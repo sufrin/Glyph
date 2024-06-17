@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="Glyph:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Glyph_jar</output-path>
+    <root id="archive" name="Glyph.jar">
+      <element id="module-output" name="Glyph" />
+      <element id="library" level="project" name="sbt: scala-sdk-2.13.12" />
+    </root>
+  </artifact>
+</component>

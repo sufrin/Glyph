@@ -15,7 +15,7 @@ scalacOptions ++= Seq(
   
 lazy val root = (project in file("."))
   .settings(
-    name := "Glyphs",
+    name := "Glyph",
     idePackagePrefix := Some("org.sufrin.glyph"),
 
   )

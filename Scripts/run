@@ -2,9 +2,9 @@
 #  Using Scala to run Glyphs with the distributed Skija/JWM libraries
 #
 
-LIB=/Users/sufrin/GitHomes/Glyphs/SkijaLib
+LIB=/Users/sufrin/GitHomes/Glyph/SkijaLib
 
-CLASSES=/Users/sufrin/GitHomes/Glyphs/out/artifacts/Glyphs_jar/Glyphs.jar
+CLASSES=/Users/sufrin/GitHomes/Glyph/out/artifacts/Glyph_jar/Glyph.jar
 
 
 JARS=$CLASSES:\
@@ -17,4 +17,4 @@ $LIB/types-0.1.1.jar
 module=${1-DemonstrationNotebook}
 shift
 
-scala -J-Xdock:name=Glyphs -cp $JARS org.sufrin.glyph.tests.$module "$@"
+scala -J-Xdock:name=Glyph -cp $JARS org.sufrin.glyph.tests.$module "$@"
