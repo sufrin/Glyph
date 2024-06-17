@@ -1,0 +1,28 @@
+\contentsline {section}{\numberline {1}User Interfaces with Glyph}{5}{section.4}%
+\contentsline {subsection}{\numberline {1.1}Introduction}{5}{subsection.5}%
+\contentsline {subsection}{\numberline {1.2}Reactive Glyphs and Focus}{6}{subsection.21}%
+\contentsline {section}{\numberline {2}Glyphs}{8}{section.25}%
+\contentsline {subsection}{\numberline {2.1}The Glyph Interface}{8}{subsection.26}%
+\contentsline {subsection}{\numberline {2.2}Glyph Composition}{9}{subsection.40}%
+\contentsline {subsection}{\numberline {2.3}Brushes}{11}{subsection.66}%
+\contentsline {section}{\numberline {3}Glyph Transformers}{14}{section.86}%
+\contentsline {section}{\numberline {4}Polygonal Glyphs}{17}{section.117}%
+\contentsline {subsection}{\numberline {4.1}Specification}{17}{subsection.118}%
+\contentsline {subsection}{\numberline {4.2}Paint Effects}{18}{subsection.136}%
+\contentsline {section}{\numberline {A}Mutability of Glyphs and Brushes}{22}{appendix.180}%
+\contentsline {subsection}{\numberline {A.1}Glyphs are mutable}{22}{subsection.181}%
+\contentsline {subsection}{\numberline {A.2}Brushes are mutable}{23}{subsection.195}%
+\contentsline {section}{\numberline {B}Text}{25}{appendix.206}%
+\contentsline {section}{\numberline {C}The Focus Protocol}{27}{appendix.224}%
+\contentsline {subsection}{\numberline {C.1}MouseMove events}{27}{subsection.225}%
+\contentsline {subsection}{\numberline {C.2}MouseButton events}{27}{subsection.226}%
+\contentsline {subsection}{\numberline {C.3}MouseScroll events}{28}{subsection.227}%
+\contentsline {subsection}{\numberline {C.4}Locating Reactive Glyphs}{28}{subsection.229}%
+\contentsline {subsection}{\numberline {C.5}Locating Glyphs in the presence of Overlays}{29}{subsection.230}%
+\contentsline {section}{\numberline {D}Anatomy of a Simple Reactive Glyph}{31}{appendix.232}%
+\contentsline {section}{\numberline {E}Examples}{34}{appendix.322}%
+\contentsline {subsection}{\numberline {E.1}A Passive GUI}{34}{subsection.323}%
+\contentsline {subsection}{\numberline {E.2}An Explicitly-styled GUI}{35}{subsection.337}%
+\contentsline {subsection}{\numberline {E.3}A GUI with Implicitly Styled Glyphs}{36}{subsection.365}%
+\contentsline {subsection}{\numberline {E.4}A Primitive Calculator}{39}{subsection.418}%
+\contentsline {section}{\numberline {F}Pages from {DemonstrationNotebook}}{41}{appendix.472}%

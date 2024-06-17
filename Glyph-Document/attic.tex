@@ -1,0 +1,282 @@
+\S{Reactive Glyphs}
+
+\SS{Introduction}
+Reactive glyphs are the means by which user actions at the GUI of an
+application, such as mouse gestures and keystrokes, are coupled to
+semantic actions of the application -- which themselves can result in
+changes to the appearance of the GUI.
+
+User interaction with the GUI in a window is mediated by an \SCALA{Interaction} -- which
+links the window with the root of the GUI's glyph-tree. Here's a main
+program that illustrates the  ``boilerplate'' necessary to construct and
+start such an \SCALA{Interaction}:\footnote{See the example given in
+\ref{anexample} for more details of  \SCALA{MediumTestGUI.root}.}
+
+
+\begin{scala}
+object MediumTest {
+  import io.github.humbleui.jwm.App
+  import MediumTestGUI.root
+  import org.sufrin.glyph.Interaction
+
+  def main(args: Array[String]): Unit = 
+    App.start(() => new Interaction(App.makeWindow(), root).start()) 
+}
+\end{scala}
+
+The last line is the important one: it shows the link between the
+generic ``java window management'' API
+\SCALA{io.github.humbleui.jwm.App}, and our \SCALA{Glyphs} API.
+The GUI thread in the application is started by the method
+\SCALA{App.start}, which then invokes the parameterless method:
+
+\begin{scala}
+    () => new Interaction(App.makeWindow(), root).start() 
+\end{scala}
+
+This constructs (\SCALA{App.makeWindow()}) a new window, then passes it
+to a new \SCALA{Interaction} together with the root of the GUI, and then
+starts that interaction. The method \SCALA{App.start} only
+returns when all the windows of the application have been closed.
+
+\SSS{Applications with more than one Window}
+Once the GUI thread is running it is straightforward to construct
+additional windows and interactions. Foe example, here's the
+definition of a ``Copy'' button whose effect is to start an
+additional interaction that uses the same GUI in a different window.
+
+
+\begin{scala}
+  val button = ShadedButton.ofString("Copy") {
+    import io.github.humbleui.jwm.App
+    val copyGUI = new MediumTestGUI {}
+    new Interaction(App.makeWindow(), copyGUI.root).start()
+  }
+\end{scala}
+
+\SS{Responding to Mouse Gestures}
+The essence of a running \SCALA{Interaction} is that an \SCALA{EventHandler}
+captures user-originated events in the window, and for each 
+event searches the glyph tree for a \SCALA{ReactiveGlyph}, then
+forwards the event (suitably annotated) to that \SCALA{ReactiveGlyph}.
+An important function of the event handler is that it keeps track
+of the most recent reactive glyph that the mouse was over, and tells
+that glyph -- by sending a synthetic event (\SCALA{GlyphLeave}) --
+when the mouse is no longer hovering\footnote{When the mouse is
+positioned over a reactive glyph we say that it is ``hovering'' in
+it.} in it , as well as telling its successor (if any) when the
+mouse moves “into” it (\SCALA{GlyphEnter}).  Events such as mouse motion or
+clicks within the currently-hovered reactive glyph are forwarded
+to it -- as are gestures made with the mouse wheel and other devices.
+
+
+\SS{Responding to Keystrokes}
+
+(TO BE WRITTEN)
+
+
+\SS{Abstract Button: a simple reactive glyph}
+
+The easiest family of reactive glyph to understand is that based
+on \SCALA{AbstractButtonGlyph}, a slight simplification of which appears in
+Figure \ref{AbstractButtonGlyph}.
+
+\begin{figure}[t]
+\begin{scala}
+ abstract class AbstractButtonGlyph extends ReactiveGlyph {
+   import io.github.humbleui.jwm.{EventMouseButton, Window}
+   var pressed, hovered: Boolean = false
+
+   def react(): Unit // reaction when the button is released while hovering
+
+   override                             // 3
+   def accept(mouse: EventMouseButton, location: Vec, window: Window): Unit = {
+     if (mouse.isPressed) {
+       pressed = true
+     } else {
+     if (pressed) {
+         pressed = false
+         react()                        // 1
+       }
+     }
+     window.requestFrame()
+   }
+
+   override                             // 2
+   def accept(event: GlyphEvent, location: Vec, window: Window): Unit = {
+     event match {
+       case _: GlyphEnter => hovered = true;
+       case _: GlyphLeave => hovered = false; pressed = false;
+     }
+     window.requestFrame()
+   }
+
+ }
+\end{scala}
+\caption{AbstractButtonGlyph}
+\label{AbstractButtonGlyph}
+\end{figure}
+
+An abstract button must define a \SCALA{react()} method: and this
+will be invoked (\SCALA{// 1}) when the mouse has been hovering over it and
+is pressed then released. To this end the state of the abstract button is
+captured by two variables: \SCALA{pressed} indicates that a mouse button
+is down; and \SCALA{hovered} indicates that the mouse is hovering over the
+button. The method \SCALA{accept(GlyphEvent...)} at \SCALA{// 2} responds to
+the synthetic enter and leave events by updating these variables. Notice
+that if the mouse leaves the abstract button then (whether or not a mouse button is
+physically pressed), it is no longer deemed to be pressed.
+
+The method \SCALA{accept(EventMouseButton...)} at \SCALA{// 3} responds to
+mouse button events. If a mouse button press is reported, the state of the abstract button is
+changed accordingly; if a mouse button release is reported and the abstract button state is pressed, then
+the reaction is invoked.
+
+``But!'', you say, ``What does one of these buttons actually look like?''.
+The answer is that it doesn't look like anything at all, until it is connected, in
+the class \SCALA{RawButton}, with glyphs to be drawn when it is shown. 
+Here we see the main organising principle of the Glyphs library in action: reactive
+glyphs are composed of their appearance and their behavious, and these aspects
+are organised -- as far as possible -- orthogonally.
+
+An extract from the relevant code is shown below.
+
+%\begin{figure}
+\begin{scala}
+
+  class RawButton(up: Glyph, down: Glyph, hover: Glyph, 
+                  val fg: Paint,
+                  val bg: Paint,
+                  reaction: => Unit
+                 ) extends AbstractButtonGlyph {
+     override
+     def diagonal: Vec =
+         up.diagonal union down.diagonal union hover.diagonal + extra
+
+     def extra:      Vec = Vec(5, 5)
+    
+     def react(): Unit = { reaction }
+
+     val downOffset  = diagonal - down.diagonal - (extra scaled 0.5f)
+     val upOffset    = diagonal - up.diagonal
+     val hoverOffset = diagonal - hover.diagonal
+
+     override
+     def draw(surface: Surface): Unit = {
+      drawBackground(surface)
+      if (pressed && hovered)
+          surface.withOrigin(downOffset.x * 0.5f, downOffset.y * 0.5f) {
+              down.draw(surface)
+        }
+      else if (hovered)
+          surface.withOrigin(hoverOffset.x * 0.5f, hoverOffset.y * 0.5f) {
+             hover.draw(surface)
+          }
+      else
+          surface.withOrigin(upOffset.x * 0.5f, upOffset.y * 0.5f) {
+             up.draw(surface)
+          }
+    }
+}                  
+\end{scala}
+%\caption{Extract from RawButton}
+%\label{rawbutton}
+%\end{figure}
+
+Three glyphs are provided: one for each of the possible states of the button.
+The \SCALA{draw} method just draws the correct glyph for the current state of the button,
+as determined in/inherited from the superclass.
+\begin{comment}
+Because the glyphs may well be of different sizes, each must be drawn
+at its own offset from the prigin of the button glyph; and these offsets are
+calculated as the button is constructed.
+\end{comment}
+
+\clearpage
+\SS{An example}\label{anexample}
+
+Figures \ref{Medium-1}-\ref{Medium-4} show successive images of
+the GUI of an application whose menu was defined by:
+
+\begin{scala}
+ val menuBar: Glyph = (Bar.Row(screenWidth)(
+   ShadedButton.ofString(" Help ", delta=3f) {
+     Popup(helpText, SafeCopy.button)
+   }, emSpace,
+   ToggleButton(" Yellow->Blue ",  "  restore Yellow ", Variable(true)){
+     case true  =>
+          yellow col  realYellow.color strokeWidth  (realYellow.strokeWidth)
+     case false =>
+          yellow col  blue.getColor strokeWidth     (realYellow.strokeWidth/2f)
+   }, emSpace,
+   ToggleButton("""Small "Rotates"""", """Restore "Rotates"""", Variable(true)){
+     case false => rotateds.scale.value = 0.5f
+     case true  => rotateds.scale.value = 1.0f
+   }, emSpace,
+   Saving.button, expandableSpace,
+   SafeCopy.button,
+ ))
+\end{scala}
+
+Other interesting components of the GUI were defined by:
+
+\begin{scala}
+  val rotateds = DynamicallyScaled()(Row.centered(
+      Rotated(3)(rotate),   Rotated(2)(rotate())
+    , Rotated(1)(rotate()), Rotated(0)(rotate())))
+    
+  val  triangularButton: ReactiveGlyph = {
+    val tr = FilledPolygon(100, 100, fg = blue)(
+               (100, 0), (0, 0), (100, 100), (100, 0))
+    ReactiveGlyphs.RawButton(tr, Rotated(2)(tr()), Rotated(1)(tr())) {
+      Popup(Col(Label("This is a popup beneath the triangular button"),
+                Label("It was placed here by pressing that button")), tr)
+    }
+  }
+
+  val lhs = Col.centered(
+      Concentric(RRect(250, 200, 5f, fg=red, bg=white), Label("Roundness"))
+    , triangularButton
+    , Concentric(Rect(250f, 250f, yellow), Rect(300f, 400f, blue() width 4))
+    , ActivelyViewed(bigGlyph())
+    , rotateds
+  )
+\end{scala}
+... and the effective root of its Glyph tree by:
+\begin{scala}
+  val root = Col.centered(menuBar, lhs)
+\end{scala}
+
+\begin{figure}
+\begin{center}
+\pdffig[scale=0.37]{PNG/Medium-1}
+\caption{Just after the application starts}
+\label{Medium-1}
+\end{center}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\pdffig[scale=0.37]{PNG/Medium-2}
+\end{center}
+\caption{Just after ``Small Rotates'' is pressed}
+\label{Medium-2}
+\end{figure}
+
+
+\begin{figure}
+\begin{center}
+\pdffig[scale=0.37]{PNG/Medium-3}
+\end{center}
+\caption{Just after the mousewheel is rotated over the pannable tiltable text}
+\label{Medium-3}
+\end{figure}
+
+
+\begin{figure}
+\begin{center}
+\pdffig[scale=0.37]{PNG/Medium-4}
+\end{center}
+\caption{After ``Restore Rotates'' is pressed}
+\label{Medium-4}
+\end{figure}

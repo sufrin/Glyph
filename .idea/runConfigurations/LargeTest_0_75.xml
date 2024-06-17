@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="LargeTest 0.75" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="org.sufrin.glyph.LargeTest" />
+    <module name="Glyphs" />
+    <option name="PROGRAM_PARAMETERS" value="-icon=./flag.png -screen=p -scale=0.75" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

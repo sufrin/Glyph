@@ -1,0 +1,14 @@
+[doc]
+name = "Tectonic"
+bundle = "https://data1.fullyjustified.net/tlextras-2022.0r0.tar"
+
+[[output]]
+name = "default"
+type = "pdf"
+tex_format = "xelatex"  # optional, defaults to "latex": the TeX format to use
+shell_escape = false  # optional, defaults to false: whether "shell escape" (\write18) is allowed
+#shell_escape_cwd = [string]  # optional, defaults to a temporary directory: path to use for \write18
+#preamble = [string] # optional, defaults to "_preamble.tex": the preamble file to use (within `src`)
+#index = [string] # optional, defaults to "index.tex": the index file to use (within `src`)
+#postamble = [string] # optional, defaults to "_postamble.tex": the postamble file to use (within `src`)
+
