@@ -2,19 +2,20 @@
 #  Using Scala to run Glyphs with the distributed Skija/JWM libraries
 #
 
-LIB=/Users/sufrin/GitHomes/Glyph/SkijaLib
+DIR=GETTINGSTARTED
+CP="$DIR/Glyph.jar"
+if [ ! -e  $CP ]
+then
+  echo "Run Scripts/compile first"
+  exit
+fi
+for file in SkijaLib/*.jar
+do
+ CP=$CP:$file
+done
 
-CLASSES=/Users/sufrin/GitHomes/Glyph/out/artifacts/Glyph_jar/Glyph.jar
-
-
-JARS=$CLASSES:\
-$LIB/jwm-0.4.17.jar:\
-$LIB/skija-shared-0.116.2.jar:\
-$LIB/skija-macos-x64-0.116.2.jar:\
-skija-macos-arm64-0.116.2.jar:\
-$LIB/types-0.1.1.jar
 
 module=${1-DemonstrationNotebook}
 shift
 
-scala -J-Xdock:name=Glyph -cp $JARS org.sufrin.glyph.tests.$module "$@"
+scala -J-Xdock:name=Glyph -cp $CP org.sufrin.glyph.tests.$module "$@"

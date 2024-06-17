@@ -1,0 +1,22 @@
+#
+#  Using Scalac to compile Glyph.jar with the distributed Skija/JWM libraries
+#
+DIR=GETTINGSTARTED
+rm    -rfv  $DIR
+mkdir -v    $DIR
+
+echo Compiling to $DIR/Glyph.jar
+
+CP=""
+for file in SkijaLib/*.jar
+do
+ CP=$CP:$file
+done
+
+scalac -deprecation -verbose -d $DIR/Glyph.jar -cp $CP `find src -name '*.scala'` |\
+  grep "specializing"
+
+ls -l $DIR
+
+
+

@@ -37,12 +37,38 @@ and `Windows`.
 
 ## Documentation
 
-A draft introduction to **Glyph** appears in `Glyph-Document/Glyph.pdf`.
-It provides a few explained examples of
+A draft introduction to **Glyph** appears in `Glyph-Document/Glyph.pdf` --
+which provides a few explained examples of
 **GUI**s (**G**lyph **U**ser **I**nterfaces). Prospective
 users may also want to read the source code of the largest
-example `DemonstrationNotebook`, which embodies many
-useful **GUI** idioms.
+example `DemonstrationNotebook` -- which embodies many
+useful **GUIdioms**
+
+
+## Getting Started
+
+The repository has all the Skija/Skia/JWM jar files needed to support
+building and using **Glyph**. I maintain the code using **IntelliJ**, and
+the repository has all the appropriate configuration files for that
+IDE. But if you don't want to have any truck with an IDE, and if you cannot
+be bothered to learn anything about **sbt** (it really *is* a
+bother), then you can use the shell script:
+
+        Script/compile
+
+to compile the library (to GETTINGSTARTED/Glyph.jar), and
+the script:
+
+        Script/run <test-name> <arguments>
+
+to run any of the tests. If no <test-name> is given, then
+
+        DemonstrationNotebook
+
+is run.
+
+A moderately experienced Scala programmer should be able to
+adapt these scripts.
 
 ## Example
 
@@ -125,4 +151,3 @@ object Example4 extends Application with Example4Interface {
 }
 ````
 
-## Getting Started
