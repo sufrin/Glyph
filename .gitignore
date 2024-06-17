@@ -4,9 +4,8 @@ target/
 !**/src/test/**/target/
 
 ### Glyphs
-PNG/*
 LOGS/*
-*.jar
+oldlib/*
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
