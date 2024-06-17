@@ -1,5 +1,5 @@
-package org.sufrin.glyph
 package org.sufrin.glyph.tests
+import  org.sufrin.glyph._
 
 import Glyphs._
 import GlyphTypes._

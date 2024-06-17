@@ -1,9 +1,8 @@
-package org.sufrin.glyph
 package org.sufrin.glyph.tests
-
-import Brush._
-import GlyphTypes._
-import Glyphs._
+import org.sufrin.glyph.Brush._
+import org.sufrin.glyph.GlyphTypes._
+import org.sufrin.glyph.Glyphs._
+import org.sufrin.glyph._
 
 
 /**
