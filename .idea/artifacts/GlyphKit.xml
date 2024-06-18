@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="GlyphKit">
+    <output-path>$PROJECT_DIR$/out/artifacts/GlyphKit</output-path>
+    <root id="archive" name="GlyphKit.jar">
+      <element id="library" level="project" name="jwm-0.4.17" />
+      <element id="library" level="project" name="skija-macos-x64-0.116.2" />
+      <element id="library" level="project" name="skija-shared-0.116.2" />
+      <element id="library" level="project" name="types-0.1.1" />
+      <element id="library" level="application" name="scala-sdk-2.13.12" />
+      <element id="module-output" name="Glyph" />
+    </root>
+  </artifact>
+</component>

@@ -21,6 +21,7 @@
 \usepackage{verbatimstyle}
 \usepackage{pdffig}
 \usepackage{manyfoot}
+\usepackage{alltt}
 
 \def\glyph[#1]#2{
 \begin{center}
@@ -439,7 +440,8 @@ of \Scala{Concentric}.}
 \pdffig[scale=0.5]{PNG/conc-r} 
 \end{center}
 
-\SSS{Temporal Alternations of Glyphs}
+
+\SSS{OneOf: Temporal Alternations of Glyphs}
 The \SCALA{OneOf} composition is used primarily in the implementation of
 dynamically ``paged'' interfaces. It constructs a glyph whose appearance is chosen
 dynamically from a palette of component glyphs.
@@ -481,6 +483,41 @@ maximal (by area) components.
 \pdffig[scale=0.6]{PNG/oneofnbg}
 \end{center}
 
+\SSS{Grid and Table organization}
+It can also be helpful to organize glyph sequences in tabular
+form. Several methods for doing
+this are provided by \Scala{NaturalSize.Grid} --
+all invoked by first specifying various aspects of the table:
+
+\begin{alltt}\textcolor{blue}{Grid(fg: Brush=nothing, bg: Brush=nothing, padx: Scalar=0, pady: Scalar=0).\(method(...)\)}
+\end{alltt}
+
+The main $method$s of such a \Scala{Grid} are:
+\begin{scala}
+  Grid(width:  Int=0, height: Int=0)(glyphs: Glyph*): Composite
+  Table(width: Int=0, height: Int=0)(glyphs: Glyph*): Composite
+  grid(width:  Int=0, height: Int=0)(glyphs: Seq[Glyph]): Composite
+  table(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Composite
+\end{scala}
+
+The \Scala{grid/Grid} method organises \Scala{glyphs} as a sequence of
+rows of \textit{identically-sized} cells,
+each large enough for any of the glyphs.
+When $width>0, height\not>0$ then $width$ is the
+number of glyphs per row; when $width\not>0, height>0$ then
+$height$ is the number of glyphs per column.\footnote{When
+neither condition is satisfied, then $width$ is chosen
+as the ceiling of $\mathbf{sqrt}(glyphs.length)$}
+
+The \Scala{table/Table} method with $width>0, height\not>0$ is similar, except
+that all cells in each column have the same width, while their height
+is the greatest of all those in the same row. When
+$width\not>0, height>0$ then
+$height$ is the number of glyphs per column, and their width
+is the greatest of all those in the same column.
+
+Figure \ref{Etc-Grid} illustrates several ways of using
+the \Scala{Grid} methods.
 
 
 \SS{Brushes}
@@ -1784,7 +1821,7 @@ trait DemonstrationPages
         val nested = new Notebook {}
         val Page = nested.DefinePage
         Page("Animation", "") {...}
-        Page("Grid", "12 blurred-frame buttons shown in grids") {...}
+        Page("Grid", "buts = 8 ... ") {...}
         Page("Blurred", "") {...}
         Page("Scroll", "Scrolling and Scaling with ViewPort") {...}
         Page("OneOf", "OneOf backgrounds") {...}
@@ -1874,6 +1911,7 @@ object DemonstrationNotebook extends DemonstrationPages with Application {
 \SAVEDFIG Styles-Blurred/the Blurred subpage of Styles* /
 \SAVEDFIG Events-Events/the Events subpage of Events* /
 \SAVEDFIG Etc-Animation/the Animation subpage of Etc* (mid-animation) /
+\SAVEDFIG Etc-Grid/the Grid subpage of Etc* /
 \SAVEDFIG Etc-Blurred/the Blurred subpage of Etc* /
 \clearpage
 

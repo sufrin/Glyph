@@ -186,7 +186,7 @@ trait EventHandler extends Consumer[Event] {
       // This event is invoked by/after a `window.requestFrame`
       case frame: EventFrameSkija =>
         val surface = frame.getSurface
-        //println(s"Scalefactor = $softwareScale ${screen.getScale}")
+        //println(s"Scalefactor = $softwareScale grid{screen.getScale}")
         val canvas = Surface(surface.getCanvas.resetMatrix().scale(screen.getScale*softwareScale, screen.getScale*softwareScale).translate(panFactor, tiltFactor), hardwareScale*softwareScale)
         canvas.clear(0xffeeeeee) // TODO: make this (background) settable
         root.draw(canvas)
@@ -278,7 +278,7 @@ trait EventHandler extends Consumer[Event] {
 
       case mouse: EventMouseMove =>
         val mouseLoc = mouseLocation(mouse.getX, mouse.getY)
-        // println(s"$mouseLoc (scaled $scaleFactor) #${screen.getScale} $mouse")
+        // println(s"$mouseLoc (scaled $scaleFactor) #grid{screen.getScale} $mouse")
         mouseFocus match {
           case Some(focussed) =>
             if (focussed.contains(mouseLoc)) {

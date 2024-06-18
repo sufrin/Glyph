@@ -1694,11 +1694,11 @@ trait DemonstrationPages extends Brushes {
             _ => for { driver <- lastDriver  } driver.msPerFrame *= 2
           }
         ), ex, ex,
-        NaturalSize.Grid(bg=lightGrey).Columns$(4)(animations.map(_.animated)), ex, ex, ex,
+        NaturalSize.Grid(bg=lightGrey).grid(width=4)(animations.map(_.animated)), ex, ex, ex,
       )
     }
 
-    Page("Grid", "12 blurred-frame buttons shown in grids") {
+    Page("Grid", "buts = 8 blurred-frame buttons, data = 9 variable sized labels") {
       implicit val blurred: ButtonStyle =
         prevailingButtonStyle.copy(
           frame = Decoration.Blurred(fg=blue, blur=10, spread=5),
@@ -1706,21 +1706,33 @@ trait DemonstrationPages extends Brushes {
           hover = prevailingButtonStyle.hover.copy(fg=white),
         )
 
-      def texts = (1 to 12).map {
+      def texts = (1 to 8).map {
         i => TextButton(f"Button $i%d") { _ => println(i) }(blurred)
       }
 
+      val data =
+        for { scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000) } yield
+            Label(f"$i.scaled($scale%1.1f)").scaled(scale)
+
 
       Col.centered(
-        Col.atLeft(TextLabel("Grid(fg=red(width=0).Columns$(5)(...)") above
-          NaturalSize.Grid(fg=red(width=0)).Columns$(5, 3, 2)(texts), ex,
-          TextLabel("Grid(fg=red(width=0).Columns$(4)(...)") above
-            NaturalSize.Grid(fg=red(width=0)).Columns$(4, 3, 2)(texts)), ex, ex,
-        Row.atTop(
-          TextLabel("Grid.Rows$(4)(...)") above NaturalSize.Grid.Rows$(4, 3, 2)(texts).framed(fg = redFrame), em,
-          TextLabel("Grid.Rows$(7)(...)") above NaturalSize.Grid.Rows$(7, 3, 2)(texts.map(_.copy())).framed(fg = redFrame))
+        Col.atLeft(
+          TextLabel("Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=5)(buts)") above
+            NaturalSize.Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=5)(texts), ex,
+          TextLabel("Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=4)(buts)") above
+            NaturalSize.Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=4)(texts)).scaled(1f), ex,
+        NaturalSize.Row(
+          TextLabel("Grid.grid(height=5)(buts)") above
+          NaturalSize.Grid.grid(height=5)(texts).framed(fg = redFrame), em,
+          TextLabel("Grid.grid(height=4)(buts)") above
+          NaturalSize.Grid.grid(height=4)(texts.map(_.copy())).framed(fg = redFrame)).scaled(1f), ex,
         // todo: why isn't a styled button copy deep?
-      ) enlarged(50)
+        ex, ex,
+        TextLabel("Grid(fg=red(width=0)).table(width=3)(data) -- variable height constant width rows"),
+        NaturalSize.Grid(fg=red(width=0), padx=10, pady=10).table(width=3)(data), ex,
+        TextLabel("Grid(fg=red(width=0)).table(height=3)(data) -- variable width constant height rows"),
+        NaturalSize.Grid(fg=red(width=0), padx=10, pady=10).table(height=3)(data)
+      ) scaled 0.8f enlarged(50)
     }
 
     Page("Blurred", "") {
@@ -1760,7 +1772,7 @@ trait DemonstrationPages extends Brushes {
           PolygonLibrary.filledStargon(5, fg=b15, C=64f, R=60f).framed()), ex, ex,
 
         Label("BlurredFrame(blur, spread)(...)"),
-        NaturalSize.Grid.Columns(4)(
+        NaturalSize.Grid(pady=10f).Table(width=4)(
         sr(10, 5),
         sr(10, 20),
         sr(10, 30),
@@ -1775,9 +1787,9 @@ trait DemonstrationPages extends Brushes {
         sr(30, 20),
         sr(30, 30),
         sr(30, 50),
-      ) scaled 0.7f, ex,
+      ).scaled(0.7f), ex, ex,
         Label("BlurredFrame(blur, spread, -blur/2f, -blur)(...)"),
-        NaturalSize.Grid.Columns(4)(
+        NaturalSize.Grid(pady=10f).Table(width=4)(
         sd(10, 10),
         sd(10, 20),
         sd(10, 30),
@@ -1792,7 +1804,7 @@ trait DemonstrationPages extends Brushes {
         sd(30, 20),
         sd(30, 30),
         sd(30, 50),
-      ) scaled 0.7f
+      ).scaled(0.7f)
       )
     }
 
@@ -1934,25 +1946,23 @@ trait DemonstrationPages extends Brushes {
 
         Col.centered(
           TextParagraphs(50, Justify)(
-            """Four ColourButtons. In the left column, the foreground colour changes
-              |as the mouse hovers or is pressed. In the right column, the background colour changes
+            """Four ColourButtons. In the top row, the foreground colour changes
+              |as the mouse hovers or is pressed. In the bottom row, the background colour changes
               |as the mouse hovers or is pressed.            |
               |""".stripMargin), ex,
-          NaturalSize.Grid(bg=lightGrey).Rows(2, 20, 20)(
-            TextBut(false),
-            RectBut(false),
-            TextBut(true),
-            RectBut(true)
+          NaturalSize.Grid(bg=lightGrey, padx=20, pady=20).Table(height=2)(
+            TextBut(false), TextBut(true),
+            RectBut(false), RectBut(true)
           ).framed(),
         ).enlarged(20).framed()
       }
 
       Col.centered(
-        NaturalSize.Grid(fg=blue(width=0)).Columns(3)(
-          state1, state2,            state3 enlarged 10f,
-          t1,     t2 scaled 1.7f,    t3 enlarged 10f
-        ).enlarged(40f).framed(blue), ex, ex,
-        NaturalSize.Grid(fg=blue(width=0)).Columns(2)(
+        NaturalSize.Grid(fg=blue(width=0), padx=10f).table(width=3)(List(
+          state1, state2,            state3,
+          t1,     t2 scaled 1.7f,    t3
+        )).enlarged(40f).framed(blue), ex, ex,
+        NaturalSize.Grid(fg=blue(width=0)).Width(2)(
           Col.centered(
           TextParagraphs(40, Center)("A TextToggle can have multi-line legends in either or both states."), ex,
           TextToggle(whenTrue = ("True"), whenFalse = ("Not True\n(or true)"), initially = true) { _ => }, ex,
