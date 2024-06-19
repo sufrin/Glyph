@@ -276,7 +276,7 @@ trait DemonstrationPages extends Brushes {
             if (nested) but.asMenuButton else but
           }
 
-          lazy val theTarget = TextLabel("This is the target")(HugeLabelStyle).framed().centerShifted
+          lazy val theTarget = TextLabel("This is the target")(HugeLabelStyle).framed()
 
           Col.centered(
             TextParagraphs(60 * em.w, Left)(
