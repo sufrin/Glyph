@@ -23,6 +23,38 @@ trait GlyphColours {
   override def toString: String = colourString
 }
 
+object CellFit {
+  trait Method
+  case object ShiftNorth extends Method
+  case object ShiftSouth extends Method
+  case object ShiftEast extends Method
+  case object ShiftWest extends Method
+  case object Stretch extends Method
+  case object Enlarge extends Method
+
+  val nothing: Brush = Brush("nothing")
+
+  /**
+   *  The given glyph: transformed according to its `cellFitMethod` to fit the given `(w,h)`
+   */
+    import Glyphs.Empty
+    import NaturalSize.{Row, Col}
+    import GlyphTransforms.Scaled
+    def apply(w: Scalar, h: Scalar, fg: Brush, bg: Brush)(glyph: Glyph): Glyph = {
+      glyph.cellFitMethod match {
+        case Enlarge     => glyph.enlargedTo(w, h, fg, bg)
+        case Stretch  =>
+          val wscale = w/glyph.w
+          val hscale = h/glyph.h
+          Scaled(wscale, hscale, fg, bg)(glyph)
+        case ShiftNorth => Col.centered(glyph, Empty(glyph.w, h - glyph.h), Empty(w, 0))
+        case ShiftSouth => Col.centered(Empty(glyph.w, h - glyph.h), glyph, Empty(w, 0))
+        case ShiftWest  => Row.centered(glyph, Empty(w-glyph.w, glyph.h), Empty(0, h))
+        case ShiftEast  => Row.centered(Empty(w-glyph.w, glyph.h), glyph, Empty(0, h))
+      }
+    }
+}
+
 /**
  *  A `Glyph` is the unit of graphical construction.
  *
@@ -117,15 +149,36 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
 
   /**
-   *  Stretchability of this glyph. Originally intended for variable-width/height spaces whose
-   *  size is determined by the size of their container and
-   *  the sizes of their peers in the container. Zero except for
-   *  `FixedWidth.Space` glyphs.
-   *
-   *  TODO: This may change if we introduce a class of extendable
-   *        non-space glyphs.
+   *  Expandability of this glyph (within NaturalSize grids)
    */
-  val xStretch, yStretch: Scalar = 0.0f
+  var cellFitMethod: CellFit.Method = CellFit.Enlarge
+
+  /**
+   * Set the current `cellFitMethod` of this glyph
+   * @param method
+   * @return
+   */
+  def cellFit(method: CellFit.Method): this.type = { cellFitMethod=method; this }
+
+  /**
+   * Fit this glyph to a cell of size `(w, h)` as specified by its current
+   * `cellFitMethod`
+   *
+   * @param w
+   * @param h
+   * @param fg foreground used if the `Expand` method is used
+   * @param bg background used if the `Expand` method is used
+   * @return
+   */
+   def cellFit(w: Scalar, h: Scalar, fg: Brush = CellFit.nothing, bg: Brush=CellFit.nothing): Glyph =
+    CellFit(w, h, fg, bg)(thisGlyph)
+
+  /**
+   * Stretchability: used when (eg) a stretchable space is to be expanded to make
+   * the content of a FixedSize container (Row, Col) fit.
+   */
+  val xStretch: Scalar = 0.0f
+  val yStretch: Scalar = 0.0f
 
   private type Shifter = (Scalar, Scalar, Scalar)=>Scalar
   /**

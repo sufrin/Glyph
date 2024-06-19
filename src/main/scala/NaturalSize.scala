@@ -233,7 +233,7 @@ object NaturalSize {
         val maxh = pady + Measure.maxHeight(row)
         var x = 0f
         for { glyph <- row } {
-          val w = glyph.enlargedTo(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
+          val w = glyph.cellFit(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
           val f = if (fg.color != 0) w.edged(fg) else w
           locatedGlyphs.append(f@@(x, y))
           x += maxw
@@ -267,7 +267,7 @@ object NaturalSize {
         val maxw = pady + Measure.maxWidth(col)
         var y = 0f
         for { glyph <- col } {
-          val w = glyph.enlargedTo(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
+          val w = glyph.cellFit(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
           val f = if (fg.color != 0) w.edged(fg) else w
           locatedGlyphs.append(f@@(x, y))
           y += maxh
@@ -301,7 +301,7 @@ object NaturalSize {
       val it = glyphs.iterator
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       while (it.hasNext) {
-        val w = it.next().enlargedTo(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
+        val w = it.next().cellFit(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
         val f = if (fg.color != 0) w.edged(fg) else w
         locatedGlyphs.append(f@@(x, y))
         i += 1
@@ -339,7 +339,7 @@ object NaturalSize {
       val it = glyphs.iterator
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       while (it.hasNext) {
-        val w = it.next().enlargedTo(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
+        val w = it.next().cellFit(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
         val f = if (fg.color != 0) w.edged(fg) else w
         locatedGlyphs.append(f@@(x, y))
         i += 1

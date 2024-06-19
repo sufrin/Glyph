@@ -580,4 +580,17 @@ object Glyphs extends Brushes {
         Text(text, font).asLabel(fg, bg)
   }
 
+  /**
+   *  An empty glyph of diagonal `(width, height)` intended to be used as a spacer
+   */
+  object Empty {
+    def apply(width: Scalar, height: Scalar): Glyph = new Glyph {
+      def draw(surface: Surface): Unit = ()
+      def diagonal: Vec = Vec(width, height)
+      def copy(fg: Brush, bg: Brush): Glyph = Empty(width, height)
+      val fg: Brush = nothing
+      val bg: Brush = nothing
+    }
+  }
+
 }

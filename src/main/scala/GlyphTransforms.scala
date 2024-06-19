@@ -656,6 +656,9 @@ object GlyphTransforms {
   object Scaled extends DefaultPaints {
     def apply(scale: Scale, fg: Brush = defaultFG, bg: Brush = defaultBG)(glyph: Glyph): Glyph =
       if (scale == 1f) glyph else new Scaled(glyph, Vec(scale, scale), fg, bg)
+
+    def apply(wscale: Scale, hscale: Scalar, fg: Brush, bg: Brush)(glyph: Glyph): Glyph =
+      if (wscale == 1f && hscale == 1f) glyph else new Scaled(glyph, Vec(wscale, hscale), fg, bg)
   }
 
   object Shaded {
@@ -703,6 +706,4 @@ object GlyphTransforms {
     def copy(fg: Brush, bg: Brush): Glyph = new Shaded(glyph.copy(), fg, bg, delta, down)
 
   }
-
-
 }
