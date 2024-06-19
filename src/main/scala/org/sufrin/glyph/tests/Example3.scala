@@ -16,7 +16,7 @@ trait Example3Interface {
     import Styles.Decoration.{Framed, Shaded}
 
     implicit val localButtons: Styles.ButtonStyle =
-      buttonStyle.copy(frame = Framed(fg = blue(width = 8, cap=SQUARE), bg = red))
+      buttonStyle.copy(frame = Framed(fg = blue(width = 8, cap=ROUND), bg=white, radiusFactor = 0.5f))
 
     implicit val localLabels: Styles.GlyphStyle =
       labelStyle.copy(font=GlyphTypes.Font(face, 40))

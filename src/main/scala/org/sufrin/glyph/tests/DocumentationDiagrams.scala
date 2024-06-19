@@ -3,6 +3,7 @@ import org.sufrin.glyph.Brush._
 import org.sufrin.glyph.GlyphTypes._
 import org.sufrin.glyph.Glyphs._
 import org.sufrin.glyph._
+import org.sufrin.glyph.styled.TextLayout.TextLabel
 
 
 /**
@@ -322,6 +323,56 @@ object DocumentationDiagrams {
     write("redpoly.png", false)(
       Polygon(200, 200, fg = red(width = 4f, pathEffect = PathEffect.makeDiscrete(5f, 100f, 15), cap = ROUND)
       )((0, 100), (200, 100)).enlarged(4).framed())
+
+    val gridTables = {
+      import styled.TextLayout._
+      object Style extends Styles.Basic{}
+      import Style._
+      import Spaces._
+      val data =
+        for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
+          Label(f"$i.scaled($scale%1.1f)").scaled(scale)
+
+      Col.centered(
+        Col.atLeft(
+          TextLabel("Grid(fg=red(width=0)).grid(width=3)(data) -- constant size cells"),
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex,
+          TextLabel("Grid(fg=red(width=0)).table(width=3)(data) -- variable height constant width rows"),
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(width = 3)(data), ex,
+          TextLabel("Grid(fg=red(width=0)).table(height=3)(data) -- variable width constant height rows"),
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(height = 3)(data)
+        ) scaled 0.8f enlarged (50))
+    }
+
+    val gridCellFit =  {
+      import styled.TextLayout._
+      object Style extends Styles.Basic{}
+      import Style._
+      import Spaces._
+      import CellFit._
+      val data =
+        for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
+          Label(f"$i.scaled($scale%1.1f)").scaled(scale)
+
+      def expanded(method: Method): Seq[Glyph] = {
+        val lab = Label(s"cellFit($method)").scaled(0.75f).cellFit(method)
+        data.updated(4, lab)
+      }
+
+      Col.centered(
+        TextLabel("grid with data(4).cellFit(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Enlarge)), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftNorth)), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftWest)), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftSouth)), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftEast)), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Stretch)), ex, ex,
+      ) scaled 0.75f enlarged (50)
+    }
+
+    write("gridtable.png", false)(gridTables)
+    write("gridcellfit.png", false)(gridCellFit)
+
 
   }
 }

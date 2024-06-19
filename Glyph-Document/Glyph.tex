@@ -75,6 +75,16 @@
 \end{figure}
 }
 
+\def\PNGFIGURE#1#2{
+\begin{figure}[h]
+\begin{center}
+\pdffig[scale=0.5]{PNG/#1}
+\caption{#2}
+\label{#1}
+\end{center}
+\end{figure}
+}
+
 
 \def\SAVEDFIG#1/#2/{\SAVEDFIGURE{#1}{#2}}
 
@@ -116,7 +126,7 @@
 \author{Bernard Sufrin\thanks{Emeritus Fellow: Department of Computer
 Science \& Worcester College, Oxford; Tutor in Computer Science,
 Magdalen College, Oxford}}
-\title{The \Glyph User-Interface Library}
+\title{The \Glyph User-Interface Library for Scala}
 \date{Draft of \today}
 %%%%%%%%%%%%%%%%%%%%%
 \begin{document}
@@ -151,7 +161,12 @@ toolkit, we have provided enough elements and combining forms for
 an innovative UI designer to experiment with, and a collection of
 implementations of conventional components (for example buttons,
 checkboxes, text input components, notebooks) to serve as models.
-\vfill
+
+Code and examples can be found in
+the public repository at
+\begin{center}
+\href{https://github.com/sufrin/Glyph}{https://github.com/sufrin/Glyph}.
+\end{center}\vfill
 \end{abstract}
 \clearpage
 \tableofcontents
@@ -516,10 +531,17 @@ $width\not>0, height>0$ then
 $height$ is the number of glyphs per column, and their width
 is the greatest of all those in the same column.
 
-Figure \ref{Etc-Grid} illustrates several ways of using
-the \Scala{Grid} methods.
+Individual glyphs in a grid can be made to fit their cell by
+various methods, including shifting in various directions within the cell, scaling to
+the size of the cell, and (the default) simply enlarging it to fit it.
 
+Figures \ref{gridtable} and  \ref{gridcellFit} illustrate several ways of using
+the \Scala{Grid} methods \Scala{grid}, and \Scala{table}.
 
+\PNGFIGURE{gridtable}{Table presentations of a grid}
+\PNGFIGURE{gridcellFit}{Individual cell placement in a grid}
+
+\clearpage
 \SS{Brushes}
 A brush applies ``paint'' to a surface. The
 most important of its characteristics are its width (aka \SCALA{strokeWidth}), and
@@ -545,7 +567,7 @@ and \SCALA{val Wide.blue} was defined as:
                      cap   = SQUARE)
 \end{scala}
 
-\pagebreak[4]
+
 The following two images show some brush properties in action. Notice the
 rounded corners of the first rectangle, and that the points have
 all the characteristics of the brushes they were drawn with.
@@ -1649,7 +1671,9 @@ on a white background.
 
     implicit val localButtons: Styles.ButtonStyle =
       buttonStyle.copy(frame =
-        Framed(fg = blue(width = 8, cap=SQUARE), bg = red))
+        Framed(fg = blue(width = 8, cap=ROUND),
+               bg = white,
+               radiusFactor = 0.5f))
 \end{scala}
 
 \clearpage
@@ -1911,7 +1935,9 @@ object DemonstrationNotebook extends DemonstrationPages with Application {
 \SAVEDFIG Styles-Blurred/the Blurred subpage of Styles* /
 \SAVEDFIG Events-Events/the Events subpage of Events* /
 \SAVEDFIG Etc-Animation/the Animation subpage of Etc* (mid-animation) /
-\SAVEDFIG Etc-Grid/the Grid subpage of Etc* /
+\SAVEDFIG Etc-Grid-Grid/the Grid.Grid subpage of Etc* /
+\SAVEDFIG Etc-Grid-Table/the Grid.Table subpage of Etc* /
+\SAVEDFIG Etc-Grid-CellFit/the Grid.CellFit subpage of Etc* /
 \SAVEDFIG Etc-Blurred/the Blurred subpage of Etc* /
 \clearpage
 

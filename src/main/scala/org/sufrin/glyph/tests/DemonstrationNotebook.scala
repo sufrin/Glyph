@@ -4,6 +4,7 @@ import FixedSize.Space.tab
 import PolygonLibrary.brown
 import io.github.humbleui.jwm.Window
 
+import java.rmi.NoSuchObjectException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Date
@@ -1698,41 +1699,76 @@ trait DemonstrationPages extends Brushes {
       )
     }
 
-    Page("Grid", "buts = 8 blurred-frame buttons, data = 9 variable sized labels") {
-      implicit val blurred: ButtonStyle =
-        prevailingButtonStyle.copy(
-          frame = Decoration.Blurred(fg=blue, blur=10, spread=5),
-          up    = prevailingButtonStyle.up.copy(fg=yellow),
-          hover = prevailingButtonStyle.hover.copy(fg=white),
-        )
+    Page("Grid", "") {
+      val nested = new Notebook {}
+      val Page = nested.DefinePage
 
-      def texts = (1 to 8).map {
-        i => TextButton(f"Button $i%d") { _ => println(i) }(blurred)
+      Page("Grid", "data = 8 blurred-frame buttons") {
+        implicit val blurred: ButtonStyle =
+          prevailingButtonStyle.copy(
+            frame = Decoration.Blurred(fg = blue, blur = 10, spread = 5),
+            up = prevailingButtonStyle.up.copy(fg = yellow),
+            hover = prevailingButtonStyle.hover.copy(fg = white),
+          )
+
+        def data = (1 to 8).map {
+          i => TextButton(f"Button $i%d") { _ => println(i) }(blurred)
+        }
+
+        Col.centered(
+          Col.atLeft(
+            TextLabel("Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=5)(data)") above
+              NaturalSize.Grid(fg = red(width = 0), padx = 20f, pady = 2f).grid(width = 5)(data), ex,
+            TextLabel("Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=4)(data)") above
+              NaturalSize.Grid(fg = red(width = 0), padx = 20f, pady = 2f).grid(width = 4)(data)).scaled(1f), ex,
+          NaturalSize.Row(
+            TextLabel("Grid.grid(height=5)(data)") above
+              NaturalSize.Grid.grid(height = 5)(data).framed(fg = redFrame), em,
+            TextLabel("Grid.grid(height=4)(data)") above
+              NaturalSize.Grid.grid(height = 4)(data.map(_.copy())).framed(fg = redFrame)).scaled(1f), ex,
+        ) enlarged (50)
       }
 
-      val data =
-        for { scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000) } yield
+      Page("Table", "data = 9 variable sized labels") {
+        val data =
+          for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
             Label(f"$i.scaled($scale%1.1f)").scaled(scale)
 
+        Col.centered(
+          Col.atLeft(
+            TextLabel("Grid(fg=red(width=0)).grid(width=3)(data) -- constant size cells"),
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex,
+            TextLabel("Grid(fg=red(width=0)).table(width=3)(data) -- variable height constant width rows"),
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(width = 3)(data), ex,
+            TextLabel("Grid(fg=red(width=0)).table(height=3)(data) -- variable width constant height rows"),
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(height = 3)(data)
+          ) scaled 0.8f enlarged (50))
+      }
 
-      Col.centered(
-        Col.atLeft(
-          TextLabel("Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=5)(buts)") above
-            NaturalSize.Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=5)(texts), ex,
-          TextLabel("Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=4)(buts)") above
-            NaturalSize.Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=4)(texts)).scaled(1f), ex,
-        NaturalSize.Row(
-          TextLabel("Grid.grid(height=5)(buts)") above
-          NaturalSize.Grid.grid(height=5)(texts).framed(fg = redFrame), em,
-          TextLabel("Grid.grid(height=4)(buts)") above
-          NaturalSize.Grid.grid(height=4)(texts.map(_.copy())).framed(fg = redFrame)).scaled(1f), ex,
-        // todo: why isn't a styled button copy deep?
-        ex, ex,
-        TextLabel("Grid(fg=red(width=0)).table(width=3)(data) -- variable height constant width rows"),
-        NaturalSize.Grid(fg=red(width=0), padx=10, pady=10).table(width=3)(data), ex,
-        TextLabel("Grid(fg=red(width=0)).table(height=3)(data) -- variable width constant height rows"),
-        NaturalSize.Grid(fg=red(width=0), padx=10, pady=10).table(height=3)(data)
-      ) scaled 0.8f enlarged(50)
+      Page("CellFit", "") {
+        import CellFit._
+        val data =
+          for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
+            Label(f"$i.scaled($scale%1.1f)").scaled(scale)
+
+        def expanded(method: Method): Seq[Glyph] = {
+          val lab = Label(s"cellFit($method)").scaled(0.75f).cellFit(method)
+          data.updated(4, lab)
+        }
+
+        Col.centered(
+            TextLabel("grid with data(4).cellFit(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Enlarge)), ex, ex,
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftNorth)), ex, ex,
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftWest)), ex, ex,
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftSouth)), ex, ex,
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftEast)), ex, ex,
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Stretch)), ex, ex,
+          ) scaled 0.75f enlarged (50)
+      }
+
+
+      nested.Layout.topButtons()
     }
 
     Page("Blurred", "") {

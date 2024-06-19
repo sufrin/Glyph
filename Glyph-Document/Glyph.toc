@@ -4,25 +4,25 @@
 \contentsline {section}{\numberline {2}Glyphs}{8}{section.25}%
 \contentsline {subsection}{\numberline {2.1}The Glyph Interface}{8}{subsection.26}%
 \contentsline {subsection}{\numberline {2.2}Glyph Composition}{9}{subsection.40}%
-\contentsline {subsection}{\numberline {2.3}Brushes}{12}{subsection.72}%
-\contentsline {section}{\numberline {3}Glyph Transformers}{15}{section.92}%
-\contentsline {section}{\numberline {4}Polygonal Glyphs}{18}{section.123}%
-\contentsline {subsection}{\numberline {4.1}Specification}{18}{subsection.124}%
-\contentsline {subsection}{\numberline {4.2}Paint Effects}{19}{subsection.142}%
-\contentsline {section}{\numberline {A}Mutability of Glyphs and Brushes}{23}{appendix.186}%
-\contentsline {subsection}{\numberline {A.1}Glyphs are mutable}{23}{subsection.187}%
-\contentsline {subsection}{\numberline {A.2}Brushes are mutable}{24}{subsection.201}%
-\contentsline {section}{\numberline {B}Text}{26}{appendix.212}%
-\contentsline {section}{\numberline {C}The Focus Protocol}{28}{appendix.230}%
-\contentsline {subsection}{\numberline {C.1}MouseMove events}{28}{subsection.231}%
-\contentsline {subsection}{\numberline {C.2}MouseButton events}{28}{subsection.232}%
-\contentsline {subsection}{\numberline {C.3}MouseScroll events}{29}{subsection.233}%
-\contentsline {subsection}{\numberline {C.4}Locating Reactive Glyphs}{29}{subsection.235}%
-\contentsline {subsection}{\numberline {C.5}Locating Glyphs in the presence of Overlays}{30}{subsection.236}%
-\contentsline {section}{\numberline {D}Anatomy of a Simple Reactive Glyph}{32}{appendix.238}%
-\contentsline {section}{\numberline {E}Examples}{35}{appendix.328}%
-\contentsline {subsection}{\numberline {E.1}A Passive GUI}{35}{subsection.329}%
-\contentsline {subsection}{\numberline {E.2}An Explicitly-styled GUI}{36}{subsection.343}%
-\contentsline {subsection}{\numberline {E.3}A GUI with Implicitly Styled Glyphs}{37}{subsection.371}%
-\contentsline {subsection}{\numberline {E.4}A Primitive Calculator}{40}{subsection.424}%
-\contentsline {section}{\numberline {F}Pages from {DemonstrationNotebook}}{42}{appendix.478}%
+\contentsline {subsection}{\numberline {2.3}Brushes}{14}{subsection.74}%
+\contentsline {section}{\numberline {3}Glyph Transformers}{16}{section.94}%
+\contentsline {section}{\numberline {4}Polygonal Glyphs}{19}{section.125}%
+\contentsline {subsection}{\numberline {4.1}Specification}{19}{subsection.126}%
+\contentsline {subsection}{\numberline {4.2}Paint Effects}{20}{subsection.144}%
+\contentsline {section}{\numberline {A}Mutability of Glyphs and Brushes}{24}{appendix.188}%
+\contentsline {subsection}{\numberline {A.1}Glyphs are mutable}{24}{subsection.189}%
+\contentsline {subsection}{\numberline {A.2}Brushes are mutable}{25}{subsection.203}%
+\contentsline {section}{\numberline {B}Text}{27}{appendix.214}%
+\contentsline {section}{\numberline {C}The Focus Protocol}{29}{appendix.232}%
+\contentsline {subsection}{\numberline {C.1}MouseMove events}{29}{subsection.233}%
+\contentsline {subsection}{\numberline {C.2}MouseButton events}{29}{subsection.234}%
+\contentsline {subsection}{\numberline {C.3}MouseScroll events}{30}{subsection.235}%
+\contentsline {subsection}{\numberline {C.4}Locating Reactive Glyphs}{30}{subsection.237}%
+\contentsline {subsection}{\numberline {C.5}Locating Glyphs in the presence of Overlays}{31}{subsection.238}%
+\contentsline {section}{\numberline {D}Anatomy of a Simple Reactive Glyph}{33}{appendix.240}%
+\contentsline {section}{\numberline {E}Examples}{36}{appendix.330}%
+\contentsline {subsection}{\numberline {E.1}A Passive GUI}{36}{subsection.331}%
+\contentsline {subsection}{\numberline {E.2}An Explicitly-styled GUI}{37}{subsection.345}%
+\contentsline {subsection}{\numberline {E.3}A GUI with Implicitly Styled Glyphs}{38}{subsection.373}%
+\contentsline {subsection}{\numberline {E.4}A Primitive Calculator}{41}{subsection.428}%
+\contentsline {section}{\numberline {F}Pages from {DemonstrationNotebook}}{43}{appendix.482}%
