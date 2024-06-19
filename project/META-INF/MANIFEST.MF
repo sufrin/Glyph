@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: 
+Class-Path: scala-library-2.13.12.jar jwm-0.4.17.jar skija-macos-x64-0.1
+ 16.2.jar skija-shared-0.116.2.jar types-0.1.1.jar
+

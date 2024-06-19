@@ -1,0 +1,24 @@
+#
+#  Using pack Glyph.jar with the distributed Skija/JWM libraries
+#
+DIR=RELEASE
+rm    -rfv  $DIR
+mkdir -v    $DIR
+
+(cd $DIR; jar xvf ../out/artifacts/Glyph/Glyph.jar)
+
+echo =====================================
+echo This script leaves a misbehaving jar
+echo =====================================
+exit
+
+for file in lib/*.jar
+do
+ (cd $DIR; jar xvf ../$file)
+done
+
+ls -l $DIR
+
+(cd DIR; jar cvf ../GlyphKit.jar .)
+
+
