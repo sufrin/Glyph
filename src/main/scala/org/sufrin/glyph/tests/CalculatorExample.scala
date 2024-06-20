@@ -139,7 +139,7 @@ class CalculatorGUI()(implicit detail: Styles.Basic) extends AdderGUI() {
 
 trait TopLevelGUI {
   
-  val noteBook = new Notebook
+  val noteBook = Notebook()
   val Page     = noteBook.DefinePage
   import MenuStyle._
 

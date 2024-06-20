@@ -33,7 +33,6 @@ object DocumentationDiagrams {
 
   import GlyphTransforms.{Rotated, Scaled}
 
-  val menu = MediumTestGUI.menuBar
   val bananas = Label("Bananas", fg=white, bg=blue)
   val oneof: OneOf = OneOf(bg = Wide.red)(
       Rotated(0)(bananas())
@@ -50,14 +49,8 @@ object DocumentationDiagrams {
   )
 
 
-  println(menu)
-  println(Label("Label", fg=yellow, bg=white))
-  println(OneOf(fg = green, bg = blue)(Label("y/b", fg = yellow, bg = blue)),
-    Label("y/r", fg = yellow, bg = red))
 
-  println(Rotated(3, green, white)(OneOf(fg = green, bg = blue)(
-                     Label("y/b", fg = yellow, bg = blue),
-                     Label("y/r", fg = yellow, bg = red))))
+
 
   var theFace: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL)
   var thePointSize: Float = 14.0f
@@ -232,7 +225,6 @@ object DocumentationDiagrams {
     write("eg3d.png")(Framed(Wide.blue)(Row.centered(a, b, a)), "Framed(Wide.blue)(\n Row.centered(a, b, a))")
     write("eg3d.png")(Framed(Wide.blue)(Row.centered(a, b, a)), "Framed(Wide.blue)(\n Row.centered(a, b, a))")
 
-    write("menubar.png")(menu, "A menu bar")
 
     write("oneof.png")(oneof, oneof.toString)
     write("oneofnbg.png")(oneofnbg, oneofnbg.toString)

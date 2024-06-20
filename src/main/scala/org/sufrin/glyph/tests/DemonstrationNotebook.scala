@@ -219,7 +219,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   val MenusPage = Page("Menus*", "Window menus and dialogues") {
-      val nested = new Notebook {}
+      val nested = Notebook()
       val Page = nested.DefinePage
       implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
       import windowdialogues.Dialogue
@@ -423,7 +423,7 @@ trait DemonstrationPages extends Brushes {
     }
 
   val TransformsPage = Page("Transforms*", "") {
-    val nested = new Notebook {}
+    val nested = Notebook()
     val Page = nested.DefinePage
     implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
     Page("Turn", "Turn transforms") {
@@ -693,7 +693,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   val OverlayPage = Page("Overlays*", "Features implemented as overlay layers and annotations"){
-    val noteBook = new Notebook
+    val noteBook = Notebook()
     val Page = noteBook.DefinePage
     implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
 
@@ -1158,7 +1158,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   val FramePage = Page("Framing*", "") {
-    val noteBook = new Notebook
+    val noteBook = Notebook()
     val Page = noteBook.DefinePage
 
     Page("Text 1", "Text (curved framing)") {
@@ -1308,7 +1308,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   val StylesPage = Page("Styles*", "") {
-    val noteBook = new Notebook {}
+    val noteBook = Notebook()
     val Page = noteBook.DefinePage
 
     Page("Framed", "") {
@@ -1397,7 +1397,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   val EventsPage = Page("Events*", "") {
-    val nested = new Notebook {}
+    val nested = Notebook()
     val Page = nested.DefinePage
 
     Page("Events", "") {
@@ -1615,7 +1615,7 @@ trait DemonstrationPages extends Brushes {
     }
 
     val familiesPerGroup = 60
-    val noteBook = new Notebook
+    val noteBook = Notebook()
     val Page = noteBook.DefinePage
     var names = FontFamilies.names.sorted.toList
 
@@ -1639,7 +1639,7 @@ trait DemonstrationPages extends Brushes {
   }(HelpStyle.labelStyle)
 
   val etcPage = Page("Etc*", "") {
-    val nested = new Notebook {}
+    val nested = Notebook()
     val Page = nested.DefinePage
 
     Page("Animation", "") {
@@ -1700,7 +1700,7 @@ trait DemonstrationPages extends Brushes {
     }
 
     Page("Grid", "") {
-      val nested = new Notebook {}
+      val nested = Notebook()
       val Page = nested.DefinePage
 
       Page("Grid", "data = 8 blurred-frame buttons") {

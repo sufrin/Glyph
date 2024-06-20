@@ -9,6 +9,7 @@ object GlyphTypes {
   type Typeface    = io.github.humbleui.skija.Typeface
   type PathEffect  = io.github.humbleui.skija.PathEffect
   type ImageFilter = io.github.humbleui.skija.ImageFilter
+  type Window      = io.github.humbleui.jwm.Window
 
   object FontManager {
     import io.github.humbleui.skija.FontMgr

@@ -6,12 +6,14 @@ import NaturalSize.nothing
  * Manage the declaration of notebook pages and the construction of tabbedNotebook
  * notebook GUIs.
  */
-class Notebook {
+trait Notebook {
 
     import NaturalSize.{Col, Row}
     import Styles._
     import styled._
+
     import TextLayout._
+
     import scala.collection.mutable.ArrayBuffer
 
     /**
@@ -32,7 +34,7 @@ class Notebook {
     val pages: ArrayBuffer[Page] = new ArrayBuffer[Page]()
 
     /** Declare a page */
-    def apply(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit detail: GlyphStyle): Page = {
+    def Page(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit detail: GlyphStyle): Page = {
       val page = new Page(title, gloss, glyph)
       if (publish) {
         pages += (page)
@@ -155,5 +157,5 @@ class Notebook {
 }
 
 object Notebook {
-  def apply(): Notebook = new Notebook()
+  def apply(): Notebook = new Notebook {}
 }
