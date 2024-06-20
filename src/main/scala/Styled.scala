@@ -423,19 +423,38 @@ object RadioCheckBoxes {
        new RadioCheckBoxes(captions, prefer, inheritFramed, action)(detail)
 }
 
-class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Boolean, action: Option[Int]=>Unit)(implicit detail: Styles.Basic) {
+/**
+ * A group of captioned checkboxes, labelled with `captions`, and with `prefer` as the
+ * caption of the to-be-checkedinitially box.  At most one box can be checked at a time:
+ * so whenever one is checked all the others are unchecked. When the currently-checked box
+ * is clicked and becomes unchecked, then the box (if any) captioned `prefer` is checked.
+ * @param captions
+ * @param prefer
+ * @param inheritFramed
+ * @param action invoked after a checkbox changes state,
+ *               with argument `None` if none of the boxes is checked, and
+ *               `Some(ix)` if the `ix`the box is checked.
+ * @param detail implicit style applied while constructing the checkboxes.
+ */
+class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Boolean,
+                      action: Option[Int]=>Unit)(implicit detail: Styles.Basic) {
   import styled.TextLayout.TextLabel
 
   val preferred  = if (prefer eq null) captions(0) else prefer
 
-  val frameStyle = if (inheritFramed) detail.buttonStyle else detail.buttonStyle.copy(frame = Styles.Decoration.Unframed)
+  val frameStyle =
+    if (inheritFramed)
+      detail.buttonStyle
+    else
+      detail.buttonStyle.copy(frame = Styles.Decoration.Unframed)
 
   lazy val checkBoxes =
-       for {i <- 0 until captions.length} yield CheckBox(initially = (captions(i) == preferred))(reaction(i))(frameStyle)
+       for {i <- 0 until captions.length} yield
+         CheckBox(initially = (captions(i) == preferred))(reaction(i))(frameStyle)
 
   def reaction(boxIndex: Int): Boolean => Unit = {
     case true =>
-      for {i <- 0 until captions.length if i != boxIndex} checkBoxes(i).set(false)
+      for {i <- 0 until captions.length if i != boxIndex } checkBoxes(i).set(false)
       action(Some(boxIndex))
     case false =>
       action(None)
