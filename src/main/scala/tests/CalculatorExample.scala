@@ -133,7 +133,7 @@ class CalculatorGUI()(implicit detail: Styles.Basic) extends AdderGUI() {
 
   override def root: Composite = Col.centered(
     super.root, ex,
-    Row.centered(styled.TextLayout.TextLabel("Choose an operator "), Row.atTop$(operations.colGlyphs))
+    Row.centered(styled.TextLayout.TextLabel("Choose an operator "), Row.atTop(operations.gridGlyphs(width=0, height=1)))
   )
 
 }

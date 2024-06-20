@@ -6,9 +6,9 @@ import Styles.GlyphStyle
 import styled.TextLayout.TextLabel
 
 
-object TransformsPage extends Notebook {
+object PortmanteauTransforms extends Notebook {
     implicit val labelStyle: GlyphStyle = PortmanteauStyle.labelStyle
-    def dummy(name: String): Glyph = Col.centered(TextLabel(s"Page ($name) intentionally left blank"))
+    def dummy(name: String): Glyph = Col.centered(TextLabel(s"Page ($name) intentionally left blank")) enlarged 50
     Page("Turn", "Turn transforms") (dummy("Turn"))
 
     Page("Tight", "") (dummy("Tight"))

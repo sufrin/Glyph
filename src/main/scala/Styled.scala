@@ -5,6 +5,8 @@ import org.sufrin.glyph.ReactiveGlyphs.Reaction
 import org.sufrin.glyph.Styles.{ButtonStyle, GlyphStyle}
 import org.sufrin.glyph._
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
  *  Systematic construction of glyphs using implicit styles.
  */
@@ -444,11 +446,31 @@ class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Bool
     checkBoxes(boxIndex).set(true)
   }
 
-  lazy val rowGlyphs: Seq[Glyph] =
-    for {i <- 0 until captions.length} yield NaturalSize.Row.centered(TextLabel(s" ${captions(i)}")(detail.labelStyle), checkBoxes(i))
 
-  lazy val colGlyphs: Seq[Glyph] =
-    for {i <- 0 until captions.length} yield NaturalSize.Col.centered(TextLabel(s"${captions(i)}")(detail.labelStyle), checkBoxes(i))
+
+  lazy val glyphRows: Seq[Glyph] = {
+    val glyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
+    for {i <- 0 until captions.length } {
+       glyphs += TextLabel(s"${captions(i)}")(detail.labelStyle)
+       glyphs += checkBoxes(i)
+    }
+    glyphs.toSeq
+  }
+
+  lazy val glyphCols: Seq[Glyph] = {
+    val glyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
+    for {i <- 0 until captions.length } {
+      glyphs += TextLabel(s"${captions(i)}")(detail.labelStyle)
+    }
+    for {i <- 0 until captions.length } {
+      glyphs += checkBoxes(i)
+    }
+    glyphs.toSeq
+  }
+
+  def gridGlyphs(width: Int=0, height: Int=captions.length): Glyph =
+    NaturalSize.Grid.table(width, height)(glyphCols).framed()
+
 
 }
 

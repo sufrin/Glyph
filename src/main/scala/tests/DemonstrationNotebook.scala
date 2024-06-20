@@ -194,14 +194,14 @@ trait DemonstrationPages extends Brushes {
           |(though space constraints within the JVM will impose a natural limit).
           |""".stripMargin), ex,
       Row(
-        TextButton("New instance")   { _ => println(s"$scale $style"); Duplicated.main(Array(scale, style, screen)) }, em,
+        TextButton("New instance")   {
+          _ => println(s"$scale $style")
+            Duplicated.main(Array(scale, style, screen)) }, em,
       ), ex,
-      Row.centered(
-          //Col.atLeft$(styles.map { b => button(s"$b -scale=1.0") }), em, em, em,
-          //Col.atRight$(styles.map { b => button(s"$b -scale=0.6") }),
-        Col.centered$(styleSelect.rowGlyphs), em scaled 6,
-        Col.centered$(scaleSelect.rowGlyphs), em scaled 6,
-        Col.centered$(screenSelect.rowGlyphs), em scaled 6,
+      Row.atTop(
+        styleSelect.gridGlyphs(), em scaled 6,
+        scaleSelect.gridGlyphs(), em scaled 6,
+        screenSelect.gridGlyphs(), em scaled 6,
       ), ex,
       TextParagraphs(ems = 60, Justify)("""Unlike a new instance, a cloned instance always shares some state with the
                                        |current GUI -- for example the notebook page currently being viewed, and the state

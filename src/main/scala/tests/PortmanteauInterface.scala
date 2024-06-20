@@ -1,0 +1,43 @@
+package org.sufrin.glyph
+package tests
+import GlyphTypes.Window
+import styled.TextLayout.{TextLabel, TextParagraphs}
+import NaturalSize.{Col, Row}
+
+trait PortmanteauInterface extends Notebook {
+  implicit val buttonStyle: Styles.ButtonStyle = PortmanteauStyle.ButtonStyle
+  implicit val labelStyle: Styles.GlyphStyle = PortmanteauStyle.labelStyle
+
+  def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
+    import windowdialogues.Dialogue.OKNO
+    val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
+      TextLabel("Do you want to Exit?") scaled 1.5f
+    ).enlarged(50)
+    OKNO(prompt,
+      title = "Exit Dialogue", ok = " Exit now ", no = " Continue ").InFront(glyph).andThen(close => if (close) window.close())
+  }
+
+  Page("Welcome", "") {
+    Col.centered(
+      TextParagraphs(30, Justify)(
+        """
+          | Welcome to the Portmanteau Notebook: its source code is more
+          |modular than that of DemonstrationNotebook -- which evolved as
+          |a monolith.
+          |
+          |""".stripMargin)) enlarged 50
+  }
+
+  Page("New Instance", "")(PortmanteauNewInstance.page)
+
+  Page("Transforms*", "")(PortmanteauTransforms.Layout.leftButtons())
+
+  import utils.Output.withWriteBar
+
+  lazy val asMenu      = withWriteBar()(Layout.menuBar)
+  lazy val asRNotebook = withWriteBar()(Layout.rightButtons())
+  lazy val asLNotebook = withWriteBar()(Layout.leftButtons())
+  lazy val asVNotebook = withWriteBar()(Layout.rotatedButtons(3))
+  lazy val asSNotebook = withWriteBar()(Layout.skewedButtons(0.2f, 0f, uniform = true))
+  lazy val asTNotebook = withWriteBar()(Layout.topButtons())
+}
