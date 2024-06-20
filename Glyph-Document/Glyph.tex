@@ -1500,9 +1500,9 @@ the interface and the outside world, needing only a definition of
 \Scala{GUI} to set up and populate its single main window.
 
 \begin{scala}
-package org.sufrin.glyph.tests
-import  org.sufrin.glyph._
-import Glyphs.Label
+package org.sufrin.glyph
+package tests
+import  Glyphs.Label
 
 object Example1 extends Application  {
   val GUI: Glyph = Label("A simple label")
@@ -1541,10 +1541,11 @@ in the trait \Scala{Example2Interface} that is mixed-in with
 \Scala{Application} to form the main program.
 
 \begin{scala}
-package org.sufrin.glyph.tests
-import org.sufrin.glyph._
+package org.sufrin.glyph
+package tests
+
 import Glyphs._
-import NaturalSize.{Row,Col}
+import NaturalSize.{Col, Row}
 import ReactiveGlyphs.TextButton
 \end{scala}
 
@@ -1601,10 +1602,10 @@ identical source code structure, save that the button and label
 definitions are imported from the \Scala{styled} package.
 
 \begin{scala}
-package org.sufrin.glyph.tests
-import org.sufrin.glyph.Glyphs._
-import org.sufrin.glyph.NaturalSize._
-import org.sufrin.glyph._
+package org.sufrin.glyph
+package tests
+import  Glyphs._
+import  NaturalSize._
 
 trait Example3Interface { ... }
 
@@ -1726,12 +1727,14 @@ straightforwardly be decided upon separately from its functionality.
 \pdffig[scale=0.30]{PNG/example4}
 \end{center}
 
-The application also uses styled components; but this time keeps to the basic standard.
+The application also uses styled components; but this time keeps to
+the basic style.
 
 \begin{scala}
-package example4
-import org.sufrin.glyph.NaturalSize.{Col, Row}
-import org.sufrin.glyph._
+package org.sufrin.glyph
+package tests
+
+import NaturalSize.{Col, Row}
 import styled.TextLayout._
 
 object Style extends Styles.Basic

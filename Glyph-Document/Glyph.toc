@@ -23,6 +23,6 @@
 \contentsline {section}{\numberline {E}Examples}{36}{appendix.330}%
 \contentsline {subsection}{\numberline {E.1}A Passive GUI}{36}{subsection.331}%
 \contentsline {subsection}{\numberline {E.2}An Explicitly-styled GUI}{37}{subsection.345}%
-\contentsline {subsection}{\numberline {E.3}A GUI with Implicitly Styled Glyphs}{38}{subsection.373}%
-\contentsline {subsection}{\numberline {E.4}A Primitive Calculator}{41}{subsection.428}%
-\contentsline {section}{\numberline {F}Pages from {DemonstrationNotebook}}{43}{appendix.482}%
+\contentsline {subsection}{\numberline {E.3}A GUI with Implicitly Styled Glyphs}{38}{subsection.374}%
+\contentsline {subsection}{\numberline {E.4}A Primitive Calculator}{41}{subsection.429}%
+\contentsline {section}{\numberline {F}Pages from {DemonstrationNotebook}}{43}{appendix.484}%
