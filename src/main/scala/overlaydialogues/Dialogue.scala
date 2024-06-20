@@ -4,6 +4,7 @@ package overlaydialogues
 
 import Location._
 import NaturalSize.{Col, Row}
+
 import io.github.humbleui.jwm.App
 
 
@@ -277,8 +278,8 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
                                         closeButtonAppearance(), closeButtonAppearance.fg, closeButtonAppearance.bg,
                           { _: Modifiers.Bitmap  => close() })
         {
-          import io.github.humbleui.jwm.Key._
           import io.github.humbleui.jwm.{EventKey, Window}
+          import io.github.humbleui.jwm.Key._
 
           override def extra: Vec = Vec.Zero
 

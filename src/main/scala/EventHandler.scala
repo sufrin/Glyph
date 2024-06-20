@@ -1,6 +1,7 @@
 package org.sufrin.glyph
 
 import io.github.humbleui.jwm.{Event, Window}
+
 import java.util.function.Consumer
 
 /** Synthetic events are generated as the mouse moves between (reactive) glyphs  */
@@ -28,6 +29,7 @@ trait EventHandler extends Consumer[Event] {
   thisHandler =>
 
   import GlyphTypes.Pixels
+
   import io.github.humbleui.jwm.{EventKey, EventMouseMove, EventMouseScroll, EventTextInput, EventTextInputMarked, Screen}
 
   /** the window for which this handler is handling events */
@@ -160,6 +162,7 @@ trait EventHandler extends Consumer[Event] {
 
   def accept(e: Event): Unit = {
     import Modifiers._
+
     import io.github.humbleui.jwm._
     import io.github.humbleui.jwm.skija.EventFrameSkija;
 

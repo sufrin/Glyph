@@ -1,5 +1,5 @@
-package org.sufrin.glyph.tests
-import org.sufrin.glyph._
+package org.sufrin.glyph
+package tests
 
 import NaturalSize.{Col, Row}
 import styled.TextLayout._
@@ -32,7 +32,7 @@ trait Example4Interface {
       TextLabel(" + "),
       b.framed()
     )
-  ) enlarged (25)
+  ) enlarged 25
 
   def field(): TextField = TextField(
     size = 8,
@@ -50,7 +50,7 @@ trait Example4Interface {
     }
   )
 
-  def calculemus() =
+  def calculemus(): Unit =
     (
       c.text.toDoubleOption,
       a.text.toDoubleOption,

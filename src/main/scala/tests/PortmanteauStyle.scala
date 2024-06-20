@@ -1,10 +1,10 @@
-package org.sufrin.glyph.tests
+package org.sufrin.glyph
+package tests
 
-import org.sufrin.glyph.GlyphTypes.FontStyle.NORMAL
-import org.sufrin.glyph.GlyphTypes.{FontManager, Typeface}
-import org.sufrin.glyph.Styles
-import org.sufrin.glyph.Styles.Decoration
-import org.sufrin.glyph.DefaultBrushes._
+import GlyphTypes.FontStyle.NORMAL
+import GlyphTypes.{FontManager, Typeface}
+import Styles.Decoration
+import DefaultBrushes._
 
 
 object PortmanteauStyle extends Styles.Basic {

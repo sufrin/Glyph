@@ -1,10 +1,10 @@
-package org.sufrin.glyph.tests
-import org.sufrin.glyph._
+package org.sufrin.glyph
+package tests
 
 import NaturalSize.{Col, Row}
 import Styles.{ButtonStyle, GlyphStyle}
-import styled.TextButton
 import overlaydialogues.Dialogue
+import styled.TextButton
 import styled.TextLayout.TextParagraphs
 
 object BasicStyle extends Styles.Basic
@@ -29,8 +29,8 @@ class AdderGUI()(implicit detail: Styles.Basic)  {
   var `c⊕b`:   Double => Double => Double = _.-
   var opName: String = "+"
 
-  val opGlyph = ActiveString(opName)
-  val helpGlyph = ActiveParagraphs(25, Justify)(helpText())(MenuStyle.labelStyle)
+  val opGlyph: DynamicGlyphs.ActiveString = ActiveString(opName)
+  val helpGlyph: DynamicGlyphs.ActiveGlyph[String] = ActiveParagraphs(25, Justify)(helpText())(MenuStyle.labelStyle)
 
 
   def setOp(opName: String, `a⊕b`: Double => Double => Double, `c⊕a`: Double => Double => Double, `c⊕b`: Double => Double => Double): Unit = {
@@ -70,7 +70,7 @@ class AdderGUI()(implicit detail: Styles.Basic)  {
   lazy val a: TextField  = TextField(size = 10, onEnter = { _ => calculemus() }, onCursorLeave = _ => check("a", a))
   lazy val b: TextField  = TextField(size = 10, onEnter = { _ => calculemus() }, onCursorLeave = _ => check("b", b))
   lazy val c: TextField  = TextField(size = 10, onEnter = { _ => calculemus() }, onCursorLeave = _ => check("c", c))
-  lazy val fields = List(a, b, c)
+  lazy val fields: Seq[TextField] = List(a, b, c)
 
   locally {
     for { field <- fields }
@@ -88,9 +88,9 @@ class AdderGUI()(implicit detail: Styles.Basic)  {
     val bv = b.text.toDoubleOption
     val cv = c.text.toDoubleOption
     (cv, av, bv) match {
-      case (Some(c), Some(a), None) if (b.text.isBlank) => b.text = text(`c⊕a`(c)(a))
-      case (Some(c), None, Some(b)) if (a.text.isBlank) => a.text = text(`c⊕b`(c)(b))
-      case (None, Some(a), Some(b)) if (c.text.isBlank) => c.text = text(`a⊕b`(a)(b))
+      case (Some(c), Some(a), None) if b.text.isBlank => b.text = text(`c⊕a`(c)(a))
+      case (Some(c), None, Some(b)) if a.text.isBlank => a.text = text(`c⊕b`(c)(b))
+      case (None, Some(a), Some(b)) if c.text.isBlank => c.text = text(`a⊕b`(a)(b))
       case (Some(cv), Some(a), Some(b))                 =>
            if   (cv==`a⊕b`(a)(b)) {}
            else
@@ -116,6 +116,7 @@ class CalculatorGUI()(implicit detail: Styles.Basic) extends AdderGUI() {
 
   import NaturalSize._
   import styled.RadioCheckBoxes
+
   import glyphStyle.Spaces._
 
   def flip[S,T,U](op: S=>T=>U):T=>S=>U = { t:T => s:S => op(s)(t) }
@@ -130,7 +131,7 @@ class CalculatorGUI()(implicit detail: Styles.Basic) extends AdderGUI() {
     case _ =>
   }
 
-  override def root = Col.centered(
+  override def root: Composite = Col.centered(
     super.root, ex,
     Row.centered(styled.TextLayout.TextLabel("Choose an operator "), Row.atTop$(operations.colGlyphs))
   )
@@ -139,8 +140,8 @@ class CalculatorGUI()(implicit detail: Styles.Basic) extends AdderGUI() {
 
 trait TopLevelGUI {
   
-  val noteBook = Notebook()
-  val Page     = noteBook.DefinePage
+  val noteBook: Notebook = Notebook()
+  val Page: noteBook.DefinePage.type = noteBook.DefinePage
   import MenuStyle._
 
 
@@ -192,14 +193,14 @@ trait TopLevelGUI {
   }
 
 
-  val root = {
+  val root: Glyph = {
     import MenuStyle._
     noteBook.Layout.rightButtons()
   }
 }
 
 object CalculatorExample extends Application {
-    val GUI = new TopLevelGUI {} . root
+    val GUI: Glyph = new TopLevelGUI {} . root
     override def title: String = "CalculatorExample"
     override val defaultIconPath: Option[String] = Some("./flag.png")
 }

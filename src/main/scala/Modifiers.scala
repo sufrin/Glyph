@@ -2,7 +2,7 @@ package org.sufrin.glyph
 
 /**
  * The state of the keyboard modifiers, mouse buttons, keyboard location, etc. at relevant events
- * can be encoded as a single integer (`Modifiers.Bitmap`). This module maps events to such
+ * can be encoded as a single integer (`Modifiers.toBitMap`). This module maps events to such
  * bitmaps. This more uniform encoding makes it fairly straightforward to use tabular mappings
  * of user-initiated events to actions.
  *
@@ -103,9 +103,8 @@ object Modifiers {
     def any: Boolean = modifiers  != 0
   }
 
-  object Bitmap {
-    def apply(event: Event): Bitmap = Modifiers.apply(event)
-  }
+  def toBitmap(event: Event): Bitmap = Modifiers.apply(event)
+
 
 
   /** Modifier bits with the same encoding in Skija event.*/

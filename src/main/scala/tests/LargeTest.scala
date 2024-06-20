@@ -1,10 +1,10 @@
-package org.sufrin.glyph.tests
-import  org.sufrin.glyph._
+package org.sufrin.glyph
+package tests
 
-import GlyphTypes._
 import Glyphs._
-import Styles.{ButtonStyle, GlyphStyle}
+import GlyphTypes._
 import Location._
+import Styles.{ButtonStyle, GlyphStyle}
 import windowdialogues.Dialogue.OK
 import PolygonLibrary._
 
@@ -15,19 +15,19 @@ trait LargeTestGUI extends Brushes {
   import NaturalSize.{Col, Row}
   import ReactiveGlyphs.{FramedButton, RawButton, ShadedButton}
 
-  lazy val atPopupAnchor = East(popupAnchor)
+  private lazy val atPopupAnchor = East(popupAnchor)
   val face: Typeface =
     FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
-  val medFont: Font = new Font(face, 36)
-  val smallFont: Font = new Font(face, 20)
-  val largeFont: Font = new Font(face, 40)
-  val hugeFont: Font = new Font(face, 50)
-  val hugerFont: Font = new Font(face, 100)
-  val buttonFont: Font = new Font(face, 28)
-  val exg = Text(" ", medFont).asGlyph()
-  val trup =
+  private val medFont: Font = new Font(face, 36)
+  private val smallFont: Font = new Font(face, 20)
+  private val largeFont: Font = new Font(face, 40)
+  private val hugeFont: Font = new Font(face, 50)
+  private val hugerFont: Font = new Font(face, 100)
+  private val buttonFont: Font = new Font(face, 28)
+  private val exg = Text(" ", medFont).asGlyph()
+  private val trup =
     FilledPolygon(100, 100, fg = blue)((100, 0), (0, 0), (100, 100), (100, 0))
-  val scene1 = {
+  private val scene1 = {
     Col.centered(
       textColumn(fg = blue)("(1) Primitive text column layouts"),
       medex,
@@ -43,7 +43,7 @@ trait LargeTestGUI extends Brushes {
       )
     )
   }
-  val scene2 = {
+  private val scene2 = {
     import GlyphTransforms.{Rotated, Scaled}
     def abcd(fg: Brush) = Row(Label("A ")(fg), Label("B ")(fg), Label("C")(fg))
     def g(fg: Brush) = abcd(fg = fg).framed(fg)
@@ -78,7 +78,7 @@ trait LargeTestGUI extends Brushes {
       )
     )
   }
-  val scene3 = {
+  private val scene3 = {
     import GlyphTransforms.Rotated
     def abcd(fg: Brush) =
       Row.centered(Label("A ")(fg), Label("B ")(fg), Label("C")(fg))
@@ -108,9 +108,9 @@ trait LargeTestGUI extends Brushes {
   /** An invisible glyph that will act as the anchor for popups.
     * It will be placed at the (right) end of the menu bar.
     */
-  val popupAnchor: Glyph = INVISIBLE()
+  private val popupAnchor: Glyph = INVISIBLE()
   /** A small but important test of placing reactives in `OneOf`s */
-  val scene4 = Framed()(
+  private val scene4 = Framed()(
     Col.centered(
       textColumn(fg = red)(
         "(4) Sub-interfaces can inhabit a OneOf\n[this entire app is structured as a OneOf]"
@@ -157,9 +157,10 @@ trait LargeTestGUI extends Brushes {
       }
     ) enlarged 30f
   )
-  val scene5 = {
+  private val scene5 = {
 
     import OnOffButton._
+
     import Toggles._
 
     lazy val toggle0: OnOffButton = onOff(
@@ -169,22 +170,22 @@ trait LargeTestGUI extends Brushes {
       bg = white,
       initially = true
     ) { state =>
-      toggle1.invert(); toggle2.invert(); toggle3.invert(); toggle4.invert();
+      toggle1.invert(); toggle2.invert(); toggle3.invert(); toggle4.invert()
       println(s"0=>$state ${toggle1.get}")
     }
 
     lazy val toggle1: OnOffButton =
-      onOff(initially = false, fg = red, bg = white) { state =>
+      onOff(initially = false, fg = red, bg = white) { _ =>
         toggle2.invert(); toggle3.invert(); toggle4.invert();
       }
 
     lazy val toggle2: OnOffButton =
-      onOff(initially = true, fg = red, bg = white) { state =>
+      onOff(initially = true, fg = red, bg = white) { _ =>
         toggle3.invert(); toggle4.invert();
       }
 
     lazy val toggle3: OnOffButton =
-      onOff(initially = false, fg = red, bg = white) { case state: Boolean =>
+      onOff(initially = false, fg = red, bg = white) { _ =>
         toggle4.invert();
       }
 
@@ -194,9 +195,7 @@ trait LargeTestGUI extends Brushes {
       initially = true,
       fg = red,
       bg = white
-    ) { case state: Boolean =>
-      toggle0.invert();
-    }
+    ) { _ => toggle0.invert() }
 
     def t(name: String)(toggle: OnOffButton): Glyph =
       Row.centered(textColumn()(name), toggle.scaled(0.75f))
@@ -255,7 +254,7 @@ trait LargeTestGUI extends Brushes {
   }
 
   import Location._
-  val scene6 = {
+  private val scene6 = {
     val anchor1 = Label("")
 
     val theText = TextField(
@@ -292,46 +291,39 @@ trait LargeTestGUI extends Brushes {
       Label(""),
       ShadedButton.ofString(
         "OS/X Symbols palette (double-click on a symbol to insert it)"
-      ) { case mods: Modifiers.Bitmap =>
-        import Modifiers.{Middle, Secondary}
-        if (mods.include(Secondary | Middle))
-          OK(
-            Col.centered(
-              Label("Symbols palette not available (simulated error)")
-            ),
-            RelativeTo(anchor1),
-            "Unimplemented"
-          ).start()
-        else
-          try io.github.humbleui.jwm.App.openSymbolsPalette()
-          catch {
-            case _: Throwable =>
-              OK(
-                Col.centered(Label("Symbols palette not available")),
-                RelativeTo(anchor1),
-                "Unimplemented"
-              ).start()
-          }
-      },
+          ) { mods: Modifiers.Bitmap =>
+              import Modifiers.{Middle, Secondary}
+              if (mods.include(Secondary | Middle))
+                OK(
+                  Col.centered(
+                    Label("Symbols palette not available (simulated error)")
+                  ),
+                  RelativeTo(anchor1),
+                  "Unimplemented"
+                ).start()
+              else
+                try io.github.humbleui.jwm.App.openSymbolsPalette()
+                catch {
+                  case _: Throwable =>
+                    OK(
+                      Col.centered(Label("Symbols palette not available")),
+                      RelativeTo(anchor1),
+                      "Unimplemented"
+                    ).start()
+                }
+          },
       anchor1
     )
   }
-  val scene7 = {
+  private val scene7 = {
     val huge = Text("Huge∑y", hugeFont)
     val large = Text("Large∑y", largeFont)
     val med = Text("Medium∑y", medFont)
     val small = Text("Small(y)", smallFont)
     val sp = Text(" ", medFont)
     def space = sp.asGlyph()
-    val but = FramedButton("ye StyledButton") { _ => }
     val texts = List(huge, sp, large, sp, med, sp, small, sp, huge)
 
-    val button: Glyph = Text("Press me", hugeFont).asGlyph(blue)
-    val rawPressMe = RawButton(
-      button.rotated(1),
-      button(red).rotated(1),
-      button(green).rotated(1)
-    ) { _ => }
 
     Col.centered(
       textColumn()(
@@ -344,7 +336,7 @@ trait LargeTestGUI extends Brushes {
       ),
       medex,
       medex,
-      (Row.atTop$(texts.map(_.asGlyph()))),
+      Row.atTop$(texts.map(_.asGlyph())),
       space,
       textColumn()("""The .atBaseLine version"""),
       medex,
@@ -355,20 +347,19 @@ trait LargeTestGUI extends Brushes {
       Row.atTop$(texts.map(_.atBaseline())).$$$$()
     )
   }
-  val scene8 = {
+  private val scene8 = {
     val fatYellow: Brush = yellow.copy strokeWidth 40
-    val fatGreen: Brush = fatYellow.copy col (0xff00ff00)
-    val fatRed: Brush = fatYellow.copy col (0xffff0000)
+    val fatGreen: Brush = fatYellow.copy col 0xff00ff00
+    val fatRed: Brush = fatYellow.copy col 0xffff0000
     val glyph: Glyph = Text("RawButton", medFont).asGlyph()
 
-    val b1 = (RawButton(glyph(), red, green) { _ => })
-    val b2 = (RawButton(glyph().enlarged(50f), red, green) { _ => }).framed()
-    val b3 =
-      (RawButton(glyph().framed(fatYellow), fatRed, fatGreen) { _ => }.framed())
-    val b4 = (RawButton(glyph().framed(fatYellow), fatRed, fatGreen) { _ => }
-      .enlarged(50f, bg = red))
-      .framed()
-    val b5 = (RawButton(glyph().framed(fatYellow), fatRed, fatGreen) { _ => })
+    val b1 = RawButton(glyph(), red, green) { _ => }
+    val b2 = RawButton(glyph().enlarged(50f), red, green) { _ => }.framed()
+    val b3 = RawButton(glyph().framed(fatYellow), fatRed, fatGreen) { _ => }.framed()
+    val b4 = RawButton(glyph().framed(fatYellow), fatRed, fatGreen) { _ => }
+              .enlarged(50f, bg = red)
+              .framed()
+    val b5 = RawButton(glyph().framed(fatYellow), fatRed, fatGreen) { _ => }
     def sp = Label(" ")
     Col.centered(
       Label("(8) Raw buttons from glyph=Text(\"RawButton\", medFont).asGlyph() (try moving/pressing the mouse on these)"),
@@ -399,7 +390,7 @@ trait LargeTestGUI extends Brushes {
       sp
     )
   }.scaled(0.9f)
-  val scene9 = {
+  private val scene9 = {
     val sp = Text(" ", medFont)
     import GlyphTypes._
 
@@ -452,7 +443,7 @@ trait LargeTestGUI extends Brushes {
       space
     )
   }
-  val scene10 = {
+  private val scene10 = {
     val sp = Text(" ", hugeFont)
     def space = sp.asGlyph()
 
@@ -495,12 +486,12 @@ trait LargeTestGUI extends Brushes {
       )
     )
   }
-  val scene11 = {
+  private val scene11 = {
     import GlyphTypes._
 
     val sp = Text(" ", medFont)
 
-    def space = (sp.asGlyph())
+    def space = sp.asGlyph()
 
     def button(scale: Scalar)(fg: Brush): Glyph =
       Text("StyledButton", medFont).asGlyph(fg).scaled(scale)
@@ -561,7 +552,7 @@ trait LargeTestGUI extends Brushes {
       )
     )
   }
-  val scene12 = {
+  private val scene12 = {
     import GlyphTransforms.Rotated
     val space = Text(" ", medFont).asGlyph()
     def sp: Glyph = space()
@@ -569,9 +560,6 @@ trait LargeTestGUI extends Brushes {
 
     val text = Text("Text", medFont).asGlyph(fg = blue)
     val rawbut: Glyph = RawButton(text, text(red), text(green)) { _ => }
-
-    def rotOfBut(q: Int): Glyph =
-      Col.centered(Label(s"But(Text).rot($q)"), rawbut().rotated(q))
 
     def badRotOfBut(q: Int): Glyph =
       Col.centered(Label(s"Rot($q)(But(Text))"), Rotated(q)(rawbut()))
@@ -607,7 +595,7 @@ trait LargeTestGUI extends Brushes {
       )
       .enlarged(sp.w)
   }
-  val scene13: Glyph = {
+  private val scene13: Glyph = {
     import GlyphTransforms.Enlarged
     Col.centered(
       Label("(13) Tracking reactive glyphs when there are many visible"),
@@ -623,7 +611,7 @@ trait LargeTestGUI extends Brushes {
       )
     )
   }
-  val scene14 = {
+  private val scene14 = {
     def measure(t: Text, g: Glyph): Glyph = {
       val x = t.width / 2
       Envelope()(
@@ -696,7 +684,7 @@ trait LargeTestGUI extends Brushes {
       )
     )
   }
-  val scene15 = {
+  private val scene15 = {
     def flag: Glyph = {
       val white = Brush("white").color(0xffffffff)
       val black = Brush("black").color(0xff000000)
@@ -725,9 +713,9 @@ trait LargeTestGUI extends Brushes {
       new Glyphs.Image(flag scaled 1.2f)
     )
   }
-  val bb = Brush("blue")(color = 0xff0000ff, width = 1.0f, cap = ROUND)
-  val cc = bb(width = 15f, name = "wide blue")
-  val scene16 = {
+  val bb: Brush = Brush("blue")(color = 0xff0000ff, width = 1.0f, cap = ROUND)
+  val cc: Brush = bb(width = 15f, name = "wide blue")
+  private val scene16 = {
 
     Col.centered(
       textColumn(fg = blue)(
@@ -746,15 +734,15 @@ trait LargeTestGUI extends Brushes {
       medex
     )
   }
-  val scene17 = {
+  private val scene17 = {
     val sides = List(3f, 5f, 7f, 9f, 11f, 13f)
-    val gons = sides.map { case n: Float =>
+    val gons = sides.map { n: Float =>
       Concentric(
         Label(s"${n.toInt}", medFont),
         openStargon(n.toInt, R=200, C=200, fg = blue(width = 6), bg = red(alpha = 0.3f))
       )
     }
-    val fgons = sides.map { case n: Float =>
+    val fgons = sides.map { n: Float =>
       Concentric(
         filledRegularPolygon(
           n.toInt,
@@ -774,21 +762,22 @@ trait LargeTestGUI extends Brushes {
       Row.centered$(fgons.map(_.scaled(0.5f))),
       medex,
       Row(
-        Concentric.centered$(sides.map { case n: Float =>
+        Concentric.centered$(sides.map { n: Float =>
           regularPolygon(n.toInt, fg = red(width = 1, alpha = 3f / n))
         }),
         medex,
-        Concentric.centered$(sides.map { case n: Float =>
+        Concentric.centered$(sides.map { n: Float =>
           regularPolygon(n.toInt, fg = blue(width = 3, alpha = 3f / n))
         })
       )
     )
   }
-  val scene18 = {
+  private val scene18 = {
+    import styled._
+    import styled.TextLayout._
+
     import BlueContext._
     import Spaces._
-    import styled.TextLayout._
-    import styled._
 
     Col.centered(
       TextLabel("(18) Some styled glyphs with implicitly-specified properties"),
@@ -820,31 +809,31 @@ trait LargeTestGUI extends Brushes {
   }
 
   import PolygonLibrary._
-  val scene19 = {
+  private val scene19 = {
+    import styled._
+    import styled.TextLayout._
+
     import BlueContext._
     import Spaces._
-    import styled.TextLayout._
-    import styled._
 
     val upColor     = yellow(name = "yellow", width = 0)
     val downColor   = red(name = "red", width = 0)
     val hoverColor  = green(name = "green", width = 0)
     val noEffect    = hoverColor.pathEffect
     val wibEffect    = wibbly(green).pathEffect
-    val wobEffect    = wobbly(green).pathEffect
 
     // Each of these checkboxes MUTATEs its associated colour
     val tUp = CheckBox(initially = false) {
-      case true  => upColor pathEffect(wibEffect)
-      case false => upColor pathEffect(noEffect)
+      case true  => upColor pathEffect wibEffect
+      case false => upColor pathEffect noEffect
     }
     val tDown = CheckBox(initially = false) {
-      case true  => downColor pathEffect(wibEffect)
-      case false => downColor pathEffect(noEffect)
+      case true  => downColor pathEffect wibEffect
+      case false => downColor pathEffect noEffect
     }
     val tHover = CheckBox(initially = false) {
-      case true  => hoverColor pathEffect(wibEffect)
-      case false => hoverColor pathEffect(noEffect)
+      case true  => hoverColor pathEffect wibEffect
+      case false => hoverColor pathEffect noEffect
     }
 
     Col.centered(
@@ -877,9 +866,9 @@ trait LargeTestGUI extends Brushes {
       ),
       ex,
       GlyphButton(
-        filledStar7((upColor)).enlarged(20),
+        filledStar7(upColor).enlarged(20),
         filledStar7(downColor).enlarged(20),
-        filledStar7((hoverColor)).enlarged(20),
+        filledStar7(hoverColor).enlarged(20),
         exact = false
       ) { _ =>
         overlaydialogues.Dialogue
@@ -890,12 +879,11 @@ trait LargeTestGUI extends Brushes {
     )
   }
 
-  val scene20 = {
-    import ReactiveGlyphs.{TextButton, ColourButton}
+  private val scene20 = {
+    import ReactiveGlyphs.{ColourButton, TextButton}
     val fatYellow: Brush = yellow.copy strokeWidth 40
-    val fatGreen: Brush = fatYellow.copy col (0xff00ff00)
-    val fatRed: Brush = fatYellow.copy col (0xffff0000)
-    val glyph: Glyph = Text("RawButton", medFont).asGlyph()
+    val fatGreen: Brush = fatYellow.copy col 0xff00ff00
+    val fatRed: Brush = fatYellow.copy col 0xffff0000
     val l1 = Label("ColourButton", fg=fatRed, bg=white)
     val b1 = new ColourButton(l1, fatYellow, fatGreen, react = { _ => }, background = false)
     val b2 = TextButton("TextButton", fg=fatRed, bg=white) { _ => }
@@ -905,7 +893,7 @@ trait LargeTestGUI extends Brushes {
     )
   }
 
-  val helpGUI = Framed(whiteFrame)(
+  private val helpGUI = Framed(whiteFrame)(
     textColumn(smallFont, black)(
       """This is a test of some basic GUI kit components.
       |
@@ -921,9 +909,9 @@ trait LargeTestGUI extends Brushes {
       |such as styled texts, menus, and popups.""".stripMargin
     )
   )
-  val scene0 = { Col.centered(helpGUI) } // the preferred scene
+  private val scene0 = { Col.centered(helpGUI) } // the preferred scene
   /** All the scenes in the test */
-  val scenes = List(
+  private val scenes = List(
     scene0,
     scene1,
     scene2,
@@ -947,8 +935,8 @@ trait LargeTestGUI extends Brushes {
     scene20
   )
   /** Width of the menu bar */
-  val screenWidth = scenes.map(_.w).max
-  val oneOf = OneOf.seq()(scenes)
+  private val screenWidth = scenes.map(_.w).max
+  val oneOf: OneOf = OneOf.seq()(scenes)
   val menu: Glyph = FixedSize
     .Row(screenWidth)
     .atTop(
@@ -967,8 +955,8 @@ trait LargeTestGUI extends Brushes {
       },
       popupAnchor
     )
-  val oneScene = false
-  val root =
+  private val oneScene = false
+  val root: Glyph =
     (oneScene match {
       case true => Col.centered(scene0)
       case false =>
@@ -978,9 +966,9 @@ trait LargeTestGUI extends Brushes {
           oneOf,
           Label(" ")
         )
-    }) enlarged (10f)
+    }) enlarged 10f
 
-  def textColumn(font: Font = buttonFont, fg: Brush = blue)(
+  private def textColumn(font: Font = buttonFont, fg: Brush = blue)(
       text: String
   ): Glyph = {
     val rows = text.split('\n')
@@ -989,30 +977,30 @@ trait LargeTestGUI extends Brushes {
     Col.centered$(INVISIBLE(fg = fg) :: texts)
   }
 
-  def medex = exg()
+  private def medex = exg()
 
   // TODO: Grids/Uniformly-sized Glyph ;lists/ ...
 
-  def trdown = trup(red).rotated(1)
+  private def trdown = trup(red).rotated(1)
 
-  def trhover = trup(green).rotated(2)
+  private def trhover = trup(green).rotated(2)
 
-  def wobbly(brush: Brush) =
+  private def wobbly(brush: Brush) =
     brush().pathEffect(PathEffect.makeDiscrete(25.0f, 6.0f, 1))
 
-  def wibbly(brush: Brush) =
+  private def wibbly(brush: Brush) =
     brush().pathEffect(PathEffect.makeDiscrete(4.0f, 5.5f, 14))
 
-  def filledStar7(brush: Brush) = filledStargon(7, fg = brush)
+  private def filledStar7(brush: Brush) = filledStargon(7, fg = brush)
 
-  def polyStar7(brush: Brush) = openStargon(7, fg = brush)
+  private def polyStar7(brush: Brush) = openStargon(7, fg = brush)
 
-  def sceneButton(i: Int): Glyph =
+  private def sceneButton(i: Int): Glyph =
     Framed()(ReactiveGlyphs.TextButton(s"$i", blue) { _ => oneOf.select(i) })
 
-  object Toggles extends BooleanButton {
-    override val bg = yellow
-    override val fg = blue
+  private object Toggles extends BooleanButton {
+    override val bg: Brush = yellow
+    override val fg: Brush = blue
 
     override def buttonFont: Font = medFont
   }
@@ -1021,15 +1009,15 @@ trait LargeTestGUI extends Brushes {
     * It's derived from
     */
 
-  object BlueContext {
-    val face: Typeface =
+  private object BlueContext {
+    private val face: Typeface =
       FontManager.default.matchFamilyStyle("Courier", FontStyle.ITALIC)
     implicit val labelStyle: GlyphStyle =
       Style.labelStyle.copy(fg = blue, font = new Font(face, 26))
     implicit val detail: ButtonStyle = Style.buttonStyle
-    val Spaces = Style.Spaces
+    val Spaces: Styles.Spaces = Style.Spaces
 
-    object Style extends Styles.Basic {}
+    private object Style extends Styles.Basic {}
   }
   // last Label makes the window long enough
   // TODO: what depth is the top of the window frame?
@@ -1040,5 +1028,5 @@ trait LargeTestGUI extends Brushes {
 object LargeTest extends Application {
   override val defaultIconPath: Option[String] = Some("./flag.png")
   val title = "LargeTest"
-  val GUI = new LargeTestGUI {}.root
+  val GUI: Glyph = new LargeTestGUI {}.root
 }

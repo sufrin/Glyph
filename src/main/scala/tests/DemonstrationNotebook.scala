@@ -1,28 +1,28 @@
-package org.sufrin.glyph.tests
-import org.sufrin.glyph._
+package org.sufrin.glyph
+package tests
+
 import FixedSize.Space.tab
 import PolygonLibrary.brown
+
 import io.github.humbleui.jwm.Window
 
-import java.rmi.NoSuchObjectException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Date
-import scala.collection.mutable.ArrayBuffer
+import scala.annotation.unused
 
 /**
  * An expansive test comprising examples of UI components
  */
 trait DemonstrationPages extends Brushes {
 
-  import GlyphTypes._
   import Glyphs._
+  import GlyphTypes._
   import NaturalSize.{Col, Row}
   import Styles.{ButtonStyle, Decoration, GlyphStyle}
   import styled._
+
   import Decoration.Framed
   import TextLayout._
-  import Location._
 
   object PrevailingStyle extends Styles.Basic {
     implicit val prevailingButtonStyle: Styles.ButtonStyle =
@@ -30,7 +30,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   object HelpStyle {
-    val Style = PrevailingStyle
+    val Style: PrevailingStyle.type = PrevailingStyle
     val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
     implicit val labelStyle: GlyphStyle = Style.labelStyle.copy(fg = black, font = new Font(face, 20))
     implicit val buttonStyle: ButtonStyle =
@@ -38,10 +38,10 @@ trait DemonstrationPages extends Brushes {
         up    = labelStyle.copy(fg = blue),
         down  = labelStyle.copy(fg = red),
         hover = labelStyle.copy(fg = green))
-    val Spaces = labelStyle.Spaces
+    val Spaces: Styles.Spaces = labelStyle.Spaces
   }
 
-  val HugeLabelStyle  = {
+  val HugeLabelStyle: GlyphStyle = {
     val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.BOLD)
     PrevailingStyle.labelStyle.copy(fg = red, font = new Font(face, 40))
   }
@@ -58,10 +58,10 @@ trait DemonstrationPages extends Brushes {
    *  navigation.
    */
   implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
-  val noteBook = Notebook()
-  val Page = noteBook.DefinePage
+  val noteBook: Notebook = Notebook()
+  val Page: noteBook.DefinePage.type = noteBook.DefinePage
 
-  val helpText =
+  val helpText: String =
     """This application demonstrates aspects of the Glyphs library
       |by offering the choice of several demonstration GUIs. These are usually shown on
       |the pages of a tabbed notebook, with tabs placed
@@ -129,7 +129,7 @@ trait DemonstrationPages extends Brushes {
 
     lazy val Duplicated = new DemonstrationPages with Application {
 
-      def GUI =
+      def GUI: Glyph =
         if (extraArgs contains "-notebook") asRNotebook else
         if (extraArgs contains "-rnotebook") asRNotebook else
         if (extraArgs contains "-lnotebook") asLNotebook else
@@ -150,7 +150,7 @@ trait DemonstrationPages extends Brushes {
 
     import PrevailingStyle._
     import Spaces._
-    implicit val Style = new Styles.Basic {}
+    implicit val Style: Styles.Basic = new Styles.Basic {}
 
 
     var style: String = "-notebook"
@@ -161,17 +161,17 @@ trait DemonstrationPages extends Brushes {
     val screens = "-screen=p/-screen=0/-screen=1/-screen=2".split("/").toList
 
     lazy val styleSelect: RadioCheckBoxes = RadioCheckBoxes(styles, "-notebook") {
-      case None => styleSelect.select(0); style = styles(0)
+      case None => styleSelect.select(0); style = styles.head
       case Some(i) => style = styles(i)
     }
 
     lazy val scaleSelect: RadioCheckBoxes = RadioCheckBoxes(scales, "-scale=0.7") {
-      case None => scaleSelect.select(0); scale = scales(0)
+      case None => scaleSelect.select(0); scale = scales.head
       case Some(i) => scale = scales(i)
     }
 
     lazy val screenSelect: RadioCheckBoxes = RadioCheckBoxes(screens) {
-      case None => screenSelect.select(0); screen = screens(0)
+      case None => screenSelect.select(0); screen = screens.head
       case Some(i) => screen = screens(i)
     }
 
@@ -249,9 +249,9 @@ trait DemonstrationPages extends Brushes {
               |
               |""".stripMargin), ex,
           Row(
-            TextButton("One")   { _ => c1.andThen(showChoice(_)) },
-            TextButton("Two")   { _ => c2.andThen(showChoice(_)) },
-            TextButton("Three") { _ => c3.andThen(showChoice(_)) },
+            TextButton("One")   { _ => c1.andThen(showChoice) },
+            TextButton("Two")   { _ => c2.andThen(showChoice) },
+            TextButton("Three") { _ => c3.andThen(showChoice) },
             anchor
           )
         ).enlarged(40)
@@ -301,26 +301,26 @@ trait DemonstrationPages extends Brushes {
               TextButton("South(the target)") { _ => OK(South(theTarget)) },
               TextButton("NorthFor(×)(the target)") { _ => OK(NorthFor(X)(theTarget)) },
               TextButton("SouthEast(the target)") { _ => OK(SouthEast(theTarget)) },
-              Menu("SouthWestFor / South / East / SouthEast Placements >", true)(
+              Menu("SouthWestFor / South / East / SouthEast Placements >")(
                 TextButton("SouthWestFor(×)(the target") { _ => OK(SouthWestFor(X)(theTarget)) },
                 TextButton("South(the target") { _ => OK(South(theTarget)) },
                 TextButton("East(the target") { _ => OK(East(theTarget)) },
               ),
               {
-                lazy val here: Glyph = TextButton("NorthFor(×)(THIS BUTTON ITSELF)") { _ => OK(NorthFor(X)(here)) };
+                lazy val here: Glyph = TextButton("NorthFor(×)(THIS BUTTON ITSELF)") { _ => OK(NorthFor(X)(here)) }
                 here
               },
               ex scaled 2,
               theTarget,
               ex scaled 2,
-              Menu("RelativeTo Placements >", true)(
-                Menu("RelativeTo/By Placements >", true)(
+              Menu("RelativeTo Placements >")(
+                Menu("RelativeTo/By Placements >")(
                   TextButton("RelativeTo(the target)") { _ => OK(RelativeTo(theTarget)) },
                   TextButton("RelativeTo(the target, Vec(the target.w,0))") { _ => OK(RelativeTo(theTarget, Vec(theTarget.w, 0f))) },
                   //TextButton("RelativeTo(the target)(theTarget.w,0))") { _ => OK(RelativeTo(theTarget)(theTarget.w, 0f)) },
                   TextButton("Another real button!") { _ => Dialogue.OK(TextLabel("Congratulations!\nYou found another\nreal button."), South(theTarget)).start() },
                 ),
-                Menu("SouthWestFor / South / East / SouthEast Placements >", true)(
+                Menu("SouthWestFor / South / East / SouthEast Placements >")(
                   TextButton("SouthWestFor(×)(the target") { _ => OK(SouthWestFor(X)(theTarget)) },
                   TextButton("South(the target") { _ => OK(South(theTarget)) },
                   TextButton("East(the target") { _ => OK(East(theTarget)) },
@@ -338,21 +338,8 @@ trait DemonstrationPages extends Brushes {
 
         lazy val theTarget = rect
 
-        lazy val theHandler = theTarget.guiRoot.eventHandler
-        lazy val (rootx, rooty): (Int, Int) = theTarget.guiRoot.windowOrigin
-
         def content: IRect = theTarget.guiRoot.eventHandler.window.getContentRect
 
-        def absolutecontent: IRect = theTarget.guiRoot.eventHandler.window.getContentRectAbsolute
-
-        def dim(g: Glyph): String = {
-          s"""BBox:         ${g.diagonal};
-             |RelativeTo:     ${g.rootDistance};
-             |Content:      ${content}
-             |""".stripMargin
-        }
-
-        /** */
         def loc(text: String) = windowdialogues.Menu.topBar(List(Label(text)))
 
         import Location._
@@ -501,10 +488,10 @@ trait DemonstrationPages extends Brushes {
             val (hh, ww) = (4.5f * h, h / 1.5f)
             val r = Rect(ww, hh, fg = Brush()(width = 2.5f, color = 0XFFff00ff))
             TextLabel("tight=true\n").above(Concentric(
-              (r(fg = black(width = 2.5f))).turned(0f, true).framed(tightBox),
-              (r(fg = redLine(width = 2.5f))).turned(-22.5f, true).framed(tightBox),
-              (r(fg = green(width = 2.5f))).turned(-45f, true).framed(tightBox),
-              (r(fg = blueLine(width = 2.5f))).turned(-67.5f, true).framed(tightBox),
+              (r(fg = black(width = 2.5f))).turned(0f, tight = true).framed(tightBox),
+              (r(fg = redLine(width = 2.5f))).turned(-22.5f, tight = true).framed(tightBox),
+              (r(fg = green(width = 2.5f))).turned(-45f, tight = true).framed(tightBox),
+              (r(fg = blueLine(width = 2.5f))).turned(-67.5f, tight = true).framed(tightBox),
               (r().turned(-90f, true)).framed(tightBox),
               Point(fg = red(width = 4))
             ))
@@ -512,11 +499,11 @@ trait DemonstrationPages extends Brushes {
           {
             val r = PolygonLibrary.regularPolygon(3, fg = Brush()(width = 2.5f, color = 0XFFff00ff))
             TextLabel("tight=true\n").above(Concentric(
-              (r(fg = black(width = 2.5f))).turned(0f, true).framed(tightBox),
-              (r(fg = redLine(width = 2.5f))).turned(-22.5f, true).framed(tightBox),
-              (r(fg = green(width = 2.5f))).turned(-45f, true).framed(tightBox),
-              (r(fg = blueLine(width = 2.5f))).turned(-67.5f, true).framed(tightBox),
-              (r()).turned(-90f, true).framed(tightBox),
+              (r(fg = black(width = 2.5f))).turned(0f, tight = true).framed(tightBox),
+              (r(fg = redLine(width = 2.5f))).turned(-22.5f, tight = true).framed(tightBox),
+              (r(fg = green(width = 2.5f))).turned(-45f, tight = true).framed(tightBox),
+              (r(fg = blueLine(width = 2.5f))).turned(-67.5f, tight = true).framed(tightBox),
+              (r()).turned(-90f, tight = true).framed(tightBox),
               Point(fg = red(width = 4))
             ))
           }, em, em, TextLabel("non-tight\nbboxes with\ncorresponding colours\n").above
@@ -546,15 +533,6 @@ trait DemonstrationPages extends Brushes {
       val d = circ.w * (0.35f)
       val w = d*5f
       val h = w*.25f
-
-      def cos(deg: Scalar): Scalar = Math.cos(deg*Math.PI/180f).toFloat
-      def sin(deg: Scalar): Scalar = Math.sin(deg*Math.PI/180f).toFloat
-
-
-      def diam(g: Glyph): Scalar = {
-        val d = g.diagonal
-        Math.sqrt(d.x*d.x + d.y*d.y).toFloat
-      }
 
       def rect = Rect(w, h, fg = blueLine)
       def tr = PolygonLibrary.star7(C=50f, R=50f, fg = Brush()(width = 2.5f, color = 0XFFff00ff))
@@ -591,7 +569,7 @@ trait DemonstrationPages extends Brushes {
 
       def rect = Rect(w, h, fg = blueLine)
 
-      def L(text: String, skewX: Scalar, g: Glyph): Glyph =
+      def L(@unused text: String, skewX: Scalar, g: Glyph): Glyph =
         TextLabel(f" x=$skewX%1.1f ").above(Skewed(skewX, 0f)(g).framed())
 
 
@@ -666,23 +644,24 @@ trait DemonstrationPages extends Brushes {
         Row.centered(
           TextLabel("g ").above(framedA.framed()), ex, ex,
           TextLabel("S(g) ").above(framedA.skewed(0.5f, 0.5f).framed()), em, em,
-          TextLabel("M(g) ").above(framedA.mirrored(true, true).framed()), em, em,
-          TextLabel("S(M(g)) ").above(framedA.mirrored(true, true).skewed(0.5f, 0.5f).framed()), em, em,
-          TextLabel("M(S(M(g))) ").above(framedA.mirrored(true, true).skewed(0.5f, 0.5f).mirrored(true, true).framed())
+          TextLabel("M(g) ").above(framedA.mirrored(leftRight = true,
+            topBottom = true).framed()), em, em,
+          TextLabel("S(M(g)) ").above(framedA.mirrored(leftRight = true, topBottom = true).skewed(0.5f, 0.5f).framed()), em, em,
+          TextLabel("M(S(M(g))) ").above(framedA.mirrored(leftRight = true, topBottom = true).skewed(0.5f, 0.5f).mirrored(leftRight = true, topBottom = true).framed())
         ), ex, ex, TextLabel("s=_.skewed(0.5, 0)"), ex,
         Row.centered(
           TextLabel("g ").above(rotA.framed()), ex, ex,
           TextLabel("s(g) ").above(rotA.skewed(0.5f, 0f).framed()), em, em,
-          TextLabel("M(g) ").above(rotA.mirrored(true, true).framed()), em, em,
-          TextLabel("s(M(g)) ").above(rotA.mirrored(true, true).skewed(0.5f, 0f).framed()), em, em,
-          TextLabel("M(s(M(g))) ").above(rotA.mirrored(true, true).skewed(0.5f, 0f).mirrored(true, true).framed()),
+          TextLabel("M(g) ").above(rotA.mirrored(leftRight = true, topBottom = true).framed()), em, em,
+          TextLabel("s(M(g)) ").above(rotA.mirrored(leftRight = true, topBottom = true).skewed(0.5f, 0f).framed()), em, em,
+          TextLabel("M(s(M(g))) ").above(rotA.mirrored(leftRight = true, topBottom = true).skewed(0.5f, 0f).mirrored(leftRight = true, topBottom = true).framed()),
         ), ex, ex, TextLabel("m=_.mirrored(false, true)"), ex,
         Row.centered(
           TextLabel("g ").above(rowABCD.framed()), ex, ex,
           TextLabel("s(g) ").above(rowABCD.skewed(0.5f, 0f).framed()), em, em,
-          TextLabel("m(g) ").above(rowABCD.mirrored(false, true).framed()), em, em,
-          TextLabel("s(m(g)) ").above(rowABCD.mirrored(false, true).skewed(0.5f, 0f).framed()), em, em,
-          TextLabel("m(s(m(g))) ").above(rowABCD.mirrored(false, true).skewed(0.5f, 0f).mirrored(false, true).framed())
+          TextLabel("m(g) ").above(rowABCD.mirrored(leftRight = false, topBottom = true).framed()), em, em,
+          TextLabel("s(m(g)) ").above(rowABCD.mirrored(leftRight = false, topBottom = true).skewed(0.5f, 0f).framed()), em, em,
+          TextLabel("m(s(m(g))) ").above(rowABCD.mirrored(leftRight = false, topBottom = true).skewed(0.5f, 0f).mirrored(leftRight = false, topBottom = true).framed())
         ), ex,
         TextLabel("Notice how the row (g) of vertical glyphs was skewed\nto the right as if from the top by m(s(m(g)))\n\nThis is the same effect as Skewed(-0.5,0)"), ex,
         rowABCD.skewed(-0.5f, 0)
@@ -837,7 +816,7 @@ trait DemonstrationPages extends Brushes {
 
       val shadedMenuStyle: MenuStyle = PrevailingStyle.menuStyle.copy(
         button=menuStyle.button.copy(frame=Decoration.Shaded(fg=red(width=0), bg=lightGrey, enlarge=15, delta=15, down=true)),
-        nestedButton=menuStyle.button.copy(frame=Decoration.Shaded(fg=blue(width=0), bg=green(alpha=0.25f), enlarge=0.25f, delta=8, down=true)),
+        nestedButton=menuStyle.button.copy(frame=Decoration.Shaded(fg=blue(width=0), bg=green(alpha=0.25f), down=true)),
         reactive=menuStyle.reactive.copy(frame=Decoration.Framed(fg=red(width=0), bg=green(alpha=0.25f))),
         inactive=Decoration.Framed(fg=red(width=0), bg=green(alpha=0.25f)),
         bg=green(alpha=0.25f)
@@ -901,20 +880,7 @@ trait DemonstrationPages extends Brushes {
 
       lazy val theTarget = rect
 
-      lazy val theHandler = theTarget.guiRoot.eventHandler
-      lazy val (rootx, rooty): (Int, Int) = theTarget.guiRoot.windowOrigin
-
       def content: IRect = theTarget.guiRoot.eventHandler.window.getContentRect
-
-      def absolutecontent: IRect = theTarget.guiRoot.eventHandler.window.getContentRectAbsolute
-
-      def dim(g: Glyph): String = {
-        s"""BBox:         ${g.diagonal};
-           |RelativeTo:   ${g.rootDistance};
-           |Content:      ${content}
-           |""".stripMargin
-      }
-
 
       Row(em,
         Col.centered(
@@ -1345,7 +1311,6 @@ trait DemonstrationPages extends Brushes {
     }
 
     Page("Blurred", "") {
-      import Styles.Decoration.Framed
       import styled.TextButton
       implicit val localStyle: ButtonStyle = PrevailingStyle.buttonStyle.copy(up=buttonStyle.up.copy(fg=white))
       Col.centered(
@@ -1427,12 +1392,12 @@ trait DemonstrationPages extends Brushes {
         }
 
         override def accept(event: EventMouseButton, location: Vec, window: Window): Unit = {
-          record(s"StyledButton ${Modifiers.Bitmap(event).toLongString}@$location")
+          record(s"StyledButton ${Modifiers.toBitmap(event).toLongString}@$location")
         }
 
         /** If the glyph wants to react to a mouse movement */
         override def accept(event: EventMouseMove, location: Vec, window: Window): Unit = {
-          record(s"Move${Modifiers.Bitmap(event).toLongString}@$location")
+          record(s"Move${Modifiers.toBitmap(event).toLongString}@$location")
         }
 
         override def accept(event: EventMouseScroll, location: Vec, window: Window): Unit = {
@@ -1440,15 +1405,15 @@ trait DemonstrationPages extends Brushes {
         }
 
         override def accept(key: EventKey, location: Vec, window: Window): Unit = {
-          record(s"Key ${Modifiers.Bitmap(key).toLongString} ${key.getKey} ")
+          record(s"Key ${Modifiers.toBitmap(key).toLongString} ${key.getKey} ")
         }
 
         override def accept(key: EventTextInput, location: Vec, window: Window): Unit = {
-          record(s"Text ${Modifiers.Bitmap(key).toLongString} ${key.getText} ")
+          record(s"Text ${Modifiers.toBitmap(key).toLongString} ${key.getText} ")
         }
 
         override def accept(key: EventTextInputMarked, location: Vec, window: Window): Unit = {
-          record(s"TextMarked ${Modifiers.Bitmap(key).toString} ${key.getText}")
+          record(s"TextMarked ${Modifiers.toBitmap(key).toString} ${key.getText}")
         }
 
         // Synthetic events delivered by the standard event handler
@@ -1457,12 +1422,12 @@ trait DemonstrationPages extends Brushes {
           event match {
             case _: GlyphEnter =>
               import io.github.humbleui.jwm.MouseCursor
-              key = s"GlyphEnter [keyboard grabbed]) ${Modifiers.Bitmap(event).toLongString}"
+              key = s"GlyphEnter [keyboard grabbed]) ${Modifiers.toBitmap(event).toLongString}"
               guiRoot.grabKeyboard(this)
               window.setMouseCursor(MouseCursor.POINTING_HAND)
               reDraw() // window.requestFrame()
             case _: GlyphLeave =>
-              key = s"GlyphLeave ${Modifiers.Bitmap(event).toLongString}"
+              key = s"GlyphLeave ${Modifiers.toBitmap(event).toLongString}"
               guiRoot.freeKeyboard()
               guiRoot.giveupFocus()
           }
@@ -1526,6 +1491,7 @@ trait DemonstrationPages extends Brushes {
 
     Page("Windows", "") {
       import Location._
+
       import io.github.humbleui.jwm.{App, Screen}
       implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
       import windowdialogues.Dialogue
@@ -1643,7 +1609,7 @@ trait DemonstrationPages extends Brushes {
     val Page = nested.DefinePage
 
     Page("Animation", "") {
-      import DynamicGlyphs.{Transformable,Periodic,Transform}
+      import DynamicGlyphs.{Periodic, Transform, Transformable}
       val shape = Glyphs.Concentric(bg=yellow)(
                        FilledOval(40, 40, fg=blue),
                        FilledRect(30, 10, fg=red) beside FilledRect(10, 10, fg=green))
@@ -1874,7 +1840,7 @@ trait DemonstrationPages extends Brushes {
 
       Col.centered(
         describe, ex,
-        Row.centered$(List(1.2f, 0.75f, 0.5f).map(ScaleButton(_))), ex,
+        Row.centered$(List(1.2f, 0.75f, 0.5f).map(ScaleButton)), ex,
         viewPort, ex,
         TextButton("Reset") {
           _ => viewPort.reset()
@@ -1927,7 +1893,6 @@ trait DemonstrationPages extends Brushes {
 
     Page("CheckBox", "Toggles, Checkboxes, ColourButtons") {
       import DynamicGlyphs.OneOf
-      import GlyphTypes.PathEffect
       import OnOffButton._
 
       implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle

@@ -1,7 +1,8 @@
 package org.sufrin.glyph
 
 import GlyphTypes.Font
-import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked, MouseCursor}
+
+import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked}
 
 /**
  *  A fixed-width reactive glyph that can be edited from the keyboard. The width of
@@ -74,12 +75,12 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
   }
   override def accept(key: EventKey, location: Vec, window: Window): Unit = {
     import Modifiers._
-    import io.github.humbleui.jwm.{Clipboard, ClipboardEntry, ClipboardFormat}
 
+    import io.github.humbleui.jwm.{Clipboard, ClipboardEntry, ClipboardFormat}
     import io.github.humbleui.jwm.Key._
     val ANYCONTROL  = Control | Command
     val ANYSHIFT    = ANYCONTROL | Alt
-    val mods: Bitmap = Bitmap(key)
+    val mods: Bitmap = toBitmap(key)
     if (mods.include(Pressed)) key._key match {
       case END        => TextModel.end()
       case LEFT if mods.include(ANYCONTROL) => TextModel.end()
@@ -210,7 +211,7 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
 
   override def accept(mouse: EventMouseButton, location: Vec, window: Window): Unit = {
     import Modifiers._
-    val mods = Bitmap(mouse)
+    val mods = toBitmap(mouse)
     val ctrl = Control|Command
     if (mouse.isPressed)
       if (mods.include(ctrl)) markTo(location.x) else moveTo(location.x)
@@ -394,7 +395,7 @@ object TextField {
     import Glyphs.Label
     import Modifiers._
     import windowdialogues.Dialogue
-    Dialogue.OK(Label(s"Unknown key: ${Bitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
+    Dialogue.OK(Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
   }
 
   def apply(fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, font: Font=Brushes.buttonFont,

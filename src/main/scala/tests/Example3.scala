@@ -1,8 +1,7 @@
-
-package org.sufrin.glyph.tests
-import org.sufrin.glyph.Glyphs._
-import org.sufrin.glyph.NaturalSize._
-import org.sufrin.glyph._
+package org.sufrin.glyph
+package tests
+import Glyphs._
+import NaturalSize._
 
 /**
  * Style to be used throughout the interface
@@ -12,20 +11,21 @@ import org.sufrin.glyph._
  * Interface using styled glyphs
  */
 
-trait Example3aInterface {
+trait Example3Interface {
   object LocalStyle extends Styles.Basic {
-    import Styles.Decoration.{Blurred}
+    import Styles.Decoration.Framed
 
     implicit val localButtons: Styles.ButtonStyle =
-      buttonStyle.copy(frame = Blurred(blur=10f, spread=10f, fg = yellow(width = 8, cap=SQUARE)))
+      buttonStyle.copy(frame = Framed(fg = blue(width = 8, cap=ROUND), bg=white, radiusFactor = 0.5f))
 
     implicit val localLabels: Styles.GlyphStyle =
       labelStyle.copy(font=GlyphTypes.Font(face, 40))
   }
-  import LocalStyle._
-  import Spaces._
   import styled.TextButton
   import styled.TextLayout.TextLabel
+
+  import LocalStyle._
+  import Spaces._
 
 
   val labelColor: Brush = green()
@@ -38,6 +38,6 @@ trait Example3aInterface {
 
 }
 
-object Example3a extends Application  with Example3aInterface {
-  override def title: String = "Example 3a"
+object Example3 extends Application  with Example3Interface {
+  override def title: String = "Example 3"
 }

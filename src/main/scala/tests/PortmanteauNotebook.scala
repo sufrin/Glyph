@@ -1,25 +1,23 @@
-package org.sufrin.glyph.tests
-import org.sufrin.glyph.GlyphTypes._
-import org.sufrin.glyph.NaturalSize.{Col, Row}
-import org.sufrin.glyph._
-import org.sufrin.glyph.styled.TextLayout.{TextLabel, TextParagraphs}
+package org.sufrin.glyph
+package tests
+
+import GlyphTypes._
+import NaturalSize.{Col, Row}
+import styled.TextLayout.{TextLabel, TextParagraphs}
 
 
 
 trait PortmanteauInterface extends Notebook {
-  import PortmanteauStyle.Spaces._
   implicit val buttonStyle: Styles.ButtonStyle = PortmanteauStyle.ButtonStyle
   implicit val labelStyle:  Styles.GlyphStyle  = PortmanteauStyle.labelStyle
 
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
     import windowdialogues.Dialogue.OKNO
-    val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged(50),
+    val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
       TextLabel("Do you want to Exit?") scaled 0.7f
     ).enlarged(50)
     OKNO(prompt,
-      title="Exit Dialogue", ok=" Exit now ", no=" Continue ").InFront(glyph).andThen{
-      case close => if (close) window.close()
-    }
+      title="Exit Dialogue", ok=" Exit now ", no=" Continue ").InFront(glyph).andThen(close => if (close) window.close())
   }
 
   Page("Welcome", "") {
@@ -37,7 +35,7 @@ trait PortmanteauInterface extends Notebook {
 
 object PortmanteauNotebook extends Application with PortmanteauInterface {
 
-  lazy val GUI = Layout.rightButtons()
+  lazy val GUI: Glyph = Layout.rightButtons()
 
   def title = s"""PortmanteauNotebook -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
 

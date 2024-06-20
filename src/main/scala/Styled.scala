@@ -17,7 +17,7 @@ import org.sufrin.glyph._
    *
    * Applying a `StyledButton` to a `Reaction` yields a (reactive) `Glyph`, that responds to mouse movement and clicks.
    *
-   *   type ButtonState = Modifiers.Bitmap
+   *   type ButtonState = Modifiers.toBitMap
    *   type Reaction = ButtonState => Unit
    *
    * Mouse movements and button presses change the tracking state of a button, which is one of:

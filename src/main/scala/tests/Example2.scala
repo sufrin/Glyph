@@ -1,8 +1,8 @@
-package org.sufrin.glyph.tests
-import org.sufrin.glyph._
+package org.sufrin.glyph
+package tests
 
 import Glyphs._
-import NaturalSize.{Row,Col}
+import NaturalSize.{Col, Row}
 import ReactiveGlyphs.TextButton
 
 /**

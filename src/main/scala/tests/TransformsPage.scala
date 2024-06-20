@@ -1,10 +1,9 @@
-package org.sufrin.glyph.tests
-import org.sufrin.glyph.DefaultBrushes._
-import org.sufrin.glyph.GlyphTypes._
-import org.sufrin.glyph.NaturalSize.Col
-import org.sufrin.glyph.Styles.GlyphStyle
-import org.sufrin.glyph.styled.TextLayout.TextLabel
-import org.sufrin.glyph.{Glyph, Notebook}
+package org.sufrin.glyph
+package tests
+
+import NaturalSize.Col
+import Styles.GlyphStyle
+import styled.TextLayout.TextLabel
 
 
 object TransformsPage extends Notebook {

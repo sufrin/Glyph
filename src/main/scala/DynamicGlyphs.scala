@@ -1,7 +1,6 @@
 package org.sufrin.glyph
 
 import io.github.humbleui.jwm.App
-import jdk.nio.zipfs.ByteArrayChannel
 
 /**
  * Glyph combinators that transform glyphs into glyphs with dynamically-determinable scales and origins.
@@ -80,6 +79,7 @@ object DynamicGlyphs extends Brushes {
    */
   class ViewPort(glyph: Glyph, val fg: Brush=black, val bg: Brush = black) extends ReactiveGlyph with Brushes {
     import GlyphTypes.Scalar
+
     import io.github.humbleui.jwm.{EventKey, EventMouseScroll}
 
     val scale     = Variable(1f)
@@ -116,7 +116,7 @@ object DynamicGlyphs extends Brushes {
       import Modifiers.Primary
       var dy: Int = mouse.getMovementY
       var dx: Int = mouse.getMovementX
-      if (Modifiers.Bitmap(mouse).any) {
+      if (Modifiers.toBitmap(mouse).any) {
         // Hack because Linux doesn't report movement magnitudes
         if (dy==0 && dx==0) {
           val thisX: Int = mouse.getX
