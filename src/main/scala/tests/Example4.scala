@@ -6,8 +6,8 @@ import styled.TextLayout._
 
 
 trait Example4Interface {
-  object Style extends Styles.Basic
-  import Style._
+  implicit object Style extends Styles.Sheet
+
 
   lazy val fields = List(a, b, c)
 

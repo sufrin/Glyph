@@ -5,8 +5,7 @@ import styled.TextLayout.{TextLabel, TextParagraphs}
 import NaturalSize.{Col, Row}
 
 trait PortmanteauInterface extends Notebook {
-  implicit val buttonStyle: Styles.ButtonStyle = PortmanteauStyle.ButtonStyle
-  implicit val labelStyle: Styles.GlyphStyle = PortmanteauStyle.labelStyle
+  implicit val style: Styles.Sheet = PortmanteauStyle
 
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
     import windowdialogues.Dialogue.OKNO

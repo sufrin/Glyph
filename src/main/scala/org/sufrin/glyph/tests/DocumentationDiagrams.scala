@@ -318,9 +318,8 @@ object DocumentationDiagrams {
 
     val gridTables = {
       import styled.TextLayout._
-      object Style extends Styles.Basic{}
-      import Style._
-      import Spaces._
+      implicit object Style extends Styles.Sheet{}
+      import Style.Spaces._
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
@@ -338,9 +337,8 @@ object DocumentationDiagrams {
 
     val gridCellFit =  {
       import styled.TextLayout._
-      object Style extends Styles.Basic{}
-      import Style._
-      import Spaces._
+      implicit object Style extends Styles.Sheet{}
+      import Style.Spaces._
       import CellFit._
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
