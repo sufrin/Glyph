@@ -1,6 +1,0 @@
-if [ ! -e target/scala-2.13/api/org/sufrin/glyph/ ]
-then
- sbt doc
-fi
-
-mv -fv target/scala-2.13/api/org/sufrin/glyph/ DOCS/glyph
