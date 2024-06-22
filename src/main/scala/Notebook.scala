@@ -45,7 +45,7 @@ trait Notebook {
 
     object DefinePage {
       def apply(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit sheet: Styles.Sheet): Page = {
-        val page = new Page(title, gloss, glyph)
+        val page = new Page(title, gloss, glyph)(sheet)
         if (publish) {
           pages += (page)
         }
@@ -56,7 +56,7 @@ trait Notebook {
     def popupButtons(implicit sheet: Styles.Sheet): List[Glyph]  = {
       def button(page: Page): Glyph = {
         lazy val here: Glyph = TextButton(page.title) {
-          _ => windowdialogues.Dialogue.OK(page.root()).SouthEast(here).start() }
+          _ => windowdialogues.Dialogue.OK(page.root()).SouthEast(here).start() }(sheet)
         here
       }
       pages.toList.map(button(_))
@@ -82,7 +82,7 @@ trait Notebook {
 
       lazy val buttons = keyed map  {
         case (n: Int, page: Page) =>
-          TextButton(page.title) { _ => oneOf.select(n) }
+          TextButton(page.title) { _ => oneOf.select(n) }(sheet)
       }
 
       lazy val uniformButtons: Seq[UniformSize.ButtonSpecification] =
@@ -148,7 +148,6 @@ trait Notebook {
 
     def topButtons(uniform: Boolean=true)(implicit sheet: Styles.Sheet) = {
       val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform)
-      import sheet.buttonStyle.up.Spaces.{em, ex}
       val lhs = Row(bg=nothing).atBottom$(buttons)
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)

@@ -24,10 +24,7 @@ trait DemonstrationPages extends Brushes {
   import Decoration.Framed
   import TextLayout._
 
-  implicit object PrevailingStyle extends Styles.Sheet {
-    implicit val prevailingButtonStyle: Styles.ButtonStyle =
-      buttonStyle.copy(frame = Framed(fg = darkGrey(width = 4), bg = lightGrey, radiusFactor = 0.5f))
-  }
+  implicit object PrevailingStyle extends Styles.Sheet {}
 
   object HelpStyle extends Styles.Sheet {
     override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
@@ -40,12 +37,14 @@ trait DemonstrationPages extends Brushes {
     override val Spaces: Styles.Spaces = labelStyle.Spaces
   }
 
+  val em: Glyph = PrevailingStyle.Spaces.em
+  val ex: Glyph = PrevailingStyle.Spaces.ex
+
+
   object HugeLabelStyle extends Styles.Sheet {
     override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.BOLD)
   }
 
-  import PrevailingStyle._
-  import Spaces._
 
   /**
    *  The GUI manifests as a `Notebook`.
@@ -55,7 +54,6 @@ trait DemonstrationPages extends Brushes {
    *  the moment this is just done to help with IDE
    *  navigation.
    */
-  implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
   val noteBook: Notebook = Notebook()
   val Page: noteBook.DefinePage.type = noteBook.DefinePage
 
@@ -145,10 +143,6 @@ trait DemonstrationPages extends Brushes {
 
     }
 
-    import PrevailingStyle._
-    import Spaces._
-    implicit val Style: Styles.Sheet = new Styles.Sheet {}
-
 
     var style: String = "-notebook"
     var scale: String = "-scale=0.7"
@@ -172,7 +166,6 @@ trait DemonstrationPages extends Brushes {
       case Some(i) => screen = screens(i)
     }
 
-    lazy implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
 
     val cloneButton = TextButton("Clone this instance") {
       _ =>
@@ -218,7 +211,6 @@ trait DemonstrationPages extends Brushes {
   val MenusPage = Page("Menus*", "Window menus and dialogues") {
       val nested = Notebook()
       val Page = nested.DefinePage
-      implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
       import windowdialogues.Dialogue
 
 
@@ -409,7 +401,6 @@ trait DemonstrationPages extends Brushes {
   val TransformsPage = Page("Transforms*", "") {
     val nested = Notebook()
     val Page = nested.DefinePage
-    implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
     Page("Turn", "Turn transforms") {
 
       def circ = PolygonLibrary.closeButtonGlyph.scaled(4)
@@ -671,7 +662,7 @@ trait DemonstrationPages extends Brushes {
   val OverlayPage = Page("Overlays*", "Features implemented as overlay layers and annotations"){
     val noteBook = Notebook()
     val Page = noteBook.DefinePage
-    implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
+    //implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
 
     Page("Dialogues", "") {
       import styled.TextButton
@@ -1001,7 +992,7 @@ trait DemonstrationPages extends Brushes {
             |
             |  A checkbox always appears on the grid: pressing this disables the grid, which can only be re-enabled by
             |the checkbox below.
-            |""".stripMargin)(HelpStyle),
+            |""".stripMargin)(PrevailingStyle),
         Row.centered(TextLabel("Grid: "), gridCheckboxForPage), ex, ex,
         TextParagraphs(40, Justify)(
           """
@@ -1168,6 +1159,8 @@ trait DemonstrationPages extends Brushes {
             long.enlarged(enlarge).framed(fg, nothing, rf)))
       }
 
+      val emWidth = em.w
+
       Col.centered(
         FixedSize.Row(width)(row(0.5f), FixedSize.Space(emWidth, 100f), row(.3f)), ex,
         FixedSize.Row(width)(row(0.25f), FixedSize.Space(emWidth, 100f), row(.125f)), ex,
@@ -1308,7 +1301,8 @@ trait DemonstrationPages extends Brushes {
 
     Page("Blurred", "") {
       import styled.TextButton
-      implicit val localStyle: ButtonStyle = PrevailingStyle.buttonStyle.copy(up=buttonStyle.up.copy(fg=white))
+      val buttonStyle = PrevailingStyle.buttonStyle
+      val localStyle: ButtonStyle = PrevailingStyle.buttonStyle.copy(up=buttonStyle.up.copy(fg=white))
       Col.centered(
         TextParagraphs(60, Left)(
           """
@@ -1362,9 +1356,8 @@ trait DemonstrationPages extends Brushes {
     val Page = nested.DefinePage
 
     Page("Events", "") {
-      import Spaces._
-
-      val theLog = StringLog(60, 25)(HelpStyle.labelStyle)
+      val labelStyle = HelpStyle.labelStyle
+      val theLog = StringLog(60, 25)(labelStyle)
 
       object CatchEvents extends ReactiveGlyph {
 
@@ -1489,7 +1482,7 @@ trait DemonstrationPages extends Brushes {
       import Location._
 
       import io.github.humbleui.jwm.{App, Screen}
-      implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
+      implicit val style: Styles.Sheet = HelpStyle
       import windowdialogues.Dialogue
 
       // App.methods can only be called after the App has started.
@@ -1542,11 +1535,11 @@ trait DemonstrationPages extends Brushes {
           .start()
       }
 
-      import HelpStyle._
-      import Spaces._
+      import HelpStyle.Spaces
+      val (em, ex) = (Spaces.em, Spaces.ex)
 
       Col.centered(
-        TextParagraphs(50 * em.w, Left)(
+        TextParagraphs(50, Left)(
           """The Screens/Windows buttons pop up lists of screens/windows whenever they are pressed.
             |Sizes and locations are in physical (pixel) coordinates. Locations are given relative
             |to the location of the primary screen; and this means that in a multi-screen layout
@@ -1666,6 +1659,7 @@ trait DemonstrationPages extends Brushes {
       val Page = nested.DefinePage
 
       Page("Grid", "data = 8 blurred-frame buttons") {
+        val prevailingButtonStyle = PrevailingStyle.buttonStyle
         implicit val blurred: ButtonStyle =
           prevailingButtonStyle.copy(
             frame = Decoration.Blurred(fg = blue, blur = 10, spread = 5),

@@ -84,10 +84,10 @@ object TextLayout {
    *
    */
   def TextParagraphs(width: Scalar, align: Alignment)(text: String)(implicit sheet: Styles.Sheet): Glyph =
-    formatTextParagraphs(width, align, text)
+    formatTextParagraphs(width, align, text)(sheet)
 
   def TextParagraphs(ems: Int, align: Alignment)(text: String)(implicit sheet: Styles.Sheet): Glyph =
-    formatTextParagraphs(ems*sheet.Spaces.em.w, align, text)
+    formatTextParagraphs(ems*sheet.Spaces.em.w, align, text)(sheet)
 
    /**
     *  Workhorse method that splits a text into chunks (at newline and space boundaries), then assembles
@@ -109,7 +109,7 @@ object TextLayout {
     var body: List[String] = text.split("[\n ]").filter(_.nonEmpty).toList
     val space = sheet.Spaces.em
     val ex = sheet.Spaces.ex
-    val interWord = FixedSize.Space(space.w/3f, 100f)                // very stretchy
+    val interWord = FixedSize.Space(space.w/1.9f, 100f)                // very stretchy
     def horizontalSpacing(dist: Scalar): Glyph = FixedSize.Space(dist, 0f, 0f) // width, but no height or stretch
     val POINTW = TextLabel("<").w
 
@@ -219,15 +219,15 @@ object TextLayout {
    * and it is redrawn.
    */
   class ActiveParagraphs(width: Scalar, align: Alignment, text: String)(implicit sheet: Styles.Sheet)
-    extends  ActiveGlyph[String](text, TextParagraphs(width, align)(text: String))
+    extends  ActiveGlyph[String](text, TextParagraphs(width, align)(text: String)(sheet))
   {
-    def toGlyph(text: String): Glyph = TextParagraphs(width: Scalar, align: Alignment)(text)
-    override def copy(fg: Brush, bg: Brush): ActiveGlyph[String] = new ActiveParagraphs(width, align, text)
+    def toGlyph(text: String): Glyph = TextParagraphs(width: Scalar, align: Alignment)(text)(sheet)
+    override def copy(fg: Brush, bg: Brush): ActiveGlyph[String] = new ActiveParagraphs(width, align, text)(sheet)
   }
 
   object ActiveParagraphs {
     def apply(ems: Int, align: Alignment=Left)(text: String)(implicit sheet: Styles.Sheet): ActiveGlyph[String] =
-      new ActiveParagraphs(ems*sheet.Spaces.em.w, align, text)
+      new ActiveParagraphs(ems*sheet.Spaces.em.w, align, text)(sheet)
   }
 
   object ActiveString {

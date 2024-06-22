@@ -1,15 +1,15 @@
 package org.sufrin.glyph
 package tests
-
-import GlyphTypes.FontStyle.NORMAL
-import GlyphTypes.{FontManager, Typeface}
-import Styles.Decoration
 import DefaultBrushes._
+import GlyphTypes._
+import GlyphTypes.FontStyle._
 
 
-object PortmanteauStyle extends Styles.Sheet {
-  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Arial", NORMAL)
-  implicit val ButtonStyle: Styles.ButtonStyle =
-    buttonStyle.copy(frame=Decoration.Blurred(blue, nothing, 15f, 5f),
-      up=buttonStyle.up.copy(fg=white))
+
+object PortmanteauStyle extends Styles.BlurredSheet {
+
+  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Courier", NORMAL)
+  override lazy val buttonFontSize: Scalar = 28
+
 }
+
