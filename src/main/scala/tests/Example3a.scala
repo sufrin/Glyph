@@ -14,21 +14,20 @@ import NaturalSize._
  */
 
 trait Example3aInterface {
-  implicit object LocalStyle extends Styles.Sheet {
-    object Super extends Styles.Sheet
+  object LocalStyle extends Styles.Basic {
     import Styles.Decoration.Blurred
 
-    override implicit lazy val buttonStyle: Styles.ButtonStyle =
-      Super.buttonStyle.copy(frame = Blurred(blur=10f, spread=10f, fg = yellow(width = 8, cap=SQUARE)))
+    implicit val localButtons: Styles.ButtonStyle =
+      buttonStyle.copy(frame = Blurred(blur=10f, spread=10f, fg = yellow(width = 8, cap=SQUARE)))
 
-    override implicit lazy val labelStyle: Styles.GlyphStyle =
-      Super.labelStyle.copy(font=GlyphTypes.Font(face, 40))
+    implicit val localLabels: Styles.GlyphStyle =
+      labelStyle.copy(font=GlyphTypes.Font(face, 40))
   }
-
   import styled.TextButton
   import styled.TextLayout.TextLabel
 
-  import LocalStyle.Spaces._
+  import LocalStyle._
+  import Spaces._
 
 
   val labelColor: Brush = green()

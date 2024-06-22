@@ -1,27 +1,28 @@
 package org.sufrin.glyph
 package tests
 
+import NaturalSize.{Col, Row}
+import Styles.{ButtonStyle, GlyphStyle}
 import overlaydialogues.Dialogue
+import styled.TextButton
 import styled.TextLayout.TextParagraphs
 
-object BasicStyle extends Styles.Sheet {
+object BasicStyle extends Styles.Basic
+
+object MenuStyle extends Styles.Basic {
   import GlyphTypes._
-  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL)
-  override lazy val buttonFontSize: Scalar = 25
+  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Arial", FontStyle.NORMAL)
+  override lazy val buttonFontSize: Scalar = 30
 }
 
-object MenuStyle extends Styles.Sheet {
-  import GlyphTypes._
-  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
-  override lazy val buttonFontSize: Scalar = 25
-}
-
-class AdderGUI()(implicit sheet: Styles.Sheet)  {
+class AdderGUI()(implicit detail: Styles.Basic)  {
   import NaturalSize.{Col, Row}
   import styled.TextButton
   import styled.TextLayout.{ActiveParagraphs, ActiveString, TextLabel}
 
-  import sheet.Spaces._
+  implicit val buttonFeatures: ButtonStyle = detail.buttonStyle
+  implicit val glyphStyle:    GlyphStyle      = buttonFeatures.up
+  import glyphStyle.Spaces._
 
   var `a⊕b`:   Double => Double => Double = _.+
   var `c⊕a`:   Double => Double => Double = _.-
@@ -29,7 +30,7 @@ class AdderGUI()(implicit sheet: Styles.Sheet)  {
   var opName: String = "+"
 
   val opGlyph: DynamicGlyphs.ActiveString = ActiveString(opName)
-  val helpGlyph: DynamicGlyphs.ActiveGlyph[String] = ActiveParagraphs(50, Justify)(helpText())
+  val helpGlyph: DynamicGlyphs.ActiveGlyph[String] = ActiveParagraphs(25, Justify)(helpText())(MenuStyle.labelStyle)
 
 
   def setOp(opName: String, `a⊕b`: Double => Double => Double, `c⊕a`: Double => Double => Double, `c⊕b`: Double => Double => Double): Unit = {
@@ -111,12 +112,12 @@ class AdderGUI()(implicit sheet: Styles.Sheet)  {
 
 }
 
-class CalculatorGUI()(implicit sheet: Styles.Sheet) extends AdderGUI() {
+class CalculatorGUI()(implicit detail: Styles.Basic) extends AdderGUI() {
 
   import NaturalSize._
   import styled.RadioCheckBoxes
 
-  import sheet.Spaces._
+  import glyphStyle.Spaces._
 
   def flip[S,T,U](op: S=>T=>U):T=>S=>U = { t:T => s:S => op(s)(t) }
 
@@ -130,30 +131,71 @@ class CalculatorGUI()(implicit sheet: Styles.Sheet) extends AdderGUI() {
     case _ =>
   }
 
-  override def root: Glyph = Col.centered(
+  override def root: Composite = Col.centered(
     super.root, ex,
-    Row.centered(styled.TextLayout.TextLabel("Choose an operator "),
-                 Grid(fg=Brush()(width=0)).grid(height=2)(operations.glyphRows)) enlarged 20
-  ) enlarged 20
+    Row.centered(styled.TextLayout.TextLabel("Choose an operator "), Row.atTop(operations.gridGlyphs(width=0, height=1)))
+  )
 
 }
 
 trait TopLevelGUI {
+  
   val noteBook: Notebook = Notebook()
   val Page: noteBook.DefinePage.type = noteBook.DefinePage
+  import MenuStyle._
+
 
   Page("Adder", "") {
-    val GUI = new AdderGUI()(BasicStyle)
+    val GUI=  new AdderGUI()(BasicStyle)
     GUI.root
-  }(MenuStyle)
+  }
 
   Page("Calculator", "") {
-    val GUI = new CalculatorGUI()(BasicStyle)
+    val GUI=new CalculatorGUI()(BasicStyle)
     GUI.root
-  }(MenuStyle)
+  }
+
+  Page("Clone", "Clone this app with a new GUI") {
+    lazy val Duplicated = new Application {
+      def GUI: Glyph = new TopLevelGUI {} . root
+      def title = s"""CalculatorExample -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
+      override
+      val defaultIconPath: Option[String] = Some("./flag.png")
+    }
+
+    implicit val buttonStyle: ButtonStyle =  MenuStyle.buttonStyle
+
+    import labelStyle.Spaces.{em, ex}
+
+    def button(args: String): Glyph = {
+      val arguments = args.split("[ ]+")
+      TextButton(args) { _ => Duplicated.main(arguments) }
+    }
+
+    val styles  = "-scale=1.0/-scale=0.9/-scale=0.8/-scale=0.7/-scale=0.6/-scale=0.5".split("/").toList
+    val buttons: List[Glyph] = styles.map(button)
+    val leftButtons = buttons.take(buttons.length/2)
+    val rightButtons = buttons.drop(leftButtons.length)
+
+    Col.centered(
+      TextParagraphs(ems = 40, Justify)(
+        """Each of the buttons below clones a new instance of the
+          |application with the properties specified on it.
+          |
+          | There is no limit on the number of instances that can be
+          |running at once.
+          |""".stripMargin), ex,
+      Row(
+        Col.atLeft$(leftButtons), em, em,
+        Col.atRight$(rightButtons),
+      )
+    ) enlarged 60
+  }
+
 
   val root: Glyph = {
-    noteBook.Layout.rightButtons(true)((MenuStyle))
+    import MenuStyle._
+    noteBook.Layout.rightButtons()
   }
 }
 

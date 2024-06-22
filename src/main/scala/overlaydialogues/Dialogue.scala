@@ -52,19 +52,19 @@ object Dialogue {
    *   UP,DOWN,LEFT,RIGHT keys.
    *
    */
-  def Menu(name: String, nested: Boolean=false)(button: Glyph, buttons: Glyph*)(implicit sheet: Styles.Sheet): Glyph = {
-     Menu$(name, nested)(button :: buttons.toList)
+  def Menu(name: String, nested: Boolean=false)(button: Glyph, buttons: Glyph*)(implicit detail: MenuStyle): Glyph = {
+     Menu$(name, nested)(button :: buttons.toList)(detail)
   }
 
-  def NestedMenu(name: String)(button: Glyph, buttons: Glyph*)(implicit sheet: Styles.Sheet): Glyph = {
-    Menu$(name, nested = true)(button :: buttons.toList)
+  def NestedMenu(name: String)(button: Glyph, buttons: Glyph*)(implicit detail: MenuStyle): Glyph = {
+    Menu$(name, nested = true)(button :: buttons.toList)(detail)
   }
 
   /**  Yield a menu button in the given button style that is bound to a menu on which are the glyphs `buttons`.
    *
    *   @see Menu
    */
-  def Menu$(name: String, nested: Boolean)(buttons: Seq[Glyph])(implicit sheet: Styles.Sheet): Glyph = {
+  def Menu$(name: String, nested: Boolean)(buttons: Seq[Glyph])(implicit detail: MenuStyle): Glyph = {
     lazy val popDowns: Seq[Glyph] = buttons.map { button => afterReact(button) { popup.close() }}
     lazy val width   = popDowns.map(_.w).max
     lazy val uniform = popDowns.map  {
@@ -73,9 +73,9 @@ object Dialogue {
            glyph.enlargedTo(width, glyph.h)
         else
         if (glyph.isReactive)
-           sheet.menuStyle.reactive.frame.decorate(glyph.enlargedTo(width, glyph.h))
+           detail.reactive.frame.decorate(glyph.enlargedTo(width, glyph.h))
         else
-           sheet.menuStyle.inactive.decorate(glyph.enlargedTo(width, glyph.h))
+           detail.inactive.decorate(glyph.enlargedTo(width, glyph.h))
     }
 
     def locatePopup(glyph: Glyph): RelativeTo = {
@@ -84,7 +84,7 @@ object Dialogue {
     }
 
     lazy val popup: Dialogue[Unit] =
-      new Dialogue[Unit](Col(bg=sheet.menuStyle.bg).centered$(uniform), East(button), Some(defaultCloseGlyph), isMenu = true) {
+      new Dialogue[Unit](Col(bg=detail.bg).centered$(uniform), East(button), Some(defaultCloseGlyph), isMenu = true) {
       // Reactivate the button when the menu is popped down
       onClose{ _ =>
         button match {
@@ -113,9 +113,9 @@ object Dialogue {
 
     lazy val button: Glyph =
       if (nested)
-        styled.MenuButton(name) (reaction) (sheet.unFramed)
+        styled.MenuButton(name) (reaction) (detail.nestedButton)
       else
-        styled.TextButton(name) (reaction) (sheet)
+        styled.TextButton(name) (reaction) (detail.button)
 
     button.asMenuButton
   }

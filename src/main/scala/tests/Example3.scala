@@ -12,7 +12,7 @@ import NaturalSize._
  */
 
 trait Example3Interface {
-  implicit object LocalStyle extends Styles.Sheet {
+  object LocalStyle extends Styles.Basic {
     import Styles.Decoration.Framed
 
     implicit val localButtons: Styles.ButtonStyle =
@@ -24,7 +24,8 @@ trait Example3Interface {
   import styled.TextButton
   import styled.TextLayout.TextLabel
 
-  import LocalStyle.Spaces._
+  import LocalStyle._
+  import Spaces._
 
 
   val labelColor: Brush = green()

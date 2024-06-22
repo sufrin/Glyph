@@ -1,9 +1,9 @@
-package org.sufrin.glyph
-package styled
+package org.sufrin.glyph.styled
 
-import GlyphTypes.Scalar
-import NaturalSize.{Col, Row}
-
+import org.sufrin.glyph.GlyphTypes.Scalar
+import org.sufrin.glyph.NaturalSize.{Col, Row}
+import org.sufrin.glyph.Styles.GlyphStyle
+import org.sufrin.glyph._
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -21,10 +21,7 @@ object TextLayout {
    * @see TextParagraph
    * @see TextParagraphs
    */
-  def TextLabel(text: String, align: Alignment = Center)(implicit sheet: Styles.Sheet): Glyph =
-    DetailedTextLabel(text, align, sheet.labelStyle)
-
-  def DetailedTextLabel(text: String, align: Alignment, detail: Styles.GlyphStyle): Glyph = {
+  def TextLabel(text: String, align: Alignment = Center)(implicit detail: GlyphStyle): Glyph = {
     val lines = text.split('\n').toList
     lines.length match {
       case 1 => Text(text, detail.font).asGlyph(detail.fg, detail.bg)
@@ -40,8 +37,7 @@ object TextLayout {
   }
 
 
-  private def formatTextParagraphs(width: Scalar, align: Alignment, text: String)(implicit sheet: Styles.Sheet): Glyph = {
-    val style = sheet.labelStyle
+  private def formatTextParagraphs(width: Scalar, align: Alignment, text: String)(implicit style: GlyphStyle): Glyph = {
     val paras = text.split("\n([ ]+|<)").filter(_.nonEmpty).map { TextParagraph(width, align) }
     val space = style.Spaces.em
     def ex = style.Spaces.ex
@@ -83,11 +79,11 @@ object TextLayout {
    * @return a column in which the paragraphs appear (separated by `style.ex`)
    *
    */
-  def TextParagraphs(width: Scalar, align: Alignment)(text: String)(implicit sheet: Styles.Sheet): Glyph =
-    formatTextParagraphs(width, align, text)
+  def TextParagraphs(width: Scalar, align: Alignment)(text: String)(implicit style: GlyphStyle): Glyph =
+    formatTextParagraphs(width, align, text)(style)
 
-  def TextParagraphs(ems: Int, align: Alignment)(text: String)(implicit sheet: Styles.Sheet): Glyph =
-    formatTextParagraphs(ems*sheet.Spaces.em.w, align, text)
+  def TextParagraphs(ems: Int, align: Alignment)(text: String)(implicit style: GlyphStyle): Glyph =
+    formatTextParagraphs(ems*style.Spaces.em.w, align, text)(style)
 
    /**
     *  Workhorse method that splits a text into chunks (at newline and space boundaries), then assembles
@@ -104,11 +100,11 @@ object TextLayout {
     *
     * @see TextParagraphs
     */
-  private def TextParagraph(overallWidth: Scalar, align: Alignment)(text: String)(implicit sheet: Styles.Sheet): (Glyph, Boolean) = {
+  private def TextParagraph(overallWidth: Scalar, align: Alignment)(text: String)(implicit style: GlyphStyle): (Glyph, Boolean) = {
     var indent, undent: Float = 0f
     var body: List[String] = text.split("[\n ]").filter(_.nonEmpty).toList
-    val space = sheet.Spaces.em
-    val ex = sheet.Spaces.ex
+    val space = style.Spaces.em
+    val ex = style.Spaces.ex
     val interWord = FixedSize.Space(space.w/3f, 100f)                // very stretchy
     def horizontalSpacing(dist: Scalar): Glyph = FixedSize.Space(dist, 0f, 0f) // width, but no height or stretch
     val POINTW = TextLabel("<").w
@@ -142,7 +138,6 @@ object TextLayout {
     val galley = ArrayBuffer[Glyph]()
 
     // make glyphs of the chunks
-    val style = sheet.labelStyle
     val glyphs: Seq[Glyph] = body.map { word => Text(word, style.font).asGlyph(style.fg, style.bg) }
 
     /**
@@ -218,7 +213,7 @@ object TextLayout {
    * {{{ TextParagraphs(width, align)(text': String) }}}
    * and it is redrawn.
    */
-  class ActiveParagraphs(width: Scalar, align: Alignment, text: String)(implicit sheet: Styles.Sheet)
+  class ActiveParagraphs(width: Scalar, align: Alignment, text: String)(implicit detail: GlyphStyle)
     extends  ActiveGlyph[String](text, TextParagraphs(width, align)(text: String))
   {
     def toGlyph(text: String): Glyph = TextParagraphs(width: Scalar, align: Alignment)(text)
@@ -226,15 +221,13 @@ object TextLayout {
   }
 
   object ActiveParagraphs {
-    def apply(ems: Int, align: Alignment=Left)(text: String)(implicit sheet: Styles.Sheet): ActiveGlyph[String] =
-      new ActiveParagraphs(ems*sheet.Spaces.em.w, align, text)
+    def apply(ems: Int, align: Alignment=Left)(text: String)(implicit detail: GlyphStyle): ActiveGlyph[String] =
+      new ActiveParagraphs(ems*detail.Spaces.em.w, align, text)
   }
 
   object ActiveString {
-    def apply(initial: String)(implicit sheet: Styles.Sheet): DynamicGlyphs.ActiveString = {
-        val detail = sheet.labelStyle
-        DynamicGlyphs.ActiveString(detail.font, detail.fg, detail.bg)(initial)
-    }
+    def apply(initial: String)(implicit detail: GlyphStyle): DynamicGlyphs.ActiveString =
+        new DynamicGlyphs.ActiveString(detail.font, detail.fg, detail.bg, initial)
   }
 
 }

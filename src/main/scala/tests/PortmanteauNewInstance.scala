@@ -35,7 +35,7 @@ object PortmanteauNewInstance {
     }
 
 
-    implicit val Style: Styles.Sheet = new Styles.Sheet {}
+    implicit val Style: Styles.Basic = new Styles.Basic {}
 
     var style: String = "-notebook"
     var scale: String = "-scale=0.7"
@@ -59,7 +59,8 @@ object PortmanteauNewInstance {
       case Some(i) => screen = screens(i)
     }
 
-
+    lazy implicit val labelStyle: GlyphStyle = PortmanteauStyle.labelStyle
+    lazy implicit val buttonStyle: ButtonStyle = PortmanteauStyle.ButtonStyle
 
 
     Col.centered(
@@ -71,7 +72,7 @@ object PortmanteauNewInstance {
           |(though space constraints within the JVM will impose a natural limit).
           |""".stripMargin) enlarged 50,
       Row(
-        TextButton("New instance") { _ => println(s"$scale $style"); Duplicated.main(Array(scale, style, screen)) }, em,
+        TextButton("New instance")   { _ => println(s"$scale $style"); Duplicated.main(Array(scale, style, screen)) }(buttonStyle), em,
       ), ex,
       Row.atTop(
         styleSelect.gridGlyphs(), em scaled 6,

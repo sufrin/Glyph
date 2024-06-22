@@ -2,11 +2,12 @@ package org.sufrin.glyph
 package tests
 
 import NaturalSize.Col
+import Styles.GlyphStyle
 import styled.TextLayout.TextLabel
 
 
 object PortmanteauTransforms extends Notebook {
-    implicit val sheet: Styles.Sheet = PortmanteauStyle
+    implicit val labelStyle: GlyphStyle = PortmanteauStyle.labelStyle
     def dummy(name: String): Glyph = Col.centered(TextLabel(s"Page ($name) intentionally left blank")) enlarged 50
     Page("Turn", "Turn transforms") (dummy("Turn"))
 
