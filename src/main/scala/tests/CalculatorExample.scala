@@ -3,7 +3,6 @@ package tests
 
 import overlaydialogues.Dialogue
 import styled.TextLayout.TextParagraphs
-import Styles.Decoration
 import DefaultBrushes._
 
 trait BasicSheet extends Styles.Sheet {
@@ -12,15 +11,10 @@ trait BasicSheet extends Styles.Sheet {
   override lazy val buttonFontSize: Scalar = 25
 }
 
-trait BlurredSheet extends BasicSheet {
-  override lazy val buttonStyle: Styles.ButtonStyle =
-    Styles.DefaultSheet.buttonStyle.copy(frame=Decoration.Blurred(blue, nothing, 15f, 5f),
-      up=Styles.DefaultSheet.buttonStyle.up.copy(fg=white))
-}
 
-object BlurredStyle extends BlurredSheet {}
+object BlurredStyle extends Styles.BlurredSheet {}
 
-object MenuStyle extends Styles.Sheet {
+object MenuStyle extends Styles.BlurredSheet {
   import GlyphTypes._
   override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.ITALIC)
   override lazy val buttonFontSize: Scalar = 30

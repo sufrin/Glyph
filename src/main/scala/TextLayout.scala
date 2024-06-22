@@ -109,7 +109,7 @@ object TextLayout {
     var body: List[String] = text.split("[\n ]").filter(_.nonEmpty).toList
     val space = sheet.Spaces.em
     val ex = sheet.Spaces.ex
-    val interWord = FixedSize.Space(space.w/3f, 100f)                // very stretchy
+    val interWord = FixedSize.Space(space.w/1.9f, 100f)                // very stretchy
     def horizontalSpacing(dist: Scalar): Glyph = FixedSize.Space(dist, 0f, 0f) // width, but no height or stretch
     val POINTW = TextLabel("<").w
 
