@@ -24,26 +24,24 @@ trait DemonstrationPages extends Brushes {
   import Decoration.Framed
   import TextLayout._
 
-  object PrevailingStyle extends Styles.Basic {
+  implicit object PrevailingStyle extends Styles.Sheet {
     implicit val prevailingButtonStyle: Styles.ButtonStyle =
       buttonStyle.copy(frame = Framed(fg = darkGrey(width = 4), bg = lightGrey, radiusFactor = 0.5f))
   }
 
-  object HelpStyle {
-    val Style: PrevailingStyle.type = PrevailingStyle
-    val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
-    implicit val labelStyle: GlyphStyle = Style.labelStyle.copy(fg = black, font = new Font(face, 20))
-    implicit val buttonStyle: ButtonStyle =
-      Style.buttonStyle.copy(
+  object HelpStyle extends Styles.Sheet {
+    override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
+    override implicit lazy val labelStyle: GlyphStyle = PrevailingStyle.labelStyle.copy(fg = black, font = new Font(face, 20))
+    override implicit lazy val buttonStyle: ButtonStyle =
+      PrevailingStyle.buttonStyle.copy(
         up    = labelStyle.copy(fg = blue),
         down  = labelStyle.copy(fg = red),
         hover = labelStyle.copy(fg = green))
-    val Spaces: Styles.Spaces = labelStyle.Spaces
+    override val Spaces: Styles.Spaces = labelStyle.Spaces
   }
 
-  val HugeLabelStyle: GlyphStyle = {
-    val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.BOLD)
-    PrevailingStyle.labelStyle.copy(fg = red, font = new Font(face, 40))
+  object HugeLabelStyle extends Styles.Sheet {
+    override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.BOLD)
   }
 
   import PrevailingStyle._
@@ -105,8 +103,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   val HelpPage = Page("Help", "Help for the Demonstration Notebook"){
-    import PrevailingStyle._
-    implicit val labelStyle: GlyphStyle = PrevailingStyle.labelStyle
+    implicit val style: Styles.Sheet = PrevailingStyle
     val anchor = INVISIBLE()
 
     Col.centered(
@@ -150,7 +147,7 @@ trait DemonstrationPages extends Brushes {
 
     import PrevailingStyle._
     import Spaces._
-    implicit val Style: Styles.Basic = new Styles.Basic {}
+    implicit val Style: Styles.Sheet = new Styles.Sheet {}
 
 
     var style: String = "-notebook"
@@ -813,39 +810,38 @@ trait DemonstrationPages extends Brushes {
         )
       }
 
-
-      val shadedMenuStyle: MenuStyle = PrevailingStyle.menuStyle.copy(
-        button=menuStyle.button.copy(frame=Decoration.Shaded(fg=red(width=0), bg=lightGrey, enlarge=15, delta=15, down=true)),
-        nestedButton=menuStyle.button.copy(frame=Decoration.Shaded(fg=blue(width=0), bg=green(alpha=0.25f), down=true)),
-        reactive=menuStyle.reactive.copy(frame=Decoration.Framed(fg=red(width=0), bg=green(alpha=0.25f))),
-        inactive=Decoration.Framed(fg=red(width=0), bg=green(alpha=0.25f)),
-        bg=green(alpha=0.25f)
-      )
-
       lazy val menuD: Glyph = {
-        implicit val menuStyle: MenuStyle = shadedMenuStyle
+          implicit object Sheet extends Styles.Sheet {
+            override lazy val menuStyle: MenuStyle = PrevailingStyle.menuStyle.copy(
+              button = menuStyle.button.copy(frame = Decoration.Shaded(fg = red(width = 0), bg = lightGrey, enlarge = 15, delta = 15, down = true)),
+              nestedButton = menuStyle.button.copy(frame = Decoration.Shaded(fg = blue(width = 0), bg = green(alpha = 0.25f), down = true)),
+              reactive = menuStyle.reactive.copy(frame = Decoration.Framed(fg = red(width = 0), bg = green(alpha = 0.25f))),
+              inactive = Decoration.Framed(fg = red(width = 0), bg = green(alpha = 0.25f)),
+              bg = green(alpha = 0.25f)
+            )
+          }
+
         Menu("D")(
-          MenuButton("A1") { _ => println("A1") },
-          Row.centered(TextLabel("Enable E: "), MenuCheckBox(true){ state=>menuE.enabled(state) }),
-          TextLabel("WTF!"),
+          MenuButton("A1") { _ => println("A1") }(Sheet),
+          Row.centered(TextLabel("Enable E: ")(Sheet), MenuCheckBox(true){ state=>menuE.enabled(state) }(Sheet)),
+          TextLabel("WTF!")(Sheet),
           NestedMenu("innerCC >")(
-            MenuButton("CCC1") { _ => println("CCC1") },
-            MenuButton("CC2") { _ => println("CCC2") },
-          ),
-          MenuButton("A2") { _ => println("A2") },
+            MenuButton("CCC1") { _ => println("CCC1") }(Sheet),
+            MenuButton("CC2") { _ => println("CCC2") }(Sheet),
+          )(Sheet),
+          MenuButton("A2") { _ => println("A2") }(Sheet),
           FilledRect(20f, 50f, fg = red), //PolygonLibrary.hideButtonGlyph().scaled(2.5f),
-          MenuButton("A3") { _ => println("A3") },
+          MenuButton("A3") { _ => println("A3") }(Sheet),
           MenuButton("Disable C") { _ =>
             menuC.enabled(false); ()
-          },
+          }(Sheet),
           MenuButton("Enable C") { _ =>
             menuC.enabled(true); ()
-          }
-        )
+          }(Sheet)
+        )(Sheet)
       }
 
       lazy val menuE: Glyph = {
-        implicit val menuStyle: MenuStyle = shadedMenuStyle
         Menu("E")(
           MenuButton("C1") { _ => println("C1") },
           NestedMenu("innerCC >")(
@@ -861,14 +857,14 @@ trait DemonstrationPages extends Brushes {
               MenuButton("CC2") { _ => println("CCC2") },
             )
           )
-        )(shadedMenuStyle)
+        )(PrevailingStyle) // TODO: ShadedMenuStyle
       }
 
 
       Col.centered(
         Col(menuA, em, menuC), ex,
-        TextLabel("The same menus with different styling"),
-        Col(menuE, em, menuD)
+        TextLabel("The same menus with different styling"), //TODO: Fix
+        // Col(menuE, em, menuD)
       )
     }
 
@@ -1005,7 +1001,7 @@ trait DemonstrationPages extends Brushes {
             |
             |  A checkbox always appears on the grid: pressing this disables the grid, which can only be re-enabled by
             |the checkbox below.
-            |""".stripMargin)(HelpStyle.labelStyle),
+            |""".stripMargin)(HelpStyle),
         Row.centered(TextLabel("Grid: "), gridCheckboxForPage), ex, ex,
         TextParagraphs(40, Justify)(
           """
@@ -1280,7 +1276,7 @@ trait DemonstrationPages extends Brushes {
     Page("Framed", "") {
       import Styles.Decoration.Framed
       import styled.TextButton
-      implicit val buttonStyle: ButtonStyle = PrevailingStyle.buttonStyle
+      val buttonStyle: ButtonStyle = PrevailingStyle.buttonStyle
       Col.centered(
         TextParagraphs(55, Left)(
           """
@@ -1299,14 +1295,14 @@ trait DemonstrationPages extends Brushes {
             |<<<<<<< ))
             |<<<<
             |""".stripMargin), ex,
-        TextButton("(width=2, radiusFactor=0.5))") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width=2), lightGrey, enlarge=0.25f, radiusFactor = 0.5f))), ex,
-        TextButton("(width=4, radiusFactor=0.5)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width=4), lightGrey, enlarge=0.25f, radiusFactor = 0.5f))), ex,
-        TextButton("(width=8, radiusFactor=0.5)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width=8), lightGrey, enlarge=0.25f, radiusFactor = 0.5f))), ex,
-        TextButton("(width=10, radiusFactor=0.5)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width=10), lightGrey, enlarge=0.25f, radiusFactor = 0.5f))), ex,
-        TextButton("(width=2, radiusFactor=0.25)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width = 2), lightGrey, enlarge = 0.25f, radiusFactor = 0.25f))), ex,
-        TextButton("(width=4, radiusFactor=0.25)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width = 4), lightGrey, enlarge = 0.25f, radiusFactor = 0.25f))), ex,
-        TextButton("(width=8, radiusFactor=0.25)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width = 8), lightGrey, enlarge = 0.25f, radiusFactor = 0.25f))), ex,
-        TextButton("(width=10, radiusFactor=0.25)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width = 10), lightGrey, enlarge = 0.25f, radiusFactor = 0.25f))), ex,
+        DetailedTextButton("(width=2, radiusFactor=0.5))") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width=2), lightGrey, enlarge=0.25f, radiusFactor = 0.5f))), ex,
+        DetailedTextButton("(width=4, radiusFactor=0.5)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width=4), lightGrey, enlarge=0.25f, radiusFactor = 0.5f))), ex,
+        DetailedTextButton("(width=8, radiusFactor=0.5)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width=8), lightGrey, enlarge=0.25f, radiusFactor = 0.5f))), ex,
+        DetailedTextButton("(width=10, radiusFactor=0.5)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width=10), lightGrey, enlarge=0.25f, radiusFactor = 0.5f))), ex,
+        DetailedTextButton("(width=2, radiusFactor=0.25)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width = 2), lightGrey, enlarge = 0.25f, radiusFactor = 0.25f))), ex,
+        DetailedTextButton("(width=4, radiusFactor=0.25)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width = 4), lightGrey, enlarge = 0.25f, radiusFactor = 0.25f))), ex,
+        DetailedTextButton("(width=8, radiusFactor=0.25)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width = 8), lightGrey, enlarge = 0.25f, radiusFactor = 0.25f))), ex,
+        DetailedTextButton("(width=10, radiusFactor=0.25)") { _ => }(buttonStyle.copy(frame = Framed(darkGrey(width = 10), lightGrey, enlarge = 0.25f, radiusFactor = 0.25f))), ex,
       )
     }
 
@@ -1331,14 +1327,14 @@ trait DemonstrationPages extends Brushes {
             |<<<<<<< ))
             |<<<<
             |""".stripMargin), ex,
-        TextButton("Blurred(fg=blue, blur=10f, spread=5f)"){ _ => }(localStyle.copy(frame=Decoration.Blurred(fg=blue, blur=10f, spread=5f))), ex,
-        TextButton("Blurred(fg=blue, blur=10f, spread=10f)"){ _ => }(localStyle.copy(frame=Decoration.Blurred(fg=blue, blur=10f, spread=10f))), ex,
-        TextButton("Blurred(fg=blue, blur=20f, spread=10f)"){ _ => }(localStyle.copy(frame=Decoration.Blurred(fg=blue, blur=20f, spread=10f))), ex,
+        DetailedTextButton("Blurred(fg=blue, blur=10f, spread=5f)"){ _ => }(localStyle.copy(frame=Decoration.Blurred(fg=blue, blur=10f, spread=5f))), ex,
+        DetailedTextButton("Blurred(fg=blue, blur=10f, spread=10f)"){ _ => }(localStyle.copy(frame=Decoration.Blurred(fg=blue, blur=10f, spread=10f))), ex,
+        DetailedTextButton("Blurred(fg=blue, blur=20f, spread=10f)"){ _ => }(localStyle.copy(frame=Decoration.Blurred(fg=blue, blur=20f, spread=10f))), ex,
         ex, TextParagraphs(55, Left)(
           """
             |<<<< style=buttonStyle.copy(frame=Decoration.Unframed)
             |""".stripMargin),
-        ex, TextButton("This is an unframed button with an edge around it"){ _ => }(buttonStyle.copy(frame=Decoration.Unframed)).edged(), ex,
+        ex, DetailedTextButton("This is an unframed button with an edge around it"){ _ => }(buttonStyle.copy(frame=Decoration.Unframed)).edged(), ex,
       )
     }
 
@@ -1349,10 +1345,10 @@ trait DemonstrationPages extends Brushes {
       implicit val labelStyle: GlyphStyle = PrevailingStyle.labelStyle.copy(fg = darkGrey, bg = green)
 
       Col.centered(
-        TextButton("Shaded StyledButton (18, down)") { _ => }(buttonStyle.copy(frame = Shaded(darkGrey, lightGrey, delta = 18f, down = true))), ex,
-        TextButton("Shaded StyledButton (8, up)") { _ => }(buttonStyle.copy(frame = Shaded(darkGrey, lightGrey, delta = 8f, down = false))), ex,
-        TextButton("Shaded StyledButton (12, up)") { _ => }(buttonStyle.copy(frame = Shaded(darkGrey, lightGrey, delta = 12f, down = false))), ex,
-        TextButton("Shaded StyledButton (18, up)") { _ => }(buttonStyle.copy(frame = Shaded(darkGrey, green, delta = 18f, down = false))), ex,
+        DetailedTextButton("Shaded StyledButton (18, down)") { _ => }(buttonStyle.copy(frame = Shaded(darkGrey, lightGrey, delta = 18f, down = true))), ex,
+        DetailedTextButton("Shaded StyledButton (8, up)") { _ => }(buttonStyle.copy(frame = Shaded(darkGrey, lightGrey, delta = 8f, down = false))), ex,
+        DetailedTextButton("Shaded StyledButton (12, up)") { _ => }(buttonStyle.copy(frame = Shaded(darkGrey, lightGrey, delta = 12f, down = false))), ex,
+        DetailedTextButton("Shaded StyledButton (18, up)") { _ => }(buttonStyle.copy(frame = Shaded(darkGrey, green, delta = 18f, down = false))), ex,
         TextLabel("Shaded Label (18, up)").shaded(delta = 18f, down = false), ex,
         TextLabel("Shaded Label (18, enlarge=0, up)").shaded(enlarge = 0f, delta = 18f, down = false), ex,
       )
@@ -1520,7 +1516,7 @@ trait DemonstrationPages extends Brushes {
         val header = center(16)("ID") + center(25)("BOUNDS") + center(25)("WORK")
         Dialogue.OK(
           Col.atLeft(
-            TextLabel(header)(HelpStyle.labelStyle),
+            DetailedTextLabel(header, Center, HelpStyle.labelStyle),
             Col.atLeft$(screens.map(showScreen(_)))),
           RelativeTo(screenButton), "Screens").start()
       }
@@ -1534,7 +1530,7 @@ trait DemonstrationPages extends Brushes {
         lazy val windows: List[Window] = App._windows.toArray.toList.map(_.asInstanceOf[Window]) // horrid!
 
         def showWindow(w: Window): Glyph = {
-          TextLabel(s"${ir(w.getWindowRect)} ${ir(w.getContentRect)} ${w.getScreen._id}[${w.getScreen.getScale}]")(HelpStyle.labelStyle)
+          TextLabel(s"${ir(w.getWindowRect)} ${ir(w.getContentRect)} ${w.getScreen._id}[${w.getScreen.getScale}]")(HelpStyle)
         }
 
         val header = "Window"
@@ -1573,36 +1569,36 @@ trait DemonstrationPages extends Brushes {
     nested.Layout.rightButtons().enlarged(20)
   }
 
-  val fontsPage = Page("Fonts*", "Font families\n(available on this computer)\n\n\n") {
-    object FontFamilies {
-      import GlyphTypes._
-      lazy val names: Seq[String] =
-        for {i <- 0 until FontManager.default.getFamiliesCount} yield FontManager.default.getFamilyName(i)
-    }
-
-    val familiesPerGroup = 60
-    val noteBook = Notebook()
-    val Page = noteBook.DefinePage
-    var names = FontFamilies.names.sorted.toList
-
-    def makePages(): Unit = {
-      implicit val labelStyle: GlyphStyle= HelpStyle.labelStyle
-      while (names.nonEmpty) {
-        val group = names.take(familiesPerGroup)
-        names = names.drop(familiesPerGroup)
-        Page(s"${group.head.takeWhile(c => c!=' ')} ⇝ ${group.last.takeWhile(c => c!=' ')}", "") {
-          //import styled.TextLayout.TextLabel
-          val labels = group.map { name => TextLabel(name, Left) }
-          val llength = labels.length / 2
-          Row(NaturalSize.Col.atLeft$(labels.take(llength)).enlarged(20).framed(), em, em,
-              NaturalSize.Col.atLeft$(labels.drop(llength)).enlarged(20).framed())
-        }
-      }
-    }
-
-    makePages()
-    noteBook.Layout.rightButtons(uniform = true)(buttonStyle.copy(frame=Framed(fg=darkGrey(width=4, cap=SQUARE), bg=lightGrey, radiusFactor = 0.0f)))
-  }(HelpStyle.labelStyle)
+//  val fontsPage = Page("Fonts*", "Font families\n(available on this computer)\n\n\n") {
+//    object FontFamilies {
+//      import GlyphTypes._
+//      lazy val names: Seq[String] =
+//        for {i <- 0 until FontManager.default.getFamiliesCount} yield FontManager.default.getFamilyName(i)
+//    }
+//
+//    val familiesPerGroup = 60
+//    val noteBook = Notebook()
+//    val Page = noteBook.DefinePage
+//    var names = FontFamilies.names.sorted.toList
+//
+//    def makePages(): Unit = {
+//      implicit val labelStyle: GlyphStyle= HelpStyle.labelStyle
+//      while (names.nonEmpty) {
+//        val group = names.take(familiesPerGroup)
+//        names = names.drop(familiesPerGroup)
+//        Page(s"${group.head.takeWhile(c => c!=' ')} ⇝ ${group.last.takeWhile(c => c!=' ')}", "") {
+//          //import styled.TextLayout.TextLabel
+//          val labels = group.map { name => TextLabel(name, Left) }
+//          val llength = labels.length / 2
+//          Row(NaturalSize.Col.atLeft$(labels.take(llength)).enlarged(20).framed(), em, em,
+//              NaturalSize.Col.atLeft$(labels.drop(llength)).enlarged(20).framed())
+//        }
+//      }
+//    }
+//
+//    makePages()
+//    noteBook.Layout.rightButtons(uniform = true)(buttonStyle.copy(frame=Framed(fg=darkGrey(width=4, cap=SQUARE), bg=lightGrey, radiusFactor = 0.0f)))
+//  }(HelpStyle.labelStyle)
 
   val etcPage = Page("Etc*", "") {
     val nested = Notebook()
@@ -1678,7 +1674,7 @@ trait DemonstrationPages extends Brushes {
           )
 
         def data = (1 to 8).map {
-          i => TextButton(f"Button $i%d") { _ => println(i) }(blurred)
+          i => DetailedTextButton(f"Button $i%d") { _ => println(i) }(blurred)
         }
 
         Col.centered(
@@ -2025,7 +2021,7 @@ trait DemonstrationPages extends Brushes {
     lazy val topBar: Glyph = ReactiveGlyphs.RawButton(r(), r(), r()) {
       _ =>
         val fileName = stringOfDate()+".png"
-        windowdialogues.Dialogue.OKNO(TextLabel(s"Save image to ${fileName}")(HelpStyle.labelStyle).enlarged(20f)).InFront(topBar).andThen{
+        windowdialogues.Dialogue.OKNO(TextLabel(s"Save image to ${fileName}")(HelpStyle).enlarged(20f)).InFront(topBar).andThen{
           case false =>
           case true  => write(fileName)(gui.guiRoot)
         }

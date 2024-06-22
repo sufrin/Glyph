@@ -4,7 +4,7 @@ package tests
 import Glyphs._
 import GlyphTypes._
 import Location._
-import Styles.{ButtonStyle, GlyphStyle}
+import Styles.GlyphStyle
 import windowdialogues.Dialogue.OK
 import PolygonLibrary._
 
@@ -776,8 +776,8 @@ trait LargeTestGUI extends Brushes {
     import styled._
     import styled.TextLayout._
 
-    import BlueContext._
-    import Spaces._
+    import BlueContext.Spaces._
+    implicit val style: Styles.Sheet = BlueContext
 
     Col.centered(
       TextLabel("(18) Some styled glyphs with implicitly-specified properties"),
@@ -813,8 +813,8 @@ trait LargeTestGUI extends Brushes {
     import styled._
     import styled.TextLayout._
 
-    import BlueContext._
-    import Spaces._
+    import BlueContext.Spaces._
+    implicit val style: Styles.Sheet = BlueContext
 
     val upColor     = yellow(name = "yellow", width = 0)
     val downColor   = red(name = "red", width = 0)
@@ -1009,15 +1009,12 @@ trait LargeTestGUI extends Brushes {
     * It's derived from
     */
 
-  private object BlueContext {
-    private val face: Typeface =
+  private object BlueContext extends Styles.Sheet{
+    object Super extends Styles.Sheet
+    override lazy val face: Typeface =
       FontManager.default.matchFamilyStyle("Courier", FontStyle.ITALIC)
-    implicit val labelStyle: GlyphStyle =
-      Style.labelStyle.copy(fg = blue, font = new Font(face, 26))
-    implicit val detail: ButtonStyle = Style.buttonStyle
-    val Spaces: Styles.Spaces = Style.Spaces
-
-    private object Style extends Styles.Basic {}
+    override implicit lazy val labelStyle: GlyphStyle =
+      Super.labelStyle.copy(fg = blue, font = new Font(face, 26))
   }
   // last Label makes the window long enough
   // TODO: what depth is the top of the window frame?

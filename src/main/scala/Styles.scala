@@ -149,7 +149,10 @@ object Styles {
     border: Scalar
   )
 
-  trait Basic  {
+  /**
+   * Implicit paramater of every styled glyph.
+   */
+  trait Sheet  { parentSheet =>
     import GlyphTypes.{FontManager, FontStyle, Typeface}
     object Brushes extends Brushes {}
     import Brushes._
@@ -186,6 +189,10 @@ object Styles {
       )
       val checkbox: CheckboxStyle = CheckboxStyle (tick = "✔" , cross = "✖", on=toggle.on, off=toggle.off)
       ButtonStyle(up=up, down=down, hover=hover, frame=frame, border=border, toggle=toggle, checkbox=checkbox)
+    }
+
+    lazy val unFramed: Sheet = new Sheet {
+      override lazy implicit val buttonStyle: ButtonStyle = parentSheet.buttonStyle.nested
     }
 
     lazy implicit val menuStyle: MenuStyle = MenuStyle(
