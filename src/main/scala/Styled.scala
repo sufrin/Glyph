@@ -231,8 +231,8 @@ case class MenuButton(text: String) extends StyledButton {
          hoverGlyphs.map (_.h).max)
 
       def frame(glyph: Glyph): Glyph = {
-      Decorate (glyph.enlargedTo (theWidth, theHeight) )
-    }
+         Decorate (glyph.enlargedTo (theWidth, theHeight) )
+      }
 
       val buttons =
       for {i <- 0 until buttonSpecs.length} yield

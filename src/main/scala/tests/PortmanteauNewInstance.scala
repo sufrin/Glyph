@@ -35,7 +35,7 @@ object PortmanteauNewInstance {
     }
 
 
-    implicit val Style: Styles.Sheet = new Styles.Sheet {}
+    implicit val Sheet: Styles.Sheet = PortmanteauStyle
 
     var style: String = "-notebook"
     var scale: String = "-scale=0.7"

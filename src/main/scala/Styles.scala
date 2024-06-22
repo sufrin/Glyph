@@ -209,6 +209,7 @@ object Styles {
     lazy implicit val labelStyle: GlyphStyle = GlyphStyle(buttonStyle.up.font, buttonStyle.up.fg, buttonStyle.up.bg)
 
     val Spaces: Spaces = labelStyle.Spaces
-
   }
+
+  object DefaultSheet extends Sheet
 }

@@ -3,18 +3,29 @@ package tests
 
 import overlaydialogues.Dialogue
 import styled.TextLayout.TextParagraphs
+import Styles.Decoration
+import DefaultBrushes._
 
-object BasicStyle extends Styles.Sheet {
+trait BasicSheet extends Styles.Sheet {
   import GlyphTypes._
   override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL)
   override lazy val buttonFontSize: Scalar = 25
 }
 
+trait BlurredSheet extends BasicSheet {
+  override lazy val buttonStyle: Styles.ButtonStyle =
+    Styles.DefaultSheet.buttonStyle.copy(frame=Decoration.Blurred(blue, nothing, 15f, 5f),
+      up=Styles.DefaultSheet.buttonStyle.up.copy(fg=white))
+}
+
+object BlurredStyle extends BlurredSheet {}
+
 object MenuStyle extends Styles.Sheet {
   import GlyphTypes._
-  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
-  override lazy val buttonFontSize: Scalar = 25
+  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.ITALIC)
+  override lazy val buttonFontSize: Scalar = 30
 }
+
 
 class AdderGUI()(implicit sheet: Styles.Sheet)  {
   import NaturalSize.{Col, Row}
@@ -111,7 +122,7 @@ class AdderGUI()(implicit sheet: Styles.Sheet)  {
 
 }
 
-class CalculatorGUI()(implicit sheet: Styles.Sheet) extends AdderGUI() {
+class CalculatorGUI()(implicit sheet: Styles.Sheet) extends AdderGUI()(sheet) {
 
   import NaturalSize._
   import styled.RadioCheckBoxes
@@ -141,16 +152,17 @@ class CalculatorGUI()(implicit sheet: Styles.Sheet) extends AdderGUI() {
 trait TopLevelGUI {
   val noteBook: Notebook = Notebook()
   val Page: noteBook.DefinePage.type = noteBook.DefinePage
+  implicit val sheet: Styles.Sheet = BlurredStyle
 
   Page("Adder", "") {
-    val GUI = new AdderGUI()(BasicStyle)
+    val GUI = new AdderGUI()(sheet)
     GUI.root
-  }(MenuStyle)
+  }
 
   Page("Calculator", "") {
-    val GUI = new CalculatorGUI()(BasicStyle)
+    val GUI = new CalculatorGUI()(sheet)
     GUI.root
-  }(MenuStyle)
+  }
 
   val root: Glyph = {
     noteBook.Layout.rightButtons(true)((MenuStyle))

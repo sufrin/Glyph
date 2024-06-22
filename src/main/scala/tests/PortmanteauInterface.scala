@@ -24,8 +24,8 @@ trait PortmanteauInterface extends Notebook {
           |modular than that of DemonstrationNotebook -- which evolved as
           |a monolith.
           |
-          |""".stripMargin)) enlarged 50
-  }
+          |""".stripMargin)(style) enlarged 50)
+  }(style)
 
   Page("New Instance", "")(PortmanteauNewInstance.page)
 
