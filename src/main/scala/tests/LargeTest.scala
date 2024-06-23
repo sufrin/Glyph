@@ -777,7 +777,7 @@ trait LargeTestGUI extends Brushes {
     import styled.TextLayout._
 
     import BlueContext.Spaces._
-    implicit val style: Styles.Sheet = BlueContext
+    implicit val style: Styles.DefaultSheet = BlueContext
 
     Col.centered(
       TextLabel("(18) Some styled glyphs with implicitly-specified properties"),
@@ -814,7 +814,7 @@ trait LargeTestGUI extends Brushes {
     import styled.TextLayout._
 
     import BlueContext.Spaces._
-    implicit val style: Styles.Sheet = BlueContext
+    implicit val style: Styles.DefaultSheet = BlueContext
 
     val upColor     = yellow(name = "yellow", width = 0)
     val downColor   = red(name = "red", width = 0)
@@ -1009,8 +1009,8 @@ trait LargeTestGUI extends Brushes {
     * It's derived from
     */
 
-  private object BlueContext extends Styles.Sheet{
-    object Super extends Styles.Sheet
+  private object BlueContext extends Styles.DefaultSheet{
+    object Super extends Styles.DefaultSheet
     override lazy val face: Typeface =
       FontManager.default.matchFamilyStyle("Courier", FontStyle.ITALIC)
     override implicit lazy val labelStyle: GlyphStyle =

@@ -24,9 +24,9 @@ trait DemonstrationPages extends Brushes {
   import Decoration.Framed
   import TextLayout._
 
-  implicit object PrevailingStyle extends Styles.Sheet {}
+  implicit object PrevailingStyle extends Styles.DefaultSheet {}
 
-  object HelpStyle extends Styles.Sheet {
+  object HelpStyle extends Styles.DefaultSheet {
     override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
     override implicit lazy val labelStyle: GlyphStyle = PrevailingStyle.labelStyle.copy(fg = black, font = new Font(face, 20))
     override implicit lazy val buttonStyle: ButtonStyle =
@@ -41,8 +41,9 @@ trait DemonstrationPages extends Brushes {
   val ex: Glyph = PrevailingStyle.Spaces.ex
 
 
-  object HugeLabelStyle extends Styles.Sheet {
+  object HugeLabelStyle extends Styles.DefaultSheet {
     override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.BOLD)
+    override lazy val buttonFontSize: Scalar = 36
   }
 
 
@@ -92,7 +93,7 @@ trait DemonstrationPages extends Brushes {
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
     import windowdialogues.Dialogue.OKNO
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged(50),
-                             TextLabel("Do you want to Exit?")(HugeLabelStyle) scaled 0.7f
+                             TextLabel("Do you want to Exit?")(HugeLabelStyle)
                 ).enlarged(50)
     OKNO(prompt,
          title="Exit Dialogue", ok=" Exit now ", no=" Continue ").InFront(glyph).andThen{
@@ -101,7 +102,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   val HelpPage = Page("Help", "Help for the Demonstration Notebook"){
-    implicit val style: Styles.Sheet = PrevailingStyle
+    implicit val style: Styles.DefaultSheet = PrevailingStyle
     val anchor = INVISIBLE()
 
     Col.centered(
@@ -802,7 +803,7 @@ trait DemonstrationPages extends Brushes {
       }
 
       lazy val menuD: Glyph = {
-          implicit object Sheet extends Styles.Sheet {
+          implicit object Sheet extends Styles.DefaultSheet {
             override lazy val menuStyle: MenuStyle = PrevailingStyle.menuStyle.copy(
               button = menuStyle.button.copy(frame = Decoration.Shaded(fg = red(width = 0), bg = lightGrey, enlarge = 15, delta = 15, down = true)),
               nestedButton = menuStyle.button.copy(frame = Decoration.Shaded(fg = blue(width = 0), bg = green(alpha = 0.25f), down = true)),
@@ -1482,7 +1483,7 @@ trait DemonstrationPages extends Brushes {
       import Location._
 
       import io.github.humbleui.jwm.{App, Screen}
-      implicit val style: Styles.Sheet = HelpStyle
+      implicit val style: Styles.DefaultSheet = HelpStyle
       import windowdialogues.Dialogue
 
       // App.methods can only be called after the App has started.

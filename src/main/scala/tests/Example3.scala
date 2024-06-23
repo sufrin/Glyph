@@ -12,7 +12,7 @@ import NaturalSize._
  */
 
 trait Example3Interface {
-  implicit object LocalStyle extends Styles.Sheet {
+  implicit object LocalStyle extends Styles.DefaultSheet {
     import Styles.Decoration.Framed
 
     implicit val localButtons: Styles.ButtonStyle =

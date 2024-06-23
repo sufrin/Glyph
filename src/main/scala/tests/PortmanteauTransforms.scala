@@ -5,14 +5,14 @@ import NaturalSize.Col
 import styled.TextLayout.TextLabel
 
 
-object PortmanteauTransforms extends Notebook {
-    implicit val sheet: Styles.Sheet = PortmanteauStyle
-    def dummy(name: String): Glyph = Col.centered(TextLabel(s"Page ($name) intentionally left blank")) enlarged 50
-    Page("Turn", "Turn transforms") (dummy("Turn"))
+class PortmanteauTransforms(implicit style: StyleSheet) extends Notebook {
+      def dummy(name: String): Glyph = Col.centered(TextLabel(s"Page ($name) intentionally left blank")) enlarged 50
 
-    Page("Tight", "") (dummy("Tight"))
+      Page("Turn", "Turn transforms")(dummy("Turn"))
 
-    Page("Skew", "Skew transforms") (dummy("Skew"))
+      Page("Tight", "")(dummy("Tight"))
 
-    Page("Mirror", "Mirroring and skewing\n(using intrinsic Glyph Transforms)") (dummy("Mirror"))
+      Page("Skew", "Skew transforms")(dummy("Skew"))
+
+      Page("Mirror", "Mirroring and skewing\n(using intrinsic Glyph Transforms)")(dummy("Mirror"))
 }

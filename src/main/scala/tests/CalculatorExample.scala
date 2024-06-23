@@ -5,23 +5,23 @@ import overlaydialogues.Dialogue
 import styled.TextLayout.TextParagraphs
 import DefaultBrushes._
 
-trait BasicSheet extends Styles.Sheet {
-  import GlyphTypes._
-  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL)
-  override lazy val buttonFontSize: Scalar = 25
-}
+//trait Default extends StyleSheet {
+//  import GlyphTypes._
+//  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL)
+//  override lazy val buttonFontSize: Scalar = 25
+//}
+//
+//
+//object BlurredStyle extends Styles.BlurredSheet {}
+//
+//object MenuStyle extends Styles.BlurredSheet {
+//  import GlyphTypes._
+//  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.ITALIC)
+//  override lazy val buttonFontSize: Scalar = 30
+//}
 
 
-object BlurredStyle extends Styles.BlurredSheet {}
-
-object MenuStyle extends Styles.BlurredSheet {
-  import GlyphTypes._
-  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.ITALIC)
-  override lazy val buttonFontSize: Scalar = 30
-}
-
-
-class AdderGUI()(implicit sheet: Styles.Sheet)  {
+class AdderGUI()(implicit sheet: StyleSheet)  {
   import NaturalSize.{Col, Row}
   import styled.TextButton
   import styled.TextLayout.{ActiveParagraphs, ActiveString, TextLabel}
@@ -116,7 +116,7 @@ class AdderGUI()(implicit sheet: Styles.Sheet)  {
 
 }
 
-class CalculatorGUI()(implicit sheet: Styles.Sheet) extends AdderGUI()(sheet) {
+class CalculatorGUI()(implicit sheet: StyleSheet) extends AdderGUI()(sheet) {
 
   import NaturalSize._
   import styled.RadioCheckBoxes
@@ -146,20 +146,26 @@ class CalculatorGUI()(implicit sheet: Styles.Sheet) extends AdderGUI()(sheet) {
 trait TopLevelGUI {
   val noteBook: Notebook = Notebook()
   val Page: noteBook.DefinePage.type = noteBook.DefinePage
-  implicit val sheet: Styles.Sheet = BlurredStyle
+  
+  implicit val blurred: StyleSheet = new Styles.Default.Derived {
+    import Styles._
+    override lazy val buttonStyle: Styles.ButtonStyle  =
+      delegate.buttonStyle.copy(frame = Decoration.Blurred(blue, nothing, 15f, 5f),
+                                up = GlyphStyle(font = buttonFont, fg = white, bg = nothing))      
+  }
 
   Page("Adder", "") {
-    val GUI = new AdderGUI()(sheet)
+    val GUI = new AdderGUI()
     GUI.root
   }
 
   Page("Calculator", "") {
-    val GUI = new CalculatorGUI()(sheet)
+    val GUI = new CalculatorGUI()
     GUI.root
   }
 
   val root: Glyph = {
-    noteBook.Layout.rightButtons(true)((MenuStyle))
+    noteBook.Layout.rightButtons(true)
   }
 }
 

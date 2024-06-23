@@ -14,8 +14,8 @@ import NaturalSize._
  */
 
 trait Example3aInterface {
-  implicit object LocalStyle extends Styles.Sheet {
-    object Super extends Styles.Sheet
+  implicit object LocalStyle extends Styles.DefaultSheet {
+    object Super extends Styles.DefaultSheet
     import Styles.Decoration.Blurred
 
     override implicit lazy val buttonStyle: Styles.ButtonStyle =

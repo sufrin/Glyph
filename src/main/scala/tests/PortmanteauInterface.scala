@@ -4,8 +4,7 @@ import GlyphTypes.Window
 import styled.TextLayout.{TextLabel, TextParagraphs}
 import NaturalSize.{Col, Row}
 
-trait PortmanteauInterface extends Notebook {
-  implicit val style: Styles.Sheet = PortmanteauStyle
+class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
 
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
     import windowdialogues.Dialogue.OKNO
@@ -27,9 +26,9 @@ trait PortmanteauInterface extends Notebook {
           |""".stripMargin)(style) enlarged 50)
   }(style)
 
-  Page("New Instance", "")(PortmanteauNewInstance.page)
+  Page("New Instance", "")(new PortmanteauInstantiation().GUI)
 
-  Page("Transforms*", "")(PortmanteauTransforms.Layout.leftButtons())
+  Page("Transforms*", "")(new PortmanteauTransforms().Layout.leftButtons())
 
   import utils.Output.withWriteBar
 

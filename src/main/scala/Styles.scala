@@ -121,7 +121,7 @@ object Styles {
   }
 
   case class ButtonStyle
-  (up: GlyphStyle
+  (  up: GlyphStyle
    , down: GlyphStyle
    , hover: GlyphStyle
    , toggle: ToggleStyle
@@ -141,7 +141,7 @@ object Styles {
    * @param inactive     style for the menu's inactive entries
    */
   case class MenuStyle
-  (button: ButtonStyle
+  (  button: ButtonStyle
    , nestedButton: ButtonStyle
    , reactive: ButtonStyle
    , inactive: Decoration.Decoration
@@ -155,10 +155,9 @@ object Styles {
   )
 
   /**
-   * Implicit parameter of every styled glyph.
+   * Stylesheet with default values for all its features.
    */
-  trait Sheet {
-    parentSheet =>
+  trait DefaultSheet extends StyleSheet {
 
     import GlyphTypes.{FontManager, FontStyle, Typeface}
 
@@ -206,8 +205,8 @@ object Styles {
       ButtonStyle(up = up, down = down, hover = hover, frame = frame, border = border, toggle = toggle, checkbox = checkbox)
     }
 
-    lazy val unFramed: Sheet = new Sheet {
-      override lazy implicit val buttonStyle: ButtonStyle = parentSheet.buttonStyle.nested
+    lazy val unFramed: StyleSheet = new Derived {
+      override lazy val buttonStyle: ButtonStyle = delegate.buttonStyle.nested
     }
 
     lazy implicit val menuStyle: MenuStyle = MenuStyle(
@@ -224,42 +223,6 @@ object Styles {
     val Spaces: Spaces = labelStyle.Spaces
   }
 
-  trait BlurredSheet extends Sheet {
-
-    import DefaultBrushes._
-    import Decoration._
-
-    override lazy implicit val labelStyle: GlyphStyle = GlyphStyle(buttonStyle.up.font, black, buttonStyle.up.bg)
-
-    override lazy implicit val buttonStyle: ButtonStyle = {
-      val colours = new GlyphColours {
-        val fg: Brush = black
-        val bg: Brush = nothing
-      }
-      val up: GlyphStyle =
-        // GlyphStyle (font=buttonFont, fg=blue,  bg=nothing)
-        GlyphStyle(font = buttonFont, fg = white, bg = nothing)
-      val down: GlyphStyle = GlyphStyle(font = buttonFont, fg = red, bg = nothing)
-      val hover: GlyphStyle = GlyphStyle(font = buttonFont, fg = green, bg = nothing)
-      val frame: Decoration =
-        // Framed(fg = buttonBorderBrush, bg = buttonBackgroundBrush)
-        Blurred(blue, nothing, 15f, 5f)
-      val border: Scalar = 6f
-      val toggle: ToggleStyle = ToggleStyle(
-        on = new GlyphColours {
-          val fg: Brush = red;
-          val bg: Brush = nothing
-        },
-        off = new GlyphColours {
-          val fg: Brush = blue;
-          val bg: Brush = nothing
-        }
-      )
-      val checkbox: CheckboxStyle = CheckboxStyle(tick = "✔", cross = "✖", on = toggle.on, off = toggle.off)
-      ButtonStyle(up = up, down = down, hover = hover, frame = frame, border = border, toggle = toggle, checkbox = checkbox)
-    }
-  }
-
-  object BasicSheet extends Sheet {}
+  object Default extends DefaultSheet {}
 
 }

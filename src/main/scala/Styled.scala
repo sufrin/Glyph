@@ -42,7 +42,7 @@ import scala.collection.mutable.ArrayBuffer
    * @see TextButton
    */
   trait StyledButton {
-    def apply(reaction: Reaction)(implicit sheet: Styles.Sheet): Glyph
+    def apply(reaction: Reaction)(implicit sheet: StyleSheet): Glyph
   }
 
  trait DetailedButton {
@@ -60,7 +60,7 @@ import scala.collection.mutable.ArrayBuffer
  *  the button's appearance) and applies the `reaction` to the inverted boolean.
  */
  trait ToggleButton {
-    def apply(reaction: Boolean => Unit)(implicit sheet: Styles.Sheet): OnOffButton
+    def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton
   }
 
   /**
@@ -84,7 +84,7 @@ import scala.collection.mutable.ArrayBuffer
    * The details of its frame, if any, are specified by the (implicit) `ButtonStyle`.
    */
   case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = true) extends StyledButton {
-    def apply(action: Reaction)(implicit sheet: Styles.Sheet): Glyph = {
+    def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
       val detail = sheet.buttonStyle
       @inline def enlarged(glyph: Glyph): Glyph = glyph.enlarged(detail.border, nothing, nothing)
       val button =
@@ -98,7 +98,7 @@ import scala.collection.mutable.ArrayBuffer
 
   /**  As GlyphButton but destined for a menu; hence deferred decoration */
   case class MenuGlyphButton(up: Glyph, down: Glyph = null, hover: Glyph = null, exact: Boolean = true) extends StyledButton {
-    def apply(action: Reaction)(implicit sheet: Styles.Sheet): Glyph = {
+    def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
       val detail = sheet.buttonStyle
       @inline def reify(glyph: Glyph): Glyph = (if (glyph eq null) up() else glyph).enlarged(detail.border, nothing, nothing)
       val button =
@@ -115,7 +115,7 @@ import scala.collection.mutable.ArrayBuffer
   // TODO: a "defer" parameter for use on styled components destined for menus
   //       this is because menu constructors decorate menu items post-hoc
   object Decorate {
-    def apply(glyph: Glyph)(implicit sheet: Styles.Sheet): Glyph = sheet.buttonStyle.frame.decorate(glyph)
+    def apply(glyph: Glyph)(implicit sheet: StyleSheet): Glyph = sheet.buttonStyle.frame.decorate(glyph)
   }
 
   object DecorateWithDetail {
@@ -131,7 +131,7 @@ import scala.collection.mutable.ArrayBuffer
    * The button's "sensitive" region does not include its decoration.
    */
   case class LightweightTextButton(text: String) extends StyledButton {
-    def apply(action: Reaction)(implicit sheet: Styles.Sheet): Glyph = {
+    def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
       val detail = sheet.buttonStyle
       val up     = detail.up.toGlyph(text, fg=detail.up.fg, bg=detail.up.bg)
       val down   = detail.down.fg
@@ -150,7 +150,7 @@ import scala.collection.mutable.ArrayBuffer
    * The button's "sensitive" region includes its decoration.
    */
   case class TextButton(text: String) extends StyledButton {
-    def apply(action: Reaction)(implicit sheet: Styles.Sheet): Glyph = {
+    def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
       val detail = sheet.buttonStyle
       val up     = Decorate(detail.up.toGlyph(text))
       val down   = Decorate(detail.down.toGlyph(text))
@@ -175,7 +175,7 @@ case class DetailedTextButton(text: String) extends DetailedButton {
    * been constructed.
    */
   case class LightweightMenuButton(text: String) extends StyledButton {
-      def apply(action: Reaction)(implicit sheet: Styles.Sheet): Glyph = {
+      def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
         val detail = sheet.buttonStyle
         val up     = detail.up.toGlyph(text, fg=detail.up.fg, bg=detail.up.bg)
         val down   = detail.down.fg
@@ -190,7 +190,7 @@ case class DetailedTextButton(text: String) extends DetailedButton {
  * been constructed.
  */
 case class MenuButton(text: String) extends StyledButton {
-  def apply(action: Reaction)(implicit sheet: Styles.Sheet): Glyph = {
+  def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
       val detail = sheet.buttonStyle
       val up = (detail.up.toGlyph(text))
       val down = (detail.down.toGlyph(text))
@@ -212,7 +212,7 @@ case class MenuButton(text: String) extends StyledButton {
     case class ButtonSpecification(text: String, action: Reaction)
     def apply(text: String)(action: Reaction): ButtonSpecification = ButtonSpecification(text, action)
 
-    def constrained(buttonSpecs: Seq[ButtonSpecification])(implicit sheet: Styles.Sheet): Seq[ReactiveGlyph] = {
+    def constrained(buttonSpecs: Seq[ButtonSpecification])(implicit sheet: StyleSheet): Seq[ReactiveGlyph] = {
       val detail = sheet.buttonStyle
       val upGlyphs    = buttonSpecs.map {b => detail.up.toGlyph (b.text)}
       val downGlyphs  = buttonSpecs.map {b => detail.down.toGlyph (b.text)}
@@ -257,7 +257,7 @@ case class MenuButton(text: String) extends StyledButton {
  */
 
   case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean) extends ToggleButton {
-    def apply(reaction: Boolean => Unit)(implicit sheet: Styles.Sheet): OnOffButton = {
+    def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
       import styled.TextLayout.DetailedTextLabel
       val detail = sheet.buttonStyle
       val offFG = detail.toggle.off.fg
@@ -283,7 +283,7 @@ case class MenuButton(text: String) extends StyledButton {
   *  As TextToggle but destined for am menu; hence defer decoration
   */
   case class MenuTextToggle(whenTrue: String, whenFalse: String, initially: Boolean) extends ToggleButton {
-    def apply(reaction: Boolean => Unit)(implicit sheet: Styles.Sheet): OnOffButton = {
+    def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
       import styled.TextLayout.DetailedTextLabel
       val detail = sheet.buttonStyle
       val offFG = detail.toggle.off.fg
@@ -309,7 +309,7 @@ case class MenuButton(text: String) extends StyledButton {
   case class GlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean) extends ToggleButton {
     import OnOffButton._
 
-    def apply(reaction: Boolean => Unit)(implicit sheet: Styles.Sheet): OnOffButton = {
+    def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
       val ww=whenTrue.w max whenFalse.w
       val hh=whenTrue.h max whenFalse.h
       val detail = sheet.buttonStyle
@@ -327,7 +327,7 @@ case class MenuButton(text: String) extends StyledButton {
 case class MenuGlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean) extends ToggleButton {
   import OnOffButton._
 
-  def apply(reaction: Boolean => Unit)(implicit sheet: Styles.Sheet): OnOffButton = {
+  def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
     val ww=whenTrue.w max whenFalse.w
     val hh=whenTrue.h max whenFalse.h
     val detail = sheet.buttonStyle
@@ -343,7 +343,7 @@ case class MenuGlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean
 }
 
   case class CheckBox(initially: Boolean) extends ToggleButton {
-    def apply(reaction: Boolean => Unit)(implicit sheet: Styles.Sheet): OnOffButton = {
+    def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
       val detail = sheet.buttonStyle
       val tick = detail.checkbox.tick
         val cross = detail.checkbox.cross
@@ -353,7 +353,7 @@ case class MenuGlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean
 
 /** Checkbox destined for a menu; hence deferred decoration */
 case class MenuCheckBox(initially: Boolean) extends ToggleButton {
-  def apply(reaction: Boolean => Unit)(implicit sheet: Styles.Sheet): OnOffButton = {
+  def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
     val detail = sheet.buttonStyle
     val tick = detail.checkbox.tick
     val cross = detail.checkbox.cross
@@ -450,7 +450,7 @@ object TextField {
 
 object RadioCheckBoxes {
   def apply(captions: Seq[String], prefer: String = null, inheritFramed: Boolean = false)(action: Option[Int]=>Unit)
-           (implicit sheet: Styles.Sheet): RadioCheckBoxes =
+           (implicit sheet: StyleSheet): RadioCheckBoxes =
        new RadioCheckBoxes(captions, prefer, inheritFramed, action)(sheet)
 }
 
@@ -468,12 +468,12 @@ object RadioCheckBoxes {
  * @param detail implicit style applied while constructing the checkboxes.
  */
 class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Boolean,
-                      action: Option[Int]=>Unit)(implicit sheet: Styles.Sheet) {
+                      action: Option[Int]=>Unit)(implicit sheet: StyleSheet) {
   import styled.TextLayout.DetailedTextLabel
 
   val preferred  = if (prefer eq null) captions(0) else prefer
 
-  val frameStyle: Styles.Sheet =
+  val frameStyle: StyleSheet =
     if (inheritFramed)
       sheet
     else
