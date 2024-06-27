@@ -61,6 +61,11 @@ object ReactiveGlyphs extends Brushes {
     var pressed, hovered: Boolean = false
     var inactive: Boolean = false
     var enabled:  Boolean = true
+    /**
+     * The most recent state of the modifiers (shift keys, button keys).
+     * This is intended to support hinting: maintained but as-yet unused.
+     */
+    var modifiers: Int    = 0
     @inline def disabled: Boolean = !enabled
 
     /**
@@ -76,7 +81,22 @@ object ReactiveGlyphs extends Brushes {
     def A: String = toString.take(30)
     def showState: String = s"""${S("P")(pressed)}${S("H")(hovered)} $A... """
 
+    /**
+     * Invoke the button's reaction independently of its pressed/hovered state,
+     * then reset its state.
+     *
+     * TODO: for shortcuts
+     */
+    def invokeReaction(): Unit = {
+      pressed = false
+      hovered = false
+      react(modifiers)
+    }
+
     override def accept(mouse: EventMouseButton, location: Vec, window: Window): Unit = {
+      import Modifiers._
+      modifiers = Modifiers(mouse)
+      //println(s"${modifiers.toLongString}")
       if (!disabled) {
         if (mouse.isPressed) {
           pressed = true
@@ -85,7 +105,7 @@ object ReactiveGlyphs extends Brushes {
             import io.github.humbleui.jwm.App
             // transition from pressed to non-pressed
             pressed = false
-            react(Modifiers(mouse))
+            react(modifiers)
             if (_afterReact.isDefined) App.runOnUIThread {
               () => {
                 _afterReact.get(Modifiers(mouse))
@@ -99,20 +119,43 @@ object ReactiveGlyphs extends Brushes {
       }
     }
 
+    private var _onGlyphEvent: Option[Boolean=>Unit] = None
+
+    /**
+     * Set or clear the action to be invoked when the cursor enters or leaves a reactive glyph.
+     */
+    def onGlyphEvent(action: (Boolean => Unit)=null): Unit = {
+      _onGlyphEvent = if (action eq null) None else Some(action)
+    }
+
+    /**
+     * Set or clear a glyph that could be shown on entry to the reactive.
+     */
+    protected var _hint: Option[Glyph] = None
+    def setHint(hint: Glyph = null): Unit =
+      _hint = if (hint eq null) None else Some(hint)
+
     override def accept(event: GlyphEvent, location: Vec, window: Window): Unit = {
+      import Modifiers._
+      modifiers = Modifiers(event)
+      //println(s"$event ${modifiers.toLongString}")
       if (!disabled) {
         event match {
           case _: GlyphEnter =>
             import io.github.humbleui.jwm.MouseCursor
             hovered = true
             window.setMouseCursor(MouseCursor.POINTING_HAND)
-            markStateChanged
 
           case _: GlyphLeave =>
             hovered = false
             pressed = false //println(s"""$showState Leave@$location""")
-            markStateChanged
         }
+
+        _onGlyphEvent match {
+          case None =>
+          case Some(action) => action(hovered)
+        }
+        markStateChanged
       }
       //if (hierarchical) reDraw() else window.requestFrame()
     }
@@ -172,7 +215,12 @@ object ReactiveGlyphs extends Brushes {
           setCurrentBrush(brush)
           glyph.draw(surface)
           surface.declareCurrentTransform(this)
-       }
+        }
+        // draw the hint, if there is one
+        _hint match {
+          case None        =>
+          case Some(hint) => surface.withOrigin(w-10, h-10) { hint.draw(surface) }
+        }
     }
 
     /**

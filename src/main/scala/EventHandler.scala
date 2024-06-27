@@ -7,9 +7,9 @@ import java.util.function.Consumer
 /** Synthetic events are generated as the mouse moves between (reactive) glyphs  */
 class GlyphEvent extends Event
 /** Synthetic event generated as the mouse leaves the currently-mouseFocus active glyph */
-case class GlyphLeave(leaving: Option[ReactiveGlyph], entering: Option[ReactiveGlyph]) extends GlyphEvent
+case class GlyphLeave(leaving: Option[ReactiveGlyph], entering: Option[ReactiveGlyph], modifiers: Int) extends GlyphEvent
 /** Synthetic event generated as the mouse enters a new active glyph */
-case class GlyphEnter(leaving: Option[ReactiveGlyph], entering: Option[ReactiveGlyph]) extends GlyphEvent
+case class GlyphEnter(leaving: Option[ReactiveGlyph], entering: Option[ReactiveGlyph], modifiers: Int) extends GlyphEvent
 
 /** Synthetic events generated only for `RootGlyphs`s */
 class RootGlyphEvent extends Event
@@ -273,7 +273,7 @@ trait EventHandler extends Consumer[Event] {
                       case focussed =>
                         recentMouseFocus = focussed
                         mouseFocus = focussed
-                        focussed.get.accept(GlyphEnter(recentMouseFocus, mouseFocus), Vec.Origin, window)
+                        focussed.get.accept(GlyphEnter(recentMouseFocus, mouseFocus, Modifiers(mouse)), Vec.Origin, window)
                         if (focussed.get.stateChanged) window.requestFrame()
                     }
                   }
@@ -290,7 +290,7 @@ trait EventHandler extends Consumer[Event] {
             } else {
               import io.github.humbleui.jwm.MouseCursor
               // it has left the focussed glyph
-              focussed.accept(GlyphLeave(mouseFocus, None), Vec.Origin, window)
+              focussed.accept(GlyphLeave(mouseFocus, None, Modifiers(mouse)), Vec.Origin, window)
               giveupMouseFocus()
               window.setMouseCursor(MouseCursor.ARROW)
               if (focussed.stateChanged) window.requestFrame()
@@ -306,7 +306,7 @@ trait EventHandler extends Consumer[Event] {
                 case reactive =>
                   recentMouseFocus = mouseFocus
                   mouseFocus = reactive
-                  reactive.get.accept(GlyphEnter(recentMouseFocus, mouseFocus), Vec.Origin, window)
+                  reactive.get.accept(GlyphEnter(recentMouseFocus, mouseFocus, Modifiers(mouse)), Vec.Origin, window)
               }
             }
             window.requestFrame()

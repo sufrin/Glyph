@@ -5,12 +5,16 @@ import GlyphTypes._
 
 
 object PortmanteauNotebook extends Application  {
+  import Styles._
 
-  trait Local extends Styles.DefaultSheet {
-    override lazy val buttonFontSize: Scalar = 40
+  /**
+   * Default sheet except for font sizes
+   */
+  object LocalStyle extends Styles.DefaultSheet {
+    override def buttonFontSize: Scalar = 32
+    override def labelFontSize: Scalar = 24
+    override def labelStyle: GlyphStyle = GlyphStyle(labelFont, buttonStyle.up.fg, buttonStyle.up.bg)
   }
-
-  object LocalStyle extends Local
 
   /**
    * Style derived from the `Local` stylesheet: with
@@ -23,9 +27,9 @@ object PortmanteauNotebook extends Application  {
   implicit val blurred: StyleSheet = new LocalStyle.Derived {
     import Styles._
     import DefaultBrushes._
-    override lazy val buttonStyle: Styles.ButtonStyle  =
+    override def buttonStyle: Styles.ButtonStyle  =
       delegate.buttonStyle.copy(frame = Decoration.Blurred(blue, nothing, 15f, 5f),
-        up = GlyphStyle(font = buttonFont, fg = white, bg = nothing))
+                                up = GlyphStyle(font = buttonFont, fg = white, bg = nothing))
   }
 
   val interface = new PortmanteauInterface()

@@ -5,6 +5,7 @@ package org.sufrin.glyph
  */
 object External {
   import GlyphTypes.Scale
+
   import io.github.humbleui.skija.Image
 
   def renderBitmap(glyph: Glyph, path: String, kind: String = "png", scale: Scale = 1.0f): Unit =
@@ -31,8 +32,9 @@ object External {
    }
 
   /** DOES NOT WORK */
-  def glyph2SVG(glyph: Glyph, path: java.nio.file.Path): Unit = {
+  @deprecated("malfunctioning") def glyph2SVG(glyph: Glyph, path: java.nio.file.Path): Unit = {
     import Glyphs.Label
+
     import io.github.humbleui.skija.OutputWStream
     import io.github.humbleui.skija.svg.SVGCanvas
     import io.github.humbleui.types.Rect

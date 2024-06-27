@@ -42,6 +42,8 @@ object Modifiers {
         case DEFAULT => Default
         case RIGHT => Right
       })
+    case mouse: GlyphEnter => mouse.modifiers
+    case mouse: GlyphLeave => mouse.modifiers
     case mouse: EventMouseMove =>
       import io.github.humbleui.jwm.MouseButton._
       var buttons = 0
@@ -103,7 +105,7 @@ object Modifiers {
     def any: Boolean = modifiers  != 0
   }
 
-  def toBitmap(event: Event): Bitmap = Modifiers.apply(event)
+    def toBitmap(event: Event): Bitmap = Modifiers.apply(event)
 
 
 

@@ -52,11 +52,11 @@ object Dialogue {
    *   UP,DOWN,LEFT,RIGHT keys.
    *
    */
-  def Menu(name: String, nested: Boolean=false)(button: Glyph, buttons: Glyph*)(implicit sheet: Styles.DefaultSheet): Glyph = {
+  def Menu(name: String, nested: Boolean=false)(button: Glyph, buttons: Glyph*)(implicit sheet: StyleSheet): Glyph = {
      Menu$(name, nested)(button :: buttons.toList)
   }
 
-  def NestedMenu(name: String)(button: Glyph, buttons: Glyph*)(implicit sheet: Styles.DefaultSheet): Glyph = {
+  def NestedMenu(name: String)(button: Glyph, buttons: Glyph*)(implicit sheet: StyleSheet): Glyph = {
     Menu$(name, nested = true)(button :: buttons.toList)
   }
 
@@ -64,7 +64,7 @@ object Dialogue {
    *
    *   @see Menu
    */
-  def Menu$(name: String, nested: Boolean)(buttons: Seq[Glyph])(implicit sheet: Styles.DefaultSheet): Glyph = {
+  def Menu$(name: String, nested: Boolean)(buttons: Seq[Glyph])(implicit sheet: StyleSheet): Glyph = {
     lazy val popDowns: Seq[Glyph] = buttons.map { button => afterReact(button) { popup.close() }}
     lazy val width   = popDowns.map(_.w).max
     lazy val uniform = popDowns.map  {

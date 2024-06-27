@@ -21,29 +21,39 @@ trait DemonstrationPages extends Brushes {
   import Styles.{ButtonStyle, Decoration, GlyphStyle}
   import styled._
 
-  import Decoration.Framed
   import TextLayout._
 
-  implicit object PrevailingStyle extends Styles.DefaultSheet {}
+
+
+  implicit val PrevailingStyle: StyleSheet =
+  if (true) Styles.Default else
+    new Styles.Default.Derived {
+    import Styles._
+    override def buttonStyle: ButtonStyle  = {
+      val light: Brush = lightGrey
+      delegate.buttonStyle.copy(frame = Decoration.Blurred(light, nothing, 15f, 5f),
+        up = GlyphStyle(font = buttonFont, fg = darkGrey, bg = nothing))
+    }
+  }
+
+  import PrevailingStyle.Spaces.{em, ex}
 
   object HelpStyle extends Styles.DefaultSheet {
-    override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
-    override implicit lazy val labelStyle: GlyphStyle = PrevailingStyle.labelStyle.copy(fg = black, font = new Font(face, 20))
-    override implicit lazy val buttonStyle: ButtonStyle =
+    override def face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
+    override def labelFontSize: Scalar = 12
+
+    override lazy val labelStyle: GlyphStyle = PrevailingStyle.labelStyle.copy(fg = black, font = labelFont)
+    override lazy val buttonStyle: ButtonStyle =
       PrevailingStyle.buttonStyle.copy(
         up    = labelStyle.copy(fg = blue),
         down  = labelStyle.copy(fg = red),
         hover = labelStyle.copy(fg = green))
-    override val Spaces: Styles.Spaces = labelStyle.Spaces
   }
 
-  val em: Glyph = PrevailingStyle.Spaces.em
-  val ex: Glyph = PrevailingStyle.Spaces.ex
-
-
-  object HugeLabelStyle extends Styles.DefaultSheet {
-    override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.BOLD)
-    override lazy val buttonFontSize: Scalar = 36
+  val HugeLabelStyle = new Styles.DefaultSheet {
+    override def face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.BOLD)
+    override def buttonFontSize: Scalar = 36
+    override def labelFontSize: Scalar = 36
   }
 
 
@@ -102,7 +112,6 @@ trait DemonstrationPages extends Brushes {
   }
 
   val HelpPage = Page("Help", "Help for the Demonstration Notebook"){
-    implicit val style: Styles.DefaultSheet = PrevailingStyle
     val anchor = INVISIBLE()
 
     Col.centered(
@@ -124,7 +133,7 @@ trait DemonstrationPages extends Brushes {
   val NewPage = Page("New", "Make a new or cloned GUI ") {
 
     lazy val Duplicated = new DemonstrationPages with Application {
-
+      enableSave = extraArgs contains "-enablesave"
       def GUI: Glyph =
         if (extraArgs contains "-notebook") asRNotebook else
         if (extraArgs contains "-rnotebook") asRNotebook else
@@ -148,6 +157,7 @@ trait DemonstrationPages extends Brushes {
     var style: String = "-notebook"
     var scale: String = "-scale=0.7"
     var screen: String = "-screen=p"
+    var saveable: String = ""
     val styles = "-notebook/-lnotebook/-snotebook/-vnotebook/-tnotebook/-menu".split("/").toList
     val scales = "-scale=1.2/-scale=1.0/-scale=0.9/-scale=0.8/-scale=0.75/-scale=0.7".split("/").toList
     val screens = "-screen=p/-screen=0/-screen=1/-screen=2".split("/").toList
@@ -167,7 +177,6 @@ trait DemonstrationPages extends Brushes {
       case Some(i) => screen = screens(i)
     }
 
-
     val cloneButton = TextButton("Clone this instance") {
       _ =>
         DemonstrationNotebook.main(Array(scale, style, screen))
@@ -186,8 +195,7 @@ trait DemonstrationPages extends Brushes {
           |""".stripMargin), ex,
       Row(
         TextButton("New instance")   {
-          _ => println(s"$scale $style")
-            Duplicated.main(Array(scale, style, screen)) }, em,
+          _ => Duplicated.main(Array(scale, style, screen, saveable)) }, em,
       ), ex,
       Row.atTop(
         styleSelect.gridGlyphs(), em scaled 6,
@@ -663,7 +671,6 @@ trait DemonstrationPages extends Brushes {
   val OverlayPage = Page("Overlays*", "Features implemented as overlay layers and annotations"){
     val noteBook = Notebook()
     val Page = noteBook.DefinePage
-    //implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
 
     Page("Dialogues", "") {
       import styled.TextButton
@@ -1335,7 +1342,6 @@ trait DemonstrationPages extends Brushes {
 
     Page("Shaded", "") {
       import Styles.Decoration._
-      import styled.TextButton
       implicit val buttonStyle: ButtonStyle = PrevailingStyle.buttonStyle.copy(frame = Shaded(black, white))
       implicit val labelStyle: GlyphStyle = PrevailingStyle.labelStyle.copy(fg = darkGrey, bg = green)
 
@@ -1357,7 +1363,7 @@ trait DemonstrationPages extends Brushes {
     val Page = nested.DefinePage
 
     Page("Events", "") {
-      val labelStyle = HelpStyle.labelStyle
+      val labelStyle = PrevailingStyle.labelStyle
       val theLog = StringLog(60, 25)(labelStyle)
 
       object CatchEvents extends ReactiveGlyph {
@@ -1481,10 +1487,9 @@ trait DemonstrationPages extends Brushes {
 
     Page("Windows", "") {
       import Location._
+      import windowdialogues.Dialogue
 
       import io.github.humbleui.jwm.{App, Screen}
-      implicit val style: Styles.DefaultSheet = HelpStyle
-      import windowdialogues.Dialogue
 
       // App.methods can only be called after the App has started.
       // So we can only configure the popup in response to a button-press
@@ -1524,7 +1529,7 @@ trait DemonstrationPages extends Brushes {
         lazy val windows: List[Window] = App._windows.toArray.toList.map(_.asInstanceOf[Window]) // horrid!
 
         def showWindow(w: Window): Glyph = {
-          TextLabel(s"${ir(w.getWindowRect)} ${ir(w.getContentRect)} ${w.getScreen._id}[${w.getScreen.getScale}]")(HelpStyle)
+          TextLabel(s"${ir(w.getWindowRect)} ${ir(w.getContentRect)} ${w.getScreen._id}[${w.getScreen.getScale}]")
         }
 
         val header = "Window"
@@ -1536,8 +1541,7 @@ trait DemonstrationPages extends Brushes {
           .start()
       }
 
-      import HelpStyle.Spaces
-      val (em, ex) = (Spaces.em, Spaces.ex)
+      //import HelpStyle.Spaces.{em, ex}
 
       Col.centered(
         TextParagraphs(50, Left)(
@@ -1841,7 +1845,6 @@ trait DemonstrationPages extends Brushes {
 
     Page("OneOf", "OneOf backgrounds") {
       import DynamicGlyphs.OneOf
-      implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
 
       val aaa = TextLabel("AAA").copy(fg=blue,bg=yellow(width=2f)).framed(fg=yellow)
       val bbb = TextLabel("BBB").copy(fg=blue, bg=nothing).scaled(2f)
@@ -1886,8 +1889,6 @@ trait DemonstrationPages extends Brushes {
       import DynamicGlyphs.OneOf
       import OnOffButton._
 
-      implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
-
       def Monitor(whenFalse: String, whenTrue: String, toggle: OnOffButton): OneOf = {
         val oneOf = OneOf()(TextLabel(whenFalse, align=Left), TextLabel(whenTrue, align=Left))
         oneOf.select(if (toggle.get) 1 else 0)
@@ -1906,9 +1907,12 @@ trait DemonstrationPages extends Brushes {
         case false => state1.select(0)
       }
       lazy val t2:OnOffButton = CheckBox(false) {
-        case true => state2.select(1)
-        case false => state2.select(0)
+        case true => state2.select(1); enableSave = true
+        case false => state2.select(0); enableSave = false
       }
+
+
+
       lazy val t3:OnOffButton = GlyphToggle(
         whenFalse=other(fg=red),
         whenTrue=star(),
@@ -1917,7 +1921,6 @@ trait DemonstrationPages extends Brushes {
         case true  => state3.select(1)
         case false => state3.select(0)
       }
-
 
       val colourGlyphExample = {
         val bl = blue(width=10)
@@ -1940,13 +1943,23 @@ trait DemonstrationPages extends Brushes {
           TextParagraphs(50, Justify)(
             """Four ColourButtons. In the top row, the foreground colour changes
               |as the mouse hovers or is pressed. In the bottom row, the background colour changes
-              |as the mouse hovers or is pressed.            |
+              |as the mouse hovers or is pressed.
               |""".stripMargin), ex,
           NaturalSize.Grid(bg=lightGrey, padx=20, pady=20).Table(height=2)(
             TextBut(false), TextBut(true),
             RectBut(false), RectBut(true)
           ).framed(),
         ).enlarged(20).framed()
+      }
+
+      val imageSaveToggle  = TextToggle(
+        whenTrue = "Image Saving Enabled\n(click top bar to save)",
+        whenFalse = "Image Saving Disabled\n(click to enable)",
+        initially = false) { state => enableSave = state }
+
+      locally {
+        HintManager(t2, "Toggle this to enable or disable the image-save bar")(HelpStyle)
+        HintManager(imageSaveToggle, "Toggle this to enable or disable the image-save bar")(HelpStyle)
       }
 
       Col.centered(
@@ -1958,10 +1971,7 @@ trait DemonstrationPages extends Brushes {
           Col.centered(
           TextParagraphs(40, Center)("A TextToggle can have multi-line legends in either or both states."), ex,
           TextToggle(whenTrue = ("True"), whenFalse = ("Not True\n(or true)"), initially = true) { _ => }, ex,
-          TextToggle(
-            whenTrue = "Enabled",
-            whenFalse = "Disabled\n(click to enable)",
-            initially = false) { _ => }
+          imageSaveToggle
         ).enlarged(10f),
           Col.centered(
           TextParagraphs(40, Center)("A GlyphToggle can have differently sized and shaped glyphs in each state"), ex,
@@ -2006,6 +2016,7 @@ trait DemonstrationPages extends Brushes {
     External.renderBitmap(glyph, s"${dir}/$path", scale=0.5f)
   }
 
+  var enableSave: Boolean = false
 
   def stringOfDate(date: LocalDateTime = LocalDateTime.now()) = {
     date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy@HHmmss"))
@@ -2015,10 +2026,12 @@ trait DemonstrationPages extends Brushes {
     val r = FilledRect(gui.w-5, 6f, fg=lightGrey)
     lazy val topBar: Glyph = ReactiveGlyphs.RawButton(r(), r(), r()) {
       _ =>
-        val fileName = stringOfDate()+".png"
-        windowdialogues.Dialogue.OKNO(TextLabel(s"Save image to ${fileName}")(HelpStyle).enlarged(20f)).InFront(topBar).andThen{
-          case false =>
-          case true  => write(fileName)(gui.guiRoot)
+        if (enableSave) {
+          val fileName = stringOfDate() + ".png"
+          windowdialogues.Dialogue.OKNO(TextLabel(s"Save image to ${fileName}").enlarged(20f)).InFront(topBar).andThen {
+            case false =>
+            case true => write(fileName)(gui.guiRoot)
+          }
         }
     }
     Col.centered(

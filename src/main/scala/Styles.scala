@@ -41,32 +41,27 @@ object Styles {
   trait Spaces {
     val emWidth: Scalar
     val exHeight: Scalar
-
-    def fill: Glyph
-
-    def em: Glyph
-
-    def ex: Glyph
+    val fill: Glyph
+    val em: Glyph
+    val ex: Glyph
   }
 
   /** Universal style for a glyph that has a foreground and a background (and may have a font) */
-  case class GlyphStyle(font: Font, fg: Brush, bg: Brush) {
+  case class GlyphStyle(font: Font, fg: Brush, bg: Brush) extends Spaces {
     def toGlyph(string: String, fg: Brush = fg, bg: Brush = bg): Glyph = Text(string, font).asGlyph(fg, bg)
 
-    val Spaces: Spaces = new Spaces {
-      lazy val emWidth: Scalar = font.measureTextWidth("M")
-      /** height of an X  in the button font */
-      lazy val exHeight: Scalar = font.measureText("X").getHeight
+    lazy val emWidth: Scalar = font.measureTextWidth("M")
+    /** height of an X  in the button font */
+    lazy val exHeight: Scalar = font.measureText("X").getHeight
 
-      /** An `emWidth/2` stretchable space */
-      lazy val fill: Glyph = new FixedSize.Space(emWidth / 2, 0f, 1f, 0f)
+    /** An `emWidth/2` stretchable space */
+    lazy val fill: Glyph = new FixedSize.Space(emWidth / 2, 0f, 1f, 0f)
 
-      /** An `emWidth` space (height 1) */
-      lazy val em: Glyph = new FixedSize.Space(emWidth, 1f, 0f, 0f)
+    /** An `emWidth` space (height 1) */
+    lazy val em: Glyph = new FixedSize.Space(emWidth, 1f, 0f, 0f)
 
-      /** An `exHeight` space (width 1) */
-      lazy val ex: Glyph = new FixedSize.Space(1f, exHeight, 0f, 0f)
-    }
+    /** An `exHeight` space (width 1) */
+    lazy val ex: Glyph = new FixedSize.Space(1f, exHeight, 0f, 0f)
   }
 
   /**
@@ -166,21 +161,26 @@ object Styles {
     import Decoration._
 
     /** Default: can be overridden */
-    lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
+    def face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
     /** Default: can be overridden */
-    lazy val buttonFontSize: Scalar = 22
+    def buttonFontSize: Scalar = 22
     /** Default: can be overridden */
-    lazy val buttonFont: Font = new Font(face, buttonFontSize)
-    /** Default: can be overridden */
-    lazy val buttonBorderWidth: Scalar = 5f
-    /** Default: can be overridden */
-    lazy val buttonBorderColor: Int = 0xFF777777
-    lazy val buttonBackgroundColor: Int = 0xFFAAAAAA
-    /** Default: can be overridden */
-    lazy val buttonBorderBrush: Brush = Brush("buttonBorder")(color = buttonBorderColor, width = buttonBorderWidth, cap = SQUARE)
-    lazy val buttonBackgroundBrush: Brush = Brush("buttonBackground")(color = buttonBackgroundColor)
+    def buttonFont: Font = new Font(face, buttonFontSize)
 
-    lazy implicit val buttonStyle: ButtonStyle = {
+    def labelFontSize: Scalar = 20
+    /** Default: can be overridden */
+    def labelFont: Font = new Font(face, labelFontSize)
+
+    /** Default: can be overridden */
+    def buttonBorderWidth: Scalar = 5f
+    /** Default: can be overridden */
+    def buttonBorderColor: Int = 0xFF777777
+    def buttonBackgroundColor: Int = 0xFFAAAAAA
+    /** Default: can be overridden */
+    def buttonBorderBrush: Brush = Brush("buttonBorder")(color = buttonBorderColor, width = buttonBorderWidth, cap = SQUARE)
+    def buttonBackgroundBrush: Brush = Brush("buttonBackground")(color = buttonBackgroundColor)
+
+    lazy val buttonStyle: ButtonStyle = {
       val colours = new GlyphColours {
         val fg: Brush = black
         val bg: Brush = nothing
@@ -205,11 +205,11 @@ object Styles {
       ButtonStyle(up = up, down = down, hover = hover, frame = frame, border = border, toggle = toggle, checkbox = checkbox)
     }
 
-    lazy val unFramed: StyleSheet = new Derived {
-      override lazy val buttonStyle: ButtonStyle = delegate.buttonStyle.nested
+    def unFramed: StyleSheet = new Derived {
+      override def buttonStyle: ButtonStyle = delegate.buttonStyle.nested
     }
 
-    lazy implicit val menuStyle: MenuStyle = MenuStyle(
+    def menuStyle: MenuStyle = MenuStyle(
       button = buttonStyle,
       nestedButton = buttonStyle.copy(frame = Framed(fg = black(width = 0), bg = buttonBackgroundBrush)),
       reactive = buttonStyle.copy(frame = Framed(fg = black(width = 0), bg = buttonBackgroundBrush)),
@@ -218,9 +218,9 @@ object Styles {
       fg = lightGrey
     )
 
-    lazy implicit val labelStyle: GlyphStyle = GlyphStyle(buttonStyle.up.font, buttonStyle.up.fg, buttonStyle.up.bg)
+    def labelStyle: GlyphStyle = GlyphStyle(labelFont, buttonStyle.up.fg, buttonStyle.up.bg)
 
-    val Spaces: Spaces = labelStyle.Spaces
+    lazy val Spaces: Spaces = labelStyle
   }
 
   object Default extends DefaultSheet {}

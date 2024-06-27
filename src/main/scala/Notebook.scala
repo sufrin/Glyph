@@ -20,8 +20,8 @@ trait Notebook {
      * Page descriptor
      */
     class Page(val title: String, val gloss: String, val glyph: Glyph)(implicit sheet: StyleSheet) {
-      val detail = sheet.labelStyle
-      import detail.Spaces._
+      val detail: GlyphStyle = sheet.labelStyle
+      import detail.{em, ex}
 
       override val toString: String = s"Page($title, $gloss){$glyph}"
 

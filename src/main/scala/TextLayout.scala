@@ -42,9 +42,9 @@ object TextLayout {
 
   private def formatTextParagraphs(width: Scalar, align: Alignment, text: String)(implicit sheet: StyleSheet): Glyph = {
     val style = sheet.labelStyle
+    import style.{ex, em}
     val paras = text.split("\n([ ]+|<)").filter(_.nonEmpty).map { TextParagraph(width, align) }
-    val space = style.Spaces.em
-    def ex = style.Spaces.ex
+    val space = em
     val page = ArrayBuffer[Glyph]()
     var lastSingleton = false
     for { (para, singleton) <- paras  } {

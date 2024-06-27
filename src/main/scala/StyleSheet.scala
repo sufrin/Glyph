@@ -1,7 +1,6 @@
 package org.sufrin.glyph
 
 trait StyleSheet { origin =>
-  import DefaultBrushes._
   import GlyphTypes._
   import Styles._
 
@@ -13,22 +12,22 @@ trait StyleSheet { origin =>
   def buttonFontSize: Scalar
 
   /** Default: can be overridden */
-  val buttonFont: Font
+  def buttonFont: Font
 
   /** Default: can be overridden */
-  val buttonBorderWidth: Scalar
+  def buttonBorderWidth: Scalar
 
   /** Default: can be overridden */
-  val buttonBorderColor: Int
-  val buttonBackgroundColor: Int
+  def buttonBorderColor: Int
+  def buttonBackgroundColor: Int
 
   /** Default: can be overridden */
-  val buttonBorderBrush: Brush
-  val buttonBackgroundBrush: Brush
-  val buttonStyle: ButtonStyle
-  val unFramed: StyleSheet
-  val menuStyle: MenuStyle
-  val labelStyle: GlyphStyle
+  def buttonBorderBrush: Brush
+  def buttonBackgroundBrush: Brush
+  def buttonStyle: ButtonStyle
+  def unFramed: StyleSheet
+  def menuStyle: MenuStyle
+  def labelStyle: GlyphStyle
   val Spaces: Spaces
 
   /**
@@ -37,18 +36,18 @@ trait StyleSheet { origin =>
    */
   class Derived extends StyleSheet {
     val delegate: StyleSheet = origin
-    lazy val face: Typeface = delegate.face
-    lazy val buttonFontSize: Scalar = delegate.buttonFontSize
-    lazy val buttonFont: Font = delegate.buttonFont
-    lazy val buttonBorderWidth: Scalar = delegate.buttonBorderWidth
-    lazy val buttonBorderColor: Pixel = delegate.buttonBorderColor
-    lazy val buttonBackgroundColor: Pixel = delegate.buttonBackgroundColor
-    lazy val buttonBorderBrush: Brush = delegate.buttonBorderBrush
-    lazy val buttonBackgroundBrush: Brush = delegate.buttonBackgroundBrush
-    lazy val buttonStyle: ButtonStyle = delegate.buttonStyle
-    lazy val unFramed: StyleSheet = delegate.unFramed
-    lazy val menuStyle: MenuStyle = delegate.menuStyle
-    lazy val labelStyle: GlyphStyle = delegate.labelStyle
-    lazy val Spaces: Spaces = delegate.Spaces
+    def face: Typeface = delegate.face
+    def buttonFontSize: Scalar = delegate.buttonFontSize
+    def buttonFont: Font = delegate.buttonFont
+    def buttonBorderWidth: Scalar = delegate.buttonBorderWidth
+    def buttonBorderColor: Pixel = delegate.buttonBorderColor
+    def buttonBackgroundColor: Pixel = delegate.buttonBackgroundColor
+    def buttonBorderBrush: Brush = delegate.buttonBorderBrush
+    def buttonBackgroundBrush: Brush = delegate.buttonBackgroundBrush
+    def buttonStyle: ButtonStyle = delegate.buttonStyle
+    def unFramed: StyleSheet = delegate.unFramed
+    def menuStyle: MenuStyle = delegate.menuStyle
+    def labelStyle: GlyphStyle = delegate.labelStyle
+    lazy val  Spaces: Spaces = delegate.Spaces
   }
 }
