@@ -119,12 +119,12 @@ object ReactiveGlyphs extends Brushes {
       }
     }
 
-    private var _onGlyphEvent: Option[Boolean=>Unit] = None
+    private var _onGlyphEvent: Option[(Boolean, Vec)=>Unit] = None
 
     /**
      * Set or clear the action to be invoked when the cursor enters or leaves a reactive glyph.
      */
-    def onGlyphEvent(action: (Boolean => Unit)=null): Unit = {
+    def onGlyphEvent(action: ((Boolean, Vec) => Unit)=null): Unit = {
       _onGlyphEvent = if (action eq null) None else Some(action)
     }
 
@@ -153,7 +153,7 @@ object ReactiveGlyphs extends Brushes {
 
         _onGlyphEvent match {
           case None =>
-          case Some(action) => action(hovered)
+          case Some(action) => action(hovered, location)
         }
         markStateChanged
       }

@@ -1907,11 +1907,9 @@ trait DemonstrationPages extends Brushes {
         case false => state1.select(0)
       }
       lazy val t2:OnOffButton = CheckBox(false) {
-        case true => state2.select(1); enableSave = true
+        case true  => state2.select(1); enableSave = true
         case false => state2.select(0); enableSave = false
       }
-
-
 
       lazy val t3:OnOffButton = GlyphToggle(
         whenFalse=other(fg=red),
@@ -1958,8 +1956,10 @@ trait DemonstrationPages extends Brushes {
         initially = false) { state => enableSave = state }
 
       locally {
-        HintManager(t2, "Toggle this to enable or disable the image-save bar")(HelpStyle)
-        HintManager(imageSaveToggle, "Toggle this to enable or disable the image-save bar")(HelpStyle)
+        HintManager(t2, 5.0, "Toggle this to enable or disable the image-save bar")(HelpStyle)
+        HintManager(imageSaveToggle, 5.0, "Toggle this to enable or disable the image-save bar")(HelpStyle)
+        HintManager(t1, 5.0, "Guess what this is for!")(HelpStyle)
+        HintManager(t3, 5.0, "Guess what this is for!")(HelpStyle)
       }
 
       Col.centered(

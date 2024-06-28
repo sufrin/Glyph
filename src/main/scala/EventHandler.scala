@@ -273,7 +273,7 @@ trait EventHandler extends Consumer[Event] {
                       case focussed =>
                         recentMouseFocus = focussed
                         mouseFocus = focussed
-                        focussed.get.accept(GlyphEnter(recentMouseFocus, mouseFocus, Modifiers(mouse)), Vec.Origin, window)
+                        focussed.get.accept(GlyphEnter(recentMouseFocus, mouseFocus, Modifiers(mouse)), mouseLoc, window)
                         if (focussed.get.stateChanged) window.requestFrame()
                     }
                   }
@@ -290,7 +290,7 @@ trait EventHandler extends Consumer[Event] {
             } else {
               import io.github.humbleui.jwm.MouseCursor
               // it has left the focussed glyph
-              focussed.accept(GlyphLeave(mouseFocus, None, Modifiers(mouse)), Vec.Origin, window)
+              focussed.accept(GlyphLeave(mouseFocus, None, Modifiers(mouse)), mouseLoc, window)
               giveupMouseFocus()
               window.setMouseCursor(MouseCursor.ARROW)
               if (focussed.stateChanged) window.requestFrame()
@@ -306,7 +306,7 @@ trait EventHandler extends Consumer[Event] {
                 case reactive =>
                   recentMouseFocus = mouseFocus
                   mouseFocus = reactive
-                  reactive.get.accept(GlyphEnter(recentMouseFocus, mouseFocus, Modifiers(mouse)), Vec.Origin, window)
+                  reactive.get.accept(GlyphEnter(recentMouseFocus, mouseFocus, Modifiers(mouse)), mouseLoc, window)
               }
             }
             window.requestFrame()
