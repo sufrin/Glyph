@@ -1887,17 +1887,26 @@ trait DemonstrationPages extends Brushes {
 
     Page("Sliders", "") {
       val trackh = Rect(900f, 55f, bg=yellow, fg=black)
-      val trackv = Rect(10f, 600f, bg=yellow, fg=black)
+      val trackv = Rect(15f, 600f, bg=yellow, fg=black)
       val imageh = FilledRect(15f, 35f, fg=red)
-      val imagev = FilledRect(10f, 5f, fg=red)
-      def reaction(proportion: Double): Unit = {
+      val imagev = FilledRect(15f, 5f, fg=red)
+      def reactionh(proportion: Double): Unit = {
         println(f"$proportion%1.5f")
+        sv.dragTo(proportion)
+        show.set(s"${sh.x}, ${sv.y}")
       }
-      val sh = new ReactiveGlyphs.HorizontalSlider(trackh, imageh, fg=nothing, bg=yellow, reaction(_)).framed()
-      val sv = new ReactiveGlyphs.VerticalSlider(trackv, imagev, fg=nothing, bg=yellow, reaction(_)).framed()
+      def reactionv(proportion: Double): Unit = {
+        println(f"$proportion%1.5f")
+        sh.dragTo(proportion)
+        show.set(s"${sh.x}, ${sv.y}")
+      }
+      lazy val sh = new ReactiveGlyphs.HorizontalSlider(trackh, imageh, fg=nothing, bg=nothing, reactionh(_))
+      lazy val sv = new ReactiveGlyphs.VerticalSlider(trackv, imagev, fg=nothing, bg=nothing, reactionv(_))
+      lazy val show = ActiveString(s"${sh.x}, ${sv.y}")
       Row.centered(
-        sh,
-        sv
+        sh turned 15f,
+        sv,
+        show.framed()
       )
     }
 

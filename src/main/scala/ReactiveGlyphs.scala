@@ -454,10 +454,12 @@ object ReactiveGlyphs extends Brushes {
    */
   abstract class GenericSlider extends ReactiveGlyph {
 
-    import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, Window}
-
+    import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, MouseCursor, Window}
     /** Invoked when the cursor drags to `loc` */
     def dragTo(loc: Vec): Unit
+    val verticalCursor   = MouseCursor.RESIZE_NS
+    val horizontalCursor = MouseCursor.RESIZE_WE
+    val cursor = MouseCursor.CROSSHAIR
 
     var pressed, hovered: Boolean = false
     var inactive: Boolean = false
@@ -521,9 +523,8 @@ object ReactiveGlyphs extends Brushes {
       if (!disabled) {
         event match {
           case _: GlyphEnter =>
-            import io.github.humbleui.jwm.MouseCursor
             hovered = true
-            window.setMouseCursor(MouseCursor.POINTING_HAND)
+            window.setMouseCursor(cursor)
 
           case _: GlyphLeave =>
             hovered = false
@@ -547,7 +548,17 @@ object ReactiveGlyphs extends Brushes {
     @inline private def onTrack(cx: Scalar): Boolean  =
       0 <= cx && cx+image.w<w
 
+    override val cursor = horizontalCursor
+
     val trackLength: Scalar = w - image.w
+
+    def dragTo(proportion: Double): Unit = {
+      val newX = (proportion*trackLength).toFloat
+      if (onTrack(newX)) {
+        this.x=newX
+        reDraw()
+      }
+    }
 
     /** Invoked when the cursor drags to `loc` */
     def dragTo(loc: Vec): Unit = {
@@ -560,7 +571,7 @@ object ReactiveGlyphs extends Brushes {
     }
 
     override def accept(wheel: EventMouseScroll, origin: Vec, window: Window): Unit = {
-        val dx = wheel.getDeltaY
+        val dx = wheel.getDeltaY min 50f max -50f
         if (onTrack(x+dx)) {
           this.x = x+dx
           reaction(x/trackLength)
@@ -595,6 +606,16 @@ object ReactiveGlyphs extends Brushes {
 
     val trackLength: Scalar = h - image.h
 
+    override val cursor = verticalCursor
+
+    def dragTo(proportion: Double): Unit = {
+      val newY = (proportion*trackLength).toFloat
+      if (onTrack(newY)) {
+        this.y=newY
+        reDraw()
+      }
+    }
+
     /** Invoked when the cursor drags to `loc` */
     def dragTo(loc: Vec): Unit = {
       val newY = (loc.y - image.h/2) max 0
@@ -606,7 +627,7 @@ object ReactiveGlyphs extends Brushes {
     }
 
     override def accept(wheel: EventMouseScroll, origin: Vec, window: Window): Unit = {
-      val dy = wheel.getDeltaY
+      val dy = wheel.getDeltaY min 50f max -50f
       if (onTrack(y+dy)) {
         this.y = y+dy
         reaction(y/trackLength)

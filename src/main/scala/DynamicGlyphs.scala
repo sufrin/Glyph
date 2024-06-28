@@ -202,52 +202,6 @@ object DynamicGlyphs extends Brushes {
    */
 
 
-  /**
-   * A glyph with an empty diagonal, that draws the given `glyph` at the
-   * computed `whenVisible` (on a rectangular background of `bg`)
-   * only when it is `visible`.
-   *
-   * No longer useful as it is but
-   * TODO: consider turning it into a basis for dynamic annotations
-   *
-   */
-  @deprecated("No longer useful") class Latent(glyph: Glyph, val visible: Variable[Boolean], val fg: Brush, val bg: Brush, whenVisible: => Vec) extends Glyph {
-    override def toString: String = s"Latent($glyph, fg=$fg, bg=$bg)"
-    override def diagonal: Vec = Vec.Zero
-
-    /** [**] forwarded to `glyph.parent_=` */
-    override def parent_=(parent: Glyph): Unit = glyph.parent = parent
-
-    /** [**] forwarded to `glyph.glyphContaining`  when enabled; else `None` */
-    override def glyphContaining(p: Vec): Option[Hit] =
-      if (visible.value) glyph.glyphContaining(p) else None
-
-    /** [**] forwarded to `glyph.isReactive`  when enabled; else `false` */
-    override def isReactive: Boolean = if (visible.value) glyph.isReactive else false
-
-    /**
-     * Draw the `glyph` on the surface at the current value of location`
-     */
-    def draw(surface: Surface): Unit = {
-      if (visible.value) surface.withOrigin(whenVisible) {
-        drawBackground(surface)
-        glyph.draw(surface)
-      }
-    }
-
-    override def @@(loc: Vec): Latent = {
-      super.@@(loc)
-      glyph.@@(loc)
-      this
-    }
-
-    def copy(fg: Brush=fg, bg:Brush=bg): Latent = new Latent(glyph.copy(fg, bg), visible, fg, bg, { location })
-  }
-
-  @deprecated("No longer useful")  object Latent extends DefaultPaints {
-    def apply(glyph: Glyph, visible: Variable[Boolean] = new Variable(false), fg: Brush = defaultFG, bg: Brush = defaultBG)(location: => Vec): Latent =
-        new Latent(glyph, visible, fg, bg, { location })
-  }
 
   /**
    * Dynamically chooseable glyph from among the sequence of `glyphs`, that behaves exactly like
