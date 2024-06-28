@@ -1885,6 +1885,22 @@ trait DemonstrationPages extends Brushes {
       ).enlarged(40)
     }
 
+    Page("Sliders", "") {
+      val trackh = Rect(900f, 55f, bg=yellow, fg=black)
+      val trackv = Rect(10f, 600f, bg=yellow, fg=black)
+      val imageh = FilledRect(15f, 35f, fg=red)
+      val imagev = FilledRect(10f, 5f, fg=red)
+      def reaction(proportion: Double): Unit = {
+        println(f"$proportion%1.5f")
+      }
+      val sh = new ReactiveGlyphs.HorizontalSlider(trackh, imageh, fg=nothing, bg=yellow, reaction(_)).framed()
+      val sv = new ReactiveGlyphs.VerticalSlider(trackv, imagev, fg=nothing, bg=yellow, reaction(_)).framed()
+      Row.centered(
+        sh,
+        sv
+      )
+    }
+
     Page("CheckBox", "Toggles, Checkboxes, ColourButtons") {
       import DynamicGlyphs.OneOf
       import OnOffButton._
@@ -1944,8 +1960,8 @@ trait DemonstrationPages extends Brushes {
               |as the mouse hovers or is pressed.
               |""".stripMargin), ex,
           NaturalSize.Grid(bg=lightGrey, padx=20, pady=20).Table(height=2)(
-            TextBut(false), TextBut(true),
-            RectBut(false), RectBut(true)
+            TextBut(false),  TextBut(true),
+            RectBut(false),  RectBut(true)
           ).framed(),
         ).enlarged(20).framed()
       }

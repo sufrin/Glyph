@@ -1,5 +1,7 @@
 package org.sufrin.glyph
 
+import io.github.humbleui.jwm.{EventMouseScroll, Window}
+
 /**
  *  A collection of `Reactive` glyph types.
  */
@@ -446,6 +448,190 @@ object ReactiveGlyphs extends Brushes {
     }
 
   }
+
+  /**
+   * A generic slider
+   */
+  abstract class GenericSlider extends ReactiveGlyph {
+
+    import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, Window}
+
+    /** Invoked when the cursor drags to `loc` */
+    def dragTo(loc: Vec): Unit
+
+    var pressed, hovered: Boolean = false
+    var inactive: Boolean = false
+    var enabled:  Boolean = true
+    /**
+     * The most recent state of the modifiers (shift keys, button keys).
+     * This is intended to support hinting: maintained but as-yet unused.
+     */
+    var modifiers: Int    = 0
+    @inline def disabled: Boolean = !enabled
+
+    /**
+     * Return the current enabled state of the glyph; set the new state
+     */
+    override def enabled(state: Boolean): Boolean = {
+      val oldState = enabled
+      enabled = state
+      oldState
+    }
+
+    def S(caption: String)(bool: Boolean): String = if (bool) caption else ""
+    def A: String = toString.take(30)
+    def showState: String = s"""${S("P")(pressed)}${S("H")(hovered)} $A... """
+
+    override def accept(mouse: EventMouseMove, location: Vec, window: Window): Unit = {
+        if (pressed) {
+          dragTo(location)
+          reDraw()
+        }
+    }
+
+    override def accept(mouse: EventMouseButton, location: Vec, window: Window): Unit = {
+      import Modifiers._
+      modifiers = Modifiers(mouse)
+      //println(s"${modifiers.toLongString}")
+      if (!disabled) {
+        if (mouse.isPressed) {
+          pressed = true
+          dragTo(location)
+        } else {
+          pressed = false
+        }
+        //println(s"""$showState ${mouse.isPressed}@$location""")
+        markStateChanged // if (hierarchical) reDraw() else window.requestFrame()
+      }
+    }
+
+    private var _onGlyphEvent: Option[(Boolean, Vec)=>Unit] = None
+
+    /**
+     * Set or clear the action to be invoked when the cursor enters or leaves a reactive glyph.
+     */
+    def onGlyphEvent(action: ((Boolean, Vec) => Unit)=null): Unit = {
+      _onGlyphEvent = if (action eq null) None else Some(action)
+    }
+
+    override def accept(event: GlyphEvent, location: Vec, window: Window): Unit = {
+      import Modifiers._
+      modifiers = Modifiers(event)
+      //println(s"$event ${modifiers.toLongString}")
+      if (!disabled) {
+        event match {
+          case _: GlyphEnter =>
+            import io.github.humbleui.jwm.MouseCursor
+            hovered = true
+            window.setMouseCursor(MouseCursor.POINTING_HAND)
+
+          case _: GlyphLeave =>
+            hovered = false
+            pressed = false //println(s"""$showState Leave@$location""")
+        }
+
+        _onGlyphEvent match {
+          case None =>
+          case Some(action) => action(hovered, location)
+        }
+        markStateChanged
+      }
+      //if (hierarchical) reDraw() else window.requestFrame()
+    }
+  }
+
+  class HorizontalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Double => Unit) extends GenericSlider {
+    val diagonal: Vec = Vec(track.w, image.h max track.h)
+    var x: Scalar = 0
+    var y: Scalar = 0
+    @inline private def onTrack(cx: Scalar): Boolean  =
+      0 <= cx && cx+image.w<w
+
+    val trackLength: Scalar = w - image.w
+
+    /** Invoked when the cursor drags to `loc` */
+    def dragTo(loc: Vec): Unit = {
+      val newX = (loc.x - image.w/2) max 0
+      if (onTrack(newX)) {
+        this.x = newX
+        this.y = 0
+        reaction(x/trackLength)
+      }
+    }
+
+    override def accept(wheel: EventMouseScroll, origin: Vec, window: Window): Unit = {
+        val dx = wheel.getDeltaY
+        if (onTrack(x+dx)) {
+          this.x = x+dx
+          reaction(x/trackLength)
+          reDraw()
+        }
+    }
+
+    val trackOffset: Scalar = (h - track.h)/2 max 0
+    val imageOffset: Scalar = (track.h-image.h)/2 max 0
+    /**
+     * Draw the glyph on the surface at its given size (as if at the origin).
+     */
+    def draw(surface: Surface): Unit = {
+        surface.declareCurrentTransform(this)
+        drawBackground(surface)
+        surface.withOrigin(0, trackOffset) { track.draw(surface) }
+        surface.withOrigin(x, imageOffset) { image.draw(surface) }
+    }
+
+
+
+    /** A copy of this glyph; perhaps with different foreground/background */
+    def copy(fg: Brush, bg: Brush): Glyph = new HorizontalSlider(track, image, fg, bg, reaction)
+  }
+
+  class VerticalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Double => Unit) extends GenericSlider {
+    val diagonal: Vec = Vec(image.w max track.w, image.h max track.h)
+    var x: Scalar = 0
+    var y: Scalar = 0
+    @inline private def onTrack(cy: Scalar): Boolean  =
+      0 <= cy && cy+image.h<h
+
+    val trackLength: Scalar = h - image.h
+
+    /** Invoked when the cursor drags to `loc` */
+    def dragTo(loc: Vec): Unit = {
+      val newY = (loc.y - image.h/2) max 0
+      if (onTrack(newY)) {
+        this.x = 0
+        this.y = newY
+        reaction(y/trackLength)
+      }
+    }
+
+    override def accept(wheel: EventMouseScroll, origin: Vec, window: Window): Unit = {
+      val dy = wheel.getDeltaY
+      if (onTrack(y+dy)) {
+        this.y = y+dy
+        reaction(y/trackLength)
+        reDraw()
+      }
+    }
+
+    val trackOffset: Scalar = (w - track.w)/2 max 0
+    val imageOffset: Scalar = (track.w-image.w)/2 max 0
+    /**
+     * Draw the glyph on the surface at its given size (as if at the origin).
+     */
+    def draw(surface: Surface): Unit = {
+      surface.declareCurrentTransform(this)
+      drawBackground(surface)
+      surface.withOrigin(trackOffset, 0) { track.draw(surface) }
+      surface.withOrigin(imageOffset, y) { image.draw(surface) }
+    }
+
+
+
+    /** A copy of this glyph; perhaps with different foreground/background */
+    def copy(fg: Brush, bg: Brush): Glyph = new VerticalSlider(track, image, fg, bg, reaction)
+  }
+
 
   /**
    *

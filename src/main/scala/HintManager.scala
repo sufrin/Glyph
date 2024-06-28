@@ -5,7 +5,7 @@ class HintManager(val target: GenericButton, val hint: Glyph, val seconds: Doubl
   val id = s"HintManager${this.hashCode()}"
   /** The new layer is constructed lazily (in fact, at the point of first entry) because
    * the target glyph will certainly have been rooted before it is entered,
-   * so target.guiRoot will by then be meaningful.
+   * so `target.guiRoot` will by then be meaningful.
    */
   lazy val layer =
     target.guiRoot.Overlay.newAnnotation(id, glyph=hint, isModal = false, visible = false, strictHiding = false, active = false)
