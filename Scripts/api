@@ -4,4 +4,4 @@ then
 fi
 
 rm -rf DOCS/glyph
-mv -fv target/scala-2.13/api/org/sufrin/glyph/ DOCS/glyph
+mv -fv target/scala-2.13/api DOCS/glyph

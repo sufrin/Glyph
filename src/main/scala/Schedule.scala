@@ -42,7 +42,7 @@ class Schedule() {
   }
 
   /**
-   * Cancel the currently-awaited event, if any. Associate the
+   * Cancel the currently-awaited event, if any; then associate the
    * `interval` and `event` with this scheduler, and execute the
    * event once after the interval.
    *
@@ -73,7 +73,7 @@ class Schedule() {
   }
 
   /**
-   * Cancel the currently-scheduled event, if any. Schedule one execution of
+   * Cancel the currently-awaited event, if any; then schedule one execution of
    * the associated event to take place after the associated interval.
    */
   def once(): Unit = {
@@ -97,7 +97,7 @@ class Schedule() {
 
 
   /**
-   * Cancel the currently-scheduled event, if any. Associate
+   * Cancel the currently-awaited event, if any; then associate
    * `interval` and `event` with this scheduler, and execute the
    * associated event periodically every associated interval.
    *
@@ -136,8 +136,9 @@ class Schedule() {
   }
 
   /**
-   * Revise the associated interval. It will come into force after
-   * the currently-associated interval elapses.
+   * Revise the associated interval: it will come into force after
+   * the currently-associated interval elapses, or is curtailed by
+   * `immediately()` or `cancel()`.
    * @param interval
    */
   def period_=(interval: Long): Unit = theInterval.set(interval)
@@ -152,7 +153,9 @@ class Schedule() {
 }
 
 object Schedule {
+  /** Return a fresh `Schedule` with no associated interval or event. */
   def apply(): Schedule = new Schedule()
+  /** Return a fresh `Schedule` associated with the given interval and event. */
   def apply(interval: Long)(event: => Unit): Schedule = {
     val schedule = new Schedule()
     schedule(interval)(event)
