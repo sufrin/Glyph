@@ -1898,13 +1898,13 @@ trait DemonstrationPages extends Brushes {
       def reactionv(proportion: Double): Unit = {
         println(f"$proportion%1.5f")
         sh.dragTo(proportion)
-        show.set(s"${sh.x}, ${sv.y}")
+        show.set(f"${sh.x}%3.2f, ${sv.y}%3.2f")
       }
       lazy val sh = new ReactiveGlyphs.HorizontalSlider(trackh, imageh, fg=nothing, bg=nothing, reactionh(_))
       lazy val sv = new ReactiveGlyphs.VerticalSlider(trackv, imagev, fg=nothing, bg=nothing, reactionv(_))
-      lazy val show = ActiveString(s"${sh.x}, ${sv.y}")
-      Row.centered(
-        sh turned 15f,
+      lazy val show = ActiveString(f"XXX.XX, XXX.XX")
+      Col.centered(
+        sh,
         sv,
         show.framed()
       )

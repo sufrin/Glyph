@@ -401,38 +401,31 @@ object DynamicGlyphs extends Brushes {
     def apply[T](glyph: DynamicGlyphs.ActiveGlyph[T], fps: Double): Periodic[T]             = new Periodic[T](glyph, (1000.0/fps).toLong)
   }
 
-  class Periodic[T](glyph: DynamicGlyphs.ActiveGlyph[T], var msPerFrame: Long) {
-    var running = false
-    var thread: Thread = null
+  class Periodic[T](glyph: DynamicGlyphs.ActiveGlyph[T], private var _msPerFrame: Long) {
+    val schedule = Schedule(_msPerFrame){App.runOnUIThread(() => glyph.step())}
+    def running = schedule.running
 
-    def runner(): Thread = {
-      val thread = Thread.ofVirtual()
-      thread.start(()=>
-        while (running) {
-          App.runOnUIThread(() => glyph.step())
-          try {
-            Thread.sleep(msPerFrame)
-          }
-          catch {
-            case exn: InterruptedException => running = false
-          }
-        }
-      )
-    }
-
-    def start(): Unit = if (!running) {
-      running = true
-      thread  = runner()
+    def start(): Unit = if (!schedule.running) {
+      schedule.periodically()
     }
 
     def stop(): Unit =
-      if (running) {
-        thread.interrupt()
-        running = false
-        thread = null
+      if (schedule.running) {
+        schedule.cancel()
       }
 
-    def fps_=(fps: Double): Unit = msPerFrame = if (fps>0.0) (1000.0/fps).toLong else 1000L
-    def fps: Double = 1000.0/msPerFrame
+    def msPerFrame_=(msPerFrame: Long): Unit = {
+       _msPerFrame = msPerFrame
+       schedule.period = msPerFrame
+    }
+
+    def msPerFrame: Long = _msPerFrame
+
+    def fps_=(fps: Double): Unit = {
+      _msPerFrame = if (fps>0.0) (1000.0/fps).toLong else 1000L
+      schedule.period = _msPerFrame
+    }
+
+    def fps: Double = 1000.0/_msPerFrame
   }
 }

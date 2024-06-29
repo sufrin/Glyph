@@ -18,7 +18,7 @@ class HintManager(val target: GenericButton, val hint: Glyph, val seconds: Doubl
         hint @@ where
         if (!layer.visible && seconds>=0) {
           layer.visible = true
-          schedule((seconds * 1000L).toLong) {
+          schedule.once((seconds * 1000L).toLong) {
             layer.visible = false
             target.reDraw()
           }
@@ -27,7 +27,7 @@ class HintManager(val target: GenericButton, val hint: Glyph, val seconds: Doubl
         if (seconds==0)
           layer.visible = false
         else
-          schedule.now()
+          schedule.immediately()
     }
   }
 
