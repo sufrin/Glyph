@@ -231,7 +231,8 @@ trait EventHandler extends Consumer[Event] {
         // or have it work on the entire Window (if that is enabled)
         mouseFocus match {
           case Some(theGlyph: ReactiveGlyph) =>
-            theGlyph.accept(scroll, Vec.Origin, window)
+            val mouseLoc = mouseLocation(scroll.getX, scroll.getY)
+            theGlyph.accept(scroll, theGlyph.glyphLocation(mouseLoc), window)
           case None =>
             if (scrollWholeWindow) scrollWindow(scroll)
         }
@@ -242,7 +243,7 @@ trait EventHandler extends Consumer[Event] {
           case Some(glyph) =>
             if (glyph.contains(mouseLoc)) {
               //print(s"B ")
-              glyph.accept(mouse, mouseLoc - glyph.rootDistance, window)
+              glyph.accept(mouse, glyph.glyphLocation(mouseLoc)/*mouseLoc - glyph.rootDistance*/, window)
               if (glyph.stateChanged)  window.requestFrame()
             } else {
               giveupMouseFocus()
@@ -273,8 +274,11 @@ trait EventHandler extends Consumer[Event] {
                       case focussed =>
                         recentMouseFocus = focussed
                         mouseFocus = focussed
-                        focussed.get.accept(GlyphEnter(recentMouseFocus, mouseFocus, Modifiers(mouse)), mouseLoc, window)
-                        if (focussed.get.stateChanged) window.requestFrame()
+                        val theGlyph = focussed.get
+                        theGlyph.accept(GlyphEnter(recentMouseFocus, mouseFocus, Modifiers(mouse)),
+                          theGlyph.glyphLocation(mouseLoc) /*mouseLoc - theGlyph.rootDistance*/,
+                          window)
+                        if (theGlyph.stateChanged) window.requestFrame()
                     }
                   }
       }
@@ -285,12 +289,14 @@ trait EventHandler extends Consumer[Event] {
         mouseFocus match {
           case Some(focussed) =>
             if (focussed.contains(mouseLoc)) {
-              focussed.accept(mouse, mouseLoc - focussed.rootDistance, window)
+              focussed.accept(mouse, focussed.glyphLocation(mouseLoc)/*mouseLoc - focussed.rootDistance*/, window)
               if (focussed.stateChanged) window.requestFrame()
             } else {
               import io.github.humbleui.jwm.MouseCursor
               // it has left the focussed glyph
-              focussed.accept(GlyphLeave(mouseFocus, None, Modifiers(mouse)), mouseLoc, window)
+              focussed.accept(GlyphLeave(mouseFocus, None, Modifiers(mouse)),
+                focussed.glyphLocation(mouseLoc), //mouseLoc - focussed.rootDistance,
+                window)
               giveupMouseFocus()
               window.setMouseCursor(MouseCursor.ARROW)
               if (focussed.stateChanged) window.requestFrame()
@@ -306,7 +312,7 @@ trait EventHandler extends Consumer[Event] {
                 case reactive =>
                   recentMouseFocus = mouseFocus
                   mouseFocus = reactive
-                  reactive.get.accept(GlyphEnter(recentMouseFocus, mouseFocus, Modifiers(mouse)), mouseLoc, window)
+                  reactive.get.accept(GlyphEnter(recentMouseFocus, mouseFocus, Modifiers(mouse)), mouseLoc - reactive.get.rootDistance, window)
               }
             }
             window.requestFrame()

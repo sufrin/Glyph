@@ -62,6 +62,10 @@ abstract class ReactiveGlyph extends Glyph {
     glyph.contains(rootDistance + relativeLocation)
   }
 
+  /** The glyph-relative position of the given screen location  */
+  def glyphLocation(screenLocation: Vec): Vec = reverseTransform(screenLocation)
+
+
 
   var _changedState: Boolean = false
 

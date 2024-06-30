@@ -451,12 +451,16 @@ object ReactiveGlyphs extends Brushes {
 
   /**
    * A generic slider
+   *
+   * TODO: Turned sliders attract focus curiously.
    */
   abstract class GenericSlider extends ReactiveGlyph {
 
     import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, MouseCursor, Window}
     /** Invoked when the cursor drags to `loc` */
     def dragTo(loc: Vec): Unit
+    def dragTo(proportion: Double): Unit
+
     val verticalCursor   = MouseCursor.RESIZE_NS
     val horizontalCursor = MouseCursor.RESIZE_WE
     val cursor = MouseCursor.CROSSHAIR
@@ -539,8 +543,10 @@ object ReactiveGlyphs extends Brushes {
       }
       //if (hierarchical) reDraw() else window.requestFrame()
     }
+
   }
 
+  // TODO: fix problems when scaled and/or turned
   class HorizontalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Double => Unit) extends GenericSlider {
     val diagonal: Vec = Vec(track.w, image.h max track.h)
     var x: Scalar = 0
@@ -585,18 +591,19 @@ object ReactiveGlyphs extends Brushes {
      * Draw the glyph on the surface at its given size (as if at the origin).
      */
     def draw(surface: Surface): Unit = {
-        surface.declareCurrentTransform(this)
         drawBackground(surface)
+        surface.declareCurrentTransform(this)
         surface.withOrigin(0, trackOffset) { track.draw(surface) }
         surface.withOrigin(x, imageOffset) { image.draw(surface) }
     }
 
-
+    locally { track.parent = this }
 
     /** A copy of this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = new HorizontalSlider(track, image, fg, bg, reaction)
   }
 
+  // TODO: fix problems when scaled and/or turned
   class VerticalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Double => Unit) extends GenericSlider {
     val diagonal: Vec = Vec(image.w max track.w, image.h max track.h)
     var x: Scalar = 0
@@ -641,13 +648,13 @@ object ReactiveGlyphs extends Brushes {
      * Draw the glyph on the surface at its given size (as if at the origin).
      */
     def draw(surface: Surface): Unit = {
-      surface.declareCurrentTransform(this)
       drawBackground(surface)
+      surface.declareCurrentTransform(this)
       surface.withOrigin(trackOffset, 0) { track.draw(surface) }
       surface.withOrigin(imageOffset, y) { image.draw(surface) }
     }
 
-
+    locally { track.parent = this }
 
     /** A copy of this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = new VerticalSlider(track, image, fg, bg, reaction)
