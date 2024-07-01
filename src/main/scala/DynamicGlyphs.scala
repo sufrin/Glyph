@@ -212,7 +212,7 @@ object DynamicGlyphs extends Brushes {
    *
    * Its `bg` is set to `BG`, if that appears, else to the `bg` of the largest (in area) of the glyphs.
    */
-  class OneOf(val glyphs: Seq[Glyph], val fg: Brush, BG: Brush=null, val enableBG: Boolean = true) extends Composite(glyphs) {
+  class OneOf(val glyphs: Seq[Glyph], align: Alignment, val fg: Brush, BG: Brush=null, val enableBG: Boolean = true) extends Composite(glyphs) {
     val bg = if (BG eq null) OneOf.largestBG(glyphs) else BG
     override val kind = "OneOf"
     override def toString: String = s"""OneOf(fg=$fg, bg=$bg\n glyphs=\n  ${glyphs.map(_.toString).mkString(",\n  ")})"""
@@ -237,12 +237,17 @@ object DynamicGlyphs extends Brushes {
     val boundingRect = Vec(glyphs.map(_.w).max, glyphs.map(_.h).max)+(inset, inset)
     val diagonal = boundingRect+(inset, inset)
 
-    // Location the subglyphs concentrically [maybe change later]
+    // Locate the subglyphs concentrically [maybe change later]
     // Link subglyphs into the glyph tree
     // TODO: (why didn't this happen in Composite?)
     locally {
+      val xFactor = align match {
+        case Center => 0.5f
+        case Left => 0.0f
+        case Right => 1.0f
+      }
       for {glyph <- glyphs} {
-          glyph @@ ((diagonal.x-glyph.w)/2, (diagonal.y-glyph.h)/2)
+          glyph @@ ((diagonal.x-glyph.w)*xFactor, (diagonal.y-glyph.h)/2)
           glyph.parent = this
       }
     }
@@ -263,7 +268,7 @@ object DynamicGlyphs extends Brushes {
     /**
      * A  copy of this glyph: made with the same constructor
      */
-    def copy(fg: Brush=fg, bg:Brush=bg): Glyph = new OneOf(glyphs, fg, bg)
+    def copy(fg: Brush=fg, bg:Brush=bg): Glyph = new OneOf(glyphs, align, fg, bg)
   }
 
   object OneOf extends Brushes {
@@ -275,17 +280,17 @@ object DynamicGlyphs extends Brushes {
       g.bg
     }
 
-    def apply(fg: Brush=defaultFG, bg: Brush=null)(glyphs: Glyph*): OneOf =
-        new OneOf(glyphs, fg=fg, BG=bg)
+    def apply(fg: Brush=defaultFG, bg: Brush=null, align: Alignment=Center)(glyphs: Glyph*): OneOf =
+        new OneOf(glyphs, align, fg=fg, BG=bg)
 
-    def withNoBackground(fg: Brush = defaultFG, bg: Brush = null)(glyphs: Glyph*): OneOf =
-      new OneOf(glyphs, fg = fg, BG = bg, enableBG = false)
+    def withNoBackground(fg: Brush = defaultFG, bg: Brush = null, align: Alignment=Center)(glyphs: Glyph*): OneOf =
+      new OneOf(glyphs, align, fg = fg, BG = bg, enableBG = false)
 
-    def seq(fg: Brush=defaultFG)(glyphs: Seq[Glyph]): OneOf =
-        new OneOf(glyphs, fg=fg)
+    def seq(fg: Brush=defaultFG, align: Alignment=Center)(glyphs: Seq[Glyph]): OneOf =
+        new OneOf(glyphs, align, fg=fg)
 
-    def $(fg: Brush = defaultFG)(glyphs: Seq[Glyph]): OneOf =
-      new OneOf(glyphs, fg = fg)
+    def $(fg: Brush = defaultFG, align: Alignment=Center)(glyphs: Seq[Glyph]): OneOf =
+      new OneOf(glyphs, align, fg = fg)
   }
 
 

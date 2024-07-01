@@ -2034,7 +2034,7 @@ trait DemonstrationPages extends Brushes {
       makePages()
       noteBook.Layout.rightButtons(uniform = true)
     }
-    nested.Layout.rightButtons().enlarged(20)
+    nested.Layout.rightButtons().enlarged(30)
   }
 
   lazy val help: Glyph = TextButton("Help") {

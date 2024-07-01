@@ -3,7 +3,7 @@ package org.sufrin.glyph
 import NaturalSize.nothing
 
 /**
- * Manage the declaration of notebook pages and the construction of tabbedNotebook
+ * Manage the declaration of notebook pages and the construction of
  * notebook GUIs.
  */
 trait Notebook {
@@ -75,9 +75,9 @@ trait Notebook {
    * notebook. When `uniform` is true, `buttons` will all have the same diagonal, else
    * they will be at their natural size (modulo styled framing)
    */
-    def tabbedNotebook(uniform: Boolean)(implicit sheet: StyleSheet): TabbedNotebook = {
+    def tabbedNotebook(uniform: Boolean, align: Alignment)(implicit sheet: StyleSheet): TabbedNotebook = {
       val glyphs: Seq[Glyph] = pages.toList.map(_.root())
-      val oneOf = DynamicGlyphs.OneOf.seq()(glyphs)
+      val oneOf = DynamicGlyphs.OneOf.seq(align=align)(glyphs)
       val keyed = (0 until glyphs.length) zip pages
 
       lazy val buttons = keyed map  {
@@ -94,7 +94,32 @@ trait Notebook {
     }
 
   /** 
-   * Deliver complete glyphs based on the declared pages of the notebook 
+   * Deliver complete notebook glyphs based on the declared pages of the notebook
+   * The bounding box of each notebook page is the union of the bounding boxes of
+   * the pages.
+   *
+   * Complete glyphs are delivered by one of the methods below, whose
+   * names suggest the placement of the buttons associated with the notebook
+   * in relation to the glyph itself.
+   *
+   * The `align` parameter indicates the horizontal alignment of each page with respect to
+   * the overall bounding box (by default this is `Center`). If `uniform` is true,
+   * then the buttons all have the same size.
+   * {{{
+   *   rightButtons(uniform: Boolean=true, align: Alignment=Center): Glyph
+   *   leftButtons(uniform: Boolean=true, align: Alignment=Center): Glyph
+   *   rotatedButtons(quads: Int, uniform: Boolean=true, align: Alignment=Center): Glyph
+   *   skewedButtons(skewX: Scalar, skewY: Scalar, uniform: Boolean=true, align: Alignment=Center): Glyph
+   *   topButtons(uniform: Boolean=true, align: Alignment=Center): Glyph
+   *   menuBar: Glyph
+   * }}}
+   *
+   * Deliver a `TabbedNotebook(buttons, oneOf)` without placing the buttons or the `oneOf`. This
+   * makes it possible to implement non-standard juxtapositions of buttons and the notebook page
+   * (for example, by having two rows/columns of buttons).
+   * {{{
+   *   raw(sheet: StyleSheet, uniform: Boolean = true, align: Alignment=Center): TabbedNotebook
+   * }}}
    */
   object Layout {
     import GlyphTypes.Scalar
@@ -110,44 +135,45 @@ trait Notebook {
 
     /**
      * A `TabbedNotebook` with a button corresponding to each page, and a `OneOf` holding the pages.
-     * Each button whose the corresponding page on the `OneOf` when clicked.
+     * Each button selects the corresponding page on the `OneOf` when clicked.
      */
-    def raw(sheet: StyleSheet, uniform: Boolean = true): TabbedNotebook = tabbedNotebook(uniform)(sheet)
+    def raw(sheet: StyleSheet, uniform: Boolean = true, align: Alignment=Center): TabbedNotebook =
+      tabbedNotebook(uniform, align)(sheet)
 
-    def rightButtons(uniform: Boolean=true)(implicit sheet: StyleSheet):  Glyph   = {
-      val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform)
+    def rightButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: StyleSheet):  Glyph   = {
+      val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val rhs = Col().atRight$(buttons)
       val lhs = oneOf
       val divider = blackLine(4, rhs.h max lhs.h)
       Row.centered(lhs, divider, rhs)
     }
 
-    def leftButtons(uniform: Boolean=true)(implicit sheet: StyleSheet): Glyph = {
-      val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform)
+    def leftButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: StyleSheet): Glyph = {
+      val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Col().atRight$(buttons)
       val rhs = oneOf
       val divider = blackLine(2, rhs.h max lhs.h)
       Row.centered(lhs, divider, rhs)
     }
 
-    def rotatedButtons(quads: Int, uniform: Boolean=true)(implicit sheet: StyleSheet) = {
-      val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform)
+    def rotatedButtons(quads: Int, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: StyleSheet) = {
+      val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Row().atBottom$(buttons.map { b => b.rotated(quads, bg=nothing) })
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
       Col.centered(lhs, divider, rhs)
     }
 
-    def skewedButtons(skewX: Scalar, skewY: Scalar, uniform: Boolean=true)(implicit sheet: StyleSheet) = {
-      val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform)
+    def skewedButtons(skewX: Scalar, skewY: Scalar, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: StyleSheet) = {
+      val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Row().atBottom$(buttons.map { b => (b.rotated(3, bg=nothing)) })
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
       Col.centered(lhs.skewed(-skewX, skewY), divider, rhs)
     }
 
-    def topButtons(uniform: Boolean=true)(implicit sheet: StyleSheet) = {
-      val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform)
+    def topButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: StyleSheet) = {
+      val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Row(bg=nothing).atBottom$(buttons)
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
