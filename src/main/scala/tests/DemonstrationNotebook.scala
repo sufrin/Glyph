@@ -222,9 +222,7 @@ trait DemonstrationPages extends Brushes {
       val Page = nested.DefinePage
       import windowdialogues.Dialogue
 
-
-
-    Page("Dialogues", "") {
+      Page("Dialogues", "") {
         val briefing = TextParagraphs(25, Left)("Choose one of the buttons, or press the close button")
         val anchor = INVISIBLE()
         val c1 = Dialogue.CHOOSE(briefing(), Location.South(anchor), "Choice")("One")
@@ -1567,36 +1565,6 @@ trait DemonstrationPages extends Brushes {
     nested.Layout.rightButtons().enlarged(20)
   }
 
-//  val fontsPage = Page("Fonts*", "Font families\n(available on this computer)\n\n\n") {
-//    object FontFamilies {
-//      import GlyphTypes._
-//      lazy val names: Seq[String] =
-//        for {i <- 0 until FontManager.default.getFamiliesCount} yield FontManager.default.getFamilyName(i)
-//    }
-//
-//    val familiesPerGroup = 60
-//    val noteBook = Notebook()
-//    val Page = noteBook.DefinePage
-//    var names = FontFamilies.names.sorted.toList
-//
-//    def makePages(): Unit = {
-//      implicit val labelStyle: GlyphStyle= HelpStyle.labelStyle
-//      while (names.nonEmpty) {
-//        val group = names.take(familiesPerGroup)
-//        names = names.drop(familiesPerGroup)
-//        Page(s"${group.head.takeWhile(c => c!=' ')} ⇝ ${group.last.takeWhile(c => c!=' ')}", "") {
-//          //import styled.TextLayout.TextLabel
-//          val labels = group.map { name => TextLabel(name, Left) }
-//          val llength = labels.length / 2
-//          Row(NaturalSize.Col.atLeft$(labels.take(llength)).enlarged(20).framed(), em, em,
-//              NaturalSize.Col.atLeft$(labels.drop(llength)).enlarged(20).framed())
-//        }
-//      }
-//    }
-//
-//    makePages()
-//    noteBook.Layout.rightButtons(uniform = true)(buttonStyle.copy(frame=Framed(fg=darkGrey(width=4, cap=SQUARE), bg=lightGrey, radiusFactor = 0.0f)))
-//  }(HelpStyle.labelStyle)
 
   val etcPage = Page("Etc*", "") {
     val nested = Notebook()
@@ -2034,11 +2002,40 @@ trait DemonstrationPages extends Brushes {
       ).above(colourGlyphExample).scaled(0.9f).enlarged(10f)
     }
 
-    nested.Layout.rightButtons()
+    Page("Fonts*", "Font families\n(available on this computer)\n\n\n") {
+        object FontFamilies {
+
+          import GlyphTypes._
+
+          lazy val names: Seq[String] =
+            for {i <- 0 until FontManager.default.getFamiliesCount} yield FontManager.default.getFamilyName(i)
+        }
+
+      val familiesPerGroup = 60
+      val noteBook = Notebook()
+      val Page = noteBook.DefinePage
+      var names = FontFamilies.names.sorted.toList
+
+      def makePages(): Unit = {
+        implicit val labelStyle: GlyphStyle= HelpStyle.labelStyle
+        while (names.nonEmpty) {
+          val group = names.take(familiesPerGroup)
+          names = names.drop(familiesPerGroup)
+          Page(s"${group.head.takeWhile(c => c!=' ')} ⇝ ${group.last.takeWhile(c => c!=' ')}", "") {
+            //import styled.TextLayout.TextLabel
+            val labels = group.map { name => TextLabel(name, Left) }
+            val llength = labels.length / 2
+            Row(NaturalSize.Col.atLeft$(labels.take(llength)).enlarged(20).framed(), em, em,
+              NaturalSize.Col.atLeft$(labels.drop(llength)).enlarged(20).framed())
+          }
+        }
+      }
+
+      makePages()
+      noteBook.Layout.rightButtons(uniform = true)
+    }
+    nested.Layout.rightButtons().enlarged(20)
   }
-
-  // ========================================================
-
 
   lazy val help: Glyph = TextButton("Help") {
     import windowdialogues.Dialogue
