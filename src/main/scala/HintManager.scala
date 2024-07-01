@@ -1,7 +1,7 @@
 package org.sufrin.glyph
-import ReactiveGlyphs.GenericButton
+import ReactiveGlyphs.Enterable
 
-class HintManager(val target: GenericButton, val hint: Glyph, val seconds: Double) {
+class HintManager(val target: Enterable, val hint: Glyph, val seconds: Double) {
   val id = s"HintManager${this.hashCode()}"
   /** The new layer is constructed lazily (in fact, at the point of first entry) because
    * the target glyph will certainly have been rooted before it is entered,
@@ -37,8 +37,8 @@ class HintManager(val target: GenericButton, val hint: Glyph, val seconds: Doubl
 }
 
 object HintManager {
-  def apply(target: GenericButton, seconds: Double=0, hint: Glyph): HintManager = new HintManager(target, hint, seconds)
-  def apply(target: GenericButton, seconds: Double, hint: String)(implicit style: StyleSheet): HintManager = {
+  def apply(target: Enterable, seconds: Double=0, hint: Glyph): HintManager = new HintManager(target, hint, seconds)
+  def apply(target: Enterable, seconds: Double, hint: String)(implicit style: StyleSheet): HintManager = {
     new HintManager(
            target,
            Glyphs.Label(hint, style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),

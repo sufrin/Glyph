@@ -1886,36 +1886,50 @@ trait DemonstrationPages extends Brushes {
     }
 
     Page("Sliders", "") {
-      import ReactiveGlyphs.{GenericSlider => Slide}
-      val trackh = Rect(900f, 55f, bg=yellow, fg=black)
-      val trackv = Rect(15f, 600f, bg=yellow, fg=black)
+      import ReactiveGlyphs.Slider
+
+      import Slider.{Horizontal, Vertical}
+      val trackh = Rect(500f, 55f, bg=yellow, fg=black)
+      val trackv = Rect(15f, 250f, bg=yellow, fg=black)
       val imageh = FilledRect(15f, 35f, fg=red)
       val imagev = FilledRect(35f, 5f, fg=red)
+
       def reaction(proportion: Double): Unit = {
-        println(f"$proportion%1.5f")
         for { sl<-slides } sl.dragTo(proportion)
-        show.set(f"${sh.w*proportion}%3.2f, ${sv.h*proportion}%3.2f")
+        show.set(f"$proportion%1.3f (${sh.w*proportion}%3.2f, ${sv.h*proportion}%3.2f)")
       }
 
-      lazy val sh: Slide  = new ReactiveGlyphs.HorizontalSlider(trackh, imageh, fg=nothing, bg=nothing, reaction(_))
-      lazy val shu: Slide = new ReactiveGlyphs.HorizontalSlider(trackh, imageh, fg=nothing, bg=nothing, reaction(_))
-      lazy val sv: Slide  = new ReactiveGlyphs.VerticalSlider(trackv, imagev, fg=nothing, bg=nothing, reaction(_))
-      lazy val svu: Slide = new ReactiveGlyphs.VerticalSlider(trackv() scaled 1.5f, imagev scaled 1.5f, fg=nothing, bg=nothing, reaction(_))
-      lazy val svr: Slide = new ReactiveGlyphs.VerticalSlider(trackv(), imagev, fg=nothing, bg=nothing, reaction(_))
+      lazy val sh:  Slider = Horizontal(trackh, imageh)(reaction)
+      lazy val shu: Slider = Horizontal(trackh, imageh)(reaction)
+      lazy val shr: Slider = Horizontal(trackh, imageh)(reaction)
+      lazy val sv:  Slider = Vertical(trackv, imagev)(reaction)
+      lazy val svu: Slider = Vertical(trackv() scaled 1.5f, imagev scaled 1.5f)(reaction)
+      lazy val svr: Slider = Vertical(trackv(), imagev)(reaction)
 
-      lazy val show = ActiveString(f"XXX.XXXX, XXX.XXXX")
-      lazy val slides: Seq[Slide] = List(sh, shu, sv, svu, svr)
+      lazy val show = ActiveString(f"X.XXX: (XXX.XX, XXX.XX)")
+      lazy val slides: Seq[Slider] = List(sh, shu, shr, sv, svu, svr)
+
+      implicit class WithHint(g: Slider) {
+        def hint(hint: String): Slider = {
+          HintManager(g, 5, s"$g: $hint")
+          g
+        }
+      }
+
       Col.centered(
         TextParagraphs(50, Justify)(
           """
             |Several linked sliders subjected to a variety of
             |scalings, rotations, and skewings.
+            |Hover over them for the details. Click
+            |or slide or rotate the wheel to set.
             |""".stripMargin), ex,
-        sh, shu.turned(5f).framed(),
-        Row.centered(sv.scaled(1.5f).framed(),
-                     svu.framed().rotated(2),
-                     svr.skewed(0.2f, 0f).turned(180f).framed(),
-                     TextLabel("An undriven horizontal rotated by 3: ") above (sh() scaled 0.5f rotated 3)),
+        sh hint "",
+        shu hint " turned 5" turned 5f framed (black),
+        Row.centered(sv hint " scaled 1.5" scaled(1.5f) framed(black), em,
+                     svu hint " rotated 2" rotated(2) framed(black), em,
+                     svr hint " skewed (.2,0) turned 180" skewed(0.2f, 0f) turned(180f) framed(black), em,
+                     shr hint " scaled 0.5f rotated 3" scaled 0.5f rotated 3),
         show.framed()
       )
     }

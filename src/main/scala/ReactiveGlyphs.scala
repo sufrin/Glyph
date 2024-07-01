@@ -11,21 +11,19 @@ object ReactiveGlyphs extends Brushes {
 
   import GlyphTypes.Scalar
 
+  trait Enterable {
+    def guiRoot:  RootGlyph
+    def reDraw(): Unit
 
-  /**
-   *  Experimental: derive the window to redraw from the glyph
-   *  hierarchy, not from the event being accepted. This is
-   *  intended to let us tidy up the signatures of the plethora of
-   *  `accept` methods of `ReactiveGlyph`s.
-   */
-  val hierarchical: Boolean = false
+    protected var _onGlyphEvent: Option[(Boolean, Vec)=>Unit] = None
 
-  /**
-   * TODO: Deliver buttons via a systematic API.
-   *
-   * TODO: Redraw requests made only at state changes on motion over hovered reactives
-   *       Plan: interaction between the hovered reactive and EventHandler
-   */
+    /**
+     * Set or clear the action to be invoked when the cursor enters or leaves a reactive glyph.
+     */
+    def onGlyphEvent(action: ((Boolean, Vec) => Unit)=null): Unit = {
+      _onGlyphEvent = if (action eq null) None else Some(action)
+    }
+  }
 
   /**
    * A `GenericButton` keeps track of whether the cursor is hovering over it, and
@@ -33,7 +31,7 @@ object ReactiveGlyphs extends Brushes {
    * it invokes `react()`. If the mouse is pressed over it, but released elsewhere,
    * then there is no reaction.
    */
-  abstract class GenericButton extends ReactiveGlyph {
+  abstract class GenericButton extends ReactiveGlyph with Enterable {
 
     import io.github.humbleui.jwm.{EventMouseButton, Window}
 
@@ -117,18 +115,11 @@ object ReactiveGlyphs extends Brushes {
           }
         }
         //println(s"""$showState ${mouse.isPressed}@$location""")
-        markStateChanged // if (hierarchical) reDraw() else window.requestFrame()
+        markStateChanged
       }
     }
 
-    private var _onGlyphEvent: Option[(Boolean, Vec)=>Unit] = None
 
-    /**
-     * Set or clear the action to be invoked when the cursor enters or leaves a reactive glyph.
-     */
-    def onGlyphEvent(action: ((Boolean, Vec) => Unit)=null): Unit = {
-      _onGlyphEvent = if (action eq null) None else Some(action)
-    }
 
     /**
      * Set or clear a glyph that could be shown on entry to the reactive.
@@ -155,11 +146,10 @@ object ReactiveGlyphs extends Brushes {
 
         _onGlyphEvent match {
           case None =>
-          case Some(action) => action(hovered, location)
+          case Some(action) => action(hovered, location + rootDistance)
         }
         markStateChanged
       }
-      //if (hierarchical) reDraw() else window.requestFrame()
     }
   }
 
@@ -376,10 +366,7 @@ object ReactiveGlyphs extends Brushes {
       }
   }
 
-    // The remaining button constructors are being phased out
-    //
-
-    object TextButton extends DefaultPaints {
+  object TextButton extends DefaultPaints {
 
       def apply(text: String, fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, background: Boolean = true)(reaction: Reaction): ColourButton = {
         val up = Brushes.buttonText(text).asGlyph(fg, bg).enlarged(Brushes.upFrame.strokeWidth*4)
@@ -388,7 +375,7 @@ object ReactiveGlyphs extends Brushes {
       }
     }
 
-    object FramedButton extends DefaultPaints {
+  object FramedButton extends DefaultPaints {
 
     import GlyphTransforms.Framed
 
@@ -454,7 +441,7 @@ object ReactiveGlyphs extends Brushes {
    *
    * TODO: Turned sliders attract focus curiously.
    */
-  abstract class GenericSlider extends ReactiveGlyph {
+  abstract class Slider extends ReactiveGlyph with Enterable {
 
     import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, MouseCursor, Window}
     /** Invoked when the cursor drags to `loc` */
@@ -463,7 +450,7 @@ object ReactiveGlyphs extends Brushes {
 
     val verticalCursor   = MouseCursor.RESIZE_NS
     val horizontalCursor = MouseCursor.RESIZE_WE
-    val cursor = MouseCursor.CROSSHAIR
+    val cursor           = MouseCursor.CROSSHAIR
 
     var pressed, hovered: Boolean = false
     var inactive: Boolean = false
@@ -507,18 +494,10 @@ object ReactiveGlyphs extends Brushes {
           pressed = false
         }
         //println(s"""$showState ${mouse.isPressed}@$location""")
-        markStateChanged // if (hierarchical) reDraw() else window.requestFrame()
+        markStateChanged
       }
     }
 
-    private var _onGlyphEvent: Option[(Boolean, Vec)=>Unit] = None
-
-    /**
-     * Set or clear the action to be invoked when the cursor enters or leaves a reactive glyph.
-     */
-    def onGlyphEvent(action: ((Boolean, Vec) => Unit)=null): Unit = {
-      _onGlyphEvent = if (action eq null) None else Some(action)
-    }
 
     override def accept(event: GlyphEvent, location: Vec, window: Window): Unit = {
       import Modifiers._
@@ -537,18 +516,18 @@ object ReactiveGlyphs extends Brushes {
 
         _onGlyphEvent match {
           case None =>
-          case Some(action) => action(hovered, location)
+          case Some(action) => action(hovered, location + rootDistance)
         }
         markStateChanged
       }
-      //if (hierarchical) reDraw() else window.requestFrame()
     }
 
   }
 
   // TODO: fix problems when scaled and/or turned
-  class HorizontalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Double => Unit) extends GenericSlider {
+  class HorizontalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Double => Unit) extends Slider {
     val diagonal: Vec = Vec(track.w, image.h max track.h)
+    override def toString: String = s"Slider.H(${(track.w,track.h)} [${(image.w, image.h)}])"
     var x: Scalar = 0
     var y: Scalar = 0
     @inline private def onTrack(cx: Scalar): Boolean  =
@@ -604,8 +583,9 @@ object ReactiveGlyphs extends Brushes {
   }
 
   // TODO: fix problems when scaled and/or turned
-  class VerticalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Double => Unit) extends GenericSlider {
+  class VerticalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Double => Unit) extends Slider {
     val diagonal: Vec = Vec(image.w max track.w, image.h max track.h)
+    override def toString: String = s"Slider.V(${(track.w,track.h)} [${(image.w, image.h)}])"
     var x: Scalar = 0
     var y: Scalar = 0
     @inline private def onTrack(cy: Scalar): Boolean  =
@@ -658,6 +638,14 @@ object ReactiveGlyphs extends Brushes {
 
     /** A copy of this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = new VerticalSlider(track, image, fg, bg, reaction)
+  }
+
+  object Slider {
+    def Horizontal(track: Glyph, image: Glyph, fg: Brush = nothing, bg: Brush = nothing)(reaction: Double => Unit): HorizontalSlider =
+        new HorizontalSlider(track, image, fg, bg, reaction)
+
+    def Vertical(track: Glyph, image: Glyph, fg: Brush = nothing, bg: Brush = nothing)(reaction: Double => Unit): VerticalSlider =
+      new VerticalSlider(track, image, fg, bg, reaction)
   }
 
 
