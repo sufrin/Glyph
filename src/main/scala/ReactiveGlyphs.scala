@@ -446,7 +446,7 @@ object ReactiveGlyphs extends Brushes {
     import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, MouseCursor, Window}
     /** Invoked when the cursor drags to `loc` */
     def dragTo(loc: Vec): Unit
-    def dragTo(proportion: Double): Unit
+    def dragTo(proportion: Scalar): Unit
 
     val verticalCursor   = MouseCursor.RESIZE_NS
     val horizontalCursor = MouseCursor.RESIZE_WE
@@ -525,7 +525,7 @@ object ReactiveGlyphs extends Brushes {
   }
 
   // TODO: fix problems when scaled and/or turned
-  class HorizontalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Double => Unit) extends Slider {
+  class HorizontalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Scalar => Unit) extends Slider {
     val diagonal: Vec = Vec(track.w, image.h max track.h)
     override def toString: String = s"Slider.H(${(track.w,track.h)} [${(image.w, image.h)}])"
     var x: Scalar = 0
@@ -537,8 +537,8 @@ object ReactiveGlyphs extends Brushes {
 
     val trackLength: Scalar = w - image.w
 
-    def dragTo(proportion: Double): Unit = {
-      val newX = (proportion*trackLength).toFloat
+    def dragTo(proportion: Scalar): Unit = {
+      val newX = (proportion*trackLength)
       if (onTrack(newX)) {
         this.x=newX
         reDraw()
@@ -583,7 +583,7 @@ object ReactiveGlyphs extends Brushes {
   }
 
   // TODO: fix problems when scaled and/or turned
-  class VerticalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Double => Unit) extends Slider {
+  class VerticalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Scalar => Unit) extends Slider {
     val diagonal: Vec = Vec(image.w max track.w, image.h max track.h)
     override def toString: String = s"Slider.V(${(track.w,track.h)} [${(image.w, image.h)}])"
     var x: Scalar = 0
@@ -595,7 +595,7 @@ object ReactiveGlyphs extends Brushes {
 
     override val cursor = verticalCursor
 
-    def dragTo(proportion: Double): Unit = {
+    def dragTo(proportion: Scalar): Unit = {
       val newY = (proportion*trackLength).toFloat
       if (onTrack(newY)) {
         this.y=newY
@@ -641,10 +641,10 @@ object ReactiveGlyphs extends Brushes {
   }
 
   object Slider {
-    def Horizontal(track: Glyph, image: Glyph, fg: Brush = nothing, bg: Brush = nothing)(reaction: Double => Unit): HorizontalSlider =
+    def Horizontal(track: Glyph, image: Glyph, fg: Brush = nothing, bg: Brush = nothing)(reaction: Scalar => Unit): HorizontalSlider =
         new HorizontalSlider(track, image, fg, bg, reaction)
 
-    def Vertical(track: Glyph, image: Glyph, fg: Brush = nothing, bg: Brush = nothing)(reaction: Double => Unit): VerticalSlider =
+    def Vertical(track: Glyph, image: Glyph, fg: Brush = nothing, bg: Brush = nothing)(reaction: Scalar => Unit): VerticalSlider =
       new VerticalSlider(track, image, fg, bg, reaction)
   }
 

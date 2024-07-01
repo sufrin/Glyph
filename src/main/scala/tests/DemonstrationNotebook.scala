@@ -1773,6 +1773,38 @@ trait DemonstrationPages extends Brushes {
       )
     }
 
+    Page("Split", "") {
+      val left = TextParagraphs(20, Justify)(
+        """
+          |This is a justified piece of text that may be quite small.
+          |You'll see it on a split screen.
+          |""".stripMargin) above ReactiveGlyphs.TextButton("Grab Left") { _ => }.framed()
+      val right = TextParagraphs(30, Left)(
+        """
+          |This is a left-justified piece of text that may be quite small.
+          |You'll see it on a split screen. It'll be a bit wider
+          |than the other thing on the screen.
+          |""".stripMargin) above ReactiveGlyphs.TextButton("Grab Right") { _ => }.framed()
+      val split = new DynamicGlyphs.SplitScreen(left, right, right.diagonal, fg=redLine strokeWidth 30f)
+      def blob = Glyphs.FilledRect(10f, 10f)
+      val slider = ReactiveGlyphs.Slider.Horizontal(Glyphs.Rect(split.w, 10f), blob){
+        case proportion: Scalar => split.setBoundary(proportion.toFloat)
+      }
+      Col.centered(
+        split,
+        slider,
+        TextButton("<"){
+          _ => split.setBoundary(1.0f); slider.dragTo(0.999f)
+        } beside
+          TextButton("<>") {
+            _ => split.exchange()
+          } beside
+        TextButton(">"){
+          _ => split.setBoundary(0.0f); slider.dragTo(0.00f)
+        },
+      ) enlarged 20f
+    }
+
     Page("Scroll", "Scrolling and Scaling with ViewPort"){
 
       val image   = PolygonLibrary.PalestinianFlag scaled 0.5f
@@ -1862,7 +1894,7 @@ trait DemonstrationPages extends Brushes {
       val imageh = FilledRect(15f, 35f, fg=red)
       val imagev = FilledRect(35f, 5f, fg=red)
 
-      def reaction(proportion: Double): Unit = {
+      def reaction(proportion: Scalar): Unit = {
         for { sl<-slides } sl.dragTo(proportion)
         show.set(f"$proportion%1.3f (${sh.w*proportion}%3.2f, ${sv.h*proportion}%3.2f)")
       }

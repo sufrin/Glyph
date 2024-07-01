@@ -293,6 +293,87 @@ object DynamicGlyphs extends Brushes {
       new OneOf(glyphs, align, fg = fg)
   }
 
+  /**
+   * A (laterally) split screen that (initially) juxtaposes `left` to `right`, in
+   * the given `boundingBox` (or an envelope large enough to contain either of them).
+   * The boundary between the glyphs is initially set at `1.0*left.w` from the left
+   * edge of the bounding box; but this boundary can be set to `proportion` of
+   * `left.w` with `setBoundary(proportion)`.
+   *
+   * @param left
+   * @param right
+   * @param boundingBox
+   * @param fg
+   * @param bg
+   */
+  class SplitScreen(left: Glyph, right: Glyph, boundingBox: Vec = null, val fg: Brush=black, val bg: Brush = black)
+        extends  Glyph {
+    import GlyphTypes.Scalar
+
+    locally { left.parent = this; right.parent = this }
+
+    var theLeft  = left
+    var theRight = right
+
+    var _boundary:   Scalar = left.w
+    var _proportion: Scalar = 1.0f
+
+    def boundary: Scalar = _boundary
+
+    /**
+     * Set the boundaryt at `proportion` of the width of the current `left`.
+     * @param proportion
+     */
+    def setBoundary(proportion: Scalar): Unit = {
+      println(_proportion)
+      _proportion = proportion
+      _boundary = proportion * theLeft.w
+      reDraw()
+    }
+
+    /**
+     * Exchange the current `left` and `right`, and re-establish the boundary.
+     */
+    def exchange(): Unit = {
+      val t = theLeft
+      theLeft = theRight
+      theRight = t
+      setBoundary(_proportion)
+    }
+
+    val offset = fg.strokeWidth/2f
+
+    def diagonal: Vec = if (boundingBox ne null) boundingBox else Vec((left.w max right.w)+fg.strokeWidth, left.h max right.h)
+
+    override def draw(surface: Surface): Unit = {
+      surface.withClip(Vec(_boundary, h)) {
+        theLeft.draw(surface)
+      }
+      surface.drawLines$(fg, _boundary+offset, 0, _boundary+offset, h)
+      surface.withClip(Vec(w, h)) {
+        surface.withOrigin(_boundary+fg.strokeWidth, 0) {
+          theRight.draw(surface)
+        }
+      }
+    }
+
+    /**
+     * In the appropriate sub-glyph, find the glyph containing `p` . The
+     * boundary between subglyphs is the (vertical) divider.
+     */
+    override def glyphContaining(p: Vec): Option[Hit] = {
+      if (0f <= p.x && p.x < _boundary)
+          theLeft.glyphContaining(p)
+      else if(_boundary+fg.strokeWidth<=p.x && p.x<w)
+          theRight.glyphContaining(p-(_boundary+fg.strokeWidth, 0))
+      else None
+    }
+
+    /** A copy of this glyph; perhaps with different foreground/background */
+    def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new SplitScreen(left, right, diagonal, fg, bg)
+
+  }
+
 
   trait Steppable {
     def start(): Unit = {}

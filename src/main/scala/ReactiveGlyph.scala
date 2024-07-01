@@ -58,6 +58,7 @@ abstract class ReactiveGlyph extends Glyph {
     //import AffineTransform.{inverse, reverse, transform}
     //val inv = inverse(affineTransform)
     //val rel = transform(inv)(rootDistance)
+    // TODO: ensure that the location is not made invisible by the clip
     val relativeLocation = reverseTransform(screenLocation)
     glyph.contains(rootDistance + relativeLocation)
   }
