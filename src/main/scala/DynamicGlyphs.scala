@@ -294,19 +294,18 @@ object DynamicGlyphs extends Brushes {
   }
 
   /**
-   * A (laterally) split screen that (initially) juxtaposes `left` to `right`, in
-   * the given `boundingBox` (or an envelope large enough to contain either of them).
-   * The boundary between the glyphs is initially set at `1.0*left.w` from the left
-   * edge of the bounding box; but this boundary can be set to `proportion` of
-   * `left.w` with `setBoundary(proportion)`.
+   * A (laterally) split screen that (initially) juxtaposes `left` to `right`. If `dynamic`
+   * its bounding box is large enough to accomodate each of them separately; else it is large
+   * enough to accomodate them side-by-side. The boundary between the current left and right
+   * is drawn as a vertical line with the brush `fg`.
    *
    * @param left
    * @param right
-   * @param boundingBox
+   * @param dynamic
    * @param fg
    * @param bg
    */
-  class SplitScreen(left: Glyph, right: Glyph, boundingBox: Vec = null, val fg: Brush=black, val bg: Brush = black)
+  class SplitScreen(left: Glyph, right: Glyph, dynamic: Boolean, val fg: Brush, val bg: Brush)
         extends  Glyph {
     import GlyphTypes.Scalar
 
@@ -316,43 +315,52 @@ object DynamicGlyphs extends Brushes {
     var theRight = right
 
     var _boundary:   Scalar = left.w
-    var _proportion: Scalar = 1.0f
+    var _proportion: Scalar = left.w/w
 
-    def boundary: Scalar = _boundary
+    def boundary: Scalar   = _boundary
+    def proportion: Scalar = _proportion
 
     /**
-     * Set the boundaryt at `proportion` of the width of the current `left`.
+     * Set the boundary at `proportion` of the width of the bounding box.
      * @param proportion
      */
     def setBoundary(proportion: Scalar): Unit = {
-      println(_proportion)
       _proportion = proportion
-      _boundary = proportion * theLeft.w
+      _boundary   = proportion * w
       reDraw()
     }
 
     /**
-     * Exchange the current `left` and `right`, and re-establish the boundary.
+     * Exchange the current `left` and `right`, and re-establish the boundary if necessary:
+     * if `dynamic` is true, then it is where it was before the exchange;
+     * otherwise it is between the current left and the current right.
      */
     def exchange(): Unit = {
       val t = theLeft
       theLeft = theRight
       theRight = t
-      setBoundary(_proportion)
+      if (dynamic) setBoundary(_proportion) else setBoundary(theLeft.w/w)
     }
 
-    val offset = fg.strokeWidth/2f
+    val sepWidth = fg.strokeWidth
+    val offset   = sepWidth/2f
 
-    def diagonal: Vec = if (boundingBox ne null) boundingBox else Vec((left.w max right.w)+fg.strokeWidth, left.h max right.h)
+    def diagonal: Vec =
+        if (dynamic)
+          Vec((left.w max right.w) + sepWidth, left.h max right.h)
+        else
+          Vec(left.w + right.w + sepWidth, left.h max right.h)
 
     override def draw(surface: Surface): Unit = {
-      surface.withClip(Vec(_boundary, h)) {
-        theLeft.draw(surface)
+      val leftScope  = Vec(_boundary, h)
+      val rightScope = Vec((w-_boundary-sepWidth) max 0f, h)
+      surface.withClip(leftScope) {
+        surface.withScope(leftScope) { theLeft.draw(surface) }
       }
       surface.drawLines$(fg, _boundary+offset, 0, _boundary+offset, h)
-      surface.withClip(Vec(w, h)) {
-        surface.withOrigin(_boundary+fg.strokeWidth, 0) {
-          theRight.draw(surface)
+      surface.withOrigin(_boundary+sepWidth, 0) {
+        surface.withClip(rightScope) {
+          surface.withScope(rightScope) { theRight.draw(surface) }
         }
       }
     }
@@ -370,8 +378,13 @@ object DynamicGlyphs extends Brushes {
     }
 
     /** A copy of this glyph; perhaps with different foreground/background */
-    def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new SplitScreen(left, right, diagonal, fg, bg)
+    def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new SplitScreen(left, right, dynamic, fg, bg)
 
+  }
+
+  object SplitScreen {
+    def apply(left: Glyph, right: Glyph, dynamic: Boolean, fg: Brush=black, bg: Brush = nothing): SplitScreen =
+      new SplitScreen(left, right, dynamic, fg, bg)
   }
 
 

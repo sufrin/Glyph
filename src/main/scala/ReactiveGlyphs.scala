@@ -524,8 +524,7 @@ object ReactiveGlyphs extends Brushes {
 
   }
 
-  // TODO: fix problems when scaled and/or turned
-  class HorizontalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Scalar => Unit) extends Slider {
+  class HorizontalSlider(track: Glyph, image: Glyph, initialProportion: Scalar, val fg: Brush, val bg: Brush, reaction: Scalar => Unit) extends Slider {
     val diagonal: Vec = Vec(track.w, image.h max track.h)
     override def toString: String = s"Slider.H(${(track.w,track.h)} [${(image.w, image.h)}])"
     var x: Scalar = 0
@@ -536,6 +535,11 @@ object ReactiveGlyphs extends Brushes {
     override val cursor = horizontalCursor
 
     val trackLength: Scalar = w - image.w
+
+    locally {
+      val newX = (initialProportion*trackLength)
+      if (onTrack(newX)) this.x=newX
+    }
 
     def dragTo(proportion: Scalar): Unit = {
       val newX = (proportion*trackLength)
@@ -579,11 +583,11 @@ object ReactiveGlyphs extends Brushes {
     locally { track.parent = this }
 
     /** A copy of this glyph; perhaps with different foreground/background */
-    def copy(fg: Brush, bg: Brush): Glyph = new HorizontalSlider(track, image, fg, bg, reaction)
+    def copy(fg: Brush, bg: Brush): Glyph = new HorizontalSlider(track, image, initialProportion, fg, bg, reaction)
   }
 
-  // TODO: fix problems when scaled and/or turned
-  class VerticalSlider(track: Glyph, image: Glyph, val fg: Brush, val bg: Brush, reaction: Scalar => Unit) extends Slider {
+
+  class VerticalSlider(track: Glyph, image: Glyph, initialProportion: Scalar, val fg: Brush, val bg: Brush, reaction: Scalar => Unit) extends Slider {
     val diagonal: Vec = Vec(image.w max track.w, image.h max track.h)
     override def toString: String = s"Slider.V(${(track.w,track.h)} [${(image.w, image.h)}])"
     var x: Scalar = 0
@@ -594,6 +598,13 @@ object ReactiveGlyphs extends Brushes {
     val trackLength: Scalar = h - image.h
 
     override val cursor = verticalCursor
+
+    locally {
+      val newY = (initialProportion*trackLength).toFloat
+      if (onTrack(newY)) {
+        this.y=newY
+      }
+    }
 
     def dragTo(proportion: Scalar): Unit = {
       val newY = (proportion*trackLength).toFloat
@@ -637,15 +648,15 @@ object ReactiveGlyphs extends Brushes {
     locally { track.parent = this }
 
     /** A copy of this glyph; perhaps with different foreground/background */
-    def copy(fg: Brush, bg: Brush): Glyph = new VerticalSlider(track, image, fg, bg, reaction)
+    def copy(fg: Brush, bg: Brush): Glyph = new VerticalSlider(track, image, initialProportion, fg, bg, reaction)
   }
 
   object Slider {
-    def Horizontal(track: Glyph, image: Glyph, fg: Brush = nothing, bg: Brush = nothing)(reaction: Scalar => Unit): HorizontalSlider =
-        new HorizontalSlider(track, image, fg, bg, reaction)
+    def Horizontal(track: Glyph, image: Glyph, initialProportion: Scalar = 0f, fg: Brush = nothing, bg: Brush = nothing)(reaction: Scalar => Unit): HorizontalSlider =
+        new HorizontalSlider(track, image, initialProportion, fg, bg, reaction)
 
-    def Vertical(track: Glyph, image: Glyph, fg: Brush = nothing, bg: Brush = nothing)(reaction: Scalar => Unit): VerticalSlider =
-      new VerticalSlider(track, image, fg, bg, reaction)
+    def Vertical(track: Glyph, image: Glyph, initialProportion: Scalar = 0f, fg: Brush = nothing, bg: Brush = nothing)(reaction: Scalar => Unit): VerticalSlider =
+      new VerticalSlider(track, image, initialProportion, fg, bg, reaction)
   }
 
 

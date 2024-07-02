@@ -31,9 +31,17 @@ abstract class ReactiveGlyph extends Glyph {
    */
   var reverseTransform: Vec    => Vec = { v => v }
 
+  /**
+   *  When nonzero, `_scope` is the diagonal of the (absolute) bounding box within which a
+   *  reactive glyph can still be considered to contain the cursor.
+   */
+  var _scope = Vec.Zero
 
-  def declareCurrentTransform(transform: AffineTransform.Transform, ambientScaling: Scalar): Unit = {
+  def declareCurrentTransform(transform: AffineTransform.Transform, ambientScaling: Scalar, scope: Vec): Unit = {
       reverseTransform = AffineTransform.reverse(transform, ambientScaling)
+      if (scope ne Vec.Zero) {
+        _scope = scope
+      }
   }
 
   /**
@@ -47,20 +55,13 @@ abstract class ReactiveGlyph extends Glyph {
    *
    */
   override def contains(screenLocation: Vec): Boolean = {
-    //import AffineTransform.{inverse, reverse, transform}
-    //val inv = inverse(affineTransform)
-    //val rel = transform(inv)(rootDistance)
     val relativeLocation = reverseTransform(screenLocation)
-    super.contains(rootDistance+relativeLocation)
+    super.contains(rootDistance+relativeLocation) && ((_scope eq Vec.Zero) || (screenLocation within _scope))
   }
 
   def glyphContains(glyph: Glyph, screenLocation: Vec): Boolean = {
-    //import AffineTransform.{inverse, reverse, transform}
-    //val inv = inverse(affineTransform)
-    //val rel = transform(inv)(rootDistance)
-    // TODO: ensure that the location is not made invisible by the clip
     val relativeLocation = reverseTransform(screenLocation)
-    glyph.contains(rootDistance + relativeLocation)
+    glyph.contains(rootDistance + relativeLocation) && ((_scope eq Vec.Zero) || (screenLocation within _scope))
   }
 
   /** The glyph-relative position of the given screen location  */

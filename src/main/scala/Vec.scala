@@ -68,6 +68,9 @@ trait Vec {
     origin.x <= x && x <= origin.x + diagonal.x &&
       origin.y <= y && y <= origin.y + diagonal.y
 
+  @inline def within(v: Vec): Boolean =
+    x<v.x && y<v.y
+
   def length: Scalar = root(x * x + y * y)
 
   def root(d: Scalar): Scalar = Math.sqrt(d).toFloat

@@ -9,6 +9,7 @@ import io.github.humbleui.types.Rect
 trait Surface {
   import GlyphTypes.{Degrees, Scalar, Scale}
   import Surface.{arrayOfPairs, arrayOfVectors}
+
   import io.github.humbleui.skija.{Image, Matrix33, Path, TextLine}
 
   val canvas: Canvas
@@ -250,6 +251,30 @@ trait Surface {
     }
   }
 
+
+  private var _scope: Vec = Vec.Zero
+
+  /**
+   * Set the scope of reactive glyph gestures to be `scope`
+   * during the computation of `effect`. When nonzero, `_scope` is the
+   * diagonal of the (absolute) bounding box within which a
+   * reactive glyph can still be considered to contain the cursor.
+   *
+   * TODO: It looks like `scope` should be set whenever a clip is
+   *       set on a container -- because one doesn't want a glyph that has been partly clipped
+   *       to continue to respond to mouse movements over its clipped part. But this
+   *       may be avoidable in many cases.
+   */
+  def withScope(scope: Vec)(effect: => Unit): Unit = {
+    val s = _scope
+    val trans      = AffineTransform.from(canvas.getLocalToDeviceAsMatrix33)
+    val thisOrigin = AffineTransform.transform(trans, 0f, 0f)
+    _scope = scope + thisOrigin
+    try effect
+    catch   { case err: Throwable => err.printStackTrace() }
+    finally { _scope = s }
+  }
+
   /**
    * Tell the given reactive glyph what the most recent co-ordinate transformation
    * was. Currently intended to be used (only) by the draw methods of reactive glyphs
@@ -258,7 +283,7 @@ trait Surface {
   def declareCurrentTransform(glyph: ReactiveGlyph) = {
       //println(s"$hardwareScale => $scaleT")
       val transform = canvas.getLocalToDeviceAsMatrix33
-      glyph.declareCurrentTransform(AffineTransform.from(transform), scale)
+      glyph.declareCurrentTransform(AffineTransform.from(transform), scale, _scope)
   }
 
 }

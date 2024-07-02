@@ -1774,35 +1774,63 @@ trait DemonstrationPages extends Brushes {
     }
 
     Page("Split", "") {
-      val left = TextParagraphs(20, Justify)(
+      import DynamicGlyphs.SplitScreen
+      import ReactiveGlyphs.Slider
+      val left = TextParagraphs(30, Justify)(
         """
           |This is a justified piece of text that may be quite small.
-          |You'll see it on a split screen.
-          |""".stripMargin) above ReactiveGlyphs.TextButton("Grab Left") { _ => }.framed()
-      val right = TextParagraphs(30, Left)(
+          |You'll see it on a split screen. When the text on the other
+          |screen is not the same width we'll see what happens.
+          |""".stripMargin) above ReactiveGlyphs.TextButton("The Left Button") { _ => }.framed()
+      val right = TextParagraphs(40, Left)(
         """
           |This is a left-justified piece of text that may be quite small.
           |You'll see it on a split screen. It'll be a bit wider
           |than the other thing on the screen.
-          |""".stripMargin) above ReactiveGlyphs.TextButton("Grab Right") { _ => }.framed()
-      val split = new DynamicGlyphs.SplitScreen(left, right, right.diagonal, fg=redLine strokeWidth 30f)
-      def blob = Glyphs.FilledRect(10f, 10f)
-      val slider = ReactiveGlyphs.Slider.Horizontal(Glyphs.Rect(split.w, 10f), blob){
-        case proportion: Scalar => split.setBoundary(proportion.toFloat)
+          |""".stripMargin) above ReactiveGlyphs.TextButton("The Right Button") { _ => }.framed()
+      val dynamic = SplitScreen(left enlarged 30, right enlarged 30, dynamic=true, fg=darkGrey.strokeWidth(6f))
+      def blob    = Glyphs.FilledRect(10f, 10f, fg=black.blurred(2f))
+      val slider  = Slider.Horizontal(Glyphs.Rect(dynamic.w, 2f), blob, dynamic.proportion){
+        case proportion: Scalar => dynamic.setBoundary(proportion)
       }
+      val static = SplitScreen(left() enlarged 30, right() enlarged 30, dynamic=false, fg=darkGrey.strokeWidth(6f))
       Col.centered(
-        split,
+        TextParagraphs(60, Justify)(
+          """
+            |This is a test of the SplitScreen glyph. The test shows a pair of glyphs side by
+            |side, each of which contains some text and a reactive glyph. Here we have coupled
+            |the SplitScreen dynamically with a
+            |Slider.Horizontal that sets the boundary between the left and right
+            |glyphs, accompanied by three buttons that respectively move the boundary to the left,
+            |exchange left and right, and move the boundary to the right.
+            |
+            | Notice how the reactives respond when the cursor hovers over
+            |parts of them that are not visible, namely by giving up the
+            |focus if they happened to have it.
+            |""".stripMargin), ex, ex,
+        dynamic,
         slider,
         TextButton("<"){
-          _ => split.setBoundary(1.0f); slider.dragTo(0.999f)
+          _ => dynamic.setBoundary(0.0f); slider.dragTo(0f)
         } beside
           TextButton("<>") {
-            _ => split.exchange()
+            _ => dynamic.exchange()
           } beside
         TextButton(">"){
-          _ => split.setBoundary(0.0f); slider.dragTo(0.00f)
+          _ => dynamic.setBoundary(1.0f); slider.dragTo(0.999f)
         },
-      ) enlarged 20f
+        ex, ex, ex,
+        TextParagraphs(60, Justify)(
+          """
+            |Below we test the SplitScreen with a static size large enough to accomodate both glyphs.
+            |It was, incidentally, built from copies of the left and right glyphs that appear above;
+            |so also acts as a test for deep-copying of all the glyphs involved in their construction.
+            |""".stripMargin), ex,
+        static,
+        TextButton("L<->R") {
+          _ => static.exchange()
+        }
+      ) enlarged 20f framed(blue)
     }
 
     Page("Scroll", "Scrolling and Scaling with ViewPort"){
