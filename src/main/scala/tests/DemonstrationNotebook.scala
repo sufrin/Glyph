@@ -54,6 +54,7 @@ trait DemonstrationPages extends Brushes {
     override def face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.BOLD)
     override def buttonFontSize: Scalar = 36
     override def labelFontSize: Scalar = 36
+    override lazy val labelStyle: GlyphStyle = PrevailingStyle.labelStyle.copy(fg = red, font = labelFont)
   }
 
 

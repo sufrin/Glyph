@@ -1368,7 +1368,7 @@ not being shared anywhere else in the GUI tree, we want to avoid
 changing that brush. So we construct a \textit{copy} (\Scala{glyph})
 of the appearance glyph, with \Scala{fg} (\Scala{bg}) set to \Scala{currentBrush}
 -- a copy of the appearance's relevant brush. We intend to use
-\Scala{glyph} when drawing the button; its  (background)  will
+\Scala{glyph} when drawing the button; its  foreground (or background)  will
 be painted using the copied brush, and the appropriate features of
 that brush will be copied (from one of \Scala{up, down, hover})
 according to the current state of the button.
@@ -1812,7 +1812,7 @@ def field(): TextField = TextField(size = 8, onEnter = {
 \clearpage
 \S{Pages from {DemonstrationNotebook}}
 
-Figures \ref{Help} to \ref{Events-Events} show some of the pages
+Figures \ref{Help} to \ref{Etc-Split} show some of the pages
 of the \texttt{DemonstrationNotebook} example. They are intended to
 illustrate some of the available tools in use, and their source
 code shows how the tools can be used.
@@ -1850,6 +1850,7 @@ trait DemonstrationPages
         Page("Animation", "") {...}
         Page("Grid", "buts = 8 ... ") {...}
         Page("Blurred", "") {...}
+        Page("Split", "") {...}
         Page("Scroll", "Scrolling and Scaling with ViewPort") {...}
         Page("OneOf", "OneOf backgrounds") {...}
         Page("CheckBox", "Toggles and Checkboxes") {...}
@@ -1942,6 +1943,7 @@ object DemonstrationNotebook extends DemonstrationPages with Application {
 \SAVEDFIG Etc-Grid-Table/the Grid.Table subpage of Etc* /
 \SAVEDFIG Etc-Grid-CellFit/the Grid.CellFit subpage of Etc* /
 \SAVEDFIG Etc-Blurred/the Blurred subpage of Etc* /
+\SAVEDFIG Etc-Split/the Split subpage of Etc* /
 \clearpage
 
 \section*{Acknowledgements}
