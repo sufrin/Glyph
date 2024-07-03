@@ -1,4 +1,5 @@
-package org.sufrin.glyph.tests
+package org.sufrin.glyph
+package tests
 
 import java.awt.desktop.{QuitEvent, QuitResponse}
 

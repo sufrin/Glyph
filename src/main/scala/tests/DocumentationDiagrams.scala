@@ -1,9 +1,7 @@
-package org.sufrin.glyph.tests
-import org.sufrin.glyph.Brush._
-import org.sufrin.glyph.GlyphTypes._
-import org.sufrin.glyph.Glyphs._
-import org.sufrin.glyph._
-import org.sufrin.glyph.styled.TextLayout.TextLabel
+package org.sufrin.glyph
+package tests
+import Glyphs._
+import GlyphTypes._
 
 
 /**
@@ -339,8 +337,9 @@ object DocumentationDiagrams {
     val gridCellFit =  {
       import styled.TextLayout._
       implicit object Style extends Styles.DefaultSheet{}
-      import Style.Spaces._
       import CellFit._
+
+      import Style.Spaces._
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
