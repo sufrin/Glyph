@@ -5,7 +5,7 @@ package overlaydialogues
 import Location._
 import NaturalSize.{Col, Row}
 
-import io.github.humbleui.jwm.App
+import io.github.humbleui.jwm.{App, EventMouseScroll}
 
 
 /**
@@ -38,7 +38,7 @@ object Dialogue {
   }
 
 
-  /**  Yield a menu button in the given button style that activates a pop-up menu on which are the glyphs `buttons`.
+  /**  Yield a menu button in the given implicit style that activates a pop-up menu on which are the glyphs `buttons`.
    *   An activated menu is modal: it takes the entire application focus while it is up; and any nested menus popped up by it will
    *   (likewise) take the entire application focus from the menu from which they were activated. The `buttons` that are active will behave as expected when clicked,
    *   then cause the whole menu to be dismissed, and focus to revert to an appropriate glyph or to become uncommitted.
@@ -49,7 +49,8 @@ object Dialogue {
    *
    *   Every attempt is made to accomodate the popup in a sensible place (to the right of the menu button), or at least in
    *   a place where it is completely visible (on its window). But if it has popped up in an inconvenient place, it can be moved using the
-   *   UP,DOWN,LEFT,RIGHT keys.
+   *   HOME and END keys, and the mousewheel. The first moves the popup north-west by its own dimension;
+   *   the second moves it south-east by its own dimension. The wheel moves it incrementally in the direction indicated.
    *
    */
   def Menu(name: String, nested: Boolean=false)(button: Glyph, buttons: Glyph*)(implicit sheet: StyleSheet): Glyph = {
@@ -125,7 +126,7 @@ object Dialogue {
    * Its `start()` or `andThen` method yields  `()` if "OK" is clicked; and `null` if the
    * popup is closed from its close button.
    *
-   * If the `position` is unspecified then it must later be set by one of
+   * The position must be set by one of
    * the `Dialogue` methods `North`, ... before the dialogue is started.
    * For example:
    * {{{
@@ -146,7 +147,7 @@ object Dialogue {
    * yields true`/`false` respectively when "OK"/"NO" are pressed; or `null` if the dialogue was closed from its
    * close button.
    *
-   * If the `position` is unspecified then it must later be set by one of
+   * The position must be set by one of
    * the `Dialogue` methods `North`, `NorthEast`,  ... before the dialogue is started.
    * For example:
    * {{{
@@ -176,7 +177,7 @@ object Dialogue {
    * the string on the button that was used; or `null` if the dialogue was closed from its
    * close button.
    *
-   * If the `position` is unspecified then it must later be set by one of
+   * The position must be set by one of
    * the `Dialogue` methods `North`, `NorthEast`,  ... before the dialogue is started.
    * For example:
    * {{{
@@ -197,6 +198,18 @@ object Dialogue {
     popup
   }
 
+  /**
+   * A generalization of  `CHOOSE`, with buttons  labelled with (copies of) the `Glyph` components of `choices`. When
+   * `(t, g)` appears as a choice; pressing the button labelled with `g` yields the value `t`. For example:
+   * {{{
+   *        CHOICE("How many hands?")((1, Label("One")), (2, Label("Two")))
+   *        .West(anchor)
+   *        .andThen{
+   *           case 1  => ...
+   *           case 2 => ...
+   *        }
+   * }}}
+   */
   def CHOICE[T](blurb: Glyph)(choices: (T, Glyph)*): Dialogue[T] = {
     lazy val buttons = choices.map {
       case (t, g) => ReactiveGlyphs.RawButton(g(), g(), g()) { _ => popup.close(t) }.framed().enlarged(20)
@@ -222,18 +235,18 @@ object Dialogue {
  *
  * @tparam T the type of value passed to the continuation (if any) by invoking `close`
  *
- * TODO: if a Dialogue is not completely visible on the current window then perhaps take backup action by jiggling it or embedding it in a
- *       window of its own.  Since the windowdialogues and overlaydialogues APIs are converging this may be straightforward.
  */
 class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyph: Option[Glyph] = None, var isModal: Boolean = true, var isMenu: Boolean = false)
 {
   thisPopup =>
 
+  val RelativeTo(glyph, _) = location
+
   import NaturalSize.{Col, Row}
   import ReactiveGlyphs.RawButton
 
   /**
-   * This will be the reactive glyph, if any, that also responds to ESCAPE/UP/DOWN/LEFT/RIGHT.
+   * This will be the reactive glyph, if any, that also responds to ESCAPE/HOME/END and the mousewheel
    * It's essential to have one of these if the popup is modal and we wish
    * the user to be able to abandon the popup without doing anything (eg. making
    * a choice or hitting a nested menu button).
@@ -276,7 +289,8 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
         val closeButton = new RawButton(closeButtonAppearance(),
                                         closeButtonAppearance(),
                                         closeButtonAppearance(), closeButtonAppearance.fg, closeButtonAppearance.bg,
-                          { _: Modifiers.Bitmap  => close() })
+                                        { _: Modifiers.Bitmap  => close() }
+        )
         {
           import io.github.humbleui.jwm.{EventKey, Window}
           import io.github.humbleui.jwm.Key._
@@ -287,13 +301,26 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
             //println(s"closeButton $key")
              key.getKey match {
                case ESCAPE  if isModal && !key.isPressed => close()
-               case UP      if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (0f, -15f); overlayRoot.reDraw()
-               case DOWN    if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (0f, 15f); overlayRoot.reDraw()
-               case RIGHT   if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (15f, 0f); overlayRoot.reDraw()
-               case LEFT    if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (-15f, 0f); overlayRoot.reDraw()
+               //case UP      if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (0f, -15f); overlayRoot.reDraw()
+               //case DOWN    if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (0f, 15f); overlayRoot.reDraw()
+               //case RIGHT   if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (15f, 0f); overlayRoot.reDraw()
+               //case LEFT    if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (-15f, 0f); overlayRoot.reDraw()
+               case HOME    if isModal && !key.isPressed =>
+                 overlayRoot.location = overlayRoot.location - overlayRoot.diagonal
+                 overlayRoot.reDraw()
+               case END     if isModal && !key.isPressed =>
+                 overlayRoot.location = overlayRoot.location + overlayRoot.diagonal
+                 overlayRoot.reDraw()
                case other => super.accept(key, location, window)
              }
           }
+
+          override def accept(event: EventMouseScroll, location: Vec, window: Window): Unit = {
+              val dx = event._deltaX
+              val dy = event._deltaY
+              if (isModal) overlayRoot.location = overlayRoot.location + (dx, dy); overlayRoot.reDraw()
+          }
+
         }
         theCloseButton = Some(closeButton)
         Col(bg = DefaultBrushes.nothing).atLeft (
@@ -334,11 +361,11 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
         // TODO: eliminate magic offset: without it the dialogues are mislocated
         val MAGIC = Vec(11f, 14f)
         var requested = glyph.rootDistance + offset + MAGIC
-        // Jiggle the location so the glyph is (sort of) visible
-        while (requested.x<0) requested = requested + Vec(2f, 0)
-        while (requested.y<0) requested = requested + Vec(0, 2f)
-        while (requested.x + overlayRoot.w > glyph.guiRoot.w) requested = requested - Vec(2f, 0)
-        while (requested.y + overlayRoot.h > glyph.guiRoot.h) requested = requested - Vec(0, 2f)
+        // Nudge the request so the glyph is (mostly) visible in the actual window
+        while (requested.x<0) requested -= Vec(requested.x, 0)
+        while (requested.y<0) requested -= Vec(0, requested.y)
+        while (requested.x + overlayRoot.w > glyph.guiRoot.W) requested -= Vec(10f, 0)
+        while (requested.y + overlayRoot.h > glyph.guiRoot.H) requested -= Vec(0, 10f)
         overlayRoot.location = requested
         glyph.guiRoot.giveupFocus()
         glyph.guiRoot.Overlay.pushLayer(overlayRoot, isModal, isMenu=isMenu, offMenuClick={ () => close() })

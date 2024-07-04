@@ -25,6 +25,12 @@ class RootGlyph(GUIroot: Glyph) extends Glyph { thisRoot =>
   /** The root Window of this interaction */
   var  rootWindow: Window = null
 
+  /** The actual width of the window; not the proposed width of the glyph  */
+  def W: Scalar = rootWindow.getContentRectAbsolute.getWidth.toFloat
+  /** The actual height of the window; not the proposed height of the glyph  */
+  def H: Scalar = rootWindow.getContentRectAbsolute.getHeight.toFloat
+
+
   /**
    * Redraw the main window associated with this (running) GUI.
    */
