@@ -395,6 +395,7 @@ object TextField {
     import Glyphs.Label
     import Modifiers._
     import windowdialogues.Dialogue
+    implicit object Style extends Styles.DefaultSheet
     Dialogue.OK(Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
   }
 

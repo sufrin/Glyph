@@ -14,6 +14,7 @@ trait LargeTestGUI extends Brushes {
   import GlyphTransforms.{Framed, Scaled}
   import NaturalSize.{Col, Row}
   import ReactiveGlyphs.{FramedButton, RawButton, ShadedButton}
+  implicit object Sheet extends Styles.DefaultSheet
 
   private lazy val atPopupAnchor = East(popupAnchor)
   val face: Typeface =

@@ -27,30 +27,30 @@ object Dialogue {
     new Dialogue[T](blurb, bottomRow, position, title)
   }
 
-  def OK(blurb: Glyph, position: Location=null, title: String=""): Dialogue[Unit] = {
+  def OK(blurb: Glyph, position: Location=null, title: String="")(implicit sheet: StyleSheet): Dialogue[Unit] = {
     // Mutual references ok<->popup
-    lazy val ok: Glyph = ReactiveGlyphs.TextButton("OK") {
+    lazy val ok: Glyph = styled.TextButton("OK") {
        _ => popup.close()
-    }.framed().enlarged(20)
+    }
     lazy val popup: Dialogue[Unit] = new Dialogue[Unit](blurb, List(ok), position, title)
     popup
   }
 
-  def OKNO(blurb: Glyph, position: Location=null, title: String = "", ok: String = " OK ", no: String=" NO "): Dialogue[Boolean] = {
+  def OKNO(blurb: Glyph, position: Location=null, title: String = "", ok: String = " OK ", no: String=" NO ")(implicit sheet: StyleSheet): Dialogue[Boolean] = {
     // Mutual references ok<->popup, no<->popup
-    lazy val okButton: Glyph = ReactiveGlyphs.TextButton(ok) {
+    lazy val okButton: Glyph = styled.TextButton(ok) {
       _ => popup.close(true)
-    }.framed().enlarged(20)
-    lazy val noButton: Glyph = ReactiveGlyphs.TextButton(no) {
+    }
+    lazy val noButton: Glyph = styled.TextButton(no) {
       _ => popup.close(false)
-    }.framed().enlarged(20)
+    }
     lazy val popup: Dialogue[Boolean] = new Dialogue[Boolean](blurb, List(okButton, noButton), position, title)
     popup
   }
 
-  def CHOOSE(blurb: Glyph, position: Location=null, title: String = "")(choices: String*): Dialogue[String] = {
+  def CHOOSE(blurb: Glyph, position: Location=null, title: String = "")(choices: String*)(implicit sheet: StyleSheet): Dialogue[String] = {
     lazy val buttons = choices.map {
-        choice => ReactiveGlyphs.TextButton(choice) {  _ => popup.close(choice) }.framed().enlarged(20)
+        choice => styled.TextButton(choice) {  _ => popup.close(choice) }
     }
     lazy val popup: Dialogue[String] = new Dialogue[String](blurb, buttons, position, title)
     popup
@@ -63,9 +63,10 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
    * Make a primitive popup from `blurb` atop `bottomRow`; placing it at `location` on the screen.
    */
 
-    import GlyphTypes.Pixels
     import Glyphs.Label
+    import GlyphTypes.Pixels
     import NaturalSize.{Col, Row}
+
     import io.github.humbleui.jwm.App
 
     val closeResult = Variable[Option[T]](None)

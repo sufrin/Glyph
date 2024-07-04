@@ -105,12 +105,12 @@ trait DemonstrationPages extends Brushes {
   // -------------------------------------------------------------------------------------------------------
 
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
-    import windowdialogues.Dialogue.OKNO
+    import overlaydialogues.Dialogue.OKNO
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged(50),
                              TextLabel("Do you want to Exit?")(HugeLabelStyle)
                 ).enlarged(50)
     OKNO(prompt,
-         title="Exit Dialogue", ok=" Exit now ", no=" Continue ").InFront(glyph).andThen{
+         title="Exit Dialogue", ok=" Exit now ", no=" Continue ")(ApplicationStyle).InFront(glyph).andThen{
             case close => if (close) window.close()
          }
   }
@@ -2147,10 +2147,9 @@ trait DemonstrationPages extends Brushes {
 
   /** Help dialogue for the menu-based interface */
   lazy val help: Glyph = TextButton("Help") {
-    val Style: StyleSheet = ApplicationStyle
+    implicit val Style: StyleSheet = ApplicationStyle
     import windowdialogues.Dialogue
     import Location.RelativeTo
-    implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
     _ =>
       Dialogue.OK(TextParagraphs(40*ex.w, Left)(helpText)(HelpStyle), RelativeTo(help), "Help").start()
   }(ApplicationStyle)

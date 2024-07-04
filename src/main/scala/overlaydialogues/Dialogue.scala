@@ -133,9 +133,9 @@ object Dialogue {
    *    OK("You blew it!").North(anchor).start()
    * }}}
    */
-  def OK(blurb: Glyph, ok: String="OK"): Dialogue[Unit] = {
+  def OK(blurb: Glyph, ok: String="OK")(implicit sheet: StyleSheet): Dialogue[Unit] = {
     // Mutual references ok<->popup
-    lazy val okButton: Glyph = ReactiveGlyphs.TextButton(ok) {
+    lazy val okButton: Glyph = styled.TextButton(ok) {
       _ => popup.close(())
     }
     lazy val popup: Dialogue[Unit] = CLOSEABLE[Unit](blurb, List(okButton))
@@ -160,14 +160,14 @@ object Dialogue {
    * }}}
    *
    */
-  def OKNO(blurb: Glyph, ok: String = " OK ", no: String = " NO ", title: String = ""): Dialogue[Boolean] = {
+  def OKNO(blurb: Glyph, ok: String = " OK ", no: String = " NO ", title: String = "")(implicit sheet: StyleSheet): Dialogue[Boolean] = {
     // Laziness because there are mutual references ok<->popup, no<->popup
-    lazy val okButton: Glyph = ReactiveGlyphs.TextButton(ok) {
+    lazy val okButton: Glyph = styled.TextButton(ok) {
       _ => popup.close(true)
-    }.framed().enlarged(20)
-    lazy val noButton: Glyph = ReactiveGlyphs.TextButton(no) {
+    }
+    lazy val noButton: Glyph = styled.TextButton(no) {
       _ => popup.close(false)
-    }.framed().enlarged(20)
+    }
     lazy val popup: Dialogue[Boolean] = CLOSEABLE[Boolean](blurb, List(okButton, noButton))
     popup
   }
@@ -190,9 +190,9 @@ object Dialogue {
    *    }
    * }}}
    */
-  def CHOOSE(blurb: Glyph)(choices: String*): Dialogue[String] = {
+  def CHOOSE(blurb: Glyph)(choices: String*)(implicit sheet: StyleSheet): Dialogue[String] = {
     lazy val buttons = choices.map {
-      choice => ReactiveGlyphs.TextButton(choice) { _ => popup.close(choice) }.framed().enlarged(20)
+      choice => styled.TextButton(choice) { _ => popup.close(choice) }
     }
     lazy val popup: Dialogue[String] = CLOSEABLE(blurb, buttons)
     popup
@@ -240,7 +240,6 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
 {
   thisPopup =>
 
-  val RelativeTo(glyph, _) = location
 
   import NaturalSize.{Col, Row}
   import ReactiveGlyphs.RawButton

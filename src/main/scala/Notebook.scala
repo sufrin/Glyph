@@ -57,7 +57,7 @@ trait Notebook {
     def popupButtons(implicit sheet: NotebookStyle): List[Glyph]  = {
       def button(page: Page): Glyph = {
         lazy val here: Glyph = TextButton(page.title) {
-          _ => windowdialogues.Dialogue.OK(page.root()).SouthEast(here).start() }(sheet.buttonStyle)
+          _ => windowdialogues.Dialogue.OK(page.root())(sheet.buttonStyle).SouthEast(here).start() }(sheet.buttonStyle)
         here
       }
       pages.toList.map(button(_))

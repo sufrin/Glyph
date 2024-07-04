@@ -20,6 +20,7 @@ object Output
 
   def withWriteBar(folder: String="SAVEDGUI")(gui: Glyph): Glyph = {
     import Glyphs._
+    implicit object Style extends Styles.DefaultSheet
     val r = FilledRect(gui.w - 5, 6f, fg = lightGrey)
     lazy val writeBar: Glyph = ReactiveGlyphs.RawButton(r(), r(), r()) {
       _ =>
