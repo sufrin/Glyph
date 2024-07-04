@@ -28,6 +28,7 @@ trait StyleSheet { origin =>
   def unFramed: StyleSheet
   def menuStyle: MenuStyle
   def labelStyle: GlyphStyle
+  def notebookStyle: NotebookStyle
   val Spaces: Spaces
 
   /**
@@ -48,6 +49,7 @@ trait StyleSheet { origin =>
     def unFramed: StyleSheet = delegate.unFramed
     def menuStyle: MenuStyle = delegate.menuStyle
     def labelStyle: GlyphStyle = delegate.labelStyle
+    def notebookStyle: NotebookStyle = delegate.notebookStyle
     lazy val  Spaces: Spaces = delegate.Spaces
   }
 }

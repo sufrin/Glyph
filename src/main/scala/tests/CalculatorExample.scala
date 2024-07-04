@@ -5,6 +5,8 @@ import overlaydialogues.Dialogue
 import styled.TextLayout.TextParagraphs
 import DefaultBrushes._
 
+import org.sufrin.glyph.Styles.NotebookStyle
+
 //trait Default extends StyleSheet {
 //  import GlyphTypes._
 //  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL)
@@ -153,6 +155,8 @@ trait TopLevelGUI {
       delegate.buttonStyle.copy(frame = Decoration.Blurred(blue, nothing, 15f, 5f),
                                 up = GlyphStyle(font = buttonFont, fg = white, bg = nothing))      
   }
+
+  implicit val style: NotebookStyle = blurred.notebookStyle
 
   Page("Adder", "") {
     val GUI = new AdderGUI()

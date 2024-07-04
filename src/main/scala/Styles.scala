@@ -150,6 +150,16 @@ object Styles {
   )
 
   /**
+   * Styling for the pages and buttons of a notebook.
+   * @param buttonStyle
+   * @param pageStyle
+   */
+  case class NotebookStyle(
+      buttonStyle:  StyleSheet,
+      pageStyle:    StyleSheet
+  )
+
+  /**
    * Stylesheet with default values for all its features.
    */
   trait DefaultSheet extends StyleSheet {
@@ -221,6 +231,8 @@ object Styles {
     def labelStyle: GlyphStyle = GlyphStyle(labelFont, buttonStyle.up.fg, buttonStyle.up.bg)
 
     lazy val Spaces: Spaces = labelStyle
+
+    lazy val notebookStyle: NotebookStyle =  NotebookStyle(this, this)
   }
 
   object Default extends DefaultSheet {}

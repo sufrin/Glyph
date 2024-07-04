@@ -4,8 +4,10 @@ import GlyphTypes.Window
 import styled.TextLayout.{TextLabel, TextParagraphs}
 import NaturalSize.{Col, Row}
 
-class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
+import org.sufrin.glyph.Styles.NotebookStyle
 
+class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
+  implicit val PageStyle: NotebookStyle = style.notebookStyle
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
     import windowdialogues.Dialogue.OKNO
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
@@ -24,7 +26,7 @@ class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
           |a monolith.
           |
           |""".stripMargin)(style) enlarged 50)
-  }(style)
+  }
 
   Page("New Instance", "")(new PortmanteauInstantiation().GUI)
 

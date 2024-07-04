@@ -19,8 +19,9 @@ trait Notebook {
     /**
      * Page descriptor
      */
-    class Page(val title: String, val gloss: String, val glyph: Glyph)(implicit sheet: StyleSheet) {
-      val detail: GlyphStyle = sheet.labelStyle
+    class Page(val title: String, val gloss: String, val glyph: Glyph)(implicit sheet: NotebookStyle) {
+      val detail: GlyphStyle = sheet.pageStyle.labelStyle
+      implicit val contentStyle: StyleSheet = sheet.pageStyle
       import detail.{em, ex}
 
       override val toString: String = s"Page($title, $gloss){$glyph}"
@@ -35,7 +36,7 @@ trait Notebook {
     val pages: ArrayBuffer[Page] = new ArrayBuffer[Page]()
 
     /** Declare a page */
-    def Page(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit sheet: StyleSheet): Page = {
+    def Page(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit sheet: NotebookStyle): Page = {
       val page = new Page(title, gloss, glyph)
       if (publish) {
         pages += (page)
@@ -44,7 +45,7 @@ trait Notebook {
     }
 
     object DefinePage {
-      def apply(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit sheet: StyleSheet): Page = {
+      def apply(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit sheet: NotebookStyle): Page = {
         val page = new Page(title, gloss, glyph)(sheet)
         if (publish) {
           pages += (page)
@@ -53,10 +54,10 @@ trait Notebook {
       }
     }
 
-    def popupButtons(implicit sheet: StyleSheet): List[Glyph]  = {
+    def popupButtons(implicit sheet: NotebookStyle): List[Glyph]  = {
       def button(page: Page): Glyph = {
         lazy val here: Glyph = TextButton(page.title) {
-          _ => windowdialogues.Dialogue.OK(page.root()).SouthEast(here).start() }(sheet)
+          _ => windowdialogues.Dialogue.OK(page.root()).SouthEast(here).start() }(sheet.buttonStyle)
         here
       }
       pages.toList.map(button(_))
@@ -75,14 +76,15 @@ trait Notebook {
    * notebook. When `uniform` is true, `buttons` will all have the same diagonal, else
    * they will be at their natural size (modulo styled framing)
    */
-    def tabbedNotebook(uniform: Boolean, align: Alignment)(implicit sheet: StyleSheet): TabbedNotebook = {
+    def tabbedNotebook(uniform: Boolean, align: Alignment)(implicit sheet: NotebookStyle): TabbedNotebook = {
+      implicit val style: StyleSheet = sheet.buttonStyle
       val glyphs: Seq[Glyph] = pages.toList.map(_.root())
       val oneOf = DynamicGlyphs.OneOf.seq(align=align)(glyphs)
       val keyed = (0 until glyphs.length) zip pages
 
       lazy val buttons = keyed map  {
         case (n: Int, page: Page) =>
-          TextButton(page.title) { _ => oneOf.select(n) }(sheet)
+          TextButton(page.title) { _ => oneOf.select(n) }
       }
 
       lazy val uniformButtons: Seq[UniformSize.ButtonSpecification] =
@@ -131,16 +133,16 @@ trait Notebook {
     }
 
     /** A menu bar on which there is a popup button for each page */
-    def menuBar(implicit sheet: StyleSheet): Glyph = Col.centered(Row.centered(Row.centered$(popupButtons)))
+    def menuBar(implicit sheet: NotebookStyle): Glyph = Col.centered(Row.centered(Row.centered$(popupButtons)))
 
     /**
      * A `TabbedNotebook` with a button corresponding to each page, and a `OneOf` holding the pages.
      * Each button selects the corresponding page on the `OneOf` when clicked.
      */
-    def raw(sheet: StyleSheet, uniform: Boolean = true, align: Alignment=Center): TabbedNotebook =
+    def raw(sheet: NotebookStyle, uniform: Boolean = true, align: Alignment=Center): TabbedNotebook =
       tabbedNotebook(uniform, align)(sheet)
 
-    def rightButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: StyleSheet):  Glyph   = {
+    def rightButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: NotebookStyle):  Glyph   = {
       val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val rhs = Col().atRight$(buttons)
       val lhs = oneOf
@@ -148,7 +150,7 @@ trait Notebook {
       Row.centered(lhs, divider, rhs)
     }
 
-    def leftButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: StyleSheet): Glyph = {
+    def leftButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: NotebookStyle): Glyph = {
       val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Col().atRight$(buttons)
       val rhs = oneOf
@@ -156,7 +158,7 @@ trait Notebook {
       Row.centered(lhs, divider, rhs)
     }
 
-    def rotatedButtons(quads: Int, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: StyleSheet) = {
+    def rotatedButtons(quads: Int, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: NotebookStyle) = {
       val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Row().atBottom$(buttons.map { b => b.rotated(quads, bg=nothing) })
       val rhs = oneOf
@@ -164,7 +166,7 @@ trait Notebook {
       Col.centered(lhs, divider, rhs)
     }
 
-    def skewedButtons(skewX: Scalar, skewY: Scalar, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: StyleSheet) = {
+    def skewedButtons(skewX: Scalar, skewY: Scalar, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: NotebookStyle) = {
       val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Row().atBottom$(buttons.map { b => (b.rotated(3, bg=nothing)) })
       val rhs = oneOf
@@ -172,7 +174,7 @@ trait Notebook {
       Col.centered(lhs.skewed(-skewX, skewY), divider, rhs)
     }
 
-    def topButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: StyleSheet) = {
+    def topButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: NotebookStyle) = {
       val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Row(bg=nothing).atBottom$(buttons)
       val rhs = oneOf

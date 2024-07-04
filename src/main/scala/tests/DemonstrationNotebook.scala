@@ -3,6 +3,7 @@ package tests
 
 import FixedSize.Space.tab
 import PolygonLibrary.brown
+import Styles.NotebookStyle
 
 import io.github.humbleui.jwm.Window
 
@@ -23,9 +24,11 @@ trait DemonstrationPages extends Brushes {
 
   import TextLayout._
 
-
-
-  implicit val PrevailingStyle: StyleSheet =
+  /**
+   * The style used throughout this application, save in a few
+   * places where local derived styles are used.
+   */
+  val ApplicationStyle: StyleSheet =
   if (true) Styles.Default else
     new Styles.Default.Derived {
     import Styles._
@@ -36,15 +39,15 @@ trait DemonstrationPages extends Brushes {
     }
   }
 
-  import PrevailingStyle.Spaces.{em, ex}
+  import ApplicationStyle.Spaces.{em, ex}
 
   object HelpStyle extends Styles.DefaultSheet {
     override def face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
     override def labelFontSize: Scalar = 12
 
-    override lazy val labelStyle: GlyphStyle = PrevailingStyle.labelStyle.copy(fg = black, font = labelFont)
+    override lazy val labelStyle: GlyphStyle = ApplicationStyle.labelStyle.copy(fg = black, font = labelFont)
     override lazy val buttonStyle: ButtonStyle =
-      PrevailingStyle.buttonStyle.copy(
+      ApplicationStyle.buttonStyle.copy(
         up    = labelStyle.copy(fg = blue),
         down  = labelStyle.copy(fg = red),
         hover = labelStyle.copy(fg = green))
@@ -54,16 +57,16 @@ trait DemonstrationPages extends Brushes {
     override def face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.BOLD)
     override def buttonFontSize: Scalar = 36
     override def labelFontSize: Scalar = 36
-    override lazy val labelStyle: GlyphStyle = PrevailingStyle.labelStyle.copy(fg = red, font = labelFont)
+    override lazy val labelStyle: GlyphStyle = ApplicationStyle.labelStyle.copy(fg = red, font = labelFont)
   }
 
+  implicit val pageStyle: NotebookStyle = ApplicationStyle.notebookStyle
 
   /**
    *  The GUI manifests as a `Notebook`.
    *  Although it is  not necessary to do so, here we
    *  bind each top-level `Page`  of the notebook to a
-   *  variable that has an analogous name. For
-   *  the moment this is just done to help with IDE
+   *  constant with an analogous name. This is just done to help with IDE
    *  navigation.
    */
   val noteBook: Notebook = Notebook()
@@ -113,6 +116,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   val HelpPage = Page("Help", "Help for the Demonstration Notebook"){
+    implicit val Style: StyleSheet = ApplicationStyle
     val anchor = INVISIBLE()
 
     Col.centered(
@@ -132,6 +136,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   val NewPage = Page("New", "Make a new or cloned GUI ") {
+    implicit val Style: StyleSheet = ApplicationStyle
 
     lazy val Duplicated = new DemonstrationPages with Application {
       enableSave = extraArgs contains "-enablesave"
@@ -219,7 +224,8 @@ trait DemonstrationPages extends Brushes {
   }
 
   val MenusPage = Page("Menus*", "Window menus and dialogues") {
-      val nested = Notebook()
+    implicit val Style: StyleSheet = ApplicationStyle
+    val nested = Notebook()
       val Page = nested.DefinePage
       import windowdialogues.Dialogue
 
@@ -407,6 +413,7 @@ trait DemonstrationPages extends Brushes {
     }
 
   val TransformsPage = Page("Transforms*", "") {
+    implicit val Style: StyleSheet = ApplicationStyle
     val nested = Notebook()
     val Page = nested.DefinePage
     Page("Turn", "Turn transforms") {
@@ -670,8 +677,13 @@ trait DemonstrationPages extends Brushes {
   val OverlayPage = Page("Overlays*", "Features implemented as overlay layers and annotations"){
     val noteBook = Notebook()
     val Page = noteBook.DefinePage
+    // Each subpage of this page declares its own style,
+    // usually the standard application style, except for
+    // the Menus subpage, which declares local styles
+    // for some menus.
 
     Page("Dialogues", "") {
+      implicit val Style: StyleSheet = ApplicationStyle
       import styled.TextButton
       val anchor = FilledRect(150, 70, blue)
 
@@ -772,9 +784,10 @@ trait DemonstrationPages extends Brushes {
       import Styles.MenuStyle
 
       lazy val menuA: Glyph = {
+        implicit val Style: StyleSheet = ApplicationStyle
         Menu("A") (
           MenuButton("A1") { _ => println("A1")  },
-          TextLabel("WTF!"),
+          TextLabel("Not a button"),
           NestedMenu("innerCC >")(
             MenuButton("CCC1") { _ => println("CCC1") },
             MenuButton("CC2") { _ => println("CCC2") },
@@ -794,6 +807,7 @@ trait DemonstrationPages extends Brushes {
       }
 
       lazy val menuC: Glyph = {
+        implicit val Style: StyleSheet = ApplicationStyle
         Menu("C")(
           MenuButton("C1") { _ => println("C1") },
           MenuButton("C2") { _ => println("C2") },
@@ -808,38 +822,41 @@ trait DemonstrationPages extends Brushes {
         )
       }
 
-      lazy val menuD: Glyph = {
-          implicit object Sheet extends Styles.DefaultSheet {
-            override lazy val menuStyle: MenuStyle = PrevailingStyle.menuStyle.copy(
-              button = menuStyle.button.copy(frame = Decoration.Shaded(fg = red(width = 0), bg = lightGrey, enlarge = 15, delta = 15, down = true)),
-              nestedButton = menuStyle.button.copy(frame = Decoration.Shaded(fg = blue(width = 0), bg = green(alpha = 0.25f), down = true)),
-              reactive = menuStyle.reactive.copy(frame = Decoration.Framed(fg = red(width = 0), bg = green(alpha = 0.25f))),
-              inactive = Decoration.Framed(fg = red(width = 0), bg = green(alpha = 0.25f)),
-              bg = green(alpha = 0.25f)
-            )
-          }
+      val LocalSheet: StyleSheet = new ApplicationStyle.Derived {
+        override lazy val menuStyle: MenuStyle = delegate.menuStyle.copy(
+          button = delegate.menuStyle.button.copy(frame = Decoration.Shaded(fg = red(width = 0), bg = lightGrey, enlarge = 15, delta = 15, down = true)),
+          nestedButton = delegate.menuStyle.button.copy(frame = Decoration.Shaded(fg = blue(width = 0), bg = green(alpha = 0.25f), down = true)),
+          reactive = delegate.menuStyle.reactive.copy(frame = Decoration.Framed(fg = lightGrey(width = 5, cap=ROUND), bg = green(alpha = 0.25f))),
+          inactive = Decoration.Framed(fg = darkGrey(width = 5, cap=ROUND), bg = green(alpha = 0.25f)),
+          bg = green(alpha = 0.25f)
+        )
+      }
 
+
+      lazy val menuD =  {
+        implicit val Style: StyleSheet = LocalSheet
         Menu("D")(
-          MenuButton("A1") { _ => println("A1") }(Sheet),
-          Row.centered(TextLabel("Enable E: ")(Sheet), MenuCheckBox(true){ state=>menuE.enabled(state) }(Sheet)),
-          TextLabel("WTF!")(Sheet),
+          MenuButton("A1") { _ => println("A1") },
+          Row.centered(TextLabel("Enable E: "), MenuCheckBox(true){ state=>menuE.enabled(state) }),
+          TextLabel("WTF!"),
           NestedMenu("innerCC >")(
-            MenuButton("CCC1") { _ => println("CCC1") }(Sheet),
-            MenuButton("CC2") { _ => println("CCC2") }(Sheet),
-          )(Sheet),
-          MenuButton("A2") { _ => println("A2") }(Sheet),
+            MenuButton("CCC1") { _ => println("CCC1") },
+            MenuButton("CC2") { _ => println("CCC2") },
+          ),
+          MenuButton("A2") { _ => println("A2") },
           FilledRect(20f, 50f, fg = red), //PolygonLibrary.hideButtonGlyph().scaled(2.5f),
-          MenuButton("A3") { _ => println("A3") }(Sheet),
+          MenuButton("A3") { _ => println("A3") },
           MenuButton("Disable C") { _ =>
             menuC.enabled(false); ()
-          }(Sheet),
+          },
           MenuButton("Enable C") { _ =>
             menuC.enabled(true); ()
-          }(Sheet)
-        )(Sheet)
+          }
+        )
       }
 
       lazy val menuE: Glyph = {
+        implicit val Style: StyleSheet = LocalSheet
         Menu("E")(
           MenuButton("C1") { _ => println("C1") },
           NestedMenu("innerCC >")(
@@ -855,18 +872,45 @@ trait DemonstrationPages extends Brushes {
               MenuButton("CC2") { _ => println("CCC2") },
             )
           )
-        )(PrevailingStyle) // TODO: ShadedMenuStyle
+        ) // TODO: ShadedMenuStyle
+      }
+
+      lazy val menuF: Glyph = {
+        implicit val localStyle: StyleSheet = HugeLabelStyle
+        Menu("F")(
+          MenuButton("C1") { _ => println("C1") },
+          NestedMenu("innerCC >")(
+            MenuButton("CCC1") { _ => println("CCC1") },
+            MenuButton("CC2")  { _ => println("CCC2") },
+          ),
+          MenuButton("C2") { _ => println("C2") },
+          NestedMenu("innerC >")(
+            MenuButton("CC1") { _ => println("CC1") },
+            MenuButton("CC2") { _ => println("CC2") },
+            NestedMenu("innerCC >")(
+              MenuButton("CCC1") { _ => println("CCC1") },
+              MenuButton("CC2")  { _ => println("CCC2") },
+            )
+          )
+        )(ApplicationStyle)
       }
 
 
-      Col.centered(
-        Col(menuA, em, menuC), ex,
-        TextLabel("The same menus with different styling"), //TODO: Fix
-        // Col(menuE, em, menuD)
-      )
+
+      { implicit val Style: StyleSheet = ApplicationStyle
+        Col.centered(
+          TextLabel("Two menus (application style)"),
+          Row(menuA, em, menuC), ex,
+          TextLabel("Two menus (different style)"),
+          Row(menuE, em, menuD), ex,
+          TextLabel("A huge menu, hiding behind a 'normal' button"),
+          menuF
+        )
+      }
     }
 
     Page("Locators", "") {
+      implicit val Style: StyleSheet = ApplicationStyle
 
       import io.github.humbleui.types.IRect
 
@@ -911,10 +955,10 @@ trait DemonstrationPages extends Brushes {
         ), em)
     }
 
-
-
     Page("Annotation", "") {
       // TODO: design a high-level annotation API
+      implicit val Style: StyleSheet = ApplicationStyle
+
       import OnOffButton.OnOffButton
       val anchor = INVISIBLE()
 
@@ -999,7 +1043,7 @@ trait DemonstrationPages extends Brushes {
             |
             |  A checkbox always appears on the grid: pressing this disables the grid, which can only be re-enabled by
             |the checkbox below.
-            |""".stripMargin)(PrevailingStyle),
+            |""".stripMargin)(ApplicationStyle),
         Row.centered(TextLabel("Grid: "), gridCheckboxForPage), ex, ex,
         TextParagraphs(40, Justify)(
           """
@@ -1015,6 +1059,7 @@ trait DemonstrationPages extends Brushes {
     }
 
     Page("Raw", "") {
+      implicit val Style: StyleSheet = ApplicationStyle
       import styled.TextButton
       val anchor = INVISIBLE()
       var strictHiding = true
@@ -1118,6 +1163,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   val FramePage = Page("Framing*", "") {
+    implicit val Style: StyleSheet = ApplicationStyle
     val noteBook = Notebook()
     val Page = noteBook.DefinePage
 
@@ -1270,13 +1316,14 @@ trait DemonstrationPages extends Brushes {
   }
 
   val StylesPage = Page("Styles*", "") {
+    implicit val Style: StyleSheet = ApplicationStyle
     val noteBook = Notebook()
     val Page = noteBook.DefinePage
 
     Page("Framed", "") {
       import Styles.Decoration.Framed
       import styled.TextButton
-      val buttonStyle: ButtonStyle = PrevailingStyle.buttonStyle
+      val buttonStyle: ButtonStyle = ApplicationStyle.buttonStyle
       Col.centered(
         TextParagraphs(55, Left)(
           """
@@ -1308,8 +1355,8 @@ trait DemonstrationPages extends Brushes {
 
     Page("Blurred", "") {
       import styled.TextButton
-      val buttonStyle = PrevailingStyle.buttonStyle
-      val localStyle: ButtonStyle = PrevailingStyle.buttonStyle.copy(up=buttonStyle.up.copy(fg=white))
+      val buttonStyle = ApplicationStyle.buttonStyle
+      val localStyle: ButtonStyle = ApplicationStyle.buttonStyle.copy(up=buttonStyle.up.copy(fg=white))
       Col.centered(
         TextParagraphs(60, Left)(
           """
@@ -1341,8 +1388,8 @@ trait DemonstrationPages extends Brushes {
 
     Page("Shaded", "") {
       import Styles.Decoration._
-      implicit val buttonStyle: ButtonStyle = PrevailingStyle.buttonStyle.copy(frame = Shaded(black, white))
-      implicit val labelStyle: GlyphStyle = PrevailingStyle.labelStyle.copy(fg = darkGrey, bg = green)
+      implicit val buttonStyle: ButtonStyle = ApplicationStyle.buttonStyle.copy(frame = Shaded(black, white))
+      implicit val labelStyle: GlyphStyle = ApplicationStyle.labelStyle.copy(fg = darkGrey, bg = green)
 
       Col.centered(
         DetailedTextButton("Shaded StyledButton (18, down)") { _ => }(buttonStyle.copy(frame = Shaded(darkGrey, lightGrey, delta = 18f, down = true))), ex,
@@ -1358,11 +1405,13 @@ trait DemonstrationPages extends Brushes {
   }
 
   val EventsPage = Page("Events*", "") {
+    implicit val Style: StyleSheet = ApplicationStyle
+
     val nested = Notebook()
     val Page = nested.DefinePage
 
     Page("Events", "") {
-      val labelStyle = PrevailingStyle.labelStyle
+      val labelStyle = ApplicationStyle.labelStyle
       val theLog = StringLog(60, 25)(labelStyle)
 
       object CatchEvents extends ReactiveGlyph {
@@ -1540,7 +1589,7 @@ trait DemonstrationPages extends Brushes {
           .start()
       }
 
-      //import HelpStyle.Spaces.{em, ex}
+      import HelpStyle.Spaces.{em, ex}
 
       Col.centered(
         TextParagraphs(50, Left)(
@@ -1566,8 +1615,8 @@ trait DemonstrationPages extends Brushes {
     nested.Layout.rightButtons().enlarged(20)
   }
 
-
   val etcPage = Page("Etc*", "") {
+    implicit val Style: StyleSheet = ApplicationStyle
     val nested = Notebook()
     val Page = nested.DefinePage
 
@@ -1633,7 +1682,7 @@ trait DemonstrationPages extends Brushes {
       val Page = nested.DefinePage
 
       Page("Grid", "data = 8 blurred-frame buttons") {
-        val prevailingButtonStyle = PrevailingStyle.buttonStyle
+        val prevailingButtonStyle = ApplicationStyle.buttonStyle
         implicit val blurred: ButtonStyle =
           prevailingButtonStyle.copy(
             frame = Decoration.Blurred(fg = blue, blur = 10, spread = 5),
@@ -2065,9 +2114,7 @@ trait DemonstrationPages extends Brushes {
 
     Page("Fonts*", "Font families\n(available on this computer)\n\n\n") {
         object FontFamilies {
-
           import GlyphTypes._
-
           lazy val names: Seq[String] =
             for {i <- 0 until FontManager.default.getFamiliesCount} yield FontManager.default.getFamilyName(i)
         }
@@ -2098,13 +2145,15 @@ trait DemonstrationPages extends Brushes {
     nested.Layout.rightButtons().enlarged(30)
   }
 
+  /** Help dialogue for the menu-based interface */
   lazy val help: Glyph = TextButton("Help") {
+    val Style: StyleSheet = ApplicationStyle
     import windowdialogues.Dialogue
     import Location.RelativeTo
     implicit val labelStyle: GlyphStyle = HelpStyle.labelStyle
     _ =>
-      Dialogue.OK(TextParagraphs(40*ex.w, Left)(helpText), RelativeTo(help), "Help").start()
-  }
+      Dialogue.OK(TextParagraphs(40*ex.w, Left)(helpText)(HelpStyle), RelativeTo(help), "Help").start()
+  }(ApplicationStyle)
 
   /////////////////////////////////////////// Debugging Tools
 
@@ -2130,6 +2179,7 @@ trait DemonstrationPages extends Brushes {
   }
 
   def saveable(gui: Glyph): Glyph = {
+    implicit val Style: StyleSheet = ApplicationStyle
     val r = FilledRect(gui.w-5, 6f, fg=lightGrey)
     lazy val topBar: Glyph = ReactiveGlyphs.RawButton(r(), r(), r()) {
       _ =>
