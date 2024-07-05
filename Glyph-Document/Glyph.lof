@@ -1,26 +1,27 @@
-\contentsline {figure}{\numberline {1}{\ignorespaces Table presentations of a grid}}{12}{figure.72}%
-\contentsline {figure}{\numberline {2}{\ignorespaces Individual cell placement in a grid}}{13}{figure.73}%
-\contentsline {figure}{\numberline {3}{\ignorespaces Intrinsic glyph transformers in use}}{18}{figure.124}%
-\contentsline {figure}{\numberline {4}{\ignorespaces the Help page}}{45}{figure.544}%
-\contentsline {figure}{\numberline {5}{\ignorespaces the New page}}{46}{figure.545}%
-\contentsline {figure}{\numberline {6}{\ignorespaces the Dialogues subpage of Menus* }}{47}{figure.546}%
-\contentsline {figure}{\numberline {7}{\ignorespaces the Turn subpage of Transforms* }}{48}{figure.547}%
-\contentsline {figure}{\numberline {8}{\ignorespaces the Tight subpage of Transforms* }}{49}{figure.548}%
-\contentsline {figure}{\numberline {9}{\ignorespaces the Skew subpage of Transforms* }}{50}{figure.549}%
-\contentsline {figure}{\numberline {10}{\ignorespaces the Mirror subpage of Transforms* }}{51}{figure.550}%
-\contentsline {figure}{\numberline {11}{\ignorespaces the Annotation subpage of Overlays* }}{52}{figure.551}%
-\contentsline {figure}{\numberline {12}{\ignorespaces the Dialogues subpage of Overlays* (vertical tabs notebook)}}{53}{figure.552}%
-\contentsline {figure}{\numberline {13}{\ignorespaces a Popped-up dialogue (vertical tabs notebook) }}{54}{figure.553}%
-\contentsline {figure}{\numberline {14}{\ignorespaces the Text1 subpage of Framing* (skewed tabs notebook) }}{55}{figure.554}%
-\contentsline {figure}{\numberline {15}{\ignorespaces the Text2 subpage of Framing* }}{56}{figure.555}%
-\contentsline {figure}{\numberline {16}{\ignorespaces the Framed subpage of Framing* }}{57}{figure.556}%
-\contentsline {figure}{\numberline {17}{\ignorespaces the Edged subpage of Framing* }}{58}{figure.557}%
-\contentsline {figure}{\numberline {18}{\ignorespaces the Framed subpage of Styles* }}{59}{figure.558}%
-\contentsline {figure}{\numberline {19}{\ignorespaces the Blurred subpage of Styles* }}{60}{figure.559}%
-\contentsline {figure}{\numberline {20}{\ignorespaces the Events subpage of Events* }}{61}{figure.560}%
-\contentsline {figure}{\numberline {21}{\ignorespaces the Animation subpage of Etc* (mid-animation) }}{62}{figure.561}%
-\contentsline {figure}{\numberline {22}{\ignorespaces the Grid.Grid subpage of Etc* }}{63}{figure.562}%
-\contentsline {figure}{\numberline {23}{\ignorespaces the Grid.Table subpage of Etc* }}{64}{figure.563}%
-\contentsline {figure}{\numberline {24}{\ignorespaces the Grid.CellFit subpage of Etc* }}{65}{figure.564}%
-\contentsline {figure}{\numberline {25}{\ignorespaces the Blurred subpage of Etc* }}{66}{figure.565}%
-\contentsline {figure}{\numberline {26}{\ignorespaces the Split subpage of Etc* }}{67}{figure.566}%
+\contentsline {figure}{\numberline {1}{\ignorespaces A one-column table made with \textcolor {blue}{\textsf {.grid(width = 1)(data)}}}}{12}{figure.71}%
+\contentsline {figure}{\numberline {2}{\ignorespaces Table presentations of a grid}}{12}{figure.72}%
+\contentsline {figure}{\numberline {3}{\ignorespaces Individual cell placement}}{13}{figure.73}%
+\contentsline {figure}{\numberline {4}{\ignorespaces Intrinsic glyph transformers in use}}{20}{figure.134}%
+\contentsline {figure}{\numberline {5}{\ignorespaces the Help page}}{47}{figure.554}%
+\contentsline {figure}{\numberline {6}{\ignorespaces the New page}}{48}{figure.555}%
+\contentsline {figure}{\numberline {7}{\ignorespaces the Dialogues subpage of Menus* }}{49}{figure.556}%
+\contentsline {figure}{\numberline {8}{\ignorespaces the Turn subpage of Transforms* }}{50}{figure.557}%
+\contentsline {figure}{\numberline {9}{\ignorespaces the Tight subpage of Transforms* }}{51}{figure.558}%
+\contentsline {figure}{\numberline {10}{\ignorespaces the Skew subpage of Transforms* }}{52}{figure.559}%
+\contentsline {figure}{\numberline {11}{\ignorespaces the Mirror subpage of Transforms* }}{53}{figure.560}%
+\contentsline {figure}{\numberline {12}{\ignorespaces the Annotation subpage of Overlays* }}{54}{figure.561}%
+\contentsline {figure}{\numberline {13}{\ignorespaces the Dialogues subpage of Overlays* (vertical tabs notebook)}}{55}{figure.562}%
+\contentsline {figure}{\numberline {14}{\ignorespaces a Popped-up dialogue (vertical tabs notebook) }}{56}{figure.563}%
+\contentsline {figure}{\numberline {15}{\ignorespaces the Text1 subpage of Framing* (skewed tabs notebook) }}{57}{figure.564}%
+\contentsline {figure}{\numberline {16}{\ignorespaces the Text2 subpage of Framing* }}{58}{figure.565}%
+\contentsline {figure}{\numberline {17}{\ignorespaces the Framed subpage of Framing* }}{59}{figure.566}%
+\contentsline {figure}{\numberline {18}{\ignorespaces the Edged subpage of Framing* }}{60}{figure.567}%
+\contentsline {figure}{\numberline {19}{\ignorespaces the Framed subpage of Styles* }}{61}{figure.568}%
+\contentsline {figure}{\numberline {20}{\ignorespaces the Blurred subpage of Styles* }}{62}{figure.569}%
+\contentsline {figure}{\numberline {21}{\ignorespaces the Events subpage of Events* }}{63}{figure.570}%
+\contentsline {figure}{\numberline {22}{\ignorespaces the Animation subpage of Etc* (mid-animation) }}{64}{figure.571}%
+\contentsline {figure}{\numberline {23}{\ignorespaces the Grid.Grid subpage of Etc* }}{65}{figure.572}%
+\contentsline {figure}{\numberline {24}{\ignorespaces the Grid.Table subpage of Etc* }}{66}{figure.573}%
+\contentsline {figure}{\numberline {25}{\ignorespaces the Grid.CellFit subpage of Etc* }}{67}{figure.574}%
+\contentsline {figure}{\numberline {26}{\ignorespaces the Blurred subpage of Etc* }}{68}{figure.575}%
+\contentsline {figure}{\numberline {27}{\ignorespaces the Split subpage of Etc* }}{69}{figure.576}%

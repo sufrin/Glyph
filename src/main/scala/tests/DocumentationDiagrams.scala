@@ -334,6 +334,22 @@ object DocumentationDiagrams {
         ) scaled 0.8f enlarged (50))
     }
 
+    val gridOrder = {
+      implicit object Style extends Styles.DefaultSheet{}
+      import Style.Spaces
+      import Spaces._
+      val data =
+        for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
+          Label(f"$i.scaled($scale%1.1f)").scaled(scale)
+
+      Col.centered(
+        // NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(height = 1)(data), ex,
+       NaturalSize.Grid(fg = blue(width = 2), padx = 10, pady = 10).grid(width = 1)(data).enlarged(10f), ex,
+       // NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(width = 0,  height=0)(Label("XYZZY") :: data.toList)
+      )
+
+    }
+
     val gridCellFit =  {
       import styled.TextLayout._
       implicit object Style extends Styles.DefaultSheet{}
@@ -350,10 +366,10 @@ object DocumentationDiagrams {
       }
 
       Col.centered(
-        TextLabel("grid with data(4).cellFit(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
-        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Enlarge)), ex, ex,
+        //TextLabel("grid with data(4).cellFit(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex, ex,
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftNorth)), ex, ex,
-        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftWest)), ex, ex,
+        //NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftWest)), ex, ex,
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftSouth)), ex, ex,
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftEast)), ex, ex,
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Stretch)), ex, ex,
@@ -362,6 +378,7 @@ object DocumentationDiagrams {
 
     write("gridtable.png", false)(gridTables)
     write("gridcellfit.png", false)(gridCellFit)
+    write("gridorder.png", false)(gridOrder)
 
 
   }
