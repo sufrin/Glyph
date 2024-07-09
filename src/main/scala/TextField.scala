@@ -103,7 +103,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
         val entry = Clipboard.get(ClipboardFormat.TEXT).getString
         if (entry ne null) TextModel.ins(entry)
 
-      case CONTROL | SHIFT | ALT | LINUX_SUPER =>
+      case CONTROL | MAC_COMMAND | SHIFT | ALT | LINUX_SUPER =>
 
       case other  =>
         if (mods.include(ANYSHIFT)) onError(key, this)
@@ -148,7 +148,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
    * editing position.
    */
   def draw(surface: Surface): Unit = {
-    panBy = 0
+    //panBy = 0
     drawBackground(surface)
     surface.declareCurrentTransform(this)
     surface.withClip(diagonal) {
@@ -156,18 +156,20 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
       // in case we start supporting mixed fonts in `TextField`s
       surface.withOrigin(location.x, atBaseLine) {
         val right = TextModel.rightText.atBaseline(fg)
-        var left = TextModel.leftText.atBaseline(fg)
+        var left = TextModel.leftText(panBy).atBaseline(fg)
         // pan (move the display "window") rightwards if necessary to bring the cursor into view
         while (left.w >= w) {
           panBy += size/3
           left = TextModel.leftText(panBy).atBaseline(fg)
         }
+        // println(s"${left.w} $size $w")
 
+        // draw the visible left and the visible right
         left.draw(surface)
         surface.withOrigin(left.w, baseLine) {
           right.draw(surface)
         }
-
+        // prepare to draw the cursor
         val cursorNudge = if (TextModel.left==0) focussedBrush.strokeWidth/2f else 0
         val cursorLeft = left.w + cursorNudge
         val cursorBrush: Brush = if (focussed) focussedBrush else unfocussedBrush
@@ -181,7 +183,13 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
           if (left.w + right.w >= w) {
             surface.drawPolygon$(panWarningBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
           }
-          // Indicate when there's invisible textlayout to the right
+
+          // cancel panning if at the left of the display while panned
+          if (panBy>0 && left.w==0) {
+            panBy = 0
+          }
+
+          // Indicate when there's invisible textlayout to the left
           if (panBy > 0) {
             surface.drawPolygon$(panWarningBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
           }
