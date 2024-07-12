@@ -8,7 +8,7 @@ package org.sufrin.glyph
  *  the final line of the paragraph (which may have fewer words in it
  *  than the others.
  *
- * @see TextLayout
+ * @see text
  *
  */
 trait Alignment {

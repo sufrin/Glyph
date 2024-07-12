@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package tests
 
 import styled.{RadioCheckBoxes, TextButton}
-import styled.TextLayout._
+import styled.text._
 import NaturalSize._
 
 class  PortmanteauInstantiation(implicit sheet: StyleSheet) {
@@ -54,7 +54,7 @@ class  PortmanteauInstantiation(implicit sheet: StyleSheet) {
     }
 
     Col.centered(
-      TextParagraphs(ems = 50, Justify)(
+      Paragraphs(ems = 50, Justify)(
         """The button below starts a completely new instance of the GUI.
           |The checkboxes determine what tab layout and scale the new instance will have; as well
           |as what screen (if there are many) it will be shown on at first.

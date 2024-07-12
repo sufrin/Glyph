@@ -775,20 +775,20 @@ trait LargeTestGUI extends Brushes {
   }
   private val scene18 = {
     import styled._
-    import styled.TextLayout._
+    import styled.text._
 
     import BlueContext.Spaces._
     implicit val style: Styles.DefaultSheet = BlueContext
 
     Col.centered(
-      TextLabel("(18) Some styled glyphs with implicitly-specified properties"),
+      Label("(18) Some styled glyphs with implicitly-specified properties"),
       ex,
       TextButton("This is a button") { state =>
         println(s"StyledButton $state")
       },
       ex,
-      TextLabel("The buttons show different shapes"),
-      TextLabel("when up, when hovering, and when pressed"),
+      Label("The buttons show different shapes"),
+      Label("when up, when hovering, and when pressed"),
       GlyphButton(trup, trdown, trhover) { state =>
         println(s"StyledButton $state")
       },
@@ -801,7 +801,7 @@ trait LargeTestGUI extends Brushes {
         println(s"StyledButton $state")
       },
       ex, ex,
-      TextLabel("Two unstyled ColourButtons"),
+      Label("Two unstyled ColourButtons"),
       Row.centered(
           ReactiveGlyphs.ColourButton(filledStar7(wobbly(blue)), red, green, background = false){ _ => }, em,
           ReactiveGlyphs.ColourButton("A ColourButton with a wobbly Frame", blue(width=0), red, green, background = false){ _ => }.enlarged(4).framed(wobbly(blue)),
@@ -812,7 +812,7 @@ trait LargeTestGUI extends Brushes {
   import PolygonLibrary._
   private val scene19 = {
     import styled._
-    import styled.TextLayout._
+    import styled.text._
 
     import BlueContext.Spaces._
     implicit val style: Styles.DefaultSheet = BlueContext
@@ -838,16 +838,16 @@ trait LargeTestGUI extends Brushes {
     }
 
     Col.centered(
-      TextLabel(
+      Label(
         "(19) GlyphButton of polygonal glyphs\n(the cursor must enter the shape)"
       ),
       ex,
       Row.centered(
-        TextLabel("Enable wobbly paint for up:"),
+        Label("Enable wobbly paint for up:"),
         tUp,
-        TextLabel(", down:"),
+        Label(", down:"),
         tDown,
-        TextLabel(", hover:"),
+        Label(", hover:"),
         tHover
       ),
       ex,
@@ -857,12 +857,12 @@ trait LargeTestGUI extends Brushes {
         filledStar7(hoverColor) rotated 1
       ) { _ =>
         overlaydialogues.Dialogue
-          .OK(TextLabel("You pressed the top button"))
+          .OK(Label("You pressed the top button"))
           .InFront(tHover)
           .start()
       }.scaled(.75f),
       ex,
-      TextLabel(
+      Label(
         "GlyphButton of framed polygonal glyphs\n(the cursor need only enter the bounding) box"
       ),
       ex,
@@ -873,7 +873,7 @@ trait LargeTestGUI extends Brushes {
         exact = false
       ) { _ =>
         overlaydialogues.Dialogue
-          .OK(TextLabel("You pressed the bottom button"))
+          .OK(Label("You pressed the bottom button"))
           .InFront(tHover)
           .start()
       }.scaled(.75f)

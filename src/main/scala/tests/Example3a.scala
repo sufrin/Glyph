@@ -26,7 +26,7 @@ trait Example3aInterface {
   }
 
   import styled.TextButton
-  import styled.TextLayout.TextLabel
+  import styled.text.Label
 
   import LocalStyle.Spaces._
 
@@ -34,7 +34,7 @@ trait Example3aInterface {
   val labelColor: Brush = green()
 
   val GUI: Glyph = Col(bg=lightGrey).centered(
-    TextLabel("A simple label") enlarged(20, bg=labelColor), ex,
+    Label("A simple label") enlarged(20, bg=labelColor), ex,
     Row(TextButton("make it yellow") { _ => labelColor color yellow.color },
         TextButton("make it red")    { _ => labelColor color red.color })
   ).enlarged(40f).enlarged(20f, bg=yellow)

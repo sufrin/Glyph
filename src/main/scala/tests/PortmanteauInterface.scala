@@ -1,17 +1,16 @@
 package org.sufrin.glyph
 package tests
 import GlyphTypes.Window
-import styled.TextLayout.{TextLabel, TextParagraphs}
+import styled.text.{Label, Paragraphs}
 import NaturalSize.{Col, Row}
-
-import org.sufrin.glyph.Styles.NotebookStyle
+import Styles.NotebookStyle
 
 class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
   implicit val PageStyle: NotebookStyle = style.notebookStyle
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
     import windowdialogues.Dialogue.OKNO
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
-      TextLabel("Do you want to Exit?") scaled 1.5f
+      Label("Do you want to Exit?") scaled 1.5f
     ).enlarged(50)
     OKNO(prompt,
       title = "Exit Dialogue", ok = " Exit now ", no = " Continue ").InFront(glyph).andThen(close => if (close) window.close())
@@ -19,7 +18,7 @@ class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
 
   Page("Welcome", "") {
     Col.centered(
-      TextParagraphs(30, Justify)(
+      Paragraphs(30, Justify)(
         """
           | Welcome to the Portmanteau Notebook: its source code is more
           |modular than that of DemonstrationNotebook -- which evolved as
@@ -31,6 +30,17 @@ class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
   Page("New Instance", "")(new PortmanteauInstantiation().GUI)
 
   Page("Transforms*", "")(new PortmanteauTransforms().Layout.leftButtons())
+
+  Page("GlyphML", "") {
+    import markup._
+    val ml = Html()(
+      Literal("My first piece of markup"),
+
+    )
+    Col.centered(
+      ml.toGlyph
+    )
+  }
 
   import utils.Output.withWriteBar
 

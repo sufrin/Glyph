@@ -258,15 +258,15 @@ case class MenuButton(text: String) extends StyledButton {
 
   case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean) extends ToggleButton {
     def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
-      import styled.TextLayout.DetailedTextLabel
+      import styled.text.Label
       val detail = sheet.buttonStyle
       val offFG = detail.toggle.off.fg
       val offBG = detail.toggle.off.bg
       val onFG = detail.toggle.on.fg
       val onBG = detail.toggle.on.bg
 
-      val whenTTrue: Glyph  = DetailedTextLabel(whenTrue, Center, detail.up)
-      val whenFFalse: Glyph = DetailedTextLabel(whenFalse, Center, detail.down)
+      val whenTTrue: Glyph  = Label(whenTrue, Center, detail.up)
+      val whenFFalse: Glyph = Label(whenFalse, Center, detail.down)
       val Vec(w, h) = (whenTTrue.diagonal union whenFFalse.diagonal)
 
       OnOffButton(
@@ -284,15 +284,15 @@ case class MenuButton(text: String) extends StyledButton {
   */
   case class MenuTextToggle(whenTrue: String, whenFalse: String, initially: Boolean) extends ToggleButton {
     def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
-      import styled.TextLayout.DetailedTextLabel
+      import styled.text.Label
       val detail = sheet.buttonStyle
       val offFG = detail.toggle.off.fg
       val offBG = detail.toggle.off.bg
       val onFG = detail.toggle.on.fg
       val onBG = detail.toggle.on.bg
 
-      val whenTTrue: Glyph  = DetailedTextLabel(whenTrue, Center, detail.up)
-      val whenFFalse: Glyph = DetailedTextLabel(whenFalse, Center, detail.down)
+      val whenTTrue: Glyph  = Label(whenTrue, Center, detail.up)
+      val whenFFalse: Glyph = Label(whenFalse, Center, detail.down)
       val Vec(w, h) = (whenTTrue.diagonal union whenFFalse.diagonal)
 
       OnOffButton(
@@ -432,6 +432,7 @@ case class MenuCheckBox(initially: Boolean) extends ToggleButton {
 object TextField {
 
   import GlyphTypes.Font
+
   import io.github.humbleui.jwm.EventKey
 
   def apply(onEnter: String => Unit            = { case text: String => },
@@ -469,7 +470,7 @@ object RadioCheckBoxes {
  */
 class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Boolean,
                       action: Option[Int]=>Unit)(implicit sheet: StyleSheet) {
-  import styled.TextLayout.DetailedTextLabel
+  import styled.text.Label
 
   val preferred  = if (prefer eq null) captions(0) else prefer
 
@@ -501,7 +502,7 @@ class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Bool
   lazy val glyphRows: Seq[Glyph] = {
     val glyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
     for {i <- 0 until captions.length } {
-       glyphs += DetailedTextLabel(s"${captions(i)}", Center, sheet.labelStyle)
+       glyphs += Label(s"${captions(i)}", Center, sheet.labelStyle)
        glyphs += checkBoxes(i)
     }
     glyphs.toSeq
@@ -510,7 +511,7 @@ class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Bool
   lazy val glyphCols: Seq[Glyph] = {
     val glyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
     for {i <- 0 until captions.length } {
-      glyphs += DetailedTextLabel(s"${captions(i)}", Center, sheet.labelStyle)
+      glyphs += Label(s"${captions(i)}", Center, sheet.labelStyle)
     }
     for {i <- 0 until captions.length } {
       glyphs += checkBoxes(i)

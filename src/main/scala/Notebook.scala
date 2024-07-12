@@ -12,7 +12,7 @@ trait Notebook {
     import Styles._
     import styled._
 
-    import TextLayout._
+    import text._
 
     import scala.collection.mutable.ArrayBuffer
 
@@ -30,7 +30,7 @@ trait Notebook {
         if (gloss.isEmpty)
           glyph
         else
-          Col.centered(TextLabel(gloss), ex, glyph)
+          Col.centered(Label(gloss), ex, glyph)
     }
 
     val pages: ArrayBuffer[Page] = new ArrayBuffer[Page]()

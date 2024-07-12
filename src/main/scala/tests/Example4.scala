@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package tests
 
 import NaturalSize.{Col, Row}
-import styled.TextLayout._
+import styled.text._
 
 
 trait Example4Interface {
@@ -12,7 +12,7 @@ trait Example4Interface {
   lazy val fields = List(a, b, c)
 
   import overlaydialogues.Dialogue.OK
-  val help = TextParagraphs(50, Justify)(
+  val help = Paragraphs(50, Justify)(
     """This app solves c = a + b if at least two of a,b,c
       |are well-formed (possibly floating point) numbers.
       |
@@ -27,9 +27,9 @@ trait Example4Interface {
     help enlarged 25,
     Row.centered(
       c.framed(),
-      TextLabel(" = "),
+      Label(" = "),
       a.framed(),
-      TextLabel(" + "),
+      Label(" + "),
       b.framed()
     )
   ) enlarged 25
@@ -40,7 +40,7 @@ trait Example4Interface {
       case s: String if s.toDoubleOption.isDefined => calculemus()
       case s: String =>
         OK(
-          TextLabel(
+          Label(
             s"""\"$s\" doesn't look much like a number.
            |Correct it or re-enter it please.
            |You can clear any field by typing ctrl-U.""".stripMargin,

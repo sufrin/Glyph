@@ -2,10 +2,8 @@ package org.sufrin.glyph
 package tests
 
 import overlaydialogues.Dialogue
-import styled.TextLayout.TextParagraphs
 import DefaultBrushes._
-
-import org.sufrin.glyph.Styles.NotebookStyle
+import Styles.NotebookStyle
 
 //trait Default extends StyleSheet {
 //  import GlyphTypes._
@@ -26,7 +24,7 @@ import org.sufrin.glyph.Styles.NotebookStyle
 class AdderGUI()(implicit sheet: StyleSheet)  {
   import NaturalSize.{Col, Row}
   import styled.TextButton
-  import styled.TextLayout.{ActiveParagraphs, ActiveString, TextLabel}
+  import styled.text.{ActiveParagraphs, ActiveString, Label, Paragraphs}
 
   import sheet.Spaces._
 
@@ -63,7 +61,7 @@ class AdderGUI()(implicit sheet: StyleSheet)  {
   def check(name: String, field: TextField): Unit = {
     if (!(field.text.toDoubleOption.isDefined || field.text.isBlank))
     {
-      Dialogue.CHOOSE(TextParagraphs(30, Justify)(
+      Dialogue.CHOOSE(Paragraphs(30, Justify)(
         s"""
           |${field.text} doesn't look much like a number.
           |""".stripMargin))("Clear", "Carry on entering a number").North(field).andThen {
@@ -104,7 +102,7 @@ class AdderGUI()(implicit sheet: StyleSheet)  {
              for { field <- target } field.text=""
              calculemus()
            } else {
-             Dialogue.OK(TextLabel("Eh?"))
+             Dialogue.OK(Label("Eh?"))
            }
       case _ =>
     }
@@ -113,7 +111,7 @@ class AdderGUI()(implicit sheet: StyleSheet)  {
   def root: Glyph = Col.centered(
     helpGlyph, ex,
     Row(TextButton("Clear") { _ => clear() }), ex,
-    Row.centered(c.framed(), TextLabel(" = "), a.framed(), opGlyph, b.framed())
+    Row.centered(c.framed(), Label(" = "), a.framed(), opGlyph, b.framed())
   )
 
 }
@@ -139,7 +137,7 @@ class CalculatorGUI()(implicit sheet: StyleSheet) extends AdderGUI()(sheet) {
 
   override def root: Glyph = Col.centered(
     super.root, ex,
-    Row.centered(styled.TextLayout.TextLabel("Choose an operator "),
+    Row.centered(styled.text.Label("Choose an operator "),
                  Grid(fg=Brush()(width=0)).grid(height=2)(operations.glyphRows)) enlarged 20
   ) enlarged 20
 

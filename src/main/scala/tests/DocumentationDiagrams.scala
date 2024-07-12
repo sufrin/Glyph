@@ -315,7 +315,7 @@ object DocumentationDiagrams {
       )((0, 100), (200, 100)).enlarged(4).framed())
 
     val gridTables = {
-      import styled.TextLayout._
+      import styled.text._
       implicit object Style extends Styles.DefaultSheet{}
       import Style.Spaces
       import Spaces._
@@ -325,11 +325,11 @@ object DocumentationDiagrams {
 
       Col.centered(
         Col.atLeft(
-          TextLabel("Grid(fg=red(width=0)).grid(width=3)(data) -- constant size cells"),
+          Label("Grid(fg=red(width=0)).grid(width=3)(data) -- constant size cells"),
           NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex,
-          TextLabel("Grid(fg=red(width=0)).table(width=3)(data) -- variable height constant width rows"),
+          Label("Grid(fg=red(width=0)).table(width=3)(data) -- variable height constant width rows"),
           NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(width = 3)(data), ex,
-          TextLabel("Grid(fg=red(width=0)).table(height=3)(data) -- variable width constant height rows"),
+          Label("Grid(fg=red(width=0)).table(height=3)(data) -- variable width constant height rows"),
           NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(height = 3)(data)
         ) scaled 0.8f enlarged (50))
     }
@@ -351,7 +351,7 @@ object DocumentationDiagrams {
     }
 
     val gridCellFit =  {
-      import styled.TextLayout._
+      import styled.text._
       implicit object Style extends Styles.DefaultSheet{}
       import CellFit._
 
@@ -366,7 +366,7 @@ object DocumentationDiagrams {
       }
 
       Col.centered(
-        //TextLabel("grid with data(4).cellFit(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
+        //Label("grid with data(4).cellFit(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex, ex,
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftNorth)), ex, ex,
         //NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftWest)), ex, ex,

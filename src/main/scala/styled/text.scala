@@ -1,30 +1,33 @@
 package org.sufrin.glyph
 package styled
 
-import GlyphTypes.Scalar
-import NaturalSize.{Col, Row}
+/**
+ *  A collection of styled text glyph constructors.
+ */
 
-import scala.collection.mutable.ArrayBuffer
-
-
-object TextLayout {
+object text {
+  import GlyphTypes._
+  import collection.mutable.ArrayBuffer
+  import NaturalSize._
   /**
    * A column of one or more lines that appear as they are presented in `text`, aligned `Left`, `Right`, or `Center`.
-   * For filled/justified/centered layout within a specific width use `TextParagraphs`.
+   * For filled/justified/centered layout within a specific width use `Paragraphs`.
    *
    * @param text    the text of the label
    * @param splitAt (=newline) character used to split the textlayout into lines
    * @param align   the alignment of lines in the column (`Justify==Left`)
    * @param detail  implicit context specifying fonts, foregrounds, etc
-   * @return yields the `align`ed  `Col` of default `TextLabel`s generated from `textlayout.split(splitAt)`.
+   * @return yields the `align`ed  `Col` of default `Label`s generated from `textlayout.split(splitAt)`.
    *
-   * @see TextParagraph
-   * @see TextParagraphs
+   * @see Paragraphs
    */
-  def TextLabel(text: String, align: Alignment = Center)(implicit sheet: StyleSheet): Glyph =
-    DetailedTextLabel(text, align, sheet.labelStyle)
+  def Label(text: String, align: Alignment = Center)(implicit sheet: StyleSheet): Glyph =
+    Label(text, align, sheet.labelStyle)
 
-  def DetailedTextLabel(text: String, align: Alignment, detail: Styles.GlyphStyle): Glyph = {
+  /**
+   *  As `Label` above but with an explicit `GlyphStyle` parameter
+   */
+  def Label(text: String, align: Alignment, detail: Styles.GlyphStyle): Glyph = {
     val lines = text.split('\n').toList
     lines.length match {
       case 1 => Text(text, detail.font).asGlyph(detail.fg, detail.bg)
@@ -40,10 +43,10 @@ object TextLayout {
   }
 
 
-  private def formatTextParagraphs(width: Scalar, align: Alignment, text: String)(implicit sheet: StyleSheet): Glyph = {
+  private def formatParagraphs(width: Scalar, align: Alignment, text: String)(implicit sheet: StyleSheet): Glyph = {
     val style = sheet.labelStyle
-    import style.{ex, em}
-    val paras = text.split("\n([ ]+|<)").filter(_.nonEmpty).map { TextParagraph(width, align) }
+    import style.{em, ex}
+    val paras = text.split("\n([ ]+|<)").filter(_.nonEmpty).map { textParagraph(width, align) }
     val space = em
     val page = ArrayBuffer[Glyph]()
     var lastSingleton = false
@@ -76,18 +79,18 @@ object TextLayout {
    * If a chunk's size exceeds the maximum width of a line, then it is "forced" into a new line; but will appear framed within a
    * thin red box, and clipped at its rightmost end.
    *
-   * @param size  (Scalar) the width of the column to be occupied by the paragraphs: in logical units (independent of font size)
+   * @param width (Scalar) the width of the column to be occupied by the paragraphs: in logical units (independent of font size)
    * @param ems   (Int) the width of the column expressed in "ems" in the font determined by the implicit style.
    * @param align the alignment of the lines within each paragraph.
    * @param style the styling of the glyphs that form the paragraphs.
    * @return a column in which the paragraphs appear (separated by `style.ex`)
    *
    */
-  def TextParagraphs(width: Scalar, align: Alignment)(text: String)(implicit sheet: StyleSheet): Glyph =
-    formatTextParagraphs(width, align, text)(sheet)
+  def Paragraphs(width: Scalar, align: Alignment)(text: String)(implicit sheet: StyleSheet): Glyph =
+    formatParagraphs(width, align, text)(sheet)
 
-  def TextParagraphs(ems: Int, align: Alignment)(text: String)(implicit sheet: StyleSheet): Glyph =
-    formatTextParagraphs(ems*sheet.Spaces.em.w, align, text)(sheet)
+  def Paragraphs(ems: Int, align: Alignment)(text: String)(implicit sheet: StyleSheet): Glyph =
+    formatParagraphs(ems*sheet.Spaces.em.w, align, text)(sheet)
 
    /**
     *  Workhorse method that splits a text into chunks (at newline and space boundaries), then assembles
@@ -102,38 +105,40 @@ object TextLayout {
     *  If a chunk's size exceeds the maximum width of a line, then it is "forced" into a new line; but will appear framed within a
     *  thin red box, and clipped at its rightmost end.
     *
-    * @see TextParagraphs
+    * @see Paragraphs
     */
-  private def TextParagraph(overallWidth: Scalar, align: Alignment)(text: String)(implicit sheet: StyleSheet): (Glyph, Boolean) = {
-    var indent, undent: Float = 0f
+  private def textParagraph(overallWidth: Scalar, align: Alignment)(text: String)(implicit sheet: StyleSheet): (Glyph, Boolean) = {
+    var leftMargin, rightMargin: Float = 0f
     var body: List[String] = text.split("[\n ]").filter(_.nonEmpty).toList
     val space = sheet.Spaces.em
-    val ex = sheet.Spaces.ex
-    val interWord = FixedSize.Space(space.w/1.9f, 100f)                // very stretchy
-    def horizontalSpacing(dist: Scalar): Glyph = FixedSize.Space(dist, 0f, 0f) // width, but no height or stretch
-    val POINTW = TextLabel("<").w
+    val ex    = sheet.Spaces.ex
+    val interWord =                               // very stretchy near-em space
+        FixedSize.Space(space.w/1.9f, 100f)
+    def horizontalSpacing(dist: Scalar): Glyph =
+        FixedSize.Space(dist, 0f, 0f)             // width, but no height or stretch
+    val POINTW = Label("<").w
 
-    // Decide on the margins (indent and undent) of the paragraph.
+    // Decide on the margins (leftMargin and rightMargin) of the paragraph.
     // TODO: add to the formatting gamut
     body match {
       case Nil =>
         // when para starts with "<<"
       case s"<$spec" :: rest if spec.matches("<*") =>
-        indent = POINTW * (1f+spec.length.toFloat)
+        leftMargin = POINTW * (1f+spec.length.toFloat)
         body = rest
         // when this para ends with ">>"
         rest.reverse match {
           case Nil =>
           case s">$spec" :: rest if spec.matches(">*") =>
-            undent = POINTW * (spec.length.toFloat)
-            body = rest.reverse
+            rightMargin = POINTW * (spec.length.toFloat)
+            body   = rest.reverse
           case _ =>
         }
       case _ =>
     }
 
     // maximum width of this paragraph: invariant
-    val maxWidth   = overallWidth - indent - undent
+    val maxWidth   = overallWidth - leftMargin - rightMargin
     //
     val maxWidthfloor = maxWidth.floor
 
@@ -145,24 +150,6 @@ object TextLayout {
     val style = sheet.labelStyle
     val glyphs: Seq[Glyph] = body.map { word => Text(word, style.font).asGlyph(style.fg, style.bg) }
 
-    /**
-     * `Iterator`-like structure supporting inspection of  the "current" `element` of
-     * a sequence, providing `hasElement()` is true. Unlike an `Iterator`,
-     * the current element can be inspected without being "consumed".
-     * The methods `nextElement` and `prevElement` change the current element position,
-     * which starts at `0`.
-     *
-     * @param seq
-     * @tparam T
-     */
-    class Stream[T](seq: Seq[T]) {
-      private var pos: Int = 0
-      /** Is `element` defined */
-      def hasElement: Boolean = 0 <= pos && pos < seq.length
-      def element: T = seq(pos)
-      def nextElement(): Unit = pos += 1
-      def prevElement(): Unit = pos -= 1
-    }
 
     def setLineFrom(words: Stream[Glyph]): (Scalar, Seq[Glyph]) = {
       import scala.collection.mutable
@@ -185,7 +172,7 @@ object TextLayout {
       (lineWidth, line.toSeq)
     }
 
-    val words = new Stream[Glyph](glyphs.toSeq)
+    val words = new Stream[Glyph](glyphs)
     var setting = true
     while (setting && words.hasElement) {
       // Maybe we have an overlong word
@@ -196,32 +183,35 @@ object TextLayout {
         words.nextElement()
       } else {
         val (width, glyphs) = setLineFrom(words)
+        // the line had only its starting alignment glyph; nothing else to do
         if (glyphs.length == 1 && width == 0) {
           setting = false
-          println("Belt and braces deployed")
         } else
           galley += FixedSize.Row(maxWidth).atTop$(glyphs)
       }
     }
 
     val column   = Col.atLeft$(galley.toList)
-    val indented = if (indent > 0f) Row(horizontalSpacing(indent), column) else column
+    // The leftMargin is applied to the whole column, if necessary
+    val indented = if (leftMargin > 0f) Row(horizontalSpacing(leftMargin), column) else column
     (indented, galley.size==1)
   }
+  
+
 
   import DynamicGlyphs.ActiveGlyph
 
   /** An `ActiveString` glyph whose initial appearance is computed as
-   * {{{ TextParagraphs(width, align)(text)}}}
+   * {{{ Paragraphs(width, align)(text)}}}
    *
    * Whenever its associated string is set by `set(text)`, the associated glyph is recomputed as
-   * {{{ TextParagraphs(width, align)(text': String) }}}
+   * {{{ Paragraphs(width, align)(text': String) }}}
    * and it is redrawn.
    */
   class ActiveParagraphs(width: Scalar, align: Alignment, text: String)(implicit sheet: StyleSheet)
-    extends  ActiveGlyph[String](text, TextParagraphs(width, align)(text: String)(sheet))
+    extends  ActiveGlyph[String](text, Paragraphs(width, align)(text: String)(sheet))
   {
-    def toGlyph(text: String): Glyph = TextParagraphs(width: Scalar, align: Alignment)(text)(sheet)
+    def toGlyph(text: String): Glyph = Paragraphs(width: Scalar, align: Alignment)(text)(sheet)
     override def copy(fg: Brush, bg: Brush): ActiveGlyph[String] = new ActiveParagraphs(width, align, text)(sheet)
   }
 
