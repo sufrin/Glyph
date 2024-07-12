@@ -1921,6 +1921,43 @@ trait DemonstrationPages extends Brushes {
       ) enlarged 20f
     }
 
+    Page("TextField", "") {
+        import overlaydialogues.Dialogue.OK
+        val tiny: StyleSheet = new Styles.DefaultSheet {
+          override val labelFontSize = 20
+        }
+        val anchor = Label("")
+
+        val theText = TextField(
+          size = 40,
+          onEnter = { s =>
+            import windowdialogues.Dialogue
+            OK(Label(s"You typed $s"))
+              .South(anchor)
+              .start()
+          }
+        )(tiny.labelStyle)
+
+        Col.centered(
+          Label("(6) TextField: a textlayout-entry field"),
+          ex,
+          ex,
+          ex,
+          Label("(the cursor is always kept in view)"),
+          Label("(visual cues are given for off-field textlayout)"),
+          Label(" "),
+          Label("Ctrl/Cmd C - copy all"),
+          Label("Ctrl/Cmd X - cut all to clipboard"),
+          Label("Ctrl/Cmd V - insert from clipboard"),
+          Label("Home/End/Left/Right/Backspace"),
+          Label(" "),
+          theText.framed(blue),
+          anchor
+        )
+
+
+    }
+
     Page("OneOf", "OneOf backgrounds") {
       import DynamicGlyphs.OneOf
 

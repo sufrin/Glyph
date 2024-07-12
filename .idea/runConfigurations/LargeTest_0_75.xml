@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="LargeTest 0.75" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="org.sufrin.glyph.LargeTest" />
+    <option name="MAIN_CLASS_NAME" value="org.sufrin.glyph.tests.LargeTest" />
     <module name="Glyph" />
     <option name="PROGRAM_PARAMETERS" value="-icon=./flag.png -screen=p -scale=0.75" />
     <method v="2">

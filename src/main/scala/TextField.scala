@@ -1,8 +1,10 @@
 package org.sufrin.glyph
 
-import GlyphTypes.Font
+import GlyphTypes.{Font, Scalar}
 
 import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked}
+import org.sufrin.logging.FINER
+
 
 /**
  *  A fixed-width reactive glyph that can be edited from the keyboard. The width of
@@ -32,7 +34,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
 {
 
   import io.github.humbleui.jwm.{EventMouseButton, Window}
-  val em = Text("\uD83D\uDE1B", font)
+  val em = Text("M", font)
   val emDiagonal = Vec(em.width, em.drop)
 
   var onCursorEnter: String => Unit = {
@@ -92,7 +94,6 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
       case DELETE     => TextModel.mvRight(); TextModel.del()
       case ENTER      => onEnter(text)
       case C if mods.include(ANYCONTROL) =>
-
         Clipboard.set(new ClipboardEntry(ClipboardFormat.TEXT, text.getBytes()))
 
       case X | U if mods.include(ANYCONTROL) =>
@@ -105,10 +106,14 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
 
       case CONTROL | MAC_COMMAND | SHIFT | ALT | LINUX_SUPER =>
 
+      // to support pan testing
+      case S if mods.include(ANYSHIFT) && TextField.loggingLevel(FINER) =>
+           for (i<-0 until 3*size) {
+             TextModel.ins(f"$i%03d ")
+           }
       case other  =>
         if (mods.include(ANYSHIFT)) onError(key, this)
     }
-    //println(s"${TextModel} ${TextModel.revLeft} ${TextModel.right}")
     reDraw()
   }
 
@@ -141,30 +146,25 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
   val panWarningOffset = panWarningBrush.strokeWidth / 2
 
   /** The most recent origin of the displayed textlayout */
-  var panBy = 0
+  def panBy: Int = TextModel.pan
 
   /**
    * Draw the glyph on the surface at its given size, with a "cursor" indicating the current
    * editing position.
    */
   def draw(surface: Surface): Unit = {
-    //panBy = 0
+    import TextField.{loggingLevel}
+
+    import org.sufrin.logging._
     drawBackground(surface)
     surface.declareCurrentTransform(this)
     surface.withClip(diagonal) {
       // NB: The text is going to be aligned on the baseline
       // in case we start supporting mixed fonts in `TextField`s
       surface.withOrigin(location.x, atBaseLine) {
+        TextModel.rePan()
         val right = TextModel.rightText.atBaseline(fg)
         var left = TextModel.leftText(panBy).atBaseline(fg)
-        // pan (move the display "window") rightwards if necessary to bring the cursor into view
-        while (left.w >= w) {
-          panBy += size/3
-          left = TextModel.leftText(panBy).atBaseline(fg)
-        }
-        // println(s"${left.w} $size $w")
-
-        // draw the visible left and the visible right
         left.draw(surface)
         surface.withOrigin(left.w, baseLine) {
           right.draw(surface)
@@ -174,6 +174,10 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
         val cursorLeft = left.w + cursorNudge
         val cursorBrush: Brush = if (focussed) focussedBrush else unfocussedBrush
         surface.withOrigin(location.x, -atBaseLine) {
+          if (loggingLevel(FINER)) {
+            surface.drawPolygon$(cursorBrush(color=0XFFFF0000), w-TextModel.margin, 0, w-TextModel.margin, diagonal.y)
+            surface.drawPolygon$(cursorBrush(color=0XFFFF0000), TextModel.margin, 0, TextModel.margin, diagonal.y)
+          }
           // Draw the "cursor" as an I-Beam
           surface.drawPolygon$(cursorBrush, cursorLeft, cursorSerifShrink, cursorLeft, diagonal.y - cursorSerifShrink) // ertical
           surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, cursorSerifShrink, cursorLeft + cursorSerifWidth, cursorSerifShrink)
@@ -184,16 +188,10 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
             surface.drawPolygon$(panWarningBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
           }
 
-          // cancel panning if at the left of the display while panned
-          if (panBy>0 && left.w==0) {
-            panBy = 0
-          }
-
           // Indicate when there's invisible textlayout to the left
           if (panBy > 0) {
             surface.drawPolygon$(panWarningBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
           }
-
         }
       }
     }
@@ -244,6 +242,9 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
     while (leftText(panBy).width > x && hasLeft) mvLeft()
   }
 
+  /** Whether or not to pan right when the cursor is in the right margin. */
+  var rightMargin: Boolean  = false
+
   /** A simple and inefficient textlayout model, for short texts in single fonts.
    *
    *  The textlayout being edited is a string `textlayout` formed from a sequence of characters
@@ -266,6 +267,7 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
     @inline private def N = buffer.size
     var left  = 0
     var right = N
+    def length: Int = left+N-right
 
     def clear(): Unit = { left=0; right = N }
 
@@ -284,7 +286,7 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
     }
 
     def leftString:  String            = new String(buffer, 0, left)
-    def leftString(from: Int):  String = new String(buffer, from, left-from)
+    def leftString(from: Int):  String = if (from<0 || left-from<=0) "" else new String(buffer, from, left-from)
     def rightString: String            = new String(buffer, right, N-right)
 
     /** The `Text` to the left of the cursor: for drawing */
@@ -389,6 +391,41 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
         right += 1
       }
     }
+
+    var pan:         Int = 0
+
+    // Define a sensible margin for panning
+    val marginChars: Int      = size/10 max 1
+    val margin: Scalar        = Text("M"*(marginChars), font).width
+
+    def rePan(): Unit = {
+      import TextField.{finest, logging}
+      val size: Scalar = w
+      @inline def vleft: Scalar = leftText(pan).width
+      if (logging) finest(s"rePan: $pan $vleft $size $margin ${ (vleft < size, vleft<margin, vleft>=size-margin)}")
+      if (leftText.width<size) {
+        pan = 0
+        if (logging) finest("<<")
+      } else {
+        (vleft < size, vleft<margin, vleft>=size-margin) match {
+          case (true, _, true) => // visible, but in the right margin
+            if (logging) finest("RM")
+            if (rightMargin) while (vleft>=size-margin) pan += marginChars
+          case (true, true, _) => // visible, but in left margin
+            if (logging) finest("LM")
+            while (vleft<margin) pan -= marginChars
+          case (true, false, false)  => // still visible
+            if (logging) finest("V")
+          case _ =>
+            if (logging) finest("J")
+            while (0<=vleft && vleft<=size && pan-marginChars>=0)
+              pan -= marginChars
+            while (vleft>=size)
+              pan += marginChars
+        }
+      }
+      if (logging) finest(s"rePan= $pan $vleft $size $margin ${ (vleft < size, vleft<margin, vleft>=size-margin)}")
+    }
   }
 }
 
@@ -397,7 +434,7 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
  *
  * @see styled.TextField
  */
-object TextField {
+object TextField extends org.sufrin.logging.Loggable {
   import Location._
   def popupError(key: EventKey, glyph: Glyph): Unit = {
     import Glyphs.Label
