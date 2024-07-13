@@ -18,14 +18,17 @@ import GlyphTypes.{Scalar}
 object FixedSize extends DefaultPaints {
 
   /** A space whose dimension(s) can be changed before layout */
-  class Space(var _w: Scalar, var _h: Scalar, xS: Scalar, yS: Scalar) extends Glyph {
+  class Space(var _w: Scalar, var _h: Scalar, xS: Scalar, yS: Scalar, val fg: Brush = nothing, val bg: Brush = nothing) extends Glyph {
     override val xStretch: Scalar = xS
     override val yStretch: Scalar = yS
 
     def draw(surface: Surface): Unit = {
-      drawBackground(surface)
+      if (bg.color!=0) {
+        //surface.fillRect(bg, diagonal)
+        println(s"bg=$bg $diagonal")
+      }
       if (fg.color!=0) {
-        println(s"$fg $diagonal (${fg.filter})")
+        //println(s"fg=$fg $diagonal")
         surface.fillRect(fg, diagonal)
       }
     }
@@ -36,26 +39,21 @@ object FixedSize extends DefaultPaints {
 
     def diagonal: Vec = Vec(_w, _h)
 
-    val fg: Brush = nothing
-    val bg: Brush = nothing
 
     /** A copy of this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = {
-      val ffg = fg
-      val bbg = bg
-      new Space(w, h, xS, yS) {
-        override val fg: Brush = ffg
-        override val bg: Brush = bbg
-      }
+      new Space(w, h, xS, yS, fg, bg)
     }
 
     val thisGlyph: Glyph = this
   }
 
   object Space {
-    def apply(wh: Scalar, stretch: Scalar): Space = new Space(wh, wh, stretch, stretch)
+    def apply(wh: Scalar, stretch: Scalar): Space =
+        new Space(wh, wh, stretch, stretch)
 
-    def apply(w: Scalar, h: Scalar, stretch: Scalar): Space = new Space(w, h, stretch, stretch)
+    def apply(w: Scalar, h: Scalar, stretch: Scalar, fg: Brush=nothing, bg: Brush=nothing): Space =
+        new Space(w, h, stretch, stretch, fg, bg)
 
     def tab: Space = new Space(10f, 10f, 1.0f, 1.0f)
   }

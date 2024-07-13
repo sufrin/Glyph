@@ -32,14 +32,32 @@ class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
   Page("Transforms*", "")(new PortmanteauTransforms().Layout.leftButtons())
 
   Page("GlyphML", "") {
+    import Glyphs._
     import markup._
-    val ml = Html()(
-      Literal("My first piece of markup"),
+    implicit val local: Context =
+      Default.copy(paperWidth = 40, leftMargin=0, rightMargin = 5)
+             .labelStyle(fg=red, bg=lightGrey)
+             .gridStyle(bg=lightGrey, fg=nothing, padY=8, padX=8)
+    val ss = (
+      Text(local.copy(padY=10, padX=10))(
+        """My first piece of markup.
+          |I expect it to be laid out as a wideish Paragraph
+          |within a left and a right margin. But who
+          |knows what fortune will bring!
+          |
+          |And here's another one.
+          |
+          |And here's yet another one that might be wider than the previous one.
+          |
+          |Pfui!
+          |""".stripMargin),
+    )
 
-    )
-    Col.centered(
-      ml.toGlyph
-    )
+    Vertical(local.copy(padY=40, padX=40, bg=darkGrey))(
+      "An example of text markup being done automagically for literal strings",
+      ss,
+      Text(local.italicStyle)("foobaz is best")
+    ).toGlyph
   }
 
   import utils.Output.withWriteBar

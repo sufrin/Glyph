@@ -108,7 +108,7 @@ object text {
     * @see Paragraphs
     */
   private def textParagraph(overallWidth: Scalar, align: Alignment)(text: String)(implicit sheet: StyleSheet): (Glyph, Boolean) = {
-    var leftMargin, rightMargin: Float = 0f
+    var leftMargin, rightMargin: Degrees = 0f
     var body: List[String] = text.split("[\n ]").filter(_.nonEmpty).toList
     val space = sheet.Spaces.em
     val ex    = sheet.Spaces.ex
@@ -137,19 +137,27 @@ object text {
       case _ =>
     }
 
-    // maximum width of this paragraph: invariant
-    val maxWidth   = overallWidth - leftMargin - rightMargin
-    //
-    val maxWidthfloor = maxWidth.floor
-
-
-    // As each line of the paragraph is assembled it is added to the galley
-    val galley = ArrayBuffer[Glyph]()
-
     // make glyphs of the chunks
     val style = sheet.labelStyle
     val glyphs: Seq[Glyph] = body.map { word => Text(word, style.font).asGlyph(style.fg, style.bg) }
 
+    val galley: ArrayBuffer[Glyph] =
+        glyphParagraph(overallWidth, align, leftMargin, rightMargin, interWord, glyphs)
+
+    val column   = Col.atLeft$(galley.toList)
+    // The leftMargin is applied to the whole column, if necessary
+    val indented = if (leftMargin > 0f) Row(horizontalSpacing(leftMargin), column) else column
+    (indented, galley.size==1)
+  }
+
+  def glyphParagraph(overallWidth: Scalar, align: Alignment, leftMargin: Scalar, rightMargin: Scalar, interWord: Glyph, glyphs: Seq[Glyph]) = {
+    // As each line of the paragraph is assembled it is added to the galley
+    val galley = ArrayBuffer[Glyph]()
+    // maximum width of this paragraph: invariant
+    val maxWidth       = overallWidth - leftMargin - rightMargin
+    // avoid rounding
+    val maxWidthfloor  = maxWidth.floor
+    val interWordWidth = interWord.w
 
     def setLineFrom(words: Stream[Glyph]): (Scalar, Seq[Glyph]) = {
       import scala.collection.mutable
@@ -157,10 +165,10 @@ object text {
       var lineWidth = 0f
 
       line += align.leftFill()
-      while (words.hasElement && (lineWidth + words.element.w + interWord.w < maxWidthfloor)) {
+      while (words.hasElement && (lineWidth + words.element.w + interWordWidth < maxWidthfloor)) {
         line += words.element
         line += interWord()
-        lineWidth += words.element.w + interWord.w
+        lineWidth += words.element.w + interWordWidth
         words.nextElement()
       }
       // line is full, erase the interword or leftfill
@@ -179,7 +187,7 @@ object text {
       if (words.hasElement && words.element.w.ceil >= maxWidthfloor) {
         // it's a candidate for hyphenation (if it's text): but we'll just illuminate it
         // println(s"Oversize ${words.element} ${words.element.w} $maxWidth")
-        galley += words.element.framed(fg=Brush() col (0XFFFF0000))
+        galley += words.element.framed(fg = Brush() col (0XFFFF0000))
         words.nextElement()
       } else {
         val (width, glyphs) = setLineFrom(words)
@@ -190,14 +198,8 @@ object text {
           galley += FixedSize.Row(maxWidth).atTop$(glyphs)
       }
     }
-
-    val column   = Col.atLeft$(galley.toList)
-    // The leftMargin is applied to the whole column, if necessary
-    val indented = if (leftMargin > 0f) Row(horizontalSpacing(leftMargin), column) else column
-    (indented, galley.size==1)
+    galley
   }
-  
-
 
   import DynamicGlyphs.ActiveGlyph
 

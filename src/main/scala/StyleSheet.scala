@@ -3,6 +3,13 @@ package org.sufrin.glyph
 trait StyleSheet { origin =>
   import GlyphTypes._
   import Styles._
+  override def toString: String =
+    s"""StyleSheet($face,
+       |    $buttonStyle
+       |    $labelStyle
+       |    $menuStyle
+       |    ...
+       | )""".stripMargin
 
   import Decoration._
   /** Default: can be overridden */

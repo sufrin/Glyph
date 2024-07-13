@@ -54,6 +54,9 @@ object Styles {
     /** height of an X  in the button font */
     lazy val exHeight: Scalar = font.measureText("X").getHeight
 
+    /** Space of dimension `emWidth * exHeight` */
+    lazy val strut: Glyph = new FixedSize.Space(emWidth, exHeight, 0f, 0f)
+
     /** An `emWidth/2` stretchable space */
     lazy val fill: Glyph = new FixedSize.Space(emWidth / 2, 0f, 1f, 0f)
 

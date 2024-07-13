@@ -10,6 +10,7 @@ object GlyphTypes {
   type PathEffect  = io.github.humbleui.skija.PathEffect
   type ImageFilter = io.github.humbleui.skija.ImageFilter
   type Window      = io.github.humbleui.jwm.Window
+  type FontStyle   = io.github.humbleui.skija.FontStyle
 
   object FontManager {
     import io.github.humbleui.skija.FontMgr
@@ -21,10 +22,10 @@ object GlyphTypes {
   }
 
   object FontStyle {
-    val BOLD = io.github.humbleui.skija.FontStyle.BOLD
-    val ITALIC = io.github.humbleui.skija.FontStyle.ITALIC
-    val NORMAL = io.github.humbleui.skija.FontStyle.NORMAL
-    val BOLD_ITALIC = io.github.humbleui.skija.FontStyle.BOLD_ITALIC
+    val BOLD: FontStyle = io.github.humbleui.skija.FontStyle.BOLD
+    val ITALIC: FontStyle = io.github.humbleui.skija.FontStyle.ITALIC
+    val NORMAL: FontStyle = io.github.humbleui.skija.FontStyle.NORMAL
+    val BOLD_ITALIC: FontStyle = io.github.humbleui.skija.FontStyle.BOLD_ITALIC
   }
 
   object PathEffect {
