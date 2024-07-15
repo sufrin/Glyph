@@ -39,7 +39,7 @@ class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
              .labelStyle(fg=red, bg=lightGrey)
              .gridStyle(bg=lightGrey, fg=nothing, padY=8, padX=8)
     val ss = (
-      Text(local.copy(padY=10, padX=10))(
+      Text(local.copy(padY=10, padX=10).parEnum())(
         """My first piece of markup.
           |I expect it to be laid out as a wideish Paragraph
           |within a left and a right margin. But who
@@ -53,10 +53,24 @@ class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
           |""".stripMargin),
     )
 
-    Vertical(local.copy(padY=40, padX=40, bg=darkGrey))(
-      "An example of text markup being done automagically for literal strings",
-      ss,
-      Text(local.italicStyle)("foobaz is best")
+    Column(local)(
+      Table(local.copy(padY=4, padX=4, fg=black, bg=darkGrey))(height=2)(
+            "An example of text markup being done automagically for literal strings",
+            ss,
+            styled.TextButton("Press Here"){ _ => },
+            Text(local.italicStyle)("foobaz is best")),
+      { implicit val local: Context = Default.copy(paperWidth=20, leftMargin=0, rightMargin=0, parIndent={()=>Nil})
+        def N(text: String): Glyph = Lit(local)(text).toGlyph//.cellFit(CellFit.ShiftNorth)
+        def W(text: String): Glyph = Lit(local)(text).toGlyph//.cellFit(CellFit.ShiftWest)
+        Table(Default.copy(paperWidth = 30))(width = -2)(
+          N("1."), "The first para is going to be quite long and I hope it folds",
+          N("2."), W("The Second para"),
+          N("555X."), W("Hein?"),
+          N("3."), W("Something else"),
+          N("4."), ("The third para is also going to be inordinately long, but who cares?"),
+          N("5."), ("The fifth para is also going to be inordinately long, but who cares?"),
+        )
+      }
     ).toGlyph
   }
 

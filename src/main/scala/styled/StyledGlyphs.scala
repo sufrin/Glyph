@@ -497,8 +497,6 @@ class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Bool
     checkBoxes(boxIndex).set(true)
   }
 
-
-
   lazy val glyphRows: Seq[Glyph] = {
     val glyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
     for {i <- 0 until captions.length } {
@@ -513,15 +511,12 @@ class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Bool
     for {i <- 0 until captions.length } {
       glyphs += Label(s"${captions(i)}", Center, sheet.labelStyle)
     }
-    for {i <- 0 until captions.length } {
-      glyphs += checkBoxes(i)
-    }
+    for {i <- 0 until captions.length } { glyphs += checkBoxes(i) }
     glyphs.toSeq
   }
 
   def gridGlyphs(width: Int=0, height: Int=captions.length): Glyph =
-    NaturalSize.Grid.table(width, height)(glyphCols).framed()
-
+      NaturalSize.Grid.table(width, height)(glyphCols)
 
 }
 

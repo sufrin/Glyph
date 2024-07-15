@@ -106,6 +106,7 @@ object NaturalSize {
     val fg: Brush
     val bg: Brush
 
+
     /** Glyphs drawn with their centres at the centre line of the column. */
     def centered(theGlyphs: Glyph*): Composite = aligned(0.5f, theGlyphs)
 
@@ -213,9 +214,11 @@ object NaturalSize {
     def Grid(width: Int=0, height: Int=0)(glyphs: Glyph*): Composite = grid(width, height)(glyphs)
 
     def table(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Composite = {
-      (width>0, height>0) match {
-        case (true, false) => TabulateRows$(width)(glyphs)
-        case (false, true) => TabulateCols$(height)(glyphs)
+      (width.sign, height.sign) match {
+        case (1, 0) => TabulateRows$(width)(glyphs)
+        case (0, 1) => TabulateCols$(height)(glyphs)
+        case (0, -1) => TabulateByCol$(-height)(glyphs)
+        case (-1, 0) => TabulateByCol$(glyphs.length / -width)(glyphs)
         case (_, _) =>
           val width: Int = Math.sqrt(glyphs.length).ceil.toInt
           Rows$(width)(glyphs)
@@ -224,10 +227,46 @@ object NaturalSize {
 
     def Table(width: Int=0, height: Int=0)(glyphs: Glyph*): Composite = table(width, height)(glyphs)
 
+    /** Each col will be as wide as its widest element
+     *  Each row will be as high as its highest element
+     */
+    def TabulateByCol$(height: Int)(glyphs: Seq[Glyph]): Composite = {
+      val pad: Glyph = FixedSize.Space(0f, 0f, 0f)
+      val cols = GridUtils.byCol(pad)(height, glyphs)
+      val rows = GridUtils.byRow(glyphs.length/height, glyphs)
+      val colWidths = cols.map(Measure.maxWidth)
+      println(colWidths)
+      val rowHeights = rows.map(Measure.maxHeight)
+      val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
+      var y = 0f
+      var maxw = 0f
+      for { row <- 0 until rows.length } {
+          var x=0f
+          for { col <- 0 until rows(row).length} {
+              val padded = rows(row)(col).cellFit(colWidths(col), rowHeights(row), fg=theseGenerators.fg, bg=theseGenerators.bg)
+              val framed = if (fg.color != 0) padded.edged(fg) else padded
+              locatedGlyphs.append(framed@@(x, y))
+              x += colWidths(col)
+          }
+          maxw = maxw max x
+          y += rowHeights(row)
+      }
+      val theGlyphs = locatedGlyphs.toSeq
+      new Composite(theGlyphs) {
+        override val kind: String = "TabulateRows"
+        val glyphs   = theGlyphs
+        val diagonal = Vec(maxw, y)
+        val fg = theseGenerators.fg
+        val bg = theseGenerators.bg
+        locally {
+          setParents()
+        }
+        def copy(fg: Brush = fg, bg: Brush = bg): Composite = TabulateByCol$(height)(theGlyphs.map(_.copy(fg, bg)))
+      }
+    }
+
     def TabulateRows$(width: Int)(glyphs: Seq[Glyph]): Composite = {
       val maxw = padx + Measure.maxWidth(glyphs)
-      def rows(glyphs: Seq[Glyph]): List[Seq[Glyph]] =
-        if (glyphs.isEmpty) List() else glyphs.take(width) :: rows(glyphs.drop(width))
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       def layout(y: Scalar, row: Seq[Glyph]): Scalar = {
         val maxh = pady + Measure.maxHeight(row)
@@ -241,7 +280,7 @@ object NaturalSize {
         maxh
       }
       var y = 0f
-      for { row <- rows(glyphs) } {
+      for { row <- GridUtils.byRow(width, glyphs) } {
         y += layout(y, row)
       }
       val theGlyphs = locatedGlyphs.toSeq
@@ -260,13 +299,11 @@ object NaturalSize {
 
     def TabulateCols$(height: Int)(glyphs: Seq[Glyph]): Composite = {
       val maxh = padx + Measure.maxHeight(glyphs)
-      def cols(glyphs: Seq[Glyph]): List[Seq[Glyph]] =
-        if (glyphs.isEmpty) List() else glyphs.take(height) :: cols(glyphs.drop(height))
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       def layout(x: Scalar, col: Seq[Glyph]): Scalar = {
         val maxw = pady + Measure.maxWidth(col)
         var y = 0f
-        for { glyph <- col } {
+        for { glyph <- col if glyph ne null } {
           val w = glyph.cellFit(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
           val f = if (fg.color != 0) w.edged(fg) else w
           locatedGlyphs.append(f@@(x, y))
@@ -275,7 +312,7 @@ object NaturalSize {
         maxw
       }
       var x = 0f
-      for { col <- cols(glyphs) } {
+      for { col <- GridUtils.byRow(height, glyphs)  } {
         x += layout(x, col)
       }
       val theGlyphs = locatedGlyphs.toSeq
