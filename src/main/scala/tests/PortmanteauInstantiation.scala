@@ -35,7 +35,7 @@ class  PortmanteauInstantiation(implicit sheet: StyleSheet) {
     var scale: String = "-scale=0.7"
     var screen: String = "-screen=p"
     val styles = "-notebook/-lnotebook/-snotebook/-vnotebook/-tnotebook/-menu".split("/").toList
-    val scales = "-scale=1.2/-scale=1.0/-scale=0.9/-scale=0.8/-scale=0.75/-scale=0.7/-scale=0.6".split("/").toList
+    val scales = "-scale=1.2/-scale=1.0/-scale=0.9/-scale=0.8/-scale=0.75/-scale=0.7/-scale=0.6".split("/").toList.reverse
     val screens = "-screen=p/-screen=0/-screen=1/-screen=2".split("/").toList
 
     lazy val styleSelect: RadioCheckBoxes = RadioCheckBoxes(styles, "-notebook") {

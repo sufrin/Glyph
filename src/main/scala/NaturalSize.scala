@@ -217,8 +217,8 @@ object NaturalSize {
       (width.sign, height.sign) match {
         case (1, 0) => TabulateRows$(width)(glyphs)
         case (0, 1) => TabulateCols$(height)(glyphs)
-        case (0, -1) => TabulateByCol$(-height)(glyphs)
-        case (-1, 0) => TabulateByCol$(glyphs.length / -width)(glyphs)
+        case (-1, 0) => TabulateByCol$(-width)(glyphs)
+        case (0, -1) => TabulateByCol$(glyphs.length / -height)(glyphs)
         case (_, _) =>
           val width: Int = Math.sqrt(glyphs.length).ceil.toInt
           Rows$(width)(glyphs)
@@ -232,9 +232,9 @@ object NaturalSize {
      */
     def TabulateByCol$(height: Int)(glyphs: Seq[Glyph]): Composite = {
       val pad: Glyph = FixedSize.Space(0f, 0f, 0f)
-      val cols = GridUtils.byCol(pad)(height, glyphs)
-      val rows = GridUtils.byRow(glyphs.length/height, glyphs)
+      val (rows, cols) = GridUtils.byCol(pad)(height, glyphs)
       val colWidths = cols.map(Measure.maxWidth)
+      println(cols)
       println(colWidths)
       val rowHeights = rows.map(Measure.maxHeight)
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
