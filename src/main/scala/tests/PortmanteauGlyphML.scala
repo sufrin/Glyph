@@ -26,21 +26,24 @@ class PortmanteauGlyphML(implicit sheet: StyleSheet) {
       |than the standard Glyphs API for interface designers who don't need to get to grips with its
       |underview.
       |
-      |There are few important principles to get to grips with:
+      |There are a couple of important principles to get to grips with:
       |""".stripMargin),
       Text(
-        """Most markup expressions take an implicit context as their
-          |final parameter. This can be modified. For example, this
-          |paragraph will be set with a narrower overall width. It
-          |appears to be centred because the overall makeup of this
-          |page is as a centred column of rectangles.
+        """Most markup expressions take a context as their
+          |final parameter, and this is usually supplied implicitly.
+          |
+          |But it can be modified: for example, the current
+          |paragraph has a narrower overall width.
           |
           |""".stripMargin)(local.copy(overallWidth = 50)).toGlyph.framed().enlarged(30, bg=Glyphs.lightGrey),
      Text(
-        """We should be back to the usual margins by now. The
-          |markup expression that set the previous paragraph was
+        """The narrower paragraph appears to be centred because the overall makeup of this
+          |page is as a centred column of rectangles.
+          |
+          |The markup expression denoting the previous paragraph modified the current implicit
+          |context by supplying a modified context explicitly:
           |""".stripMargin),
-     Text("""Text(...)((local.copy(overallWidth=40))""")(local.labelStyle(fg=red).copy(parAlign=Center)),
+     Text("""Text("Most ... width")(local.copy(overallWidth=40))""")(local.labelStyle(fg=red).copy(parAlign=Center)),
      styled.TextButton("I want to know more!"){
        _ =>
      }
