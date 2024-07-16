@@ -4,7 +4,7 @@ import GlyphTypes.{Scalar}
 
 /**
  * `FixedSize` glyphs are Rows / Columns whose widths/heights are preset, and that contain
- * `Space` elements that are cellFit to fill them.
+ * `Space` elements that are fitToCell to fill them.
  *
  * When a row (col) is to be set in a given width (height), its natural size is
  * first established by summing the widths (heights) of its glyphs. If this is

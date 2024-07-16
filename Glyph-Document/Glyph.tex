@@ -465,34 +465,50 @@ of \Scala{Concentric}.}
 It can also be helpful to organize glyph sequences in tabular
 form. Several methods for doing
 this are provided by \Scala{NaturalSize.Grid} --
-all invoked by first specifying various aspects of the table:
+all invoked by first specifying various aspects of the table.
+
 
 \begin{alltt}\textcolor{blue}{Grid(fg: Brush=nothing, bg: Brush=nothing, padx: Scalar=0, pady: Scalar=0).\(method(...)\)}
 \end{alltt}
 
 The main $method$s of such a \Scala{Grid} are:
 \begin{scala}
-  Grid(width:  Int=0, height: Int=0)(glyphs: Glyph*): Composite
-  Table(width: Int=0, height: Int=0)(glyphs: Glyph*): Composite
-  grid(width:  Int=0, height: Int=0)(glyphs: Seq[Glyph]): Composite
-  table(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Composite
+  Grid(width:  Int=0, height: Int=0)(glyphs: Glyph*):      Composite
+  Table(width: Int=0, height: Int=0)(glyphs: Glyph*):      Composite
+  Rows(width:  Int=0)                (glyphs: Glyph*):     Composite 
+  Cols(height: Int=0)                (glyphs: Glyph*):     Composite 
+  grid(width:  Int=0, height: Int=0)(glyphs: Seq[Glyph]):  Composite
+  table(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]):  Composite
+  rows(width:  Int=0)                (glyphs: Seq[Glyph]): Composite
+  cols(height: Int=0)                (glyphs: Seq[Glyph]): Composite
 \end{scala}
 
-The \Scala{grid/Grid} method organises \Scala{glyphs} as a sequence of
-rows of \textit{identically-sized} cells,
-each large enough for any of the glyphs.
-When $width>0, height\not>0$ then $width$ is the
-number of glyphs per row; when $width\not>0, height>0$ then
-$height$ is the number of glyphs per column.\footnote{When
-neither condition is satisfied, then $width$ is chosen
-as the ceiling of $\mathbf{sqrt}(glyphs.length)$}
+Methods with \Scala{width}, \Scala{height}, and \Scala{glyphs} formal parameters interpret
+their \Scala{glyphs} actual parameter as follows:\footnote{In this section \Scala{width} means ``number of columns''; and \Scala{height} means
+``number of rows.}
+\begin{enumerate}
+     \item  if there's a \Scala{width} parameter then glyphs is interpreted as a catenation of rows of the given \Scala{width}
+     \item if there's a \Scala{height} parameter then glyphs is interpreted as a catenation of columns of the given \Scala{height}
+     \item if there are both \Scala{width} and \Scala{height} parameters, then:
+    \begin{enumerate}
+         \item if one argument is omitted,
+         \Scala{glyphs} is interpreted as if the method had only the other formal parameter (as above)
+         \item if  both arguments are omitted then \Scala{width} is taken to be \Scala{ceiling(sqrt(glyphs.length))}.
+    \end{enumerate}
+\end{enumerate}
 
-The \Scala{table/Table} method with $width>0, height\not>0$ is similar, except
-that all cells in each column have the same width, while their height
-is the greatest of all those in the same row. When
-$width\not>0, height>0$ then
-$height$ is the number of glyphs per column, and their width
-is the greatest of all those in the same column.
+
+The \Scala{grid/Grid} methods present a grid of
+\textit{identically-dimensioned} cells,
+each large enough for any of the glyphs.
+
+The \Scala{table/Table} methods present a grid in which 
+all cells in each column have the same horizontal dimension, and all cells in each row
+row have the same vertical dimension.
+
+The \Scala{rows/Rows} methods present a grid of row data with columns of uniform horizontal dimension, whilst
+analogously  \Scala{cols/Cols} presents a grid of column data with rows of uniform vertical dimension.
+
 Figures \ref{gridorder}, \ref{gridtable} and  \ref{gridcellFit} illustrate several ways of using
 the \Scala{Grid} methods \Scala{grid}, and \Scala{table}.
 
@@ -501,7 +517,7 @@ the \Scala{Grid} methods \Scala{grid}, and \Scala{table}.
 
 Individual glyphs in a grid can be made to fit their cell by
 various methods, including shifting in various directions within the cell, scaling to
-the size of the cell, and (the default) simply enlarging it to fit it.
+the size of the cell, and (the default) simply enlarging it to fit.
 Figure \ref{gridcellFit} illustrates annotations that can be
 made to individual glyphs that define how they are made to
 fit the cells they will inhabit. The data used here is
@@ -510,12 +526,16 @@ the same as earlier, save that (except in the first grid) the 4th cell is a labe
 constants:
 
 \begin{scala}
-case object ShiftNorth extends Method // shifted to the top cell edge
-case object ShiftSouth extends Method // ... to the bottom edge ...
-case object ShiftEast  extends Method // ... to the right edge ...
-case object ShiftWest  extends Method // ... to the left edge ...
-case object Stretch    extends Method // scaled (up) to fit the cell
-case object Enlarge    extends Method // the default: centred in the cell
+case object ShiftNorth     extends Method // ... to the top edge
+case object ShiftNorthWest extends Method // ... to the top left corner
+case object ShiftWest      extends Method // ... to the left edge ...
+case object ShiftSouthWest extends Method // ... to the bottom left  ...
+case object ShiftSouth     extends Method // ... to the bottom edge ...
+case object ShiftSouthEast extends Method // ... to the bottom right ...
+case object ShiftEast      extends Method // ... to the right edge ...
+case object ShiftNorthEast extends Method // ... to the top right ...
+case object Stretch        extends Method // scaled up to fit the cell
+case object Enlarge        extends Method // centred in the cell
 \end{scala}
 
 In each case the grid is composed by:
@@ -523,7 +543,8 @@ In each case the grid is composed by:
 Grid(fg = red(width=0), padx=10, pady=10).grid(width=3)(data)
 \end{scala}
 
-\PNGFIGURE[scale=0.35]{gridorder}{A one-column table made with \Scala{.grid(width = 1)(data)}}
+\PNGFIGURE[scale=0.35]{gridorder}{Tables made with \Scala{.grid(width = 1)(data)}
+                                  and \Scala{.rows(width = 1)(data)}}
 
 
 \PNGFIGURE[scale=0.5]{gridtable}{Table presentations of a grid}
@@ -1976,9 +1997,9 @@ object DemonstrationNotebook extends DemonstrationPages with Application {
 \SAVEDFIG Styles-Blurred/the Blurred subpage of Styles* /
 \SAVEDFIG Events-Events/the Events subpage of Events* /
 \SAVEDFIG Etc-Animation/the Animation subpage of Etc* (mid-animation) /
-\SAVEDFIG Etc-Grid-Grid/the Grid.Grid subpage of Etc* /
-\SAVEDFIG Etc-Grid-Table/the Grid.Table subpage of Etc* /
-\SAVEDFIG Etc-Grid-CellFit/the Grid.CellFit subpage of Etc* /
+\SAVEDFIG Etc-Grid-RowsCols/the Rows{/}Cols subpage of Etc*.Grid /
+\SAVEDFIG Etc-Grid-CellSizes/the Cell Sizes subpage of Etc*.Grid /
+\SAVEDFIG Etc-Grid-GlyphPlacement/the Glyph Placement subpage of Etc*.Grid /
 \SAVEDFIG Etc-Blurred/the Blurred subpage of Etc* /
 \SAVEDFIG Etc-Split/the Split subpage of Etc* /
 \clearpage

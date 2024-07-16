@@ -179,7 +179,7 @@ object markup {
     lazy val theGlyph: Glyph = body.length match {
       case 0 => NaturalSize.Col().centered()
       case 1 => body(0).toGlyph
-      case _ => NaturalSize.Grid(fg=local.fg, bg=local.bg, pady=local.padY).Rows$(width)(body.map(_.toGlyph))
+      case _ => NaturalSize.Grid(fg=local.fg, bg=local.bg, pady=local.padY).uniformlyByRows(width)(body.map(_.toGlyph))
     }
     def toGlyph: Glyph = theGlyph.enlargedBy(dw=local.padX, dh=local.padY, fg=local.fg, bg=local.bg)
   }
@@ -188,7 +188,7 @@ object markup {
     lazy val theGlyph: Glyph = body.length match {
       case 0 => NaturalSize.Col().centered()
       case 1 => body(0).toGlyph
-      case _ => NaturalSize.Grid(fg=local.fg, bg=local.bg, pady=local.padY).Cols$(height)(body.map(_.toGlyph))
+      case _ => NaturalSize.Grid(fg=local.fg, bg=local.bg, pady=local.padY).uniformlyByCols(height)(body.map(_.toGlyph))
     }
     def toGlyph: Glyph = theGlyph.enlargedBy(dw=local.padX, dh=local.padY, fg=local.fg, bg=local.bg)
   }

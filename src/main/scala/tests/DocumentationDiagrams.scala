@@ -325,12 +325,18 @@ object DocumentationDiagrams {
 
       Col.centered(
         Col.atLeft(
-          Label("Grid(fg=red(width=0)).grid(width=3)(data) -- constant size cells"),
+          Label(".grid(width=3)(data) -- row data as uniform size cells"),
           NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex,
-          Label("Grid(fg=red(width=0)).table(width=3)(data) -- variable height constant width rows"),
-          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(width = 3)(data), ex,
-          Label("Grid(fg=red(width=0)).table(height=3)(data) -- variable width constant height rows"),
-          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(height = 3)(data)
+          Label(".grid(height=3)(data) -- col data as uniform size cells"),
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(height = 3)(data), ex, ex, ex,
+          Label(".rows(width=3)(data) -- row data in uniform width columns"),
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).rows(width = 3)(data), ex,
+          Label(".cols(height=3)(data) -- col data in uniform height rows"),
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).cols(height = 3)(data), ex, ex, ex,
+          Label(".table(width=3)(data) -- row data as minimal width/height cols/rows"),
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(width=3)(data), ex,
+          Label(".table(height=3)(data) -- col data as minimal width/height cols/rows"),
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(height=3)(data)
         ) scaled 0.8f enlarged (50))
     }
 
@@ -344,7 +350,8 @@ object DocumentationDiagrams {
 
       Col.centered(
         // NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(height = 1)(data), ex,
-       NaturalSize.Grid(fg = blue(width = 2), padx = 10, pady = 10).grid(width = 1)(data).enlarged(10f), ex,
+        NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(width = 1)(data).enlarged(10f), ex, ex,
+        NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).rows(width = 1)(data).enlarged(10f), ex,
        // NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(width = 0,  height=0)(Label("XYZZY") :: data.toList)
       )
 
@@ -361,18 +368,19 @@ object DocumentationDiagrams {
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
 
       def expanded(method: Method): Seq[Glyph] = {
-        val lab = Label(s"cellFit($method)").scaled(0.75f).cellFit(method)
+        val lab = Label(s"fitToCell($method)").scaled(0.75f).cellFit(method)
         data.updated(4, lab)
       }
 
       Col.centered(
-        //Label("grid with data(4).cellFit(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
+        //Label("grid with data(4).fitToCell(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex, ex,
-        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftNorth)), ex, ex,
-        //NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftWest)), ex, ex,
-        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftSouth)), ex, ex,
-        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftEast)), ex, ex,
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Stretch)), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftNorth)), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftSouthWest)), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftSouth)), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftSouthEast)), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftEast)), ex, ex,
       ) scaled 0.75f enlarged (50)
     }
 

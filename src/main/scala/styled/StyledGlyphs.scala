@@ -515,8 +515,11 @@ class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Bool
     glyphs.toSeq
   }
 
-  def gridGlyphs(width: Int=0, height: Int=captions.length): Glyph =
-      NaturalSize.Grid.table(width, height)(glyphCols)
+  def arrangedVertically(): Glyph =
+      NaturalSize.Grid.table(width=2)(glyphRows)
+
+  def arrangedHorizontally(): Glyph =
+    NaturalSize.Grid(padx=5).table(width=captions.length)(glyphCols)
 
 }
 

@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 
-import GlyphTypes._
 import Glyphs.nothing
+import GlyphTypes._
 import NaturalSize.{Col, Row}
 
 /**
@@ -108,6 +108,10 @@ abstract trait GlyphTransforms {
   def shaded(fg: Brush = thisGlyph.fg, bg: Brush = thisGlyph.bg, enlarge: Scalar = 0.25f, delta: Scalar = 8f, down: Boolean=false): Glyph =
     new GlyphTransforms.Shaded(thisGlyph.enlarged(if (enlarge < 1f) enlarge * (thisGlyph.w min thisGlyph.h) else enlarge), fg = fg, bg = bg, delta = delta, down)
 
+  /** This glyph in a cavity of size `(w,h)` displaced by `(dx, dy)` */
+  def inCavity(w: Scalar, h: Scalar, dx: Scalar, dy: Scalar): Glyph =
+    new GlyphTransforms.InCavity(w, h, dx, dy, thisGlyph, thisGlyph.fg, thisGlyph.bg)
+
   /**  `Row.centered(thisGlyph, g)` */
   def beside(g: Glyph): Glyph = Row.centered(thisGlyph, g)
   def besideTop(g: Glyph): Glyph = Row.atTop(thisGlyph, g)
@@ -155,6 +159,35 @@ object GlyphTransforms {
   }
 
 
+  /** The glyph displaced by `(dx,dy)` in a cavity of size `(w, h)` */
+  class InCavity(w: Scalar, h: Scalar, dx: Scalar, dy: Scalar, val glyph: Glyph, val fg: Brush, val bg: Brush) extends TransformedGlyph {
+
+    override def toString: String = s"InCavity($w, $h, $dx, $dy)($glyph)"
+    override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(p-delta)
+    override def glyphContaining(p: Vec): Option[Hit] = glyph.glyphContaining(p-delta)
+
+    /**
+     * Draw the glyph on the surface at its given size (as if at the origin).
+     */
+    def draw(surface: Surface): Unit = {
+      drawBackground(surface)
+      surface.withClip(diagonal) {
+        surface.withOrigin(delta) {
+          glyph.draw(surface)
+        }
+      }
+    }
+
+    def delta: Vec = Vec(dx, dy)
+    /**
+     * The diagonal size of the glyph
+     */
+    def diagonal: Vec = Vec(w, h)
+
+    /** A copy of this glyph; perhaps with different foreground/background */
+    def copy(fg: Brush=this.fg, bg: Brush=this.bg): Glyph = new InCavity(w, h, dx, dy, glyph, fg, bg)
+
+  }
   /**
    * A glyph that renders as `glyph` framed by a surround painted with fg`, on a mount painted with `bg`.
    *
@@ -172,7 +205,7 @@ object GlyphTransforms {
    *
    */
   class Framed(val glyph: Glyph, val fg: Brush, val bg: Brush, val radiusFactor: Scalar=0f) extends TransformedGlyph {
-    import Glyphs.{FilledRect, RRect, Rect}
+    import Glyphs.{FilledRect, Rect, RRect}
 
     override def toString: String = s"Mounted($fg, $bg)($glyph)"
     override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)

@@ -65,9 +65,9 @@ class  PortmanteauInstantiation(implicit sheet: StyleSheet) {
         TextButton("New instance") { _ => println(s"$scale $style"); Duplicated.main(Array(scale, style, screen)) }, em,
       ), ex,
       Row.atTop(
-        styleSelect.gridGlyphs(), em scaled 6,
-        scaleSelect.gridGlyphs(), em scaled 6,
-        screenSelect.gridGlyphs(),
+        styleSelect.arrangedVertically(), em scaled 6,
+        scaleSelect.arrangedVertically(), em scaled 6,
+        screenSelect.arrangedVertically(),
       ), ex
     )
   }

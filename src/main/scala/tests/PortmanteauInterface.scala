@@ -55,27 +55,23 @@ class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
 
     Column(local)(
       Table(local.copy(padY=4, padX=4, fg=black, bg=darkGrey))(height=2)(
-            "An example of text markup being done automagically for literal strings",
+            Text(local)("An example of text markup being done automagically for literal strings"),
             ss,
             styled.TextButton("Press Here"){ _ => },
             Text(local.italicStyle)("foobaz is best")),
       { implicit val local: Context = Default.copy(paperWidth=20, leftMargin=0, rightMargin=0, parIndent={()=>Nil})
-        def N(text: String): Glyph = Lit(local)(text).toGlyph
-        def W(text: String): Glyph = Lit(local)(text).toGlyph
-        implicit def text2Glyph(text: String):Glyph = Lit(local)(text).toGlyph
-        Table(Default.copy(paperWidth = 30))(height = -3)(
-          "a", "*aa*",
-          "bb", "*bbbb*",
-          "ccc", "*cccccc*",
-
-          //N("1"), W("1a"),
-          //N("11"), W("11b"),
-          //N("111"), W("111c"),
-          //N("1111"), W("111d"),
-          //N("111"), W("Hein?"),
-          //N("1111"), W("Something else"),
-          //N("11111"), ("The third para is also going to be inordinately long, but who cares?"),
-          //N("111111"), ("The fifth para is also going to be inordinately long, but who cares?"),
+        import CellFit._
+        def N(text: String): Glyph = Lit(local)(text).toGlyph.cellFit(ShiftNorthEast)
+        def W(text: String): Glyph = Lit(local)(text).toGlyph.cellFit(ShiftNorthWest)
+        Table(Default.copy(paperWidth = 30))(width=2)(
+          N("1"), W("1a"),
+          N("11"), W("11b"),
+          N("111"), W("111c"),
+          N("1111"), W("111d"),
+          N("111"), W("Hein?"),
+          N("1111"), W("Something else"),
+          N("11111"), ("The third para is also going to be inordinately long, but who cares?"),
+          N("111111"), ("The fifth para is also going to be inordinately long, but who cares?"),
         )
       }
     ).toGlyph

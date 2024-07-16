@@ -163,7 +163,7 @@ trait DemonstrationPages extends Brushes {
     var screen: String = "-screen=p"
     var saveable: String = ""
     val styles = "-notebook/-lnotebook/-snotebook/-vnotebook/-tnotebook/-menu".split("/").toList
-    val scales = "-scale=1.2/-scale=1.0/-scale=0.9/-scale=0.8/-scale=0.75/-scale=0.7".split("/").toList
+    val scales = "-scale=1.2/-scale=1.0/-scale=0.9/-scale=0.8/-scale=0.75/-scale=0.7/-scale=0.6".split("/").toList.reverse
     val screens = "-screen=p/-screen=0/-screen=1/-screen=2".split("/").toList
 
     lazy val styleSelect: RadioCheckBoxes = RadioCheckBoxes(styles, "-notebook") {
@@ -202,9 +202,9 @@ trait DemonstrationPages extends Brushes {
           _ => Duplicated.main(Array(scale, style, screen, saveable)) }, em,
       ), ex,
       Row.atTop(
-        styleSelect.gridGlyphs(), em scaled 6,
-        scaleSelect.gridGlyphs(), em scaled 6,
-        screenSelect.gridGlyphs(), em scaled 6,
+        styleSelect.arrangedVertically(), em scaled 6,
+        scaleSelect.arrangedVertically(), em scaled 6,
+        screenSelect.arrangedVertically(), em scaled 6,
       ), ex,
       Paragraphs(ems = 60, Justify)("""Unlike a new instance, a cloned instance always shares some state with the
                                        |current GUI -- for example the notebook page currently being viewed, and the state
@@ -1679,7 +1679,7 @@ trait DemonstrationPages extends Brushes {
       val nested = Notebook()
       val Page = nested.DefinePage
 
-      Page("Grid", "data = 8 blurred-frame buttons") {
+      Page("Rows/Cols", "data = 8 blurred-frame buttons") {
         val prevailingButtonStyle = ApplicationStyle.buttonStyle
         implicit val blurred: ButtonStyle =
           prevailingButtonStyle.copy(
@@ -1694,51 +1694,58 @@ trait DemonstrationPages extends Brushes {
 
         Col.centered(
           Col.atLeft(
-            Label("Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=5)(data)") above
+            Label(".grid(width=5)(data) as rows") above
               NaturalSize.Grid(fg = red(width = 0), padx = 20f, pady = 2f).grid(width = 5)(data), ex,
-            Label("Grid(fg=red(width=0), padx=20f, pady=2f).grid(width=4)(data)") above
-              NaturalSize.Grid(fg = red(width = 0), padx = 20f, pady = 2f).grid(width = 4)(data)).scaled(1f), ex,
+            Label(".grid(width=4)(data) as rows") above
+              NaturalSize.Grid(fg = red(width = 0), padx = 20f, pady = 2f).grid(width = 4)(data)).scaled(1f), ex, ex, ex,
           NaturalSize.Row(
-            Label("Grid.grid(height=5)(data)") above
+            Label(".grid(height=5)(data) as cols") above
               NaturalSize.Grid.grid(height = 5)(data).framed(fg = redFrame), em,
-            Label("Grid.grid(height=4)(data)") above
+            Label(".grid(height=4)(data) as cols") above
               NaturalSize.Grid.grid(height = 4)(data.map(_.copy())).framed(fg = redFrame)).scaled(1f), ex,
         ) enlarged (50)
       }
 
-      Page("Table", "data = 9 variable sized labels") {
+      Page("Cell sizes", "data = 9 variable sized labels. Grid(... padx=10, pady=10)") {
         val data =
           for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
             Label(f"$i.scaled($scale%1.1f)").scaled(scale)
 
         Col.centered(
           Col.atLeft(
-            Label("Grid(fg=red(width=0)).grid(width=3)(data) -- constant size cells"),
+            Label(".grid(width=3)(data) -- row data as uniform size cells"),
             NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex,
-            Label("Grid(fg=red(width=0)).table(width=3)(data) -- variable height constant width rows"),
-            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(width = 3)(data), ex,
-            Label("Grid(fg=red(width=0)).table(height=3)(data) -- variable width constant height rows"),
-            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(height = 3)(data)
+            Label(".grid(height=3)(data) -- col data as uniform size cells"),
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(height = 3)(data), ex, ex, ex,
+            Label(".rows(width=3)(data) -- row data as uniform width rows"),
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).rows(width = 3)(data), ex,
+            Label(".cols(height=3)(data) -- col data as uniform height rows"),
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).cols(height = 3)(data), ex, ex, ex,
+            Label(".table(width=3)(data) -- row data as minimal width/height cols/rows"),
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(width=3)(data), ex,
+            Label(".table(height=3)(data) -- col data as minimal width/height cols/rows"),
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(height=3)(data)
+
           ) scaled 0.8f enlarged (50))
       }
 
-      Page("CellFit", "") {
+      Page("Glyph Placement", "") {
         import CellFit._
         val data =
           for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
             Label(f"$i.scaled($scale%1.1f)").scaled(scale)
 
         def expanded(method: Method): Seq[Glyph] = {
-          val lab = Label(s"cellFit($method)").scaled(0.75f).cellFit(method)
+          val lab = Label(s"fitToCell($method)").scaled(0.75f).cellFit(method)
           data.updated(4, lab)
         }
 
         Col.centered(
-            Label("grid with data(4).cellFit(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
+            Label("grid with data(4).fitToCell(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
             NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Enlarge)), ex, ex,
             NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftNorth)), ex, ex,
             NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftWest)), ex, ex,
-            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftSouth)), ex, ex,
+            NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftSouthEast)), ex, ex,
             NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftEast)), ex, ex,
             NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Stretch)), ex, ex,
           ) scaled 0.75f enlarged (50)

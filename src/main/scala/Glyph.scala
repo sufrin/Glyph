@@ -26,9 +26,13 @@ trait GlyphColours {
 object CellFit {
   trait Method
   case object ShiftNorth extends Method
-  case object ShiftSouth extends Method
-  case object ShiftEast extends Method
+  case object ShiftNorthWest extends Method
   case object ShiftWest extends Method
+  case object ShiftSouthWest extends Method
+  case object ShiftSouth extends Method
+  case object ShiftSouthEast extends Method
+  case object ShiftEast extends Method
+  case object ShiftNorthEast extends Method
   case object Stretch extends Method
   case object Enlarge extends Method
 
@@ -38,19 +42,24 @@ object CellFit {
    *  The given glyph: transformed according to its `cellFitMethod` to fit the given `(w,h)`
    */
     import Glyphs.Empty
-    import NaturalSize.{Row, Col}
     import GlyphTransforms.Scaled
-    def apply(w: Scalar, h: Scalar, fg: Brush, bg: Brush)(glyph: Glyph): Glyph = {
-      glyph.cellFitMethod match {
+    import NaturalSize.{Col, Row}
+    /** method should be `glyph.cellFitMethod` */
+    def fitToCell(method: Method, w: Scalar, h: Scalar, fg: Brush, bg: Brush)(glyph: Glyph): Glyph = {
+      method match {
         case Enlarge     => glyph.enlargedTo(w, h, fg, bg)
         case Stretch  =>
           val wscale = w/glyph.w
           val hscale = h/glyph.h
           Scaled(wscale, hscale, fg, bg)(glyph)
-        case ShiftNorth => Col.centered(glyph, Empty(glyph.w, h - glyph.h), Empty(w, 0))
-        case ShiftSouth => Col.centered(Empty(glyph.w, h - glyph.h), glyph, Empty(w, 0))
-        case ShiftWest  => Row.centered(glyph, Empty(w-glyph.w, glyph.h), Empty(0, h))
-        case ShiftEast  => Row.centered(Empty(w-glyph.w, glyph.h), glyph, Empty(0, h))
+        case ShiftNorth      => glyph.inCavity(w, h, (w-glyph.w)/2f, 0f)
+        case ShiftNorthWest  => glyph.inCavity(w, h, 0f, 0f)
+        case ShiftWest       => glyph.inCavity(w, h, 0f, (h-glyph.h)/2f)
+        case ShiftSouthWest  => glyph.inCavity(w, h, 0f, h-glyph.h)
+        case ShiftSouth      => glyph.inCavity(w, h, (w-glyph.w)/2f, h-glyph.h)
+        case ShiftSouthEast  => glyph.inCavity(w, h, w-glyph.w, h-glyph.h)
+        case ShiftEast       => glyph.inCavity(w, h, w-glyph.w, (h-glyph.h)/2f)
+        case ShiftNorthEast  => glyph.inCavity(w, h, w-glyph.w, 0f)
       }
     }
 }
@@ -149,14 +158,14 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
 
   /**
-   *  Expandability of this glyph (within NaturalSize grids)
+   *  Expandability of this glyph (within `NaturalSize` grids)
    */
-  var cellFitMethod: CellFit.Method = CellFit.Enlarge
+  private var cellFitMethod: CellFit.Method = CellFit.Enlarge
 
   /**
    * Set the current `cellFitMethod` of this glyph
    * @param method
-   * @return
+   * @return this
    */
   def cellFit(method: CellFit.Method): this.type = { cellFitMethod=method; this }
 
@@ -164,14 +173,14 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    * Fit this glyph to a cell of size `(w, h)` as specified by its current
    * `cellFitMethod`
    *
-   * @param w
-   * @param h
-   * @param fg foreground used if the `Expand` method is used
-   * @param bg background used if the `Expand` method is used
-   * @return
+   * @param w width of the cell
+   * @param h height of the cell
+   * @param fg foreground used if any expansion happens
+   * @param bg background used if any expansion happens
+   * @return this glyph padded (etc) to fit `(w, h)` using its current `cellFitMethod`
    */
-   def cellFit(w: Scalar, h: Scalar, fg: Brush = CellFit.nothing, bg: Brush=CellFit.nothing): Glyph =
-    CellFit(w, h, fg, bg)(thisGlyph)
+   def fitToCell(w: Scalar, h: Scalar, fg: Brush = CellFit.nothing, bg: Brush=CellFit.nothing): Glyph =
+       CellFit.fitToCell(thisGlyph.cellFitMethod, w, h, fg, bg)(thisGlyph)
 
   /**
    * Stretchability: used when (eg) a stretchable space is to be expanded to make

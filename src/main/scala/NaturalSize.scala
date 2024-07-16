@@ -194,6 +194,17 @@ object NaturalSize {
   }
 
   import GlyphTypes.Scalar
+
+    /*
+     *  All `GridGenerators` methods with `width`, and/or `height`, and 'glyphs` formal parameters interpret
+     *  glyphs as follows:
+     *  if there's a `width` parameter then glyphs is interpreted as a catenation of rows of the given `width`;
+     *  if there's a `height` parameter then glyphs is interpreted as a catenation of columns of the given `height`.
+     *  if there are both `width` and `height` parameters, then if one argument is omitted,
+     *  `glyphs` is interpreted as if the method had only one formal paramater; if
+     *  both arguments are omitted then `width` is taken to be `ceiling(sqrt(glyphs.length))`.
+     *
+     */
   trait GridGenerators {
     theseGenerators =>
     val fg:   Brush
@@ -201,49 +212,64 @@ object NaturalSize {
     val padx: Scalar
     val pady: Scalar
 
+
+      /**
+       * Glyphs are arranged as a grid of uniformly-sized cells, dimensioned to (just) fit
+       * them all.
+       */
     def grid(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Composite = {
       (width>0, height>0) match {
-        case (true, false) => Rows$(width)(glyphs)
-        case (false, true) => Cols$(height)(glyphs)
+        case (true, false) => uniformlyByRows(width)(glyphs)
+        case (false, true) => uniformlyByCols(height)(glyphs)
         case (_, _) =>
           val width: Int = Math.sqrt(glyphs.length).ceil.toInt
-          Rows$(width)(glyphs)
+          uniformlyByRows(width)(glyphs)
       }
     }
 
+      /**
+       * Glyphs are arranged as a grid of uniformly-sized cells, dimensioned to (just) fit
+       * them all.
+       */
     def Grid(width: Int=0, height: Int=0)(glyphs: Glyph*): Composite = grid(width, height)(glyphs)
 
-    def table(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Composite = {
-      (width.sign, height.sign) match {
-        case (1, 0) => TabulateRows$(width)(glyphs)
-        case (0, 1) => TabulateCols$(height)(glyphs)
-        case (-1, 0) => TabulateByCol$(-width)(glyphs)
-        case (0, -1) => TabulateByCol$(glyphs.length / -height)(glyphs)
-        case (_, _) =>
-          val width: Int = Math.sqrt(glyphs.length).ceil.toInt
-          Rows$(width)(glyphs)
-      }
-    }
+      /**
+       * Glyphs are arranged as a grid of constant-height rows, dimensioned to (just) fit
+       * all cells on each row.
+       */
+    def Rows(width: Int=0)(glyphs: Seq[Glyph]): Composite  = rows(width)(glyphs)
 
+      /**
+       * Glyphs are arranged as a grid of constant-width columns, dimensioned to (just) fit
+       * all cells on each column.
+       */
+    def Cols(height: Int=0)(glyphs: Seq[Glyph]): Composite = cols(height)(glyphs)
+
+
+    /**
+     *  Each col will be as wide as its widest element;
+     *  each row will be as high as its highest element.
+     */
     def Table(width: Int=0, height: Int=0)(glyphs: Glyph*): Composite = table(width, height)(glyphs)
 
-    /** Each col will be as wide as its widest element
-     *  Each row will be as high as its highest element
+    /**
+     *  Each col will be as wide as its widest element;
+     *  each row will be as high as its highest element.
      */
-    def TabulateByCol$(height: Int)(glyphs: Seq[Glyph]): Composite = {
+    def table(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Composite = {
+      val theWidth   = if (width>0) width else if (height>0) glyphs.length/height else Math.sqrt(glyphs.length).ceil.toInt
       val pad: Glyph = FixedSize.Space(0f, 0f, 0f)
-      val (rows, cols) = GridUtils.byCol(pad)(height, glyphs)
-      val colWidths = cols.map(Measure.maxWidth)
-      println(cols)
-      println(colWidths)
-      val rowHeights = rows.map(Measure.maxHeight)
+      val (rs, cs)   = GridUtils.byCol[Glyph](pad)(theWidth, glyphs)
+      val (rows, cols) = if (height>0) (cs, rs) else (rs, cs)
+      val colWidths    = cols.map(col=>padx+Measure.maxWidth(col))
+      val rowHeights   = rows.map(row=>pady+Measure.maxHeight(row))
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       var y = 0f
       var maxw = 0f
       for { row <- 0 until rows.length } {
           var x=0f
           for { col <- 0 until rows(row).length} {
-              val padded = rows(row)(col).cellFit(colWidths(col), rowHeights(row), fg=theseGenerators.fg, bg=theseGenerators.bg)
+              val padded = rows(row)(col).fitToCell(colWidths(col), rowHeights(row), fg=theseGenerators.fg, bg=theseGenerators.bg)
               val framed = if (fg.color != 0) padded.edged(fg) else padded
               locatedGlyphs.append(framed@@(x, y))
               x += colWidths(col)
@@ -261,18 +287,19 @@ object NaturalSize {
         locally {
           setParents()
         }
-        def copy(fg: Brush = fg, bg: Brush = bg): Composite = TabulateByCol$(height)(theGlyphs.map(_.copy(fg, bg)))
+        def copy(fg: Brush = fg, bg: Brush = bg): Composite = table(height)(theGlyphs.map(_.copy(fg, bg)))
       }
     }
 
-    def TabulateRows$(width: Int)(glyphs: Seq[Glyph]): Composite = {
+      /** @see Rows */
+    def rows(width: Int)(glyphs: Seq[Glyph]): Composite = {
       val maxw = padx + Measure.maxWidth(glyphs)
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       def layout(y: Scalar, row: Seq[Glyph]): Scalar = {
         val maxh = pady + Measure.maxHeight(row)
         var x = 0f
         for { glyph <- row } {
-          val w = glyph.cellFit(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
+          val w = glyph.fitToCell(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
           val f = if (fg.color != 0) w.edged(fg) else w
           locatedGlyphs.append(f@@(x, y))
           x += maxw
@@ -293,18 +320,19 @@ object NaturalSize {
         locally {
           setParents()
         }
-        def copy(fg: Brush = fg, bg: Brush = bg): Composite = TabulateRows$(width)(theGlyphs.map(_.copy(fg, bg)))
+        def copy(fg: Brush = fg, bg: Brush = bg): Composite = rows(width)(theGlyphs.map(_.copy(fg, bg)))
       }
     }
 
-    def TabulateCols$(height: Int)(glyphs: Seq[Glyph]): Composite = {
+      /** @see Cols */
+    def cols(height: Int)(glyphs: Seq[Glyph]): Composite = {
       val maxh = padx + Measure.maxHeight(glyphs)
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       def layout(x: Scalar, col: Seq[Glyph]): Scalar = {
         val maxw = pady + Measure.maxWidth(col)
         var y = 0f
         for { glyph <- col if glyph ne null } {
-          val w = glyph.cellFit(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
+          val w = glyph.fitToCell(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
           val f = if (fg.color != 0) w.edged(fg) else w
           locatedGlyphs.append(f@@(x, y))
           y += maxh
@@ -325,12 +353,12 @@ object NaturalSize {
         locally {
           setParents()
         }
-        def copy(fg: Brush = fg, bg: Brush = bg): Composite = TabulateCols$(height)(theGlyphs.map(_.copy(fg, bg)))
+        def copy(fg: Brush = fg, bg: Brush = bg): Composite = cols(height)(theGlyphs.map(_.copy(fg, bg)))
       }
     }
 
 
-    def Rows$(width: Int)(glyphs: Seq[Glyph]): Composite = {
+    def uniformlyByRows(width: Int)(glyphs: Seq[Glyph]): Composite = {
       val maxh = pady + Measure.maxHeight(glyphs)
       val maxw = padx + Measure.maxWidth(glyphs)
       var x, y = 0f
@@ -338,7 +366,7 @@ object NaturalSize {
       val it = glyphs.iterator
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       while (it.hasNext) {
-        val w = it.next().cellFit(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
+        val w = it.next().fitToCell(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
         val f = if (fg.color != 0) w.edged(fg) else w
         locatedGlyphs.append(f@@(x, y))
         i += 1
@@ -361,14 +389,13 @@ object NaturalSize {
         locally {
           setParents()
         }
-        def copy(fg: Brush = fg, bg: Brush = bg): Composite = Rows$(width)(theGlyphs.map(_.copy()))
+        def copy(fg: Brush = fg, bg: Brush = bg): Composite = uniformlyByRows(width)(theGlyphs.map(_.copy()))
       }
     }
 
-    def Width(width: Int)(theGlyphs: Glyph*): Composite =
-        Rows$(width)(theGlyphs)
 
-    def Cols$(height: Int)(glyphs: Seq[Glyph]): Composite = {
+
+      def uniformlyByCols(height: Int)(glyphs: Seq[Glyph]): Composite = {
       val maxh = pady + Measure.maxHeight(glyphs)
       val maxw = padx + Measure.maxWidth(glyphs)
       var x, y = 0f
@@ -376,7 +403,7 @@ object NaturalSize {
       val it = glyphs.iterator
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       while (it.hasNext) {
-        val w = it.next().cellFit(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
+        val w = it.next().fitToCell(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
         val f = if (fg.color != 0) w.edged(fg) else w
         locatedGlyphs.append(f@@(x, y))
         i += 1
@@ -399,12 +426,15 @@ object NaturalSize {
         locally {
           setParents()
         }
-        def copy(fg: Brush = fg, bg: Brush = bg): Composite = Cols$(height)(theGlyphs.map(_.copy()))
+        def copy(fg: Brush = fg, bg: Brush = bg): Composite = uniformlyByCols(height)(theGlyphs.map(_.copy()))
       }
     }
 
+    def Width(width: Int)(theGlyphs: Glyph*): Composite =
+        uniformlyByRows(width)(theGlyphs)
+
     def Height(height: Int)(theGlyphs: Glyph*): Composite =
-        Cols$(height)(theGlyphs)
+        uniformlyByCols(height)(theGlyphs)
 
   }
 

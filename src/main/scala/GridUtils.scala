@@ -8,7 +8,7 @@ object GridUtils {
   def byRow[T](width: Int, seq: Seq[T]):  Seq[Seq[T]] =
     seq.sliding(width, width).toSeq
 
-  /** The *rows, columns) of a sequence presented in row order, padded with padding so that all columns are the same height  */
+  /** The (rows, columns) of a sequence presented in row order, padded with padding so that all columns are the same height  */
   def byCol[T](padding: T)(width: Int, seq: Seq[T]):  (Seq[Seq[T]], Seq[Seq[T]]) = {
     val deficit = seq.length % width
     val rows =
