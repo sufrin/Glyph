@@ -150,11 +150,16 @@ object text {
     (indented, galley.size==1)
   }
 
-  def glyphParagraph(overallWidth: Scalar, align: Alignment, leftMargin: Scalar, rightMargin: Scalar, interWord: Glyph, glyphs: Seq[Glyph]) = {
+  def glyphParagraph(overallWidth:  Scalar,
+                     align:         Alignment,
+                     leftMargin:    Scalar,
+                     rightMargin:   Scalar,
+                     interWord:     Glyph,
+                     glyphs:        Seq[Glyph]) = {
     // As each line of the paragraph is assembled it is added to the galley
     val galley = ArrayBuffer[Glyph]()
     // maximum width of this paragraph: invariant
-    val maxWidth       = overallWidth - leftMargin - rightMargin
+    val maxWidth       = overallWidth - (leftMargin + rightMargin)
     // avoid rounding
     val maxWidthfloor  = maxWidth.floor
     val interWordWidth = interWord.w

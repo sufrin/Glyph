@@ -31,51 +31,7 @@ class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
 
   Page("Transforms*", "")(new PortmanteauTransforms().Layout.leftButtons())
 
-  Page("GlyphML", "") {
-    import Glyphs._
-    import markup._
-    implicit val local: Context =
-      Default.copy(paperWidth = 40, leftMargin=0, rightMargin = 5)
-             .labelStyle(fg=red, bg=lightGrey)
-             .gridStyle(bg=lightGrey, fg=nothing, padY=8, padX=8)
-    val ss = (
-      Text(local.copy(padY=10, padX=10).parEnum())(
-        """My first piece of markup.
-          |I expect it to be laid out as a wideish Paragraph
-          |within a left and a right margin. But who
-          |knows what fortune will bring!
-          |
-          |And here's another one.
-          |
-          |And here's yet another one that might be wider than the previous one.
-          |
-          |Pfui!
-          |""".stripMargin),
-    )
-
-    Column(local)(
-      Table(local.copy(padY=4, padX=4, fg=black, bg=darkGrey))(height=2)(
-            Text(local)("An example of text markup being done automagically for literal strings"),
-            ss,
-            styled.TextButton("Press Here"){ _ => },
-            Text(local.italicStyle)("foobaz is best")),
-      { implicit val local: Context = Default.copy(paperWidth=20, leftMargin=0, rightMargin=0, parIndent={()=>Nil})
-        import CellFit._
-        def N(text: String): Glyph = Lit(local)(text).toGlyph.cellFit(ShiftNorthEast)
-        def W(text: String): Glyph = Lit(local)(text).toGlyph.cellFit(ShiftNorthWest)
-        Table(Default.copy(paperWidth = 30))(width=2)(
-          N("1"), W("1a"),
-          N("11"), W("11b"),
-          N("111"), W("111c"),
-          N("1111"), W("111d"),
-          N("111"), W("Hein?"),
-          N("1111"), W("Something else"),
-          N("11111"), ("The third para is also going to be inordinately long, but who cares?"),
-          N("111111"), ("The fifth para is also going to be inordinately long, but who cares?"),
-        )
-      }
-    ).toGlyph
-  }
+  Page("GlyphML", "") (new PortmanteauGlyphML().GUI)
 
   import utils.Output.withWriteBar
 

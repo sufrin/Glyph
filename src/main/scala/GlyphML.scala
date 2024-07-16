@@ -35,19 +35,25 @@ object markup {
    * A context embodies a stylesheet and some ad-hoc
    * dimensions and brushes.
    */
-  case class Context(style: StyleSheet, paperWidth: Scalar, leftMargin: Scalar, rightMargin: Scalar,
-                       fg:   Brush,  bg: Brush,
-                       padX: Scalar, padY: Scalar,
-                       fontFamily: Family = Family(),
-                       fontSize:   Scalar = 22,
-                       fontStyle:  FontStyle = FontStyle.NORMAL,
-                       parIndent:  ()=>Seq[Glyph] = { ()=>Nil },
-                       parHang:    Boolean = false
+  case class Context(style: StyleSheet,
+                     overallWidth: Scalar=50f,
+                     leftMargin:   Scalar=0f,
+                     rightMargin: Scalar=0f,
+                     fg: Brush = Glyphs.black,
+                     bg: Brush = Glyphs.nothing,
+                     padX: Scalar = 0f,
+                     padY: Scalar = 0f,
+                     fontFamily: Family = Family(),
+                     fontSize:   Scalar = 22,
+                     fontStyle:  FontStyle = FontStyle.NORMAL,
+                     parIndent:  ()=>Seq[Glyph] = { ()=>Nil },
+                     parHang:    Boolean = false,
+                     parAlign:   Alignment = Left
                     ) {
 
       def font: Font = fontFamily.makeFont(fontStyle, fontSize)
 
-      def labelStyle(fg: Brush=null, bg: Brush=null, font: GlyphTypes.Font=null): Context = {
+      def labelStyle(fg: Brush=null, bg: Brush=null, font: GlyphTypes.Font=font): Context = {
         val sheet = this.style
         val ls    = sheet.labelStyle
         val nfg   = if (fg ne null) fg else ls.fg
@@ -59,18 +65,19 @@ object markup {
         copy(style=newStyle)
       }
 
-      def gridStyle(fg: Brush=this.fg, bg: Brush=this.bg, padX: Scalar=this.padX, padY: Scalar=this.padY): Context =
+    def gridStyle(fg: Brush=this.fg, bg: Brush=this.bg, padX: Scalar=this.padX, padY: Scalar=this.padY): Context =
         copy(fg=fg, bg=bg, padX=padX, padY=padY)
 
       def italicStyle: Context = copy(fontStyle=FontStyle.ITALIC)
-      def boldStyle: Context = copy(fontStyle=FontStyle.BOLD)
+      def boldStyle:   Context = copy(fontStyle=FontStyle.BOLD)
+      def fontSize(size: Scalar): Context = copy(fontSize = size)
       def parIndent(ems: Int): Context = copy(parIndent={ () => List(FixedSize.Space(ems*style.labelStyle.emWidth, 0f, 0f, fg, bg)) } )
       def parEnum(ems: Int=2): Context = {
         var count = 0
         val label: ()=>List[Glyph] = {
           () =>
              count += 1
-             List(AtBaseLine(this)(s"$count.").toGlyph.enlargedTo(ems*style.labelStyle.emWidth, style.labelStyle.exHeight))
+             List(AtBaseLine(s"$count.")(local=this).toGlyph.enlargedTo(ems*style.labelStyle.emWidth, style.labelStyle.exHeight))
         }
         copy(parIndent=label)
       }
@@ -93,20 +100,20 @@ object markup {
     /**
      *   Literal text that will be nested within an `Element`, styled directly from context
      */
-    case class AtBaseLine(local: Context=Default)(text: String) extends Element {
+    case class AtBaseLine(text: String)(implicit local: Context) extends Element {
       val fg=local.style.labelStyle.fg
       val bg=local.style.labelStyle.bg
       def toGlyph: Glyph = org.sufrin.glyph.Text(text, font=local.font, fg=fg, bg=bg).atBaseline(fg, bg)
     }
 
-    case class Lit(local: Context=Default)(text: String) extends Element {
+    def S(text: String)(implicit local: Context) : Element = AtBaseLine(text)
+
+    case class Lit(text: String)(implicit local: Context)  extends Element {
       val fg=local.style.labelStyle.fg
       val bg=local.style.labelStyle.bg
       def toGlyph: Glyph = org.sufrin.glyph.Text(text, font=local.font, fg=fg, bg=bg).asGlyph(fg, bg)
     }
 
-    /** Coerce a `String` to a `Text` element */
-    implicit def fromStringToElement(text: String)(implicit local: Context): Element = Text(local)(text)
     /** Coerce a `Glyph` to a `GlyphElement`  */
     implicit def fromGlyphToElement(glyph: Glyph): Element = GlyphElement(glyph)
     /** Coerce an `Element` to a `Glyph` */
@@ -121,43 +128,41 @@ object markup {
   /**
    *   Literal text that will be nested within an `Element`, styled directly from local.style.labelStyle
    */
-  case class Label(local: Context=Default)(val text: String) extends Element {
+  case class Label(val text: String)(implicit local: Context) extends Element {
     def toGlyph: Glyph = {
       val style = local.style
-      // Text(text, font = style.labelStyle.font, fg = style.labelStyle.fg, bg = style.labelStyle.bg).asGlyph(fg, bg)
       Glyphs.Label(text, font = style.labelStyle.font, fg = style.labelStyle.fg, bg = style.labelStyle.bg)
     }
   }
 
   /** A sequence of one or more paragraphs derived from `text`, with paragraph boundaries at empty lines */
-  case class Text(local: Context=Default)(val text: String) extends Element {
+  case class Text(val text: String)(implicit local: Context) extends Element {
       val paras: Seq[Element] =
           text.split("""\n\n+""")
               .filter(_.nonEmpty)
               .toSeq.map(_.split(' ')
-                         .toSeq.map{ word => AtBaseLine(local)(word)})
-              .map(Paragraph(local)(_))
-      val column = Column$(local)(paras)
+                         .toSeq.map{ word => AtBaseLine(word)(local)})
+              .map(Paragraph(_)(local))
+      val column = Column$(paras)
       def toGlyph: Glyph = column.toGlyph
     }
 
-    def Column(local: Context=Default)(body: Element*): Element =
-      Column$(local)(body)
+    def Column(body: Element*)(implicit local: Context): Element =
+      Column$(body)
 
-    case class Column$(local: Context=Default)(body: Seq[Element]) extends Element {
+    case class Column$(body: Seq[Element])(implicit local: Context) extends Element {
       lazy val theGlyph: Glyph = body.length match {
         case 0 => NaturalSize.Col().centered()
         case 1 => body(0).toGlyph
-        case _ => NaturalSize.Col(fg=local.fg, bg=local.bg).centered$(body.map(_.toGlyph))
-        //NaturalSize.Grid(fg=local.fg, bg=local.bg, pady=local.padY).table(width=1)(body.map(_.toGlyph))
+        case _ => NaturalSize.Grid(fg=local.fg, bg=local.bg, pady=local.padY).rows(1)(body.map(_.toGlyph))
       }
       def toGlyph: Glyph = theGlyph.enlargedBy(dw=local.padX, dh=local.padY, fg=local.fg, bg=local.bg)
     }
 
-    def Row(local: Context=Default)(body: Element*): Element =
-      Row$(local)(body)
+    def Row(body: Element*)(implicit local: Context): Element =
+      Row$(body)
 
-    case class Row$(local: Context=Default)(body: Seq[Element]) extends Element {
+    case class Row$(body: Seq[Element])(implicit local: Context) extends Element {
       lazy val theGlyph: Glyph = body.length match {
         case 0 => NaturalSize.Row().centered()
         case 1 => body(0).toGlyph
@@ -166,7 +171,7 @@ object markup {
       def toGlyph: Glyph = theGlyph.enlargedBy(dw=local.padX, dh=local.padY, fg=local.fg, bg=local.bg)
     }
 
-    case class Table(local: Context=Default)(width: Int=0, height: Int=0)(body: Element*) extends Element {
+    case class Table(width: Int=0, height: Int=0)(body: Element*)(implicit local: Context) extends Element {
       lazy val theGlyph: Glyph = body.length match {
         case 0 => NaturalSize.Col().centered()
         case 1 => body(0).toGlyph
@@ -175,7 +180,7 @@ object markup {
       def toGlyph: Glyph = theGlyph.enlargedBy(dw=local.padX, dh=local.padY, fg=local.fg, bg=local.bg)
     }
 
-  case class Rows(local: Context=Default)(width: Int=0)(body: Element*) extends Element {
+  case class Rows(width: Int=0)(body: Element*)(implicit local: Context) extends Element {
     lazy val theGlyph: Glyph = body.length match {
       case 0 => NaturalSize.Col().centered()
       case 1 => body(0).toGlyph
@@ -184,7 +189,7 @@ object markup {
     def toGlyph: Glyph = theGlyph.enlargedBy(dw=local.padX, dh=local.padY, fg=local.fg, bg=local.bg)
   }
 
-  case class Cols(local: Context=Default)(height: Int=0)(body: Element*) extends Element {
+  case class Cols(height: Int=0)(body: Element*)(implicit local: Context) extends Element {
     lazy val theGlyph: Glyph = body.length match {
       case 0 => NaturalSize.Col().centered()
       case 1 => body(0).toGlyph
@@ -194,25 +199,23 @@ object markup {
   }
 
 
-
-
-
   /** Paragraph */
-    def P(local: Context=Default)(body: Element*): Element = Paragraph(local)(body)
+    def P(body: Element*)(implicit local: Context): Element = Paragraph(body)
 
-    case class Paragraph(local: Context=Default)(body: Seq[Element]) extends Element {
+    case class Paragraph(body: Seq[Element])(implicit local: Context) extends Element {
       val style     = local.style
-      val strut     = style.labelStyle.em
-      val interWord = FixedSize.Space(strut.w / 1.9f, strut.h, stretch=100f)
+      val emWidth   = style.labelStyle.emWidth
+      val interWord = FixedSize.Space(emWidth/1.5f, emWidth, stretch=2f)
       val glyphs    = local.parIndent() ++ body.map(_.toGlyph)
-      val galley    = styled.text.glyphParagraph(local.paperWidth * strut.w, Justify,
-                                                 local.leftMargin*strut.w,
-                                                 local.rightMargin*strut.w, interWord,
+      val galley    = styled.text.glyphParagraph(overallWidth = local.overallWidth * emWidth,
+                                                 align       = local.parAlign,
+                                                 leftMargin  = local.leftMargin*emWidth,
+                                                 rightMargin = local.rightMargin*emWidth, interWord,
                                                  glyphs)
       val bg        = style.labelStyle.bg
       def toGlyph: Glyph = {
         val column = NaturalSize.Col(bg=bg).atLeft$(galley.toSeq)
-        if (local.leftMargin > 0f) NaturalSize.Row(bg=bg).centered(FixedSize.Space(local.leftMargin*strut.w, 0f, 0f), column) else column
+        if (local.leftMargin > 0f) NaturalSize.Row(bg=bg).centered(FixedSize.Space(local.leftMargin*emWidth, 0f, 0f), column) else column
       }
   }
 
