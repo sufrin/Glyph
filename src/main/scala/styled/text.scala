@@ -163,8 +163,9 @@ object text {
     // avoid rounding
     val maxWidthfloor  = maxWidth.floor
     val interWordWidth = interWord.w
+    val words = Stream[Glyph](glyphs)
 
-    def setLineFrom(words: Stream[Glyph]): (Scalar, Seq[Glyph]) = {
+    @inline def setLine(): (Scalar, Seq[Glyph]) = {
       import scala.collection.mutable
       val line = mutable.IndexedBuffer[Glyph]()
       var lineWidth = 0f
@@ -185,7 +186,6 @@ object text {
       (lineWidth, line.toSeq)
     }
 
-    val words = new Stream[Glyph](glyphs)
     var setting = true
     while (setting && words.hasElement) {
       // Maybe we have an overlong word
@@ -195,7 +195,7 @@ object text {
         galley += words.element.framed(fg = Brush() col (0XFFFF0000))
         words.nextElement()
       } else {
-        val (width, glyphs) = setLineFrom(words)
+        val (width, glyphs) = setLine()
         // the line had only its starting alignment glyph; nothing else to do
         if (glyphs.length == 1 && width == 0) {
           setting = false
@@ -205,6 +205,80 @@ object text {
     }
     galley
   }
+
+  /**
+   *  UNUSED
+   *
+   *  An iterator for the galley glyphs representing
+   *  lines made from an iterator of simple glyphs.
+   *
+   *  When false, `untilEnd` terminates the result iterator at
+   *  the first empty "line"; otherwise it terminates only
+   *  when the input iterator terminates.
+   */
+  def glyphParagraphGalleys(overallWidth:  Scalar,
+                     align:         Alignment,
+                     leftMargin:    Scalar,
+                     rightMargin:   Scalar,
+                     interWord:     Glyph,
+                     iterator:      Iterator[Glyph],
+                     untilEnd:      Boolean = false): Iterator[Glyph] = {
+    // maximum width of this paragraph: invariant
+    val maxWidth       = overallWidth - (leftMargin + rightMargin)
+    // avoid rounding
+    val maxWidthfloor  = maxWidth.floor
+    val interWordWidth = interWord.w
+    val words          = Stream(iterator)
+
+    @inline def setLine(): (Scalar, Seq[Glyph]) = {
+      import scala.collection.mutable
+      val line = mutable.IndexedBuffer[Glyph]()
+      var lineWidth = 0f
+
+      line += align.leftFill()
+      while (words.hasElement && (lineWidth + words.element.w + interWordWidth < maxWidthfloor)) {
+        line += words.element
+        line += interWord()
+        lineWidth += words.element.w + interWordWidth
+        words.nextElement()
+      }
+      // line is full, erase the interword or leftfill
+      line.update(line.length - 1, align.rightFill())
+      // if this is the very last line, words will be empty
+      if (!words.hasElement) {
+        line += align.lastFill()
+      }
+      (lineWidth, line.toSeq)
+    }
+
+    var setting = true
+
+    new Iterator[Glyph] {
+      def hasNext: Boolean = (setting||untilEnd) && words.hasElement
+      def next(): Glyph = {
+        var result: Glyph = null
+        while (hasNext) {
+          // Maybe we have an overlong word
+          if (words.hasElement && words.element.w.ceil >= maxWidthfloor) {
+            // it's a candidate for hyphenation (if it's text): but we'll just illuminate it
+            // println(s"Oversize ${words.element} ${words.element.w} $maxWidth")
+            result = words.element.framed(fg = Brush() col (0XFFFF0000))
+            words.nextElement()
+          } else {
+            val (width, glyphs) = setLine()
+            // the line had only its starting alignment glyph
+            if (glyphs.length == 1 && width == 0) {
+              result = glyphs(0) // a zero-width glyph
+              setting = untilEnd
+            } else
+              result = FixedSize.Row(maxWidth).atTop$(glyphs)
+          }
+        }
+        result
+      }
+    }
+  }
+
 
   import DynamicGlyphs.ActiveGlyph
 
