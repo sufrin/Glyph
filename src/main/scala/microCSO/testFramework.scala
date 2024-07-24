@@ -1,11 +1,14 @@
 package org.sufrin.microCSO
 
 import org.sufrin.logging.{Default, FINEST, INFO}
+import org.sufrin.microCSO.Time._
 
 import scala.sys.process.stdout
 
 trait testFramework {
   val logging: Boolean = true
+
+  val deadline: Nanoseconds = Time.seconds(5.0)
 
   def test(): Unit
 
@@ -16,9 +19,9 @@ trait testFramework {
     println(s"============= RUN $p ==============")
     stdout.flush()
     val handle = p.fork()
-    handle.terminationStatus(5e6.toLong) match {
+    handle.terminationStatus(deadline) match {
       case (true, status)  => println(s"$p terminated ($status)")
-      case (false, status) => println(s"$p STILL RUNNING after 5 seconds ($status)")
+      case (false, status) => println(s"$p TIMEOUT after ${deadline.toDouble/seconds(1.0)} seconds ($status)")
     }
     println(s"=====================")
     stdout.flush()
