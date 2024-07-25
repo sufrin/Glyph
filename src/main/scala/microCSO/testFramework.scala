@@ -15,16 +15,29 @@ trait testFramework {
   def main(args: Array[String]): Unit = test()
 
   def run(p: process): Unit = {
+    RuntimeDatabase.reset()
     Thread.currentThread.setName(s"RUN($p)")
     println(s"============= RUN $p ==============")
-    stdout.flush()
+    System.out.flush()
     val handle = p.fork()
     handle.terminationStatus(deadline) match {
-      case (true, status)  => println(s"$p terminated ($status)")
-      case (false, status) => println(s"$p TIMEOUT after ${deadline.toDouble/seconds(1.0)} seconds ($status)")
+      case (true, status)  => println(s"\n$p\n TERMINATED ($status)")
+      case (false, status) =>
+        println(s"\n$p\nTIMEOUT after ${deadline.toDouble/seconds(1.0)} seconds ($status)")
+        println("RuntimeDatabase:")
+        RuntimeDatabase.forEach {
+          case thread: Thread =>
+            RuntimeDatabase.remove(thread)
+            Threads.showThreadTrace(thread)
+        }
+        println("Open Channels:")
+        RuntimeDatabase.forEachChannel{
+          case chan: Chan[_] =>
+            println(s"$chan")
+        }
     }
     println(s"=====================")
-    stdout.flush()
+    System.out.flush()
   }
 
   def show(s: String): Unit = {
@@ -50,10 +63,12 @@ trait testFramework {
     println(s"============= APPLY $p ==============")
     try p() catch {
       case exn: Throwable =>
-        exn.printStackTrace(System.out)
+        System.out.println(exn.getMessage)
+        Threads.showStackTrace(exn.getStackTrace)
         System.out.flush()
     }
     println(s"===========================")
+    System.out.flush()
   }
 
 }

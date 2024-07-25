@@ -212,6 +212,8 @@ class SyncChan[T](name: String) extends Chan[T] {
   private[this] val closed, full   = new AtomicBoolean(false)
   private[this] var buffer: T = _
 
+  locally { RuntimeDatabase.addChannel(this) }
+
   /** READY if not closed and there's a writer waiting to sync (else CLOSED or
    * IDLE) (used only by alternation implementations)
    */
@@ -306,7 +308,7 @@ class SyncChan[T](name: String) extends Chan[T] {
       LockSupport.unpark(
         writer.getAndSet(null)
       ) // Force a waiting writer to continue ***
-      // this.unregister() // Debugger no longer interested
+      RuntimeDatabase.removeChannel(this)// Debugger no longer interested
     }
   }
 
@@ -411,11 +413,11 @@ class SharedSyncChan[T](name: String, readers: Int=1, writers: Int = 1) extends 
   override def toString: String = s"SharedSyncChan.$name  [in: $inPortState, out: $outPortState][readers=${readersLeft.get}, writers=${writersLeft.get}] $currentState"
 
   override def closeIn(): Unit = withLock(rLock) {
-    if (readersLeft.decrementAndGet()<=0 && writersLeft.get<=0) super.closeIn()
+    if (readersLeft.decrementAndGet()<=0) super.close()
   }
 
   override def closeOut(): Unit = withLock (wLock) {
-    if (writersLeft.decrementAndGet()<=0 && readersLeft.get<=0) super.closeOut()
+    if (writersLeft.decrementAndGet()<=0) super.close()
   }
 
   override def ?(u: Unit): T = withLock(rLock) { super.?(()) }
@@ -445,10 +447,12 @@ class SharedSyncChan[T](name: String, readers: Int=1, writers: Int = 1) extends 
 class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers: Int = 1) extends Chan[T] {
   import termination._
   override val toString: String = s"SharedBuffered.$name($capacity)"
+  locally { RuntimeDatabase.addChannel(this) }
+
   def currentState: String = s"$name capacity=${buffer.remainingCapacity()} readers=${waitingReader.get} writers=${waitingWriter.get}"
 
-  val inOpen, outOpen       = new AtomicBoolean(true)
-  def canRead: Boolean = inOpen.get
+  val inOpen, outOpen   = new AtomicBoolean(true)
+  def canRead: Boolean  = inOpen.get
   def canWrite: Boolean = outOpen.get
 
   /** When non-null this is a peer waiting to write/read */
@@ -474,9 +478,12 @@ class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers
   def CloseIn(): Unit  = {
     Default.finest(s"$this CloseIn()")
     if (inOpen.getAndSet(false)) {
+       // it was open
+       RuntimeDatabase.removeChannel(this)
        val peer = waitingWriter.getAndSet(null)
        if (peer ne null) peer.interrupt()
     }
+    if (completelyClosed) RuntimeDatabase.removeChannel(this)
   }
 
   /** Close the output port unconditionally, and tell readers: idempotent*/
@@ -486,7 +493,10 @@ class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers
       val peer = waitingReader.getAndSet(null)
       if (peer ne null) peer.interrupt()
     }
+    if (completelyClosed) RuntimeDatabase.removeChannel(this)
   }
+
+  @inline private final def completelyClosed: Boolean = !canRead && !canWrite
 
   val buffer = new LinkedBlockingQueue[T](capacity)
 
@@ -514,7 +524,7 @@ class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers
         waitingWriter.set(null)
       } else {
         waitingWriter.set(Thread.currentThread())
-        try { buffer.put(t) } catch { case _: InterruptedException => }// perhaps interrupted
+        try { buffer.put(t) } catch { case _: InterruptedException => closeOut() }// perhaps interrupted
         waitingWriter.set(null)
       }
     }
@@ -540,6 +550,8 @@ class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers
           }
           catch {
             case _: InterruptedException =>
+              waitingReader.set(null)
+              closeIn()
               throw new Closed(name)
           }
         }
@@ -566,8 +578,8 @@ object Chan extends serialNamer {
   }
 
   trait SharedChanGenerator {
-    val readers: Int = 1
-    val writers: Int = 1
+    def readers: Int
+    def writers: Int
 
     def apply[T](capacity: Int): Chan[T] = capacity match {
       case 0 =>
@@ -596,17 +608,111 @@ object Chan extends serialNamer {
    * engage with more than a single reader or writer in the same rendezvous.
    */
   object Shared extends SharedChanGenerator {
-    def apply(readers: Int=1, writers: Int=1): SharedChanGenerator = {
+    def readers: Int = 0
+    def writers: Int = 0
+
+    def apply(readers: Int, writers: Int): SharedChanGenerator = {
       val withReaders=readers
       val withWriters=writers
       new SharedChanGenerator {
-        override val readers: Int = withReaders
-        override val writers: Int = withWriters
+        def readers: Int = withReaders
+        def writers: Int = withWriters
       }
     }
   }
 }
 
+/** Database of running processes, and channels   */
+object RuntimeDatabase {
+  def reset(): Unit = {
+    vThreads.clear()
+    vChannels.clear()
+  }
+  /** Mapping of (running) thread ids to RuntimeDatabase */
+  val vThreads =
+    new scala.collection.concurrent.TrieMap[Long, Thread]
+
+  val vChannels =
+    new scala.collection.concurrent.TrieMap[Int, AnyRef]
+
+  /** Evaluate f at each of the running threads  */
+  def forEach(f: Thread=>Unit): Unit =
+    vThreads.foreach{ case (_, thread) => f(thread)}
+
+  /** remove from the database (when terminating) */
+  def remove(thread: Thread): Unit = vThreads.remove(thread.threadId)
+
+  /** add to the database (when starting) */
+  def add(thread: Thread): Unit = vThreads += (thread.threadId -> thread)
+
+  /** Evaluate f at each of the running threads  */
+  def forEachChannel(f: Chan[Any] => Unit): Unit =
+    vChannels.foreach{ case (_, chan) => f(chan.asInstanceOf[Chan[Any]])}
+
+  /** remove from the database (when terminating) */
+  def removeChannel(chan: Chan[_]): Unit = vChannels.remove(System.identityHashCode(chan))
+
+  /** add to the database (when starting) */
+  def addChannel(chan: Chan[_]): Unit = vChannels += (System.identityHashCode(chan) -> chan)
+
+}
+
+object Threads {
+  import java.io.PrintStream
+
+  val suppress: String = "java.base"
+
+
+  def showThreadTrace(thread: Thread, out: PrintStream) = {
+    println(thread)
+    showStackTrace(thread.getStackTrace, out)
+  }
+
+  def showStackTrace(trace: Array[StackTraceElement], out: PrintStream=System.out) = {
+    for (frame <- trace
+         if ! frame.isNativeMethod
+        )
+    {
+      if (frame.getClassName.startsWith("java.")) {
+      }
+      else
+        out.println(unmangle(frame.toString))
+    }
+    out.println("")
+  }
+
+  def showThreadTrace(thread: Thread): Unit =
+      showThreadTrace(thread: Thread, System.out)
+
+  /** Mapping from mangleable characters to their mangling. */
+  private val mangleMap = List(
+    ("~", "$tilde"),
+    ("=", "$eq"),
+    ("<", "$less"),
+    (">", "$greater"),
+    ("!", "$bang"),
+    ("#", "$hash"),
+    ("%", "$percent"),
+    ("^", "$up"),
+    ("&", "$amp"),
+    ("|", "$bar"),
+    ("*", "$times"),
+    ("/", "$div"),
+    ("+", "$plus"),
+    ("-", "$minus"),
+    (":", "$colon"),
+    ("\\", "$bslash"),
+    ("?", "$qmark"),
+    ("@", "$at")
+  )
+
+  /** unmangle a compiler-generated mangled name */
+  private def unmangle(name: String): String = {
+    var r = name
+    for ((ch, mangled) <- mangleMap) r = r.replace(mangled, ch)
+    r
+  }
+}
 
 /**
  *  A `process` is a prototype for an entity that can be applied
@@ -651,6 +757,7 @@ class ForkHandle(val name: String, val body: ()=>Unit, val latch: Latch) extends
     var prevName: String = ""
     try {
       thread = Thread.currentThread
+      RuntimeDatabase.add(thread)           // add to the database
       prevName = thread.getName
       thread.setName(name)
       status = Running
@@ -663,7 +770,8 @@ class ForkHandle(val name: String, val body: ()=>Unit, val latch: Latch) extends
         status = unAnticipated(thrown)
         Default.error(s"[${Thread.currentThread().getName}] threw $thrown")
     } finally {
-      thread.setName(prevName)
+      thread.setName(prevName)  // remove from the database
+      RuntimeDatabase.remove(Thread.currentThread)
     }
     if (logging)
       Default.finest(s"($this).run() => $status")
@@ -797,10 +905,12 @@ object termination {
   case class unAnticipated(throwable: Throwable) extends Status {
     override def toString: String = s"unAnticipated($throwable)"
     def propagate(): Unit = {
-     if (logging)
-        Default.finest(s"[${Thread.currentThread().getName}]$this.propagate()")
-      if (Default.level>=FINEST) {
-        throwable.printStackTrace()
+      if (logging) {
+        if (Default.level>=FINEST) {
+          Default.finest(s"[${Thread.currentThread().getName}]$this.propagate()")
+          Threads.showStackTrace(throwable.getStackTrace)
+          System.out.flush()
+        }
       }
       throw throwable
     }
@@ -845,7 +955,7 @@ trait serialNamer {
 }
 
 object proc extends serialNamer {
-  private val logging: Boolean = false
+  private val logging: Boolean = true
 
   import termination._
   val namePrefix = "proc"

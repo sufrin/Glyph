@@ -9,17 +9,11 @@ object test1 extends testFramework {
 
   def test(): Unit = {
     Default.level = INFO
-    val terminate = proc("Terminate") {
-      show("'Output From Terminate'")
-    }
+    val terminate = proc("Terminate") { show("'Output From Terminate'") }
 
-    val failure = proc("Failure") {
-      fail("within Failure")
-    }
+    val failure = proc("Failure") { fail("within Failure") }
 
-    val close = proc("Close") {
-      throw new Closed("<no channel>")
-    }
+    val close = proc("Close") { throw new Closed("<no channel>") }
 
     val runStop = proc("runStop"){ stop }
 
@@ -50,8 +44,8 @@ object test1 extends testFramework {
       }
     }
 
-    run(stopping(10))
     run(failing(10))
+    run(stopping(10))
     frun(stopping(10)||failing(6))
 
   }
@@ -100,6 +94,26 @@ object test2 extends testFramework {
 
       {
         val c = Chan[String]("c", 1)
+        val s = source(c, "the rain in spain falls mainly stop in the plain".split(' '))
+        val t = sink(c) {
+          case "stop" => stop
+          case s => show(s"'$s' ")
+        }
+        run(s || t)
+      }
+
+      {
+        val c = Chan[String]("c", 0)
+        val s = source(c, "the rain in spain falls mainly stop in the plain".split(' '))
+        val t = sink(c) {
+          case "stop" => stop
+          case s => show(s"'$s' ")
+        }
+        run(s || t)
+      }
+
+      { println("UNSOUNDNESS OF SHARED SYNCED CHANNEL CLOSING")
+        val c = Chan.Shared(1, 1)[String]("c", 0)
         val s = source(c, "the rain in spain falls mainly stop in the plain".split(' '))
         val t = sink(c) {
           case "stop" => stop
@@ -170,41 +184,81 @@ object test3 extends testFramework {
 
 object test4 extends testFramework {
   Default.level = INFO
+
   def test(): Unit = {
+    import Time._
     def useChan(share: Chan[String]): process =
-        ||( proc("l") {
-            var n = 0
-            repeat(n<10) {
-              share ! s"l$n"; n += 1
-            }
-            show(s"l STOP")
-            share.closeOut()
+      ||(proc("l") {
+        var n = 0
+        repeat(n < 10) {
+          share ! s"l$n";
+          n += 1
+        }
+        show(s"l STOP")
+        share.closeOut()
+      }
+        , proc("r") {
+          var n = 0
+          repeat(n < 10) {
+            share ! s"r$n";
+            n += 1
           }
-          , proc("r") {
-            var n = 0
-            repeat(n<15) {
-              share ! s"r$n"; n += 1
-            }
-            show(s"r STOP")
-            share.closeOut()
-          }
-          , sink(share) { n => show(s"->$n") }
+          show(s"r STOP")
+          share.closeOut()
+        }
+        , sink(share) { n => show(s"1->$n") }
+        , sink(share) { n => show(s"2->$n") }
       )
 
     def shareTest(bufSize: Int): Unit = {
-      val shared = Chan.Shared(readers=1, writers=2)[String]("Shared", bufSize)
+      RuntimeDatabase.reset()
+      val shared = Chan.Shared(readers = 2, writers = 2)[String]("Shared", bufSize)
       println(s"ShareTest $bufSize")
       run(useChan(shared))
     }
 
-    shareTest(0)  // Shared Synced Channels // TODO: this deadlocks when both writers have finished and closed. Why?
+    println(s"==================== NonSync Overtaking Test (Assertion Error, then timeout expected)")
+    val ch1: Chan[String] = Chan[String]("ch1", 0)
+    run(useChan(ch1))
+
+    println(s"==================== Finite sharing test 1")
+    val ch2: Chan[String] = Chan.Shared(readers=2, writers=2)[String]("ch2", 0)
+    run(proc("w1"){ ch2!"from w1"} ||
+        proc("w2"){ ch2!"from w2"} ||
+        proc("ra"){ ch2?{s=>show(s"ra<-$s")} } ||
+        proc("rb"){ ch2?{s=>show(s"rb<-$s")} })
+
+    println(s"==================== Finite sharing test 2")
+    val ch3: Chan[String] = Chan.Shared(readers=2, writers=2)[String]("ch3", 0)
+    run(||(proc("w1"){ ch3!"from w1"},
+           proc("rb"){ Time.sleepms(1000); ch3?{s=>show(s"rb<-$s")} },
+           proc("w2"){ ch3.writeBefore(2000*milliSec)("from w2")},
+           proc("ra"){ ch3?{s=>show(s"ra<-$s")} },
+       ))
+
+    println("===================== Unshared/unbuffered linear termination test")
+    val unsharedunbuffered: Chan[Int] = Chan[Int]("Unshared Unbuffered", 0)
+    frun((source(unsharedunbuffered, 0 until 16) || sink(unsharedunbuffered) { n => show(s" $n") }))
+
+    println("===================== Unshared/buffered linear termination test")
+    val unshared: Chan[Int] = Chan[Int]("Unshared Buffered", 2)
+    frun((source(unshared, 0 until 16) || sink(unshared) { n => show(s" $n") }))
+
+    println("===================== Convergent unshared/buffered termination test")
+    val conv: Chan[Int] = Chan[Int]("Converge", 2)
+    frun((source(conv, 0 until 160)  ||
+          source(conv, 16 until 320) ||
+          sink(conv) { n => show(s" $n"); if (n==20) Time.sleepms(20) }
+        ))
+
+    println("===================== Shared unbuffered linear termination test")
+    val shared: Chan[Int] = Chan.Shared(readers = 1, writers = 1)[Int]("Shared", 0)
+    frun((source(shared, 0 until 16) || sink(shared) { n => show(s" $n") }))
+
+    println("===================== Multiway shared tests")
+    shareTest(0) 
     shareTest(1)
     shareTest(10)
-
-    println(s"Overtaking Test")
-    val unshared = Chan[String]("Unshared", 0)
-    run(useChan(unshared))
-
 
   }
 }
