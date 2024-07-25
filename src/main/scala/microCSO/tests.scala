@@ -256,7 +256,7 @@ object test4 extends testFramework {
     frun((source(shared, 0 until 16) || sink(shared) { n => show(s" $n") }))
 
     println("===================== Multiway shared tests")
-    shareTest(0) 
+    shareTest(0)
     shareTest(1)
     shareTest(10)
 
@@ -314,36 +314,45 @@ object test6 extends testFramework {
 
   def test(): Unit = {
      import Time._
+     val Sec=seconds(1)
 
-     def readDeadline(chan: Chan[String], waitW: Nanoseconds, waitR: Nanoseconds): process = {
+     def readDeadline(chan: Chan[String], writeDelay: Double, readDead: Double): process = {
+       val delay = if (writeDelay>readDead) "(reader times out)" else ""
        ||(
-         proc ("caption") { println(s"readDeadline($chan, waitW=$waitW, waitr=$waitR)(${if (waitW>waitR) "times out" else ""})") },
-         proc ("reader")  { val r = chan.readBefore(waitR); println(s"reader=$r"); chan.closeIn() },
-         proc ("writer")  { sleep(waitW); chan!"WRITTEN"; println("written"); chan.closeOut() }
+         proc ("caption") { println(f"readDeadline($chan%s, writeDelay=${writeDelay}%f, readDead=$readDead)" + delay) },
+         proc ("reader")  { val r = chan.readBefore(seconds(readDead)); println(s"reader=$r"); chan.closeIn() },
+         proc ("writer")  { sleep(seconds(writeDelay)); chan!"WRITTEN"; println("written"); chan.closeOut() }
        )
      }
 
-     def writeDeadline(chan: Chan[String], waitW: Nanoseconds, waitR: Nanoseconds): process = {
+     def writeDeadline(chan: Chan[String], writeDead: Double, readDelay: Double): process = {
+      val delay = if (writeDead<readDelay) "(writer times out)" else ""
       ||(
-        proc ("caption") { println(s"writeDeadline($chan, waitW=$waitW, waitr=$waitR)(${if (waitW<waitR) "times out" else ""})") },
-        proc ("reader")  { sleep(waitR); val r = chan?(); println(s"reader=$r"); chan.closeIn() },
-        proc ("writer")  { if (chan.writeBefore(waitW)("WRITTEN")) println("written") else println("unwritten"); chan.closeOut() }
+        proc ("caption") { println(s"writeDeadline($chan, writeDead=$writeDead, readDelay=$readDelay)" + delay) },
+        proc ("reader")  { sleep(seconds(readDelay)); val r = chan?(); println(s"reader?$r"); chan.closeIn() },
+        proc ("writer")  { if (chan.writeBefore(seconds(writeDead))("WRITTEN")) println("written") else println("unwritten"); chan.closeOut() }
       )
     }
 
+    //                        write delay     read deadline
+    run(readDeadline(Chan(0), (0.01),         (0.5)))
+    run(readDeadline(Chan(0), (0.5),          (1.0)))
+    run(readDeadline(Chan(0), (1.0),          (1.5)))
+    run(readDeadline(Chan(0), (1.499999),     (1.5)))
+    run(readDeadline(Chan(0), (0.4999999999), (0.5)))
+    run(readDeadline(Chan(1), (1.5),          (1.0)))
+    run(readDeadline(Chan(1), (4.0),          (1.5)))
+    run(readDeadline(Chan(1), (1.499999),     (1.5)))
+    run(readDeadline(Chan(1), (0.4999999999), (0.5)))
 
-    run(readDeadline(Chan(0), seconds(0.01), seconds(0.5)))
-    run(readDeadline(Chan(0), seconds(0.5),  seconds(1.0)))
-    run(readDeadline(Chan(0), seconds(1.0),  seconds(1.5)))
-    run(readDeadline(Chan(1), seconds(1.5),  seconds(1.0)))
-    run(readDeadline(Chan(1), seconds(4.0),  seconds(1.5)))
-
-    run(writeDeadline(Chan(0), seconds(0.01), seconds(0.5)))
-    run(writeDeadline(Chan(0), seconds(0.5),  seconds(1.0)))
-    run(writeDeadline(Chan(0), seconds(1.0),  seconds(0.5)))
-    run(writeDeadline(Chan(1), seconds(0.01), seconds(0.5)))
-    run(writeDeadline(Chan(1), seconds(0.5),  seconds(1.0)))
-    run(writeDeadline(Chan(1), seconds(1.0),  seconds(0.5)))
+    //                         write deadline read delay
+    run(writeDeadline(Chan(0), (0.1),         (0.5)))
+    run(writeDeadline(Chan(0), (0.5),         (1.0)))
+    run(writeDeadline(Chan(0), (1.0),         (0.5)))
+    run(writeDeadline(Chan(1), (0.01),        (0.5)))
+    run(writeDeadline(Chan(1), (0.5),         (1.0)))
+    run(writeDeadline(Chan(1), (1.0),         (0.5)))
+    run(writeDeadline(Chan(1), (1.0),         (0.99999999)))
 
   }
 }

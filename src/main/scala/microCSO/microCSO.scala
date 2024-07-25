@@ -805,7 +805,7 @@ class ForkHandle(val name: String, val body: ()=>Unit, val latch: Latch) extends
  */
 class proc(val name: String="", val body: ()=>Unit)  extends process { thisProc =>
   import termination._
-  private val logging: Boolean = true
+  private val logging: Boolean = false
 
   def apply(): Unit = body()
 
@@ -830,7 +830,7 @@ class proc(val name: String="", val body: ()=>Unit)  extends process { thisProc 
 }
 
 class par(components: Seq[process]) extends process {
-  private val logging: Boolean  = true
+  private val logging: Boolean  = false
   def name: String = components.map(_.name).mkString("(", "||", ")")
   def ||(that: process): process = new par(List(this, that))
 
@@ -879,7 +879,7 @@ class par(components: Seq[process]) extends process {
  *          can be added.
  */
 object termination {
-  private val logging: Boolean = true
+  private val logging: Boolean = false
   trait Status {
     /** LUB of `this` and `other` */
     def |||(other: Status):Status = termination.|||(this, other)
@@ -955,7 +955,7 @@ trait serialNamer {
 }
 
 object proc extends serialNamer {
-  private val logging: Boolean = true
+  private val logging: Boolean = false
 
   import termination._
   val namePrefix = "proc"
