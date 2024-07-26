@@ -20,6 +20,17 @@ trait Closeable {
   def close(): Unit
 }
 
+
+/** Outcome of a tentative read/write */
+trait  AltOutcome {}
+class  AltResult[T] extends AtomicReference[T]
+
+object AltOutcome {
+  case object OK extends AltOutcome
+  case object CLOSED extends AltOutcome
+  case object NO extends AltOutcome
+}
+
 trait OutPort[T] extends Closeable { port =>
   /**
    * Idempotent declaration that there will be no further writes to this channel.
@@ -30,6 +41,13 @@ trait OutPort[T] extends Closeable { port =>
 
   def writeBefore(timeoutNS: Time.Nanoseconds)(value: T): Boolean
   def !(t: T): Unit
+  
+  /**
+   * Behaves as `!(t)` and yields `OK` if `t` can be accepted by the channel; else
+   * yields `NO` or `CLOSED`.
+   */
+  def offer(t: T): AltOutcome
+  
   def out: OutPort[T] = port
   /** This port hasn't yet been closed */
   def canWrite: Boolean
@@ -56,6 +74,13 @@ trait InPort[T] extends Closeable { port =>
    */
   def ??[V](f: T=>V): V = f(this.?(()))
   def in: InPort[T] = port
+
+  /**
+   * Behaves as `result.set(?())` and yields `OK` when a writer has already committed to output
+   * else yields `CLOSED` or `NO`
+   */
+  def poll(result: AltResult[T]): AltOutcome
+
   /** This port hasn't yet been closed */
   def canRead: Boolean
   /**
@@ -253,6 +278,18 @@ class SyncChan[T](name: String) extends Chan[T] {
   override def toString: String =
     s"""SyncChan.${this.name} [in: $inPortState, out: $outPortState] $currentState"""
 
+  /** Behaves as ! when a reader is already committed  */
+  def offer(value: T): AltOutcome = {
+    if (closed.get) AltOutcome.CLOSED else
+    if (full.get)   AltOutcome.NO else {
+      val peer = reader.get()
+      if (peer==null) AltOutcome.NO else {
+        this.!(value)
+        AltOutcome.OK
+      }
+    }
+  }
+
   def !(value: T) = {
     checkOpen
     val current = Thread.currentThread
@@ -271,6 +308,19 @@ class SyncChan[T](name: String) extends Chan[T] {
     }
     if (full.get) checkOpen         // *** (see close) []
     writer.set(null)                // READY
+  }
+
+  /** Behaves as `result.set(?())` when  a writer is already committed */
+  def poll(result: AltResult[T]): AltOutcome = {
+    if (closed.get)
+      AltOutcome.CLOSED
+    else
+    if (full.get) {
+      result.set(this.?(()))
+      AltOutcome.OK
+    }
+    else
+      AltOutcome.NO
   }
 
   def ?(t: Unit): T = {
@@ -349,7 +399,7 @@ class SyncChan[T](name: String) extends Chan[T] {
     if (closed.get) {
       writer.set(null)
       reader.set(null)
-      throw new Closed(name)
+      throw new termination.Closed(name)
     }
 
   def readBefore(timeoutNS: Time.Nanoseconds): Option[T] = {
@@ -425,6 +475,8 @@ class SharedSyncChan[T](name: String, readers: Int=1, writers: Int = 1) extends 
 
   override def readBefore(timeoutNS: Nanoseconds): Option[T] = withLock(rLock) { super.readBefore(timeoutNS) }
   override def writeBefore(timeoutNS: Nanoseconds)(value: T) = withLock(wLock) { super.writeBefore(timeoutNS)(value) }
+  override def poll(result: AltResult[T]): AltOutcome = withLock(rLock) { super.poll(result) }
+  override def offer(value: T): AltOutcome = withLock(wLock) { super.offer(value) }
 
 }
 
@@ -518,6 +570,16 @@ class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers
     else
       throw new Closed(name)
 
+  def offer(value: T): AltOutcome = {
+    if (!(inOpen.get && outOpen.get))
+      AltOutcome.CLOSED
+    else if (buffer.offer(value)) {
+      waitingWriter.set(null)
+      AltOutcome.OK
+    } else
+      AltOutcome.NO
+  }
+
   def !(t: T): Unit = {
       if (!(inOpen.get && outOpen.get)) throw new Closed(name) else
       if (buffer.offer(t)) {
@@ -528,6 +590,21 @@ class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers
         waitingWriter.set(null)
       }
     }
+
+  def poll(result: AltResult[T]): AltOutcome = {
+    if (inOpen.get) {
+      if (!outOpen.get && buffer.isEmpty) {
+        // output is closed and the buffer is empty
+        AltOutcome.CLOSED
+      } else {
+        val t = buffer.poll()
+        if (t==null) AltOutcome.NO else {
+          result.set(t)
+          AltOutcome.OK
+        }
+      }
+    } else AltOutcome.CLOSED
+  }
 
   def ?(t: Unit): T =
       if (inOpen.get) {

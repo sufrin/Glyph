@@ -5,7 +5,10 @@ import org.sufrin.microCSO.portTools._
 import org.sufrin.microCSO.proc._
 import org.sufrin.microCSO.termination._
 
-object test1 extends testFramework {
+/**
+ * Tests interaction of || with termination of simple processes
+ */
+object testSimpleParAndTermination extends testFramework {
 
   def test(): Unit = {
     Default.level = INFO
@@ -51,10 +54,14 @@ object test1 extends testFramework {
   }
 }
 
-object test2 extends testFramework {
+/**
+ * Tests termination interacting with || and with closed channels
+ */
+object testParAndTermination extends testFramework {
 
     def test() = {
       Default.level = INFO
+
       run((proc("first") {
         show("first")
       } || proc("second") {
@@ -85,14 +92,14 @@ object test2 extends testFramework {
         )
       }
 
-      {
+      { println("UnShared Buffered")
         val c = Chan[String]("c", 4)
         val s = source(c, "the rain in spain falls mainly in the plain".split(' '))
         val t = sink(c) { s => show(s"'$s'") }
         run(s || t)
       }
 
-      {
+      { println("UnShared Buffered: sink stops early")
         val c = Chan[String]("c", 1)
         val s = source(c, "the rain in spain falls mainly stop in the plain".split(' '))
         val t = sink(c) {
@@ -102,7 +109,7 @@ object test2 extends testFramework {
         run(s || t)
       }
 
-      {
+      { println("UnShared Synced: sink stops early")
         val c = Chan[String]("c", 0)
         val s = source(c, "the rain in spain falls mainly stop in the plain".split(' '))
         val t = sink(c) {
@@ -112,7 +119,7 @@ object test2 extends testFramework {
         run(s || t)
       }
 
-      { println("UNSOUNDNESS OF SHARED SYNCED CHANNEL CLOSING")
+      { println("Shared Synced: sink stops early")
         val c = Chan.Shared(1, 1)[String]("c", 0)
         val s = source(c, "the rain in spain falls mainly stop in the plain".split(' '))
         val t = sink(c) {
@@ -122,10 +129,18 @@ object test2 extends testFramework {
         run(s || t)
       }
 
+      { println("Timeout test")
+        import Time._
+        run(proc("Sleeper"){
+          println("I am about to sleep for 5.1s")
+          sleep(seconds(5.1))
+        })
+      }
     }
   }
 
-object test3 extends testFramework {
+/** Tests zipping   */
+object testZip extends testFramework {
   def test(): Unit = {
 
     for {bufSize <- List(100, 50, 30, 2)} {
@@ -182,7 +197,10 @@ object test3 extends testFramework {
   }
 }
 
-object test4 extends testFramework {
+/**
+ *  Tests various aspects of sharing (buffered/synchronous) channels.
+ */
+object testSharing extends testFramework {
   Default.level = INFO
 
   def test(): Unit = {
@@ -263,13 +281,14 @@ object test4 extends testFramework {
   }
 }
 
-object test5 extends testFramework {
+/**
+ * This exercises the dynamic test for overtaking in a synchronous channel.
+ */
+object testOvertaking extends testFramework {
   import Time._
   override val deadline = seconds(0.95)
 
-  /**
-   * This exercises the dynamic test for overtaking in a synchronous channel.
-   */
+
   def test(): Unit = {
     Default.level = INFO
     frun ( proc("deliberate assertion failure") { assert(false, "this is a deliberate assertion failure ")} )
@@ -297,20 +316,20 @@ object test5 extends testFramework {
   }
 }
 
-object test6 extends testFramework {
-  /**
-   * This is a simple test for readBefore/writeBefore.
-   *
-   * Each trial uses a new channel and it single-shot reads and writes on the channel.
-   * The reader in `readDeadline`  waits for a read to complete in `readR`, and
-   * the writer delays the write for `waitW`.
-   *
-   * Readers/writers in  `writeDeadline`  delays the read and awaits the write.
-   *
-   * All readers(writers) close their input(output) port when done: this
-   * averts non-termination of their peer, thus timeout of the test
-   * as a whole.
-   */
+/**
+ * This is a simple test for readBefore/writeBefore.
+ *
+ * Each trial uses a new channel and it single-shot reads and writes on the channel.
+ * The reader in `readDeadline`  waits for a read to complete in `readR`, and
+ * the writer delays the write for `waitW`.
+ *
+ * Readers/writers in  `writeDeadline`  delays the read and awaits the write.
+ *
+ * All readers(writers) close their input(output) port when done: this
+ * averts non-termination of their peer, thus timeout of the test
+ * as a whole.
+ */
+object testDeadlines extends testFramework {
 
   def test(): Unit = {
      import Time._
@@ -355,6 +374,93 @@ object test6 extends testFramework {
     run(writeDeadline(Chan(1), (1.0),         (0.99999999)))
 
   }
+}
+
+/**
+ *   Tests the asynchronous constructs (offer/poll) designed to support
+ *   alternation.
+ */
+object testAlt extends testFramework {
+  import Time._
+  def test(): Unit = {
+    def offerer(chan: Chan[Int], delay: Double, to: Int): process = proc (f"offerer($delay%f, $to%d)") {
+      val every = seconds(delay)
+      for { i<-0 until to } {
+        val r = chan.offer(i)
+        show(s"[$i $r]")
+        sleep(every)
+      }
+      chan.closeOut()
+    }
+
+    def writer(chan: Chan[Int], delay: Double, to: Int): process = proc (f"writer($delay%f, $to%d)") {
+      val every = seconds(delay)
+      for { i<-0 until to } {
+        sleep(every)
+        chan!i
+        show(s"[$i]")
+      }
+      chan.closeOut()
+    }
+
+    def reader(chan: Chan[Int], delay: Double, to: Int): process = proc (f"$chan%s: reader($delay%f, $to%d)") {
+      var d = seconds(delay)
+      for { i<-0 until to } {
+        val r = chan?()
+        show(s"->$r")
+        sleep(d)
+      }
+      chan.closeIn()
+    }
+
+    def poller(chan: Chan[Int], delay: Double, to: Int): process = proc (f"$chan%s: poller($delay%f, $to%d)") {
+      var every = seconds(delay)
+      val res = new AltResult[Int]
+      for { i<-0 until to } {
+        sleep(every)
+        val r = chan.poll(res)
+        show(s"->$r(${res.get})")
+      }
+      chan.closeIn()
+    }
+
+    def offererReader(chan: Chan[Int])(readDelay: Double, countReads: Int)(writeDelay: Double, countWrites: Int): Unit = {
+      run(reader(chan, readDelay, countReads) || offerer(chan, writeDelay, countWrites))
+    }
+
+    def writerPoller(chan: Chan[Int])(readDelay: Double, countReads: Int)(writeDelay: Double, countWrites: Int): Unit = {
+      run(poller(chan, readDelay, countReads) || writer(chan, writeDelay, countWrites))
+    }
+
+    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Polls/buffered")
+
+    writerPoller(Chan[Int]("ch1", 10))(0.0001, 20)(0.0001, 20)
+    writerPoller(Chan[Int]("ch1", 10))(0.0001, 20)(0.0002, 20)
+    writerPoller(Chan[Int]("ch1", 10))(0.0001, 10)(0.0004, 30)
+    writerPoller(Chan[Int]("ch1", 20))(0.0001, 20)(0.0006, 20)
+
+    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Polls/unbuffered")
+
+    writerPoller(Chan[Int]("ch1", 0))(0.0001, 20)(0.0001, 20)
+    writerPoller(Chan[Int]("ch1", 0))(0.0001, 20)(0.0002, 20)
+    writerPoller(Chan[Int]("ch1", 0))(0.0001, 10)(0.0004, 30)
+    writerPoller(Chan[Int]("ch1", 0))(0.0001, 20)(0.0006, 20)
+
+    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Offers/buffered")
+    offererReader(Chan[Int]("ch1", 10))(0.0001, 20)(0.0001, 20)
+    offererReader(Chan[Int]("ch1", 10))(0.002, 20)(0.0001, 20)
+    offererReader(Chan[Int]("ch1", 10))(0.004, 10)(0.0001, 30)
+    offererReader(Chan[Int]("ch1", 20))(0.002, 20)(0.0001, 20)
+
+
+    println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Offers/unbuffered")
+    offererReader(Chan[Int]("ch1", 0))(0.00001, 20)(0.0001, 20)
+    offererReader(Chan[Int]("ch1", 0))(0.002, 20)(0.0001, 20)
+    offererReader(Chan[Int]("ch1", 0))(0.004, 10)(0.0001, 30)
+    offererReader(Chan[Int]("ch1", 0))(0.002, 20)(0.0001, 20)
+
+  }
+
 }
 
 
