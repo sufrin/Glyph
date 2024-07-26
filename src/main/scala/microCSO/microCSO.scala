@@ -20,7 +20,6 @@ trait Closeable {
   def close(): Unit
 }
 
-
 /** Outcome of a tentative read/write */
 trait  AltOutcome {}
 class  AltResult[T] extends AtomicReference[T]
@@ -43,14 +42,17 @@ trait OutPort[T] extends Closeable { port =>
   def !(t: T): Unit
   
   /**
-   * Behaves as `!(t)` and yields `OK` if `t` can be accepted by the channel; else
+   * Behaves as `!(t())` and yields `OK` if something can be accepted by the channel; else
    * yields `NO` or `CLOSED`.
    */
-  def offer(t: T): AltOutcome
+  def offer(t: () => T): AltOutcome
   
   def out: OutPort[T] = port
   /** This port hasn't yet been closed */
   def canWrite: Boolean
+
+  def isSharedOutPort: Boolean = false
+
   /**
    *  The state of the channel underlying this port changed, leaving
    *  the port itself in `newState` -- used only in alternation
@@ -83,6 +85,9 @@ trait InPort[T] extends Closeable { port =>
 
   /** This port hasn't yet been closed */
   def canRead: Boolean
+
+  def isSharedInPort: Boolean = false
+
   /**
    *  The state of the channel underlying this port changed, leaving
    *  the port itself in `newState` -- used only in alternation
@@ -103,6 +108,7 @@ trait Chan[T] extends OutPort[T] with InPort[T] {
     closeOut()
   }
 }
+
 
 object PortState {
   trait PortState
@@ -278,12 +284,13 @@ class SyncChan[T](name: String) extends Chan[T] {
   override def toString: String =
     s"""SyncChan.${this.name} [in: $inPortState, out: $outPortState] $currentState"""
 
-  /** Behaves as ! when a reader is already committed  */
-  def offer(value: T): AltOutcome = {
+  /** Behaves as !(t()) when a reader is already committed  */
+  def offer(t: ()=>T): AltOutcome = {
     if (closed.get) AltOutcome.CLOSED else
     if (full.get)   AltOutcome.NO else {
       val peer = reader.get()
       if (peer==null) AltOutcome.NO else {
+        val value = t()
         this.!(value)
         AltOutcome.OK
       }
@@ -476,7 +483,7 @@ class SharedSyncChan[T](name: String, readers: Int=1, writers: Int = 1) extends 
   override def readBefore(timeoutNS: Nanoseconds): Option[T] = withLock(rLock) { super.readBefore(timeoutNS) }
   override def writeBefore(timeoutNS: Nanoseconds)(value: T) = withLock(wLock) { super.writeBefore(timeoutNS)(value) }
   override def poll(result: AltResult[T]): AltOutcome = withLock(rLock) { super.poll(result) }
-  override def offer(value: T): AltOutcome = withLock(wLock) { super.offer(value) }
+  override def offer(t: ()=>T): AltOutcome = withLock(wLock) { super.offer(t) }
 
 }
 
@@ -570,10 +577,12 @@ class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers
     else
       throw new Closed(name)
 
-  def offer(value: T): AltOutcome = {
+  def offer(t: ()=>T): AltOutcome = {
     if (!(inOpen.get && outOpen.get))
       AltOutcome.CLOSED
-    else if (buffer.offer(value)) {
+    else
+      // ********************* POTENTIAL RACE ********************** PROTECT WITH
+    if (buffer.remainingCapacity()>0 && buffer.offer(t())) {
       waitingWriter.set(null)
       AltOutcome.OK
     } else
@@ -1132,6 +1141,56 @@ object proc extends serialNamer {
   }
 }
 
+object altTools {
+  import AltOutcome._
+  trait Event {}
+  case class `??`[T](guard: () => Boolean, port: InPort[T],  f: T => Unit) extends Event
+  case class `!!`[T](guard: () => Boolean, port: OutPort[T], f: () => T) extends Event
+
+  def runFirst(events: Seq[Event]): AltOutcome = {
+    var outcome: AltOutcome = NO
+    val iter: Iterator[Event] = events.iterator
+    while (outcome==NO && iter.hasNext) {
+      iter.next() match {
+        case `!!`(guard, port, f) =>
+          if (guard()) {
+            outcome = port.offer(f)
+          }
+        case `??`(guard, port, f) =>
+          if (guard()) {
+            val result = new AltResult[Any]
+            port.poll(result) match {
+              case OK     => f(result.get); outcome = OK
+              case CLOSED => outcome = CLOSED
+            }
+          }
+      }
+    }
+    outcome
+  }
+
+  class rotater[T](val original: Seq[T]) extends Seq[T] {
+    val length: Int = original.length
+    var offset: Int = 0
+    def rot(): Unit = { offset = (offset+1) % length}
+
+    def iterator: Iterator[T] = new Iterator[T] {
+      var current: Int = offset
+      var count : Int  = length
+      def hasNext: Boolean = count>0
+
+      def next(): T = {
+        val r = original(current)
+        current = (current + 1) % length
+        count -=1
+        r
+      }
+    }
+
+    def apply(i: Int): T = original((offset+i)%length)
+  }
+}
+
 object portTools {
   private val logging: Boolean = false
   import proc._
@@ -1172,6 +1231,15 @@ object portTools {
     }
   }
 
+  def merge[T](ins: Seq[InPort[T]])(out: OutPort[T]): process  = {
+      val readers = || (for { in <-ins } yield
+          proc {
+            repeatedly { in?{ t => out!t } }
+            // Here if either input or output failed
+            if (!out.canWrite) { for { in<-ins } in.closeIn() }
+          })
+      proc { readers(); out.closeOut() }
+  }
 
   def source[T](out: OutPort[T], it: Iterable[T]): proc = proc (s"source($out,...)"){
       repeatFor (it) { t => out!t }

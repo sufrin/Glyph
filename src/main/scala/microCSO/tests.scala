@@ -386,7 +386,7 @@ object testAlt extends testFramework {
     def offerer(chan: Chan[Int], delay: Double, to: Int): process = proc (f"offerer($delay%f, $to%d)") {
       val every = seconds(delay)
       for { i<-0 until to } {
-        val r = chan.offer(i)
+        val r = chan.offer(()=>i)
         show(s"[$i $r]")
         sleep(every)
       }
@@ -461,6 +461,52 @@ object testAlt extends testFramework {
 
   }
 
+}
+
+object testMerge extends testFramework {
+  val N: Int = 5
+  def labelled(n: Int): Iterable[(Int, Int)] = for {i <- 0 until 20} yield (n, i)
+
+  def test(): Unit = {
+    Default.level = INFO
+    for {bufSize <- List(0, 1, 5)} {
+      val chans: Seq[Chan[(Int, Int)]] = (0 until N).toList.map { case n: Int => Chan[(Int, Int)](s"chan$n", 10) }
+      val producers =
+        ||(for {chan <- 0 until N} yield source[(Int, Int)](chans(chan), labelled(chan)))
+      val merged = Chan.Shared(readers = 1, writers = N)[(Int, Int)]("merged", bufSize)
+      var count = 0
+      println(s"Merge trial (merge channel size = $bufSize)")
+      run(producers ||
+        merge(chans)(merged) ||
+        sink(merged) { case (chan, n) => show(f"$chan%02d $n%02d @$count%02d"); if (n == 5) show("\n"); count += 1 }
+      )
+    }
+
+    for { bufSize <- List(0, 1, 5) } {
+      val chans: Seq[Chan[(Int, Int)]] = (0 until N).toList.map { case n: Int => Chan[(Int, Int)](s"chan$n", 4) }
+      val producers =
+        ||(for {chan <- 0 until N} yield source[(Int, Int)](chans(chan), labelled(chan)))
+      val merged = Chan.Shared(readers = 1, writers = N)[(Int, Int)]("merged", bufSize)
+      var count = 0
+      println(s"Merge trial (output termination) (merge channel size = $bufSize)")
+      run(producers             ||
+          merge(chans)(merged)  ||
+          sink(merged) { case (chan, n) => show(f"$chan%02d $n%02d @$count%02d"); if (n == 5) show("\n"); if (count==50) stop; count += 1 }
+      )
+    }
+
+  }
+}
+
+object testEvents extends testFramework {
+  def test(): Unit = {
+      var l = (0 until 5).toSeq
+      var r = new altTools.rotater[Int](l)
+      for { rots <- 0 until 8 } {
+          println(r.toSeq)
+          r.rot()
+      }
+  }
 }
 
 
