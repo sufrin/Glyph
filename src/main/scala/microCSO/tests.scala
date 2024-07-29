@@ -4,6 +4,7 @@ import org.sufrin.logging.{Default, INFO}
 import org.sufrin.microCSO.portTools._
 import org.sufrin.microCSO.proc._
 import org.sufrin.microCSO.termination._
+import org.sufrin.microCSO.Time.sleepms
 
 /**
  * Tests interaction of || with termination of simple processes
@@ -499,13 +500,122 @@ object testMerge extends testFramework {
 }
 
 object testEvents extends testFramework {
+  import altTools._
   def test(): Unit = {
-      var l = (0 until 5).toSeq
-      var r = new altTools.rotater[Int](l)
-      for { rots <- 0 until 8 } {
-          println(r.toSeq)
-          r.rot()
+    Default.level=INFO
+
+    def testWrite(): Unit =
+    { val l = Chan[String]("l", 0)
+      val c = Chan[(String,String)]("c", 0)
+      val r = Chan[String]("r", 0)
+      var m, n = 0
+
+      println((l.out && n < 10))
+
+
+      val count = proc("io") {
+        serve(
+          (l && n < 20) =!=> { n += 1; s"$n" }
+          ,
+          (r && m < 20) =!=> { m += 1; sleepms(35); s"$m" }
+        )
+        r.closeOut()
+        l.closeOut()
       }
+      run(count || zip(l, r)(c) || sink(c){ s => println(s) })
+    }
+
+    def testCopy(): Unit =
+    { val l = Chan[String]("l", 1)
+      val c = Chan[(String,String)]("c", 1)
+      val d = Chan[(String,String)]("d", 1)
+      val r = Chan[String]("r", 1)
+      var m, n = 0
+
+      def copy[T](i: InPort[T], o: OutPort[T]): process = proc(s"xfer($i,$o)"){
+        withPorts(i, o) {
+          var buf: Option[T] = None
+          serve(
+            (i && buf.isEmpty) =?=> { t => buf = Some(t) }
+            ,
+            (o && buf.isDefined) =!=> { val t = buf.get; buf=None; t }
+          )
+          Default.info("Copy finished")
+        }
+      }
+
+      val source = proc("Source") {
+        withPorts(l, c, r, d) {
+          serve(
+            (l && n < 20) =!=> {
+              n += 1; s"$n"
+            }
+            ,
+            (r && m < 20) =!=> {
+              m += 1; sleepms(15); s"$m"
+            }
+          )
+          Default.info("Source finished")
+        }
+      }
+      run(source || zip(l, r)(c) || copy(c, d) || sink(d){ s => println(s) })
+    }
+
+    def testReadWrite(): Unit =
+    { val l = Chan[String]("l", 1)
+      val c = Chan[(String,String)]("c", 1)
+      val d = Chan[(String,String)]("d", 1)
+      val r = Chan[String]("r", 1)
+      var m, n = 0
+
+      val source = proc("Source") {
+        withPorts(l, c, r, d) {
+          serve(
+            (l && n < 20) =!=> {
+              n += 1; s"$n"
+            }
+            ,
+            (r && m < 20) =!=> {
+              m += 1; sleepms(15); s"$m"
+            }
+            ,
+            c =?=> {
+              case s =>
+                d ! s
+                if (s==("20", "20")) { d ! ("CLOSING C", ""); c.closeIn() }
+            }
+            // NB:  c =?=> { s => d!s } keeps the serve loop alive (until interrupted) because
+            // c hasn't yet been closed, and the input event remains enabled
+            //
+          )
+          Default.info("Source finished")
+        }
+      }
+      run(source || zip(l, r)(c) || sink(d){ s => println(s) })
+    }
+
+    def testRead(): Unit =
+    { val l = Chan[String]("l", 0)
+      val c = Chan[String]("c", 0)
+      val r = Chan[String]("r", 0)
+
+      val lev = l =?=> { s: String => show(s"l:$s") } // `??`(() => true, l, { s: String => println(s"l $s") })
+      val cev = c =?=> { s: String => show(s"c:$s") }
+      val rev = r =?=> { s: String => show(s"r:$s") }
+
+      val server: process = proc("serve") {
+        serve(lev, rev, cev)
+        Default.finer(s"serve() terminated")
+      }
+
+      run(server || source(c, "my dog has fleas".split(' ')) || source(l, (0 until 20).map(_.toString)) || source(r, (100 until 120).map(_.toString)))
+    }
+
+    testReadWrite()
+
+    testCopy()
+    testWrite()
+    testRead()
   }
 }
 

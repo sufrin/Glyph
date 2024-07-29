@@ -1,14 +1,15 @@
 package org.sufrin.microCSO
 
 /**
- * A drastically simplified sublanguage of ThreadCSO using only
- * virtual threads.
+ * A somewhat simplified sublanguage of ThreadCSO using only
+ * virtual threads, and with only minimal debugger support.
  */
 
 import org.sufrin.logging._
 import org.sufrin.microCSO.termination._
-import org.sufrin.microCSO.PortState.{CLOSEDSTATE, IDLESTATE, PortState, READYSTATE}
 import org.sufrin.microCSO.Time.Nanoseconds
+import org.sufrin.microCSO.altTools.{In, InOut, Out, Port}
+import org.sufrin.microCSO.proc.{repeatedly, stop}
 
 import java.util.concurrent.{LinkedBlockingQueue, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
@@ -32,7 +33,7 @@ object AltOutcome {
 
 trait OutPort[T] extends Closeable { port =>
   /**
-   * Idempotent declaration that there will be no further writes to this channel.
+   * Idempotent promise that there will be no further writes to this channel.
    * Buffered channels may nevertheless be capable of further reads.
    */
   def closeOut(): Unit
@@ -48,33 +49,35 @@ trait OutPort[T] extends Closeable { port =>
   def offer(t: () => T): AltOutcome
   
   def out: OutPort[T] = port
+
   /** This port hasn't yet been closed */
   def canWrite: Boolean
 
   def isSharedOutPort: Boolean = false
 
   /**
-   *  The state of the channel underlying this port changed, leaving
-   *  the port itself in `newState` -- used only in alternation
-   *  constructions, and must be overridden in alternation-potent
-   *  channels.
+   * OutPort event notation
    */
-  def outPortEvent(newState: PortState.PortState): Unit = {}
-  def outPortState: PortState.PortState
+  def && (guard: => Boolean): GuardedPort[T] = GuardedPort[T](()=>guard, Out(out))
+  def =!=> (value: =>T): altTools.!![T]  = altTools.`!!`(()=>true, out, ()=>value)
 }
 
-trait InPort[T] extends Closeable { port =>
-  /** Idempotent declaration that there will be no further reads from this channel */
+
+trait InPort[T] extends Closeable { port: InPort[T] =>
+  /** Idempotent promise that there will be no further reads from the associated channel */
   def closeIn(): Unit
   def close(): Unit = closeIn()
   def readBefore(timeOut: Time.Nanoseconds): Option[T]
+  /** read from the associated channel */
   def ?(t: Unit): T
+  /** read from the associated channel and apply `f` to the result */
   def ?[V](f: T=>V): V = f(this.?(()))
   /**
    *   Extended-rendezvous read: return to the writer only when `f` terminates.
    *   This is distinct from `?[V](f: T=>V): V` only in synchronized channels.
    */
   def ??[V](f: T=>V): V = f(this.?(()))
+  /** this port itself */
   def in: InPort[T] = port
 
   /**
@@ -89,33 +92,34 @@ trait InPort[T] extends Closeable { port =>
   def isSharedInPort: Boolean = false
 
   /**
-   *  The state of the channel underlying this port changed, leaving
-   *  the port itself in `newState` -- used only in alternation
-   *  constructions, and must be overridden in alternation-potent
-   *  channels.
+   *  InPort event notation
    */
-  def inPortEvent(newState: PortState.PortState): Unit = {}
-  def inPortState: PortState.PortState
+  def && (guard: => Boolean): GuardedPort[T] = GuardedPort[T](()=>guard, In(in))
+  def =?=> (f: T=>Unit): altTools.??[T]  = altTools.`??`(()=>true, in, f)
 }
+
+case class GuardedPort[T](guard: () => Boolean, port: Port[T]) {
+  Default.fine(s"GuardedPort(..., $port)")
+  def =?=> (f: T=>Unit): altTools.??[T]  = altTools.`??`(()=>true, port.asIn, f)
+  def =!=> (value: =>T): altTools.!![T]  = altTools.`!!`(guard, port.asOut, ()=>value)
+}
+
 
 trait Chan[T] extends OutPort[T] with InPort[T] {
   /** Capture (an approximation to) the current state for debugger components */
   def currentState: String
 
-  /** Close both ports of this channel  */
+  /** Close both ports of this channel */
   override def close(): Unit = {
     closeIn()
     closeOut()
   }
+
+  /** The guard notation (from a channel) supports either outport or inport events  */
+  override def &&(guard: => Boolean): GuardedPort[T] =
+           GuardedPort[T](() => guard, InOut(this))
 }
 
-
-object PortState {
-  trait PortState
-  case object READYSTATE   extends PortState
-  case object CLOSEDSTATE  extends PortState
-  case object IDLESTATE extends PortState
-}
 
 object Time {
   type Nanoseconds = Long
@@ -238,27 +242,14 @@ object Time {
  */
 class SyncChan[T](name: String) extends Chan[T] {
 
-  import PortState._
   private[this] val reader, writer = new AtomicReference[Thread]
   private[this] val closed, full   = new AtomicBoolean(false)
   private[this] var buffer: T = _
 
   locally { RuntimeDatabase.addChannel(this) }
 
-  /** READY if not closed and there's a writer waiting to sync (else CLOSED or
-   * IDLE) (used only by alternation implementations)
-   */
-  def inPortState: PortState =
-    if (closed.get) CLOSEDSTATE else if (full.get) READYSTATE else IDLESTATE
 
-  /** READY if not closed and there's a reader waiting and last writer has
-   * already synced (else CLOSED or IDLE) (used only by alternation
-   * implementations)
-   */
-  def outPortState: PortState =
-    if (closed.get) CLOSEDSTATE
-    else if (!full.get && reader.get != null) READYSTATE
-    else IDLESTATE
+
 
 
   /**
@@ -282,9 +273,11 @@ class SyncChan[T](name: String) extends Chan[T] {
   }
 
   override def toString: String =
-    s"""SyncChan.${this.name} [in: $inPortState, out: $outPortState] $currentState"""
+    s"""SyncChan.${this.name} $currentState"""
 
-  /** Behaves as !(t()) when a reader is already committed  */
+  /**
+   *  Behaves as !(t()) when a reader is already committed
+   */
   def offer(t: ()=>T): AltOutcome = {
     if (closed.get) AltOutcome.CLOSED else
     if (full.get)   AltOutcome.NO else {
@@ -307,7 +300,6 @@ class SyncChan[T](name: String) extends Chan[T] {
     )
     buffer = value
     full.set(true)
-    inPortEvent(READYSTATE)         // Announce state change to any alternation
     LockSupport.unpark(reader.get)  // DELIVER BUFFER TO READER
     while (!closed.get && full.get) // AWAIT SYNC FROM READER
     {
@@ -338,7 +330,6 @@ class SyncChan[T](name: String) extends Chan[T] {
       lastReader == null,
       s"[${current.getName}]$name?() overtaking [${lastReader.getName}]$name?()"
     )
-    outPortEvent(READYSTATE)          // Announce state change to any alternation
     while (!closed.get && !full.get)  // AWAIT BUFFER
     {
       LockSupport.park(this)
@@ -357,8 +348,6 @@ class SyncChan[T](name: String) extends Chan[T] {
    */
   override def close(): Unit = {
     if (!closed.getAndSet(true)) { // closing is idempotent
-      outPortEvent(CLOSEDSTATE)    // Announce state change
-      inPortEvent(CLOSEDSTATE)     // Announce state change
       LockSupport.unpark(
         reader.getAndSet(null)
       ) // Force a waiting reader to continue **
@@ -381,7 +370,6 @@ class SyncChan[T](name: String) extends Chan[T] {
       lastReader == null,
       s"[${current.getName}]$name??() overtaking [${lastReader.getName}]$name??()"
     )
-    outPortEvent(READYSTATE)
     while (!closed.get && !full.get) {
       LockSupport.park(this)
     }
@@ -417,7 +405,6 @@ class SyncChan[T](name: String) extends Chan[T] {
     )
     checkOpen
     reader.set(current)
-    outPortEvent(READYSTATE)
     val success =
       0 < Time.parkUntilElapsedOr(this, timeoutNS, closed.get || full.get)
     checkOpen
@@ -439,7 +426,6 @@ class SyncChan[T](name: String) extends Chan[T] {
     val current = Thread.currentThread
     writer.set(current)
     full.set(true)
-    inPortEvent(READYSTATE)
     LockSupport.unpark(reader.getAndSet(null))
     var success =
       0 < Time.parkUntilElapsedOr(this, timeoutNS, closed.get || !full.get)
@@ -452,8 +438,15 @@ class SyncChan[T](name: String) extends Chan[T] {
 }
 
 /**
- *  A shareable synchronized channel (for completeness). Sharing affects only the
- *  port-closing methods: readers/writers may not coincide at a rendezvous.
+ *  A shareable synchronized channel (for completeness) made from an
+ *  underlying synchronized channel. Processes
+ *  sharing the channel wait (in `Lock` queues) for reading (or writing)
+ *  methods to be available. This contrasts with the underlying
+ *  channel in which (inadvertently-sharing) readers (writers) MAY (but shouldn't)
+ *  overetake each other.
+ *
+ *  The channel closes at the last invocation of `closeIn`,
+ *  or the last invocation of `closeOut`.
  */
 class SharedSyncChan[T](name: String, readers: Int=1, writers: Int = 1) extends SyncChan[T](name) {
   import java.util.concurrent.locks.{ReentrantLock => Lock}
@@ -467,7 +460,7 @@ class SharedSyncChan[T](name: String, readers: Int=1, writers: Int = 1) extends 
   val readersLeft = new AtomicLong(readers)
   val writersLeft = new AtomicLong(writers)
 
-  override def toString: String = s"SharedSyncChan.$name  [in: $inPortState, out: $outPortState][readers=${readersLeft.get}, writers=${writersLeft.get}] $currentState"
+  override def toString: String = s"SharedSyncChan.$name [readers=${readersLeft.get}, writers=${writersLeft.get}] $currentState"
 
   override def closeIn(): Unit = withLock(rLock) {
     if (readersLeft.decrementAndGet()<=0) super.close()
@@ -492,6 +485,11 @@ class SharedSyncChan[T](name: String, readers: Int=1, writers: Int = 1) extends 
  * be closed for input (exactly) `readers` times; and for output
  * exactly `writers` times. In these situations we say the channel is
  * "fully closed" (for input / for output).
+ *
+ * Either `readers` or `writers` can be zero: in which case the reading (writing)
+ * side of the channel remains open until the other side is fully closed. If they
+ * are both zero then the channel is never closed by `closeIn()` or `closeOut()`,
+ * but can still be closed by `close()`.
  *
  * Reads will continue to succeed while the buffer is nonempty -- even
  * when the channel is fully closed for output. Writes will succeed if
@@ -519,18 +517,29 @@ class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers
   val readersLeft = new AtomicLong(readers)
   val writersLeft = new AtomicLong(writers)
 
-  def inPortState: PortState =
-    if (!inOpen.get) CLOSEDSTATE else if (buffer.isEmpty) IDLESTATE else READYSTATE
-
-  def outPortState: PortState =
-    if (!outOpen.get) CLOSEDSTATE else if (buffer.remainingCapacity()==0) IDLESTATE else READYSTATE
-
+  /** A promise that this process will no longer input from this channel.
+   *  Decrements the number of readers.
+   *  Closes the input side of the channel completely when the number of
+   *  remaining `readers` is exactly 0.
+   */
   def closeIn(): Unit = {
     if (readersLeft.decrementAndGet()==0) CloseIn()
   }
 
+  /**
+   *  A promise that this process will no longer write to this channel.
+   *  Decrements the number of writers.
+   *  Closes the output side of the channel completely when the number of `writers`
+   *  remaining is exactly 0.
+   */
   def closeOut(): Unit = {
     if (writersLeft.decrementAndGet()==0) CloseOut()
+  }
+
+  /** Close the channel unconditionally in both directions  */
+  override def close(): Unit = {
+    CloseIn()
+    CloseOut()
   }
 
   /** Close the input port unconditionally, and interrupt any waiting writer: idempotent */
@@ -581,7 +590,9 @@ class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers
     if (!(inOpen.get && outOpen.get))
       AltOutcome.CLOSED
     else
-      // ********************* POTENTIAL RACE ********************** PROTECT WITH
+      // ********************* POTENTIAL RACE **********************
+      // Safe only when there is at most a single writer
+      //
     if (buffer.remainingCapacity()>0 && buffer.offer(t())) {
       waitingWriter.set(null)
       AltOutcome.OK
@@ -1147,47 +1158,126 @@ object altTools {
   case class `??`[T](guard: () => Boolean, port: InPort[T],  f: T => Unit) extends Event
   case class `!!`[T](guard: () => Boolean, port: OutPort[T], f: () => T) extends Event
 
-  def runFirst(events: Seq[Event]): AltOutcome = {
-    var outcome: AltOutcome = NO
-    val iter: Iterator[Event] = events.iterator
-    while (outcome==NO && iter.hasNext) {
-      iter.next() match {
-        case `!!`(guard, port, f) =>
-          if (guard()) {
-            outcome = port.offer(f)
-          }
-        case `??`(guard, port, f) =>
-          if (guard()) {
-            val result = new AltResult[Any]
-            port.poll(result) match {
-              case OK     => f(result.get); outcome = OK
-              case CLOSED => outcome = CLOSED
-            }
-          }
-      }
-    }
-    outcome
+  trait Port[T] {
+    def asIn: InPort[T] = null
+    def asOut: OutPort[T] = null
   }
 
-  class rotater[T](val original: Seq[T]) extends Seq[T] {
+  case class Out[T](port: OutPort[T]) extends Port[T] { override def asOut = port }
+  case class In[T](port: InPort[T]) extends Port[T]   { override def asIn: InPort[T] = port }
+  case class InOut[T](chan: Chan[T]) extends Port[T]  {
+    override def asIn: InPort[T]   = chan.in
+    override def asOut: OutPort[T] = chan.out
+  }
+
+  def repetition(events: Seq[Event]): Unit = {
+    val fairness = new Rotater(events)
+    repeatedly {
+      val outcome = tryAlternation(fairness)
+      if (outcome == NO) stop else fairness.rot()
+    }
+  }
+
+  def serve(events: Event*): Unit = repetition(events)
+
+  def alt(events: Event*): Unit   = alternation(events)
+
+  def alternation(events: Seq[Event]): Unit =
+    tryAlternation(events) match {
+      case NO => throw new Error("Alternation failed")
+      case _  => ()
+    }
+
+
+  def tryAlternation(events: Seq[Event]): AltOutcome = {
+      var outcome: AltOutcome = NO
+      var running = true
+      while (running) {
+        val (feasible, result) = runFirst(events)
+        Default.finer(s"$result alternation ($feasible)")
+        // result is OK or all events refused or infeasible
+        result match {
+          case OK =>
+            // an event fired
+            outcome = OK
+            running = false
+          case CLOSED | NO =>
+            // no event seen on this pass fired
+            if (feasible==0) {
+              // now nothing CAN happen
+              outcome = NO
+              running = false
+            } else {
+              // wait a bit and try again
+              Default.finest(s"$result alternation retrying ($feasible)")
+              Time.sleep(500000) // PRO-TEM: 500 muSec delay in case something happens
+            }
+        }
+      }
+      outcome
+  }
+
+  /**
+   * Find and fire the first ready event.
+   * Return the number of feasible events.
+   */
+  def runFirst(events: Seq[Event]): (Int, AltOutcome) = {
+    var outcome:  AltOutcome = NO
+    var feasible: Int = 0
+    // feasibles are the events that might be ready
+    Default.finer(s"runFirst $events")
+    val feasibles = events.filter{
+      case `!!`(guard, port, _) => guard() && port.canWrite
+      case `??`(guard, port, _) => guard() && port.canRead
+    }
+    val iter: Iterator[Event] = feasibles.iterator
+    // find and fire the first ready event
+    while (outcome!=OK && iter.hasNext) {
+      iter.next() match {
+        case `!!`(guard, port, f) =>
+            outcome = port.offer(f)
+            outcome match {
+              case OK => feasible += 1
+              case _  =>
+            }
+        case `??`(guard, port, f) =>
+            val result = new AltResult[Any]
+            port.poll(result) match {
+              case OK     =>
+                f(result.get)
+                outcome = OK
+                feasible += 1
+              case CLOSED =>
+                outcome = CLOSED
+              case NO     =>
+                outcome = NO
+            }
+      }
+    }
+    // outcome==OK || all events refused or infeasible // TODO: need to distinguish?
+    (feasibles.length, outcome)
+  }
+
+  class Rotater[T](val original: Seq[T]) extends Seq[T] {
     val length: Int = original.length
-    var offset: Int = 0
-    def rot(): Unit = { offset = (offset+1) % length}
+    private val LENGTH = length
+    private var offset: Int = 0
+    def rot(): Unit = { offset = (offset+1) % LENGTH}
 
     def iterator: Iterator[T] = new Iterator[T] {
       var current: Int = offset
-      var count : Int  = length
+      var count : Int  = LENGTH
       def hasNext: Boolean = count>0
 
       def next(): T = {
         val r = original(current)
-        current = (current + 1) % length
+        current = (current + 1) % LENGTH
         count -=1
         r
       }
     }
 
-    def apply(i: Int): T = original((offset+i)%length)
+    def apply(i: Int): T = original((offset+i)%LENGTH)
   }
 }
 
