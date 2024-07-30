@@ -1157,9 +1157,12 @@ object altTools {
   trait Event {}
   case class `??`[T](guard: () => Boolean, port: InPort[T],  f: T => Unit) extends Event
   case class `!!`[T](guard: () => Boolean, port: OutPort[T], f: () => T) extends Event
+  case class `Or-Else`(eval: ()=>Unit)
+  case class `After-NS`(ns: Nanoseconds, eval: ()=>Unit)
+
 
   trait Port[T] {
-    def asIn: InPort[T] = null
+    def asIn:  InPort[T]  = null
     def asOut: OutPort[T] = null
   }
 
@@ -1170,62 +1173,185 @@ object altTools {
     override def asOut: OutPort[T] = chan.out
   }
 
-  def repetition(events: Seq[Event]): Unit = {
+  /**
+   *  Repeatedly find and fire one of the `events`, until
+   *  none are feasible. The search for firing events is in
+   *  sequential order: it is "fair" inasmuch as
+   *  at each iteration `events` is rotated by a single place.
+   *
+   *  The "Finding" is done by polling periodically (the period is half a microsecond). This
+   *  is somewhat inelegant, but drastically simplifies the implementation.
+   *
+   * @see ServeBefore
+   */
+  def Serve(events: Seq[Event]): Unit = {
     val fairness = new Rotater(events)
     repeatedly {
-      val outcome = tryAlternation(fairness)
-      if (outcome == NO) stop else fairness.rot()
+      eventFired(fairness, deadline=0, afterDeadline = {()=>}) match {
+        case true  => fairness.rot()
+        case false => stop
+      }
+    }
+  }
+/**
+ *  Repeatedly find and fire one of the `events` until
+ *  none are feasible. The search for firing events is in
+ *  sequential order: it is "fair" inasmuch as
+ *  at each iteration `events` is rotated by a single place.
+ *
+ * The "finding" is performed by polling every `waitDelta` nanoseconds until
+ * {{{
+ *   (a) one of the `events` has fired -- then rotate `events` and continue serving
+ *   (b) the deadline (if positive) has expired -- then evaluate `afterDeadline` and continue serving
+ *   (c) none of the `events` are feasible -- then evaluate `orElse`, and stop
+ * }}}
+ */
+ def ServeBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = 500000 )(events: Seq[Event]): Unit = {
+    val fairness = new Rotater(events)
+    repeatedly {
+      eventFired(fairness, deadline, afterDeadline = {()=>afterDeadline}) match {
+        case true  =>
+          fairness.rot()
+        case false =>
+          orElse
+          stop
+      }
     }
   }
 
-  def serve(events: Event*): Unit = repetition(events)
-
-  def alt(events: Event*): Unit   = alternation(events)
-
-  def alternation(events: Seq[Event]): Unit =
-    tryAlternation(events) match {
-      case NO => throw new Error("Alternation failed")
-      case _  => ()
-    }
-
-
-  def tryAlternation(events: Seq[Event]): AltOutcome = {
-      var outcome: AltOutcome = NO
-      var running = true
-      while (running) {
-        val (feasible, result) = runFirst(events)
-        Default.finer(s"$result alternation ($feasible)")
-        // result is OK or all events refused or infeasible
-        result match {
-          case OK =>
-            // an event fired
-            outcome = OK
-            running = false
-          case CLOSED | NO =>
-            // no event seen on this pass fired
-            if (feasible==0) {
-              // now nothing CAN happen
-              outcome = NO
-              running = false
-            } else {
-              // wait a bit and try again
-              Default.finest(s"$result alternation retrying ($feasible)")
-              Time.sleep(500000) // PRO-TEM: 500 muSec delay in case something happens
-            }
-        }
+  /**
+   * @see ServeBefore
+   */
+  def serveBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = 500000 )(events: Event*): Unit = {
+    val fairness = new Rotater(events)
+    repeatedly {
+      eventFired(fairness, deadline, afterDeadline = {()=>afterDeadline}) match {
+        case true  =>
+          fairness.rot()
+        case false =>
+          orElse
+          stop
       }
-      outcome
+    }
+  }
+
+  /**
+   *  Repeatedly find one of the `events` that fires, until
+   *  none are feasible. The search for firing events is in
+   *  sequential order: it is "fair" inasmuch as
+   *  at each iteration `events` is rotated by a single place.
+   *
+   *  The "Finding" is done by polling periodically (the period is half a microsecond). This
+   *  is somewhat inelegant, but drastically simplifies the implementation.
+   *
+   * @see serveBefore
+   */
+  def serve(events: Event*): Unit = Serve(events)
+
+  /**
+   * Poll periodically until one of the `events` fires or none is feasible.
+   * In the latter case an error is thrown.
+   *
+   * @see altBefore
+   */
+  def alt(events: Event*): Unit = Alt(events)
+
+  /**
+   * Poll periodically until one of the `events` fires or none is feasible. In
+   * the latter case an error is thrown.
+   *
+   * @see AltBefore
+   */
+  def Alt(events: Seq[Event]): Unit =
+      eventFired(events, deadline=0, afterDeadline = {()=>})  match {
+        case false => throw new Error("alternation: no feasible events")
+        case true =>
+      }
+
+  /**
+   * Poll every `waitDelta` nanoseconds until
+   * {{{
+   *   (a) one of the `events` has fired
+   *   (b) the deadline (if positive) has expired -- then evaluate `afterDeadline`
+   *   (c) none of the `events` are feasible -- then evaluate `orElse`.
+   * }}}
+   *
+   */
+  def altBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {} , waitDelta: Nanoseconds = 500000)(events: Event*): Unit =
+      eventFired(events, deadline, afterDeadline = { ()=>afterDeadline }, waitDelta) match {
+        case false => orElse
+        case true  =>
+      }
+
+  /**
+   * Poll every `waitDelta` nanoseconds until
+   * {{{
+   *   (a) one of the `events` has fired
+   *   (b) the deadline (if positive) has expired -- then evaluate `afterDeadline`
+   *   (c) none of the `events` are feasible -- then evaluate `orElse`
+   * }}}
+   *
+   */
+  def AltBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = 500000 )(events: Seq[Event]): Unit =
+      eventFired(events, deadline, afterDeadline = { ()=>afterDeadline }, waitDelta) match {
+        case false => orElse
+        case true  =>
+      }
+
+  /**
+   *  (busy) wait until one of `events`  fires or none are feasible.
+   *  Yield true in the former case and false in the latter case.
+   *
+   *  If there's a positive `deadline` then
+   *  evaluate `afterDeadline()` and return true if none has fired before the
+   *  deadline has elapsed; else just continue (busy) waiting.
+   *
+   *  `waitDelta` is the delay between successive attempts to find and fire an event.
+   *
+   */
+  def eventFired(events: Seq[Event], deadline: Nanoseconds=0, afterDeadline: ()=>Unit, waitDelta: Nanoseconds = 500000): Boolean = {
+    var outcome = false
+    var waiting = true
+    var remainingTime = deadline
+    val hasDeadline   = remainingTime>0
+    while (waiting) {
+      val (feasible, result) = fireFirst(events)
+      Default.finest(s"$result event retrying ($feasible) $remainingTime")
+      // result is OK or all events refused or infeasible
+      result match {
+        case OK =>
+          // an event fired
+          outcome = true
+          waiting = false
+        case CLOSED | NO =>
+          // no event seen on this pass fired
+          if (feasible == 0) {
+            // now nothing CAN happen
+            outcome = false
+            waiting = false
+          } else if (hasDeadline && remainingTime<=0) {
+            afterDeadline()
+            outcome = true
+            waiting = false
+          } else {
+            // wait a bit and try again
+            Time.sleep(waitDelta)
+            remainingTime -= waitDelta
+          }
+      }
+    }
+    outcome
   }
 
   /**
    * Find and fire the first ready event.
    * Return the number of feasible events.
    */
-  def runFirst(events: Seq[Event]): (Int, AltOutcome) = {
+  @inline private final def fireFirst(events: Seq[Event]): (Int, AltOutcome) = {
     var outcome:  AltOutcome = NO
     var feasible: Int = 0
     // feasibles are the events that might be ready
-    Default.finer(s"runFirst $events")
+    Default.finer(s"fireFirst $events")
     val feasibles = events.filter{
       case `!!`(guard, port, _) => guard() && port.canWrite
       case `??`(guard, port, _) => guard() && port.canRead

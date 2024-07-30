@@ -4,7 +4,8 @@ import org.sufrin.logging.{Default, INFO}
 import org.sufrin.microCSO.portTools._
 import org.sufrin.microCSO.proc._
 import org.sufrin.microCSO.termination._
-import org.sufrin.microCSO.Time.sleepms
+import org.sufrin.microCSO.Time.{seconds, sleepms}
+
 
 /**
  * Tests interaction of || with termination of simple processes
@@ -379,9 +380,9 @@ object testDeadlines extends testFramework {
 
 /**
  *   Tests the asynchronous constructs (offer/poll) designed to support
- *   alternation.
+ *   Alt.
  */
-object testAlt extends testFramework {
+object testPolling extends testFramework {
   import Time._
   def test(): Unit = {
     def offerer(chan: Chan[Int], delay: Double, to: Int): process = proc (f"offerer($delay%f, $to%d)") {
@@ -504,6 +505,70 @@ object testEvents extends testFramework {
   def test(): Unit = {
     Default.level=INFO
 
+
+    def testServe(): Unit = {
+      import Time._
+      val c = Chan[Int]("c", 0)
+      val listen = proc("listen") {
+        altBefore(50*milliSec, afterDeadline={ show("==")}, orElse = { println("finished")})(
+          c =?=> { x =>  show(s"$x") }
+        )
+        serveBefore(50*milliSec, afterDeadline={ show("*")}, orElse = { println("finished")})(
+          c =?=> { x =>  show(s"$x") }
+        )
+      }
+      val speak= proc("speak") {
+        sleep(150*milliSec)
+        for { i<-0 until 3} {
+          c!i
+          sleep(100*milliSec)
+        }
+        c.closeOut()
+      }
+      run(speak||listen)
+    }
+
+    def testAlt(): Unit = {
+      val l = Chan[String]("l", 0)
+      val c = Chan[String]("c", 0)
+      val r = Chan[String]("r", 0)
+      val stops = proc ("stops") {
+        println("Started")
+        altBefore(orElse={ println("Nothing open")})(
+          l =?=> { x => show(x) },
+          r =?=> { x => show(x) },
+          c =?=> { x => show(x) }
+        )
+
+        altBefore(orElse={ println("Nothing open")})(
+          l =?=> { x => show(x) },
+          r =?=> { x => show(x) },
+          c =?=> { x => show(x) }
+        )
+
+        alt(
+          l =?=> { x => show(x) },
+          r =?=> { x => show(x) },
+          c =?=> { x => show(x) }
+        )
+      }
+
+      val closes = proc("closes") {
+        withPorts (l, c, r) {
+          Time.sleep(seconds(1))
+          println("Closing l")
+          l.closeIn()
+          Time.sleep(seconds(1))
+          println("Closing r")
+          r.closeIn()
+          Time.sleep(seconds(1))
+          println("Closing c")
+          c.closeIn()
+        }
+      }
+      run(stops || closes)
+    }
+
     def testWrite(): Unit =
     { val l = Chan[String]("l", 0)
       val c = Chan[(String,String)]("c", 0)
@@ -612,10 +677,11 @@ object testEvents extends testFramework {
     }
 
     testReadWrite()
-
     testCopy()
     testWrite()
     testRead()
+    testAlt()
+    testServe()
   }
 }
 
