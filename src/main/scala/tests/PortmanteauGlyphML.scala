@@ -1,51 +1,53 @@
 package org.sufrin.glyph
 package tests
 
+// TODO: clean up the baseline/non-baseline mess.
 
 class PortmanteauGlyphML(implicit sheet: StyleSheet) {
   import Glyphs.{blue, lightGrey, nothing, red}
   import markup._
   implicit val local: Context =
     Context(     style        = sheet,
-                 overallWidth = 60,
+                 columnWidth  = 800f,
                  leftMargin   = 0,
                  rightMargin  = 0,
-                 parAlign     = Justify)
-      .copy(fontFamily=Family("Courier"))
-      .fontSize(28)
+                 parAlign     = Justify,
+                 fontFamily   = Family("Menlo"),
+                 fontSize     = 22)
       .labelStyle(fg=Glyphs.black, bg=Glyphs.nothing)
       .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
 
-  val intro = P(S("An introduction to"), S("GlyphML")(local.boldStyle))(local.copy(parAlign=Center))
+  val intro = Row(S("An introduction to "), S("GlyphML")(boldStyle))(fontFamily("Arial"))(fontScale(1.6f))
 
-  val GUI: Glyph = Column(
+  val GUI: Glyph = new Resizeable(local) {
+     def element: Element = Column(
       intro,
       Text("""GlyphML is a domain-specific language embedded in Scala: its expressions denote Glyphs.
-      |
-      |The GlyphML API (which is still evolving rapidly) may eventually be slightly more convenient
-      |than the standard Glyphs API for interface designers who don't need to get to grips with its
-      |underview.
-      |
-      |There are a couple of important principles to get to grips with:
-      |""".stripMargin),
+             |
+             |We hope the GlyphML API (which is still evolving) will eventually be more
+             |convenient than the standard Glyphs API for use
+             |by interface designers who are not inclined to study the latter in detail.
+             |
+             |Nevertheless, there are a couple of important principles to get to grips with:
+             |""".stripMargin),
       Text(
-        """Most markup expressions take a context as their
-          |final parameter, and this is usually supplied implicitly.
+        """Markup Elements are the abstract syntax of a language
+          |of expressions whose meanings are, in effect, functions
+          |from contexts to glyphs. Contexts provide the style and dimension
+          |information needed when an element is translated to a Glyph for use in a GUI.
           |
-          |But it can be modified: for example, the current
-          |paragraph has a narrower overall width.
+          |The translation context can be modified in the scope of an element,
+          |by applying transforms to the element itself.
           |
-          |""".stripMargin)(local.copy(overallWidth = 50)).toGlyph.framed().enlarged(30, bg=Glyphs.lightGrey),
-     Text(
-        """The narrower paragraph appears to be centred because the overall makeup of this
-          |page is as a centred column of rectangles.
-          |
-          |The markup expression denoting the previous paragraph modified the current implicit
-          |context by supplying a modified context explicitly:
+          |For example, the current
+          |section of text has enumerated paragraphs, is framed, and is  narrower than those surrounding it.
+          |""".stripMargin)(parEnum(1))(fontSize(20))(margins(5, 5)).framed(fg=blue),
+      Text(
+        """The Text expression denoting the framed section above used
+          |context transforms and an element transform as follows:
           |""".stripMargin),
-     Text("""Text("Most ... width")(local.copy(overallWidth=40))""")(local.labelStyle(fg=red).copy(parAlign=Center)),
-     styled.TextButton("I want to know more!"){
-       _ =>
-     }
-  ).toGlyph
+       Verb("Text(\"...\")(parEnum(1))(fontSize(20))(margins(5, 5)).framed(fg=blue)")(fontFamily("Courier"))(fontScale(0.75f)),
+       styled.TextButton("I want to know more!"){ _ => }
+     ).framed(fg=red strokeWidth 20f)
+  }
 }

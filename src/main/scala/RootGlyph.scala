@@ -13,13 +13,33 @@ import GlyphTypes.Scalar
  *
  * //TODO: can we now dispense with the Envelope, since we have to implement most Glyph features here now anyway.
  */
-class RootGlyph(GUIroot: Glyph) extends Glyph { thisRoot =>
-  import io.github.humbleui.jwm.App.runOnUIThread
+class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   import io.github.humbleui.jwm.{Event, EventKey, Screen, Window}
+  import io.github.humbleui.jwm.App.runOnUIThread
   def copy(fg: Brush=this.fg, bg: Brush=this.bg) : Glyph = new RootGlyph(GUIroot)
+
+  /**
+   * Regenerate the root glyph to be of size (no more than) `(newW, newH)`.
+   * If the root glyph returns itself (the usual case), then the current Interaction's software scale
+   * is changed uniformly to accomodate the new window size.
+   *
+   * @param newW
+   * @param newH
+   */
+  def resizeRoot(newW: Scalar, newH: Scalar): Unit = {
+     val newRoot = GUIroot.atSize(Vec(newW, newH))
+     if (newRoot ne GUIroot) {
+       GUIroot.parent = this
+       diagonal = GUIroot.diagonal
+     } else {
+       // Just change the global scale
+       eventHandler.softwareScale = newW/w min newH/h
+     }
+  }
+
   val fg: Brush = DefaultBrushes.invisible
   val bg: Brush = DefaultBrushes.invisible
-  val diagonal: Vec = GUIroot.diagonal
+  var diagonal: Vec = GUIroot.diagonal
   locally { GUIroot.parent = this }
   override def toString: String = s"RootGlyph\n\tdelegate = $GUIroot"
   /** The root Window of this interaction */
@@ -303,7 +323,8 @@ def acceptWindowEvent(event: Event, window: Window, handler: EventHandler): Unit
       App.runOnUIThread(() => onRootLeave())
     case _: EventWindowFocusIn =>
       rootWindow.requestFrame()
-    case _: EventWindowResize =>
+    case ev: EventWindowResize =>
+      resizeRoot(ev.getContentWidth.toFloat, ev.getContentHeight.toFloat)
       rootWindow.requestFrame()
     case _: EventWindowMove =>
       // also when resized by moving a corner or an edge

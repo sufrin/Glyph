@@ -162,6 +162,7 @@ object text {
     val maxWidth       = overallWidth - (leftMargin + rightMargin)
     // avoid rounding
     val maxWidthfloor  = maxWidth.floor
+    //println(s"[ov=$overallWidth,lm=$leftMargin,maxw=$maxWidthfloor]")
     val interWordWidth = interWord.w
     val words = Stream[Glyph](glyphs)
 

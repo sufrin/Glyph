@@ -391,6 +391,15 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
   def apply(fg: Brush=fg, bg: Brush=bg): Glyph = this.copy(fg, bg)
 
   /**
+   * A functionally equivalent copy of this glyph, generated within the
+   * given `boundingBox`. By default this is
+   * the identity. Glyph-generators can be implemented
+   * that use the size parameters to determine the
+   * details of their internal layout.
+   */
+   def atSize(boundingBox: Vec): Glyph = this
+
+  /**
    *  A glyph derived from this glyph, and intended to be used for visual checks of geometry.
    *
    * @see DebugGeometry
