@@ -1,6 +1,6 @@
 package org.sufrin.microCSO
 
-import org.sufrin.logging.{Default, INFO}
+import org.sufrin.logging.{Default, FINEST, INFO}
 import org.sufrin.microCSO.portTools._
 import org.sufrin.microCSO.proc._
 import org.sufrin.microCSO.termination._
@@ -466,34 +466,46 @@ object testPolling extends testFramework {
 }
 
 object testMerge extends testFramework {
-  val N: Int = 5
-  def labelled(n: Int): Iterable[(Int, Int)] = for {i <- 0 until 20} yield (n, i)
+  val N: Int = 4
+  def labelled(n: Int): Iterable[(Int, Int)] = for {i <- 0 until 10} yield (n, i)
 
   def test(): Unit = {
-    Default.level = INFO
+    Default.level = FINEST
     for {bufSize <- List(0, 1, 5)} {
-      val chans: Seq[Chan[(Int, Int)]] = (0 until N).toList.map { case n: Int => Chan[(Int, Int)](s"chan$n", 10) }
+
+      val chans: Seq[Chan[(Int, Int)]] = (0 until N).toList.map { case n: Int => Chan[(Int, Int)](s"chan$n", 0) }
+
       val producers =
         ||(for {chan <- 0 until N} yield source[(Int, Int)](chans(chan), labelled(chan)))
+
       val merged = Chan.Shared(readers = 1, writers = N)[(Int, Int)]("merged", bufSize)
+
       var count = 0
-      println(s"Merge trial (merge channel size = $bufSize)")
-      run(producers ||
-        merge(chans)(merged) ||
-        sink(merged) { case (chan, n) => show(f"$chan%02d $n%02d @$count%02d"); if (n == 5) show("\n"); count += 1 }
+      println(s"Merge trial $N producers (merge channel buffer size = $bufSize)")
+      run( producers
+        || merge(chans)(merged)
+        || sink(merged) { case (chan, n) => println(f"$chan%02d $n%02d @$count%02d"); count += 1 }
       )
     }
 
     for { bufSize <- List(0, 1, 5) } {
-      val chans: Seq[Chan[(Int, Int)]] = (0 until N).toList.map { case n: Int => Chan[(Int, Int)](s"chan$n", 4) }
+      val chans: Seq[Chan[(Int, Int)]] = (0 until N).toList.map { case n: Int => Chan[(Int, Int)](s"chan$n", 0) }
+
       val producers =
         ||(for {chan <- 0 until N} yield source[(Int, Int)](chans(chan), labelled(chan)))
+
       val merged = Chan.Shared(readers = 1, writers = N)[(Int, Int)]("merged", bufSize)
+
       var count = 0
-      println(s"Merge trial (output termination) (merge channel size = $bufSize)")
+      println(s"Merge trial $N producers (output termination) (merge channel size = $bufSize)")
       run(producers             ||
           merge(chans)(merged)  ||
-          sink(merged) { case (chan, n) => show(f"$chan%02d $n%02d @$count%02d"); if (n == 5) show("\n"); if (count==50) stop; count += 1 }
+          sink(merged) {
+            case (chan, n) =>
+              println(f"$chan%02d $n%02d @$count%02d")
+              if (count==27) stop
+              count += 1
+          }
       )
     }
 

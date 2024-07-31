@@ -8,7 +8,7 @@ import scala.sys.process.stdout
 trait testFramework {
   val logging: Boolean = true
 
-  val deadline: Nanoseconds = Time.seconds(5.0)
+  val deadline: Nanoseconds = Time.seconds(4.0)
 
   def test(): Unit
 
