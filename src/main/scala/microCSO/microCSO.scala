@@ -463,12 +463,12 @@ class SharedSyncChan[T](name: String, readers: Int=1, writers: Int = 1) extends 
 
   override def toString: String = s"SharedSyncChan.$name [readers=${readersLeft.get}/$readers, writers=${writersLeft.get}/$writers] $currentState"
 
-  override def closeIn(): Unit = withLock(rLock) {
-    if (readersLeft.decrementAndGet()<=0) super.close()
+  override def closeIn(): Unit =  {
+    if (readersLeft.decrementAndGet()==0) super.close()
   }
 
-  override def closeOut(): Unit = withLock (wLock) {
-    if (writersLeft.decrementAndGet()<=0) super.close()
+  override def closeOut(): Unit = {
+    if (writersLeft.decrementAndGet()==0) super.close()
   }
 
   override def ?(u: Unit): T = withLock(rLock) { super.?(()) }
@@ -517,12 +517,12 @@ class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers
   override def toString: String =
     s"SharedBufferedChan.$name [readers=${readersLeft.get}/$readers, writers=${writersLeft.get}/$writers] {$currentState}"
 
-  override def closeIn(): Unit = withLock(rLock) {
+  override def closeIn(): Unit = {
     Default.finer(s"$this.closeIn()")
     if (readersLeft.decrementAndGet()==0) super.close()
   }
 
-  override def closeOut(): Unit = withLock (wLock) {
+  override def closeOut(): Unit = {
     Default.finer(s"$this.closeOut()")
     if (writersLeft.decrementAndGet()==0) super.close()
   }
@@ -765,7 +765,13 @@ object RuntimeDatabase {
     vThreads.foreach{ case (_, thread) => f(thread)}
 
   /** remove from the database (when terminating) */
-  def remove(thread: Thread): Unit = vThreads.remove(thread.threadId)
+  def remove(thread: Thread): Unit = {
+    vThreads.remove(thread.threadId)
+    thread.getState match {
+      case Thread.State.TERMINATED => vLocals.remove(thread.threadId)
+      case _ =>
+    }
+  }
 
   /** add to the database (when starting) */
   def add(thread: Thread): Unit = vThreads += (thread.threadId -> thread)
@@ -780,6 +786,40 @@ object RuntimeDatabase {
   /** add to the database (when starting) */
   def addChannel(chan: Chan[_]): Unit = vChannels += (System.identityHashCode(chan) -> chan)
 
+  //////////////////////// local variables
+
+  type LocalKey = String
+  type LocalThunk = ()=> Any
+
+  val vLocals =
+    new scala.collection.concurrent.TrieMap[Long, scala.collection.concurrent.TrieMap[LocalKey, LocalThunk]]
+
+  def newLocal[V](key: String, value: =>V): Unit = {
+    val id  = Thread.currentThread().threadId
+    val map = vLocals.getOrElseUpdate(id, new scala.collection.concurrent.TrieMap[LocalKey, LocalThunk])
+    map += (key -> { () => value })
+  }
+
+  def forLocals(thread: Thread)(fun: (String, Any)=>Unit): Unit = {
+    val id  = thread.threadId
+    for { map <- vLocals.get(id) }
+        for { (k, thunk) <- map } fun(k, thunk())
+  }
+
+  /*
+  def setLocal[V](key: LocalKey, value: V): Unit = {
+    val id  = Thread.currentThread().threadId
+    val map = vLocals.get(id).get
+    map += (key->value)
+  }
+
+  def getLocal[V](key: LocalKey): V = {
+    val id  = Thread.currentThread().threadId
+    val map = vLocals.get(id).get
+    map.getOrElse(key, null).asInstanceOf[V]
+  }
+  */
+
 }
 
 object Threads {
@@ -789,7 +829,10 @@ object Threads {
 
 
   def showThreadTrace(thread: Thread, out: PrintStream) = {
-    println(thread)
+    out.println(thread)
+    RuntimeDatabase.forLocals(thread) {
+      case (key, value) => out.println(f"$key%8s -> $value%s")
+    }
     showStackTrace(thread.getStackTrace, out)
   }
 
@@ -803,7 +846,7 @@ object Threads {
       else
         out.println(unmangle(frame.toString))
     }
-    out.println("")
+    out.println()
   }
 
   def showThreadTrace(thread: Thread): Unit =
@@ -1495,13 +1538,17 @@ object portTools {
   }
 
   def source[T](out: OutPort[T], it: Iterable[T]): proc = proc (s"source($out,...)"){
-      repeatFor (it) { t => out!t }
+      var count = 0
+      RuntimeDatabase.newLocal("count", count)
+      repeatFor (it) { t => out!t; count += 1 }
       out.closeOut()
       Default.finer(s"source($out) closed")
   }
 
   def sink[T](in: InPort[T])(andThen: T=>Unit): proc = proc (s"sink($in)"){
-      repeatedly { in?andThen }
+      var count = 0
+      RuntimeDatabase.newLocal("count", count)
+      repeatedly { in?{ t => andThen(t); count+=1 } }
       in.closeIn()
       Default.finer(s"sink($in) closed")
   }

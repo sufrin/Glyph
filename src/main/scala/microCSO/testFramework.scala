@@ -24,7 +24,7 @@ trait testFramework {
       case (true, status)  => println(s"\n$p\n TERMINATED ($status)")
       case (false, status) =>
         println(s"\n$p\nTIMEOUT after ${deadline.toDouble/seconds(1.0)} seconds ($status)")
-        println("RuntimeDatabase:")
+        println("Runtime Information:")
         RuntimeDatabase.forEach {
           case thread: Thread =>
             RuntimeDatabase.remove(thread)
