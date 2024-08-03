@@ -193,7 +193,8 @@ object text {
       if (words.hasElement && words.element.w.ceil >= maxWidthfloor) {
         // it's a candidate for hyphenation (if it's text): but we'll just illuminate it
         // println(s"Oversize ${words.element} ${words.element.w} $maxWidth")
-        galley += words.element.framed(fg = Brush() col (0XFFFF0000))
+        // Row... "normalizes" atBaseline glyphs
+        galley += Row(words.element).framed(fg = Brush() col (0XFFFF0000))
         words.nextElement()
       } else {
         val (width, glyphs) = setLine()
@@ -263,7 +264,8 @@ object text {
           if (words.hasElement && words.element.w.ceil >= maxWidthfloor) {
             // it's a candidate for hyphenation (if it's text): but we'll just illuminate it
             // println(s"Oversize ${words.element} ${words.element.w} $maxWidth")
-            result = words.element.framed(fg = Brush() col (0XFFFF0000))
+            // Row... "normalizes" atBaseline glyphs
+            result = Row(words.element).framed(fg = Brush() col (0XFFFF0000))
             words.nextElement()
           } else {
             val (width, glyphs) = setLine()

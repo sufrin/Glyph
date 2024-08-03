@@ -12,6 +12,8 @@ trait Vec {
 
   override def toString: String = s"($x,$y)"
 
+  def whenPositive: Vec = if (x>0 && y>0) this else Vec.Zero
+
   def +(delta: Vec): Vec = Vec(x + delta.x, y + delta.y)
 
   def +(dx: Scalar, dy: Scalar): Vec = Vec(x + dx, y + dy)

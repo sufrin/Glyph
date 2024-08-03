@@ -121,10 +121,20 @@ object markup {
       def toGlyph(local: Context): Glyph = glyphTransform(derivedFrom.toGlyph(local))
     }
 
+    /**
+     * Measure the enlargement produced by the glyph transform `.framed(...)`
+     * This might be considered a wasteful method, but the alternative (dead-reckoning)
+     * would induce cross-module dependencies in its implementation.
+     */
+    object measureFrame {
+      val dummy = Glyphs.INVISIBLE()
+      def apply(fg: Brush, bg: Brush): Vec = dummy.framed(fg, bg).diagonal
+    }
+
     def framed(fg: Brush=DefaultBrushes.black, bg: Brush = DefaultBrushes.nothing): Element = new Element {
       def toGlyph(local: Context): Glyph = {
-        val inset = 2*fg.strokeWidth
-        val boundingBox  = Vec((local.boundingBox.x-inset) max 0, (local.boundingBox.y-inset) max 0)
+        val inset        = measureFrame(fg, bg)
+        val boundingBox  = (local.boundingBox - inset).whenPositive
         derivedFrom.toGlyph(local.copy(boundingBox = boundingBox)).framed(fg, bg)
       }
     }
@@ -309,16 +319,9 @@ object markup {
           val glyphs = local.parIndent() ++ body.map(_.toGlyph(local))
           // The overall width is determined by the context
           // If the bounding box is unspecified, then use the column width
-          val contextDeterminedWidth =
-            if (local.boundingBox.x==0) {
-              local.columnWidth
-            } else {
-              local.boundingBox.x.floor-emWidth
-            }
-
           val galley =
             styled.text.glyphParagraph(
-                 overallWidth = contextDeterminedWidth,
+                 overallWidth = if (local.boundingBox.x==0) local.columnWidth else local.boundingBox.x.floor,
                  align        = local.parAlign,
                  leftMargin   = (local.leftMargin) * emWidth,
                  rightMargin  = (local.rightMargin) * emWidth,

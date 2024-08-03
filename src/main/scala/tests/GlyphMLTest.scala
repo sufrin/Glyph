@@ -2,22 +2,22 @@ package org.sufrin.glyph
 package tests
 
 import markup._
-import Glyphs.nothing
+import Glyphs.{lightGrey, nothing}
 import GlyphTypes.Scalar
 import Styles.GlyphStyle
 
-class TopdownExample {
+class GlyphMLTest {
 
 }
 
-object TopdownExample extends Application {
+object GlyphMLTest extends Application {
 
   object LocalStyle extends Styles.DefaultSheet {
     override def buttonFontSize: Scalar = 32
     override def labelFontSize: Scalar = 24
     override def labelStyle: GlyphStyle = GlyphStyle(labelFont, buttonStyle.up.fg, buttonStyle.up.bg)
   }
-  val LocalContext: Context =
+  val Local: Context =
     Context(
       style        = LocalStyle,
       columnWidth  = 800f,
@@ -29,18 +29,17 @@ object TopdownExample extends Application {
       .labelStyle(fg=Glyphs.black, bg=Glyphs.nothing)
       .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
 
-  val GUI: Glyph = new PortmanteauGlyphML()(LocalStyle) {
+  val GUI: Glyph = new Resizeable(Local) {
     def element: Element = {
-      Text("""GlyphML is a domain-specific language embedded in Scala: its expressions denote Glyphs.
+      Text("""GlyphML is a domain-specific language embedded in Scala: its elements denote Glyphs.
              |
-             |The GlyphML API (which is still evolving rapidly) may eventually be slightly more convenient
+             |The GlyphML API (which is still evolving) may eventually be slightly more convenient
              |than the standard Glyphs API for interface designers who don't need to get to grips with its
              |underview.
              |
-             |There are a couple of important principles to get to grips with:
-             |""".stripMargin)
+             |""".stripMargin)(_.labelStyle(fg=DefaultBrushes.red)).framed(fg=DefaultBrushes.yellow strokeWidth 40f, bg=lightGrey)
     }
-  }.GUI
+  }
 
   override def title: String = "Topdown Example"
 
