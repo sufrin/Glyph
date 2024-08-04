@@ -399,6 +399,9 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    */
    def atSize(boundingBox: Vec): Glyph = this
 
+   /** False unless `atSize` will generate a distinct glyph */
+   def resizeable: Boolean = false
+
   /**
    *  A glyph derived from this glyph, and intended to be used for visual checks of geometry.
    *

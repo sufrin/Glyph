@@ -114,6 +114,8 @@ object markup {
       def toGlyph(local: Context): Glyph = derivedFrom.toGlyph(transformer(local))
     }
 
+    def unBounded(local: Context): Glyph = toGlyph(local.copy(boundingBox = Vec.Zero))
+
     /** Transform the inherited context locally while generating the glyph */
     def apply(transformer: ContextTransform): Element = this.locally(transformer)
 
@@ -138,6 +140,14 @@ object markup {
         derivedFrom.toGlyph(local.copy(boundingBox = boundingBox)).framed(fg, bg)
       }
     }
+
+    def scaled(wr: Scalar, hr: Scalar): Element = new Element {
+      def toGlyph(local: Context): Glyph = {
+        val Vec(bw, bh) = local.boundingBox
+        derivedFrom.toGlyph(local.copy(boundingBox = Vec(bw*wr, bh*hr)))
+      }
+    }
+
   }
 
   /**
@@ -185,6 +195,8 @@ object markup {
   abstract class Resizeable(context: Context) extends Glyph with GlyphTransforms {
       var delegate: Glyph = atSize(context.boundingBox)
 
+      override def resizeable: Boolean = true
+
       override def atSize(boundingBox: Vec): Glyph = {
         //print(s"atSize($boundingBox)")
         delegate = element.toGlyph(context.copy(boundingBox = boundingBox))
@@ -214,6 +226,34 @@ object markup {
       override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)
 
     }
+
+  case class Dynamic (select: Vec => Element) extends Element {
+    def toGlyph(local: Context): Glyph = {
+      val elt = select(local.boundingBox)
+      elt.toGlyph(local)
+    }
+  }
+
+  case class Beside(l1: Element, l2: Element) extends Element {
+    def toGlyph(local: Context): Glyph = {
+      val g1 = l1.toGlyph(local)
+      val g2 = l2.toGlyph(local)
+      NaturalSize.Row(local.fg, local.bg)(g1, g2)
+    }
+  }
+
+  case class Cached(initial: Context)(element: Element) extends Element {
+    var cached: Glyph = element.toGlyph(initial)
+    val originalW: Scalar = cached.diagonal.x
+    val originalH: Scalar = cached.diagonal.y
+    def diagonal: Vec = cached.diagonal
+    def w: Scalar = diagonal.x
+    def h: Scalar = diagonal.y
+    def toGlyph(local: Context): Glyph = {
+      cached = element.toGlyph(local)
+      cached
+    }
+  }
 
   /** A glyph viewed as a markup element */
   case class GlyphElement(glyph: Glyph) extends Element {

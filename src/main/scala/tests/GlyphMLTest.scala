@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package tests
 
 import markup._
-import Glyphs.{lightGrey, nothing}
+import Glyphs.{darkGrey, lightGrey, nothing}
 import GlyphTypes.Scalar
 import Styles.GlyphStyle
 
@@ -13,32 +13,87 @@ class GlyphMLTest {
 object GlyphMLTest extends Application {
 
   object LocalStyle extends Styles.DefaultSheet {
-    override def buttonFontSize: Scalar = 32
-    override def labelFontSize: Scalar = 24
+    override def buttonFontSize: Scalar = 22
+    override def labelFontSize: Scalar = 22
     override def labelStyle: GlyphStyle = GlyphStyle(labelFont, buttonStyle.up.fg, buttonStyle.up.bg)
   }
   val Local: Context =
     Context(
       style        = LocalStyle,
-      columnWidth  = 800f,
+      columnWidth  = 400f,
       leftMargin   = 0,
       rightMargin  = 0,
       parAlign     = Justify)
-      .copy(fontFamily=Family("Courier"))
-      .fontSize(28)
+      .copy(fontFamily=Family("Menlo"))
+      .fontSize(22)
       .labelStyle(fg=Glyphs.black, bg=Glyphs.nothing)
       .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
 
+  val t1 = Text("""GlyphML is a domain-specific language embedded in Scala: its elements denote Glyphs.
+                  |
+                  |The GlyphML API (which is still evolving) may eventually be slightly more convenient
+                  |than the standard Glyphs API for interface designers who don't need to get to grips with its
+                  |underview.
+                  |
+                  |""".stripMargin)(_.labelStyle(fg=DefaultBrushes.red)).framed(fg=DefaultBrushes.black strokeWidth 0, bg=lightGrey)
+
+  val t2 = Text("""This is an experiment in choosing the details of GUI layout dynamically.
+                  |
+                  |Initially these two paragraphs appear beside each other in their "natural" sizes
+                  |for the current context. But if the window is made long enough, they may
+                  |appear as a column.
+                  |
+                  |""".stripMargin)(_.labelStyle(fg=DefaultBrushes.red)).framed(fg=DefaultBrushes.black strokeWidth 0, bg=lightGrey)
+
+  val r1 = Cached(Local)(t1)
+  val r2 = Cached(Local)(t2)
+  val but: Glyph = styled.TextButton("(size)") {
+    _ =>
+      val root = r1.cached.guiRoot
+      val d = root.diagonal
+      println(d)
+      root.fixContentSize()
+      println(root.diagonal)
+  }(LocalStyle)
+  val sup: Glyph = styled.TextButton("(sup)") {
+    _ =>
+      val root = r1.cached.guiRoot
+      val d = root.diagonal
+      println(d)
+      root.setContentSize(Vec(r1.originalW+r2.originalW, r1.originalH+r2.originalH))
+      root.fixContentSize()
+      println(root.diagonal)
+  }(LocalStyle)
+  val `2w`: Glyph = styled.TextButton("(*2w)") {
+    _ =>
+      val root = r1.cached.guiRoot
+      val d = root.diagonal
+      println(d)
+      root.setContentSize(Vec(2*d.x, d.y/2))
+      root.fixContentSize()
+      println(root.diagonal)
+  }(LocalStyle)
+  val `2h`: Glyph = styled.TextButton("(*2h)") {
+    _ =>
+      val root = r1.cached.guiRoot
+      val d = root.diagonal
+      println(d)
+      root.setContentSize(Vec(d.x/2, 2*d.y))
+      root.fixContentSize()
+      println(root.diagonal)
+  }(LocalStyle)
+  val buts =  NaturalSize.Row(but, `2w`, `2h`, sup)
+
   val GUI: Glyph = new Resizeable(Local) {
-    def element: Element = {
-      Text("""GlyphML is a domain-specific language embedded in Scala: its elements denote Glyphs.
-             |
-             |The GlyphML API (which is still evolving) may eventually be slightly more convenient
-             |than the standard Glyphs API for interface designers who don't need to get to grips with its
-             |underview.
-             |
-             |""".stripMargin)(_.labelStyle(fg=DefaultBrushes.red)).framed(fg=DefaultBrushes.yellow strokeWidth 40f, bg=lightGrey)
-    }
+    /** An experiment in dynamic layout  */
+    def element: Element = Dynamic {
+      case Vec(0, 0) => Column(buts, Row(r1, r2))
+      case Vec(w, h) if (w-6>r1.w+r2.w) => Column(buts(), Row(r1, Glyphs.FilledRect(6, h, darkGrey), r2))
+      case Vec(w, h) if (h-6-buts.h>r1.h+r2.h) => Column(buts(), r1, Glyphs.FilledRect(w-50, 6, darkGrey), r2)
+      case _ =>
+          val tw = r1.w+r2.w
+          Column(buts, Row(r1.scaled(r1.w/tw, 1), r2.scaled(r2.w/tw, 1)))
+      }
   }
 
   override def title: String = "Topdown Example"

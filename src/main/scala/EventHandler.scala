@@ -284,7 +284,9 @@ trait EventHandler extends Consumer[Event] {
       }
 
       case mouse: EventMouseMove =>
+        // MouseState.discover(root.asInstanceOf[RootGlyph], mouse, window) // obsolescent
         val mouseLoc = mouseLocation(mouse.getX, mouse.getY)
+        root.asInstanceOf[RootGlyph].onMotion(mouseLoc)
         // println(s"$mouseLoc (scaled $scaleFactor) #grid{screen.getScale} $mouse")
         mouseFocus match {
           case Some(focussed) =>
@@ -332,7 +334,7 @@ trait EventHandler extends Consumer[Event] {
   object MouseState {
 
     val enterMargin = 6
-    val leaveMargin = 30
+    val leaveMargin = 6
 
     /** Is the mouse inside the window */
     var inside: Option[Boolean] = None

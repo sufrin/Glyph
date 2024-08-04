@@ -18,23 +18,51 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   import io.github.humbleui.jwm.App.runOnUIThread
   def copy(fg: Brush=this.fg, bg: Brush=this.bg) : Glyph = new RootGlyph(GUIroot)
 
+  var ignoreResizes: Int = 0
   /**
-   * Regenerate the root glyph to be of size (no more than) `(newW, newH)`.
-   * If the root glyph returns itself (the usual case), then the current Interaction's software scale
+   * Regenerate the `GUIroot` to be of size (no more than) `(newW, newH)`, if
+   * it is `resizeable`. Otherwise the current Interaction's software scale
    * is changed uniformly to accomodate the new window size.
+   *
+   * The next mouse motion following the resize causes the window to take on
+   * the dimensions of the new `GUIroot` -- this gets round the problem of
+   * a resize leaving new content in the wrong-shaped window. It would have been
+   * better if Skija told us the state of the mouse when it invokes the resize event,
+   * for then we could delay the recomputation of the content until the window size
+   * became stable.
    *
    * @param newW
    * @param newH
    */
   def resizeRoot(newW: Scalar, newH: Scalar): Unit = {
-     val newRoot = GUIroot.atSize(Vec(newW, newH))
-     if (newRoot ne GUIroot) {
-       GUIroot.parent = this
-       diagonal = GUIroot.diagonal
-     } else {
-       // Just change the global scale
-       eventHandler.softwareScale = newW/w min newH/h
+     if (GUIroot.resizeable) {
+       ignoreResizes -= 1
+       if (ignoreResizes<0) {
+         io.github.humbleui.jwm.App.runOnUIThread { ()=>
+           val newRoot = GUIroot.atSize(Vec(newW - 21f, newH - 21f)) // I HATE MAGIC: where do the deltas come from?
+           if (newRoot ne GUIroot) {
+             newRoot.parent = this
+             GUIroot.parent = this
+             diagonal = newRoot.diagonal
+             onNextMotion { fixContentSize() }
+           }
+         }
+       }
      }
+     else {
+       // Just change the global scale
+       eventHandler.softwareScale = newW / w min newH / h
+     }
+  }
+
+  def fixContentSize(): Unit = {
+    ignoreResizes = 1
+    rootWindow.setContentSize(diagonal.x.toInt, diagonal.y.toInt)
+  }
+
+  def setContentSize(diagonal: Vec): Unit = {
+    println(s"contentSize:=$diagonal")
+    rootWindow.setContentSize(diagonal.x.toInt, diagonal.y.toInt)
   }
 
   val fg: Brush = DefaultBrushes.invisible
@@ -304,11 +332,28 @@ def windowCloseRequest(w: Window): Unit = {
 
 var mouseInside: Option[Boolean] = None
 
+var _onMotion: Option[()=>Unit] = None
+
+def onNextMotion(action: => Unit): Unit = {
+    _onMotion = Some {()=>action}
+}
+
+def onMotion(mouseLoc: Vec): Unit = {
+  _onMotion match {
+    case None => ()
+    case Some(action) =>
+      _onMotion = None
+      action()
+  }
+}
+
 def acceptRootGlyphEvent(event: RootGlyphEvent, window: Window, handler: EventHandler): Unit = {
   if (handler.logEvents) println(event)
   event match {
-    case RootEnterEvent(window) => onRootEnter()
-    case RootLeaveEvent(window) => onRootLeave()
+    case RootEnterEvent(window) =>
+      onRootEnter()
+    case RootLeaveEvent(window) =>
+      onRootLeave()
   }
 }
 
