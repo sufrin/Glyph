@@ -23,15 +23,16 @@ object GlyphMLTest extends Application {
     Context(
       style        = LocalStyle,
       columnWidth  = 400f,
+      boundingBox  = Vec(400, 250),
       leftMargin   = 0,
       rightMargin  = 0,
       parAlign     = Justify)
-      .copy(fontFamily=Family("Menlo"))
+      .copy(fontFamily=Family("Arial"))
       .fontSize(22)
       .labelStyle(fg=Glyphs.black, bg=Glyphs.nothing)
       .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
       .frameStyle(Decoration.Blurred(fg=blue, blur=15f, spread=15f), fg=white)
-      //.frameStyle(fg=white, bg=blue, Decoration.Shaded(fg=blue, bg=darkGrey))
+      //.frameStyle(decoration=Decoration.Shaded(fg=blue, bg=darkGrey))
 
   val t1 = Text("""GlyphML is a domain-specific language embedded in Scala: its elements denote Glyphs.
                   |
@@ -49,27 +50,40 @@ object GlyphMLTest extends Application {
                   |
                   |""".stripMargin)(_.labelStyle(fg=DefaultBrushes.red)).framed(fg=DefaultBrushes.black strokeWidth 0, bg=lightGrey)
 
+  val anchor = Cached(Local)(INVISIBLE())
   val r1 = Cached(Local)(t1)
   val r2 = Cached(Local)(t2)
-  val but: Glyph = styled.TextButton("(track)") {
+  val traceOn: Glyph = styled.TextButton("Trace on") {
     _ =>
-      val root = r1.cached.guiRoot
+      val root = anchor.root
       root.decodeMotionModifiers(true)
       root.trackMouseState(true)
       RootGlyph.level=FINE
   }(Local.style)
+  val traceOff: Glyph = styled.TextButton("Trace off") {
+    _ =>
+      val root = anchor.root
+      root.decodeMotionModifiers(false)
+      root.trackMouseState(false)
+      RootGlyph.level=FINE
+  }(Local.style)
 
-  val buts =  NaturalSize.Row(but)
 
   val GUI: Glyph = Resizeable(Local) {
+    def menu =  MenuBar(Local)(traceOn, Gap, traceOff)
+    def splitRow(h: Scalar) = {
+      val tw = r1.w+r2.w
+      Column(menu, Row(r1.scaled(r1.w/tw, 1), Glyphs.FilledRect(6, h, darkGrey), r2.scaled(r2.w/tw, 1)))
+    }
+    def splitCol(w: Scalar) = {
+      val th = r1.h+r2.h
+      Column(Column(r1.scaled(1, r1.h/th), menu, r2.scaled(1, r2.h/th)))
+    }
     /** An experiment in dynamic layout  */
     Dynamic {
-      case Vec(0, 0) => Column(buts, Row(r1, r2))
-      case Vec(w, h) if (w-6>r1.w+r2.w) => Column(buts(), Row(r1, Glyphs.FilledRect(6, h, darkGrey), r2))
-      case Vec(w, h) if (h-6-buts.h>r1.h+r2.h) => Column(buts(), r1, Glyphs.FilledRect(w-50, 6, darkGrey), r2)
-      case _ =>
-          val tw = r1.w+r2.w
-          Column(buts, Row(r1.scaled(r1.w/tw, 1), r2.scaled(r2.w/tw, 1)))
+      case Vec(0, 0)        => splitCol(50f)
+      case Vec(w, h) if w>h => splitRow(h)
+      case Vec(w, h)        => splitCol(w)
       }
   }
 

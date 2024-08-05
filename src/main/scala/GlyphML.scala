@@ -69,17 +69,17 @@ object markup {
         copy(style=newStyle)
       }
 
-    def frameStyle(decoration: Decoration, fg: Brush=null, bg: Brush=null): Context = {
-      val ls    = this.style.buttonStyle.up
-      val nfg   = if (fg ne null) fg else ls.fg
-      val nbg   = if (bg ne null) bg else ls.bg
-      val newUp = this.style.buttonStyle.up.copy(fg=nfg, bg=nbg)
-      val newButtonStyle = this.style.buttonStyle.copy(up = newUp, frame=decoration)
-      val newStyle = new this.style.Derived {
-        override lazy val buttonStyle: ButtonStyle = newButtonStyle
+      def frameStyle(decoration: Decoration, fg: Brush=null, bg: Brush=null): Context = {
+        val ls    = this.style.buttonStyle.up
+        val nfg   = if (fg ne null) fg else ls.fg
+        val nbg   = if (bg ne null) bg else ls.bg
+        val newUp = this.style.buttonStyle.up.copy(fg=nfg, bg=nbg)
+        val newButtonStyle = this.style.buttonStyle.copy(up = newUp, frame=decoration)
+        val newStyle = new this.style.Derived {
+          override lazy val buttonStyle: ButtonStyle = newButtonStyle
+        }
+        copy(style=newStyle)
       }
-      copy(style=newStyle)
-    }
 
     def gridStyle(fg: Brush=this.fg, bg: Brush=this.bg, padX: Scalar=this.padX, padY: Scalar=this.padY): Context =
         copy(fg=fg, bg=bg, padX=padX, padY=padY)
@@ -193,7 +193,7 @@ object markup {
 
 
     /**
-     *   A glyph, whose appearance is the glyph denoted by the markup element
+     *   A glyph, whose appearance is denoted by the markup element
      *   delivered by `element`. It rebuilds its appearance at a given size on request.
      *   Its initial appearance is determined by `context`; and if the context hasn't
      *   set a positive `boundingBox`, this will be the "natural" (bottom-up)
@@ -240,12 +240,31 @@ object markup {
 
     }
 
+  /**
+   *   A glyph, whose appearance is denoted by the markup element
+   *   denoted by `theElement`. It rebuilds its appearance at a given size on request.
+   *   Its initial appearance is determined by `context`; and if the context hasn't
+   *   set a positive `boundingBox`, this will be the "natural" (bottom-up)
+   *   appearance determined by the rest of the context. Subsequent invocations of
+   *   `atSize(box: Vec)` regenerate the appearance using `context.copy(boundingBox=box)`
+   *
+   *   It is intended for use as the top-level `Glyph` of a GUI whose
+   *   window may be resized, and whose layout may need to be adapted to
+   *   the current size.
+   *
+   */
   object Resizeable {
-    def apply(context: Context)(body: => Element): Resizeable = new Resizeable(context) {
-      def element: Element = body
+    def apply(context: Context)(theElement: => Element): Resizeable = new Resizeable(context) {
+      def element: Element = theElement
     }
   }
 
+  /**
+   *   An `Element` whose appearance is determined dynamically
+   *   in `local: Context` by {{{
+   *   select(local.boundingBox).toGlyph(local)
+   *   }}}
+   */
   case class Dynamic (select: Vec => Element) extends Element {
     def toGlyph(local: Context): Glyph = {
       val elt = select(local.boundingBox)
@@ -253,21 +272,23 @@ object markup {
     }
   }
 
-  case class Beside(l1: Element, l2: Element) extends Element {
-    def toGlyph(local: Context): Glyph = {
-      val g1 = l1.toGlyph(local)
-      val g2 = l2.toGlyph(local)
-      NaturalSize.Row(local.fg, local.bg)(g1, g2)
-    }
+  case object Gap extends Element {
+    def toGlyph(local: Context): Glyph = FixedSize.Space.tab
+  }
+
+  case class MenuBar (local: Context)(elements: Element*) extends Element {
+    def toGlyph(local: Context): Glyph =
+      FixedSize.Row(local.boundingBox.x, local.fg, local.bg).atBottom$(elements.map(_.toGlyph(local)))
   }
 
   case class Cached(initial: Context)(element: Element) extends Element {
     var cached: Glyph = element.toGlyph(initial)
     val originalW: Scalar = cached.diagonal.x
     val originalH: Scalar = cached.diagonal.y
-    def diagonal: Vec = cached.diagonal
-    def w: Scalar = diagonal.x
-    def h: Scalar = diagonal.y
+    def root: RootGlyph   = cached.findRoot
+    def diagonal: Vec     = cached.diagonal
+    def w: Scalar         = diagonal.x
+    def h: Scalar         = diagonal.y
     def toGlyph(local: Context): Glyph = {
       cached = element.toGlyph(local)
       cached
