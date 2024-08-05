@@ -1,6 +1,12 @@
 package org.sufrin.glyph
 import GlyphTypes.Scalar
 
+import io.github.humbleui.jwm.{App, EventMouseMove}
+
+
+object RootGlyph extends org.sufrin.logging.Loggable {
+
+}
 
 /**
  * A top-level glyph that keeps track of the details of the host window of
@@ -21,15 +27,12 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   var ignoreResizes: Int = 0
   /**
    * Regenerate the `GUIroot` to be of size (no more than) `(newW, newH)`, if
-   * it is `resizeable`. Otherwise the current Interaction's software scale
+   * it is `resizeable`. Otherwise the current `Interaction`'s software scale
    * is changed uniformly to accomodate the new window size.
    *
    * The next mouse motion following the resize causes the window to take on
    * the dimensions of the new `GUIroot` -- this gets round the problem of
-   * a resize leaving new content in the wrong-shaped window. It would have been
-   * better if Skija told us the state of the mouse when it invokes the resize event,
-   * for then we could delay the recomputation of the content until the window size
-   * became stable.
+   * a resize leaving new content in the wrong-shaped window.
    *
    * @param newW
    * @param newH
@@ -311,13 +314,18 @@ val args: List[String] = Nil
 
 override def isRoot = true
 
-/**
- *  Invoke this if the cursor or the focus leaves the root window.
- *  Help for implementing "auto-popdown" of menu windows
- */
 
-def onRootLeave(): Unit = {}
-def onRootEnter(): Unit = {}
+def onRootLeave(): Unit = {
+  RootGlyph.fine(s"RootLeave($mouse)")
+}
+
+def onRootEnter(): Unit = {
+  RootGlyph.fine(s"RootEnter($mouse)")
+}
+
+def onFocus(in: Boolean): Unit = {
+  RootGlyph.fine(s"Focus($in)")
+}
 
 protected var _onCloseRequest: Option[Window => Unit] = None
 
@@ -332,23 +340,50 @@ def windowCloseRequest(w: Window): Unit = {
 
 var mouseInside: Option[Boolean] = None
 
-var _onMotion: Option[()=>Unit] = None
 
+var _onNextMotion: Option[()=>Unit] = None
+
+/**
+ * The `action` will be evaluated when the
+ * mouse next moves.
+ */
 def onNextMotion(action: => Unit): Unit = {
-    _onMotion = Some {()=>action}
+    _onNextMotion = Some {()=>action}
 }
 
-def onMotion(mouseLoc: Vec): Unit = {
-  _onMotion match {
+
+var _mouseLoc:              Vec = Vec.Zero
+var _decodeMotionModifiers: Boolean = false
+var _mouseModifiers:        Modifiers.Bitmap = 0
+var _mouseStateTracker:     MouseStateTracker = null
+def mouse: (Vec, Modifiers.Bitmap) =  (_mouseLoc, _mouseModifiers)
+def decodeMotionModifiers(enable: Boolean): Unit = _decodeMotionModifiers=enable
+def trackMouseState(enable: Boolean): Unit = {
+  if (enable)
+    _mouseStateTracker = new MouseStateTracker(thisRoot)
+  else
+    _mouseStateTracker = null
+}
+
+/**
+ * Unconditionally invoked by the event handler when the mouse moves.
+ * Tracks the current mouse location, and (when `_decodeMotionModifiers` is set)
+ * the current state of the modifiers. It also evaluates the currently
+ * declared `onNextMotion` action.
+ */
+def onMotion(mouseLoc: Vec, event: EventMouseMove): Unit = {
+  _mouseLoc = mouseLoc
+  if (_decodeMotionModifiers) _mouseModifiers = Modifiers(event)
+  _onNextMotion match {
     case None => ()
     case Some(action) =>
-      _onMotion = None
+      _onNextMotion = None
       action()
   }
+  if (_mouseStateTracker ne null) _mouseStateTracker.accept(event)
 }
 
-def acceptRootGlyphEvent(event: RootGlyphEvent, window: Window, handler: EventHandler): Unit = {
-  if (handler.logEvents) println(event)
+def acceptRootGlyphEvent(event: RootGlyphEvent): Unit = {
   event match {
     case RootEnterEvent(window) =>
       onRootEnter()
@@ -364,10 +399,9 @@ def acceptWindowEvent(event: Event, window: Window, handler: EventHandler): Unit
   if (handler.logEvents) println(f"$event%s 0x${window._ptr}%12x")
   event match {
     case _: EventWindowFocusOut =>
-      import io.github.humbleui.jwm.App
-      App.runOnUIThread(() => onRootLeave())
+      App.runOnUIThread(() => onFocus(false))
     case _: EventWindowFocusIn =>
-      rootWindow.requestFrame()
+      App.runOnUIThread(() => onFocus(true))
     case ev: EventWindowResize =>
       resizeRoot(ev.getContentWidth.toFloat, ev.getContentHeight.toFloat)
       rootWindow.requestFrame()

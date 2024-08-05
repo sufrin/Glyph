@@ -1,6 +1,7 @@
 package org.sufrin.glyph
 
-import Styles.GlyphStyle
+import Styles.{ButtonStyle, GlyphStyle}
+import Styles.Decoration.Decoration
 
 object markup {
   import java.io.{PrintWriter, StringWriter}
@@ -67,6 +68,18 @@ object markup {
         }
         copy(style=newStyle)
       }
+
+    def frameStyle(decoration: Decoration, fg: Brush=null, bg: Brush=null): Context = {
+      val ls    = this.style.buttonStyle.up
+      val nfg   = if (fg ne null) fg else ls.fg
+      val nbg   = if (bg ne null) bg else ls.bg
+      val newUp = this.style.buttonStyle.up.copy(fg=nfg, bg=nbg)
+      val newButtonStyle = this.style.buttonStyle.copy(up = newUp, frame=decoration)
+      val newStyle = new this.style.Derived {
+        override lazy val buttonStyle: ButtonStyle = newButtonStyle
+      }
+      copy(style=newStyle)
+    }
 
     def gridStyle(fg: Brush=this.fg, bg: Brush=this.bg, padX: Scalar=this.padX, padY: Scalar=this.padY): Context =
         copy(fg=fg, bg=bg, padX=padX, padY=padY)
@@ -226,6 +239,12 @@ object markup {
       override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)
 
     }
+
+  object Resizeable {
+    def apply(context: Context)(body: => Element): Resizeable = new Resizeable(context) {
+      def element: Element = body
+    }
+  }
 
   case class Dynamic (select: Vec => Element) extends Element {
     def toGlyph(local: Context): Glyph = {

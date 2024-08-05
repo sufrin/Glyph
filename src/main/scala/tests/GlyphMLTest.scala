@@ -2,9 +2,11 @@ package org.sufrin.glyph
 package tests
 
 import markup._
-import Glyphs.{darkGrey, lightGrey, nothing}
+import Glyphs._
 import GlyphTypes.Scalar
-import Styles.GlyphStyle
+import Styles.{Decoration, GlyphStyle}
+
+import org.sufrin.logging.FINE
 
 class GlyphMLTest {
 
@@ -28,6 +30,8 @@ object GlyphMLTest extends Application {
       .fontSize(22)
       .labelStyle(fg=Glyphs.black, bg=Glyphs.nothing)
       .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
+      .frameStyle(Decoration.Blurred(fg=blue, blur=15f, spread=15f), fg=white)
+      //.frameStyle(fg=white, bg=blue, Decoration.Shaded(fg=blue, bg=darkGrey))
 
   val t1 = Text("""GlyphML is a domain-specific language embedded in Scala: its elements denote Glyphs.
                   |
@@ -47,46 +51,19 @@ object GlyphMLTest extends Application {
 
   val r1 = Cached(Local)(t1)
   val r2 = Cached(Local)(t2)
-  val but: Glyph = styled.TextButton("(size)") {
+  val but: Glyph = styled.TextButton("(track)") {
     _ =>
       val root = r1.cached.guiRoot
-      val d = root.diagonal
-      println(d)
-      root.fixContentSize()
-      println(root.diagonal)
-  }(LocalStyle)
-  val sup: Glyph = styled.TextButton("(sup)") {
-    _ =>
-      val root = r1.cached.guiRoot
-      val d = root.diagonal
-      println(d)
-      root.setContentSize(Vec(r1.originalW+r2.originalW, r1.originalH+r2.originalH))
-      root.fixContentSize()
-      println(root.diagonal)
-  }(LocalStyle)
-  val `2w`: Glyph = styled.TextButton("(*2w)") {
-    _ =>
-      val root = r1.cached.guiRoot
-      val d = root.diagonal
-      println(d)
-      root.setContentSize(Vec(2*d.x, d.y/2))
-      root.fixContentSize()
-      println(root.diagonal)
-  }(LocalStyle)
-  val `2h`: Glyph = styled.TextButton("(*2h)") {
-    _ =>
-      val root = r1.cached.guiRoot
-      val d = root.diagonal
-      println(d)
-      root.setContentSize(Vec(d.x/2, 2*d.y))
-      root.fixContentSize()
-      println(root.diagonal)
-  }(LocalStyle)
-  val buts =  NaturalSize.Row(but, `2w`, `2h`, sup)
+      root.decodeMotionModifiers(true)
+      root.trackMouseState(true)
+      RootGlyph.level=FINE
+  }(Local.style)
 
-  val GUI: Glyph = new Resizeable(Local) {
+  val buts =  NaturalSize.Row(but)
+
+  val GUI: Glyph = Resizeable(Local) {
     /** An experiment in dynamic layout  */
-    def element: Element = Dynamic {
+    Dynamic {
       case Vec(0, 0) => Column(buts, Row(r1, r2))
       case Vec(w, h) if (w-6>r1.w+r2.w) => Column(buts(), Row(r1, Glyphs.FilledRect(6, h, darkGrey), r2))
       case Vec(w, h) if (h-6-buts.h>r1.h+r2.h) => Column(buts(), r1, Glyphs.FilledRect(w-50, 6, darkGrey), r2)
