@@ -25,6 +25,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   def copy(fg: Brush=this.fg, bg: Brush=this.bg) : Glyph = new RootGlyph(GUIroot)
 
   var ignoreResizes: Int = 0
+  var firstResize:   Boolean = true
   /**
    * Regenerate the `GUIroot` to be of size (no more than) `(newW, newH)`, if
    * it is `resizeable`. Otherwise the current `Interaction`'s software scale
@@ -36,18 +37,24 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    *
    * @param newW
    * @param newH
+   * @param force force the resizing
    */
-  def resizeRoot(newW: Scalar, newH: Scalar): Unit = {
+  def resizeRoot(newW: Scalar, newH: Scalar, force: Boolean = false): Unit = {
+     RootGlyph.fine(s"($newW,$newH)[force=$force] [first=$firstResize][$ignoreResizes]")
      if (GUIroot.resizeable) {
        ignoreResizes -= 1
-       if (ignoreResizes<0) {
+       if (force || ignoreResizes<0) {
          io.github.humbleui.jwm.App.runOnUIThread { ()=>
            val newRoot = GUIroot.atSize(Vec(newW - 21f, newH - 21f)) // I HATE MAGIC: where do the deltas come from?
            if (newRoot ne GUIroot) {
              newRoot.parent = this
              GUIroot.parent = this
              diagonal = newRoot.diagonal
-             onNextMotion { fixContentSize() }
+             if (force || firstResize) {
+               fixContentSize()
+               firstResize = false
+             } else
+               onNextMotion { fixContentSize() }
            }
          }
        }
@@ -58,6 +65,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
      }
   }
 
+  /** Set the window content size without recalculating based on the size  */
   def fixContentSize(): Unit = {
     ignoreResizes = 1
     rootWindow.setContentSize(diagonal.x.toInt, diagonal.y.toInt)

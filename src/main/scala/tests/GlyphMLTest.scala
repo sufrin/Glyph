@@ -22,7 +22,7 @@ object GlyphMLTest extends Application {
   val Local: Context =
     Context(
       style        = LocalStyle,
-      columnWidth  = 400f,
+      paragraphWidth  = 400,
       boundingBox  = Vec(400, 250),
       leftMargin   = 0,
       rightMargin  = 0,
@@ -32,15 +32,14 @@ object GlyphMLTest extends Application {
       .labelStyle(fg=Glyphs.black, bg=Glyphs.nothing)
       .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
       .frameStyle(Decoration.Blurred(fg=blue, blur=15f, spread=15f), fg=white)
+      .paragraphEms(45)
       //.frameStyle(decoration=Decoration.Shaded(fg=blue, bg=darkGrey))
 
   val t1 = Text("""GlyphML is a domain-specific language embedded in Scala: its elements denote Glyphs.
                   |
-                  |The GlyphML API (which is still evolving) may eventually be slightly more convenient
-                  |than the standard Glyphs API for interface designers who don't need to get to grips with its
-                  |underview.
+                  |Its API may  be somewhat more convenient for interface designers than the standard Glyphs API.
                   |
-                  |""".stripMargin)(_.labelStyle(fg=DefaultBrushes.red)).framed(fg=DefaultBrushes.black strokeWidth 0, bg=lightGrey)
+                  |""".stripMargin)(paragraphEms(25)).framed(fg=DefaultBrushes.black strokeWidth 2, bg=lightGrey)
 
   val t2 = Text("""This is an experiment in choosing the details of GUI layout dynamically.
                   |
@@ -48,42 +47,54 @@ object GlyphMLTest extends Application {
                   |for the current context. But if the window is made long enough, they may
                   |appear as a column.
                   |
-                  |""".stripMargin)(_.labelStyle(fg=DefaultBrushes.red)).framed(fg=DefaultBrushes.black strokeWidth 0, bg=lightGrey)
+                  |""".stripMargin)(paragraphEms(25)).framed(fg=DefaultBrushes.black strokeWidth 2, bg=lightGrey)
 
-  val anchor = Cached(Local)(INVISIBLE())
   val r1 = Cached(Local)(t1)
   val r2 = Cached(Local)(t2)
-  val traceOn: Glyph = styled.TextButton("Trace on") {
+  val anchor = r1
+
+  lazy val traceOn: Glyph = styled.TextButton("Trace on") {
     _ =>
-      val root = anchor.root
+      val root = traceOn.findRoot
       root.decodeMotionModifiers(true)
       root.trackMouseState(true)
       RootGlyph.level=FINE
   }(Local.style)
-  val traceOff: Glyph = styled.TextButton("Trace off") {
+
+  lazy val traceOff: Glyph = styled.TextButton("Trace off") {
     _ =>
-      val root = anchor.root
+      val root = traceOff.findRoot
       root.decodeMotionModifiers(false)
       root.trackMouseState(false)
       RootGlyph.level=FINE
   }(Local.style)
 
+  lazy val rowLayout: Glyph = styled.TextButton("Row layout") {
+    _ => rowLayout.findRoot.resizeRoot(r1.originalW+r2.originalW+550, r1.originalH+r2.originalH, force=true)
+  }(Local.style)
+
+  lazy val colLayout: Glyph = styled.TextButton("Column layout") {
+    _ => colLayout.findRoot.resizeRoot(r1.originalW max r2.originalW, r1.originalH+r2.originalH+550, force=true)
+  }(Local.style)
 
   val GUI: Glyph = Resizeable(Local) {
-    def menu =  MenuBar(Local)(traceOn, Gap, traceOff)
-    def splitRow(h: Scalar) = {
-      val tw = r1.w+r2.w
-      Column(menu, Row(r1.scaled(r1.w/tw, 1), Glyphs.FilledRect(6, h, darkGrey), r2.scaled(r2.w/tw, 1)))
+
+    def menuBar =  MenuBar(Local)(traceOn(), Gap, traceOff)
+    def sideBar =  SideBar(Local)(traceOn(), Gap, traceOff)
+    def sizeBar =  Column(rowLayout, colLayout, traceOn)
+
+    def splitRow(w: Scalar, h: Scalar) = {
+      FixedWidth(w)(sideBar, Glyphs.FilledRect(6, h, darkGrey), r1, Gap, Glyphs.FilledRect(6, h, nothing), Gap, r2)
     }
-    def splitCol(w: Scalar) = {
-      val th = r1.h+r2.h
-      Column(Column(r1.scaled(1, r1.h/th), menu, r2.scaled(1, r2.h/th)))
+
+    def splitCol(w: Scalar, h: Scalar) = {
+      FixedHeight(h)(menuBar, r1, Gap, r2)
     }
-    /** An experiment in dynamic layout  */
+
     Dynamic {
-      case Vec(0, 0)        => splitCol(50f)
-      case Vec(w, h) if w>h => splitRow(h)
-      case Vec(w, h)        => splitCol(w)
+      case Vec(w, h) if w>=r1.originalW+r2.originalW => splitRow(w, h)
+      case Vec(w, h) if h>=r1.originalH+r2.originalH => splitCol(w, h)
+      case _ => sizeBar.framed(fg=red, bg=nothing)
       }
   }
 

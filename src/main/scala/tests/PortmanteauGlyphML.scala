@@ -8,7 +8,7 @@ class PortmanteauGlyphML(implicit sheet: StyleSheet) {
   import markup._
   implicit val local: Context =
     Context(     style        = sheet,
-                 columnWidth  = 800f,
+                 paragraphWidth  = 800f,
                  leftMargin   = 0,
                  rightMargin  = 0,
                  parAlign     = Justify,
@@ -41,7 +41,7 @@ class PortmanteauGlyphML(implicit sheet: StyleSheet) {
           |
           |For example, the current
           |section of text has enumerated paragraphs, is framed, and is  narrower than those surrounding it.
-          |""".stripMargin)(parEnum(1))(fontSize(20))(margins(5, 5)).framed(fg=blue),
+          |""".stripMargin)(parEnum(1))(fontSize(20))(indentPoints(5, 5)).framed(fg=blue),
       Text(
         """The Text expression denoting the framed section above used
           |context transforms and an element transform as follows:
