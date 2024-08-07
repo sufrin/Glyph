@@ -10,69 +10,110 @@ object RootGlyph extends org.sufrin.logging.Loggable {
 
 /**
  * A top-level glyph that keeps track of the details of the host window of
- * the GUIrootGUIroot; its geometry, etc. Wrapping a glyph in one of these
+ * the `Glyph GUIroot`; its geometry, etc. Wrapping a glyph in one of these
  * makes it possible to provide ``global'' services (such a popups)
  * from reactive glyphs without them needing to refer to a global object.
  *
- * These glyphs are inserted automatically when an `Interaction` is constructed
- * from a `Window` and the root of an application-specific glyph tree.
+ * `RootGlyph`s are inserted automatically when an `Interaction` is constructed
+ * from a `Window` and the root `Glyph`  `GUIroot` of an application-specific glyph tree.
  *
- * //TODO: can we now dispense with the Envelope, since we have to implement most Glyph features here now anyway.
+ * Note:
+ *
+ * This class has become a repository for the many methods and services needed to mediate between
+ * the very large variety of reactive glyphs and the window-system/event-handler. At some point it may
+ * be advantageous to refactor/modularize its functionality; but for the moment convenience lures.
+ *
+ * There is no principled reason why most variables and methods here are public -- indeed some of them should
+ * be less universally accessible than this.
  */
 class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   import io.github.humbleui.jwm.{Event, EventKey, Screen, Window}
   import io.github.humbleui.jwm.App.runOnUIThread
   def copy(fg: Brush=this.fg, bg: Brush=this.bg) : Glyph = new RootGlyph(GUIroot)
 
-  var ignoreResizes: Int = 0
-  var firstResize:   Boolean = true
   /**
-   * Regenerate the `GUIroot` to be of size (no more than) `(newW, newH)`, if
-   * it is `resizeable`. Otherwise the current `Interaction`'s software scale
-   * is changed uniformly to accomodate the new window size.
+   *  When a window size changes, automatically scale its non-resizeable GUIs when they are not (programmatically)
+   *  `resizeable`. This can be changed at any time.
+   */
+  var autoScale: Boolean = false
+
+  /** Ignore the next `rootWindowResized`.
+   *  Used only when the `autoScale` path through `rootWindowResized` is
+   *  taken.
+   */
+  private var ignoreResize: Boolean = false
+
+  /**
+   * Regenerate the `GUIroot` to be of size (no more than) `(newW, newH)` if
+   * it is `resizeable`. Otherwise, if `autoScale` is true the current `Interaction`'s software scale
+   * is changed uniformly to accomodate the new window size. Otherwise resynchronize the
+   * window size to its original value, and thereby appear to refuse to change in response
+   * to a manual window-size change.
    *
-   * The next mouse motion following the resize causes the window to take on
-   * the dimensions of the new `GUIroot` -- this gets round the problem of
-   * a resize leaving new content in the wrong-shaped window.
+   * Invoked by the `EventManager` (with force=false) and from one or two
+   * active glyphs (with force=true).
+   *
    *
    * @param newW
    * @param newH
    * @param force force the resizing
+   *
    */
-  def resizeRoot(newW: Scalar, newH: Scalar, force: Boolean = false): Unit = {
-     RootGlyph.fine(s"($newW,$newH)[force=$force] [first=$firstResize][$ignoreResizes]")
+  def rootWindowResized(newW: Scalar, newH: Scalar, force: Boolean = false): Unit = {
+     RootGlyph.fine(s"($newW,$newH)[force=$force]")
+     if (ignoreResize) {
+       ignoreResize = false
+     } else
      if (GUIroot.resizeable) {
-       ignoreResizes -= 1
-       if (force || ignoreResizes<0) {
+       if (force || newW!=diagonal.x || newH!=diagonal.y) {
          io.github.humbleui.jwm.App.runOnUIThread { ()=>
-           val newRoot = GUIroot.atSize(Vec(newW - 21f, newH - 21f)) // I HATE MAGIC: where do the deltas come from?
+           val newRoot = GUIroot.atSize(Vec(newW, newH))
            if (newRoot ne GUIroot) {
              newRoot.parent = this
              GUIroot.parent = this
              diagonal = newRoot.diagonal
-             if (force || firstResize) {
-               fixContentSize()
-               firstResize = false
-             } else
-               onNextMotion { fixContentSize() }
+             RootGlyph.fine(s"=>$diagonal[force=$force]")
+             // While the window is being manually resized, presence of the following
+             // line will suppress visual feedback until the new root has changed dimension.
+             // This is not necessarily a bad thing
+             // syncWindowContentSize()
+             onNextMotion { syncWindowContentSize() }
            }
          }
        }
      }
+     else
+     if (autoScale) {
+         // Change the software display scaling to reflect the new window size
+         val newScale = newW / w min newH / h
+         val oldScale = eventHandler.softwareScale
+         eventHandler.softwareScale = newScale
+         if (oldScale != newScale) {
+           ignoreResize = true
+           setWindowContentSize(diagonal.scaled(newScale))
+         }
+     }
      else {
-       // Just change the global scale
-       eventHandler.softwareScale = newW / w min newH / h
+       // Don't permit a manual resize
+       syncWindowContentSize()
      }
   }
 
-  /** Set the window content size without recalculating based on the size  */
-  def fixContentSize(): Unit = {
-    ignoreResizes = 1
+  /**
+   *  Synchronize the window's content bounding box with this glyph's bounding
+   *  box. The subsequent `rootWindowResized` will not cause the root layout
+   *  to be recalculated.
+   */
+  def syncWindowContentSize(): Unit = {
     rootWindow.setContentSize(diagonal.x.toInt, diagonal.y.toInt)
   }
 
-  def setContentSize(diagonal: Vec): Unit = {
-    println(s"contentSize:=$diagonal")
+  /**
+   * Force the window's content bounding box to be `diagonal`, and accept a
+   * subsequent `rootWindowResized` notification.
+   * @param diagonal
+   */
+  def setWindowContentSize(diagonal: Vec): Unit = {
     rootWindow.setContentSize(diagonal.x.toInt, diagonal.y.toInt)
   }
 
@@ -411,7 +452,7 @@ def acceptWindowEvent(event: Event, window: Window, handler: EventHandler): Unit
     case _: EventWindowFocusIn =>
       App.runOnUIThread(() => onFocus(true))
     case ev: EventWindowResize =>
-      resizeRoot(ev.getContentWidth.toFloat, ev.getContentHeight.toFloat)
+      rootWindowResized(ev.getContentWidth.toFloat, ev.getContentHeight.toFloat)
       rootWindow.requestFrame()
     case _: EventWindowMove =>
       // also when resized by moving a corner or an edge

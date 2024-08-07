@@ -70,11 +70,11 @@ object GlyphMLTest extends Application {
   }(Local.style)
 
   lazy val rowLayout: Glyph = styled.TextButton("Row layout") {
-    _ => rowLayout.findRoot.resizeRoot(r1.originalW+r2.originalW+550, r1.originalH+r2.originalH, force=true)
+    _ => rowLayout.findRoot.rootWindowResized(r1.originalW+r2.originalW+550, r1.originalH+r2.originalH, force=true)
   }(Local.style)
 
   lazy val colLayout: Glyph = styled.TextButton("Column layout") {
-    _ => colLayout.findRoot.resizeRoot(r1.originalW max r2.originalW, r1.originalH+r2.originalH+550, force=true)
+    _ => colLayout.findRoot.rootWindowResized(r1.originalW max r2.originalW, r1.originalH+r2.originalH+550, force=true)
   }(Local.style)
 
   val GUI: Glyph = Resizeable(Local) {

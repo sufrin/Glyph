@@ -12,7 +12,7 @@ import io.github.humbleui.jwm.EventMouseMove
  * outside" the window and away from it.
  *
  * When an object of this class is used to follow the mouse it triggers
- * `enteringWindow` and `leavingWindow` methods when
+ * `enteringWindow` and `leavingWindow` methods in `root: RootGlyph` when
  * motion events a arising in `root.rootWindow` are delivered to it
  * by invocations of:
  *
