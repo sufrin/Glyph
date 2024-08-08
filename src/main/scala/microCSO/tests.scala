@@ -544,99 +544,57 @@ object testEvents extends testFramework {
     Default.level=INFO
 
 
-    def testServe(): Unit = {
-      println(s"testServe()")
-      import Time._
-      val c = Chan[Int]("c", 0)
-      val listen = proc("listen") {
-        altBefore(50*milliSec, afterDeadline={ show("==")}, orElse = { println("finished")})(
-          c =?=> { x =>  show(s"$x") }
-        )
-        serveBefore(50*milliSec, afterDeadline={ show("*")}, orElse = { println("finished")})(
-          c =?=> { x =>  show(s"$x") }
-        )
-      }
-      val speak= proc("speak") {
-        sleep(150*milliSec)
-        for { i<-0 until 3} {
-          c!i
-          sleep(100*milliSec)
-        }
-        c.closeOut()
-      }
-      run(speak||listen)
-    }
 
-    def testAlt(): Unit = {
-      println(s"testAlt()")
-      val l = Chan[String]("l", 0)
-      val c = Chan[String]("c", 0)
-      val r = Chan[String]("r", 0)
-      val stops = proc ("stops") {
-        println("Started")
-        altBefore(orElse={ println("Nothing open")})(
-          l =?=> { x => show(x) },
-          r =?=> { x => show(x) },
-          c =?=> { x => show(x) }
-        )
 
-        altBefore(orElse={ println("Nothing open")})(
-          l =?=> { x => show(x) },
-          r =?=> { x => show(x) },
-          c =?=> { x => show(x) }
-        )
 
-        alt(
-          l =?=> { x => show(x) },
-          r =?=> { x => show(x) },
-          c =?=> { x => show(x) }
-        )
-      }
-
-      val closes = proc("closes") {
-        withPorts (l, c, r) {
-          Time.sleep(seconds(1))
-          println("Closing l")
-          l.closeIn()
-          Time.sleep(seconds(1))
-          println("Closing r")
-          r.closeIn()
-          Time.sleep(seconds(1))
-          println("Closing c")
-          c.closeIn()
-        }
-      }
-      run(stops || closes)
-    }
-
-    def testWrite(): Unit =
-    { println(s"testWrite()")
-      val l = Chan[String]("l", 0)
-      val c = Chan[(String,String)]("c", 0)
-      val r = Chan[String]("r", 0)
+    def testReadWrite(capacity: Int): Unit =
+    { val level = OFF
+      println(s"testReadWrite($capacity)")
+      val l = Chan[String]("l", capacity).withLogLevel(level)
+      val c = Chan[(String,String)]("c", capacity).withLogLevel(level)
+      val d = Chan[(String,String)]("d", capacity).withLogLevel(level)
+      val r = Chan[String]("r", capacity).withLogLevel(level)
       var m, n = 0
+      var going = 0
 
-      println((l.out && n < 10))
-
-
-      val count = proc("io") {
-        serve(
-          (l && n < 20) =!=> { n += 1; s"$n" }
-          ,
-          (r && m < 20) =!=> { m += 1; sleepms(35); s"$m" }
-        )
-        r.closeOut()
-        l.closeOut()
+      val source = proc("Source") {
+        withPorts(l, r, d, c) {
+          serve(
+            (l && (n < 20)) =!=> {
+              n += 1; s"$n"
+            }
+            ,
+            (r && (m < 20)) =!=> {
+              m += 1; sleepms(15); s"$m"
+            }
+            ,
+            (c && going < 21) =?=> {
+              case s =>
+                d ! s
+                going += 1
+                if (going==20) {
+                  l.closeOut()
+                  r.closeOut()
+                }
+            }
+            // without guarding c the serve loop livelocks
+          )
+          c.info(s"$c")
+          Default.info("Source finished")
+        }
       }
-      run(count || zip(l, r)(c) || sink(c){ s => println(s) })
+      frun(source || zip(l, r)(c) || sink(d){ s => println(s) })
     }
+
+    testReadWrite(0)
+    testReadWrite(4)
 
     def testCopy(capacity: Int): Unit =
     { println(s"testCopy($capacity)")
-      val l = Chan[String]("l", capacity)
-      val c = Chan[(String,String)]("c", capacity)
-      val d = Chan[(String,String)]("d", capacity)
-      val r = Chan[String]("r", capacity)
+      val l = Chan[String]("l", capacity).withLogLevel(FINEST)
+      val c = Chan[(String,String)]("c", capacity).withLogLevel(FINEST)
+      val d = Chan[(String,String)]("d", capacity).withLogLevel(FINEST)
+      val r = Chan[String]("r", capacity).withLogLevel(FINEST)
       var m, n = 0
 
       def copy[T](i: InPort[T], o: OutPort[T]): process = proc(s"xfer($i,$o)"){
@@ -648,8 +606,6 @@ object testEvents extends testFramework {
             (o && buf.isDefined) =!=> { val t = buf.get; buf=None; t }
           )
           Default.info("Copy finished")
-          i.closeIn()
-          o.closeOut()
         }
         println(s"$i\n$o\n")
       }
@@ -666,75 +622,136 @@ object testEvents extends testFramework {
             }
           )
           Default.info("Source finished")
-          l.closeOut()
-          r.closeOut()
           println(s"$l\n$r\n")
         }
       }
       run(source || zip(l, r)(c) || copy(c, d) || sink(d){ s => println(s) })
     }
 
-    def testReadWrite(capacity: Int): Unit =
-    { println(s"testReadWrite($capacity)")
-      val l = Chan[String]("l", capacity)
-      val c = Chan[(String,String)]("c", capacity)
-      val d = Chan[(String,String)]("d", capacity)
-      val r = Chan[String]("r", capacity)
-      var m, n = 0
+    //+ testCopy(0)
+    //+ testCopy(1)
 
-      val source = proc("Source") {
-        withPorts(l, c, r, d) {
-          serve(
-            (l && n < 20) =!=> {
-              n += 1; s"$n"
-            }
-            ,
-            (r && m < 20) =!=> {
-              m += 1; sleepms(15); s"$m"
-            }
-            ,
-            c =?=> {
-              case s =>
-                d ! s
-                if (s==("20", "20")) { d ! ("CLOSING C", ""); c.close() }
-            }
-            // NB:  without c.close() c =?=> { s => d!s } keeps the serve loop alive (until interrupted) because
-            // c hasn't yet been closed, and the input event remains enabled
-            //
-          )
-          Default.info("Source finished")
-        }
-        println(s"$l\n$c\n$r\n$d\n")
-      }
-      run(source || zip(l, r)(c) || sink(d){ s => println(s) })
-    }
-
-    def testRead(): Unit =
+    def testReadEvents(): Unit =
     { val l = Chan[String]("l", 0)
       val c = Chan[String]("c", 0)
       val r = Chan[String]("r", 0)
 
-      val lev = l =?=> { s: String => show(s"l:$s") } // `??`(() => true, l, { s: String => println(s"l $s") })
-      val cev = c =?=> { s: String => show(s"c:$s") }
-      val rev = r =?=> { s: String => show(s"r:$s") }
+      val lev = l =?=> { s: String => show(s"[l:$s]") }
+      val cev = c =?=> { s: String => show(s"[c:$s]") }
+      val rev = r =?=> { s: String => show(s"[r:$s]") }
 
       val server: process = proc("serve") {
         serve(lev, rev, cev)
         Default.finer(s"serve() terminated")
       }
 
-      run(server || source(c, "my dog has fleas".split(' ')) || source(l, (0 until 20).map(_.toString)) || source(r, (100 until 120).map(_.toString)))
+      run( server
+        || source(c, "my dog has fleas".split(' '))
+        || source(l, (1 to 20).map(_.toString))
+        || source(r, (100 to 120).map(_.toString))
+      )
     }
 
-    testReadWrite(0)
-    testReadWrite(4)
+    //+ testReadEvents()
 
-    testCopy(0)
-    testCopy(1)
-    testWrite()
-    testRead()
-    testAlt()
-    testServe()
+    def testWriteEvents(): Unit =
+    { println(s"testWriteEvents()")
+      val l = Chan[String]("l", 0)
+      val c = Chan[(String,String)]("c", 0)
+      val r = Chan[String]("r", 0)
+      var m, n = 0
+
+      val lrOutput = proc("lrOutput") {
+        withPorts(l, r) {
+          serve(
+            (l && n < 20) =!=> { n += 1; s"$n" }
+            ,
+            (r && m < 20) =!=> { m += 1; sleepms(35); s"$m" }
+          )
+        }
+      }
+      run(lrOutput || zip(l, r)(c) || sink(c){ s => show(s"$s") })
+    }
+
+    //+ testWriteEvents()
+
+    def testAltBefore(): Unit = {
+      println(s"testAltBefore() [Nothing ppen twice; then an alternation failure]")
+      val l = Chan[String]("l", 0)
+      val c = Chan[String]("c", 0)
+      val r = Chan[String]("r", 0)
+      val stops = proc ("stops") {
+        val started = Time.milliTime
+        println("Started")
+
+        altBefore(seconds(0.5), orElse={ println(s"Nothing open @ ${Time.milliTime-started}")})(
+          l =?=> { x => show(x) },
+          r =?=> { x => show(x) },
+          c =?=> { x => show(x) }
+        )
+
+        altBefore(orElse={ println(s"Nothing open @ ${Time.milliTime-started}")})(
+          l =?=> { x => show(x) },
+          r =?=> { x => show(x) },
+          c =?=> { x => show(x) }
+        )
+
+        alt(
+          l =?=> { x => show(x) },
+          r =?=> { x => show(x) },
+          c =?=> { x => show(x) }
+        )
+      }
+
+      val closes = proc("closes") {
+        withPorts (l, c, r) {
+          l!"HELLO"
+          Time.sleep(seconds(1))
+          println("Closing l")
+          l.closeIn()
+          Time.sleep(seconds(1))
+          println("Closing r")
+          r.closeIn()
+          Time.sleep(seconds(1))
+          println("Closing c")
+          c.closeIn()
+        }
+      }
+      run(stops || closes)
+    }
+
+    //+ testAltBefore()
+
+    def testServe(): Unit = {
+      println(s"testServe() []")
+      import Time._
+      val c = Chan[Int]("c", 0)
+      val listen = proc("listen") {
+        val start = Time.milliTime
+        def now= Time.milliTime-start
+
+        altBefore(50*milliSec, afterDeadline={ show(s"==@$now")}, orElse = { println("finished")})(
+          c =?=> { x =>  show(s"[$x@$now]") }
+        )
+
+        serveBefore(50*milliSec, afterDeadline={ show("*")}, orElse = { println("finished")})(
+          c =?=> { x =>  show(s"{$x@$now}") }
+        )
+      }
+
+      val speak= proc("speak") {
+        sleep(180*milliSec)         // any shorter delay here meets the altBefore deadline.
+        for { i<-0 until 3} {
+          c!i
+          sleep(100*milliSec)
+        }
+        sleep(1000*milliSec)
+        c.closeOut()
+      }
+      run(speak||listen)
+    }
+
+    // + testServe()
   }
 }
 

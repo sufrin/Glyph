@@ -4,6 +4,11 @@ import org.sufrin.logging.Loggable
 import org.sufrin.microCSO.altTools.InOut
 
 trait Chan[T] extends OutPort[T] with InPort[T] with Loggable {
+  def withLogLevel(logLevel: Int): this.type =
+  { level = logLevel
+    this
+  }
+
   /** Capture (an approximation to) the current state for debugger components */
   def currentState: String
 

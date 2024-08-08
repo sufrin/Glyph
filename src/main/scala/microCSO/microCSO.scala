@@ -99,12 +99,9 @@ trait InPort[T] extends Closeable { port: InPort[T] =>
 }
 
 case class GuardedPort[T](guard: () => Boolean, port: Port[T]) {
-  Default.fine(s"GuardedPort(..., $port)")
   def =?=> (f: T=>Unit): altTools.??[T]  = altTools.`??`(()=>true, port.asIn, f)
   def =!=> (value: =>T): altTools.!![T]  = altTools.`!!`(guard, port.asOut, ()=>value)
 }
-
-
 
 
 object Time {
@@ -213,10 +210,6 @@ object Time {
 
 
 }
-
-
-
-
 
 
 /** Database of running processes, and channels   */
@@ -686,22 +679,16 @@ object proc extends serialNamer {
   }
 }
 
-object altTools {
-  val logging = false
+
+
+object altTools  {
   private final val nanoDelta: Nanoseconds = 5*microSec
-
-  import AltOutcome._
-  trait Event {}
-  case class `??`[T](guard: () => Boolean, port: InPort[T],  f: T => Unit) extends Event
-  case class `!!`[T](guard: () => Boolean, port: OutPort[T], f: () => T) extends Event
-  case class `Or-Else`(eval: ()=>Unit)
-  case class `After-NS`(ns: Nanoseconds, eval: ()=>Unit)
-
 
   trait Port[T] {
     def asIn:  InPort[T]  = null
     def asOut: OutPort[T] = null
   }
+
 
   case class Out[T](port: OutPort[T]) extends Port[T] { override def asOut = port }
   case class In[T](port: InPort[T]) extends Port[T]   { override def asIn: InPort[T] = port }
@@ -709,6 +696,14 @@ object altTools {
     override def asIn: InPort[T]   = chan.in
     override def asOut: OutPort[T] = chan.out
   }
+
+  trait Event
+  case class `??`[T](guard: () => Boolean, port: InPort[T],  f: T => Unit) extends Event
+  case class `!!`[T](guard: () => Boolean, port: OutPort[T], f: () => T) extends Event
+  case class `Or-Else`(eval: ()=>Unit)
+  case class `After-NS`(ns: Nanoseconds, eval: ()=>Unit)
+
+  import AltOutcome._
 
   /**
    *  Repeatedly find and fire one of the `events`, until
@@ -851,9 +846,9 @@ object altTools {
     var waiting = true
     var remainingTime = deadline
     val hasDeadline   = remainingTime>0
+
     while (waiting) {
-      val (feasible, result) = fireFirst(events)
-      if (logging) Default.finest(s"$result event retrying ($feasible) $remainingTime")
+      val (feasibles, result) = fireFirst(events)
       // result is OK or all events refused or infeasible
       result match {
         case OK =>
@@ -862,8 +857,9 @@ object altTools {
           waiting = false
         case CLOSED | NO =>
           // no event seen on this pass fired
-          if (feasible == 0) {
+          if (feasibles == 0) {
             // now nothing CAN happen
+            // print("* "); System.out.flush()
             outcome = false
             waiting = false
           } else if (hasDeadline && remainingTime<=0) {
@@ -887,12 +883,11 @@ object altTools {
   @inline private final def fireFirst(events: Seq[Event]): (Int, AltOutcome) = {
     var outcome:  AltOutcome = NO
     var feasible: Int = 0
-    // feasibles are the events that might be ready
-    if (logging) Default.finer(s"fireFirst $events")
     val feasibles = events.filter{
       case `!!`(guard, port, _) => guard() && port.canWrite
       case `??`(guard, port, _) => guard() && port.canRead
     }
+    //if (feasibles.isEmpty) Default.finer(s"fireFirst ${feasibles.length} feasible")
     val iter: Iterator[Event] = feasibles.iterator
     // find and fire the first ready event
     while (outcome!=OK && iter.hasNext) {
@@ -900,9 +895,12 @@ object altTools {
         case `!!`(guard, port, f) =>
             outcome = port.offer(f)
             outcome match {
-              case OK => feasible += 1
-              case _  =>
-            }
+              case OK =>
+                feasible += 1
+              case CLOSED =>
+                outcome = CLOSED
+              case NO     =>
+                outcome = NO            }
         case `??`(guard, port, f) =>
             val result = new AltResult[Any]
             port.poll(result) match {
@@ -918,6 +916,7 @@ object altTools {
       }
     }
     // outcome==OK || all events refused or infeasible // TODO: need to distinguish?
+    // Default.finer(s"fireFirst $feasible/${feasibles.length} $outcome")
     (feasibles.length, outcome)
   }
 

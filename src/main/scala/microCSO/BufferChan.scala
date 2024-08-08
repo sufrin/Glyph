@@ -18,6 +18,7 @@ import scala.collection.mutable
  * @tparam T
  */
 class BufferChan[T](name: String, capacity: Int) extends Chan[T] {
+  override def className: String = s"BufferChan.$name($capacity)"
 
   private[this] val reader, writer                      = new AtomicReference[Thread]
   private[this] val inputClosed, outputClosed, closed   = new AtomicBoolean(false)
@@ -39,14 +40,11 @@ class BufferChan[T](name: String, capacity: Int) extends Chan[T] {
       if (ww == null && wr == null) "-"
       else {
         if (ww != null)
-          if (!isEmpty)
-            s"!($buffer) from ${ww.getName}"
-          else
-            s"! from ${ww.getName}"
+           s"![from ${ww.getName}]"
         else
-          s"? from ${wr.getName}"
+           s"?[from ${wr.getName}]"
       }
-    result
+    s"$result (${buffer.length}/${capacity})"
   }
 
   override def toString: String =
@@ -121,8 +119,8 @@ class BufferChan[T](name: String, capacity: Int) extends Chan[T] {
     result
   }
 
-  def canRead: Boolean  = canInput
-  def canWrite: Boolean = canOutput
+  def canRead: Boolean  = !inputClosed.get
+  def canWrite: Boolean = !inputClosed.get
 
   def canInput: Boolean = !inputClosed.get && !isEmpty
 
@@ -134,7 +132,7 @@ class BufferChan[T](name: String, capacity: Int) extends Chan[T] {
     }
   }
 
-  def canOutput: Boolean = !outputClosed.get
+  def canOutput: Boolean = !outputClosed.get && !isFull
 
   def closeOut(): Unit = {
     if (logging) finer(s"$this CLOSING OUTPUT")

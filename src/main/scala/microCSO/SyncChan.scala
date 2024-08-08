@@ -18,6 +18,7 @@ import java.util.concurrent.locks.LockSupport
  * @tparam T
  */
 class SyncChan[T](name: String) extends Chan[T] {
+  override def className: String = s"SyncChan.$name"
 
   private[this] val reader, writer = new AtomicReference[Thread]
   private[this] val closed, full   = new AtomicBoolean(false)
@@ -129,7 +130,7 @@ class SyncChan[T](name: String) extends Chan[T] {
       if (logging) finer(s"$this CLOSED")
       LockSupport.unpark( reader.getAndSet(null) ) // Force a waiting reader to continue **
       LockSupport.unpark( writer.getAndSet(null) ) // Force a waiting writer to continue ***
-      //***RuntimeDatabase.removeChannel(this)// Debugger no longer interested
+      RuntimeDatabase.removeChannel(this)// Debugger no longer interested
     }
   }
 
