@@ -1,6 +1,6 @@
 package org.sufrin.microCSO
 
-import org.sufrin.logging.{Default, FINEST, INFO}
+import org.sufrin.logging.{Default, FINEST, INFO, OFF}
 import org.sufrin.microCSO.portTools._
 import org.sufrin.microCSO.proc._
 import org.sufrin.microCSO.termination._
@@ -141,16 +141,23 @@ object testParAndTermination extends testFramework {
     }
   }
 
-/** Tests zipping   */
+/**
+ *  A test of the termination protocols that
+ *  exposes late reactions to peers closing. Or,
+ *  to be more precise, /exposed/. The `zip`
+ *  loop restarts its reader at each
+ *  iteration; and the reads need to be terminated
+ *  if the output ports close as well as if they succeed.
+ */
 object testZip extends testFramework {
   def test(): Unit = {
 
-    for {bufSize <- List(100, 50, 30, 2)} {
+    for {zbuf<-List(0, 4); bufSize <- List(0, 1, 30)} {
       if (logging) Default.level = INFO
-      if (logging) Default.info(s"Zip trial $bufSize")
+      if (logging) Default.info(s"Zip trial $bufSize (zipped: $zbuf)")
       val as = Chan[Int]("as", bufSize)
       val bs = Chan[Int]("bs", bufSize)
-      val zipped = Chan[(Int, Int)]("zipped", 10)
+      val zipped = Chan[(Int, Int)]("zipped", zbuf)
       run(
         source(as, (1 to 25).toList)
           || source(bs, (1 to 35).toList)
@@ -160,39 +167,37 @@ object testZip extends testFramework {
     }
 
 
-    for {bufSize <- List(30, 2, 0)} {
+    for {zbuf<-List(0, 10); bufSize <- List(30, 2, 0)} {
       if (logging) Default.level = INFO
-      if (logging) Default.info(s"Zip trial $bufSize taking 15")
+      if (logging) Default.info(s"Zip trial $bufSize taking 15 (zipped: $zbuf)")
       val as = Chan[Int]("as", bufSize)
       val bs = Chan[Int]("bs", bufSize)
-      val zipped = Chan[(Int, Int)]("zipped", 10)
-      run(
-        source(as, (1 to 25).toList)
-          || source(bs, (1 to 35).toList)
-          || zip(as, bs)(zipped)
-          || proc("take 15") {
-          for {_ <- 0 until 15} show(s"${zipped ? ()}")
-          zipped.closeIn()
-        }
+      val zipped = Chan[(Int, Int)]("zipped", zbuf)
+      run( source(as, (1 to 25).toList)
+        || source(bs, (1 to 35).toList)
+        || zip(as, bs)(zipped)
+        || proc("take 15") {
+            for {_ <- 0 until 15} show(s"${zipped ? ()}")
+            zipped.closeIn()
+           }
       )
     }
 
     for {bufSize <- List(30, 2, 0)} {
       if (logging) Default.level = INFO
-      if (logging) Default.info(s"Zip trial $bufSize taking 15")
+      if (logging) Default.info(s"Zip trial $bufSize taking triples up to k")
       val as = Chan[Int]("as", bufSize)
       val bs = Chan[Int]("bs", bufSize)
       val cs = Chan[Char]("cs", bufSize)
       val zipped = Chan[(Int, Int, Char)]("zipped", 100)
-      run(
-             source(as, (1 to 25).toList)
-          || source(bs, (1 to 35).toList)
-          || source(cs, "abcdefghijk")
-          || zip(as, bs, cs)(zipped)
-          || proc("take 15") {
+      run( source(as, (1 to 25).toList)
+        || source(bs, (1 to 35).toList)
+        || source(cs, "abcdefghijk")
+        || zip(as, bs, cs)(zipped)
+        || proc("take 15") {
                for {_ <- 0 until 150} show(s"${zipped ? ()}")
                zipped.closeIn()
-             }
+           }
       )
     }
 
@@ -264,12 +269,22 @@ object testSharing extends testFramework {
     val unshared: Chan[Int] = Chan[Int]("Unshared Buffered", 2)
     frun((source(unshared, 0 until 16) || sink(unshared) { n => show(s" $n") }))
 
-    println("===================== Convergent unshared/buffered termination test")
-    val conv: Chan[Int] = Chan[Int]("Converge", 2)
-    frun((source(conv, 0 until 160)  ||
-          source(conv, 16 until 320) ||
+    println("===================== Convergent unshared/buffered termination test [EXPECT AN OVERTAKING ERROR]")
+    val conv: Chan[Int] = Chan[Int]("Converge", 16)
+    frun((source(conv, 1 to 20)  ||
+          source(conv,  21 to 50) ||
           sink(conv) { n => show(s" $n"); if (n==20) Time.sleepms(20) }
         ))
+
+    println("===================== Convergent shared/buffered termination test")
+
+    {
+      val conv: Chan[Int] = Chan.Shared(writers=2, readers=1)[Int]("Converge", 16)
+      frun((source(conv,  1 to 20) ||
+        source(conv, 21 to 50) ||
+        sink(conv) { n => show(s" $n"); if (n == 20) Time.sleepms(20) }
+        ))
+    }
 
     println("===================== Shared unbuffered linear termination test")
     val shared: Chan[Int] = Chan.Shared(readers = 1, writers = 1)[Int]("Shared", 0)
@@ -436,10 +451,10 @@ object testPolling extends testFramework {
 
     println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Polls/buffered")
 
-    writerPoller(Chan[Int]("ch1", 10))(0.0001, 20)(0.0001, 20)
-    writerPoller(Chan[Int]("ch1", 10))(0.0001, 20)(0.0002, 20)
-    writerPoller(Chan[Int]("ch1", 10))(0.0001, 10)(0.0004, 30)
-    writerPoller(Chan[Int]("ch1", 20))(0.0001, 20)(0.0006, 20)
+    writerPoller(Chan[Int]("ch1(10)", 10))(0.0001, 20)(0.0001, 20)
+    writerPoller(Chan[Int]("ch1(10)", 10))(0.0001, 20)(0.0002, 20)
+    writerPoller(Chan[Int]("ch1(10)", 10))(0.0001, 10)(0.0004, 30)
+    writerPoller(Chan[Int]("ch1(20)", 20))(0.0001, 20)(0.0006, 20)
 
     println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Polls/unbuffered")
 
@@ -449,10 +464,10 @@ object testPolling extends testFramework {
     writerPoller(Chan[Int]("ch1", 0))(0.0001, 20)(0.0006, 20)
 
     println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Offers/buffered")
-    offererReader(Chan[Int]("ch1", 10))(0.0001, 20)(0.0001, 20)
-    offererReader(Chan[Int]("ch1", 10))(0.002, 20)(0.0001, 20)
-    offererReader(Chan[Int]("ch1", 10))(0.004, 10)(0.0001, 30)
-    offererReader(Chan[Int]("ch1", 20))(0.002, 20)(0.0001, 20)
+    offererReader(Chan[Int]("ch1(10)", 10))(0.0001, 20)(0.0001, 20)
+    offererReader(Chan[Int]("ch1(10)", 10))(0.002, 20)(0.0001, 20)
+    offererReader(Chan[Int]("ch1(10)", 10))(0.004, 10)(0.0001, 30)
+    offererReader(Chan[Int]("ch1(20)", 20))(0.002, 20)(0.0001, 20)
 
 
     println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Offers/unbuffered")
@@ -465,12 +480,17 @@ object testPolling extends testFramework {
 
 }
 
+/**
+ *  Tests `Serve` functionality using the portTools.merge` component.
+ *  Among other things this test demonstrated the importance of getting
+ *  readers and writers counts correct on (nominally) shared channels.
+ */
 object testMerge extends testFramework {
-  val N: Int = 4
+  val N: Int = 2
   def labelled(n: Int): Iterable[(Int, Int)] = for {i <- 0 until 10} yield (n, i)
 
   def test(): Unit = {
-    Default.level = FINEST
+    portTools.level = OFF
     for {bufSize <- List(0, 1, 5)} {
 
       val chans: Seq[Chan[(Int, Int)]] = (0 until N).toList.map { case n: Int => Chan[(Int, Int)](s"chan$n", 0) }
@@ -478,13 +498,15 @@ object testMerge extends testFramework {
       val producers =
         ||(for {chan <- 0 until N} yield source[(Int, Int)](chans(chan), labelled(chan)))
 
-      val merged = Chan.Shared(readers = 1, writers = N)[(Int, Int)]("merged", bufSize)
+      // No need for the sharing; but when I got the writers count wrong the failure to close
+      // caused sink(merged) below to deadlock at the top of its read loop.
+      val merged = Chan.Shared(readers = 1, writers = 1)[(Int, Int)]("merged", bufSize)
 
       var count = 0
       println(s"Merge trial $N producers (merge channel buffer size = $bufSize)")
-      run( producers
+      frun( producers
         || merge(chans)(merged)
-        || sink(merged) { case (chan, n) => println(f"$chan%02d $n%02d @$count%02d"); count += 1 }
+        || sink(merged) { case (chan, n) => show(f"[$chan%02d->$n%02d@$count%02d]"); count += 1 }
       )
     }
 
@@ -494,15 +516,19 @@ object testMerge extends testFramework {
       val producers =
         ||(for {chan <- 0 until N} yield source[(Int, Int)](chans(chan), labelled(chan)))
 
-      val merged = Chan.Shared(readers = 1, writers = N)[(Int, Int)]("merged", bufSize)
+      val merged = Chan[(Int, Int)]("merged", bufSize)
 
       var count = 0
       println(s"Merge trial $N producers (output termination) (merge channel size = $bufSize)")
+      println(s"This also demonstrates selective logging of channel events")
+      for { chan <- chans } chan.level = FINEST
+      portTools.level=FINEST
+      merged.level=FINEST
       run(producers             ||
           merge(chans)(merged)  ||
           sink(merged) {
             case (chan, n) =>
-              println(f"$chan%02d $n%02d @$count%02d")
+              show(f"[$chan%02d->$n%02d@$count%02d]")
               if (count==27) stop
               count += 1
           }
@@ -519,6 +545,7 @@ object testEvents extends testFramework {
 
 
     def testServe(): Unit = {
+      println(s"testServe()")
       import Time._
       val c = Chan[Int]("c", 0)
       val listen = proc("listen") {
@@ -541,6 +568,7 @@ object testEvents extends testFramework {
     }
 
     def testAlt(): Unit = {
+      println(s"testAlt()")
       val l = Chan[String]("l", 0)
       val c = Chan[String]("c", 0)
       val r = Chan[String]("r", 0)
@@ -582,7 +610,8 @@ object testEvents extends testFramework {
     }
 
     def testWrite(): Unit =
-    { val l = Chan[String]("l", 0)
+    { println(s"testWrite()")
+      val l = Chan[String]("l", 0)
       val c = Chan[(String,String)]("c", 0)
       val r = Chan[String]("r", 0)
       var m, n = 0
@@ -602,11 +631,12 @@ object testEvents extends testFramework {
       run(count || zip(l, r)(c) || sink(c){ s => println(s) })
     }
 
-    def testCopy(): Unit =
-    { val l = Chan[String]("l", 1)
-      val c = Chan[(String,String)]("c", 1)
-      val d = Chan[(String,String)]("d", 1)
-      val r = Chan[String]("r", 1)
+    def testCopy(capacity: Int): Unit =
+    { println(s"testCopy($capacity)")
+      val l = Chan[String]("l", capacity)
+      val c = Chan[(String,String)]("c", capacity)
+      val d = Chan[(String,String)]("d", capacity)
+      val r = Chan[String]("r", capacity)
       var m, n = 0
 
       def copy[T](i: InPort[T], o: OutPort[T]): process = proc(s"xfer($i,$o)"){
@@ -618,7 +648,10 @@ object testEvents extends testFramework {
             (o && buf.isDefined) =!=> { val t = buf.get; buf=None; t }
           )
           Default.info("Copy finished")
+          i.closeIn()
+          o.closeOut()
         }
+        println(s"$i\n$o\n")
       }
 
       val source = proc("Source") {
@@ -633,16 +666,20 @@ object testEvents extends testFramework {
             }
           )
           Default.info("Source finished")
+          l.closeOut()
+          r.closeOut()
+          println(s"$l\n$r\n")
         }
       }
       run(source || zip(l, r)(c) || copy(c, d) || sink(d){ s => println(s) })
     }
 
-    def testReadWrite(): Unit =
-    { val l = Chan[String]("l", 1)
-      val c = Chan[(String,String)]("c", 1)
-      val d = Chan[(String,String)]("d", 1)
-      val r = Chan[String]("r", 1)
+    def testReadWrite(capacity: Int): Unit =
+    { println(s"testReadWrite($capacity)")
+      val l = Chan[String]("l", capacity)
+      val c = Chan[(String,String)]("c", capacity)
+      val d = Chan[(String,String)]("d", capacity)
+      val r = Chan[String]("r", capacity)
       var m, n = 0
 
       val source = proc("Source") {
@@ -659,14 +696,15 @@ object testEvents extends testFramework {
             c =?=> {
               case s =>
                 d ! s
-                if (s==("20", "20")) { d ! ("CLOSING C", ""); c.closeIn() }
+                if (s==("20", "20")) { d ! ("CLOSING C", ""); c.close() }
             }
-            // NB:  c =?=> { s => d!s } keeps the serve loop alive (until interrupted) because
+            // NB:  without c.close() c =?=> { s => d!s } keeps the serve loop alive (until interrupted) because
             // c hasn't yet been closed, and the input event remains enabled
             //
           )
           Default.info("Source finished")
         }
+        println(s"$l\n$c\n$r\n$d\n")
       }
       run(source || zip(l, r)(c) || sink(d){ s => println(s) })
     }
@@ -688,8 +726,11 @@ object testEvents extends testFramework {
       run(server || source(c, "my dog has fleas".split(' ')) || source(l, (0 until 20).map(_.toString)) || source(r, (100 until 120).map(_.toString)))
     }
 
-    testReadWrite()
-    testCopy()
+    testReadWrite(0)
+    testReadWrite(4)
+
+    testCopy(0)
+    testCopy(1)
     testWrite()
     testRead()
     testAlt()

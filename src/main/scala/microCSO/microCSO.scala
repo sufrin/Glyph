@@ -8,13 +8,12 @@ package org.sufrin.microCSO
 
 import org.sufrin.logging._
 import org.sufrin.microCSO.termination._
-import org.sufrin.microCSO.Time.Nanoseconds
+import org.sufrin.microCSO.Time.{microSec, Nanoseconds}
 import org.sufrin.microCSO.altTools._
 import org.sufrin.microCSO.proc.{repeatedly, stop}
 
-import java.util.concurrent.{LinkedBlockingQueue, TimeUnit}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import java.util.concurrent.locks.LockSupport
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 
 
 trait Closeable {
@@ -106,20 +105,6 @@ case class GuardedPort[T](guard: () => Boolean, port: Port[T]) {
 }
 
 
-trait Chan[T] extends OutPort[T] with InPort[T] {
-  /** Capture (an approximation to) the current state for debugger components */
-  def currentState: String
-
-  /** Close both ports of this channel */
-  override def close(): Unit = {
-    closeIn()
-    closeOut()
-  }
-
-  /** The guard notation (from a channel) supports either outport or inport events  */
-  override def &&(guard: => Boolean): GuardedPort[T] =
-           GuardedPort[T](() => guard, InOut(this))
-}
 
 
 object Time {
@@ -229,523 +214,10 @@ object Time {
 
 }
 
-/**
- * A non-shared synchronized (unbuffered) channel with the given `name`. When `c` is
- * such a channel, the termination of `c!v` (in a writing process) is synchronized with that
- * of `c?()` in a (distinct) reading process. The event is called a rendezvous: thje first
- * process to arrive at the rendezvous awaits the second. If more than one reader arrives
- * before a writer (or vice-versa) the channel detects that it is being shared; but this
- * heuristic for detecting sharing is not complete, because a consumer that repeatedly
- * consumes at a faster rate than two producers will not be detectable this way.
- *
- * @param name
- * @tparam T
- */
-class SyncChan[T](name: String) extends Chan[T] {
 
-  private[this] val reader, writer = new AtomicReference[Thread]
-  private[this] val closed, full   = new AtomicBoolean(false)
-  private[this] var buffer: T = _
 
-  locally { RuntimeDatabase.addChannel(this) }
 
 
-
-
-
-  /**
-   *  Capture (an approximation to) the current state for debugger components
-   */
-  def currentState: String = {
-    val wr = reader.get
-    val ww = writer.get
-    val result =
-      if (ww == null && wr == null) "-"
-      else {
-        if (ww != null)
-          if (full.get)
-            s"!($buffer) from ${ww.getName}"
-          else
-            s"! from ${ww.getName}"
-        else
-          s"? from ${wr.getName}"
-      }
-    result
-  }
-
-  override def toString: String =
-    s"""SyncChan.${this.name} $currentState"""
-
-  /**
-   *  Behaves as !(t()) when a reader is already committed
-   */
-  def offer(t: ()=>T): AltOutcome = {
-    if (closed.get) AltOutcome.CLOSED else
-    if (full.get)   AltOutcome.NO else {
-      val peer = reader.get()
-      if (peer==null) AltOutcome.NO else {
-        val value = t()
-        this.!(value)
-        AltOutcome.OK
-      }
-    }
-  }
-
-  def !(value: T) = {
-    checkOpen
-    val current = Thread.currentThread
-    val lastWriter = writer.getAndSet(current)
-    assert(
-      lastWriter == null,
-      s"[${current.getName}]$name!($value) overtaking [${lastWriter.getName}]$name!($buffer)"
-    )
-    buffer = value
-    full.set(true)
-    LockSupport.unpark(reader.get)  // DELIVER BUFFER TO READER
-    while (!closed.get && full.get) // AWAIT SYNC FROM READER
-    {
-      LockSupport.park(this)
-    }
-    if (full.get) checkOpen         // *** (see close) []
-    writer.set(null)                // READY
-  }
-
-  /** Behaves as `result.set(?())` when  a writer is already committed */
-  def poll(result: AltResult[T]): AltOutcome = {
-    if (closed.get)
-      AltOutcome.CLOSED
-    else
-    if (full.get) {
-      result.set(this.?(()))
-      AltOutcome.OK
-    }
-    else
-      AltOutcome.NO
-  }
-
-  def ?(t: Unit): T = {
-    checkOpen
-    val current     = Thread.currentThread
-    val lastReader  = reader.getAndSet(current)
-    assert(
-      lastReader == null,
-      s"[${current.getName}]$name?() overtaking [${lastReader.getName}]$name?()"
-    )
-    while (!closed.get && !full.get)  // AWAIT BUFFER
-    {
-      LockSupport.park(this)
-    }
-    checkOpen                       // ** (see close)
-    val result = buffer             // ## (cf. ?? at ##)
-    buffer = null.asInstanceOf[T]   // For the garbage-collector
-    reader.set(null)
-    full.set(false)                 // EMPTY BUFFER; READY
-    LockSupport.unpark(writer.get)  // SYNC WRITER
-    result
-  }
-
-  /**
-   * Fully close this channel for both input and output.
-   */
-  override def close(): Unit = {
-    if (!closed.getAndSet(true)) { // closing is idempotent
-      LockSupport.unpark(
-        reader.getAndSet(null)
-      ) // Force a waiting reader to continue **
-      LockSupport.unpark(
-        writer.getAndSet(null)
-      ) // Force a waiting writer to continue ***
-      RuntimeDatabase.removeChannel(this)// Debugger no longer interested
-    }
-  }
-
-  def canRead: Boolean  = !closed.get
-  def canWrite: Boolean = !closed.get
-
-  /** Extended rendezvous read & compute, then sync */
-  override def ??[U](f: T => U): U = {
-    checkOpen
-    val current = Thread.currentThread
-    val lastReader = reader.getAndSet(current)
-    assert(
-      lastReader == null,
-      s"[${current.getName}]$name??() overtaking [${lastReader.getName}]$name??()"
-    )
-    while (!closed.get && !full.get) {
-      LockSupport.park(this)
-    }
-    checkOpen                     // ** (see close)
-    val result = f(buffer)        // ## compute before the write sync: (cf. ? at ##)
-    buffer = null.asInstanceOf[T] // For the garbage collector
-    reader.set(null)
-    full.set(false)               // EMPTY BUFFER; READY
-    LockSupport.unpark(writer.get)// SYNC WRITER
-    result
-  }
-
-  def canInput: Boolean = !closed.get
-
-  def closeIn(): Unit = close()
-
-  def canOutput: Boolean = !closed.get
-
-  def closeOut(): Unit = close()
-
-  @inline private[this] def checkOpen =
-    if (closed.get) {
-      writer.set(null)
-      reader.set(null)
-      throw new termination.Closed(name)
-    }
-
-  def readBefore(timeoutNS: Time.Nanoseconds): Option[T] = {
-    val current = Thread.currentThread
-    assert(
-      reader.get == null,
-      s"[${current.getName}]$name?() overtaking [${reader.get.getName}]$name?()"
-    )
-    checkOpen
-    reader.set(current)
-    val success =
-      0 < Time.parkUntilElapsedOr(this, timeoutNS, closed.get || full.get)
-    checkOpen
-    val result = buffer
-    buffer = null.asInstanceOf[T]
-    reader.set(null)
-    full.set(false)
-    LockSupport.unpark(writer.get)
-    if (success) Some(result) else None
-  }
-
-  def writeBefore(timeoutNS: Time.Nanoseconds)(value: T): Boolean = {
-    assert(
-      writer.get == null,
-      s"$name!($value) from ${Thread.currentThread.getName} overtaking $name!($buffer) [${writer.get.getName}]"
-    )
-    checkOpen
-    buffer = value
-    val current = Thread.currentThread
-    writer.set(current)
-    full.set(true)
-    LockSupport.unpark(reader.getAndSet(null))
-    var success =
-      0 < Time.parkUntilElapsedOr(this, timeoutNS, closed.get || !full.get)
-    if (!success) full.set(false)
-    writer.set(null)
-    checkOpen
-    success
-  }
-
-}
-
-/**
- *  A shareable synchronized channel (for completeness) made from an
- *  underlying synchronized channel. Processes
- *  sharing the channel wait (in `Lock` queues) for reading (or writing)
- *  methods to be available. This contrasts with the underlying
- *  channel in which (inadvertently-sharing) readers (writers) MAY (but shouldn't)
- *  overetake each other.
- *
- *  The channel closes at the last invocation of `closeIn`,
- *  or the last invocation of `closeOut`.
- */
-class SharedSyncChan[T](name: String, readers: Int=1, writers: Int = 1) extends SyncChan[T](name) {
-  import java.util.concurrent.locks.{ReentrantLock => Lock}
-  val rLock, wLock = new Lock()
-
-  @inline final def withLock[T](lock: Lock) ( body: => T ): T = {
-    lock.lock()
-    try { body } catch { case exn: Throwable => throw exn } finally { lock.unlock() }
-  }
-
-  val readersLeft = new AtomicLong(readers)
-  val writersLeft = new AtomicLong(writers)
-
-  override def toString: String = s"SharedSyncChan.$name [readers=${readersLeft.get}/$readers, writers=${writersLeft.get}/$writers] $currentState"
-
-  override def closeIn(): Unit =  {
-    if (readersLeft.decrementAndGet()==0) super.close()
-  }
-
-  override def closeOut(): Unit = {
-    if (writersLeft.decrementAndGet()==0) super.close()
-  }
-
-  override def ?(u: Unit): T = withLock(rLock) { super.?(()) }
-  override def !(t: T): Unit = withLock(wLock) { super.!(t) }
-
-  override def readBefore(timeoutNS: Nanoseconds): Option[T] = withLock(rLock) { super.readBefore(timeoutNS) }
-  override def writeBefore(timeoutNS: Nanoseconds)(value: T) = withLock(wLock) { super.writeBefore(timeoutNS)(value) }
-  override def poll(result: AltResult[T]): AltOutcome = withLock(rLock) { super.poll(result) }
-  override def offer(t: ()=>T): AltOutcome = withLock(wLock) { super.offer(t) }
-
-}
-
-/**
- * A shared buffered channel with the given name and `capacity`, expected to
- * be closed for input (exactly) `readers` times; and for output
- * exactly `writers` times. In these situations we say the channel is
- * "fully closed" (for input / for output).
- *
- * Either `readers` or `writers` can be zero: in which case the reading (writing)
- * side of the channel remains open until the other side is fully closed. If they
- * are both zero then the channel is never closed by `closeIn()` or `closeOut()`,
- * but can still be closed by `close()`.
- *
- * Reads will continue to succeed while the buffer is nonempty -- even
- * when the channel is fully closed for output. Writes will succeed if
- * the channel is neither fully closed for input or for output.
- *
- * @param name
- * @param capacity
- * @param readers
- * @param writers
- * @tparam T
- */
-class SharedBufferedChan[T](name: String, capacity: Int, readers: Int=1, writers: Int=1) extends BufferedChan[T](name, capacity) {
-  import java.util.concurrent.locks.{ReentrantLock => Lock}
-  val rLock, wLock = new Lock()
-
-  @inline private final def withLock[T](lock: Lock) ( body: => T ): T = {
-    lock.lockInterruptibly()
-    try { body } finally { lock.unlock() }
-  }
-
-  val readersLeft = new AtomicLong(readers)
-  val writersLeft = new AtomicLong(writers)
-
-  override def toString: String =
-    s"SharedBufferedChan.$name [readers=${readersLeft.get}/$readers, writers=${writersLeft.get}/$writers] {$currentState}"
-
-  override def closeIn(): Unit = {
-    Default.finer(s"$this.closeIn()")
-    if (readersLeft.decrementAndGet()==0) super.close()
-  }
-
-  override def closeOut(): Unit = {
-    Default.finer(s"$this.closeOut()")
-    if (writersLeft.decrementAndGet()==0) super.close()
-  }
-
-  override def ?(u: Unit): T = withLock(rLock) { super.?(()) }
-  override def !(t: T): Unit = withLock(wLock) { super.!(t) }
-
-  override def readBefore(timeoutNS: Nanoseconds): Option[T] = withLock(rLock) { super.readBefore(timeoutNS) }
-  override def writeBefore(timeoutNS: Nanoseconds)(value: T) = withLock(wLock) { super.writeBefore(timeoutNS)(value) }
-  override def poll(result: AltResult[T]): AltOutcome = withLock(rLock) { super.poll(result) }
-  override def offer(t: ()=>T): AltOutcome = withLock(wLock) { super.offer(t) }
-
-}
-
-/**
- * An unshared buffered channel with the given `capacity (>0)`.
- *
- * @param name
- * @param capacity
- * @tparam T
- */
-class BufferedChan[T](name: String, capacity: Int) extends Chan[T] {
-  import termination._
-
-  val buffer = new LinkedBlockingQueue[T](capacity)
-
-  def currentState: String =
-    s"$name capacity=${buffer.remainingCapacity()}/${capacity} reader=${waitingReader.get} writer=${waitingWriter.get}"
-
-  val inOpen, outOpen   = new AtomicBoolean(true)
-  def canRead: Boolean  = inOpen.get
-  def canWrite: Boolean = outOpen.get
-
-  /** When non-null this is a peer waiting to write/read */
-  val waitingWriter, waitingReader = new AtomicReference[Thread]
-
-  override def toString: String =
-    s"SharedBuffered.$name(${buffer.remainingCapacity()}/$capacity)"
-
-  locally { RuntimeDatabase.addChannel(this) }
-
-
-  /** Close the channel unconditionally in both directions  */
-  override def close(): Unit = {
-    closeIn()
-    closeOut()
-  }
-
-  /** Close the input port unconditionally, and interrupt any waiting writer: idempotent */
-  def closeIn(): Unit  =  {
-    Default.finest(s"$this CloseIn()")
-    if (inOpen.getAndSet(false)) {
-       val peer = waitingWriter.getAndSet(null)
-       if (peer ne null) peer.interrupt()
-    }
-    if (completelyClosed) RuntimeDatabase.removeChannel(this)
-  }
-
-  /** Close the output port unconditionally, and tell readers: idempotent*/
-  def closeOut(): Unit = {
-    Default.finest(s"$this CloseOut()")
-    if (outOpen.getAndSet(false)) {
-      val peer = waitingReader.getAndSet(null)
-      if (peer ne null) peer.interrupt()
-    }
-    if (completelyClosed) RuntimeDatabase.removeChannel(this)
-  }
-
-  @inline private final def completelyClosed: Boolean = !canRead && !canWrite
-
-  def readBefore(timeoutNS: Time.Nanoseconds): Option[T] = {
-      if (inOpen.get) {
-        val msg = buffer.poll(timeoutNS, TimeUnit.NANOSECONDS)
-        if (msg==null)
-           None
-        else
-           Some(msg)
-      }
-      else
-        throw new Closed(name)
-  }
-
-  def writeBefore(timeoutNS: Time.Nanoseconds)(value: T): Boolean = {
-    if (outOpen.get) {
-      buffer.offer(value, timeoutNS, TimeUnit.NANOSECONDS)
-    }
-    else
-      throw new Closed(name)
-  }
-
-  def offer(t: ()=>T): AltOutcome =  {
-    if (!(inOpen.get && outOpen.get))
-      AltOutcome.CLOSED
-    else
-      // ********************* POTENTIAL RACE **********************
-      // Safe only when there's a single writer
-      // Use the Shared version if you need something more
-    if (buffer.remainingCapacity()>0 && buffer.offer(t())) {
-      waitingWriter.set(null)
-      AltOutcome.OK
-    } else
-      AltOutcome.NO
-  }
-
-  def !(t: T): Unit = {
-      if (!(inOpen.get && outOpen.get)) throw new Closed(name) else
-      if (buffer.offer(t)) {
-        waitingWriter.set(null)
-      } else {
-        waitingWriter.set(Thread.currentThread())
-        try { buffer.put(t) } catch { case _: InterruptedException => closeOut() }// perhaps interrupted
-        waitingWriter.set(null)
-      }
-    }
-
-  def poll(result: AltResult[T]): AltOutcome = {
-    if (inOpen.get) {
-      if (!outOpen.get && buffer.isEmpty) {
-        // output is closed and the buffer is empty
-        AltOutcome.CLOSED
-      } else {
-        val t = buffer.poll()
-        if (t==null) AltOutcome.NO else {
-          result.set(t)
-          AltOutcome.OK
-        }
-      }
-    } else AltOutcome.CLOSED
-  }
-
-  def ?(t: Unit): T = {
-      if (inOpen.get) {
-        if (!outOpen.get && buffer.isEmpty) {
-          // output is closed and the buffer is empty
-          throw new Closed(name)
-        } else {
-          // output is not closed or the buffer has something waiting
-          val t: T = buffer.poll()
-          try {
-            if (t == null) {
-              waitingReader.set(Thread.currentThread())
-              val w: T = buffer.take() // this may be interrupted
-              waitingReader.set(null)
-              w
-            } else {
-              waitingReader.set(null)
-              t
-            }
-          }
-          catch {
-            case _: InterruptedException =>
-              waitingReader.set(null)
-              closeIn()
-              throw new Closed(name)
-          }
-        }
-      } else
-        throw new Closed(name)
-  }
-}
-
-
-object Chan extends serialNamer {
-  val namePrefix: String = "Chan"
-  import org.sufrin.logging._
-  def apply[T](capacity: Int): Chan[T] = capacity match {
-      case 0 =>
-        new SyncChan[T](nextName())
-      case _ =>
-        new BufferedChan[T](nextName(), capacity)
-  }
-
-  def apply[T](name: String, capacity: Int): Chan[T] = capacity match {
-    case 0 =>
-      new SyncChan[T](name)
-    case _ =>
-      new BufferedChan[T](name, capacity)
-  }
-
-  trait SharedChanGenerator {
-    def readers: Int
-    def writers: Int
-
-    def apply[T](capacity: Int): Chan[T] = capacity match {
-      case 0 =>
-        new SharedSyncChan[T](nextName(), readers, writers)
-      case _ =>
-        new SharedBufferedChan[T](nextName(), capacity, readers = readers, writers = writers)
-    }
-
-    def apply[T](name: String, capacity: Int): Chan[T] = capacity match {
-      case 0 =>
-        new SharedSyncChan[T](name)
-      case _ =>
-        new SharedBufferedChan[T](name, capacity, readers = readers, writers = writers)
-    }
-  }
-
-  /**
-   * `Chan.Shared(readers, writers)(name, capacity)` yields a shared
-   * channel of the given capacity, intended to be read by the
-   * given number of readers and written by the given number
-   * of writers. Closing of the shared channel in a given direction
-   * takes place when the given number of `closeIn()`  (resp `closeOut()`)
-   * have been invoked.
-   *
-   * When its capacity is zero, the channel is a synced channel, and may not
-   * engage with more than a single reader or writer in the same rendezvous.
-   */
-  object Shared extends SharedChanGenerator {
-    def readers: Int = 0
-    def writers: Int = 0
-
-    def apply(readers: Int, writers: Int): SharedChanGenerator = {
-      val withReaders=readers
-      val withWriters=writers
-      new SharedChanGenerator {
-        def readers: Int = withReaders
-        def writers: Int = withWriters
-      }
-    }
-  }
-}
 
 /** Database of running processes, and channels   */
 object RuntimeDatabase {
@@ -768,7 +240,7 @@ object RuntimeDatabase {
   def remove(thread: Thread): Unit = {
     vThreads.remove(thread.threadId)
     thread.getState match {
-      case Thread.State.TERMINATED => vLocals.remove(thread.threadId)
+      case Thread.State.TERMINATED => removeLocals(thread)
       case _ =>
     }
   }
@@ -806,20 +278,11 @@ object RuntimeDatabase {
         for { (k, thunk) <- map } fun(k, thunk())
   }
 
-  /*
-  def setLocal[V](key: LocalKey, value: V): Unit = {
-    val id  = Thread.currentThread().threadId
-    val map = vLocals.get(id).get
-    map += (key->value)
+  def removeLocals(thread: Thread): Unit = {
+    val id  = thread.threadId
+    for { map <- vLocals.get(id) } map.clear()
+    vLocals.remove(id)
   }
-
-  def getLocal[V](key: LocalKey): V = {
-    val id  = Thread.currentThread().threadId
-    val map = vLocals.get(id).get
-    map.getOrElse(key, null).asInstanceOf[V]
-  }
-  */
-
 }
 
 object Threads {
@@ -1225,6 +688,7 @@ object proc extends serialNamer {
 
 object altTools {
   val logging = false
+  private final val nanoDelta: Nanoseconds = 5*microSec
 
   import AltOutcome._
   trait Event {}
@@ -1279,7 +743,7 @@ object altTools {
  *   (c) none of the `events` are feasible -- then evaluate `orElse`, and stop
  * }}}
  */
- def ServeBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = 500000 )(events: Seq[Event]): Unit = {
+ def ServeBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: Seq[Event]): Unit = {
     val fairness = new Rotater(events)
     repeatedly {
       eventFired(fairness, deadline, afterDeadline = {()=>afterDeadline}) match {
@@ -1295,7 +759,7 @@ object altTools {
   /**
    * @see ServeBefore
    */
-  def serveBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = 500000 )(events: Event*): Unit = {
+  def serveBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: Event*): Unit = {
     val fairness = new Rotater(events)
     repeatedly {
       eventFired(fairness, deadline, afterDeadline = {()=>afterDeadline}) match {
@@ -1350,7 +814,7 @@ object altTools {
    * }}}
    *
    */
-  def altBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {} , waitDelta: Nanoseconds = 500000)(events: Event*): Unit =
+  def altBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {} , waitDelta: Nanoseconds = nanoDelta)(events: Event*): Unit =
       eventFired(events, deadline, afterDeadline = { ()=>afterDeadline }, waitDelta) match {
         case false => orElse
         case true  =>
@@ -1365,7 +829,7 @@ object altTools {
    * }}}
    *
    */
-  def AltBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = 500000 )(events: Seq[Event]): Unit =
+  def AltBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: Seq[Event]): Unit =
       eventFired(events, deadline, afterDeadline = { ()=>afterDeadline }, waitDelta) match {
         case false => orElse
         case true  =>
@@ -1382,7 +846,7 @@ object altTools {
    *  `waitDelta` is the delay between successive attempts to find and fire an event.
    *
    */
-  def eventFired(events: Seq[Event], deadline: Nanoseconds=0, afterDeadline: ()=>Unit, waitDelta: Nanoseconds = 500000): Boolean = {
+  def eventFired(events: Seq[Event], deadline: Nanoseconds=0, afterDeadline: ()=>Unit, waitDelta: Nanoseconds = nanoDelta): Boolean = {
     var outcome = false
     var waiting = true
     var remainingTime = deadline
@@ -1480,8 +944,7 @@ object altTools {
   }
 }
 
-object portTools {
-  private val logging: Boolean = false
+object portTools extends Loggable{
   import proc._
 
 
@@ -1496,7 +959,6 @@ object portTools {
     withPorts(as, bs, out) {
       repeatedly {
         read()
-        if (logging) Default.finest(s"read($a,$b)")
         out ! (a, b)
       }
     }
@@ -1513,10 +975,8 @@ object portTools {
     withPorts(as, bs, cs, out) {
       repeatedly {
         read()
-        if (logging) Default.finest(s"read($a,$b,$c)")
         out ! (a, b, c)
       }
-      if (logging) Default.finer(s"zip($as,$bs,$cs)($out) terminated")
     }
   }
 
@@ -1532,25 +992,28 @@ object portTools {
       Serve(
         for { in<-ins } yield in =?=> { t => out!t }
       )
-      for { in<-ins } in.closeIn()
-      out.closeOut()
-      Default.finer(s"merge($ins)($out) terminated after closing")
+    if (logging) finer(s"merge($ins)($out) SERVE terminated")
+    out.closeOut()
+    for { in<-ins } in.closeIn()
+    if (logging) finer(s"merge($ins)($out) terminated after closing")
   }
 
   def source[T](out: OutPort[T], it: Iterable[T]): proc = proc (s"source($out,...)"){
       var count = 0
-      RuntimeDatabase.newLocal("count", count)
+      //RuntimeDatabase.newLocal("source count", count)
+      //RuntimeDatabase.newLocal("source out", out)
       repeatFor (it) { t => out!t; count += 1 }
       out.closeOut()
-      Default.finer(s"source($out) closed")
+      if (logging) finer(s"source($out) closed")
   }
 
   def sink[T](in: InPort[T])(andThen: T=>Unit): proc = proc (s"sink($in)"){
       var count = 0
-      RuntimeDatabase.newLocal("count", count)
+      //RuntimeDatabase.newLocal("sink count", count)
+      //RuntimeDatabase.newLocal("sink in", in)
       repeatedly { in?{ t => andThen(t); count+=1 } }
       in.closeIn()
-      Default.finer(s"sink($in) closed")
+      if (logging) finer(s"sink($in) closed")
   }
 }
 
