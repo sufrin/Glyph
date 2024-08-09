@@ -1,5 +1,6 @@
 package org.sufrin.microCSO
 
+import org.sufrin.microCSO.Alternation.{AltOutcome, AltResult}
 import org.sufrin.microCSO.Time.Nanoseconds
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
@@ -17,7 +18,7 @@ import scala.collection.mutable
  * @param name
  * @tparam T
  */
-class BufferChan[T](name: String, capacity: Int) extends Chan[T] {
+class BufferChan[T](val name: String, capacity: Int) extends Chan[T] {
   override def className: String = s"BufferChan.$name($capacity)"
 
   private[this] val reader, writer                      = new AtomicReference[Thread]
@@ -27,7 +28,7 @@ class BufferChan[T](name: String, capacity: Int) extends Chan[T] {
   @inline private def isFull: Boolean  = buffer.length==capacity
   @inline private def isEmpty: Boolean = buffer.isEmpty
 
-  locally { RuntimeDatabase.addChannel(this) }
+  locally { org.sufrin.microCSO.Runtime.addChannel(this) }
 
 
   /**
@@ -119,10 +120,8 @@ class BufferChan[T](name: String, capacity: Int) extends Chan[T] {
     result
   }
 
-  def canRead: Boolean  = !inputClosed.get
-  def canWrite: Boolean = !inputClosed.get
-
-  def canInput: Boolean = !inputClosed.get && !isEmpty
+  def canInput: Boolean  = !inputClosed.get
+  def canOutput: Boolean = !inputClosed.get
 
   def closeIn(): Unit = {
     if (logging) finer(s"$this CLOSING INPUT")
@@ -131,8 +130,6 @@ class BufferChan[T](name: String, capacity: Int) extends Chan[T] {
       LockSupport.unpark(writer.getAndSet(null))
     }
   }
-
-  def canOutput: Boolean = !outputClosed.get && !isFull
 
   def closeOut(): Unit = {
     if (logging) finer(s"$this CLOSING OUTPUT")

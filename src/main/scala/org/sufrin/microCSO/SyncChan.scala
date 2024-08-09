@@ -1,5 +1,6 @@
 package org.sufrin.microCSO
 
+import org.sufrin.microCSO.Alternation.{AltOutcome, AltResult}
 import org.sufrin.microCSO.Time.Nanoseconds
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
@@ -17,14 +18,14 @@ import java.util.concurrent.locks.LockSupport
  * @param name
  * @tparam T
  */
-class SyncChan[T](name: String) extends Chan[T] {
+class SyncChan[T](val name: String) extends Chan[T] {
   override def className: String = s"SyncChan.$name"
 
   private[this] val reader, writer = new AtomicReference[Thread]
   private[this] val closed, full   = new AtomicBoolean(false)
   private[this] var buffer: T = _
 
-  locally { RuntimeDatabase.addChannel(this) }
+  locally { org.sufrin.microCSO.Runtime.addChannel(this) }
 
 
 
@@ -130,12 +131,10 @@ class SyncChan[T](name: String) extends Chan[T] {
       if (logging) finer(s"$this CLOSED")
       LockSupport.unpark( reader.getAndSet(null) ) // Force a waiting reader to continue **
       LockSupport.unpark( writer.getAndSet(null) ) // Force a waiting writer to continue ***
-      RuntimeDatabase.removeChannel(this)// Debugger no longer interested
+      Runtime.removeChannel(this)// Debugger no longer interested
     }
   }
 
-  def canRead: Boolean  = !closed.get
-  def canWrite: Boolean = !closed.get
 
   /** Extended rendezvous read & compute, then sync */
   override def ??[U](f: T => U): U = {

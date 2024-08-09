@@ -1,19 +1,31 @@
-package org.sufrin.microCSO
 
 /**
- * A somewhat simplified sublanguage of ThreadCSO using only
- * virtual threads, and with only minimal debugger support.
+ * A simplified sublanguage of ThreadCSO using only
+ * virtual threads, and with simplified support for debugging.
  *
+ * Key simplifications:
+ *
+ * 1. Alternation constructs are simplified, and use direct
+ * polling of events in their implementation.
+ *
+ * 2. A straightforward factory for channels, of which
+ * there are four kinds formed along two dimensions:
+ *
+ *  {{{ synchronised | buffered
+ *      shared       | nonshared
+ *  }}}
+ *
+ * @see Chan
  */
 
+package org.sufrin.microCSO
+
 import org.sufrin.logging._
+import org.sufrin.microCSO.Alternation._
 import org.sufrin.microCSO.termination._
-import org.sufrin.microCSO.Time.{microSec, Nanoseconds}
-import org.sufrin.microCSO.altTools._
-import org.sufrin.microCSO.proc.{repeatedly, stop}
 
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
+import java.util.concurrent.atomic.AtomicLong
 
 
 trait Closeable {
@@ -21,15 +33,6 @@ trait Closeable {
   def close(): Unit
 }
 
-/** Outcome of a tentative read/write */
-trait  AltOutcome {}
-class  AltResult[T] extends AtomicReference[T]
-
-object AltOutcome {
-  case object OK extends AltOutcome
-  case object CLOSED extends AltOutcome
-  case object NO extends AltOutcome
-}
 
 trait OutPort[T] extends Closeable { port =>
   /**
@@ -41,25 +44,24 @@ trait OutPort[T] extends Closeable { port =>
 
   def writeBefore(timeoutNS: Time.Nanoseconds)(value: T): Boolean
   def !(t: T): Unit
-  
+
   /**
    * Behaves as `!(t())` and yields `OK` if something can be accepted by the channel; else
    * yields `NO` or `CLOSED`.
    */
   def offer(t: () => T): AltOutcome
-  
+
   def out: OutPort[T] = port
 
   /** This port hasn't yet been closed */
-  def canWrite: Boolean
+  def canOutput: Boolean
 
-  def isSharedOutPort: Boolean = false
 
   /**
    * OutPort event notation
    */
   def && (guard: => Boolean): GuardedPort[T] = GuardedPort[T](()=>guard, Out(out))
-  def =!=> (value: =>T): altTools.!![T]  = altTools.`!!`(()=>true, out, ()=>value)
+  def =!=> (value: =>T): `Output-Event`[T]  = `Output-Event`(()=>true, out, ()=>value)
 }
 
 
@@ -87,7 +89,7 @@ trait InPort[T] extends Closeable { port: InPort[T] =>
   def poll(result: AltResult[T]): AltOutcome
 
   /** This port hasn't yet been closed */
-  def canRead: Boolean
+  def canInput: Boolean
 
   def isSharedInPort: Boolean = false
 
@@ -95,130 +97,24 @@ trait InPort[T] extends Closeable { port: InPort[T] =>
    *  InPort event notation
    */
   def && (guard: => Boolean): GuardedPort[T] = GuardedPort[T](()=>guard, In(in))
-  def =?=> (f: T=>Unit): altTools.??[T]  = altTools.`??`(()=>true, in, f)
+  def =?=> (f: T=>Unit): `Input-Event`[T]  = `Input-Event`(()=>true, in, f)
 }
 
 case class GuardedPort[T](guard: () => Boolean, port: Port[T]) {
-  def =?=> (f: T=>Unit): altTools.??[T]  = altTools.`??`(()=>true, port.asIn, f)
-  def =!=> (value: =>T): altTools.!![T]  = altTools.`!!`(guard, port.asOut, ()=>value)
+  def =?=> (f: T=>Unit): `Input-Event`[T]  = `Input-Event`(()=>true, port.asIn, f)
+  def =!=> (value: =>T): `Output-Event`[T]  = `Output-Event`(guard, port.asOut, ()=>value)
 }
 
 
-object Time {
-  type Nanoseconds = Long
-  type Milliseconds = Long
-
-  /** Number of nanoseconds in a nanosecond */
-  val nanoSec: Nanoseconds = 1L
-
-  /** Number of nanoseconds in a microsecond: `n*microSec` is n microseconds
-   * expressed as nanoseconds
-   */
-  val microSec: Nanoseconds = 1000L * nanoSec
-
-  /** Number of nanoseconds in a microsecond: `n*μS` is n microseconds expressed
-   * as nanoseconds
-   */
-  val μS: Nanoseconds = microSec
-
-  /** Number of nanoseconds in a millisecond: `n*milliSec` is n milliseconds
-   * expressed as nanoseconds
-   */
-  val milliSec: Nanoseconds = 1000L * microSec
-
-  /** Number of nanoseconds in a second: `n*Sec` is n seconds expressed as
-   * nanoseconds
-   */
-  val Sec: Nanoseconds = 1000L * milliSec
-
-  /** Number of nanoseconds in a minute: `n*Min` is n minutes expressed as
-   * nanoseconds
-   */
-  val Min: Nanoseconds = 60L * Sec
-
-  /** Number of nanoseconds in an hour: `n*Hour` is n hours expressed as
-   * nanoseconds
-   */
-  val Hour: Nanoseconds = 60L * Min
-
-  /** Number of nanoseconds in a day: `n*Day` is n days expressed as nanoseconds
-   */
-  val Day: Nanoseconds = 24L * Hour
-
-  /** Convert a fractional time expressed in seconds to nanoseconds */
-  def seconds(secs: Double): Nanoseconds = (secs * Sec).toLong
-
-  /** Sleep for the given number of milliseconds. */
-  @inline def sleepms(ms: Milliseconds): Unit = Thread.sleep(ms)
-
-  /** Sleep for the given number of nanoseconds */
-  @inline def sleep(ns: Nanoseconds): Unit =
-    Thread.sleep(ns / milliSec, (ns % milliSec).toInt)
-
-  /** Read the system nanosecond timer */
-  @inline def nanoTime: Nanoseconds = System.nanoTime()
-
-  /** Read the system millisecond timer */
-  @inline def milliTime: Milliseconds = System.currentTimeMillis()
-
-  /** Wait until `deadline` for `condition` to become true. If it became true
-   * before the deadline then the result is the time remaining when it became
-   * true. Otherwise the result will be negative, and representing the time
-   * after the deadline when deadline expiry was noticed.
-   *
-   * @param blocker
-   *   the object to be reported as the blocker by debuggers
-   * @param deadline
-   *   the deadline in nanoseconds
-   * @param condition
-   *   the condition
-   * @return
-   *   Nanoseconds remaining when the condition became true or when the
-   *   deadline expired (possibly negative)
-   */
-  @inline def parkUntilDeadlineOr(
-                                   blocker: AnyRef,
-                                   deadline: Nanoseconds,
-                                   condition: => Boolean
-                                 ): Nanoseconds = {
-    var left = deadline - System.nanoTime
-    while (left > 0 && !condition) {
-      java.util.concurrent.locks.LockSupport.parkNanos(blocker, left)
-      left = deadline - System.nanoTime
-    }
-    // left<=0 || condition
-    return left
-  }
-
-  /** Equivalent to `parkUntilDeadline(blocker, timeOut+System.nanoTime,
-   * condition)`
-   */
-  @inline def parkUntilElapsedOr(
-                                  blocker: AnyRef,
-                                  timeOut: Nanoseconds,
-                                  condition: => Boolean
-                                ): Nanoseconds = {
-    val deadline = timeOut + System.nanoTime
-    var left = timeOut
-    while (left > 0 && !condition) {
-      java.util.concurrent.locks.LockSupport.parkNanos(blocker, left)
-      left = deadline - System.nanoTime
-    }
-    // left<=0 || condition
-    return left
-  }
-
-
-}
 
 
 /** Database of running processes, and channels   */
-object RuntimeDatabase {
+object Runtime {
   def reset(): Unit = {
     vThreads.clear()
     vChannels.clear()
   }
-  /** Mapping of (running) thread ids to RuntimeDatabase */
+  /** Mapping of (running) thread ids to Runtime */
   val vThreads =
     new scala.collection.concurrent.TrieMap[Long, Thread]
 
@@ -286,7 +182,7 @@ object Threads {
 
   def showThreadTrace(thread: Thread, out: PrintStream) = {
     out.println(thread)
-    RuntimeDatabase.forLocals(thread) {
+    Runtime.forLocals(thread) {
       case (key, value) => out.println(f"$key%8s -> $value%s")
     }
     showStackTrace(thread.getStackTrace, out)
@@ -381,7 +277,7 @@ class ForkHandle(val name: String, val body: ()=>Unit, val latch: Latch) extends
     var prevName: String = ""
     try {
       thread = Thread.currentThread
-      RuntimeDatabase.add(thread)           // add to the database
+      Runtime.add(thread)           // add to the database
       prevName = thread.getName
       thread.setName(name)
       status = Running
@@ -395,7 +291,7 @@ class ForkHandle(val name: String, val body: ()=>Unit, val latch: Latch) extends
         Default.error(s"[${Thread.currentThread().getName}] threw $thrown")
     } finally {
       thread.setName(prevName)  // remove from the database
-      RuntimeDatabase.remove(Thread.currentThread)
+      Runtime.remove(Thread.currentThread)
     }
     if (logging)
       Default.finest(s"($this).run() => $status")
@@ -681,267 +577,6 @@ object proc extends serialNamer {
 
 
 
-object altTools  {
-  private final val nanoDelta: Nanoseconds = 5*microSec
-
-  trait Port[T] {
-    def asIn:  InPort[T]  = null
-    def asOut: OutPort[T] = null
-  }
-
-
-  case class Out[T](port: OutPort[T]) extends Port[T] { override def asOut = port }
-  case class In[T](port: InPort[T]) extends Port[T]   { override def asIn: InPort[T] = port }
-  case class InOut[T](chan: Chan[T]) extends Port[T]  {
-    override def asIn: InPort[T]   = chan.in
-    override def asOut: OutPort[T] = chan.out
-  }
-
-  trait Event
-  case class `??`[T](guard: () => Boolean, port: InPort[T],  f: T => Unit) extends Event
-  case class `!!`[T](guard: () => Boolean, port: OutPort[T], f: () => T) extends Event
-  case class `Or-Else`(eval: ()=>Unit)
-  case class `After-NS`(ns: Nanoseconds, eval: ()=>Unit)
-
-  import AltOutcome._
-
-  /**
-   *  Repeatedly find and fire one of the `events`, until
-   *  none are feasible. The search for firing events is in
-   *  sequential order: it is "fair" inasmuch as
-   *  at each iteration `events` is rotated by a single place.
-   *
-   *  The "Finding" is done by polling periodically (the period is half a microsecond). This
-   *  is somewhat inelegant, but drastically simplifies the implementation.
-   *
-   * @see ServeBefore
-   */
-  def Serve(events: Seq[Event]): Unit = {
-    val fairness = new Rotater(events)
-    repeatedly {
-      eventFired(fairness, deadline=0, afterDeadline = {()=>}) match {
-        case true  => fairness.rot()
-        case false => stop
-      }
-    }
-  }
-/**
- *  Repeatedly find and fire one of the `events` until
- *  none are feasible. The search for firing events is in
- *  sequential order: it is "fair" inasmuch as
- *  at each iteration `events` is rotated by a single place.
- *
- * The "finding" is performed by polling every `waitDelta` nanoseconds until
- * {{{
- *   (a) one of the `events` has fired -- then rotate `events` and continue serving
- *   (b) the deadline (if positive) has expired -- then evaluate `afterDeadline` and continue serving
- *   (c) none of the `events` are feasible -- then evaluate `orElse`, and stop
- * }}}
- */
- def ServeBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: Seq[Event]): Unit = {
-    val fairness = new Rotater(events)
-    repeatedly {
-      eventFired(fairness, deadline, afterDeadline = {()=>afterDeadline}) match {
-        case true  =>
-          fairness.rot()
-        case false =>
-          orElse
-          stop
-      }
-    }
-  }
-
-  /**
-   * @see ServeBefore
-   */
-  def serveBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: Event*): Unit = {
-    val fairness = new Rotater(events)
-    repeatedly {
-      eventFired(fairness, deadline, afterDeadline = {()=>afterDeadline}) match {
-        case true  =>
-          fairness.rot()
-        case false =>
-          orElse
-          stop
-      }
-    }
-  }
-
-  /**
-   *  Repeatedly find one of the `events` that fires, until
-   *  none are feasible. The search for firing events is in
-   *  sequential order: it is "fair" inasmuch as
-   *  at each iteration `events` is rotated by a single place.
-   *
-   *  The "Finding" is done by polling periodically (the period is half a microsecond). This
-   *  is somewhat inelegant, but drastically simplifies the implementation.
-   *
-   * @see serveBefore
-   */
-  def serve(events: Event*): Unit = Serve(events)
-
-  /**
-   * Poll periodically until one of the `events` fires or none is feasible.
-   * In the latter case an error is thrown.
-   *
-   * @see altBefore
-   */
-  def alt(events: Event*): Unit = Alt(events)
-
-  /**
-   * Poll periodically until one of the `events` fires or none is feasible. In
-   * the latter case an error is thrown.
-   *
-   * @see AltBefore
-   */
-  def Alt(events: Seq[Event]): Unit =
-      eventFired(events, deadline=0, afterDeadline = {()=>})  match {
-        case false => throw new Error("alternation: no feasible events")
-        case true =>
-      }
-
-  /**
-   * Poll every `waitDelta` nanoseconds until
-   * {{{
-   *   (a) one of the `events` has fired
-   *   (b) the deadline (if positive) has expired -- then evaluate `afterDeadline`
-   *   (c) none of the `events` are feasible -- then evaluate `orElse`.
-   * }}}
-   *
-   */
-  def altBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {} , waitDelta: Nanoseconds = nanoDelta)(events: Event*): Unit =
-      eventFired(events, deadline, afterDeadline = { ()=>afterDeadline }, waitDelta) match {
-        case false => orElse
-        case true  =>
-      }
-
-  /**
-   * Poll every `waitDelta` nanoseconds until
-   * {{{
-   *   (a) one of the `events` has fired
-   *   (b) the deadline (if positive) has expired -- then evaluate `afterDeadline`
-   *   (c) none of the `events` are feasible -- then evaluate `orElse`
-   * }}}
-   *
-   */
-  def AltBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: Seq[Event]): Unit =
-      eventFired(events, deadline, afterDeadline = { ()=>afterDeadline }, waitDelta) match {
-        case false => orElse
-        case true  =>
-      }
-
-  /**
-   *  (busy) wait until one of `events`  fires or none are feasible.
-   *  Yield true in the former case and false in the latter case.
-   *
-   *  If there's a positive `deadline` then
-   *  evaluate `afterDeadline()` and return true if none has fired before the
-   *  deadline has elapsed; else just continue (busy) waiting.
-   *
-   *  `waitDelta` is the delay between successive attempts to find and fire an event.
-   *
-   */
-  def eventFired(events: Seq[Event], deadline: Nanoseconds=0, afterDeadline: ()=>Unit, waitDelta: Nanoseconds = nanoDelta): Boolean = {
-    var outcome = false
-    var waiting = true
-    var remainingTime = deadline
-    val hasDeadline   = remainingTime>0
-
-    while (waiting) {
-      val (feasibles, result) = fireFirst(events)
-      // result is OK or all events refused or infeasible
-      result match {
-        case OK =>
-          // an event fired
-          outcome = true
-          waiting = false
-        case CLOSED | NO =>
-          // no event seen on this pass fired
-          if (feasibles == 0) {
-            // now nothing CAN happen
-            // print("* "); System.out.flush()
-            outcome = false
-            waiting = false
-          } else if (hasDeadline && remainingTime<=0) {
-            afterDeadline()
-            outcome = true
-            waiting = false
-          } else {
-            // wait a bit and try again
-            Time.sleep(waitDelta)
-            remainingTime -= waitDelta
-          }
-      }
-    }
-    outcome
-  }
-
-  /**
-   * Find and fire the first ready event.
-   * Return the number of feasible events.
-   */
-  @inline private final def fireFirst(events: Seq[Event]): (Int, AltOutcome) = {
-    var outcome:  AltOutcome = NO
-    var feasible: Int = 0
-    val feasibles = events.filter{
-      case `!!`(guard, port, _) => guard() && port.canWrite
-      case `??`(guard, port, _) => guard() && port.canRead
-    }
-    //if (feasibles.isEmpty) Default.finer(s"fireFirst ${feasibles.length} feasible")
-    val iter: Iterator[Event] = feasibles.iterator
-    // find and fire the first ready event
-    while (outcome!=OK && iter.hasNext) {
-      iter.next() match {
-        case `!!`(guard, port, f) =>
-            outcome = port.offer(f)
-            outcome match {
-              case OK =>
-                feasible += 1
-              case CLOSED =>
-                outcome = CLOSED
-              case NO     =>
-                outcome = NO            }
-        case `??`(guard, port, f) =>
-            val result = new AltResult[Any]
-            port.poll(result) match {
-              case OK     =>
-                f(result.get)
-                outcome = OK
-                feasible += 1
-              case CLOSED =>
-                outcome = CLOSED
-              case NO     =>
-                outcome = NO
-            }
-      }
-    }
-    // outcome==OK || all events refused or infeasible // TODO: need to distinguish?
-    // Default.finer(s"fireFirst $feasible/${feasibles.length} $outcome")
-    (feasibles.length, outcome)
-  }
-
-  class Rotater[T](val original: Seq[T]) extends Seq[T] {
-    val length: Int = original.length
-    private val LENGTH = length
-    private var offset: Int = 0
-    def rot(): Unit = { offset = (offset+1) % LENGTH}
-
-    def iterator: Iterator[T] = new Iterator[T] {
-      var current: Int = offset
-      var count : Int  = LENGTH
-      def hasNext: Boolean = count>0
-
-      def next(): T = {
-        val r = original(current)
-        current = (current + 1) % LENGTH
-        count -=1
-        r
-      }
-    }
-
-    def apply(i: Int): T = original((offset+i)%LENGTH)
-  }
-}
 
 object portTools extends Loggable{
   import proc._
@@ -999,8 +634,8 @@ object portTools extends Loggable{
 
   def source[T](out: OutPort[T], it: Iterable[T]): proc = proc (s"source($out,...)"){
       var count = 0
-      //RuntimeDatabase.newLocal("source count", count)
-      //RuntimeDatabase.newLocal("source out", out)
+      //Runtime.newLocal("source count", count)
+      //Runtime.newLocal("source out", out)
       repeatFor (it) { t => out!t; count += 1 }
       out.closeOut()
       if (logging) finer(s"source($out) closed")
@@ -1008,8 +643,8 @@ object portTools extends Loggable{
 
   def sink[T](in: InPort[T])(andThen: T=>Unit): proc = proc (s"sink($in)"){
       var count = 0
-      //RuntimeDatabase.newLocal("sink count", count)
-      //RuntimeDatabase.newLocal("sink in", in)
+      //Runtime.newLocal("sink count", count)
+      //Runtime.newLocal("sink in", in)
       repeatedly { in?{ t => andThen(t); count+=1 } }
       in.closeIn()
       if (logging) finer(s"sink($in) closed")

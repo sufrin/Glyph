@@ -4,6 +4,7 @@ import org.sufrin.logging.{Default, FINEST, INFO, OFF}
 import org.sufrin.microCSO.portTools._
 import org.sufrin.microCSO.proc._
 import org.sufrin.microCSO.termination._
+import org.sufrin.microCSO.Alternation.AltResult
 import org.sufrin.microCSO.Time.{seconds, sleepms}
 
 
@@ -236,7 +237,7 @@ object testSharing extends testFramework {
       )
 
     def shareTest(bufSize: Int): Unit = {
-      RuntimeDatabase.reset()
+      org.sufrin.microCSO.Runtime.reset()
       val shared = Chan.Shared(readers = 2, writers = 2)[String]("Shared", bufSize)
       println(s"ShareTest $bufSize")
       run(useChan(shared))
@@ -539,14 +540,9 @@ object testMerge extends testFramework {
 }
 
 object testEvents extends testFramework {
-  import altTools._
+  import Alternation._
   def test(): Unit = {
     Default.level=INFO
-
-
-
-
-
     def testReadWrite(capacity: Int): Unit =
     { val level = OFF
       println(s"testReadWrite($capacity)")

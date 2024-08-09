@@ -15,7 +15,7 @@ trait testFramework {
   def main(args: Array[String]): Unit = test()
 
   def run(p: process): Unit = {
-    RuntimeDatabase.reset()
+    Runtime.reset()
     Thread.currentThread.setName(s"RUN($p)")
     println(s"============= RUN $p ==============")
     System.out.flush()
@@ -25,13 +25,13 @@ trait testFramework {
       case (false, status) =>
         println(s"\n$p\nTIMEOUT after ${deadline.toDouble/seconds(1.0)} seconds ($status)")
         println("Runtime Information:")
-        RuntimeDatabase.forEach {
+        Runtime.forEach {
           case thread: Thread =>
-            RuntimeDatabase.remove(thread)
+            Runtime.remove(thread)
             Threads.showThreadTrace(thread)
         }
         println("Open Channels:")
-        RuntimeDatabase.forEachChannel{
+        Runtime.forEachChannel{
           case chan: Chan[_] =>
             println(s"$chan")
         }

@@ -1,7 +1,7 @@
 package org.sufrin.microCSO
 
 import org.sufrin.logging.Loggable
-import org.sufrin.microCSO.altTools.InOut
+import org.sufrin.microCSO.Alternation.InOut
 
 trait Chan[T] extends OutPort[T] with InPort[T] with Loggable {
   def withLogLevel(logLevel: Int): this.type =
@@ -23,6 +23,25 @@ trait Chan[T] extends OutPort[T] with InPort[T] with Loggable {
     GuardedPort[T](() => guard, InOut(this))
 }
 
+/**
+ *  The main channel factory. Channels are synchronised (`c!(x)` and `c?()` terminate
+ *  at the same time) if `capacity==0`. Channels invent their own names if `name` is not
+ *  provided.
+ *
+ *  {{{
+ *    Chan[T](name, capacity)          -- yields a non-shared channel
+ *    Chan.Shared(readers, writers)[T] -- yields a shared channel
+ *  }}}
+ *
+ * A non-shared synchronised channel closes immediately its input
+ * or output port is closed. When such a channel is shared, it closes
+ * after `readers` `closeIn`s, or `writers` `closeOut`s.
+ *
+ * A buffered channel remains readable, even after a `closeOut`, as long
+ * as there are unread items in its buffer.
+ *
+ * @see Chan.Shared
+ */
 object Chan extends serialNamer {
   val namePrefix: String = "Chan"
   def apply[T](capacity: Int): Chan[T] = capacity match {
@@ -64,7 +83,8 @@ object Chan extends serialNamer {
    * given number of readers and written by the given number
    * of writers. Closing of the shared channel in a given direction
    * takes place when the given number of `closeIn()`  (resp `closeOut()`)
-   * have been invoked.
+   * have been invoked. If `readers==0` the channel never closes for input;
+   * if `writers==0` the channel never closes for output.
    *
    * When its capacity is zero, the channel is a synced channel, and may not
    * engage with more than a single reader or writer in the same rendezvous.
