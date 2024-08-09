@@ -1,6 +1,6 @@
 package org.sufrin.microCSO
 
-import org.sufrin.microCSO.Alternation.{AltOutcome, AltResult}
+import org.sufrin.microCSO.Alternation.EventOutcome
 import org.sufrin.microCSO.Time.Nanoseconds
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
@@ -25,7 +25,7 @@ class SyncChan[T](val name: String) extends Chan[T] {
   private[this] val closed, full   = new AtomicBoolean(false)
   private[this] var buffer: T = _
 
-  locally { org.sufrin.microCSO.Runtime.addChannel(this) }
+  locally { org.sufrin.microCSO.CSORuntime.addChannel(this) }
 
 
 
@@ -57,14 +57,14 @@ class SyncChan[T](val name: String) extends Chan[T] {
   /**
    *  Behaves as !(t()) when a reader is already committed
    */
-  def offer(t: ()=>T): AltOutcome = {
-    if (closed.get) AltOutcome.CLOSED else
-      if (full.get)   AltOutcome.NO else {
+  def offer(t: ()=>T): EventOutcome[Nothing] = {
+    if (closed.get) EventOutcome.CLOSED else
+      if (full.get)   EventOutcome.FAILED else {
         val peer = reader.get()
-        if (peer==null) AltOutcome.NO else {
+        if (peer==null) EventOutcome.FAILED else {
           val value = t()
           this.!(value)
-          AltOutcome.OK
+          EventOutcome.SUCCEEDED
         }
       }
   }
@@ -89,16 +89,15 @@ class SyncChan[T](val name: String) extends Chan[T] {
   }
 
   /** Behaves as `result.set(?())` when  a writer is already committed */
-  def poll(result: AltResult[T]): AltOutcome = {
+  def poll(): EventOutcome[T] = {
     if (closed.get)
-      AltOutcome.CLOSED
+      EventOutcome.CLOSED
     else
       if (full.get) {
-        result.set(this.?(()))
-        AltOutcome.OK
+        EventOutcome.POLLED(this.?(()))
       }
       else
-        AltOutcome.NO
+        EventOutcome.FAILED
   }
 
   def ?(t: Unit): T = {
@@ -131,7 +130,7 @@ class SyncChan[T](val name: String) extends Chan[T] {
       if (logging) finer(s"$this CLOSED")
       LockSupport.unpark( reader.getAndSet(null) ) // Force a waiting reader to continue **
       LockSupport.unpark( writer.getAndSet(null) ) // Force a waiting writer to continue ***
-      Runtime.removeChannel(this)// Debugger no longer interested
+      CSORuntime.removeChannel(this)// Debugger no longer interested
     }
   }
 
@@ -258,7 +257,7 @@ class SharedSyncChan[T](name: String, readers: Int=1, writers: Int = 1) extends 
 
   override def readBefore(timeoutNS: Nanoseconds): Option[T] = withLock(rLock) { super.readBefore(timeoutNS) }
   override def writeBefore(timeoutNS: Nanoseconds)(value: T) = withLock(wLock) { super.writeBefore(timeoutNS)(value) }
-  override def poll(result: AltResult[T]): AltOutcome = withLock(rLock) { super.poll(result) }
-  override def offer(t: ()=>T): AltOutcome = withLock(wLock) { super.offer(t) }
+  override def poll(): EventOutcome[T] = withLock(rLock) { super.poll() }
+  override def offer(t: ()=>T): EventOutcome[Nothing] = withLock(wLock) { super.offer(t) }
 
 }

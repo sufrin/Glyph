@@ -4,7 +4,6 @@ import org.sufrin.logging.{Default, FINEST, INFO, OFF}
 import org.sufrin.microCSO.portTools._
 import org.sufrin.microCSO.proc._
 import org.sufrin.microCSO.termination._
-import org.sufrin.microCSO.Alternation.AltResult
 import org.sufrin.microCSO.Time.{seconds, sleepms}
 
 
@@ -237,7 +236,7 @@ object testSharing extends testFramework {
       )
 
     def shareTest(bufSize: Int): Unit = {
-      org.sufrin.microCSO.Runtime.reset()
+      org.sufrin.microCSO.CSORuntime.reset()
       val shared = Chan.Shared(readers = 2, writers = 2)[String]("Shared", bufSize)
       println(s"ShareTest $bufSize")
       run(useChan(shared))
@@ -433,11 +432,10 @@ object testPolling extends testFramework {
 
     def poller(chan: Chan[Int], delay: Double, to: Int): process = proc (f"$chan%s: poller($delay%f, $to%d)") {
       var every = seconds(delay)
-      val res = new AltResult[Int]
       for { i<-0 until to } {
         sleep(every)
-        val r = chan.poll(res)
-        show(s"->$r(${res.get})")
+        val r = chan.poll()
+        show(s"->$r")
       }
       chan.closeIn()
     }

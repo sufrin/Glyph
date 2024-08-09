@@ -1,7 +1,7 @@
 package org.sufrin.microCSO
 
-import org.sufrin.microCSO.Alternation.{AltOutcome, AltResult}
-import org.sufrin.microCSO.Time.Nanoseconds
+import Alternation.EventOutcome
+import Time.Nanoseconds
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.concurrent.locks.LockSupport
@@ -28,7 +28,7 @@ class BufferChan[T](val name: String, capacity: Int) extends Chan[T] {
   @inline private def isFull: Boolean  = buffer.length==capacity
   @inline private def isEmpty: Boolean = buffer.isEmpty
 
-  locally { org.sufrin.microCSO.Runtime.addChannel(this) }
+  locally { org.sufrin.microCSO.CSORuntime.addChannel(this) }
 
 
   /**
@@ -54,16 +54,16 @@ class BufferChan[T](val name: String, capacity: Int) extends Chan[T] {
   /**
    *  Behaves as !(t()) when there is room in the buffer
    */
-  def offer(t: ()=>T): AltOutcome = {
+  def offer(t: ()=>T): EventOutcome[Nothing] = {
     if (outputClosed.get)
-      AltOutcome.CLOSED
+      EventOutcome.CLOSED
     else
     if (isFull)
-      AltOutcome.NO
+      EventOutcome.FAILED
     else {
       val value = t()
       this.!(value)
-      AltOutcome.OK
+      EventOutcome.SUCCEEDED
     }
   }
 
@@ -87,16 +87,15 @@ class BufferChan[T](val name: String, capacity: Int) extends Chan[T] {
   }
 
   /** Behaves as `result.set(?())` when  a writer is already committed */
-  def poll(result: AltResult[T]): AltOutcome = {
+  def poll(): EventOutcome[T] = {
     if (closed.get)
-      AltOutcome.CLOSED
+      EventOutcome.CLOSED
     else
       if (!isEmpty) {
-        result.set(this.?(()))
-        AltOutcome.OK
+        EventOutcome.POLLED(this.?(()))
       }
       else
-        AltOutcome.NO
+        EventOutcome.FAILED
   }
 
   def ?(t: Unit): T = {
@@ -216,7 +215,7 @@ class SharedBufferChan[T](name: String, capacity: Int, readers: Int=1, writers: 
 
   override def readBefore(timeoutNS: Nanoseconds): Option[T] = withLock(rLock) { super.readBefore(timeoutNS) }
   override def writeBefore(timeoutNS: Nanoseconds)(value: T) = withLock(wLock) { super.writeBefore(timeoutNS)(value) }
-  override def poll(result: AltResult[T]): AltOutcome = withLock(rLock) { super.poll(result) }
-  override def offer(t: ()=>T): AltOutcome = withLock(wLock) { super.offer(t) }
+  override def poll(): EventOutcome[T] = withLock(rLock) { super.poll() }
+  override def offer(t: ()=>T): EventOutcome[Nothing] = withLock(wLock) { super.offer(t) }
 
 }

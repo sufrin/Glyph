@@ -1,7 +1,8 @@
 
 /**
  * A simplified sublanguage of ThreadCSO using only
- * virtual threads, and with simplified support for debugging.
+ * virtual threads, and with simplified support for
+ * live debugging.
  *
  * Key simplifications:
  *
@@ -46,10 +47,10 @@ trait OutPort[T] extends Closeable { port =>
   def !(t: T): Unit
 
   /**
-   * Behaves as `!(t())` and yields `OK` if something can be accepted by the channel; else
+   * Behaves as `!(t())` and yields `FAILED` if something can be accepted by the channel; else
    * yields `NO` or `CLOSED`.
    */
-  def offer(t: () => T): AltOutcome
+  def offer(t: () => T): EventOutcome[Nothing]
 
   def out: OutPort[T] = port
 
@@ -60,7 +61,7 @@ trait OutPort[T] extends Closeable { port =>
   /**
    * OutPort event notation
    */
-  def && (guard: => Boolean): GuardedPort[T] = GuardedPort[T](()=>guard, Out(out))
+  def && (guard: => Boolean): GuardedPort[T] = GuardedPort[T](()=>guard, `Out-Port`(out))
   def =!=> (value: =>T): `Output-Event`[T]  = `Output-Event`(()=>true, out, ()=>value)
 }
 
@@ -83,10 +84,10 @@ trait InPort[T] extends Closeable { port: InPort[T] =>
   def in: InPort[T] = port
 
   /**
-   * Behaves as `result.set(?())` and yields `OK` when a writer has already committed to output
+   * Yields `RETURN(?())` when a writer to the port's channel has already committed to output
    * else yields `CLOSED` or `NO`
    */
-  def poll(result: AltResult[T]): AltOutcome
+  def poll(): EventOutcome[T]
 
   /** This port hasn't yet been closed */
   def canInput: Boolean
@@ -96,25 +97,28 @@ trait InPort[T] extends Closeable { port: InPort[T] =>
   /**
    *  InPort event notation
    */
-  def && (guard: => Boolean): GuardedPort[T] = GuardedPort[T](()=>guard, In(in))
+  def && (guard: => Boolean): GuardedPort[T] = GuardedPort[T](()=>guard, `In-Port`(in))
   def =?=> (f: T=>Unit): `Input-Event`[T]  = `Input-Event`(()=>true, in, f)
 }
 
-case class GuardedPort[T](guard: () => Boolean, port: Port[T]) {
-  def =?=> (f: T=>Unit): `Input-Event`[T]  = `Input-Event`(()=>true, port.asIn, f)
-  def =!=> (value: =>T): `Output-Event`[T]  = `Output-Event`(guard, port.asOut, ()=>value)
+/**
+ *  Abstract syntax of a guarded port or channel: precursor of an alternation event
+ */
+case class GuardedPort[T](guard: () => Boolean, port: AnyPort[T]) {
+  def =?=> (f: T=>Unit): `Input-Event`[T]  = `Input-Event`(()=>true, port.asInPort, f)
+  def =!=> (value: =>T): `Output-Event`[T]  = `Output-Event`(guard, port.asOutPort, ()=>value)
 }
 
 
 
 
 /** Database of running processes, and channels   */
-object Runtime {
+object CSORuntime {
   def reset(): Unit = {
     vThreads.clear()
     vChannels.clear()
   }
-  /** Mapping of (running) thread ids to Runtime */
+  /** Mapping of (running) thread ids to CSORuntime */
   val vThreads =
     new scala.collection.concurrent.TrieMap[Long, Thread]
 
@@ -182,7 +186,7 @@ object Threads {
 
   def showThreadTrace(thread: Thread, out: PrintStream) = {
     out.println(thread)
-    Runtime.forLocals(thread) {
+    CSORuntime.forLocals(thread) {
       case (key, value) => out.println(f"$key%8s -> $value%s")
     }
     showStackTrace(thread.getStackTrace, out)
@@ -277,7 +281,7 @@ class ForkHandle(val name: String, val body: ()=>Unit, val latch: Latch) extends
     var prevName: String = ""
     try {
       thread = Thread.currentThread
-      Runtime.add(thread)           // add to the database
+      CSORuntime.add(thread)           // add to the database
       prevName = thread.getName
       thread.setName(name)
       status = Running
@@ -291,7 +295,7 @@ class ForkHandle(val name: String, val body: ()=>Unit, val latch: Latch) extends
         Default.error(s"[${Thread.currentThread().getName}] threw $thrown")
     } finally {
       thread.setName(prevName)  // remove from the database
-      Runtime.remove(Thread.currentThread)
+      CSORuntime.remove(Thread.currentThread)
     }
     if (logging)
       Default.finest(s"($this).run() => $status")
@@ -634,8 +638,8 @@ object portTools extends Loggable{
 
   def source[T](out: OutPort[T], it: Iterable[T]): proc = proc (s"source($out,...)"){
       var count = 0
-      //Runtime.newLocal("source count", count)
-      //Runtime.newLocal("source out", out)
+      //CSORuntime.newLocal("source count", count)
+      //CSORuntime.newLocal("source out", out)
       repeatFor (it) { t => out!t; count += 1 }
       out.closeOut()
       if (logging) finer(s"source($out) closed")
@@ -643,8 +647,8 @@ object portTools extends Loggable{
 
   def sink[T](in: InPort[T])(andThen: T=>Unit): proc = proc (s"sink($in)"){
       var count = 0
-      //Runtime.newLocal("sink count", count)
-      //Runtime.newLocal("sink in", in)
+      //CSORuntime.newLocal("sink count", count)
+      //CSORuntime.newLocal("sink in", in)
       repeatedly { in?{ t => andThen(t); count+=1 } }
       in.closeIn()
       if (logging) finer(s"sink($in) closed")

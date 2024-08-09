@@ -3,40 +3,39 @@ package org.sufrin.microCSO
 import org.sufrin.microCSO.Time.{microSec, Nanoseconds}
 import org.sufrin.microCSO.proc.{repeatedly, stop}
 
-import java.util.concurrent.atomic.AtomicReference
-
 object Alternation  {
   private final val nanoDelta: Nanoseconds = 5*microSec
 
-  trait Port[T] {
-    def asIn:  InPort[T]  = null
-    def asOut: OutPort[T] = null
+
+  /** Possible outcome of an alternation event  */
+  trait  EventOutcome [+T] {}
+  object EventOutcome {
+    case class  POLLED[T](value: T) extends EventOutcome[T] // for a poll()
+    case object SUCCEEDED extends EventOutcome[Nothing]
+    case object CLOSED extends EventOutcome[Nothing]
+    case object FAILED extends EventOutcome[Nothing]
   }
 
-  /** Outcome of a tentative read/write */
-  trait  AltOutcome {}
-  class  AltResult[T] extends AtomicReference[T]
-
-  object AltOutcome {
-    case object OK extends AltOutcome
-    case object CLOSED extends AltOutcome
-    case object NO extends AltOutcome
+  /** Encoding of the port or channel that guards an event: abstract syntax */
+  trait AnyPort[T] {
+    def asInPort:  InPort[T]  = null
+    def asOutPort: OutPort[T] = null
+  }
+  case class `Out-Port`[T](port: OutPort[T]) extends AnyPort[T] { override def asOutPort = port }
+  case class `In-Port`[T](port: InPort[T])   extends AnyPort[T] { override def asInPort: InPort[T] = port }
+  case class `Both-Ports`[T](chan: Chan[T])  extends AnyPort[T] {
+    override def asInPort: InPort[T]   = chan.in
+    override def asOutPort: OutPort[T] = chan.out
   }
 
-  case class Out[T](port: OutPort[T]) extends Port[T] { override def asOut = port }
-  case class In[T](port: InPort[T]) extends Port[T]   { override def asIn: InPort[T] = port }
-  case class InOut[T](chan: Chan[T]) extends Port[T]  {
-    override def asIn: InPort[T]   = chan.in
-    override def asOut: OutPort[T] = chan.out
-  }
-
-  trait Event
-  case class `Input-Event`[T](guard: () => Boolean, port: InPort[T], f: T => Unit) extends Event
-  case class `Output-Event`[T](guard: () => Boolean, port: OutPort[T], f: () => T) extends Event
+  /** Events constructed by the alternation notation */
+  trait IOEvent
+  case class `Input-Event`[T](guard: () => Boolean, port: InPort[T], f: T => Unit) extends IOEvent
+  case class `Output-Event`[T](guard: () => Boolean, port: OutPort[T], f: () => T) extends IOEvent
   case class `Or-Else`(eval: ()=>Unit)
   case class `After-NS`(ns: Nanoseconds, eval: ()=>Unit)
 
-  import AltOutcome._
+  import EventOutcome._
 
   /**
    *  Repeatedly find and fire one of the `events`, until
@@ -44,15 +43,12 @@ object Alternation  {
    *  sequential order: it is "fair" inasmuch as
    *  at each iteration `events` is rotated by a single place.
    *
-   *  The "Finding" is done by polling periodically (the period is half a microsecond). This
-   *  is somewhat inelegant, but drastically simplifies the implementation.
-   *
    * @see ServeBefore
    */
-  def Serve(events: Seq[Event]): Unit = {
+  def Serve(events: Seq[IOEvent]): Unit = {
     val fairness = new Rotater(events)
     repeatedly {
-      eventFired(fairness, deadline=0, afterDeadline = {()=>}) match {
+      pollEvents(fairness, deadline=0, afterDeadline = { ()=>}) match {
         case true  => fairness.rot()
         case false => stop
       }
@@ -70,11 +66,13 @@ object Alternation  {
    *   (b) the deadline (if positive) has expired -- then evaluate `afterDeadline` and continue serving
    *   (c) none of the `events` are feasible -- then evaluate `orElse`, and stop
    * }}}
+   *
+   * @see pollEvents
    */
-  def ServeBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: Seq[Event]): Unit = {
+  def ServeBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: Seq[IOEvent]): Unit = {
     val fairness = new Rotater(events)
     repeatedly {
-      eventFired(fairness, deadline, afterDeadline = {()=>afterDeadline}) match {
+      pollEvents(fairness, deadline, afterDeadline = { ()=>afterDeadline}) match {
         case true  =>
           fairness.rot()
         case false =>
@@ -87,10 +85,10 @@ object Alternation  {
   /**
    * @see ServeBefore
    */
-  def serveBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: Event*): Unit = {
+  def serveBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: IOEvent*): Unit = {
     val fairness = new Rotater(events)
     repeatedly {
-      eventFired(fairness, deadline, afterDeadline = {()=>afterDeadline}) match {
+      pollEvents(fairness, deadline, afterDeadline = { ()=>afterDeadline}) match {
         case true  =>
           fairness.rot()
         case false =>
@@ -106,12 +104,9 @@ object Alternation  {
    *  sequential order: it is "fair" inasmuch as
    *  at each iteration `events` is rotated by a single place.
    *
-   *  The "Finding" is done by polling periodically (the period is half a microsecond). This
-   *  is somewhat inelegant, but drastically simplifies the implementation.
-   *
    * @see serveBefore
    */
-  def serve(events: Event*): Unit = Serve(events)
+  def serve(events: IOEvent*): Unit = Serve(events)
 
   /**
    * Poll periodically until one of the `events` fires or none is feasible.
@@ -119,7 +114,7 @@ object Alternation  {
    *
    * @see altBefore
    */
-  def alt(events: Event*): Unit = Alt(events)
+  def alt(events: IOEvent*): Unit = Alt(events)
 
   /**
    * Poll periodically until one of the `events` fires or none is feasible. In
@@ -127,8 +122,8 @@ object Alternation  {
    *
    * @see AltBefore
    */
-  def Alt(events: Seq[Event]): Unit =
-    eventFired(events, deadline=0, afterDeadline = {()=>})  match {
+  def Alt(events: Seq[IOEvent]): Unit =
+    pollEvents(events, deadline=0, afterDeadline = { ()=>})  match {
       case false => throw new Error("alternation: no feasible events")
       case true =>
     }
@@ -141,9 +136,10 @@ object Alternation  {
    *   (c) none of the `events` are feasible -- then evaluate `orElse`.
    * }}}
    *
+   * @see pollEvents
    */
-  def altBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {} , waitDelta: Nanoseconds = nanoDelta)(events: Event*): Unit =
-    eventFired(events, deadline, afterDeadline = { ()=>afterDeadline }, waitDelta) match {
+  def altBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {} , waitDelta: Nanoseconds = nanoDelta)(events: IOEvent*): Unit =
+    pollEvents(events, deadline, afterDeadline = { ()=>afterDeadline }, waitDelta) match {
       case false => orElse
       case true  =>
     }
@@ -156,15 +152,17 @@ object Alternation  {
    *   (c) none of the `events` are feasible -- then evaluate `orElse`
    * }}}
    *
+   * @see pollEvents
+   *
    */
-  def AltBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: Seq[Event]): Unit =
-    eventFired(events, deadline, afterDeadline = { ()=>afterDeadline }, waitDelta) match {
+  def AltBefore(deadline: Nanoseconds=0, afterDeadline: => Unit = {}, orElse: => Unit = {}, waitDelta: Nanoseconds = nanoDelta )(events: Seq[IOEvent]): Unit =
+    pollEvents(events, deadline, afterDeadline = { ()=>afterDeadline }, waitDelta) match {
       case false => orElse
       case true  =>
     }
 
   /**
-   *  (busy) wait until one of `events`  fires or none are feasible.
+   *  Poll until one of `events`  fires or none are feasible.
    *  Yield true in the former case and false in the latter case.
    *
    *  If there's a positive `deadline` then
@@ -173,31 +171,38 @@ object Alternation  {
    *
    *  `waitDelta` is the delay between successive attempts to find and fire an event.
    *
+   * A more elegant solution replaces the polling. Each running alternation
+   * that has finds no fireable event on the first poll, has informed all the channels
+   * of its feasible events that it is waiting (by passing a shared semaphore, on which it is waiting, to each of them).
+   * A channel that is holding such a semaphore just releases it when anything interesting has happened to it
+   * (closed, poll would succeed, offer would succeed). The downside of this method is that all the channels that
+   * were involved must now have their semaphores removed by a closing phase of the alternation.
+   *
    */
-  def eventFired(events: Seq[Event], deadline: Nanoseconds=0, afterDeadline: ()=>Unit, waitDelta: Nanoseconds = nanoDelta): Boolean = {
-    var outcome = false
+  def pollEvents(events: Seq[IOEvent], deadline: Nanoseconds=0, afterDeadline: ()=>Unit, waitDelta: Nanoseconds = nanoDelta): Boolean = {
+    var result  = false
     var waiting = true
     var remainingTime = deadline
     val hasDeadline   = remainingTime>0
 
     while (waiting) {
-      val (feasibles, result) = fireFirst(events)
-      // result is OK or all events refused or infeasible
-      result match {
-        case OK =>
+      val (feasibles,  fired) = fireFirst(events)
+      // result is FAILED or all events refused or infeasible
+      fired match {
+        case SUCCEEDED =>
           // an event fired
-          outcome = true
+          result = true
           waiting = false
-        case CLOSED | NO =>
+        case CLOSED | FAILED =>
           // no event seen on this pass fired
           if (feasibles == 0) {
             // now nothing CAN happen
             // print("* "); System.out.flush()
-            outcome = false
+            result = false
             waiting = false
           } else if (hasDeadline && remainingTime<=0) {
             afterDeadline()
-            outcome = true
+            result = true
             waiting = false
           } else {
             // wait a bit and try again
@@ -206,50 +211,48 @@ object Alternation  {
           }
       }
     }
-    outcome
+    result
   }
 
   /**
-   * Find and fire the first ready event.
-   * Return the number of feasible events.
+   * Find and fire the first of the (input or output) `events` that is ready.
+   * Return the number of feasible events, with one of `SUCCEEDED|CLOSED|FAILED`; an
+   * input event that successfully polled is treated as `SUCCEEDED`
    */
-  @inline private final def fireFirst(events: Seq[Event]): (Int, AltOutcome) = {
-    var outcome:  AltOutcome = NO
+  @inline private final def fireFirst(events: Seq[IOEvent]): (Int, EventOutcome[Nothing]) = {
+    var outcome:  EventOutcome[Nothing] = FAILED
     var feasible: Int = 0
     val feasibles = events.filter{
       case `Output-Event`(guard, port, _) => guard() && port.canOutput
       case `Input-Event`(guard, port, _) => guard() && port.canInput
     }
     //if (feasibles.isEmpty) Default.finer(s"fireFirst ${feasibles.length} feasible")
-    val iter: Iterator[Event] = feasibles.iterator
+    val iter: Iterator[IOEvent] = feasibles.iterator
     // find and fire the first ready event
-    while (outcome!=OK && iter.hasNext) {
+    while (outcome!=SUCCEEDED && iter.hasNext) {
       iter.next() match {
         case `Output-Event`(guard, port, f) =>
           outcome = port.offer(f)
           outcome match {
-            case OK =>
+            case SUCCEEDED =>
               feasible += 1
             case CLOSED =>
               outcome = CLOSED
-            case NO     =>
-              outcome = NO            }
+            case FAILED     =>
+              outcome = FAILED            }
         case `Input-Event`(guard, port, f) =>
-          val result = new AltResult[Any]
-          port.poll(result) match {
-            case OK     =>
-              f(result.get)
-              outcome = OK
+          port.poll() match {
+            case POLLED(result)    =>
+              f(result)
+              outcome = SUCCEEDED
               feasible += 1
             case CLOSED =>
               outcome = CLOSED
-            case NO     =>
-              outcome = NO
+            case FAILED     =>
+              outcome = FAILED
           }
       }
     }
-    // outcome==OK || all events refused or infeasible // TODO: need to distinguish?
-    // Default.finer(s"fireFirst $feasible/${feasibles.length} $outcome")
     (feasibles.length, outcome)
   }
 

@@ -1,21 +1,37 @@
 package org.sufrin.microCSO
+import org.sufrin.logging._
 
-import org.sufrin.logging.{Default, FINEST, INFO}
 import org.sufrin.microCSO.Time._
 
-import scala.sys.process.stdout
-
+/**
+ * Any object that extends `testFramework` has a `main` that can
+ * be run (from the terminal or IDE), and that, in turn, runs
+ * its defined `test()`. Each `test()` should use
+ * `run`, and `apply` (or their logging.Default-enabling
+ * variants `frun`, `fapply`) to start processes.
+ *
+ * 1. `run` and `frun`
+ * fork their argument process, and interrupt it if it runs past
+ * a deadline; these are helpful for coping with deadlocked
+ * threads.
+ *
+ * 2. `apply` and `fapply` are lower-level testers that
+ * catch and backtrace any exceptions/errors thrown by
+ * the process they run.
+ */
 trait testFramework {
   val logging: Boolean = true
 
   val deadline: Nanoseconds = Time.seconds(4.0)
 
+  /** This method defines an individual test */
   def test(): Unit
 
+  /** Run the defined test */
   def main(args: Array[String]): Unit = test()
 
   def run(p: process): Unit = {
-    Runtime.reset()
+    CSORuntime.reset()
     Thread.currentThread.setName(s"RUN($p)")
     println(s"============= RUN $p ==============")
     System.out.flush()
@@ -24,14 +40,14 @@ trait testFramework {
       case (true, status)  => println(s"\n$p\n TERMINATED ($status)")
       case (false, status) =>
         println(s"\n$p\nTIMEOUT after ${deadline.toDouble/seconds(1.0)} seconds ($status)")
-        println("Runtime Information:")
-        Runtime.forEach {
+        println("CSORuntime Information:")
+        CSORuntime.forEach {
           case thread: Thread =>
-            Runtime.remove(thread)
+            CSORuntime.remove(thread)
             Threads.showThreadTrace(thread)
         }
         println("Open Channels:")
-        Runtime.forEachChannel{
+        CSORuntime.forEachChannel{
           case chan: Chan[_] =>
             println(s"$chan")
         }
@@ -42,7 +58,7 @@ trait testFramework {
 
   def show(s: String): Unit = {
     if (Default.level>INFO) println(s) else print(s"$s ")
-    stdout.flush()
+    System.out.flush()
   }
 
   def frun(p: process): Unit = {

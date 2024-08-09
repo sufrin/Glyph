@@ -1,7 +1,7 @@
 package org.sufrin.microCSO
 
 import org.sufrin.logging.Loggable
-import org.sufrin.microCSO.Alternation.InOut
+import org.sufrin.microCSO.Alternation.`Both-Ports`
 
 trait Chan[T] extends OutPort[T] with InPort[T] with Loggable {
   def withLogLevel(logLevel: Int): this.type =
@@ -20,7 +20,7 @@ trait Chan[T] extends OutPort[T] with InPort[T] with Loggable {
 
   /** The guard notation (from a channel) supports either outport or inport events  */
   override def &&(guard: => Boolean): GuardedPort[T] =
-    GuardedPort[T](() => guard, InOut(this))
+    GuardedPort[T](() => guard, `Both-Ports`(this))
 }
 
 /**
