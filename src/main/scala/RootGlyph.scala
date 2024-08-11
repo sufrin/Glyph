@@ -1,25 +1,125 @@
 package org.sufrin.glyph
 import GlyphTypes.Scalar
 
+import io.github.humbleui.jwm.{App, EventMouseMove}
+
+
+object RootGlyph extends org.sufrin.logging.Loggable {
+
+}
 
 /**
  * A top-level glyph that keeps track of the details of the host window of
- * the GUIrootGUIroot; its geometry, etc. Wrapping a glyph in one of these
+ * the `Glyph GUIroot`; its geometry, etc. Wrapping a glyph in one of these
  * makes it possible to provide ``global'' services (such a popups)
  * from reactive glyphs without them needing to refer to a global object.
  *
- * These glyphs are inserted automatically when an `Interaction` is constructed
- * from a `Window` and the root of an application-specific glyph tree.
+ * `RootGlyph`s are inserted automatically when an `Interaction` is constructed
+ * from a `Window` and the root `Glyph`  `GUIroot` of an application-specific glyph tree.
  *
- * //TODO: can we now dispense with the Envelope, since we have to implement most Glyph features here now anyway.
+ * Note:
+ *
+ * This class has become a repository for the many methods and services needed to mediate between
+ * the very large variety of reactive glyphs and the window-system/event-handler. At some point it may
+ * be advantageous to refactor/modularize its functionality; but for the moment convenience lures.
+ *
+ * There is no principled reason why most variables and methods here are public -- indeed some of them should
+ * be less universally accessible than this.
  */
-class RootGlyph(GUIroot: Glyph) extends Glyph { thisRoot =>
-  import io.github.humbleui.jwm.App.runOnUIThread
+class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   import io.github.humbleui.jwm.{Event, EventKey, Screen, Window}
+  import io.github.humbleui.jwm.App.runOnUIThread
   def copy(fg: Brush=this.fg, bg: Brush=this.bg) : Glyph = new RootGlyph(GUIroot)
+
+  /**
+   *  When a window size changes, automatically scale its non-resizeable GUIs when they are not (programmatically)
+   *  `resizeable`. This can be changed at any time.
+   */
+  var autoScale: Boolean = false
+
+  /** Ignore the next `rootWindowResized`.
+   *  Used only when the `autoScale` path through `rootWindowResized` is
+   *  taken.
+   */
+  private var ignoreResize: Boolean = false
+
+  /**
+   * Regenerate the `GUIroot` to be of size (no more than) `(newW, newH)` if
+   * it is `resizeable`. Otherwise, if `autoScale` is true the current `Interaction`'s software scale
+   * is changed uniformly to accomodate the new window size. Otherwise resynchronize the
+   * window size to its original value, and thereby appear to refuse to change in response
+   * to a manual window-size change.
+   *
+   * Invoked by the `EventManager` (with force=false) and from one or two
+   * active glyphs (with force=true).
+   *
+   *
+   * @param newW
+   * @param newH
+   * @param force force the resizing
+   *
+   */
+  def rootWindowResized(newW: Scalar, newH: Scalar, force: Boolean = false): Unit = {
+     RootGlyph.fine(s"($newW,$newH)[force=$force]")
+     if (ignoreResize) {
+       ignoreResize = false
+     } else
+     if (GUIroot.resizeable) {
+       if (force || newW!=diagonal.x || newH!=diagonal.y) {
+         io.github.humbleui.jwm.App.runOnUIThread { ()=>
+           val newRoot = GUIroot.atSize(Vec(newW, newH))
+           if (newRoot ne GUIroot) {
+             newRoot.parent = this
+             GUIroot.parent = this
+             diagonal = newRoot.diagonal
+             RootGlyph.fine(s"=>$diagonal[force=$force]")
+             // While the window is being manually resized, presence of the following
+             // line will suppress visual feedback until the new root has changed dimension.
+             // This is not necessarily a bad thing
+             // syncWindowContentSize()
+             onNextMotion { syncWindowContentSize() }
+           }
+         }
+       }
+     }
+     else
+     if (autoScale) {
+         // Change the software display scaling to reflect the new window size
+         val newScale = newW / w min newH / h
+         val oldScale = eventHandler.softwareScale
+         eventHandler.softwareScale = newScale
+         if (oldScale != newScale) {
+           ignoreResize = true
+           setWindowContentSize(diagonal.scaled(newScale))
+         }
+     }
+     else {
+       // Don't permit a manual resize
+       syncWindowContentSize()
+     }
+  }
+
+  /**
+   *  Synchronize the window's content bounding box with this glyph's bounding
+   *  box. The subsequent `rootWindowResized` will not cause the root layout
+   *  to be recalculated.
+   */
+  def syncWindowContentSize(): Unit = {
+    rootWindow.setContentSize(diagonal.x.toInt, diagonal.y.toInt)
+  }
+
+  /**
+   * Force the window's content bounding box to be `diagonal`, and accept a
+   * subsequent `rootWindowResized` notification.
+   * @param diagonal
+   */
+  def setWindowContentSize(diagonal: Vec): Unit = {
+    rootWindow.setContentSize(diagonal.x.toInt, diagonal.y.toInt)
+  }
+
   val fg: Brush = DefaultBrushes.invisible
   val bg: Brush = DefaultBrushes.invisible
-  val diagonal: Vec = GUIroot.diagonal
+  var diagonal: Vec = GUIroot.diagonal
   locally { GUIroot.parent = this }
   override def toString: String = s"RootGlyph\n\tdelegate = $GUIroot"
   /** The root Window of this interaction */
@@ -263,13 +363,18 @@ val args: List[String] = Nil
 
 override def isRoot = true
 
-/**
- *  Invoke this if the cursor or the focus leaves the root window.
- *  Help for implementing "auto-popdown" of menu windows
- */
 
-def onRootLeave(): Unit = {}
-def onRootEnter(): Unit = {}
+def onRootLeave(): Unit = {
+  RootGlyph.fine(s"RootLeave($mouse)")
+}
+
+def onRootEnter(): Unit = {
+  RootGlyph.fine(s"RootEnter($mouse)")
+}
+
+def onFocus(in: Boolean): Unit = {
+  RootGlyph.fine(s"Focus($in)")
+}
 
 protected var _onCloseRequest: Option[Window => Unit] = None
 
@@ -284,11 +389,55 @@ def windowCloseRequest(w: Window): Unit = {
 
 var mouseInside: Option[Boolean] = None
 
-def acceptRootGlyphEvent(event: RootGlyphEvent, window: Window, handler: EventHandler): Unit = {
-  if (handler.logEvents) println(event)
+
+var _onNextMotion: Option[()=>Unit] = None
+
+/**
+ * The `action` will be evaluated when the
+ * mouse next moves.
+ */
+def onNextMotion(action: => Unit): Unit = {
+    _onNextMotion = Some {()=>action}
+}
+
+
+var _mouseLoc:              Vec = Vec.Zero
+var _decodeMotionModifiers: Boolean = false
+var _mouseModifiers:        Modifiers.Bitmap = 0
+var _mouseStateTracker:     MouseStateTracker = null
+def mouse: (Vec, Modifiers.Bitmap) =  (_mouseLoc, _mouseModifiers)
+def decodeMotionModifiers(enable: Boolean): Unit = _decodeMotionModifiers=enable
+def trackMouseState(enable: Boolean): Unit = {
+  if (enable)
+    _mouseStateTracker = new MouseStateTracker(thisRoot)
+  else
+    _mouseStateTracker = null
+}
+
+/**
+ * Unconditionally invoked by the event handler when the mouse moves.
+ * Tracks the current mouse location, and (when `_decodeMotionModifiers` is set)
+ * the current state of the modifiers. It also evaluates the currently
+ * declared `onNextMotion` action.
+ */
+def onMotion(mouseLoc: Vec, event: EventMouseMove): Unit = {
+  _mouseLoc = mouseLoc
+  if (_decodeMotionModifiers) _mouseModifiers = Modifiers(event)
+  _onNextMotion match {
+    case None => ()
+    case Some(action) =>
+      _onNextMotion = None
+      action()
+  }
+  if (_mouseStateTracker ne null) _mouseStateTracker.accept(event)
+}
+
+def acceptRootGlyphEvent(event: RootGlyphEvent): Unit = {
   event match {
-    case RootEnterEvent(window) => onRootEnter()
-    case RootLeaveEvent(window) => onRootLeave()
+    case RootEnterEvent(window) =>
+      onRootEnter()
+    case RootLeaveEvent(window) =>
+      onRootLeave()
   }
 }
 
@@ -299,11 +448,11 @@ def acceptWindowEvent(event: Event, window: Window, handler: EventHandler): Unit
   if (handler.logEvents) println(f"$event%s 0x${window._ptr}%12x")
   event match {
     case _: EventWindowFocusOut =>
-      import io.github.humbleui.jwm.App
-      App.runOnUIThread(() => onRootLeave())
+      App.runOnUIThread(() => onFocus(false))
     case _: EventWindowFocusIn =>
-      rootWindow.requestFrame()
-    case _: EventWindowResize =>
+      App.runOnUIThread(() => onFocus(true))
+    case ev: EventWindowResize =>
+      rootWindowResized(ev.getContentWidth.toFloat, ev.getContentHeight.toFloat)
       rootWindow.requestFrame()
     case _: EventWindowMove =>
       // also when resized by moving a corner or an edge

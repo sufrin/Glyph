@@ -129,6 +129,12 @@ trait DemonstrationPages extends Brushes {
           anchor.guiRoot.onCloseRequest( _.close() )
         case true =>
           anchor.guiRoot.onCloseRequest ( confirmCloseOn(anchor)(_) )
+      }, ex,
+      TextToggle(whenTrue="Rescaling enabled", whenFalse="Rescaling disabled", initially=false) {
+        case false =>
+          anchor.guiRoot.autoScale = false
+        case true =>
+          anchor.guiRoot.autoScale = true
       }
     )
   }

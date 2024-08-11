@@ -284,7 +284,9 @@ trait EventHandler extends Consumer[Event] {
       }
 
       case mouse: EventMouseMove =>
+        // MouseStateTracker.discover(root.asInstanceOf[RootGlyph], mouse, window) // obsolescent
         val mouseLoc = mouseLocation(mouse.getX, mouse.getY)
+        root.asInstanceOf[RootGlyph].onMotion(mouseLoc, mouse)
         // println(s"$mouseLoc (scaled $scaleFactor) #grid{screen.getScale} $mouse")
         mouseFocus match {
           case Some(focussed) =>
@@ -328,77 +330,6 @@ trait EventHandler extends Consumer[Event] {
          }
     }
   }
-  
-  object MouseState {
 
-    val enterMargin = 6
-    val leaveMargin = 30
-
-    /** Is the mouse inside the window */
-    var inside: Option[Boolean] = None
-    
-    @inline def enteringWindow(root: RootGlyph): Unit =
-      inside match {
-        case Some(true) =>
-        case None | Some(false) =>
-          inside = Some(true)
-          root.acceptRootGlyphEvent(RootEnterEvent(window), window, thisHandler)
-      }
-
-    @inline def leavingWindow(root: RootGlyph): Unit =
-      inside match {
-        case Some(false) =>
-        case None | Some(true) =>
-          inside = Some(false)
-          root.acceptRootGlyphEvent(RootLeaveEvent(window), window, thisHandler)
-      }
-
-    trait Direction
-    case class L(dist: Int) extends Direction
-    case class R(dist: Int) extends Direction
-    case object N extends Direction
-    case class U(dist: Int) extends Direction
-    case class D(dist: Int) extends Direction
-    case object LeftWards extends Direction
-    case object RightWards extends Direction
-    case object UpWards extends Direction
-    case object DownWards extends Direction
-
-    /**
-     * A mouse move that finds no natural glyph to hover over may be
-     * made outside the window. The root glyph is informed when it
-     * looks like the mouse is entering or leaving the window.
-     *
-     * The criterion for entering the window is that the motion is "just outside", but towards
-     * the window. That for leaving the window is that the motion is "somewhat more than just 
-     * outside" the window and away from it. 
-     */
-    def discover(root: RootGlyph, event: EventMouseMove, window: Window): Unit = {
-      import Math.abs
-      val x = event._x.toInt
-      val y = event._y.toInt
-      val dx = if (event._movementX > 0) RightWards else if (event._movementX < 0) LeftWards else N
-      val dy = if (event._movementY > 0) DownWards else if (event._movementY < 0) UpWards else N
-      val w = window.getWindowRect.getWidth
-      val h = window.getWindowRect.getHeight
-      val xOutside = if (x <= 0) L(-x) else if (x >= w) R(x - w) else N
-      val yOutside = if (y <= 0) U(-y) else if (y >= h) D(y - h) else N
-
-      (xOutside, dx) match {
-        case (L(dist), RightWards) if dist <= enterMargin => enteringWindow(root)
-        case (R(dist), LeftWards) if dist <= enterMargin  => enteringWindow(root)
-        case (L(dist), LeftWards) if dist <= leaveMargin  => leavingWindow(root)
-        case (R(dist), RightWards) if dist <= leaveMargin => leavingWindow(root)
-        case _ =>
-          (yOutside, dy) match {
-            case (U(dist), DownWards) if dist <= enterMargin => enteringWindow(root)
-            case (D(dist), UpWards) if dist <= enterMargin   => enteringWindow(root)
-            case (U(dist), UpWards) if dist <= leaveMargin   => leavingWindow(root)
-            case (D(dist), DownWards) if dist <= leaveMargin => leavingWindow(root)
-            case _ =>
-          }
-      }
-    }
-  }
 
 }

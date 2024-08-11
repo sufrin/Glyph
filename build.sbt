@@ -19,3 +19,9 @@ lazy val root = (project in file("."))
     idePackagePrefix := Some("org.sufrin.glyph"),
 
   )
+
+lazy val microCSO = (project in file("microCSO"))
+  .settings(
+      name := "microCSO",
+      idePackagePrefix := Some("org.sufrin.microCSO"),
+  )
