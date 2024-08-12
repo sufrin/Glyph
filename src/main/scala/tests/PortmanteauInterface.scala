@@ -3,12 +3,14 @@ package tests
 import GlyphTypes.Window
 import styled.text.{Label, Paragraphs}
 import NaturalSize.{Col, Row}
+import Styles.Default.Spaces.ex
 import Styles.NotebookStyle
 
 class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
-  implicit val PageStyle: NotebookStyle = style.notebookStyle
+  implicit val PageStyle: NotebookStyle = style.notebookStyle.copy(buttonStyle=style, pageStyle=style)
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
-    import windowdialogues.Dialogue.OKNO
+    import overlaydialogues.Dialogue.OKNO
+    // TODO: windowdialogues need set software scale more carefully than now if autoScale
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
       Label("Do you want to Exit?") scaled 1.5f
     ).enlarged(50)
@@ -17,14 +19,21 @@ class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
   }
 
   Page("Welcome", "") {
+    val anchor = Glyphs.INVISIBLE()
     Col.centered(
+      anchor,
       Paragraphs(30, Justify)(
         """
           | Welcome to the Portmanteau Notebook: its source code is more
           |modular than that of DemonstrationNotebook -- which evolved as
           |a monolith.
           |
-          |""".stripMargin)(style) enlarged 50)
+          |""".stripMargin) enlarged 50, ex,
+      styled.text.Label("Scaleable: ") beside styled.CheckBox(initially=false) {
+        state =>
+          anchor.guiRoot.autoScale=state
+      }
+    )
   }
 
   Page("New Instance", "")(new PortmanteauInstantiation().GUI)
