@@ -1,4 +1,4 @@
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / version := "0.9.0"
 
 ThisBuild / scalaVersion := "2.13.12"
 
@@ -18,10 +18,4 @@ lazy val root = (project in file("."))
     name := "Glyph",
     idePackagePrefix := Some("org.sufrin.glyph"),
 
-  )
-
-lazy val microCSO = (project in file("microCSO"))
-  .settings(
-      name := "microCSO",
-      idePackagePrefix := Some("org.sufrin.microCSO"),
   )
