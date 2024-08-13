@@ -2,6 +2,7 @@ package org.sufrin.glyph
 package windowdialogues
 
 import io.github.humbleui.jwm.Screen
+import org.sufrin.logging.Loggable
 
 /**
  *   A running dialogue is a glyph-tree contained in its own top-level window, and
@@ -20,7 +21,7 @@ import io.github.humbleui.jwm.Screen
 
 import Location._
 
-object Dialogue {
+object Dialogue extends Loggable {
 
   /** A dialogue whose gui consists of `blurb` atop a bottom row consisting of buttons built from glyphs. */
   def apply[T](blurb: Glyph, bottomRow: Seq[Glyph], position: Location=null, title: String = ""): Dialogue[T] = {
@@ -174,8 +175,12 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
                 result
               }
 
-
-            override def size: (Int, Int) = Vec.scaleToPixels(location.effectiveScale, theRoot.w, theRoot.h)
+              override def size: Pixels = {
+                // theRoot.diagonal.scaled(location.effectiveScale).toPair
+                val px = Vec.scaleToPixels(location.effectiveScale, theRoot.diagonal.x, theRoot.diagonal.y)
+                Dialogue.finest(s"Dialogue size:$px")
+                px
+              }
 
             override def screen: Screen = location.screen
 

@@ -182,7 +182,9 @@ trait EventHandler extends Consumer[Event] {
       // on MacOS cmd-Q just kills the running app.
       case closeEvent: EventWindowCloseRequest =>
            root match {
-             case root: RootGlyph => root.windowCloseRequest(window)
+             case root: RootGlyph =>
+               root.windowCloseRequest(window)
+               root.reDraw()
              case _ =>
            }
 

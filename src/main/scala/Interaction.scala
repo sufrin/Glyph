@@ -3,6 +3,7 @@ package org.sufrin.glyph
 import GlyphTypes.Scalar
 
 import io.github.humbleui.jwm.{App, Platform, Window}
+import org.sufrin.logging.Loggable
 
 /**
  * When started, an `Interaction` hosts the given GUI root glyph
@@ -139,6 +140,7 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
     // Set the window size
     { val (w, h): Pixels   = size
       val (dx, dy): Pixels = inset
+      Interaction.finer(s"Start: ($w,$h) ($dx,$dy)")
       window.setContentSize(w+dx, h+dy)
     }
 
@@ -146,6 +148,10 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
     window.setEventListener(handler)
     window.setVisible(true)
   }
+
+}
+
+object Interaction extends Loggable {
 
 }
 

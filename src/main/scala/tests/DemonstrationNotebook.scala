@@ -1,6 +1,7 @@
 package org.sufrin.glyph
 package tests
 
+import CellFit.ShiftEast
 import FixedSize.Space.tab
 import PolygonLibrary.brown
 import Styles.NotebookStyle
@@ -94,6 +95,9 @@ trait DemonstrationPages extends Brushes {
       | The "New" page enables instantiation of a new GUI with
       |a choice of tab style, viewing scale and starting screen.
       |
+      | The "Rescaling enabled" button enables rescaling of the GUI in response to the
+      |user changing the width of the application window interactively.
+      |
       | The application evolved naturally during development because we saw that unit-testing was
       |not going to be effective. It is not, and not intended to be, a comprehensive test; but if it
       |works at all then a very substantial proportion of the toolkit must be functioning adequately.
@@ -102,16 +106,32 @@ trait DemonstrationPages extends Brushes {
   // -------------------------------------------------------------------------------------------------------
 
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
-    import overlaydialogues.Dialogue.OKNO
     import styled.text._
+    import windowdialogues.Dialogue.OKNO
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged(50),
                              Label("Do you want to Exit?")(HugeLabelStyle)
                 ).enlarged(50)
     OKNO(prompt,
-         title="Exit Dialogue", ok=" Exit now ", no=" Continue ")(ApplicationStyle).InFront(glyph).andThen{
+         title="Exit Dialogue", ok=" Exit now ", no=" Continue ")(ApplicationStyle).OnRootOf(glyph).andThen{
             case close => if (close) window.close()
          }
   }
+
+  /** Is the save-bar (at the top of the GUI) enabled */
+  var enableSave: Boolean = false
+
+  /** Checkbox indicating whether the save-bar is enabled: synchronized with `enableSaveTextToggle` */
+  lazy val enableSaveCheckBox: OnOffButton.OnOffButton = CheckBox(initially=false) {
+    state =>
+      enableSave=state
+      enableSaveTextToggle.set(state)
+  }(ApplicationStyle)
+
+  /** A text toggle indicating in its text whether the save-bar is enabled: synchronized with `enableSaveCheckBox` */
+  lazy val enableSaveTextToggle  = TextToggle(
+    whenTrue = "Image Saving Enabled\n(click top bar to save)",
+    whenFalse = "Image Saving Disabled\n(click to enable)",
+    initially = enableSaveCheckBox.get) { state => enableSaveCheckBox.set(state); enableSave=state }(ApplicationStyle)
 
   val HelpPage = Page("Help", "Help for the Demonstration Notebook"){
     implicit val Style: StyleSheet = ApplicationStyle
@@ -120,22 +140,25 @@ trait DemonstrationPages extends Brushes {
     Col.centered(
       anchor,
       Paragraphs(60, Justify)(helpText), ex, ex,
-
-      TextToggle(whenTrue="Stop Logging Events", whenFalse="Log Events", initially=false) {
+      NaturalSize.Grid.Table(width=2)(
+      Label("Event logging: ").cellFit(ShiftEast), CheckBox(initially=false) {
         state => anchor.guiRoot.eventHandler.logEvents = state
-      }, ex,
-      TextToggle(whenTrue="Just exit on close button", whenFalse="Confirm exit on close button", initially=true) {
+      },
+      Label("Confirm exit: ").cellFit(ShiftEast),  CheckBox(initially=true) {
         case false  =>
           anchor.guiRoot.onCloseRequest( _.close() )
         case true =>
           anchor.guiRoot.onCloseRequest ( confirmCloseOn(anchor)(_) )
-      }, ex,
-      TextToggle(whenTrue="Rescaling enabled", whenFalse="Rescaling disabled", initially=false) {
+      }) enlargedBy(50, 0) beside
+      NaturalSize.Grid.Table(width=2)(
+      Label("Rescaling: ").cellFit(ShiftEast), CheckBox(initially=false) {
         case false =>
           anchor.guiRoot.autoScale = false
         case true =>
           anchor.guiRoot.autoScale = true
-      }
+      },
+      Label("Image saving: ").cellFit(ShiftEast), enableSaveCheckBox
+      )
     )
   }
 
@@ -1965,8 +1988,6 @@ trait DemonstrationPages extends Brushes {
           theText.framed(blue),
           anchor
         )
-
-
     }
 
     Page("OneOf", "OneOf backgrounds") {
@@ -2081,9 +2102,9 @@ trait DemonstrationPages extends Brushes {
         case true => state1.select(1)
         case false => state1.select(0)
       }
-      lazy val t2:OnOffButton = CheckBox(false) {
-        case true  => state2.select(1); enableSave = true
-        case false => state2.select(0); enableSave = false
+      lazy val t2:OnOffButton = CheckBox(enableSaveCheckBox.get) {
+        case true  => state2.select(1)
+        case false => state2.select(0)
       }
 
       lazy val t3:OnOffButton = GlyphToggle(
@@ -2125,14 +2146,10 @@ trait DemonstrationPages extends Brushes {
         ).enlarged(20).framed()
       }
 
-      val imageSaveToggle  = TextToggle(
-        whenTrue = "Image Saving Enabled\n(click top bar to save)",
-        whenFalse = "Image Saving Disabled\n(click to enable)",
-        initially = false) { state => enableSave = state }
+
 
       locally {
-        HintManager(t2, 5.0, "Toggle this to enable or disable the image-save bar")(HelpStyle)
-        HintManager(imageSaveToggle, 5.0, "Toggle this to enable or disable the image-save bar")(HelpStyle)
+        HintManager(enableSaveTextToggle, 5.0, "Toggle this to enable or disable the image-save bar")(HelpStyle)
         HintManager(t1, 5.0, "Guess what this is for!")(HelpStyle)
         HintManager(t3, 5.0, "Guess what this is for!")(HelpStyle)
       }
@@ -2146,7 +2163,7 @@ trait DemonstrationPages extends Brushes {
           Col.centered(
           Paragraphs(40, Center)("A TextToggle can have multi-line legends in either or both states."), ex,
           TextToggle(whenTrue = ("True"), whenFalse = ("Not True\n(or true)"), initially = true) { _ => }, ex,
-          imageSaveToggle
+          enableSaveTextToggle
         ).enlarged(10f),
           Col.centered(
           Paragraphs(40, Center)("A GlyphToggle can have differently sized and shaped glyphs in each state"), ex,
@@ -2219,8 +2236,6 @@ trait DemonstrationPages extends Brushes {
     External.renderBitmap(glyph, s"${dir}/$path", scale=0.5f)
   }
 
-  var enableSave: Boolean = false
-
   def stringOfDate(date: LocalDateTime = LocalDateTime.now()) = {
     date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy@HHmmss"))
   }
@@ -2230,7 +2245,7 @@ trait DemonstrationPages extends Brushes {
     val r = FilledRect(gui.w-5, 6f, fg=lightGrey)
     lazy val topBar: Glyph = ReactiveGlyphs.RawButton(r(), r(), r()) {
       _ =>
-        if (enableSave) {
+        if (enableSaveCheckBox.get) {
           val fileName = stringOfDate() + ".png"
           windowdialogues.Dialogue.OKNO(Label(s"Save image to ${fileName}").enlarged(20f)).InFront(topBar).andThen {
             case false =>
@@ -2255,14 +2270,15 @@ trait DemonstrationPages extends Brushes {
 
 object DemonstrationNotebook extends DemonstrationPages with Application {
   import GlyphTypes.Window
-  lazy val GUI = if (extraArgs contains "-notebook") asRNotebook else
+  lazy val GUI =
+            if (extraArgs contains "-notebook")   asRNotebook else
             if (extraArgs contains "-rnotebook")  asRNotebook else
             if (extraArgs contains "-lnotebook")  asLNotebook else
             if (extraArgs contains "-snotebook")  asSNotebook else
             if (extraArgs contains "-vnotebook")  asVNotebook else
             if (extraArgs contains "-tnotebook")  asTNotebook else
             if (extraArgs contains "-menu") asMenu else asRNotebook
-  def title = s"""SmallTest -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
+  def title = s"""Demonstration Notebook -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
   override
   val defaultIconPath: Option[String] = Some ("./flag.png")
 

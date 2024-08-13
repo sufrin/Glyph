@@ -60,7 +60,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    *
    */
   def rootWindowResized(newW: Scalar, newH: Scalar, force: Boolean = false): Unit = {
-     RootGlyph.fine(s"($newW,$newH)[force=$force][hwscale=$hardwareScale][diag=$diagonal]")
+     RootGlyph.fine(s"($newW,$newH)[force=$force,ignoreResize=$ignoreResize][hwscale=$hardwareScale; swscale=$softwareScale][diag=$diagonal]")
      if (ignoreResize) {
        ignoreResize = false
      } else
@@ -85,17 +85,24 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
      else
      if (autoScale) {
          // Change the software display scaling to reflect the new window size
-         val newScale = newW / w min newH / h
          val oldScale = eventHandler.softwareScale
+         val newScale =
+           if (w!=newW) newW / w
+           else
+           //if (h!=newH) newH / h
+           //else
+             oldScale
          eventHandler.softwareScale = newScale
          if (oldScale != newScale) {
+           RootGlyph.finest(s"autoScale: $oldScale->$newScale")
            ignoreResize = true
            setContentSize(diagonal.scaled(newScale))
          }
      }
      else {
        // Don't permit a manual resize
-       syncWindowContentSize()
+       RootGlyph.finest(s"fixedScale $hardwareScale*$softwareScale")
+       setContentSize(diagonal.scaled(hardwareScale*softwareScale))
      }
   }
 

@@ -351,6 +351,12 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
     thisPopup
   }
 
+  def OnRootOf(glyph: Glyph): this.type = {
+    val loc = glyph.rootDistance
+    location = Location.OnRootOf(glyph)(5, 5)
+    thisPopup
+  }
+
   /**
    * Allocate an Overlay layer and continue the interaction.
    */
