@@ -60,7 +60,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    *
    */
   def rootWindowResized(newW: Scalar, newH: Scalar, force: Boolean = false): Unit = {
-     RootGlyph.fine(s"($newW,$newH)[force=$force]")
+     RootGlyph.fine(s"($newW,$newH)[force=$force][hwscale=$hardwareScale][diag=$diagonal]")
      if (ignoreResize) {
        ignoreResize = false
      } else
@@ -90,7 +90,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
          eventHandler.softwareScale = newScale
          if (oldScale != newScale) {
            ignoreResize = true
-           setWindowContentSize(diagonal.scaled(newScale))
+           setContentSize(diagonal.scaled(newScale))
          }
      }
      else {
@@ -105,7 +105,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    *  to be recalculated.
    */
   def syncWindowContentSize(): Unit = {
-    rootWindow.setContentSize(diagonal.x.toInt, diagonal.y.toInt)
+    setScaledContentSize(diagonal)
   }
 
   /**
@@ -113,8 +113,13 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    * subsequent `rootWindowResized` notification.
    * @param diagonal
    */
-  def setWindowContentSize(diagonal: Vec): Unit = {
-    rootWindow.setContentSize(diagonal.x.toInt, diagonal.y.toInt)
+  def setContentSize(diagonal: Vec): Unit = {
+    setScaledContentSize(diagonal)
+  }
+
+  def setScaledContentSize(diagonal: Vec): Unit = {
+    val diag = diagonal scaled hardwareScale
+    rootWindow.setContentSize(diag.x.toInt, diag.y.toInt)
   }
 
   val fg: Brush = DefaultBrushes.invisible
@@ -452,7 +457,7 @@ def acceptWindowEvent(event: Event, window: Window, handler: EventHandler): Unit
     case _: EventWindowFocusIn =>
       App.runOnUIThread(() => onFocus(true))
     case ev: EventWindowResize =>
-      rootWindowResized(ev.getContentWidth.toFloat, ev.getContentHeight.toFloat)
+      rootWindowResized(ev.getContentWidth.toFloat/hardwareScale, ev.getContentHeight.toFloat/hardwareScale)
       rootWindow.requestFrame()
     case _: EventWindowMove =>
       // also when resized by moving a corner or an edge
