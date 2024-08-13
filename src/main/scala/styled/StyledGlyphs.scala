@@ -346,8 +346,8 @@ case class MenuGlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean
     def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
       val detail = sheet.buttonStyle
       val tick = detail.checkbox.tick
-        val cross = detail.checkbox.cross
-        TextToggle(whenFalse=cross, whenTrue=tick, initially=initially)(reaction)
+      val cross = detail.checkbox.cross
+      TextToggle(whenFalse=cross, whenTrue=tick, initially=initially)(reaction)
     }
   }
 
