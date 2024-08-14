@@ -4,6 +4,7 @@ package tests
 import CellFit.ShiftEast
 import FixedSize.Space.tab
 import PolygonLibrary.brown
+import ReactiveGlyphs.RawButton
 import Styles.NotebookStyle
 
 import java.time.LocalDateTime
@@ -117,25 +118,45 @@ trait DemonstrationPages extends Brushes {
          }
   }
 
-  /** Is the save-bar (at the top of the GUI) enabled */
+  /**
+   * Is the save-bar (at the top of the GUI) enabled?
+   * This part of the state is managed by the `saveEnable` variable that itself
+   * is controlled by a couple of toggles with which it is kept synchronised.
+   */
   var enableSave: Boolean = false
+  import BooleanGlyphs._
 
-  /** Checkbox indicating whether the save-bar is enabled: synchronized with `enableSaveTextToggle` */
-  lazy val enableSaveCheckBox: OnOffButton.OnOffButton = CheckBox(initially=false) {
-    state =>
-      enableSave=state
+  /**
+   *
+   * This reactive variable manages the state(s) of the enabling buttons.
+   * This is the technique to use when several checkboxes/textToggles
+   * will be used to control the same boolean variable and must be kept in
+   * sync.
+   *
+   */
+  val saveEnable = Variable.reactive(initially=enableSave){
+    (_, state) =>
+      enableSaveCheckBox.set(state)
       enableSaveTextToggle.set(state)
-  }(ApplicationStyle)
+      enableSave = state
+  }
 
-  /** A text toggle indicating in its text whether the save-bar is enabled: synchronized with `enableSaveCheckBox` */
-  lazy val enableSaveTextToggle  = TextToggle(
-    whenTrue = "Image Saving Enabled\n(click top bar to save)",
-    whenFalse = "Image Saving Disabled\n(click to enable)",
-    initially = enableSaveCheckBox.get) { state => enableSaveCheckBox.set(state); enableSave=state }(ApplicationStyle)
+  /** Checkbox indicating whether the save-bar is enabled. */
+  lazy val enableSaveCheckBox: OnOffButton =
+    CheckBox(initially=saveEnable.value) (saveEnable) (ApplicationStyle)
+
+  /** A text toggle indicating in its text whether the save-bar is enabled. */
+  lazy val enableSaveTextToggle: OnOffButton =
+    TextToggle(
+       whenTrue = "Image Saving Enabled\n(click top bar to save)",
+       whenFalse = "Image Saving Disabled\n(click to enable)",
+       initially = saveEnable.value) (saveEnable) (ApplicationStyle)
+
 
   val HelpPage = Page("Help", "Help for the Demonstration Notebook"){
     implicit val Style: StyleSheet = ApplicationStyle
     val anchor = INVISIBLE()
+    locally { HintManager(enableSaveCheckBox, 5, "Click this to enable the image-save bar")(HelpStyle) }
 
     Col.centered(
       anchor,
@@ -986,7 +1007,7 @@ trait DemonstrationPages extends Brushes {
       // TODO: design a high-level annotation API
       implicit val Style: StyleSheet = ApplicationStyle
 
-      import OnOffButton.OnOffButton
+      import BooleanGlyphs.OnOffButton
       val anchor = INVISIBLE()
 
       var gridAnnotation: Option[RootLayer] = None
@@ -2082,8 +2103,8 @@ trait DemonstrationPages extends Brushes {
     }
 
     Page("CheckBox", "Toggles, Checkboxes, ColourButtons") {
+      import BooleanGlyphs._
       import DynamicGlyphs.OneOf
-      import OnOffButton._
 
       def Monitor(whenFalse: String, whenTrue: String, toggle: OnOffButton): OneOf = {
         val oneOf = OneOf()(Label(whenFalse, align=Left), Label(whenTrue, align=Left))
@@ -2102,7 +2123,7 @@ trait DemonstrationPages extends Brushes {
         case true => state1.select(1)
         case false => state1.select(0)
       }
-      lazy val t2:OnOffButton = CheckBox(enableSaveCheckBox.get) {
+      lazy val t2:OnOffButton = CheckBox(false) {
         case true  => state2.select(1)
         case false => state2.select(0)
       }
@@ -2243,9 +2264,9 @@ trait DemonstrationPages extends Brushes {
   def saveable(gui: Glyph): Glyph = {
     implicit val Style: StyleSheet = ApplicationStyle
     val r = FilledRect(gui.w-5, 6f, fg=lightGrey)
-    lazy val topBar: Glyph = ReactiveGlyphs.RawButton(r(), r(), r()) {
+    lazy val topBar: RawButton = ReactiveGlyphs.RawButton(r(), r(), r()) {
       _ =>
-        if (enableSaveCheckBox.get) {
+        if (enableSave) {
           val fileName = stringOfDate() + ".png"
           windowdialogues.Dialogue.OKNO(Label(s"Save image to ${fileName}").enlarged(20f)).InFront(topBar).andThen {
             case false =>
@@ -2253,6 +2274,18 @@ trait DemonstrationPages extends Brushes {
           }
         }
     }
+    val HintStyle: StyleSheet = HelpStyle
+    val saveHint = styled.text.Paragraphs(60, Justify)(
+        """
+          |When enabled, clicking on this grey strip enables the current GUI's
+          |appearance to be saved in a .png file.
+          |
+          |It can be enabled/disabled with the checkbox on the Help page,
+          |or with a button that appears on the Etc*/CheckBox page.
+          |""".stripMargin) (HintStyle) scaled 1.5f enlarged 15 framed (fg=redFrame, bg=white)
+    // don't nag: only show the hint if it hasn't been acted upon
+    HintManager(topBar, 5.0, saveHint).onlyWhen(!enableSave)
+
     Col.centered(
       topBar,
       gui

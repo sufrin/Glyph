@@ -24,6 +24,7 @@ class Variable[T](
 
 object Variable {
   def apply[T](initially: T): Variable[T] = new Variable[T](initially)
+  def reactive[T](initially: T)(reaction: (T,T)=>Unit ): Variable[T] = new Variable(initially, reaction)
 }
 
 trait Settable[T] {
