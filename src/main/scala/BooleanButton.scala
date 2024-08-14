@@ -22,12 +22,12 @@ trait BooleanButton  {
   def cross: Glyph = Text("✖", buttonFont).asGlyph(fg, bg)
   def tick: Glyph  = Text("✔", buttonFont).asGlyph(fg, bg)
 
-  import OnOffButton._
+  import BooleanGlyphs._
 
   /** An on-off button showing `toGlyph(whenTrue)` or `toGlyph(whenFalse)` */
   def onOff(whenTrue: String, whenFalse: String, initially: Boolean, fg: Brush, bg: Brush)
            (reaction: Boolean => Unit): OnOffButton = {
-      OnOffButton(new OnOff(whenTrue=toGlyph(whenTrue), whenFalse=toGlyph(whenFalse), initially, fg, bg),
+      BooleanGlyphs(new OnOff(whenTrue=toGlyph(whenTrue), whenFalse=toGlyph(whenFalse), initially, fg, bg),
         initially,
         fg, bg,
         reaction)

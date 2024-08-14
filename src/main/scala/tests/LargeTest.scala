@@ -160,13 +160,13 @@ trait LargeTestGUI extends Brushes {
   )
   private val scene5 = {
 
-    import OnOffButton._
+    import BooleanGlyphs._
 
     import Toggles._
 
     lazy val toggle0: OnOffButton = onOff(
-      "OnOffButton 0 is\nOff",
-      "OnOffButton 0 is\nOn",
+      "BooleanGlyphs 0 is\nOff",
+      "BooleanGlyphs 0 is\nOn",
       fg = red,
       bg = white,
       initially = true

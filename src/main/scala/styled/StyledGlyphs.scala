@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package styled
 
 import Glyphs.nothing
-import OnOffButton._
+import BooleanGlyphs._
 import ReactiveGlyphs.Reaction
 import Styles.GlyphStyle
 
@@ -58,9 +58,15 @@ import scala.collection.mutable.ArrayBuffer
  *  The generated button has the physical appearance of a `StyledButton`, but its state is supplemented by
  *  a boolean that determines which of its appearances is shown. Clicking on the button inverts the boolean (thereby changing
  *  the button's appearance) and applies the `reaction` to the inverted boolean.
+ *
+ *  If the button is made with a `Variable` rather than a direct reaction, then clicking the button
+ *  changes the variable's value.
  */
- trait ToggleButton {
+ trait ToggleButton { thisToggle =>
     def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton
+    def apply(variable: Variable[Boolean])(implicit sheet: StyleSheet): OnOffButton = thisToggle.apply {
+      state => variable.value = state
+    }
   }
 
   /**
@@ -269,7 +275,7 @@ case class MenuButton(text: String) extends StyledButton {
       val whenFFalse: Glyph = Label(whenFalse, Center, detail.down)
       val Vec(w, h) = (whenTTrue.diagonal union whenFFalse.diagonal)
 
-      OnOffButton(
+      BooleanGlyphs(
         new OnOff(whenTrue  = Decorate(whenTTrue.enlargedTo(w, h)),
                   whenFalse = Decorate(whenFFalse.enlargedTo(w, h)), initially = initially, fg = offFG, bg = offBG),
                   initially = initially,
@@ -295,7 +301,7 @@ case class MenuButton(text: String) extends StyledButton {
       val whenFFalse: Glyph = Label(whenFalse, Center, detail.down)
       val Vec(w, h) = (whenTTrue.diagonal union whenFFalse.diagonal)
 
-      OnOffButton(
+      BooleanGlyphs(
         new OnOff(
           whenTrue  = (whenTTrue.enlargedTo(w, h)),
           whenFalse = (whenFFalse.enlargedTo(w, h)), initially = initially, fg = offFG, bg = offBG),
@@ -307,13 +313,13 @@ case class MenuButton(text: String) extends StyledButton {
   }
 
   case class GlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean) extends ToggleButton {
-    import OnOffButton._
+    import BooleanGlyphs._
 
     def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
       val ww=whenTrue.w max whenFalse.w
       val hh=whenTrue.h max whenFalse.h
       val detail = sheet.buttonStyle
-      OnOffButton(new OnOff(whenTrue=Decorate(whenTrue.enlargedTo(ww,hh)),
+      BooleanGlyphs(new OnOff(whenTrue=Decorate(whenTrue.enlargedTo(ww,hh)),
                             whenFalse=Decorate(whenFalse.enlargedTo(ww,hh)),
                             initially=initially, fg=NOTHING, bg=NOTHING),
         initially=initially,
@@ -325,13 +331,13 @@ case class MenuButton(text: String) extends StyledButton {
 
 /** A glyphtoggle destined for a menu: defers decoration  */
 case class MenuGlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean) extends ToggleButton {
-  import OnOffButton._
+  import BooleanGlyphs._
 
   def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
     val ww=whenTrue.w max whenFalse.w
     val hh=whenTrue.h max whenFalse.h
     val detail = sheet.buttonStyle
-    OnOffButton(new OnOff(
+    BooleanGlyphs(new OnOff(
       whenTrue=(whenTrue.enlargedTo(ww,hh)),
       whenFalse=(whenFalse.enlargedTo(ww,hh)),
       initially=initially, fg=NOTHING, bg=NOTHING),

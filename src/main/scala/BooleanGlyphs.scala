@@ -2,7 +2,7 @@ package org.sufrin.glyph
 
 import Glyphs.nothing
 
-object OnOffButton {
+object BooleanGlyphs {
 
     import ReactiveGlyphs.{GenericButton, RawButton}
 
