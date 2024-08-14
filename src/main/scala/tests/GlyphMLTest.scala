@@ -39,18 +39,21 @@ object GlyphMLTest extends Application {
                   |
                   |Its API may  be somewhat more convenient for interface designers than the standard Glyphs API.
                   |
-                  |""".stripMargin)(paragraphEms(25)).framed(fg=DefaultBrushes.black strokeWidth 2, bg=lightGrey)
+                  |""".stripMargin)(paragraphEms(40))(paragraphEms(30))
 
   val t2 = Text("""This is an experiment in choosing the details of GUI layout dynamically.
                   |
-                  |Initially these two paragraphs appear beside each other in their "natural" sizes
-                  |for the current context. But if the window is made long enough, they may
-                  |appear as a column.
+                  |In row layout these two paragraphs appear beside each other in their "natural" sizes
+                  |for the current context. In column layout they will appear as a column.
                   |
-                  |""".stripMargin)(paragraphEms(25)).framed(fg=DefaultBrushes.black strokeWidth 2, bg=lightGrey)
+                  |As the window geometry is changed manually the GUI may switch between row and
+                  |column layout, and the initial "welcome", which is just an
+                  |invitation to choose.
+                  |
+                  |""".stripMargin)(paragraphEms(25))
 
-  val r1 = Cached(Local)(t1)
-  val r2 = Cached(Local)(t2)
+  val r1 = Cached(Local)(t1.framed(fg=DefaultBrushes.black strokeWidth 2, bg=lightGrey))
+  val r2 = Cached(Local)(t2.framed(fg=DefaultBrushes.black strokeWidth 2, bg=lightGrey))
   val anchor = r1
 
   lazy val traceOn: Glyph = styled.TextButton("Trace on") {
@@ -70,21 +73,34 @@ object GlyphMLTest extends Application {
   }(Local.style)
 
   lazy val rowLayout: Glyph = styled.TextButton("Row layout") {
-    _ => rowLayout.findRoot.rootWindowResized(r1.originalW+r2.originalW+550, r1.originalH+r2.originalH, force=true)
+    _ => rowLayout.findRoot.rootWindowResized(r1.originalW+r2.originalW+(traceOn.w max traceOff.w)+40, r1.originalH+r2.originalH, force=true)
+  }(Local.style)
+
+  var dynamicLayout: Boolean = false
+
+  lazy val dynaLayout: Glyph = styled.CheckBox(dynamicLayout) {
+    state =>
+      dynamicLayout=state
+      RootGlyph.fine(s"dynamicLayout $dynamicLayout")
   }(Local.style)
 
   lazy val colLayout: Glyph = styled.TextButton("Column layout") {
-    _ => colLayout.findRoot.rootWindowResized(r1.originalW max r2.originalW, r1.originalH+r2.originalH+550, force=true)
+    _ => colLayout.findRoot.rootWindowResized(r1.originalW max r2.originalW+(traceOn.w max traceOff.w), (r1.originalH+r2.originalH)*1.5f, force=true)
   }(Local.style)
 
   val GUI: Glyph = Resizeable(Local) {
 
-    def menuBar =  MenuBar(Local)(traceOn(), Gap, traceOff)
-    def sideBar =  SideBar(Local)(traceOn(), Gap, traceOff)
-    def sizeBar =  Column(rowLayout, colLayout, traceOn)
+    def menuBar =  MenuBar(Local)(dynaLayout, traceOn(), Gap, traceOff)
+    def sideBar =  SideBar(Local)(dynaLayout, traceOn(), Gap, traceOff)
+    def sizeBar =  Column(rowLayout, colLayout, traceOn, dynaLayout)
 
     def splitRow(w: Scalar, h: Scalar) = {
       FixedWidth(w)(sideBar, Glyphs.FilledRect(6, h, darkGrey), r1, Gap, Glyphs.FilledRect(6, h, nothing), Gap, r2)
+    }
+
+    def HalfRow(w: Scalar, h: Scalar, g1: Element, g2: Element) = {
+      RootGlyph.fine(s"HalfRow $w")
+      FixedWidth(w)(g1, Gap, g2)
     }
 
     def splitCol(w: Scalar, h: Scalar) = {
@@ -92,8 +108,13 @@ object GlyphMLTest extends Application {
     }
 
     Dynamic {
-      case Vec(w, h) if w>=r1.originalW+r2.originalW => splitRow(w, h)
-      case Vec(w, h) if h>=r1.originalH+r2.originalH => splitCol(w, h)
+      case Vec(w, h) if (dynamicLayout && w>650f) =>
+        RootGlyph.fine(s"Dynamic $w")
+        HalfRow(w, h,
+          t2.locally(paragraphPoints(w/3f)), t1(paragraphPoints(w/4f)))
+
+      case Vec(w, h) if w>=(traceOn.w max traceOff.w)+r1.originalW+r2.originalW => splitRow(w, h)
+      case Vec(w, h) if h>=traceOn.h+r1.originalH+r2.originalH => splitCol(w, h)
       case _ => sizeBar.framed(fg=red, bg=nothing)
       }
   }

@@ -50,9 +50,9 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    * window size to its original value, and thereby appear to refuse to change in response
    * to a manual window-size change.
    *
-   * Invoked by the `EventManager` (with force=false) and from one or two
-   * active glyphs (with force=true).
-   *
+   * Invoked by the `EventManager` (with force=false) and from GUI code (with force=true). In the
+   * former case, if the window `resizeable` and is being manually resized, its window is synchronized with the
+   * size of its content at the first mouse motion after the resizing drag finishes.
    *
    * @param newW
    * @param newH
@@ -73,11 +73,10 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
              GUIroot.parent = this
              diagonal = newRoot.diagonal
              RootGlyph.fine(s"=>$diagonal[force=$force]")
-             // While the window is being manually resized, presence of the following
-             // line will suppress visual feedback until the new root has changed dimension.
-             // This is not necessarily a bad thing
-             // syncWindowContentSize()
-             onNextMotion { syncWindowContentSize() }
+             if (force)
+               syncWindowContentSize()
+             else // wait until the mouse moves
+               onNextMotion { syncWindowContentSize() }
            }
          }
        }

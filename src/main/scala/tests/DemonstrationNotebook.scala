@@ -2283,7 +2283,8 @@ trait DemonstrationPages extends Brushes {
           |It can be enabled/disabled with the checkbox on the Help page,
           |or with a button that appears on the Etc*/CheckBox page.
           |""".stripMargin) (HintStyle) scaled 1.5f enlarged 15 framed (fg=redFrame, bg=white)
-    // don't nag: only show the hint if it hasn't been acted upon
+
+    // Show the hint if the client doesn't already know what the fuss is about
     HintManager(topBar, 5.0, saveHint).onlyWhen(!enableSave)
 
     Col.centered(

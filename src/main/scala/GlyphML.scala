@@ -130,7 +130,9 @@ object markup {
   def indentPoints(left: Scalar, right: Scalar): ContextTransform = _.indentPoints(left, right)
   def indentEms(left: Int, right: Int): ContextTransform = _.indentEms(left, right)
   def paragraphEms(ems: Int): ContextTransform = _.paragraphEms(ems)
-  def paragraphPoints(points: Scalar): ContextTransform = _.paragraphPoints(points)
+  def paragraphPoints(points: Scalar): ContextTransform = {
+      cxt => cxt.paragraphPoints(points)
+  }
   def unBounded: ContextTransform = _.copy(boundingBox = Vec.Zero)
   def bounded(w: Scalar, h: Scalar): ContextTransform = _.copy(boundingBox = Vec(w, h))
   def bounded(box: Vec): ContextTransform = _.copy(boundingBox = box)
@@ -336,13 +338,15 @@ object markup {
   }
 
   case class Cached(initial: Context)(element: Element) extends Element {
-    var cached: Glyph = element.toGlyph(initial)
+    var cached: Glyph     = element.toGlyph(initial)
     val originalW: Scalar = cached.diagonal.x
     val originalH: Scalar = cached.diagonal.y
+
     def root: RootGlyph   = cached.findRoot
     def diagonal: Vec     = cached.diagonal
     def w: Scalar         = diagonal.x
     def h: Scalar         = diagonal.y
+
     def toGlyph(local: Context): Glyph = {
       cached = element.toGlyph(local)
       cached
