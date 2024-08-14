@@ -2,6 +2,10 @@ package org.sufrin.glyph
 import ReactiveGlyphs.Enterable
 
 class HintManager(val target: Enterable, val hint: Glyph, val seconds: Double) {
+  private var _allow: () => Boolean = ()=>true
+
+  def onlyWhen(allow: => Boolean): this.type = { _allow = { ()=>allow }; this }
+
   val id = s"HintManager${this.hashCode()}"
   /** The new layer is constructed lazily (in fact, at the point of first entry) because
    * the target glyph will certainly have been rooted before it is entered,
@@ -16,7 +20,7 @@ class HintManager(val target: Enterable, val hint: Glyph, val seconds: Double) {
     target.onGlyphEvent {
       case (true, where) =>
         hint @@ where
-        if (!layer.visible && seconds>=0) {
+        if (_allow() && !layer.visible && seconds>=0) {
           layer.visible = true
           schedule.once((seconds * 1000L).toLong) {
             layer.visible = false
@@ -36,8 +40,16 @@ class HintManager(val target: Enterable, val hint: Glyph, val seconds: Double) {
   }
 }
 
+/**
+ * Add a hint manager to the `target` (reactive glyph), that enables a that a glyph (usually some text) to be shown as an overlay near the cursor whenever
+ * the cursor enters the target. The hint will be removed `seconds` later.
+ *
+ * If `h: HintManager` then `h.onlyWhen(allow: => Boolean)` is the same hint manager, except that the expression
+ * `allow` is evaluated whenever `h`'s hint is about to be shown and (if false) the hinto is not shown. This
+ * allows the designer to provide ways of suppressing hints, and of avoiding "nagging".
+ */
 object HintManager {
-  def apply(target: Enterable, seconds: Double=0, hint: Glyph): HintManager = new HintManager(target, hint, seconds)
+  def apply(target: Enterable, seconds: Double, hint: Glyph): HintManager = new HintManager(target, hint, seconds)
   def apply(target: Enterable, seconds: Double, hint: String)(implicit style: StyleSheet): HintManager = {
     new HintManager(
            target,
