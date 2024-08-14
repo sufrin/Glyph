@@ -29,10 +29,14 @@ trait Application {
   def main(args: Array[String]): Unit = {
     import io.github.humbleui.jwm.Screen
     var icon: Option[String] = defaultIconPath
+    var logPrefix: String = ""
     extraArgs.clear()
 
     for {arg <- args} arg match {
-      case s"-log($module)=$level" => org.sufrin.logging(module)=level
+      case s"-log($logprefix)" => logPrefix=logprefix
+      case s"-log($logPaths)=$level" =>
+           for { obj <- logPaths.split("[,:]").map(_.trim) }
+               org.sufrin.logging(s"$logPrefix.$obj")=level
       case s"-scale=$scale" if scale.matches("[0-9]*.[0-9]+") => scaleFactor = scale.toFloat
       case s"-icon=$path"                                     => icon = if (java.nio.file.Path.of(path).toFile.exists) Some(path) else None
       case s"-screen=$whichScreen" if whichScreen.matches("[0123p]")    => useScreen = whichScreen.head
@@ -41,9 +45,10 @@ trait Application {
         stderr.println(
         s"""(bad flag: $arg)
           |Flags are:
-          |-log(objectname)=levelname => set the logging level of the Loggable extension modulename
-          |-scale=d.dd    => scale the display
-          |-screen=[0123p] => use the numbered screen (012) or the primary screen (p)
+          |-log(logPrefix) => set the (package) prefix for subsequent logPath components
+          |-log(logPath,...logPath)=levelname => set the logging level of the objects named logPrefix.logPath
+          |-scale=d.dd     => scale the initial display
+          |-screen=[0123p] => use the numbered screen (012) or the primary screen (p) for the initial display
           |-icon=$$path    => set the icon path to $$path
           |""".stripMargin)
       }
