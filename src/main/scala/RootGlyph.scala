@@ -102,7 +102,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
      else {
        // Don't permit a manual resize
        RootGlyph.finest(s"fixedScale $hardwareScale*$softwareScale")
-       setContentSize(diagonal.scaled(hardwareScale*softwareScale))
+       setContentSize(diagonal.scaled(softwareScale))
      }
   }
 
