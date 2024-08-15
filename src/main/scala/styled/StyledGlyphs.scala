@@ -67,6 +67,13 @@ import scala.collection.mutable.ArrayBuffer
     def apply(variable: Variable[Boolean])(implicit sheet: StyleSheet): OnOffButton = thisToggle.apply {
       state => variable.value = state
     }
+    def apply(variable: ToggleVariable)(implicit sheet: StyleSheet): OnOffButton = {
+        val button = thisToggle.apply {
+          state => variable.value = state
+        }
+        variable.addButton(button)
+        button
+    }
   }
 
   /**

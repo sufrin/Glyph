@@ -1,5 +1,7 @@
 package org.sufrin.glyph
 
+import BooleanGlyphs.OnOffButton
+
 /** Reference to a variable */
 class Variable[T](
     initially: T,
@@ -22,10 +24,20 @@ class Variable[T](
 
 }
 
+class ToggleVariable(initially: Boolean, reaction: Boolean => Unit) extends Variable[Boolean](initially, { (_, state) => reaction(state) }) {
+  val buttons = new collection.mutable.ListBuffer[OnOffButton]()
+  def addButton(button: OnOffButton): Unit = buttons.addOne(button)
+}
+
 object Variable {
   def apply[T](initially: T): Variable[T] = new Variable[T](initially)
   def reactive[T](initially: T)(reaction: (T,T)=>Unit ): Variable[T] = new Variable(initially, reaction)
 }
+
+object ToggleVariable {
+  def apply[T](initially: Boolean)(reaction: Boolean =>Unit ): ToggleVariable = new ToggleVariable(initially, reaction)
+}
+
 
 trait Settable[T] {
   def set(state: T): Unit
