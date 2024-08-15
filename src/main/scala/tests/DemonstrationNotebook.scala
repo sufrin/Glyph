@@ -128,25 +128,20 @@ trait DemonstrationPages extends Brushes {
 
   /**
    *
-   * This reactive variable manages the state(s) of the enabling buttons.
-   * This is the technique to use when several checkboxes/textToggles
-   * will be used to control the same boolean variable and must be kept in
-   * sync.
+   * This `ToggleVariable` keeps the state(s) of (and appearances) of all the buttons
+   * with which it is associated  in  sync.
    *
    */
-  val saveEnable = Variable.reactive(initially=enableSave){
-    (_, state) =>
-      enableSaveCheckBox.set(state)
-      enableSaveTextToggle.set(state)
-      enableSave = state
+  val saveEnable = BooleanVariable[OnOffButton](initially=enableSave){
+    state => enableSave = state
   }
 
   /** Checkbox indicating whether the save-bar is enabled. */
-  lazy val enableSaveCheckBox: OnOffButton =
+  val enableSaveCheckBox: OnOffButton =
     CheckBox(initially=saveEnable.value) (saveEnable) (ApplicationStyle)
 
   /** A text toggle indicating in its text whether the save-bar is enabled. */
-  lazy val enableSaveTextToggle: OnOffButton =
+  val enableSaveTextToggle: OnOffButton =
     TextToggle(
        whenTrue = "Image Saving Enabled\n(click top bar to save)",
        whenFalse = "Image Saving Disabled\n(click to enable)",

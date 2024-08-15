@@ -59,19 +59,20 @@ import scala.collection.mutable.ArrayBuffer
  *  a boolean that determines which of its appearances is shown. Clicking on the button inverts the boolean (thereby changing
  *  the button's appearance) and applies the `reaction` to the inverted boolean.
  *
- *  If the button is made with a `Variable` rather than a direct reaction, then clicking the button
- *  changes the variable's value.
+ *  If the button is made with a `BooleanVariable` rather than a direct reaction,
+ *  then it is registered with the variable, and clicking the button changes
+ *  the variable's value, and sets the states of all registered buttons. This
+ *  is the way to generate several buttons that show and control a single boolean.
  */
  trait ToggleButton { thisToggle =>
     def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton
-    def apply(variable: Variable[Boolean])(implicit sheet: StyleSheet): OnOffButton = thisToggle.apply {
-      state => variable.value = state
-    }
-    def apply(variable: ToggleVariable)(implicit sheet: StyleSheet): OnOffButton = {
+    def apply(variable: BooleanVariable[OnOffButton])(implicit sheet: StyleSheet): OnOffButton = {
         val button = thisToggle.apply {
-          state => variable.value = state
+          state =>
+            variable.value = state
+            for { button <- variable.registered} button.set(state)
         }
-        variable.addButton(button)
+        variable.register(button)
         button
     }
   }

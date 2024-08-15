@@ -2,7 +2,10 @@ package org.sufrin.glyph
 
 import BooleanGlyphs.OnOffButton
 
-/** Reference to a variable */
+/**
+ *  An "active" variable that triggers a method
+ *  when its value changes.
+ */
 class Variable[T](
     initially: T,
     onChange: (T, T) => Unit = { (oldv: T, newv: T) => {} }
@@ -11,31 +14,48 @@ class Variable[T](
 
   override def toString: String = s"${_theValue}"
 
+  /** Set the `value` of the variable
+   *  @see value_=
+   */
   def set(value: T): Unit = this.value = value
 
+  /** Yield the value of the variable */
+  def get: T = _theValue
+
+  /** Yield the value of the variable */
   def value: T = _theValue
 
+  /**
+   * Set the value of the variable, and
+   * trigger `onChange(oldValue, value)`
+   * if they differ.
+   */
   def value_=(value: T): Unit = {
     if ((_theValue != null) && (_theValue != value)) onChange(_theValue, value)
     _theValue = value
   }
 
-  def get: T = _theValue
-
 }
 
-class ToggleVariable(initially: Boolean, reaction: Boolean => Unit) extends Variable[Boolean](initially, { (_, state) => reaction(state) }) {
-  val buttons = new collection.mutable.ListBuffer[OnOffButton]()
-  def addButton(button: OnOffButton): Unit = buttons.addOne(button)
+/**
+ * An active `Variable[Boolean]` that triggers a reaction when its
+ * value changes. As a convenience it enables a list of things to
+ * be registered with it.
+ */
+class BooleanVariable[T](initially: Boolean, reaction: Boolean => Unit) extends
+      Variable[Boolean](initially, { (_, state) => reaction(state) }) {
+  val registered = new collection.mutable.ListBuffer[T]()
+  def register(thing: T): Unit = registered.addOne(thing)
+  def remove(thing: T): Unit = registered.filter{elt: T => elt != thing}
 }
 
 object Variable {
   def apply[T](initially: T): Variable[T] = new Variable[T](initially)
-  def reactive[T](initially: T)(reaction: (T,T)=>Unit ): Variable[T] = new Variable(initially, reaction)
 }
 
-object ToggleVariable {
-  def apply[T](initially: Boolean)(reaction: Boolean =>Unit ): ToggleVariable = new ToggleVariable(initially, reaction)
+object BooleanVariable {
+  def apply[T](initially: Boolean)(reaction: Boolean =>Unit ): BooleanVariable[T] =
+    new BooleanVariable[T](initially, reaction)
 }
 
 
