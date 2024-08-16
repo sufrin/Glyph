@@ -1,7 +1,5 @@
 package org.sufrin.glyph
 
-import BooleanGlyphs.OnOffButton
-
 /**
  *  An "active" variable that triggers a method
  *  when its value changes.

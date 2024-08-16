@@ -108,7 +108,7 @@ trait DemonstrationPages extends Brushes {
 
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
     import styled.text._
-    import windowdialogues.Dialogue.OKNO
+    import overlaydialogues.Dialogue.OKNO
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged(50),
                              Label("Do you want to Exit?")(HugeLabelStyle)
                 ).enlarged(50)
@@ -192,7 +192,7 @@ trait DemonstrationPages extends Brushes {
         if (extraArgs contains "-tnotebook") asTNotebook else
         if (extraArgs contains "-menu") asMenu else asRNotebook
 
-      def title = s"""SmallTest -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
+      def title = s"""DemonstrationNotebook -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
 
       override
       val defaultIconPath: Option[String] = Some("./flag.png")

@@ -37,6 +37,14 @@ trait Application {
       case s"-log($logPaths)=$level" =>
            for { obj <- logPaths.split("[,:]").map(_.trim) }
                org.sufrin.logging(s"$logPrefix.$obj")=level
+
+
+      case s"-log:$logPaths=$level" =>
+        for { obj <- logPaths.split("[,:]").map(_.trim) }
+          org.sufrin.logging(s"$logPrefix.$obj")=level
+
+      case s"-log:$logprefix" => logPrefix=logprefix
+
       case s"-scale=$scale" if scale.matches("[0-9]*.[0-9]+") => scaleFactor = scale.toFloat
       case s"-icon=$path"                                     => icon = if (java.nio.file.Path.of(path).toFile.exists) Some(path) else None
       case s"-screen=$whichScreen" if whichScreen.matches("[0123p]")    => useScreen = whichScreen.head
@@ -54,6 +62,8 @@ trait Application {
       }
       case _ =>  extraArgs += arg
     }
+
+    println(s"$logPrefix")
 
     App.start(() => {
       new Interaction(App.makeWindow(), GUI, scaleFactor) {

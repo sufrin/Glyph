@@ -3,6 +3,8 @@ package org.sufrin.glyph
 import Styles.{ButtonStyle, GlyphStyle}
 import Styles.Decoration.Decoration
 
+import org.sufrin.logging.Loggable
+
 object markup {
   import java.io.{PrintWriter, StringWriter}
 
@@ -264,10 +266,12 @@ object markup {
 
       def element: Element
 
-      var delegate: Glyph = atSize(context.boundingBox)
+      var delegate: Glyph = element.toGlyph(context)
 
       override def atSize(boundingBox: Vec): Glyph = {
+        Resizeable.finest(s"atSize($boundingBox) with scale=${guiRoot.softwareScale}")
         delegate = element.toGlyph(context.copy(boundingBox = boundingBox))
+        Resizeable.finest(s"delegate.diagonal=${delegate.diagonal} => $diagonal")
         delegate
       }
 
@@ -294,7 +298,7 @@ object markup {
    *   the current size.
    *
    */
-  object Resizeable {
+  object Resizeable extends Loggable {
     def apply(context: Context)(theElement: => Element): Resizeable = new Resizeable(context) {
       def element: Element = theElement
     }
@@ -313,7 +317,9 @@ object markup {
   case class Dynamic (select: Vec => Element) extends Element {
     def toGlyph(local: Context): Glyph = {
       val elt = select(local.boundingBox)
-      elt.toGlyph(local)
+      val result=elt.toGlyph(local)
+      Resizeable.finest(s"Dynamic.toGlyph(${local.boundingBox})=>${result.diagonal}")
+      result
     }
   }
 

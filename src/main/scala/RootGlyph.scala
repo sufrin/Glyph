@@ -2,6 +2,7 @@ package org.sufrin.glyph
 import GlyphTypes.Scalar
 
 import io.github.humbleui.jwm.{App, EventMouseMove}
+import org.sufrin.glyph.markup.Resizeable
 
 
 object RootGlyph extends org.sufrin.logging.Loggable {
@@ -68,9 +69,11 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
        if (force || newW!=diagonal.x || newH!=diagonal.y) {
          io.github.humbleui.jwm.App.runOnUIThread { ()=>
            val newRoot = GUIroot.atSize(Vec(newW, newH))
+           RootGlyph.finest(s"newRoot diagonal ${newRoot.diagonal} (${newRoot ne GUIroot})")
            if (newRoot ne GUIroot) {
              newRoot.parent = this
              GUIroot.parent = this
+             //GUIroot = newRoot
              diagonal = newRoot.diagonal
              RootGlyph.fine(s"=>$diagonal[force=$force]")
              if (force)
@@ -84,24 +87,28 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
      else
      if (autoScale) {
          // Change the software display scaling to reflect the new window size
-         val oldScale = eventHandler.softwareScale
-         val newScale =
+       val oldScale = eventHandler.softwareScale
+
+       val factor =
            if (w!=newW) newW / w
            else
            //if (h!=newH) newH / h
            //else
-             oldScale
-         eventHandler.softwareScale = newScale
-         if (oldScale != newScale) {
-           RootGlyph.finest(s"autoScale: $oldScale->$newScale")
-           ignoreResize = true
-           setContentSize(diagonal.scaled(newScale))
-         }
+             1.0f
+       RootGlyph.finest(s"autoScale: $oldScale $w $newW $factor")
+       eventHandler.softwareScale *= factor
+       if (oldScale != eventHandler.softwareScale) {
+         RootGlyph.finest(s"autoScale: $oldScale->$softwareScale")
+         ignoreResize = true
+         syncWindowContentSize()
+       }
      }
      else {
        // Don't permit a manual resize
        RootGlyph.finest(s"fixedScale $hardwareScale*$softwareScale")
-       setContentSize(diagonal.scaled(softwareScale))
+       RootGlyph.finest(s"\n   window=${rootWindow.getWindowRect}\n   content=${rootWindow.getContentRect}")
+       RootGlyph.finest(s"\n   window=${rootWindow.getWindowRect}\n   content=${rootWindow.getContentRectAbsolute}")
+       setContentSize(diagonal)
      }
   }
 
@@ -124,7 +131,8 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   }
 
   def setScaledContentSize(diagonal: Vec): Unit = {
-    val diag = diagonal scaled hardwareScale
+    val diag = diagonal scaled hardwareScale scaled softwareScale
+    Resizeable.finest(s"setScaledContentSize($diagonal)=>$diag")
     rootWindow.setContentSize(diag.x.toInt, diag.y.toInt)
   }
 
@@ -463,7 +471,7 @@ def acceptWindowEvent(event: Event, window: Window, handler: EventHandler): Unit
     case _: EventWindowFocusIn =>
       App.runOnUIThread(() => onFocus(true))
     case ev: EventWindowResize =>
-      rootWindowResized(ev.getContentWidth.toFloat/hardwareScale, ev.getContentHeight.toFloat/hardwareScale)
+      rootWindowResized(ev.getContentWidth.toFloat/hardwareScale/softwareScale, ev.getContentHeight.toFloat/hardwareScale/softwareScale)
       rootWindow.requestFrame()
     case _: EventWindowMove =>
       // also when resized by moving a corner or an edge

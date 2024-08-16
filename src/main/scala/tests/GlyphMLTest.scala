@@ -73,7 +73,6 @@ object GlyphMLTest extends Application {
         RootGlyph.level= if (state) FINE else OFF
     }(Local.style)
 
-
     var dynamicLayout: Boolean = false
 
     lazy val dynaLayout: Glyph = styled.TextToggle(whenFalse="Enable Dynamic", whenTrue="Disable Dynamic", initially=dynamicLayout) {
@@ -101,7 +100,8 @@ object GlyphMLTest extends Application {
     def menuBar                    = MenuBar(Local)(dynaLayout, Gap, rowLayout, colLayout, splashLayout)
     lazy val menuBarHeight: Scalar = dynaLayout.h max rowLayout.h max colLayout.h max splashLayout.h
 
-    lazy val splashScreen          =  Column(rowLayout, colLayout, traceOn, dynaLayout).constant(Local)
+    lazy val splashColumn: Element = Column(rowLayout, colLayout, traceOn, dynaLayout)
+    lazy val splashScreen          = splashColumn.constant(Local)
 
     def layoutRow(w: Scalar, h: Scalar) =
         FixedWidth(w)(sideBar, Glyphs.FilledRect(2, h, darkGrey), nat1, Gap, Glyphs.FilledRect(2, h, nothing), Gap, nat2)
@@ -119,17 +119,24 @@ object GlyphMLTest extends Application {
       lazy val rowH: Scalar = sideBarWidth+(nat1.h max nat2.h)+2*enlarge+2
       lazy val colH: Scalar = menuBarHeight+nat1.h+nat2.h+2*enlarge
 
-      Dynamic {
-        case Vec(w, h) if dynamicLayout && h>splashScreen.h*1.2f && w>splashScreen.w*1.5f =>
-          RootGlyph.fine(s"Dynamic $w")
-          val ww = w-sideBarWidth-2*enlarge
-          layoutDynamic(w, h, text1.original(paragraphPoints(ww*0.3f)).framed(fg=redLine, bg=lightGrey),
-                        text2.original(paragraphPoints(ww*0.5f)).framed(fg=redLine, bg=lightGrey))
-        case Vec(w, h) if w>=rowW && h<colH => layoutRow(w, h)
-        case Vec(w, h) if h>=colH               => layoutCol(w, h)
-        case _ =>
-          splashScreen.framed(fg=redFrame, bg=nothing)
-        }\\(_.enlarged(enlarge))
+      var selectCount = 0
+
+      def selectDynamic(windowSize: Vec): Element = {
+        windowSize match {
+          case Vec(w, h) if dynamicLayout && h>splashScreen.h*1.2f && w>splashScreen.w*1.5f =>
+            RootGlyph.fine(s"Dynamic $w")
+            val ww = w-sideBarWidth-2*enlarge
+            layoutDynamic(w, h, text1.original(paragraphPoints(ww*0.3f)).framed(fg=redLine, bg=lightGrey),
+              text2.original(paragraphPoints(ww*0.5f)).framed(fg=redLine, bg=lightGrey))
+          case Vec(w, h) if w>=rowW && h<colH => layoutRow(w, h)
+          case Vec(w, h) if h>=colH           => layoutCol(w, h)
+          case Vec(w, h) =>
+            Resizeable.finest(s"splashScreen selected for ($w, $h) => (${splashScreen.w}, ${splashScreen.h})")
+            splashScreen
+        }
+      }
+
+      Dynamic(selectDynamic)\\(_.enlarged(enlarge))
   }
 
   override def title: String = "Topdown Example"
