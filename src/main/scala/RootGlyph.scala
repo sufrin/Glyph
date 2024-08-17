@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 import GlyphTypes.Scalar
 
-import io.github.humbleui.jwm.{App, EventMouseMove}
+import io.github.humbleui.jwm.{App, EventMouseMove, EventTextInput, EventTextInputMarked}
 import org.sufrin.glyph.markup.Resizeable
 
 
@@ -42,7 +42,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    *  Used only when the `autoScale` path through `rootWindowResized` is
    *  taken.
    */
-  private var ignoreResize: Boolean = false
+  private var ignoreResize: Boolean = true
 
   /**
    * Regenerate the `GUIroot` to be of size (no more than) `(newW, newH)` if
@@ -79,7 +79,10 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
              if (force)
                syncWindowContentSize()
              else // wait until the mouse moves
-               onNextMotion { syncWindowContentSize() }
+               onNextMotion {
+                 ignoreResize=true
+                 syncWindowContentSize()
+               }
            }
          }
        }
@@ -92,8 +95,8 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
        val factor =
            if (w!=newW) newW / w
            else
-           //if (h!=newH) newH / h
-           //else
+           if (h!=newH) newH / h
+           else
              1.0f
        RootGlyph.finest(s"autoScale: $oldScale $w $newW $factor")
        eventHandler.softwareScale *= factor
@@ -133,7 +136,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   def setScaledContentSize(diagonal: Vec): Unit = {
     val diag = diagonal scaled hardwareScale scaled softwareScale
     Resizeable.finest(s"setScaledContentSize($diagonal)=>$diag")
-    rootWindow.setContentSize(diag.x.toInt, diag.y.toInt)
+    App.runOnUIThread{()=>rootWindow.setContentSize(diag.x.toInt, diag.y.toInt)}
   }
 
   val fg: Brush = DefaultBrushes.invisible
@@ -236,26 +239,23 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   }
 
 
-  /*
+  /**
    *  Locate `p` within a visible reactive glyph in a decoration, in the topmost overlay, or else within a
    *  *visible* glyph in the underlying `GUIroot`.
    *
    *  The intention is that
-   * (a) A direct hover over a reactive glyph in an overlaydialogues will be picked up
+   *
+   * (a) A direct hover over a reactive glyph in an overlay will be picked up
    *     during a mouse-focus transfer -- whether or not there
-   *     are reactive glyphs "hidden" by it.  //TODO: reconsider this?
+   *     are reactive glyphs "hidden" by it.
    *
    * (b) `GUIroot` glyphs that are *completely covered* by the top overlay will not be selected during a mouse-focus
    *  transfer. Thus as far as a button is concerned,
    *  if you can't see it at all then you can't press it; but if you can see some of it
-   *  then you can (unless strict hiding is enabled in the topmost overlay).
+   *  then you can -- unless strict hiding is enabled in the topmost overlay (which is probably advisable
+   *  for components implementing dialogues or menus).
    *
-   *  TODO: generalize from "top overlay" to "any overlay".
-   *
-   *  TODO: (see notebooks) a click ANYWHERE outside a running isModal/menu overlay
-   *        should perhaps close that overlay. One would be to present a
-   *        "dummy" hit with a dummy reactive if the search at ** finds `None`. That
-   *        reactive would interpret (only) a button up and ignore everything else.
+   *  TODO: generalize from "top overlay" to "any overlay"?
    *
    */
 
@@ -294,51 +294,51 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   /**
    *  Yield a hit, if possible, on a visible `Reactive` glyph that contains `p` within  a decoration layer
    */
-def decorationContaining(p: Vec): Option[Hit] = {
-  // select the visible, active decoration layers.
-  val visibleActive = (Overlay.annotations.filter { case (id: String, layer: RootLayer) => layer.visible && layer.active })
-  // get the hits from the visible, active decoration layers containing hits
-  val visibleActiveHits = visibleActive.map { case (id: String, layer: RootLayer) => (layer.glyph.glyphContaining(p - layer.glyph.location)) }.filter(_.nonEmpty).map(_.get)
-  // now thin these hits to those that are hits on reactives
-  val visibleReactiveHits = visibleActiveHits.filter{ hit => hit.glyph.isReactive }
-  // and if there is at least one, then choose the first.
-  // TODO: Deal with ambiguities by some sort of priority -- it surely won't happen often
-  //       because annotations are not really supposed to offer reactions.
-  if (visibleReactiveHits.nonEmpty) Some(visibleReactiveHits.head) else None
-}
+  def decorationContaining(p: Vec): Option[Hit] = {
+    // select the visible, active decoration layers.
+    val visibleActive = (Overlay.annotations.filter { case (id: String, layer: RootLayer) => layer.visible && layer.active })
+    // get the hits from the visible, active decoration layers containing hits
+    val visibleActiveHits = visibleActive.map { case (id: String, layer: RootLayer) => (layer.glyph.glyphContaining(p - layer.glyph.location)) }.filter(_.nonEmpty).map(_.get)
+    // now thin these hits to those that are hits on reactives
+    val visibleReactiveHits = visibleActiveHits.filter{ hit => hit.glyph.isReactive }
+    // and if there is at least one, then choose the first.
+    // TODO: Deal with ambiguities by some sort of priority -- it surely won't happen often
+    //       because annotations are not really supposed to offer reactions.
+    if (visibleReactiveHits.nonEmpty) Some(visibleReactiveHits.head) else None
+  }
 
   /**
    *  If there's a visible decoration containing a reactive glyph that contains `p` then
    *  return a hit on that glyph; else seek a hit in the `GUIroot`.
    */
-override def reactiveContaining(p: Vec): Option[ReactiveGlyph] =
-  decorationContaining(p) match {
-    case None      => GUIroot.reactiveContaining(p)
-    case Some(hit) => hit.glyph.reactiveContaining(p)
-  }
+  override def reactiveContaining(p: Vec): Option[ReactiveGlyph] =
+    decorationContaining(p) match {
+      case None      => GUIroot.reactiveContaining(p)
+      case Some(hit) => hit.glyph.reactiveContaining(p)
+    }
 
-override def reactiveParent: Option[ReactiveGlyph] = GUIroot.reactiveParent
+  override def reactiveParent: Option[ReactiveGlyph] = GUIroot.reactiveParent
 
 /**
  * Draw the main glyph overlaid with the visible annotations and then
  * the overlay glyphs in last-pushed order.
  */
-override def draw(surface: Surface): Unit = {
-  GUIroot.drawBackground(surface)
-  GUIroot.draw(surface)
+  override def draw(surface: Surface): Unit = {
+    GUIroot.drawBackground(surface)
+    GUIroot.draw(surface)
 
-  for {(id, layer)  <- Overlay.annotations if layer.visible} {
+    for {(id, layer)  <- Overlay.annotations if layer.visible} {
+        surface.withOrigin(layer.glyph.location) {
+          layer.glyph.draw(surface)
+        }
+      }
+
+    for { layer <- Overlay.layers.reverseIterator if layer.visible } {
       surface.withOrigin(layer.glyph.location) {
         layer.glyph.draw(surface)
       }
     }
-
-  for { layer <- Overlay.layers.reverseIterator if layer.visible } {
-    surface.withOrigin(layer.glyph.location) {
-      layer.glyph.draw(surface)
-    }
   }
-}
   /**
    *  Invoked by the eventHandler when there has been an off-glyph click.
    *  Informs the topmost (if any) overlay, if it is a menu
@@ -354,84 +354,84 @@ override def draw(surface: Surface): Unit = {
 //////////////////////////////////////////////////////////////////////////////////
 
 
-def windowOrigin: (Int, Int) = {
-  val rect = rootWindow.getWindowRect
-  val crect = rootWindow.getContentRect
-  val (x, y) = (rect.getLeft, rect.getTop)
-  //println(s"RootGlyph.windowOrigin=($x,$y) [$crect]")
-  (x,y)
-}
+  def windowOrigin: (Int, Int) = {
+    val rect = rootWindow.getWindowRect
+    val crect = rootWindow.getContentRect
+    val (x, y) = (rect.getLeft, rect.getTop)
+    //println(s"RootGlyph.windowOrigin=($x,$y) [$crect]")
+    (x,y)
+  }
 
-def onScreenSize(g: Glyph): (Int, Int) = eventHandler.onScreenSize(g)
+  def onScreenSize(g: Glyph): (Int, Int) = eventHandler.onScreenSize(g)
 
-def contentLocation: (Int, Int) = eventHandler.contentLocation
+  def contentLocation: (Int, Int) = eventHandler.contentLocation
 
-def logicalLocation(glyph: Glyph, offset: Vec): (Int, Int) = eventHandler.logicalLocation(glyph.rootDistance+offset)
+  def logicalLocation(glyph: Glyph, offset: Vec): (Int, Int) = eventHandler.logicalLocation(glyph.rootDistance+offset)
 
-def logicalLocation(offset: Vec): (Int, Int)               = eventHandler.logicalLocation(offset)
+  def logicalLocation(offset: Vec): (Int, Int)               = eventHandler.logicalLocation(offset)
 
 /** The EventHandler (if any) managing this Interaction */
-var  eventHandler: EventHandler = null
+  var  eventHandler: EventHandler = null
 
-def softwareScale:  Scalar = eventHandler.softwareScale
-def currentScreen: Screen  = rootWindow.getScreen
-def hardwareScale: Scalar  = rootWindow.getScreen.getScale
+  def softwareScale:  Scalar = eventHandler.softwareScale
+  def currentScreen: Screen  = rootWindow.getScreen
+  def hardwareScale: Scalar  = rootWindow.getScreen.getScale
 
-/** Extra arguments -- usually provided from the command line via `Interaction` */
-val args: List[String] = Nil
+  /** Extra arguments -- usually provided from the command line via `Interaction` */
+  val args: List[String] = Nil
 
-override def isRoot = true
-
-
-def onRootLeave(): Unit = {
-  RootGlyph.fine(s"RootLeave($mouse)")
-}
-
-def onRootEnter(): Unit = {
-  RootGlyph.fine(s"RootEnter($mouse)")
-}
-
-def onFocus(in: Boolean): Unit = {
-  RootGlyph.fine(s"Focus($in)")
-}
-
-protected var _onCloseRequest: Option[Window => Unit] = None
-
-def onCloseRequest(action: Window => Unit): Unit = _onCloseRequest = Some(action)
-
-def windowCloseRequest(w: Window): Unit = {
-    _onCloseRequest match {
-      case None         => w.close()
-      case Some(action) => action(w)
-    }
-}
-
-var mouseInside: Option[Boolean] = None
+  override def isRoot = true
 
 
-var _onNextMotion: Option[()=>Unit] = None
+  def onRootLeave(): Unit = {
+    RootGlyph.fine(s"RootLeave($mouse)")
+  }
 
-/**
- * The `action` will be evaluated when the
- * mouse next moves.
- */
-def onNextMotion(action: => Unit): Unit = {
-    _onNextMotion = Some {()=>action}
-}
+  def onRootEnter(): Unit = {
+    RootGlyph.fine(s"RootEnter($mouse)")
+  }
+
+  def onFocus(in: Boolean): Unit = {
+    RootGlyph.fine(s"Focus($in)")
+  }
+
+  protected var _onCloseRequest: Option[Window => Unit] = None
+
+  def onCloseRequest(action: Window => Unit): Unit = _onCloseRequest = Some(action)
+
+  def windowCloseRequest(w: Window): Unit = {
+      _onCloseRequest match {
+        case None         => w.close()
+        case Some(action) => action(w)
+      }
+  }
+
+  var mouseInside: Option[Boolean] = None
 
 
-var _mouseLoc:              Vec = Vec.Zero
-var _decodeMotionModifiers: Boolean = false
-var _mouseModifiers:        Modifiers.Bitmap = 0
-var _mouseStateTracker:     MouseStateTracker = null
-def mouse: (Vec, Modifiers.Bitmap) =  (_mouseLoc, _mouseModifiers)
-def decodeMotionModifiers(enable: Boolean): Unit = _decodeMotionModifiers=enable
-def trackMouseState(enable: Boolean): Unit = {
-  if (enable)
-    _mouseStateTracker = new MouseStateTracker(thisRoot)
-  else
-    _mouseStateTracker = null
-}
+  var _onNextMotion: Option[()=>Unit] = None
+
+  /**
+   * The `action` will be evaluated when the
+   * mouse next moves.
+   */
+  def onNextMotion(action: => Unit): Unit = {
+      _onNextMotion = Some {()=>action}
+  }
+
+
+  var _mouseLoc:              Vec = Vec.Zero
+  var _decodeMotionModifiers: Boolean = false
+  var _mouseModifiers:        Modifiers.Bitmap = 0
+  var _mouseStateTracker:     MouseStateTracker = null
+  def mouse: (Vec, Modifiers.Bitmap) =  (_mouseLoc, _mouseModifiers)
+  def decodeMotionModifiers(enable: Boolean): Unit = _decodeMotionModifiers=enable
+  def trackMouseState(enable: Boolean): Unit = {
+    if (enable)
+      _mouseStateTracker = new MouseStateTracker(thisRoot)
+    else
+      _mouseStateTracker = null
+  }
 
 /**
  * Unconditionally invoked by the event handler when the mouse moves.
@@ -439,82 +439,94 @@ def trackMouseState(enable: Boolean): Unit = {
  * the current state of the modifiers. It also evaluates the currently
  * declared `onNextMotion` action.
  */
-def onMotion(mouseLoc: Vec, event: EventMouseMove): Unit = {
-  _mouseLoc = mouseLoc
-  if (_decodeMotionModifiers) _mouseModifiers = Modifiers(event)
-  _onNextMotion match {
-    case None => ()
-    case Some(action) =>
-      _onNextMotion = None
-      action()
+  def onMotion(mouseLoc: Vec, event: EventMouseMove): Unit = {
+    _mouseLoc = mouseLoc
+    if (_decodeMotionModifiers) _mouseModifiers = Modifiers(event)
+    _onNextMotion match {
+      case None => ()
+      case Some(action) =>
+        _onNextMotion = None
+        action()
+    }
+    if (_mouseStateTracker ne null) _mouseStateTracker.accept(event)
   }
-  if (_mouseStateTracker ne null) _mouseStateTracker.accept(event)
-}
 
-def acceptRootGlyphEvent(event: RootGlyphEvent): Unit = {
-  event match {
-    case RootEnterEvent(window) =>
-      onRootEnter()
-    case RootLeaveEvent(window) =>
-      onRootLeave()
+  def acceptRootGlyphEvent(event: RootGlyphEvent): Unit = {
+    event match {
+      case RootEnterEvent(window) =>
+        onRootEnter()
+      case RootLeaveEvent(window) =>
+        onRootLeave()
+    }
   }
-}
 
-def acceptWindowEvent(event: Event, window: Window, handler: EventHandler): Unit = {
-  import io.github.humbleui.jwm.{EventWindowFocusIn, EventWindowFocusOut, EventWindowMove, EventWindowResize, EventWindowRestore}
-  rootWindow   = window
-  eventHandler = handler
-  if (handler.logEvents) println(f"$event%s 0x${window._ptr}%12x")
-  event match {
-    case _: EventWindowFocusOut =>
-      App.runOnUIThread(() => onFocus(false))
-    case _: EventWindowFocusIn =>
-      App.runOnUIThread(() => onFocus(true))
-    case ev: EventWindowResize =>
-      rootWindowResized(ev.getContentWidth.toFloat/hardwareScale/softwareScale, ev.getContentHeight.toFloat/hardwareScale/softwareScale)
-      rootWindow.requestFrame()
-    case _: EventWindowMove =>
-      // also when resized by moving a corner or an edge
-      rootWindow.requestFrame()
-    case _: EventWindowRestore =>
-      rootWindow.requestFrame()
-    case _ =>
-      rootWindow.requestFrame()
+  def acceptWindowEvent(event: Event, window: Window, handler: EventHandler): Unit = {
+    import io.github.humbleui.jwm.{EventWindowFocusIn, EventWindowFocusOut, EventWindowMove, EventWindowResize, EventWindowRestore}
+    rootWindow   = window
+    eventHandler = handler
+    if (handler.logEvents) println(f"$event%s 0x${window._ptr}%12x")
+    event match {
+      case _: EventWindowFocusOut =>
+        App.runOnUIThread(() => onFocus(false))
+      case _: EventWindowFocusIn =>
+        App.runOnUIThread(() => onFocus(true))
+      case ev: EventWindowResize =>
+        rootWindowResized(ev.getContentWidth.toFloat/hardwareScale/softwareScale, ev.getContentHeight.toFloat/hardwareScale/softwareScale)
+        rootWindow.requestFrame()
+      case _: EventWindowMove =>
+        // also when resized by moving a corner or an edge
+        rootWindow.requestFrame()
+      case _: EventWindowRestore =>
+        rootWindow.requestFrame()
+      case _ =>
+        rootWindow.requestFrame()
+    }
   }
-}
 
-def close(): Unit = {
-  runOnUIThread(()=>rootWindow.close())
-}
-
-def isWindowClosed: Boolean = rootWindow.isClosed
-
-def grabKeyboard(component: ReactiveGlyph): Unit = {
-  if (eventHandler ne null) eventHandler.keyboardFocus = Some(component)
-}
-
-def freeKeyboard(): Unit = {
-  if (eventHandler ne null) {
-    eventHandler.recentKeyboardFocus = eventHandler.keyboardFocus
-    eventHandler.keyboardFocus = None
+  def close(): Unit = {
+    runOnUIThread(()=>rootWindow.close())
   }
-}
+
+  def isWindowClosed: Boolean = rootWindow.isClosed
+
+  def grabKeyboard(component: ReactiveGlyph): Unit = {
+    if (eventHandler ne null) eventHandler.keyboardFocus = Some(component)
+  }
+
+  def freeKeyboard(): Unit = {
+    if (eventHandler ne null) {
+      eventHandler.recentKeyboardFocus = eventHandler.keyboardFocus
+      eventHandler.keyboardFocus = None
+    }
+  }
 
 /** True iff the next keystroke will be offered to `component`.  */
-def hasKeyboardFocus(component: ReactiveGlyph): Boolean = {
-  if (eventHandler ne null) eventHandler.keyboardFocus match {
-    case None =>
-         eventHandler.recentKeyboardFocus match {
-           case None => false
-           case Some(focussed) => focussed eq component
-         }
-    case Some(focussed) => focussed eq component
-  } else false
-}
+  def hasKeyboardFocus(component: ReactiveGlyph): Boolean = {
+    if (eventHandler ne null) eventHandler.keyboardFocus match {
+      case None =>
+           eventHandler.recentKeyboardFocus match {
+             case None => false
+             case Some(focussed) => focussed eq component
+           }
+      case Some(focussed) => focussed eq component
+    } else false
+  }
 
-def giveupFocus(): Unit = eventHandler.giveupFocus()
+  def giveupFocus(): Unit = eventHandler.giveupFocus()
 
-def whenUnfocussed(event: EventKey): Unit = {}
+  var _handleUnfocussedKey: Option[EventKey=>Unit] = None
+
+  def handleUnfocussedKey(handler: EventKey=>Unit): Unit = _handleUnfocussedKey=Some(handler)
+
+  def onKeyboardUnfocussed(event: EventKey): Unit =
+    _handleUnfocussedKey match {
+      case Some(handler) => handler(event)
+      case None =>
+    }
+
+  /**  */
+  def onKeyboardUnfocussed(key: EventTextInput): Unit = {}
+  def onKeyboardUnfocussed(key: EventTextInputMarked): Unit = {}
 
 }
 

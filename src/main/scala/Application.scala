@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import io.github.humbleui.jwm.Window
+import io.github.humbleui.jwm.{EventKey, Window}
 
 /**
  * An application specified by a GUI, and a title. Some generic flags
@@ -78,6 +78,12 @@ trait Application {
         override def inset = (0, 0)
         override def iconPath = icon
 
+        override def onKeyboardUnfocussed(key: EventKey): Unit = {
+          GUI.findRoot.onKeyboardUnfocussed(key)
+          window.requestFrame()
+        }
+
+
         override def screen = useScreen match {
           case 'p' => App.getPrimaryScreen
           case '0' => getScreen(0)
@@ -87,6 +93,13 @@ trait Application {
         }
       }.start()
       GUI.findRoot.onCloseRequest(onClose(_))
+      // handle every unexpected key
+      GUI.findRoot.handleUnfocussedKey {
+        case key: EventKey =>
+          // TODO: we really should beep!
+          implicit val basic: StyleSheet = Styles.Default
+          overlaydialogues.Dialogue.OK(styled.text.Label(s"Unexpected $key")).OnRootOf(GUI).start()
+      }
     })
   }
 

@@ -129,11 +129,32 @@ trait EventHandler extends Consumer[Event] {
   }
 
   /** Invoked on an `EventKey` when there's no `keyboardFocus` */
-  def onKeyboardUnfocussed(key: EventKey): Unit = {}
+  def onKeyboardUnfocussed(key: EventKey): Unit = {
+    root match {
+      case root: RootGlyph =>
+        root.onKeyboardUnfocussed(key)
+        root.reDraw()
+      case _ =>
+    }
+  }
   /** Invoked on an `EventTextInput` when there's no `keyboardFocus` */
-  def onKeyboardUnfocussed(key: EventTextInput): Unit = {}
+  def onKeyboardUnfocussed(key: EventTextInput): Unit = {
+    root match {
+      case root: RootGlyph =>
+        root.onKeyboardUnfocussed(key)
+        root.reDraw()
+      case _ =>
+    }
+  }
   /** Invoked on an `EventTextInputMarked` when there's no `keyboardFocus` */
-  def onKeyboardUnfocussed(key: EventTextInputMarked): Unit = {}
+  def onKeyboardUnfocussed(key: EventTextInputMarked): Unit = {
+    root match {
+      case root: RootGlyph =>
+        root.onKeyboardUnfocussed(key)
+        root.reDraw()
+      case _ =>
+    }
+  }
 
   import GlyphTypes.Scalar
   /*
@@ -200,11 +221,13 @@ trait EventHandler extends Consumer[Event] {
         keyboardFocus match {
           case None =>
               recentKeyboardFocus match {
-                case None => onKeyboardUnfocussed(key)
+                case None =>
+                  onKeyboardUnfocussed(key)
                 case Some(glyph) =>
                   glyph.accept(key, Vec.Origin, window)
               }
-          case Some(glyph) => glyph.accept(key, Vec.Origin, window)
+          case Some(glyph) =>
+            glyph.accept(key, Vec.Origin, window)
         }
 
       case key: EventTextInput  =>        // key pressed that yielded some textlayout

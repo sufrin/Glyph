@@ -107,8 +107,8 @@ trait DemonstrationPages extends Brushes {
   // -------------------------------------------------------------------------------------------------------
 
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
-    import styled.text._
     import overlaydialogues.Dialogue.OKNO
+    import styled.text._
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged(50),
                              Label("Do you want to Exit?")(HugeLabelStyle)
                 ).enlarged(50)
