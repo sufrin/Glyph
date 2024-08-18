@@ -40,6 +40,8 @@ class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
 
   Page("Transforms*", "")(new PortmanteauTransforms().Layout.leftButtons())
 
+  Page("Text", "") (new PortmanteauText().GUI)
+
   Page("GlyphML", "") (new PortmanteauGlyphML().GUI)
 
   import utils.Output.withWriteBar

@@ -1,6 +1,8 @@
 package org.sufrin.glyph
 
 import io.github.humbleui.jwm.{EventKey, Window}
+import org.sufrin.glyph.Modifiers.{toBitmap, Bitmap}
+import org.sufrin.logging
 
 /**
  * An application specified by a GUI, and a title. Some generic flags
@@ -45,9 +47,9 @@ trait Application {
 
       case s"-log:$logprefix" => logPrefix=logprefix
 
-      case s"-scale=$scale" if scale.matches("[0-9]*.[0-9]+") => scaleFactor = scale.toFloat
-      case s"-icon=$path"                                     => icon = if (java.nio.file.Path.of(path).toFile.exists) Some(path) else None
-      case s"-screen=$whichScreen" if whichScreen.matches("[0123p]")    => useScreen = whichScreen.head
+      case s"-scale=$scale" if scale.matches("[0-9]*.[0-9]+")       => scaleFactor = scale.toFloat
+      case s"-icon=$path"                                           => icon = if (java.nio.file.Path.of(path).toFile.exists) Some(path) else None
+      case s"-screen=$whichScreen" if whichScreen.matches("[0-9p]") => useScreen = whichScreen.head
       case s"-h" => {
         import scala.sys.process.stderr
         stderr.println(
@@ -86,19 +88,18 @@ trait Application {
 
         override def screen = useScreen match {
           case 'p' => App.getPrimaryScreen
-          case '0' => getScreen(0)
-          case '1' => getScreen(1)
-          case '2' => getScreen(2)
-          case '3' => getScreen(3)
+          case _   => getScreen(useScreen-'0')
         }
       }.start()
       GUI.findRoot.onCloseRequest(onClose(_))
-      // handle every unexpected key
+      // default handler for all unexpected keys
       GUI.findRoot.handleUnfocussedKey {
-        case key: EventKey =>
+        case event: EventKey =>
           // TODO: we really should beep!
-          implicit val basic: StyleSheet = Styles.Default
-          overlaydialogues.Dialogue.OK(styled.text.Label(s"Unexpected $key")).OnRootOf(GUI).start()
+          // implicit val basic: StyleSheet = Styles.Default
+          // overlaydialogues.Dialogue.OK(styled.text.Label(s"Unexpected $key")).OnRootOf(GUI).start()
+          val key = s"Key ${Modifiers.toBitmap(event).toLongString} ${event.getKey}"
+          logging.Default.warn(s"Key unexpected: ${key}")
       }
     })
   }

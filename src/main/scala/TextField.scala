@@ -65,13 +65,14 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
    *       It's not clear from the example programs
    */
   override def accept(key: EventTextInputMarked, location: Vec, window: Window): Unit = {
-    //println(key)
-    TextModel.insMarked(key.getText, 1)
+    val start= key.getReplacementStart
+    val end  = key.getReplacementEnd
+    // Cases I know of are for single accent characters
+    TextModel.insForReplacement(key.getText, 1+end-start) // pending characters to delete
     reDraw()
   }
 
   override def accept(key: EventTextInput, location: Vec, window: Window): Unit = {
-    //println(key)
     TextModel.ins(key.getText)
     reDraw()
   }
@@ -135,12 +136,12 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
    */
   val unfocussedBrush = Brush("cursorunfocussed") color 0X33000000 strokeWidth 2.5f
 
-  /** 
+  /**
    * Brush used to show panned warnings
    */
   val panWarningBrush = fg.copy() strokeWidth 20.0f alpha 0.3
-  
-  /** 
+
+  /**
    *  Offset from start/end of the glyph of x of the pan-warning stroke
    */
   val panWarningOffset = panWarningBrush.strokeWidth / 2
@@ -335,12 +336,13 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
       if (left != 0) left -= 1
     }
 
-    private var pendingReplacements: Int = 0
-    private def doPendingReplacements(): Unit = while (pendingReplacements>0) { del(); pendingReplacements -= 1 }
+    private var pendingDeletions: Int = 0
+    private def doPendingDeletions(): Unit =
+      while (pendingDeletions>0) { del(); pendingDeletions -= 1 }
 
     /** Insert a character from the Unicode BMP  */
     def ins(ch: Char): Unit = {
-      doPendingReplacements()
+      doPendingDeletions()
       insCodePoint(ch)
     }
 
@@ -349,7 +351,7 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
      *  characters (for example Smileys, Kanji, ...) outside the BMP
      */
     def ins(string: String): Unit = {
-      doPendingReplacements()
+      doPendingDeletions()
       string.codePoints.forEach(insCodePoint(_))
     }
 
@@ -359,8 +361,8 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
      * `toReplace` characters are marked for replacement at the
      * following keystroke.
      */
-    def insMarked(string: String, toReplace: Int): Unit = {
-      pendingReplacements = toReplace
+    def insForReplacement(string: String, toReplace: Int): Unit = {
+      pendingDeletions = toReplace
       string.codePoints.forEach(insCodePoint(_))
     }
 
