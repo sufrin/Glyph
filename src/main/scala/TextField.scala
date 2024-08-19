@@ -2,7 +2,7 @@ package org.sufrin.glyph
 
 import GlyphTypes.{Font, Scalar}
 
-import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked}
+import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked, Key}
 import org.sufrin.logging.FINER
 
 
@@ -29,7 +29,8 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
                 var onError: (EventKey, Glyph) => Unit,
                 var onCursorLeave: String => Unit,
                 size: Int,
-                initialText: String
+                initialText: String,
+                abbreviations: org.sufrin.utility.TextAbbreviations
                ) extends ReactiveGlyph
 {
 
@@ -70,20 +71,32 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
     // Cases I know of are for single accent characters
     TextModel.insForReplacement(key.getText, 1+end-start) // pending characters to delete
     reDraw()
+    resetAbbreviationTrigger()
   }
 
   override def accept(key: EventTextInput, location: Vec, window: Window): Unit = {
     TextModel.ins(key.getText)
     reDraw()
+    resetAbbreviationTrigger()
   }
+
+  /** 
+   * The last shift-key that was pressed alone.  
+   * Two successive presses of the same shift key 
+   * (with nothing else pressed) triggers an abbreviation hunt. 
+   */
+  private var abbreviationTrigger = Key.UNDEFINED
+  private def resetAbbreviationTrigger(): Unit = abbreviationTrigger = Key.UNDEFINED
+
   override def accept(key: EventKey, location: Vec, window: Window): Unit = {
     import Modifiers._
-
     import io.github.humbleui.jwm.{Clipboard, ClipboardEntry, ClipboardFormat}
     import io.github.humbleui.jwm.Key._
+
     val ANYCONTROL  = Control | Command
     val ANYSHIFT    = ANYCONTROL | Alt
     val mods: Bitmap = toBitmap(key)
+
     if (mods.include(Pressed)) key._key match {
       case END        => TextModel.end()
       case LEFT if mods.include(ANYCONTROL) => TextModel.end()
@@ -105,7 +118,16 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
         val entry = Clipboard.get(ClipboardFormat.TEXT).getString
         if (entry ne null) TextModel.ins(entry)
 
-      case CONTROL | MAC_COMMAND | SHIFT | ALT | LINUX_SUPER =>
+      // case ESCAPE     => TextModel.abbreviation()
+
+      // two successive presses on the same shift key triggers an abbreviation
+      case CONTROL | MAC_COMMAND | SHIFT | LINUX_SUPER | ALT | MAC_OPTION =>
+        if (abbreviationTrigger eq key._key) {
+          TextModel.abbreviation()
+          resetAbbreviationTrigger()
+        } else {
+          abbreviationTrigger = key._key
+        }
 
       // to support pan testing
       case S if mods.include(ANYSHIFT) && TextField.loggingLevel(FINER) =>
@@ -344,6 +366,7 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
     def ins(ch: Char): Unit = {
       doPendingDeletions()
       insCodePoint(ch)
+      if (abbreviations.onLineTrigger) abbreviation()
     }
 
     /**
@@ -353,6 +376,7 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
     def ins(string: String): Unit = {
       doPendingDeletions()
       string.codePoints.forEach(insCodePoint(_))
+      if (abbreviations.onLineTrigger) abbreviation()
     }
 
     /**
@@ -364,6 +388,7 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
     def insForReplacement(string: String, toReplace: Int): Unit = {
       pendingDeletions = toReplace
       string.codePoints.forEach(insCodePoint(_))
+      if (abbreviations.onLineTrigger) abbreviation()
     }
 
     def mvLeft(): Unit = if (left!=0) {
@@ -428,6 +453,27 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
       }
       if (logging) finest(s"rePan= $pan $vleft $size $margin ${ (vleft < size, vleft<margin, vleft>=size-margin)}")
     }
+
+    def leftCharSequence: CharSequence = new CharSequence {
+      def length(): Int = left
+      def charAt(index: Int): Char = buffer(index).toChar
+      def subSequence(start: Int, end: Int): CharSequence = leftString.subSequence(start, end)
+    }
+
+    var abbreviating: Boolean = false
+
+    def abbreviation(): Unit = if (abbreviations!=null) {
+      abbreviations.findAbbreviation(leftCharSequence, left) match {
+        case None =>
+        case Some((repl, size)) =>
+          if (!abbreviating) {
+            abbreviating = true
+            if (left >= size) left -= size
+            ins(repl)
+            abbreviating = false
+          }
+      }
+    } else ()
   }
 }
 
@@ -451,12 +497,14 @@ object TextField extends org.sufrin.logging.Loggable {
             onError: (EventKey, Glyph) => Unit = popupError(_,_),
             onCursorLeave: String=>Unit        = { case text: String => },
             size: Int,
-            initialText: String = ""
+            initialText: String = "",
+            abbreviations: org.sufrin.utility.TextAbbreviations = null
            ): TextField =
       new TextField(fg, bg, font,
             onEnter=onEnter,
             onError=onError,
             onCursorLeave=onCursorLeave,
             size=size,
-            initialText=initialText)
+            initialText=initialText,
+            abbreviations)
 }

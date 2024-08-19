@@ -6,6 +6,8 @@ import BooleanGlyphs._
 import ReactiveGlyphs.Reaction
 import Styles.GlyphStyle
 
+import org.sufrin.utility.TextAbbreviations
+
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -453,13 +455,14 @@ object TextField {
             onError: (EventKey, Glyph) => Unit = { case (key, glyph) => },
             onCursorLeave: String=>Unit        = { case text: String => },
             size:    Int,
-            initialText: String = ""
+            initialText: String = "",
+            abbreviations: TextAbbreviations = null
            )
             (implicit detail: Styles.GlyphStyle): TextField = {
     val fg: Brush = detail.fg
     val bg: Brush = detail.bg
     val font: Font = detail.font
-    new TextField(fg, bg, font, onEnter, onError, onCursorLeave, size, initialText)
+    new TextField(fg, bg, font, onEnter, onError, onCursorLeave, size, initialText, abbreviations)
   }
 }
 
