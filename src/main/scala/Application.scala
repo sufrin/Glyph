@@ -1,7 +1,6 @@
 package org.sufrin.glyph
 
 import io.github.humbleui.jwm.{EventKey, Window}
-import org.sufrin.glyph.Modifiers.{toBitmap, Bitmap}
 import org.sufrin.logging
 
 /**
@@ -13,6 +12,7 @@ trait Application {
   def wherePossible(body: => Unit): Unit = try { body } catch { case exn: UnsupportedOperationException => { println(exn) } }
 
   import io.github.humbleui.jwm.App
+
   import scala.collection.mutable.ArrayBuffer
   def GUI:   Glyph
   def title: String
@@ -85,6 +85,10 @@ trait Application {
           window.requestFrame()
         }
 
+        locally {
+          handler.logEvents = args.contains("-logevents")
+          handler.noResize = args.contains("-noresize")
+        }
 
         override def screen = useScreen match {
           case 'p' => App.getPrimaryScreen

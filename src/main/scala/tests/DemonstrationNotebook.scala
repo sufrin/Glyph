@@ -168,10 +168,11 @@ trait DemonstrationPages extends Brushes {
       }) enlargedBy(50, 0) beside
       NaturalSize.Grid.Table(width=2)(
       Label("Rescaling: ").cellFit(ShiftEast), CheckBox(initially=false) {
-        case false =>
-          anchor.guiRoot.autoScale = false
-        case true =>
-          anchor.guiRoot.autoScale = true
+        state =>
+          if (anchor.guiRoot.platform=="X11")
+            overlaydialogues.Dialogue.OK(Label("Warning: X11 doesn't always implement automatic rescaling properly")).OnRootOf(anchor).start()
+          anchor.guiRoot.autoScale = state
+
       },
       Label("Image saving: ").cellFit(ShiftEast), enableSaveCheckBox
       )

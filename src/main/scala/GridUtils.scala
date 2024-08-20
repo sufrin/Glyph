@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-
+import scala.language.implicitConversions
 /**
  * Utilities for building grids from sequences
  */

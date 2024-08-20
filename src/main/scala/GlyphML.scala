@@ -265,7 +265,6 @@ object markup {
       override def resizeable: Boolean = true
 
       def element: Element
-
       var delegate: Glyph = element.toGlyph(context)
 
       override def atSize(boundingBox: Vec): Glyph = {
@@ -314,10 +313,10 @@ object markup {
    *   detailed layout of (part of) a GUI depends on the size of the
    *   window in which it will be rendered.
    */
-  case class Dynamic (select: Vec => Element) extends Element {
+  case class Dynamic (select: Vec => Element, enlarge: Scalar=0f) extends Element {
     def toGlyph(local: Context): Glyph = {
       val elt = select(local.boundingBox)
-      val result=elt.toGlyph(local)
+      val result=elt.toGlyph(local).enlarged(enlarge)
       Resizeable.finest(s"Dynamic.toGlyph(${local.boundingBox})=>${result.diagonal}")
       result
     }
@@ -382,6 +381,8 @@ object markup {
       def toGlyph(local: Context): Glyph = glyph
   }
 
+  import scala.language.implicitConversions
+  
   /** Coerce a `Glyph` to a `GlyphElement`  */
   implicit def fromGlyphToElement(glyph: Glyph): Element = GlyphElement(glyph)
 
@@ -401,7 +402,7 @@ object markup {
       val paras: Seq[Element] =
         text.split("""\n\n+""")
           .filter(_.nonEmpty)
-          .toSeq.map(_.split(' ').toSeq.map { word => AtBaseLine(word) })
+          .toSeq.map(_.split("[ \n]").toSeq.map { word => AtBaseLine(word) })
           .map(Paragraph(_))
       val column = Column$(paras)
       val result = column.toGlyph(local)

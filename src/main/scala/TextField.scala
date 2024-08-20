@@ -366,7 +366,7 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
     def ins(ch: Char): Unit = {
       doPendingDeletions()
       insCodePoint(ch)
-      if (abbreviations.onLineTrigger) abbreviation()
+      if (abbreviations!=null && abbreviations.onLineTrigger) abbreviation()
     }
 
     /**
@@ -376,7 +376,7 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
     def ins(string: String): Unit = {
       doPendingDeletions()
       string.codePoints.forEach(insCodePoint(_))
-      if (abbreviations.onLineTrigger) abbreviation()
+      if (abbreviations!=null && abbreviations.onLineTrigger) abbreviation()
     }
 
     /**
@@ -388,7 +388,7 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
     def insForReplacement(string: String, toReplace: Int): Unit = {
       pendingDeletions = toReplace
       string.codePoints.forEach(insCodePoint(_))
-      if (abbreviations.onLineTrigger) abbreviation()
+      if (abbreviations!=null && abbreviations.onLineTrigger) abbreviation()
     }
 
     def mvLeft(): Unit = if (left!=0) {

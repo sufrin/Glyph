@@ -51,6 +51,8 @@ trait EventHandler extends Consumer[Event] {
 
   /** Log events as they are accepted */
   var logEvents: Boolean = false
+  var noResize: Boolean = false // Linux/X instrument
+
   var logLn: String => Unit = { line  => println(line) }
   var logEv: (Event, Modifiers.Bitmap) => Unit = {
       case (event, modifiers) =>

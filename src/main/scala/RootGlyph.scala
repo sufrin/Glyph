@@ -1,9 +1,44 @@
 package org.sufrin.glyph
-import GlyphTypes.Scalar
 
-import io.github.humbleui.jwm.{App, EventMouseMove, EventTextInput, EventTextInputMarked}
-import org.sufrin.glyph.markup.Resizeable
+import io.github.humbleui.jwm.{App, EventMouseMove, EventTextInput, EventTextInputMarked, Platform}
+import GlyphTypes._
 
+/**
+ *
+ * This class provides the machinery for a workaround for an obscure (to me) effect of
+ * X11 management of window resize requests and window resize notifications.
+ *
+ * It's used to prevent deeply reentrant invocations of (only)
+ * `rootWindowResize` that arise from "automatic" window rescaling
+ * when the window is resized externally. There ought to be a better way.
+ *
+ */
+class NonReentrant(log: org.sufrin.logging.Logger = RootGlyph.log) {
+
+  var count = 0
+
+  locally {
+    App.runOnUIThread{
+      () => log.fine(s"UI thread is ${Thread.currentThread()}")
+    }
+  }
+
+  def apply[T](limit: Long, fatal: Boolean=false)(body: => T): T = {
+    try {
+      count += 1
+      if (count<limit) {
+        log.finest(s"Invocation ${count} from ${Thread.currentThread()}")
+        body
+      }
+      else {
+        log.fine(s"Reentrant invocation ${count} from ${Thread.currentThread()}")
+        if (fatal) throw new Error(s"Reentrant invocation from ${Thread.currentThread()}") else null.asInstanceOf[T]
+      }
+    } finally {
+      count -= 1
+    }
+  }
+}
 
 object RootGlyph extends org.sufrin.logging.Loggable {
 
@@ -35,6 +70,8 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   /**
    *  When a window size changes, automatically scale its non-resizeable GUIs when they are not (programmatically)
    *  `resizeable`. This can be changed at any time.
+   *
+   *  TODO: works on OS/X but not on X11, so shouldn't be anabled on X11
    */
   var autoScale: Boolean = false
 
@@ -42,7 +79,9 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    *  Used only when the `autoScale` path through `rootWindowResized` is
    *  taken.
    */
-  private var ignoreResize: Boolean = true
+  private var ignoreResize: Boolean = false  // the FIRST resize is essential
+
+  val nonReentrant = new NonReentrant       // Linux variant is very picky about re-entrant resizes.
 
   /**
    * Regenerate the `GUIroot` to be of size (no more than) `(newW, newH)` if
@@ -60,7 +99,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    * @param force force the resizing
    *
    */
-  def rootWindowResized(newW: Scalar, newH: Scalar, force: Boolean = false): Unit = {
+  def rootWindowResized(newW: Scalar, newH: Scalar, force: Boolean = false): Unit = nonReentrant(3, fatal=false) {
      RootGlyph.fine(s"($newW,$newH)[force=$force,ignoreResize=$ignoreResize][hwscale=$hardwareScale; swscale=$softwareScale][diag=$diagonal]")
      if (ignoreResize) {
        ignoreResize = false
@@ -73,46 +112,44 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
            if (newRoot ne GUIroot) {
              newRoot.parent = this
              GUIroot.parent = this
-             //GUIroot = newRoot
-             diagonal = newRoot.diagonal
-             RootGlyph.fine(s"=>$diagonal[force=$force]")
-             if (force)
-               syncWindowContentSize()
-             else // wait until the mouse moves
+           }
+           if (true) {
+           diagonal = newRoot.diagonal
+           RootGlyph.fine(s"=>$diagonal[force=$force]")
+             if (force) { setContentSize(diagonal)  }
+              // wait until the mouse moves
                onNextMotion {
-                 ignoreResize=true
                  syncWindowContentSize()
                }
            }
          }
        }
      }
-     else
-     if (autoScale) {
-         // Change the software display scaling to reflect the new window size
-       val oldScale = eventHandler.softwareScale
-
-       val factor =
-           if (w!=newW) newW / w
-           else
-           if (h!=newH) newH / h
+     else {
+       if (autoScale && platform != "X11") { // X11 is problematic
+         // Change the software display scaling to reflect a window size imposed manually
+         val oldScale = eventHandler.softwareScale
+         val factor =
+           if (w != newW) newW / w
+           else if (h != newH) newH / h
            else
              1.0f
-       RootGlyph.finest(s"autoScale: $oldScale $w $newW $factor")
-       eventHandler.softwareScale *= factor
-       if (oldScale != eventHandler.softwareScale) {
-         RootGlyph.finest(s"autoScale: $oldScale->$softwareScale")
-         ignoreResize = true
-         syncWindowContentSize()
+         RootGlyph.finest(s"autoScale: $oldScale $w $newW $factor")
+         eventHandler.softwareScale *= factor
+         if (oldScale != eventHandler.softwareScale) {
+           RootGlyph.finest(s"autoScale: $oldScale->$softwareScale")
+           syncWindowContentSize()
+         }
+       }
+       else {
+         // Don't permit a manual resize: force the window back to its original size
+         RootGlyph.finest(s"fixedScale $hardwareScale*$softwareScale")
+         RootGlyph.finest(s"\n   window=${rootWindow.getWindowRect}\n   content=${rootWindow.getContentRect}")
+         RootGlyph.finest(s"\n   window=${rootWindow.getWindowRect}\n   content=${rootWindow.getContentRectAbsolute}")
+         setContentSize(diagonal)
        }
      }
-     else {
-       // Don't permit a manual resize
-       RootGlyph.finest(s"fixedScale $hardwareScale*$softwareScale")
-       RootGlyph.finest(s"\n   window=${rootWindow.getWindowRect}\n   content=${rootWindow.getContentRect}")
-       RootGlyph.finest(s"\n   window=${rootWindow.getWindowRect}\n   content=${rootWindow.getContentRectAbsolute}")
-       setContentSize(diagonal)
-     }
+    reDraw()
   }
 
   /**
@@ -121,6 +158,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    *  to be recalculated.
    */
   def syncWindowContentSize(): Unit = {
+    ignoreResize = true
     setScaledContentSize(diagonal)
   }
 
@@ -133,10 +171,16 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
     setScaledContentSize(diagonal)
   }
 
+  def runOffUIThread(body: => Unit): Unit = {
+    Thread.startVirtualThread{
+      () => body
+    }
+  }
+
   def setScaledContentSize(diagonal: Vec): Unit = {
     val diag = diagonal scaled hardwareScale scaled softwareScale
-    Resizeable.finest(s"setScaledContentSize($diagonal)=>$diag")
-    App.runOnUIThread{()=>rootWindow.setContentSize(diag.x.toInt, diag.y.toInt)}
+    RootGlyph.finest(s"setScaledContentSize($diagonal)=>$diag")
+    App.runOnUIThread{()=>rootWindow.setContentSize(diag.x.floor.toInt, diag.y.floor.toInt)}
   }
 
   val fg: Brush = DefaultBrushes.invisible
@@ -471,8 +515,9 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
       case _: EventWindowFocusIn =>
         App.runOnUIThread(() => onFocus(true))
       case ev: EventWindowResize =>
-        rootWindowResized(ev.getContentWidth.toFloat/hardwareScale/softwareScale, ev.getContentHeight.toFloat/hardwareScale/softwareScale)
-        rootWindow.requestFrame()
+           rootWindowResized((ev.getContentWidth.toFloat/hardwareScale/softwareScale).floor,
+                             (ev.getContentHeight.toFloat/hardwareScale/softwareScale).floor)
+           rootWindow.requestFrame()
       case _: EventWindowMove =>
         // also when resized by moving a corner or an edge
         rootWindow.requestFrame()
@@ -485,6 +530,13 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
 
   def close(): Unit = {
     runOnUIThread(()=>rootWindow.close())
+  }
+
+  def platform: String = Platform.CURRENT match {
+    case Platform.MACOS => "MACOS"
+    case Platform.X11 => "X11"
+    case Platform.WINDOWS => "WINDOWS"
+    case other => other.toString
   }
 
   def isWindowClosed: Boolean = rootWindow.isClosed

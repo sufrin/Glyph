@@ -35,7 +35,8 @@ object GlyphMLTest extends Application {
       //.frameStyle(decoration=Decoration.Shaded(fg=blue, bg=darkGrey))
 
 
-  val text1 = Text("""GlyphML is a domain-specific language embedded in Scala: its elements denote Glyphs.
+  val text1 = Text("""
+                  |GlyphML is a domain-specific language embedded in Scala: its elements denote Glyphs.
                   |
                   |Its API may  be somewhat more convenient for interface designers than the standard Glyphs API.
                   |
@@ -67,7 +68,7 @@ object GlyphMLTest extends Application {
 
     lazy val traceOn: Glyph = styled.TextToggle(whenFalse="Trace on", whenTrue="Trace off", initially=false) {
       state =>
-        val root = traceOn.findRoot
+        val root = traceOn.guiRoot
         root.decodeMotionModifiers(state)
         root.trackMouseState(state)
         RootGlyph.level= if (state) FINE else OFF
@@ -83,16 +84,23 @@ object GlyphMLTest extends Application {
 
     val GUI: Glyph = Resizeable(Local) {
 
+
     lazy val rowLayout: Glyph = styled.TextButton("Row layout") {
-      _ => rowLayout.findRoot.rootWindowResized(rowW, rowH, force=true)
+      _ =>
+        val root = rowLayout.guiRoot
+        root.rootWindowResized(rowW, rowH, force=true)
     }(Local.style)
 
     lazy val colLayout: Glyph = styled.TextButton("Column layout") {
-      _ => colLayout.findRoot.rootWindowResized(rowW, colH+60, force=true)
+      _ =>
+        val root = colLayout.guiRoot
+        root.rootWindowResized(rowW, colH+60, force=true)
     }(Local.style)
 
     lazy val splashLayout: Glyph = styled.TextButton("Splash Screen") {
-        _ => colLayout.findRoot.rootWindowResized(splashScreen.w+2*enlarge, splashScreen.h+2*enlarge, force=true)
+        _ =>
+          val root = splashLayout.guiRoot
+          root.rootWindowResized(splashScreen.w+2*enlarge, splashScreen.h+2*enlarge, force=true)
     }(Local.style)
 
     def sideBar                    = SideBar(Local)(dynaLayout, Gap, rowLayout, colLayout, splashLayout)
@@ -100,8 +108,8 @@ object GlyphMLTest extends Application {
     def menuBar                    = MenuBar(Local)(dynaLayout, Gap, rowLayout, colLayout, splashLayout)
     lazy val menuBarHeight: Scalar = dynaLayout.h max rowLayout.h max colLayout.h max splashLayout.h
 
-    lazy val splashColumn: Element = Column(rowLayout, colLayout, traceOn, dynaLayout)
-    lazy val splashScreen          = splashColumn.constant(Local)
+    lazy val splashColumn: Element  = Column(rowLayout, colLayout, traceOn, dynaLayout)
+    lazy val splashScreen: Constant = splashColumn.constant(Local)
 
     def layoutRow(w: Scalar, h: Scalar) =
         FixedWidth(w)(sideBar, Glyphs.FilledRect(2, h, darkGrey), nat1, Gap, Glyphs.FilledRect(2, h, nothing), Gap, nat2)
@@ -136,7 +144,7 @@ object GlyphMLTest extends Application {
         }
       }
 
-      Dynamic(selectDynamic)\\(_.enlarged(enlarge))
+      Dynamic(selectDynamic, enlarge=10f)
   }
 
   override def title: String = "Topdown Example"
