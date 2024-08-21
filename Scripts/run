@@ -24,6 +24,7 @@ done
 module=${1-DemonstrationNotebook}
 shift
 
+# echo scala -J-Xdock:name=Glyph -cp $CP org.sufrin.glyph.tests.$module "$@"
+
 scala -J-Xdock:name=Glyph -cp $CP org.sufrin.glyph.tests.$module "$@"
 
-echo CP=$CP 

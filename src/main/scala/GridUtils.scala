@@ -1,9 +1,10 @@
 package org.sufrin.glyph
+
 import scala.language.implicitConversions
 /**
  * Utilities for building grids from sequences
  */
-object GridUtils {
+object GridUtils  {
   /** The rows of a sequence presented in row order  */
   def byRow[T](width: Int, seq: Seq[T]):  Seq[Seq[T]] =
     seq.sliding(width, width).toSeq

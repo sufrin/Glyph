@@ -382,7 +382,7 @@ object markup {
   }
 
   import scala.language.implicitConversions
-  
+
   /** Coerce a `Glyph` to a `GlyphElement`  */
   implicit def fromGlyphToElement(glyph: Glyph): Element = GlyphElement(glyph)
 

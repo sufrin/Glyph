@@ -34,6 +34,7 @@ trait Application {
     var logPrefix: String = ""
     extraArgs.clear()
 
+
     for {arg <- args} arg match {
       case s"-log($logprefix)" => logPrefix=logprefix
       case s"-log($logPaths)=$level" =>
