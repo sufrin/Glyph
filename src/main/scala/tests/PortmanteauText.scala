@@ -13,20 +13,26 @@ class PortmanteauText(implicit style: StyleSheet) extends Notebook {
   abbrev("(c)") = "\u00A9"
   abbrev("\u00A9") = "(c)"
   abbrev("(r)") = "\u00AE"
-  abbrev(":)")  = "\uD83D\uDE00"
-  abbrev(":O")  = "\uD83D\uDE2E"
   abbrev("<3")  = "❤"
   abbrev("❤")  =  "<3"
+  // translations to strings including surrogate pairs
   abbrev(":-|") = "\uD83D\uDE10"
   abbrev(":|")  = "\uD83D\uDE11"
-  abbrev("\uD83D\uDE11") = ":|" // doesn't map: surrogates are not treated properly
+  abbrev(":)")  = "\uD83D\uDE00"
+  abbrev(":O")  = "\uD83D\uDE2E"
+  // translations from strings including surrogate pairs
+  abbrev("\uD83D\uDE11")   = ":|"   // unabbreviate
+  abbrev("\uD83D\uDE10")   = ":-|"  // unabbreviate
+  abbrev("\uD83D\uDE00)")  = "\uD83D\uDE00\uD83D\uDE00" // double-up a smiley
+  abbrev("\uD83D\uDE00\uD83D\uDE00") = ":))"
+  abbrev("\uD83D\uDE2E") = ":O"
 
   val textField: TextField = TextField(size = 40, onEnter = { _ =>  }, onCursorLeave = { _ => anchor.guiRoot.giveupFocus() }, abbreviations = abbrev)
   val GUI: Glyph = NaturalSize.Col.centered(
     anchor,
     text.Paragraphs(50, Justify)(
       """
-        |This is an example of a TextField that has been set up with a few abbreviations for emojis,
+        |This is an example of a TextField that has been set up by mapping a few abbreviations to emojis,
         |namely: (c) (r) :) :O <3 :-| :|
         |
         | When "Live abbreviations" is set, typing an abbreviation results in the insertion of the
@@ -34,6 +40,9 @@ class PortmanteauText(implicit style: StyleSheet) extends Notebook {
         |in succession has the same result. The machinery is straightforward, and is intended to be used
         |in text editors and other text components to make it easy for users to generate characters
         |that aren't natively available on their input device. [see Input Method@Wikipedia]
+        |
+        | Some of the emojis are also mapped back to their original abbreviations: something you can check
+        |by using the "any-shift-key-twice" method.
         |
         |""".stripMargin),
     text.Label("Log events") beside CheckBox(initially=false) {

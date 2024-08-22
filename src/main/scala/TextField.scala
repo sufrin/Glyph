@@ -454,16 +454,13 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
       if (logging) finest(s"rePan= $pan $vleft $size $margin ${ (vleft < size, vleft<margin, vleft>=size-margin)}")
     }
 
-    def leftCharSequence: CharSequence = new CharSequence {
-      def length(): Int = left
-      def charAt(index: Int): Char = buffer(index).toChar
-      def subSequence(start: Int, end: Int): CharSequence = leftString.subSequence(start, end)
-    }
-
     var abbreviating: Boolean = false
 
+    def leftCodePoints: Seq[CodePoint] =
+        buffer.toIndexedSeq.take(left)
+
     def abbreviation(): Unit = if (abbreviations!=null) {
-      abbreviations.findAbbreviation(leftCharSequence, left) match {
+      abbreviations.findAbbreviation(leftCodePoints, left) match {
         case None =>
         case Some((repl, size)) =>
           if (!abbreviating) {
