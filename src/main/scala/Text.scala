@@ -32,12 +32,13 @@ object Text extends DefaultPaints {
      * A textlayout glyph with the diagonal of this textlayout, that
      * will be drawn with origin adjusted by the baseline of the textlayout.
      */
-    def atBaseline(fg: Brush = Text.defaultFG, bg: Brush = Text.defaultBG): Glyph = {
-      val _fg=fg
+    def atBaseline(fg: Brush = fg, bg: Brush = bg): Glyph = {
+      val _fg = fg
       val _bg = bg
+
       new Glyph {
       override val kind="Text.atBaseline"
-      override def toString: String = s"Text(${string}).atBaseline($fg, $bg))"
+      override def toString: String = s"Text(${string}).atBaseline(${this.fg}, ${this.bg}))"
       val diagonal = theText.diagonal
       override val baseLine = height
       val fg = _fg
@@ -45,7 +46,7 @@ object Text extends DefaultPaints {
 
       def draw(surface: Surface): Unit = {
         drawBackground(surface)
-        surface.drawTextLine(paint, implementation, 0, 0)
+        surface.drawTextLine(fg, implementation, 0, 0)
       }
 
       def copy(fg: Brush=fg, bg: Brush=bg): Glyph = atBaseline(fg, bg)

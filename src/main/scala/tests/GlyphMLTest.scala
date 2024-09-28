@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 package tests
 
-import markup._
+import GlyphML._
 import Glyphs._
 import GlyphTypes.Scalar
 import Styles.{Decoration, GlyphStyle}
@@ -25,8 +25,9 @@ object GlyphMLTest extends Application {
       boundingBox    = Vec(400, 250),
       leftMargin     = 0,
       rightMargin    = 0,
-      parAlign       = Justify)
-      .copy(fontFamily=Family("Menlo"))
+      parAlign       = Justify,
+      fg             = Glyphs.black)
+      .copy(fontFamily=FontFamily("Menlo"))
       .fontSize(20)
       .labelStyle(fg=Glyphs.black, bg=Glyphs.nothing)
       .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
@@ -108,7 +109,7 @@ object GlyphMLTest extends Application {
     def menuBar                    = MenuBar(Local)(dynaLayout, Gap, rowLayout, colLayout, splashLayout)
     lazy val menuBarHeight: Scalar = dynaLayout.h max rowLayout.h max colLayout.h max splashLayout.h
 
-    lazy val splashColumn: Element  = Column(rowLayout, colLayout, traceOn, dynaLayout)
+    lazy val splashColumn: Element  = Centered(rowLayout, colLayout, traceOn, dynaLayout)
     lazy val splashScreen: Constant = splashColumn.constant(Local)
 
     def layoutRow(w: Scalar, h: Scalar) =

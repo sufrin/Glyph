@@ -28,6 +28,8 @@ trait Application {
   var useScreen: Char = 'p'
   var scaleFactor = 1.0f
 
+  val installRootHandlers: Boolean = false
+
   def main(args: Array[String]): Unit = {
     import io.github.humbleui.jwm.Screen
     var icon: Option[String] = defaultIconPath
@@ -96,9 +98,9 @@ trait Application {
           case _   => getScreen(useScreen-'0')
         }
       }.start()
-      GUI.findRoot.onCloseRequest(onClose(_))
+      if (installRootHandlers) GUI.findRoot.onCloseRequest(onClose(_))
       // default handler for all unexpected keys
-      GUI.findRoot.handleUnfocussedKey {
+      if (installRootHandlers) GUI.findRoot.handleUnfocussedKey {
         case event: EventKey =>
           // TODO: we really should beep!
           // implicit val basic: StyleSheet = Styles.Default

@@ -4,15 +4,15 @@ package tests
 // TODO: clean up the baseline/non-baseline mess.
 
 class PortmanteauGlyphML(implicit sheet: StyleSheet) {
+  import GlyphML._
   import Glyphs.{blue, lightGrey, nothing, red}
-  import markup._
   implicit val local: Context =
     Context(     style        = sheet,
                  paragraphWidth  = 800f,
                  leftMargin   = 0,
                  rightMargin  = 0,
                  parAlign     = Justify,
-                 fontFamily   = Family("Menlo"),
+                 fontFamily   = FontFamily("Menlo"),
                  fontSize     = 22)
       .labelStyle(fg=Glyphs.black, bg=Glyphs.nothing)
       .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
@@ -20,7 +20,7 @@ class PortmanteauGlyphML(implicit sheet: StyleSheet) {
   val intro = Row(S("An introduction to "), S("GlyphML")(boldStyle))(fontFamily("Arial"))(fontScale(1.6f))
 
   val GUI: Glyph = new Resizeable(local) {
-     def element: Element = Column(
+     def element: Element = Centered(
       intro,
       Text("""GlyphML is a domain-specific language embedded in Scala: its expressions denote Glyphs.
              |
@@ -41,7 +41,7 @@ class PortmanteauGlyphML(implicit sheet: StyleSheet) {
           |
           |For example, the current
           |section of text has enumerated paragraphs, is framed, and is  narrower than those surrounding it.
-          |""".stripMargin)(parEnum(1))(fontSize(20))(indentPoints(5, 5)).framed(fg=blue),
+          |""".stripMargin)(parEnum(1))(fontSize(20))(indentEms(2, 2)).framed(fg=blue),
       Text(
         """The Text expression denoting the framed section above used
           |context transforms and an element transform as follows:

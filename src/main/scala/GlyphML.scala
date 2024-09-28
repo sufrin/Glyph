@@ -5,7 +5,7 @@ import Styles.Decoration.Decoration
 
 import org.sufrin.logging.Loggable
 
-object markup {
+object GlyphML {
   import java.io.{PrintWriter, StringWriter}
 
   /**
@@ -13,22 +13,7 @@ object markup {
    */
    import GlyphTypes._
 
-   case class Family(name: String="Menlo") {
-     lazy val normalFace:     Typeface = FontManager.default.matchFamilyStyle(name, FontStyle.NORMAL)
-     lazy val boldFace:       Typeface = FontManager.default.matchFamilyStyle(name, FontStyle.BOLD)
-     lazy val italicFace:     Typeface = FontManager.default.matchFamilyStyle(name, FontStyle.ITALIC)
-     lazy val boldItalicFace: Typeface = FontManager.default.matchFamilyStyle(name, FontStyle.BOLD_ITALIC)
-     def  makeFont(style: GlyphTypes.FontStyle, size: Scalar): Font = {
-       style match {
-         case FontStyle.NORMAL      => new Font(normalFace, size)
-         case FontStyle.BOLD        => new Font(boldFace, size)
-         case FontStyle.ITALIC      => new Font(italicFace, size)
-         case FontStyle.BOLD_ITALIC => new Font(boldItalicFace, size)
-       }
-     }
-     def apply(size: Scalar)(style: FontStyle): Font = makeFont(style, size)
-     def apply(style:FontStyle)(size: Scalar): Font = makeFont(style, size)
-   }
+
 
   /**
    * A context embodies a stylesheet and some useful dimensions and brushes.
@@ -42,22 +27,23 @@ object markup {
    */
   case class Context(style: StyleSheet,
                      boundingBox: Vec = Vec.Zero,
-                     paragraphWidth: Scalar=1200f,
+                     paragraphWidth: Scalar=0f,
                      leftMargin:  Scalar=0f,
                      rightMargin: Scalar=0f,
-                     fg: Brush = Glyphs.black,
-                     bg: Brush = Glyphs.nothing,
+                     fg: Brush = DefaultBrushes.black,
+                     bg: Brush = DefaultBrushes.nothing,
                      padX: Scalar = 0f,
                      padY: Scalar = 0f,
-                     fontFamily: Family = Family(),
+                     fontFamily: FontFamily = FontFamily(),
                      fontSize:   Scalar = 22,
                      fontStyle:  FontStyle = FontStyle.NORMAL,
                      parIndent:  ()=>Seq[Glyph] = { ()=>Nil },
                      parHang:    Boolean = false,
-                     parAlign:   Alignment = Left
+                     parAlign:   Alignment = Left,
+                     parSkip:    Scalar    = 5f
                     ) {
 
-      lazy val font: Font = fontFamily.makeFont(fontStyle, fontSize)
+      def font: Font = fontFamily.makeFont(fontStyle, fontSize)
 
       def labelStyle(fg: Brush=null, bg: Brush=null, font: GlyphTypes.Font=font): Context = {
         val sheet = this.style
@@ -73,7 +59,8 @@ object markup {
 
       /** Width of the given text using `brush` (default the current `fg`) */
       def textWidth(text: String, brush: Brush=fg): Scalar = font.measureTextWidth(text, brush)
-      lazy val emWidth: Scalar = font.measureTextWidth("M")
+
+      def emWidth: Scalar = font.measureTextWidth("M")
 
       def frameStyle(decoration: Decoration, fg: Brush=null, bg: Brush=null): Context = {
         val ls    = this.style.buttonStyle.up
@@ -92,10 +79,17 @@ object markup {
 
     def italicStyle: Context = copy(fontStyle=FontStyle.ITALIC)
     def boldStyle:   Context = copy(fontStyle=FontStyle.BOLD)
+    def normalStyle: Context = copy(fontStyle=FontStyle.NORMAL)
+    def boldItalicStyle: Context = copy(fontStyle=FontStyle.BOLD_ITALIC)
+    def fontFamily(familyName: String): Context = copy(fontFamily=FontFamily(familyName))
     def fontSize(size: Scalar): Context = copy(fontSize = size)
     def fontScale(scale: Scalar): Context = copy(fontSize = this.fontSize*scale)
-    def parIndent(ems: Int = 2): Context =
+    def parIndent(ems: Int = 2): Context = {
         copy(parIndent={ () => List(FixedSize.Space(ems*style.labelStyle.emWidth, 0f, 0f, fg, bg)) } )
+    }
+
+    def parSkip(points: Scalar): Context = copy(parSkip=points)
+
     def parEnum(start: Int = 0): Context = {
       var count = start-1
       val label: ()=>List[Glyph] = {
@@ -105,31 +99,31 @@ object markup {
       }
       copy(parIndent=label)
     }
-    def indentPoints(left: Scalar, right: Scalar): Context =
-      copy(leftMargin=leftMargin+left, rightMargin=rightMargin+right)
 
-    def indentEms(left: Int, right: Int): Context = indentPoints(left*emWidth, right*emWidth)
+    def indentEms(left: Int, right: Int): Context =
+      copy(leftMargin=leftMargin+(left), rightMargin=rightMargin+(right))
 
-    def paragraphEms(ems: Int): Context = paragraphPoints(ems*emWidth)
+    def paragraphEms(ems: Int): Context =
+      paragraphPoints(ems*emWidth)
 
-    def paragraphPoints(points: Scalar): Context = copy(paragraphWidth = points)
+    def paragraphPoints(points: Scalar): Context =
+      copy(paragraphWidth = points)
 
   }
 
   val Default: Context =
         Context(Styles.Default, Vec.Zero, 1200f, 10, 10, fg=Glyphs.black, bg=Glyphs.nothing, padX=0, padY=0)
 
-  type ContextTransform = Context=>Context
-  type GlyphTransform   = Glyph=>Glyph
+  type ContextTransform = Context => Context
+  type GlyphTransform   = Glyph   => Glyph
   def compose[T](transforms: Seq[T=>T]): T=>T = transforms.foldLeft({t:T=>t}){ (tl, tr) => { t: T => tr(tl(t)) }}
 
   val italicStyle: ContextTransform = _.italicStyle
   val boldStyle:   ContextTransform = _.boldStyle
   def fontSize(size: Scalar): ContextTransform = _.fontSize(size)
   def fontScale(scale: Scalar): ContextTransform = _.fontScale(scale)
-  def fontFamily(familyName: String): ContextTransform = _.copy(fontFamily=Family(familyName))
+  def fontFamily(familyName: String): ContextTransform = _.copy(fontFamily=FontFamily(familyName))
   def parEnum(start: Int = 1): ContextTransform = _.parEnum(start)
-  def indentPoints(left: Scalar, right: Scalar): ContextTransform = _.indentPoints(left, right)
   def indentEms(left: Int, right: Int): ContextTransform = _.indentEms(left, right)
   def paragraphEms(ems: Int): ContextTransform = _.paragraphEms(ems)
   def paragraphPoints(points: Scalar): ContextTransform = {
@@ -249,7 +243,7 @@ object markup {
 
 
     /**
-     *   A glyph, whose appearance is denoted by the markup element
+     *   A glyph, whose appearance is denoted by the GlyphML element
      *   delivered by `element`. It rebuilds its appearance at a given size on request.
      *   Its initial appearance is determined by `context`; and if the context hasn't
      *   set a positive `boundingBox`, this will be the "natural" (bottom-up)
@@ -285,7 +279,7 @@ object markup {
     }
 
   /**
-   *   A glyph, whose appearance is denoted by the markup element
+   *   A glyph, whose appearance is denoted by the GlyphML element
    *   denoted by `theElement`. It rebuilds its appearance at a given size on request.
    *   Its initial appearance is determined by `context`; and if the context hasn't
    *   set a positive `boundingBox`, this will be the "natural" (bottom-up)
@@ -376,7 +370,7 @@ object markup {
     def toGlyph(local: Context): Glyph = cached
   }
 
-  /** A glyph viewed as a markup element */
+  /** A glyph viewed as a GlyphML element */
   case class GlyphElement(glyph: Glyph) extends Element {
       def toGlyph(local: Context): Glyph = glyph
   }
@@ -411,9 +405,37 @@ object markup {
     }
   }
 
-  def Column(body: Element*): Element = Column$(body)
+  def glyphsToPara(glyphs: Seq[Glyph])(local: Context): Glyph = {
+      val emWidth   = local.emWidth//.labelStyle.emWidth
+      val interWord = FixedSize.Space(w=emWidth / 1.5f, h=0f, stretch = 2f)
+      val glyphs$   = local.parIndent() ++ glyphs
 
-  case class Column$(body: Seq[Element]) extends Element {
+      // The overall width is determined by the context
+      // If the bounding box is unspecified, then use the column width
+      val galley =
+        styled.text.glyphParagraph(
+          overallWidth = local.paragraphWidth,
+          align        = local.parAlign,
+          leftMargin   = local.leftMargin * emWidth,
+          rightMargin  = local.rightMargin * emWidth,
+          interWord,
+          glyphs$
+        )
+
+      val column = NaturalSize.Col(bg = local.bg).atLeft$(galley.toSeq)
+      if (local.leftMargin > 0f)
+        NaturalSize.Row(bg = local.bg)
+                   .centered(FixedSize.Space(w=local.leftMargin * emWidth, h=0f, stretch=0f),
+                             column,
+                             FixedSize.Space(w=local.rightMargin * emWidth, h=0f, stretch=0f))
+      else
+        column
+  }
+
+  def Centered(body: Element*): Element = Centered$(body)
+  def Column(body: Element*):   Element = Column$(body)
+
+  case class Centered$(body: Seq[Element]) extends Element {
       def toGlyph(local: Context): Glyph = {
         val theGlyph: Glyph = body.length match {
           case 0 => Glyphs.INVISIBLE()
@@ -422,6 +444,17 @@ object markup {
         }
         theGlyph.enlargedBy(dw = local.padX, dh = local.padY, fg = local.fg, bg = local.bg)
       }
+  }
+
+  case class Column$(body: Seq[Element]) extends Element {
+    def toGlyph(local: Context): Glyph = {
+      val theGlyph: Glyph = body.length match {
+        case 0 => Glyphs.INVISIBLE()
+        case 1 => body(0).toGlyph(local)
+        case _ => NaturalSize.Col(fg = local.fg, bg = local.bg).atLeft$(body.map(_.toGlyph(local)))
+      }
+      theGlyph.enlargedBy(dw = local.padX, dh = local.padY, fg = local.fg, bg = local.bg)
+    }
   }
 
   def Row(body: Element*): Element =
@@ -459,6 +492,28 @@ object markup {
         theGlyph.enlargedBy(dw = local.padX, dh = local.padY, fg = local.fg, bg = local.bg)
       }
     }
+
+  case class RowsFromGlyphs(width: Int=0)(body: Seq[Glyph]) extends Element {
+    def toGlyph(local: Context): Glyph = {
+      val theGlyph: Glyph = body.length match {
+        case 0 => NaturalSize.Col().centered()
+        case 1 => body(0).toGlyph(local)
+        case _ => NaturalSize.Grid(fg = local.fg, bg = local.bg, pady = local.padY).uniformlyByRows(width)(body)
+      }
+      theGlyph.enlargedBy(dw = local.padX, dh = local.padY, fg = local.fg, bg = local.bg)
+    }
+  }
+
+  case class ColsFromGlyphs(height: Int=0)(body: Seq[Glyph]) extends Element {
+    def toGlyph(local: Context): Glyph = {
+      val theGlyph: Glyph = body.length match {
+        case 0 => NaturalSize.Col().centered()
+        case 1 => body(0).toGlyph(local)
+        case _ => NaturalSize.Grid(fg = local.fg, bg = local.bg, pady = local.padY).uniformlyByCols(height)(body)
+      }
+      theGlyph.enlargedBy(dw = local.padX, dh = local.padY, fg = local.fg, bg = local.bg)
+    }
+  }
 
     case class Cols(height: Int = 0)(body: Element*) extends Element {
         def toGlyph(local: Context): Glyph = {

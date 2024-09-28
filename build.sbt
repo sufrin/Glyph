@@ -19,3 +19,7 @@ lazy val root = (project in file("."))
     idePackagePrefix := Some("org.sufrin.glyph"),
 
   )
+
+// XML GlyphML for paragraphs
+
+libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.2.0"
