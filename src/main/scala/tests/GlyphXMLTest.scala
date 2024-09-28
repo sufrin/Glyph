@@ -39,10 +39,12 @@ object GlyphXMLTest extends Application {
           <b>GlyphXML</b>is a domain specific language expressed as XML: its elements denote <i>Glyph sequences.</i>
         </p>
         <p fg="red"><i>Its <n>API</n> may  be  somewhat more convenient for interface designers than the standard Glyphs API.</i></p>
-        <!--row alignment="left" fg="red"-->
-          <p><i>Its <n>API</n> may  be somewhat more convenient for interface designers than the standard Glyphs API.</i></p>
-          able <i>was</i>I
-        <!--/row--><!--
+        <row alignment="top" fg="red">
+          <p>
+            <i>Its <n>API</n> may  be somewhat more convenient for interface designers than the standard Glyphs API.</i>
+          </p>
+          <verb framed="red">able <i>was</i> I</verb>
+        </row><!--
         <verb  bg="yellow" fontScale="1.3" fontFamily="Courier">
           <p l="2" r="2">
             <i fg="red">Its <n>API</n> may  be somewhat
@@ -53,7 +55,7 @@ object GlyphXMLTest extends Application {
           </p>
         </verb>
         -->
-        <p bg="lightGrey">
+        <p>
           This is the start of an experiment in defining GUIs using
           (mainly) <b>XML.</b>
         </p>

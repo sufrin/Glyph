@@ -32,7 +32,8 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
    *
    */
   def translate(atBaseLine: Boolean)(elem: Node)(inherited: AttributeMap)(context: GlyphML.Context): Seq[Glyph] = {
-      val attributes = inherited ++ elem.attributes.asAttrMap
+     val localAttributes =  elem.attributes.asAttrMap
+     val attributes = inherited ++ localAttributes
 
       def String(key: String, alt: String): String = attributes.getOrElse(key, alt)
 
@@ -96,6 +97,12 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
         .fontScale(Float("fontScale", 1.0f))
         .parSkip(Float("parSkip", 0f))
 
+      def framed(glyph: Glyph): Glyph =
+        {
+          val brush = Brush("framed", DefaultBrushes.nothing)
+          if (brush ==  DefaultBrushes.nothing) glyph else glyph.framed(brush)
+        }
+
       elem match {
         case Text(buffer) =>
           import context.font
@@ -113,7 +120,7 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
 
         case <p>{child@_*}</p> =>
           val context$ = universal(context)
-          List(GlyphML.glyphsToPara(child.flatMap {  node => translate(true)(node)(attributes)(context$) })(context$).framed(DefaultBrushes.blueLine))
+          List(framed(GlyphML.glyphsToPara(child.flatMap {  node => translate(true)(node)(attributes)(context$) })(context$)))
 
         case <verb>{child@_*}</verb> =>
           import org.sufrin.glyph.{Text => TextChunk}
@@ -122,7 +129,7 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
           val lines      = child.toString.split('\n').toSeq
           val lines$     = stripIndentation(lines)
           val texts      = lines$.map{ line => TextChunk(line, context$.font, context$.fg, context$.bg).asGlyph()}
-          List(NaturalSize.Col(bg=background).atLeft$(texts))
+          List(framed(NaturalSize.Col(bg=background).atLeft$(texts)))
 
         case <xml>{child@_*}</xml> =>
           val context$ = universal(context)
