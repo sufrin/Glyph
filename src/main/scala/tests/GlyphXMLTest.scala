@@ -29,15 +29,15 @@ object GlyphXMLTest extends Application {
 
   def GUI: Glyph = GUIMarkup.toGlyph(local)
 
-  val x = <i>the rain in spain</i>
+  val x = <square/>
 
   def GUIMarkup =
     COLUMN(
       <xml fontFamily="Courier" fontSize="32" align="justify" parSkip="20">
         <p>
-          {x}
           <b>GlyphXML</b>is a domain specific language expressed as XML: its elements denote <i>Glyph sequences.</i>
         </p>
+        <square fg="red" bg="blue"/>
         <p fg="red"><i>Its <n>API</n> may  be  somewhat more convenient for interface designers than the standard Glyphs API.</i></p>
         <row alignment="top" fg="red">
           <p>

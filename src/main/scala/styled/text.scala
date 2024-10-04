@@ -9,6 +9,7 @@ object text {
   import GlyphTypes._
   import collection.mutable.ArrayBuffer
   import NaturalSize._
+
   /**
    * A column of one or more lines that appear as they are presented in `text`, aligned `Left`, `Right`, or `Center`.
    * For filled/justified/centered layout within a specific width use `Paragraphs`.

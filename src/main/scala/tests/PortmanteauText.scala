@@ -30,21 +30,30 @@ class PortmanteauText(implicit style: StyleSheet) extends Notebook {
   val textField: TextField = TextField(size = 40, onEnter = { _ =>  }, onCursorLeave = { _ => anchor.guiRoot.giveupFocus() }, abbreviations = abbrev)
   val GUI: Glyph = NaturalSize.Col.centered(
     anchor,
-    text.Paragraphs(50, Justify)(
-      """
-        |This is an example of a TextField that has been set up by mapping a few abbreviations to emojis,
-        |namely: (c) (r) :) :O <3 :-| :|
-        |
-        | When "Live abbreviations" is set, typing an abbreviation results in the insertion of the
-        |unicode sequence it abbreviates. At any other time, typing the same shift key twice
-        |in succession has the same result. The machinery is straightforward, and is intended to be used
-        |in text editors and other text components to make it easy for users to generate characters
-        |that aren't natively available on their input device. [see Input Method@Wikipedia]
-        |
-        | Some of the emojis are also mapped back to their original abbreviations: something you can check
-        |by using the "any-shift-key-twice" method.
-        |
-        |""".stripMargin),
+    XML(<xml width="50em" align="justify" fg="blue" parSkip="0.75em">
+      <p>
+        This is an example of a TextField that has been set up by mapping a few abbreviations to emojis,
+        namely:
+      </p>
+      <s/>
+      <row align="center" bg="nothing" fontFamily="Courier">
+        <![CDATA[(c) (r) :) :O <3 :-| :|]]>
+      </row>
+      <s/>
+      <p>
+        When "Live abbreviations" is set, typing an abbreviation results in the insertion of the
+        unicode sequence it abbreviates. At any other time, typing the same shift key twice
+        in succession has the same result. The machinery is straightforward, and is intended to be used
+        in text editors and other text components to make it easy for users to generate characters
+        that aren't natively available on their input device. [see Input Method@Wikipedia]
+      </p>
+      <s/>
+      <p>
+        Some of the emojis are also mapped back to their original abbreviations: something you can check
+        by using the "any-shift-key-twice" method.
+      </p>
+      </xml>
+    ),
     text.Label("Log events") beside CheckBox(initially=false) {
       state => anchor.guiRoot.eventHandler.logEvents=state
     } beside
