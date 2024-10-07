@@ -1,13 +1,25 @@
 package org.sufrin.glyph
 
-import scala.collection.immutable.HashMap
-
 object XML {
+  /** A column described by the given xml node translated in the default context using the given style sheet.  */
   def apply(node: xml.Node)(implicit sheet: StyleSheet): Glyph = {
     val local = GlyphML.Context(style=sheet)
     val glyphs: Seq[Glyph] = GlyphXML.translate(node)(Map.empty)(local)
     NaturalSize.Col().centered$(glyphs)
   }
+
+  /** A column described by the given xml node translated in the given local context.  */
+  def Col(node: xml.Node)(implicit local: GlyphML.Context): Glyph = {
+    val glyphs: Seq[Glyph] = GlyphXML.translate(node)(Map.empty)(local)
+    NaturalSize.Col().centered$(glyphs)
+  }
+
+  /** A row described by the given xml node translated in the given local context.  */
+  def Row(node: xml.Node)(implicit local: GlyphML.Context): Glyph = {
+    val glyphs: Seq[Glyph] = GlyphXML.translate(node)(Map.empty)(local)
+    NaturalSize.Col().centered$(glyphs)
+  }
+
 }
 
 object GlyphXML extends org.sufrin.logging.SourceLoggable {
@@ -80,24 +92,6 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
     }
   }
 
-  val glyphMapping: HashMap[String, (AttributeMap, Context)=>Glyph] = HashMap[String, (AttributeMap, Context)=>Glyph](
-    "square" -> { case (localAttributes, local) =>
-      val w = localAttributes.Float("w", 10)
-      val h = localAttributes.Float("h", 10)
-      Glyphs.Rect(w,h,fg=local.fg, bg=local.bg) }
-  )
-
-  def COLUMN(node: xml.Node)(implicit local: GlyphML.Context): GlyphML.Element = {
-    val glyphs = translate(node)(Map.empty)(local)
-    GlyphML.Column$(glyphs.map(GlyphML.GlyphElement(_)))
-  }
-
-  def ROW(node: xml.Node)(implicit local: GlyphML.Context): GlyphML.Element = {
-    val glyphs = translate(node)(Map.empty)(local)
-    GlyphML.Row$(glyphs.map(GlyphML.GlyphElement(_)))
-  }
-
-
   /**
    * 1. Translate `<tag attrs>body</tag>` into a glyph sequence. The `context`  provides
    * glyph-specific features, and appropriate aspects of the context are
@@ -159,6 +153,17 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
           val fg = context.fg
           val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
           List(toGlyph(TextChunk(text, font, fg, bg)))
+
+        case EntityRef(id) =>
+          import context.font
+          import org.sufrin.glyph.{Text => TextChunk}
+          val text = id match {
+            case "amp" => "&"
+            case "ls" => "<"
+            case "gt" => ">"
+            case other => elem.toString
+          }
+          List(toGlyph(TextChunk(text, font, context.fg, DefaultBrushes.nothing)))
 
         case <s></s> =>
           List(FixedSize.Space(1f, context.parSkip, 0f))
@@ -247,9 +252,20 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
           val glyphs = child.flatMap {  node => translate(node)(attributes)(context$) }
           List(GlyphML.ColsFromGlyphs(height)(glyphs).toGlyph(context$))
 
+        case <copy>{child@_*}</copy> =>
+          val context$ = universal(context)
+          val id = localAttributes.String("id", "")
+          context.glyphMap.get(id) match {
+            case None =>
+              warn(s"Unknown named glyph <copy id=$id ...>...")
+              Seq.empty[Glyph]
+            case Some(glyph) =>
+              List(glyph.copy(fg=context$.fg, bg=context$.bg))
+          }
+
         case elem: Elem =>
           val tag = elem.label
-          glyphMapping.get(tag) match {
+          context.generatorMap.get(tag) match {
             case None =>
               warn(s"Unknown tag <$tag ...")
               Seq.empty[Glyph]

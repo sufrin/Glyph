@@ -2,16 +2,16 @@ package org.sufrin.glyph
 package tests
 
 import GlyphML.Context
-import Glyphs.{blue, nothing, white}
+import Glyphs.{blue, nothing, white, FilledOval}
 import GlyphTypes.Scalar
-import GlyphXML.COLUMN
+import GlyphXML._
 import Styles.{Decoration, GlyphStyle}
 
 object GlyphXMLTest extends Application {
 
   def title: String = "GlyphXML"
 
-  object LocalStyle extends Styles.DefaultSheet {
+  implicit object LocalStyle extends Styles.DefaultSheet {
     override def buttonFontSize: Scalar  = 22
     override def labelFontSize: Scalar   = 22
     override def labelStyle: GlyphStyle  = GlyphStyle(labelFont, buttonStyle.up.fg, buttonStyle.up.bg)
@@ -26,44 +26,40 @@ object GlyphXMLTest extends Application {
       .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
       .frameStyle(Decoration.Blurred(fg=blue, blur=15f, spread=15f), fg=white)
       .paragraphEms(45)
+      .withGlyph("circle")(FilledOval(100, 100, fg=blue))
+      .withElement("square"){
+        { case (localAttributes, local) =>
+          val w = localAttributes.Float("w", 10f)
+          val h = localAttributes.Float("h", 10f)
+          Glyphs.Rect(w,h,fg=local.fg, bg=local.bg) }
+      }
 
-  def GUI: Glyph = GUIMarkup.toGlyph(local)
+  val circle = <copy id="circle" fg="blue"/>
 
-  val x = <square/>
-
-  def GUIMarkup =
-    COLUMN(
-      <xml fontFamily="Courier" fontSize="32" align="justify" parSkip="20">
+  def GUI =
+    XML.Col(
+      <xml width="45em" fontFamily="Courier" fontSize="32" align="justify" parSkip="20">
         <p>
           <b>GlyphXML</b>is a domain specific language expressed as XML: its elements denote <i>Glyph sequences.</i>
         </p>
-        <square fg="red" bg="blue"/>
+        <square fg="red" bg="blue" w="45" h="45"/>
         <p fg="red"><i>Its <n>API</n> may  be  somewhat more convenient for interface designers than the standard Glyphs API.</i></p>
-        <row alignment="top" fg="red">
+        <col alignment="center" fg="red">
           <p>
             <i>Its <n>API</n> may  be somewhat more convenient for interface designers than the standard Glyphs API.</i>
           </p>
           <verb framed="red">able <i>was</i> I</verb>
-        </row><!--
-        <verb  bg="yellow" fontScale="1.3" fontFamily="Courier">
-          <p l="2" r="2">
-            <i fg="red">Its <n>API</n> may  be somewhat
-              more convenient for interface
-              designers than the standard
-              Glyphs API.
-            </i>
-          </p>
-        </verb>
-        -->
+          {circle}
+        </col>
         <p>
           This is the start of an experiment in defining GUIs using
           (mainly) <b>XML.</b>
         </p>
         <xml align="center">
-        <rows width="200" colWidth="2" fg="red" bg="lightGrey">
+        <rows width="15em" colWidth="2" fg="red" bg="lightGrey">
           <p bg="lightGrey"><i>the rain</i></p><p><b>in spain</b></p>
           <verb>Some verbatim</verb><verb>Material</verb>
-          <p><i>falls mainly</i></p><p><b>in the plain</b></p>
+          <p><i>falls © mainly</i></p><p><b>in the &amp; plain</b></p>
           <col>
             <p>X</p><p>Y</p>
           </col>
@@ -71,7 +67,7 @@ object GlyphXMLTest extends Application {
         </xml>
 
         <xml align="center">
-          <cols width="200" rowHeight="3" fg="blue" >
+          <cols width="15em" rowHeight="3" fg="blue" >
             <p bg="lightGrey"><i>the rain</i></p><p><b>in spain</b></p>
             <verb>Some verbatim</verb><verb>Material</verb>
             <p><i>falls mainly</i></p><p><b>in the plain</b></p>

@@ -1,9 +1,12 @@
 package org.sufrin.glyph
 
+import GlyphXML.AttributeMap
 import Styles.{ButtonStyle, GlyphStyle}
 import Styles.Decoration.Decoration
 
 import org.sufrin.logging.Loggable
+
+import scala.collection.mutable
 
 object GlyphML {
   import java.io.{PrintWriter, StringWriter}
@@ -12,8 +15,6 @@ object GlyphML {
    * Abstract syntax of a markup language the  meaning of whose elements are `Glyphs`.
    */
    import GlyphTypes._
-
-
 
   /**
    * A context embodies a stylesheet and some useful dimensions and brushes.
@@ -40,8 +41,17 @@ object GlyphML {
                      parIndent:  ()=>Seq[Glyph] = { ()=>Nil },
                      parHang:    Boolean = false,
                      parAlign:   Alignment = Left,
-                     parSkip:    Scalar    = 5f
-                    ) {
+                     parSkip:    Scalar    = 5f,
+       glyphMap:     mutable.Map[String, Glyph] =
+                     mutable.LinkedHashMap[String, Glyph](),
+       generatorMap: mutable.Map[String, (AttributeMap, Context)=>Glyph] =
+                     mutable.LinkedHashMap[String, (AttributeMap, Context)=>Glyph]()
+      )
+  {
+      def withGlyph(id: String)(glyph: Glyph): this.type =
+          { glyphMap(id)=glyph; this }
+      def withElement(id: String)(generator: (AttributeMap, Context)=>Glyph): this.type =
+          { generatorMap(id) = generator; this }
 
       def font: Font = fontFamily.makeFont(fontStyle, fontSize)
 
