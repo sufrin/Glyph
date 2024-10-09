@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package tests
 
 import GlyphML.Context
-import Glyphs.{blue, nothing, white, FilledOval}
+import Glyphs.{blue, nothing, white}
 import GlyphTypes.Scalar
 import GlyphXML._
 import Styles.{Decoration, GlyphStyle}
@@ -11,14 +11,14 @@ object GlyphXMLTest extends Application {
 
   def title: String = "GlyphXML"
 
-  implicit object LocalStyle extends Styles.DefaultSheet {
+  implicit val LocalStyle: StyleSheet =  new Styles.DefaultSheet {
     override def buttonFontSize: Scalar  = 22
     override def labelFontSize: Scalar   = 22
     override def labelStyle: GlyphStyle  = GlyphStyle(labelFont, buttonStyle.up.fg, buttonStyle.up.bg)
-  }
+  }//.unFramed
 
   implicit val local: Context =
-    Context(style= LocalStyle)
+    Context(style=LocalStyle)
       .fontFamily("Roman")
       .parSkip(40f)
       .fontSize(20)
@@ -26,35 +26,55 @@ object GlyphXMLTest extends Application {
       .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
       .frameStyle(Decoration.Blurred(fg=blue, blur=15f, spread=15f), fg=white)
       .paragraphEms(45)
-      .withGlyph("circle")(FilledOval(100, 100, fg=blue))
+      .withEntity("circle")(styled.TextButton("circle"){ _ => println("Circle Pressed")})
+      .withEntity("button")(styled.TextButton("button"){ _ => println("Button Pressed")})
       .withElement("square"){
-        { case (localAttributes, local) =>
-          val w = localAttributes.Float("w", 10f)
-          val h = localAttributes.Float("h", 10f)
-          Glyphs.Rect(w,h,fg=local.fg, bg=local.bg) }
+         case (localAttributes, local) =>
+          val w = localAttributes.Units("w", 10f)(local)
+          val h = localAttributes.Units("h", 10f)(local)
+          Glyphs.Rect(w,h,fg=local.fg, bg=local.bg)
+      }
+      .withElement("button") {
+          case (localAttributes, local) =>
+            styled.TextButton("button") { _ => println("Button Pressed") }
       }
 
-  val circle = <copy id="circle" fg="blue"/>
+  val square = <square w="2em" h="2em" fg="red"/>
+  val button = <button/>
+  val embedded = <p>embedded <glyph>{button}</glyph> for you</p>
 
   def GUI =
     XML.Col(
-      <xml width="45em" fontFamily="Courier" fontSize="32" align="justify" parSkip="20">
-        <p>
-          <b>GlyphXML</b>is a domain specific language expressed as XML: its elements denote <i>Glyph sequences.</i>
-        </p>
-        <square fg="red" bg="blue" w="45" h="45"/>
-        <p fg="red"><i>Its <n>API</n> may  be  somewhat more convenient for interface designers than the standard Glyphs API.</i></p>
-        <col alignment="center" fg="red">
-          <p>
-            <i>Its <n>API</n> may  be somewhat more convenient for interface designers than the standard Glyphs API.</i>
-          </p>
-          <verb framed="red">able <i>was</i> I</verb>
-          {circle}
-        </col>
+      <xml width="45em" fontFamily="Courier" fontSize="22" align="justify" parSkip="20">
         <p>
           This is the start of an experiment in defining GUIs using
           (mainly) <b>XML.</b>
         </p>
+        <p>
+          <b>GlyphXML</b>is a domain specific language expressed as XML: its elements denote sequences.
+        </p>
+        <square fg="red" bg="blue" w="45" h="45"/>
+        <p fg="red"><i>Its <n>API</n> &amp; xml-based markup may be somewhat more convenient for interface designers than the standard Glyphs API.</i></p>
+        <col alignment="center">
+          <p align="center">Here are some embedded glyphs</p>
+          <verb>{button}</verb>
+          {button}
+          <verb>{square}</verb>
+          {square}
+          <verb>{embedded}</verb>
+          {embedded}
+        </col>
+        <col alignment="center" fg="red">
+          <![CDATA[
+  <p>
+    <i>Its <n>API</n> may be somewhat more convenient
+    for interface designers than the standard Glyphs API.</i>
+  </p>
+  ]]>
+          <verb framed="red">able <i>was</i> I</verb>
+          &circle;
+        </col>
+
         <xml align="center">
         <rows width="15em" colWidth="2" fg="red" bg="lightGrey">
           <p bg="lightGrey"><i>the rain</i></p><p><b>in spain</b></p>

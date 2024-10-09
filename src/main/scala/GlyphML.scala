@@ -48,7 +48,7 @@ object GlyphML {
                      mutable.LinkedHashMap[String, (AttributeMap, Context)=>Glyph]()
       )
   {
-      def withGlyph(id: String)(glyph: Glyph): this.type =
+      def withEntity(id: String)(glyph: Glyph): this.type =
           { glyphMap(id)=glyph; this }
       def withElement(id: String)(generator: (AttributeMap, Context)=>Glyph): this.type =
           { generatorMap(id) = generator; this }
@@ -71,6 +71,45 @@ object GlyphML {
       def textWidth(text: String, brush: Brush=fg): Scalar = font.measureTextWidth(text, brush)
 
       def emWidth: Scalar = font.measureTextWidth("M")
+
+      def exHeight: Scalar = {
+        val text = org.sufrin.glyph.Text("X", font, fg=fg, bg=bg)
+        text.height+text.descent
+      }
+
+      def atBaseLine(glyph: Glyph): Glyph = new Glyph { thisGlyph =>
+        locally {
+          glyph.parent=thisGlyph
+        }
+
+        /**
+         * Draw the glyph on the surface at its given size (as if at the origin).
+         */
+        def draw(surface: Surface): Unit = {
+          surface.withOrigin(0, -exHeight) {
+            glyph.draw(surface)
+          }
+        }
+
+        override def reactiveContaining(p: Vec): Option[ReactiveGlyph] =
+          glyph.reactiveContaining(p-(0, exHeight))
+
+        override def glyphContaining(p: Vec): Option[Hit] =
+          glyph.glyphContaining(p-(0, exHeight))
+
+        override def baseLine: Scalar = exHeight
+
+        /**
+         * The diagonal size of the glyph
+         */
+        def diagonal: Vec = Vec(glyph.w, glyph.h)
+
+        /** A copy of this glyph; perhaps with different foreground/background */
+        def copy(fg: Brush, bg: Brush): Glyph = atBaseLine(glyph)
+
+        val fg: Brush = glyph.fg
+        val bg: Brush = glyph.bg
+      }
 
       def frameStyle(decoration: Decoration, fg: Brush=null, bg: Brush=null): Context = {
         val ls    = this.style.buttonStyle.up

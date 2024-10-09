@@ -152,18 +152,28 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
           import org.sufrin.glyph.{Text => TextChunk}
           val fg = context.fg
           val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
-          List(toGlyph(TextChunk(text, font, fg, bg)))
+          val glyphs = text.split('\n').toSeq.map(TextChunk(_, font, fg, bg).asGlyph())
+          List(NaturalSize.Col.atLeft$(glyphs))
 
         case EntityRef(id) =>
           import context.font
           import org.sufrin.glyph.{Text => TextChunk}
-          val text = id match {
-            case "amp" => "&"
-            case "ls" => "<"
-            case "gt" => ">"
-            case other => elem.toString
+          def glyphOf(text: String): Glyph = toGlyph(TextChunk(text, font, context.fg, DefaultBrushes.nothing))
+          val glyph = id match {
+            case "amp" => glyphOf("&")
+            case "ls" => glyphOf("<")
+            case "gt" => glyphOf(">")
+            case _ =>
+              context.glyphMap.get(id) match {
+                case None =>
+                  warn(s"Unknown named glyph <copy id=$id ...>...")
+                  glyphOf(s"&$id;")
+                case Some(glyph) =>
+                  glyph.framed()
+
+              }
           }
-          List(toGlyph(TextChunk(text, font, context.fg, DefaultBrushes.nothing)))
+          List(glyph)
 
         case <s></s> =>
           List(FixedSize.Space(1f, context.parSkip, 0f))
@@ -252,16 +262,23 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
           val glyphs = child.flatMap {  node => translate(node)(attributes)(context$) }
           List(GlyphML.ColsFromGlyphs(height)(glyphs).toGlyph(context$))
 
-        case <copy>{child@_*}</copy> =>
+        case <glyph>{child@_*}</glyph> =>
           val context$ = universal(context)
-          val id = localAttributes.String("id", "")
-          context.glyphMap.get(id) match {
-            case None =>
-              warn(s"Unknown named glyph <copy id=$id ...>...")
-              Seq.empty[Glyph]
-            case Some(glyph) =>
-              List(glyph.copy(fg=context$.fg, bg=context$.bg))
-          }
+          val id = localAttributes.String("ref", "")
+          id match {
+            case "" =>
+              val glyphs = child.flatMap {  node => translate(node)(attributes)(context$) }
+              glyphs.map(context.atBaseLine(_))
+
+            case _ =>
+                  context.glyphMap.get (id) match {
+                      case None =>
+                      warn (s"Unknown named glyph <glyph ref=$id ...>...")
+                      Seq.empty[Glyph]
+                      case Some (glyph) =>
+                      List (context.atBaseLine (glyph).framed() )
+                  }
+      }
 
         case elem: Elem =>
           val tag = elem.label
