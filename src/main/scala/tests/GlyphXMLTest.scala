@@ -7,6 +7,8 @@ import GlyphTypes.Scalar
 import GlyphXML._
 import Styles.{Decoration, GlyphStyle}
 
+import scala.collection.immutable.ListMap
+
 object GlyphXMLTest extends Application {
 
   def title: String = "GlyphXML"
@@ -40,9 +42,10 @@ object GlyphXMLTest extends Application {
       .withReaction("act2"){
         _ => println("act2")
       }
+      .withAttrs("#button")(ListMap("hover"->"lightGrey", "fg"->"green", "label"->"Another Default Button", "framed"->"blue4"))
 
   val square = <square w="2em" h="2em" fg="red"/>
-  val button = <button action="act1" fontScale="1.3" hover="lightGrey" fg="red" bg="yellow" label="Button Act1" framed="blue4"/>
+  val button = <button action="act1" hover="lightGrey" bg="yellow"/>
   val embedded = <p>embedded &button; for you</p>
 
   def GUI =

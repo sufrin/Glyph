@@ -162,7 +162,13 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
    *
    */
   def translate(within: List[String])(elem: Node)(inherited: AttributeMap)(context: GlyphML.Context): Seq[Glyph] = {
-      val localAttributes = elem.attributes.asAttrMap
+      val defaultAttributes: AttributeMap = context.attrMap.get(s"#${elem.label}") match {
+        case None =>
+          Map.empty
+        case Some(attrs) =>
+          attrs
+      }
+      val localAttributes = defaultAttributes ++ (elem.attributes.asAttrMap)
       val attributes = inherited ++ localAttributes
       val within$ = elem.label :: within
       def stylingTag(tag: String): Boolean = stylingTags.contains(tag)
