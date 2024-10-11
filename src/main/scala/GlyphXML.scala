@@ -1,22 +1,27 @@
 package org.sufrin.glyph
 
+import ReactiveGlyphs.{ColourButton, Reaction}
+
 object XML {
+  val TOPLEVEL = List("")
   /** A column described by the given xml node translated in the default context using the given style sheet.  */
   def apply(node: xml.Node)(implicit sheet: StyleSheet): Glyph = {
     val local = GlyphML.Context(style=sheet)
-    val glyphs: Seq[Glyph] = GlyphXML.translate(node)(Map.empty)(local)
+    val glyphs: Seq[Glyph] = GlyphXML.translate(TOPLEVEL)(node)(Map.empty)(local)
     NaturalSize.Col().centered$(glyphs)
   }
 
   /** A column described by the given xml node translated in the given local context.  */
   def Col(node: xml.Node)(implicit local: GlyphML.Context): Glyph = {
-    val glyphs: Seq[Glyph] = GlyphXML.translate(node)(Map.empty)(local)
+    val glyphs: Seq[Glyph] = GlyphXML.translate(TOPLEVEL)(node)(Map.empty)(local)
     NaturalSize.Col().centered$(glyphs)
   }
 
+  implicit def XMLtoGlyph(node: xml.Node)(implicit local: GlyphML.Context): Glyph = Col(node)(local)
+
   /** A row described by the given xml node translated in the given local context.  */
   def Row(node: xml.Node)(implicit local: GlyphML.Context): Glyph = {
-    val glyphs: Seq[Glyph] = GlyphXML.translate(node)(Map.empty)(local)
+    val glyphs: Seq[Glyph] = GlyphXML.translate(TOPLEVEL)(node)(Map.empty)(local)
     NaturalSize.Col().centered$(glyphs)
   }
 
@@ -29,6 +34,7 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
   import scala.xml._
 
   type AttributeMap = Map[String,String]
+
   implicit class TypedAttributeMap(attributes: AttributeMap) {
 
     def String(key: String, alt: String): String = attributes.getOrElse(key, alt)
@@ -51,16 +57,38 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
       case None     => alt
     }
 
-    def Units(key: String, alt: Float)(context: GlyphML.Context): Float = attributes.get(key) match {
-      case Some (s"${s}em") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat*context.emWidth
-      case Some (s"${s}EM") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat*context.emWidth
-      case Some (s"${s}") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
-      case Some (s"${s}px") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
-      case Some (s"${s}PX") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
-      case Some(other)    =>
-        warn(s"$key(=$other) should specify a unit in em/px")(source)
+    def Reaction(key: String, alt: Reaction)(context: GlyphML.Context): Reaction = attributes.get(key) match {
+      case Some (reactionName) =>
+           context.reactionMap.getOrElse(reactionName, { _ => })
+      case None =>
         alt
-      case None => alt
+    }
+
+    def Units(key: String, alt: Float)(context: GlyphML.Context): Float = attributes.get(key) match {
+      case Some(spec) =>
+        spec.toLowerCase match {
+          case (s"${s}em") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * context.emWidth
+          case (s"${s}ex") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * context.exHeight
+          case (s"${s}px") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
+          case (s"${s}pt") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
+          case (other) =>
+            warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt")(source)
+            alt
+      }
+      case None =>
+        alt
+    }
+
+    def Bool(key: String, default: Boolean): Boolean = attributes.get(key.toLowerCase) match {
+      case None => default
+      case Some(boolean) =>
+        boolean.toLowerCase match {
+          case "t" | "true"  | "on" => true
+          case "f" | "false" | "off" => false
+          case _ =>
+            warn(s"$key=\"$boolean\" should be t/f/true/on/false/off")
+            default
+        }
     }
 
     def Align(key: String, default: Alignment): Alignment = attributes.get(key) match {
@@ -75,6 +103,9 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
         default
     }
 
+    import org.sufrin.glyph.Brush.ROUND
+
+    // TODO: better notation for brushes
     def Brush(key: String, alt: Brush): Brush = attributes.get(key) match {
       case None       => alt
       case Some(s"0X$hex") if hex.matches("[0-9A-F][0-9A-F][0-9A-F][0-9A-F]") =>
@@ -86,12 +117,38 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
         case "lightgrey" => DefaultBrushes.lightGrey
         case "darkgrey" => DefaultBrushes.darkGrey
         case "yellow" => DefaultBrushes.yellow
+        case "red4"  => org.sufrin.glyph.Brush(s"red").color(0XFFFF0000).strokeWidth(6).strokeCap(ROUND)
+        case "blue4" => org.sufrin.glyph.Brush(s"blue").color(0XFF0000FF).strokeWidth(6).strokeCap(ROUND)
+        case "green4" => org.sufrin.glyph.Brush(s"blue").color(0XFF00FF00).strokeWidth(6).strokeCap(ROUND)
+        case "lightgrey4" => DefaultBrushes.lightGrey.strokeWidth(6).strokeCap(ROUND)
+        case "darkgrey4" => DefaultBrushes.darkGrey.strokeWidth(6).strokeCap(ROUND)
+        case "yellow4" => DefaultBrushes.yellow.strokeWidth(6).strokeCap(ROUND)
         case "nothing" => DefaultBrushes.nothing
         case _ => DefaultBrushes.black
       }
     }
+
+    /**
+     * Context derived from `context` by declaring
+     * the universally-applicable attributes.
+     */
+    def declareAttributes(context: Context): Context =
+      context
+      .copy(parAlign=Align("align", context.parAlign),
+        fontFamily=FontFamily(String("fontFamily", context.fontFamily.name)),
+        fontSize=Float("fontSize", context.fontSize),
+        paragraphWidth=Units("width", context.paragraphWidth)(context),
+        fg=Brush("fg", DefaultBrushes.black),
+        bg=Brush("bg", DefaultBrushes.nothing),
+        leftMargin = Float("leftMargin",   context.leftMargin),
+        rightMargin = Float("rightMargin", context.leftMargin),
+        parSkip = Units("parSkip", 0f)(context)
+      )
+      .indentEms(Int("l", 0), Int("r", 0))
+      .fontScale(Float("fontScale", 1.0f))
   }
 
+  private val stylingTags: Seq[String] = List("b", "em", "i", "indent", "bi", "n")
   /**
    * 1. Translate `<tag attrs>body</tag>` into a glyph sequence. The `context`  provides
    * glyph-specific features, and appropriate aspects of the context are
@@ -104,40 +161,24 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
    * translating each word into a glyph in `context.font`.
    *
    */
-  def translate(elem: Node)(inherited: AttributeMap)(context: GlyphML.Context): Seq[Glyph] = {
-     val localAttributes =  elem.attributes.asAttrMap
-     val attributes = inherited ++ localAttributes
-     def String(key: String, alt: String): String = attributes.String(key, alt)
-     def Int(key: String, alt: Int): Int = attributes.Int(key, alt)
-     def Float(key: String, alt: Float): Float = attributes.Float(key, alt)
-     def Align(key: String, default: Alignment): Alignment = attributes.Align(key, default)
-     def Brush(key: String, alt: Brush): Brush = attributes.Brush(key, alt)
-    def Units(key: String, alt: Float): Float = attributes.Units(key, alt)(context)
-    @inline def toGlyph(word: org.sufrin.glyph.Text): Glyph = word.atBaseline()
+  def translate(within: List[String])(elem: Node)(inherited: AttributeMap)(context: GlyphML.Context): Seq[Glyph] = {
+      val localAttributes = elem.attributes.asAttrMap
+      val attributes = inherited ++ localAttributes
+      val within$ = elem.label :: within
+      def stylingTag(tag: String): Boolean = stylingTags.contains(tag)
+      val inPara: Boolean =
+        within.dropWhile(stylingTag).head=="p"
 
-    /**
-       * Context derived from this context by assigning
-       * the universally-applicable attributes to it.
-       */
-      def universal(context: Context): Context = context
-        .copy(parAlign=Align("align", context.parAlign),
-              fontFamily=FontFamily(String("fontFamily", context.fontFamily.name)),
-              fontSize=Float("fontSize", context.fontSize),
-              paragraphWidth=Units("width", context.paragraphWidth),
-              fg=Brush("fg", DefaultBrushes.black),
-              bg=Brush("bg", DefaultBrushes.nothing),
-              leftMargin = Float("leftMargin",   context.leftMargin),
-              rightMargin = Float("rightMargin", context.leftMargin),
-              )
-        .indentEms(Int("l", 0), Int("r", 0))
-        .fontScale(Float("fontScale", 1.0f))
-        .parSkip(Units("parSkip", 0f))
 
-      def framed(glyph: Glyph): Glyph =
-        {
-          val brush = Brush("framed", DefaultBrushes.nothing)
+      @inline def toGlyph(word: org.sufrin.glyph.Text): Glyph =
+        if (inPara) word.atBaseline() else word.asGlyph()
+
+
+      def framed(glyph: Glyph): Glyph = {
+          val brush = attributes.Brush("framed", DefaultBrushes.nothing)
           if (brush ==  DefaultBrushes.nothing) glyph else glyph.framed(brush)
-        }
+      }
+
 
       elem match {
         case Text(buffer) =>
@@ -152,7 +193,7 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
           import org.sufrin.glyph.{Text => TextChunk}
           val fg = context.fg
           val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
-          val glyphs = text.split('\n').toSeq.map(TextChunk(_, font, fg, bg).asGlyph())
+          val glyphs = text.split('\n').toSeq.map(TextChunk(_, font, fg, bg).asGlyph(fg, bg))
           List(NaturalSize.Col.atLeft$(glyphs))
 
         case EntityRef(id) =>
@@ -169,64 +210,98 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
                   warn(s"Unknown named glyph <copy id=$id ...>...")
                   glyphOf(s"&$id;")
                 case Some(glyph) =>
-                  glyph.framed()
-
+                  if (inPara) context.atBaseLine(glyph) else glyph
               }
           }
           List(glyph)
+
+        // TODO: should use the styled glyph
+        case <button>{child@_*}</button> =>
+          val context$ = attributes.declareAttributes(context)
+          val act = localAttributes.Reaction("action", { _ => })(context)
+          val label = localAttributes.String("label", "")
+          val fg=context$.fg
+          val bg=context$.bg
+          val down       = attributes.Brush("down", ColourButton.down)
+          val hover      = attributes.Brush("hover", ColourButton.hover)
+          val background = attributes.Bool("background", false)
+          lazy val glyphs = NaturalSize.Row(bg=bg).centered$(child.flatMap { node => translate(within$)(node)(attributes)(context$) })
+          if (label.isEmpty)
+            List(framed(ReactiveGlyphs.ColourButton(glyphs, down, hover, background)(act)))
+          else
+            List(framed(ReactiveGlyphs.ColourButton(label, fg, down, hover, bg, background)(act)))
 
         case <s></s> =>
           List(FixedSize.Space(1f, context.parSkip, 0f))
 
         case <font-cache></font-cache> =>
           import org.sufrin.glyph.{Text => TextChunk}
-          val context$ = universal(context)
+          val context$ = attributes.declareAttributes(context)
           val fg = context$.fg
           val bg = DefaultBrushes.nothing
           FontFamily.fonts.map{ fontId => toGlyph(TextChunk(fontId, context$.font, fg, bg))}
 
         case <p>{child@_*}</p> =>
-          val context$ = universal(context)
-          List(framed(GlyphML.glyphsToPara(child.flatMap {  node => translate(node)(attributes)(context$) })(context$)))
+          val context$ = attributes.declareAttributes(context)
+          val skip = context$.parSkip
+          val thePara = framed(GlyphML.glyphsToPara(child.flatMap {  node => translate(within$)(node)(attributes)(context$) })(context$))
+          if (skip == 0.0f) List(thePara) else List(thePara, FixedSize.Space(1f, context.parSkip, 0f))
 
         case <verb>{child@_*}</verb> =>
           import org.sufrin.glyph.{Text => TextChunk}
-          val context$ = universal(context)
-          val background = Brush("bg", DefaultBrushes.nothing)
+          val context$ = attributes.declareAttributes(context)
+          val background = attributes.Brush("bg", DefaultBrushes.nothing)
           val lines      = child.toString.split('\n').toSeq
           val lines$     = stripIndentation(lines)
           val texts      = lines$.map{ line => TextChunk(line, context$.font, context$.fg, context$.bg).asGlyph()}
           List(framed(NaturalSize.Col(bg=background).atLeft$(texts)))
 
-        case <xml>{child@_*}</xml> =>
-          val context$ = universal(context)
-          child.flatMap {  node => translate(node)(attributes)(context$) }
+        case <body>{child@_*}</body> =>
+          val context$ = attributes.declareAttributes(context)
+          child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
+
+        case <div>{child@_*}</div> =>
+          val context$ = attributes.declareAttributes(context)
+          import org.sufrin.glyph.{Text => TextChunk}
+          localAttributes.get("id") match {
+            case None =>
+              child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
+            case Some(id) =>
+              context.attrMap.get(id) match {
+                case None =>
+                  org.sufrin.logging.Default.warn(s"""<div ${elem.attributes}>... has no attributes defined by $id""")
+                  child.flatMap { node => translate(within$)(node)(attributes)(context$) }
+                case Some(attrs) =>
+                  val attributes$ = attrs++(localAttributes.removed("id"))
+                  child.flatMap {  node => translate(within$)(node)(attributes$)(attributes$.declareAttributes(context)) }
+              }
+          }
 
         case <indent>{child@_*}</indent> =>
-             val context$ = universal(context).indentEms(Int("l", 0), Int("r", 0))
-             child.flatMap {  node => translate(node)(attributes)(context$) }
+             val context$ = attributes.declareAttributes(context).indentEms(attributes.Int("l", 0), attributes.Int("r", 0))
+             child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
 
         case <i>{child@_*}</i> =>
-          val context$ = universal(context).italicStyle
-          child.flatMap {  node => translate(node)(attributes)(context$) }
+          val context$ = attributes.declareAttributes(context).italicStyle
+          child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
 
         case <b>{child@_*}</b> =>
-          val context$   = universal(context).boldStyle
-          child.flatMap {  node => translate(node)(attributes)(context$) }
+          val context$   = attributes.declareAttributes(context).boldStyle
+          child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
 
         case <bi>{child@_*}</bi> =>
-          val context$   = universal(context).boldItalicStyle
-          child.flatMap {  node => translate(node)(attributes)(context$) }
+          val context$   = attributes.declareAttributes(context).boldItalicStyle
+          child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
 
         case <n>{child@_*}</n> =>
-          val context$   = universal(context).normalStyle
-          child.flatMap {  node => translate(node)(attributes)(context$) }
+          val context$   = attributes.declareAttributes(context).normalStyle
+          child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
 
         case <row>{child@_*}</row> =>
-          val context$ = universal(context)
+          val context$ = attributes.declareAttributes(context)
           val builder = NaturalSize.Row(fg=context.fg, bg=context.bg)
-          val glyphs = child.flatMap {  node => translate(node)(attributes)(context$) }
-          val glyph = String("alignment", "center") match {
+          val glyphs = child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
+          val glyph = attributes.String("alignment", "center") match {
             case "center" => builder.centered$(glyphs)
             case "top"    => builder.atTop$(glyphs)
             case "bottom" => builder.atBottom$(glyphs)
@@ -237,10 +312,10 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
           List(glyph)
 
         case <col>{child@_*}</col> =>
-          val context$ = universal(context)
+          val context$ = attributes.declareAttributes(context)
           val builder = NaturalSize.Col(fg=context.fg, bg=context.bg)
-          val glyphs = child.flatMap {  node => translate(node)(attributes)(context$) }
-          val glyph = String("alignment", "center") match {
+          val glyphs = child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
+          val glyph = attributes.String("alignment", "center") match {
             case "center" => builder.centered$(glyphs)
             case "left"    => builder.atLeft$(glyphs)
             case "right" => builder.atRight$(glyphs)
@@ -251,23 +326,23 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
           List(glyph)
 
         case <rows>{child@_*}</rows> =>
-          val context$ = universal(context)
-          val width = Int("colWidth", 1)
-          val glyphs = child.flatMap {  node => translate(node)(attributes)(context$) }
+          val context$ = attributes.declareAttributes(context)
+          val width = attributes.Int("colWidth", 1)
+          val glyphs = child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
           List(GlyphML.RowsFromGlyphs(width)(glyphs).toGlyph(context$))
 
         case <cols>{child@_*}</cols> =>
-          val context$ = universal(context)
-          val height = Int("rowHeight", 1)
-          val glyphs = child.flatMap {  node => translate(node)(attributes)(context$) }
+          val context$ = attributes.declareAttributes(context)
+          val height = attributes.Int("rowHeight", 1)
+          val glyphs = child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
           List(GlyphML.ColsFromGlyphs(height)(glyphs).toGlyph(context$))
 
         case <glyph>{child@_*}</glyph> =>
-          val context$ = universal(context)
+          val context$ = attributes.declareAttributes(context)
           val id = localAttributes.String("ref", "")
           id match {
             case "" =>
-              val glyphs = child.flatMap {  node => translate(node)(attributes)(context$) }
+              val glyphs = child.flatMap {  node => translate(within$)(node)(attributes)(context$) }
               glyphs.map(context.atBaseLine(_))
 
             case _ =>
@@ -288,7 +363,7 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
               Seq.empty[Glyph]
 
             case Some(generator) =>
-              List(generator(localAttributes, universal(context)))
+              List(generator(localAttributes, attributes.declareAttributes(context)))
           }
         case _ =>
           Seq.empty[Glyph]

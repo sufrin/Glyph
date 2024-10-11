@@ -10,6 +10,7 @@ import Styles.NotebookStyle
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import scala.annotation.unused
+import scala.collection.immutable.ListMap
 
 /**
  * An expansive test comprising examples of UI components
@@ -153,9 +154,58 @@ trait DemonstrationPages extends Brushes {
     val anchor = INVISIBLE()
     locally { HintManager(enableSaveCheckBox, 5, "Click this to enable the image-save bar")(HelpStyle) }
 
+    import GlyphML.Context
+    import XML.XMLtoGlyph
+
+    implicit val local: Context =
+      Context(style=ApplicationStyle)
+        .fontFamily("Menlo")
+        .fontSize(20)
+        .withAttrs("#cdata")(ListMap("fg"->"red", "bg"->"lightGrey", "fontFamily"->"Courier" ))
+
     Col.centered(
       anchor,
-      Paragraphs(60, Justify)(helpText), ex, ex,
+      //Paragraphs(60, Justify)(helpText)
+      //[replaced by the following markup language literal]
+      <body fg="blue" align="justify" parSkip="1em" width="60em">
+          <p>
+            This application demonstrates aspects of the Glyphs library
+            by offering the choice of several demonstration GUIs. These are usually shown on
+            the pages of a tabbed notebook, with tabs placed
+            to the right. Several of the pages have pages nested  within them:
+            their names have * by them.
+          </p>
+          <p>
+            Command-line arguments affect the notebook style (normally -notebook)
+            and scale (normally 1.00).</p>
+          <div id="#cdata" >
+          <![CDATA[
+            -notebook   => tabs to the right (the default)
+            -rnotebook  => tabs to the right
+            -lnotebook  => tabs to the left
+            -vnotebook  => rotated tabs along the top
+            -tnotebook  => tabs along the top
+            -snotebook  => rotated and skewed tabs along the top
+
+            -menu       => individual popup windows selected from a menu bar
+
+            -scale=d.dd => the viewing scale is d.dd (1.00 by default)
+            ]]>
+          </div>
+          <p>The "New" page enables instantiation of a new GUI with
+            a choice of tab style, viewing scale and starting screen.
+          </p>
+          <p>
+            The "Rescaling enabled" button enables rescaling of the GUI in response to the
+            user changing the width of the application window interactively.
+          </p>
+          <p>
+            The application evolved naturally during development because we saw that unit-testing was
+            not going to be effective. It is not, and not intended to be, a comprehensive test; but if it
+            works at all then a very substantial proportion of the toolkit must be functioning adequately.
+          </p>
+      </body>
+      , ex, ex,
       NaturalSize.Grid.Table(width=2)(
       Label("Event logging: ").cellFit(ShiftEast), CheckBox(initially=false) {
         state => anchor.guiRoot.eventHandler.logEvents = state
@@ -1823,7 +1873,7 @@ trait DemonstrationPages extends Brushes {
             | Painting filled material with a blurred brush leads to
             |the paint coverage being enlarged by the blur of the brush
             |
-            |<<<<< b30=$b30
+            |b30=$b30
             |<<<<< FilledRect(150, 30, fg=b30).enlargedBy(30f, 30f).framed()
             |<<<<< FilledRect(150, 30, fg=b30).framed()
             |

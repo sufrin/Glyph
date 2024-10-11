@@ -1,6 +1,7 @@
 package org.sufrin.glyph
 
 import GlyphXML.AttributeMap
+import ReactiveGlyphs.Reaction
 import Styles.{ButtonStyle, GlyphStyle}
 import Styles.Decoration.Decoration
 
@@ -45,13 +46,25 @@ object GlyphML {
        glyphMap:     mutable.Map[String, Glyph] =
                      mutable.LinkedHashMap[String, Glyph](),
        generatorMap: mutable.Map[String, (AttributeMap, Context)=>Glyph] =
-                     mutable.LinkedHashMap[String, (AttributeMap, Context)=>Glyph]()
+                     mutable.LinkedHashMap[String, (AttributeMap, Context)=>Glyph](),
+       attrMap:      mutable.Map[String, AttributeMap] =
+                     mutable.LinkedHashMap[String, AttributeMap](),
+       contextMap:   mutable.Map[String, Context] =
+                     mutable.LinkedHashMap[String, Context](),
+       reactionMap:  mutable.Map[String, Reaction] =
+                     mutable.LinkedHashMap[String, Reaction](),
       )
   {
       def withEntity(id: String)(glyph: Glyph): this.type =
           { glyphMap(id)=glyph; this }
       def withElement(id: String)(generator: (AttributeMap, Context)=>Glyph): this.type =
           { generatorMap(id) = generator; this }
+      def withAttrs(id: String)(map: AttributeMap): this.type =
+          { attrMap(id) = map; this }
+      def withContext(id: String)(context: Context): this.type =
+          { contextMap(id) = context; this }
+      def withReaction(id: String)(reaction: Reaction): this.type =
+          { reactionMap(id) = reaction; this }
 
       def font: Font = fontFamily.makeFont(fontStyle, fontSize)
 
@@ -70,9 +83,9 @@ object GlyphML {
       /** Width of the given text using `brush` (default the current `fg`) */
       def textWidth(text: String, brush: Brush=fg): Scalar = font.measureTextWidth(text, brush)
 
-      def emWidth: Scalar = font.measureTextWidth("M")
+      lazy val emWidth: Scalar = font.measureTextWidth("M")
 
-      def exHeight: Scalar = {
+      lazy val exHeight: Scalar = {
         val text = org.sufrin.glyph.Text("X", font, fg=fg, bg=bg)
         text.height+text.descent
       }

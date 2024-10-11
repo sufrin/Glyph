@@ -20,8 +20,8 @@ object GlyphXMLTest extends Application {
   implicit val local: Context =
     Context(style=LocalStyle)
       .fontFamily("Roman")
-      .parSkip(40f)
-      .fontSize(20)
+      .parSkip(0f)
+      .fontSize(16)
       .labelStyle(fg=Glyphs.black, bg=Glyphs.nothing)
       .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
       .frameStyle(Decoration.Blurred(fg=blue, blur=15f, spread=15f), fg=white)
@@ -34,27 +34,31 @@ object GlyphXMLTest extends Application {
           val h = localAttributes.Units("h", 10f)(local)
           Glyphs.Rect(w,h,fg=local.fg, bg=local.bg)
       }
-      .withElement("button") {
-          case (localAttributes, local) =>
-            styled.TextButton("button") { _ => println("Button Pressed") }
+      .withReaction("act1"){
+        _ => println("act1")
+      }
+      .withReaction("act2"){
+        _ => println("act2")
       }
 
   val square = <square w="2em" h="2em" fg="red"/>
-  val button = <button/>
-  val embedded = <p>embedded <glyph>{button}</glyph> for you</p>
+  val button = <button action="act1" fontScale="1.3" hover="lightGrey" fg="red" bg="yellow" label="Button Act1" framed="blue4"/>
+  val embedded = <p>embedded &button; for you</p>
 
   def GUI =
     XML.Col(
-      <xml width="45em" fontFamily="Courier" fontSize="22" align="justify" parSkip="20">
+      <body width="45em" fontFamily="Courier" fontSize="20" align="justify" parSkip="5pt">
         <p>
           This is the start of an experiment in defining GUIs using
-          (mainly) <b>XML.</b>
+          (mainly) <b>XML</b>
         </p>
         <p>
-          <b>GlyphXML</b>is a domain specific language expressed as XML: its elements denote sequences.
+          GlyphXML is a domain specific language expressed as XML: its elements denote sequences.
         </p>
-        <square fg="red" bg="blue" w="45" h="45"/>
-        <p fg="red"><i>Its <n>API</n> &amp; xml-based markup may be somewhat more convenient for interface designers than the standard Glyphs API.</i></p>
+        <square fg="red" bg="blue" w="4.5em" h="4.5em"/>
+        <p fg="red"><i>Its <n>API</n> &amp; xml-based markup may be somewhat more
+          convenient for interface designers <col>{square}</col>
+          than the standard Glyphs API.</i></p>
         <col alignment="center">
           <p align="center">Here are some embedded glyphs</p>
           <verb>{button}</verb>
@@ -75,7 +79,7 @@ object GlyphXMLTest extends Application {
           &circle;
         </col>
 
-        <xml align="center">
+        <div align="center">
         <rows width="15em" colWidth="2" fg="red" bg="lightGrey">
           <p bg="lightGrey"><i>the rain</i></p><p><b>in spain</b></p>
           <verb>Some verbatim</verb><verb>Material</verb>
@@ -84,17 +88,17 @@ object GlyphXMLTest extends Application {
             <p>X</p><p>Y</p>
           </col>
         </rows>
-        </xml>
+        </div>
 
-        <xml align="center">
+        <div align="center">
           <cols width="15em" rowHeight="3" fg="blue" >
             <p bg="lightGrey"><i>the rain</i></p><p><b>in spain</b></p>
             <verb>Some verbatim</verb><verb>Material</verb>
             <p><i>falls mainly</i></p><p><b>in the plain</b></p>
           </cols>
-        </xml>
+        </div>
 
-      </xml>
+      </body>
     )
 
 }
