@@ -157,6 +157,8 @@ trait DemonstrationPages extends Brushes {
     import GlyphML.Context
     import XML.XMLtoGlyph
 
+    import org.sufrin.SourceLocation.{sourceLocation => source}
+
     implicit val local: Context =
       Context(style=ApplicationStyle)
         .fontFamily("Menlo")
@@ -167,7 +169,7 @@ trait DemonstrationPages extends Brushes {
       anchor,
       //Paragraphs(60, Justify)(helpText)
       //[replaced by the following markup language literal]
-      <body fg="blue" align="justify" parSkip="1em" width="60em">
+      <body fg="blue" align="justify" parSkip="1em" width="60em" source={s"$source"}>
           <p>
             This application demonstrates aspects of the Glyphs library
             by offering the choice of several demonstration GUIs. These are usually shown on

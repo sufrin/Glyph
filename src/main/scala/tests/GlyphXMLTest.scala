@@ -30,6 +30,7 @@ object GlyphXMLTest extends Application {
       .paragraphEms(45)
       .withEntity("circle")(styled.TextButton("circle"){ _ => println("Circle Pressed")})
       .withEntity("button")(styled.TextButton("button"){ _ => println("Button Pressed")})
+      .withEntity("RECT")(Glyphs.FilledRect(50, 30,fg=DefaultBrushes.red).framed(fg=DefaultBrushes.green.strokeWidth(4)))
       .withElement("square"){
          case (localAttributes, local) =>
           val w = localAttributes.Units("w", 10f)(local)
@@ -42,63 +43,70 @@ object GlyphXMLTest extends Application {
       .withReaction("act2"){
         _ => println("act2")
       }
-      .withAttrs("#button")(ListMap("hover"->"lightGrey", "fg"->"green", "label"->"Another Default Button", "framed"->"blue4"))
+      .withAttrs("#button")(ListMap("hover"->"yellow", "down"->"red", "bg"->"darkGrey", "up"->"blue", "label"->"Default Button",
+                                    "framed"->"darkGrey"))
+      .withAttrs("#but")(ListMap("hover"->"green", "down"->"blue",  "up"->"yellow", "label"->"Another Default Button",
+        "framed"->"blue4"))
+      .withAttrs("thisButton")(ListMap("label"->"Another Default Button", "framed"->"blue4"))
 
-  val square = <square w="2em" h="2em" fg="red"/>
-  val button = <button action="act1" hover="lightGrey" bg="yellow"/>
-  val embedded = <p>embedded &button; for you</p>
+  val square = <square fg="red" bg="blue" w="5.5em" h="2.5em"/>
+  val button = <button action="act1" label="Act 1" id="thisButton" class="#but"/>
+  val embedded = <p align="center">embedded &button; for you</p>
+
+  import org.sufrin.SourceLocation.sourceLocation
 
   def GUI =
     XML.Col(
-      <body width="45em" fontFamily="Courier" fontSize="20" align="justify" parSkip="5pt">
+      <body width="55em" fontFamily="Courier" fontSize="20" align="justify" parSkip="10pt" source={s"$sourceLocation"}>
         <p>
-          This is the start of an experiment in defining GUIs using
+          This is an experiment in defining GUIs using
           (mainly) <b>XML</b>
         </p>
         <p>
           GlyphXML is a domain specific language expressed as XML: its elements denote sequences.
         </p>
-        <square fg="red" bg="blue" w="4.5em" h="4.5em"/>
+
+
         <p fg="red"><i>Its <n>API</n> &amp; xml-based markup may be somewhat more
-          convenient for interface designers <col>{square}</col>
+          convenient for interface designers &RECT;
           than the standard Glyphs API.</i></p>
-        <col alignment="center">
-          <p align="center">Here are some embedded glyphs</p>
-          <verb>{button}</verb>
-          {button}
-          <verb>{square}</verb>
-          {square}
-          <verb>{embedded}</verb>
-          {embedded}
-        </col>
-        <col alignment="center" fg="red">
-          <![CDATA[
+        <![CDATA[
   <p>
     <i>Its <n>API</n> may be somewhat more convenient
     for interface designers than the standard Glyphs API.</i>
   </p>
   ]]>
+        <p align="center">Here are some embedded glyphs (3 rows x 2 columns wide)</p>
+        <table cols="2" fontScale="0.75">
+          <verb>{button}</verb>   {button}
+          <verb>{square}</verb>   {square}
+          <verb>{embedded}</verb> {embedded}
+        </table>
+        <col alignment="center" fg="red">
+
           <verb framed="red">able <i>was</i> I</verb>
           &circle;
         </col>
 
-        <div align="center">
-        <rows width="15em" colWidth="2" fg="red" bg="lightGrey">
-          <p bg="lightGrey"><i>the rain</i></p><p><b>in spain</b></p>
-          <verb>Some verbatim</verb><verb>Material</verb>
-          <p><i>falls © mainly</i></p><p><b>in the &amp; plain</b></p>
-          <col>
-            <p>X</p><p>Y</p>
-          </col>
-        </rows>
-        </div>
 
-        <div align="center">
-          <cols width="15em" rowHeight="3" fg="blue" >
-            <p bg="lightGrey"><i>the rain</i></p><p><b>in spain</b></p>
-            <verb>Some verbatim</verb><verb>Material</verb>
-            <p><i>falls mainly</i></p><p><b>in the plain</b></p>
-          </cols>
+        <div align="center" fontScale="0.8">
+          <p align="center">Here are some grids and tables</p>
+          <grid cols="4" source={s"$source"}>
+            <row><i>grid(3,0)</i> <grid columns="3" fg="blue" >1 2 3 -4- 5 6 7 8 9 --X--</grid></row>
+            <row><i>grid(4,0)</i> <grid columns="4" fg="blue" >1 2 3 -4- 5 6 7 8 9 --X-- </grid></row>
+            <row><i>grid(0,3)</i> <grid rows="3" fg="blue" >1 2 3 -4- 5 6 7 8 9 X</grid></row>
+            <row><i>grid(0,4)</i> <grid rows="4" fg="blue" >1 2 3 -4- 5 6 7 8 9 X</grid></row>
+
+            <row><i>rows(3,0)</i> <rows columns="3" fg="blue" >1 2 3 -4- 5 6 7 8 9 --X-- Y</rows></row>
+            <row><i>rows(4,0)</i> <rows columns="4" fg="blue" >1 2 3 --4-- 5 6 7 8 9 --X-- Y</rows></row>
+            <row><i>cols(0,3)</i> <cols rows="3" fg="blue" >1 2 3 -4- 5 6 7 8 9 --X-- Y</cols></row>
+            <row><i>cols(0,4)</i> <cols rows="4" fg="blue" >1 2 3 -4- 5 6 7 8 9 --X-- Y</cols></row>
+
+            <row><i>table(3,0)</i> <table columns="3" fg="blue" >1 2 3 -4- 5 6 7 8 9 --X-- Y</table></row>
+            <row><i>table(4,0)</i> <table columns="4" fg="blue" >1 2 3 -4- 5 6 7 8 9 --X-- Y</table></row>
+            <row><i>table(0,3)</i> <table rows="3" fg="blue" >1 2 3 -4- 5 6 7 8 9 X Y</table></row>
+            <row><i>table(0,4)</i> <table rows="4" fg="blue" >1 2 3 -4- 5 6 7 8 9 X Y</table></row>
+          </grid>
         </div>
 
       </body>

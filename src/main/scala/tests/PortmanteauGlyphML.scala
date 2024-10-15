@@ -8,7 +8,7 @@ class PortmanteauGlyphML(implicit sheet: StyleSheet) {
   import Glyphs.{blue, lightGrey, nothing, red}
   implicit val local: Context =
     Context(     style        = sheet,
-                 paragraphWidth  = 800f,
+                 parWidth  = 800f,
                  leftMargin   = 0,
                  rightMargin  = 0,
                  parAlign     = Justify,

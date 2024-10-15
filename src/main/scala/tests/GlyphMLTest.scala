@@ -21,7 +21,7 @@ object GlyphMLTest extends Application {
   val Local: Context =
     Context(
       style          = LocalStyle,
-      paragraphWidth = 400,
+      parWidth = 400,
       boundingBox    = Vec(400, 250),
       leftMargin     = 0,
       rightMargin    = 0,

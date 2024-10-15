@@ -29,7 +29,7 @@ object GlyphML {
    */
   case class Context(style: StyleSheet,
                      boundingBox: Vec = Vec.Zero,
-                     paragraphWidth: Scalar=0f,
+                     parWidth: Scalar=0f,
                      leftMargin:  Scalar=0f,
                      rightMargin: Scalar=0f,
                      fg: Brush = DefaultBrushes.black,
@@ -43,15 +43,16 @@ object GlyphML {
                      parHang:    Boolean = false,
                      parAlign:   Alignment = Left,
                      parSkip:    Scalar    = 5f,
-       glyphMap:     mutable.Map[String, Glyph] =
+                     var xmlSource:  String = "",
+                     glyphMap:     mutable.Map[String, Glyph] =
                      mutable.LinkedHashMap[String, Glyph](),
-       generatorMap: mutable.Map[String, (AttributeMap, Context)=>Glyph] =
+                     generatorMap: mutable.Map[String, (AttributeMap, Context)=>Glyph] =
                      mutable.LinkedHashMap[String, (AttributeMap, Context)=>Glyph](),
-       attrMap:      mutable.Map[String, AttributeMap] =
+                     attrMap:      mutable.Map[String, AttributeMap] =
                      mutable.LinkedHashMap[String, AttributeMap](),
-       contextMap:   mutable.Map[String, Context] =
+                     contextMap:   mutable.Map[String, Context] =
                      mutable.LinkedHashMap[String, Context](),
-       reactionMap:  mutable.Map[String, Reaction] =
+                     reactionMap:  mutable.Map[String, Reaction] =
                      mutable.LinkedHashMap[String, Reaction](),
       )
   {
@@ -169,7 +170,7 @@ object GlyphML {
       paragraphPoints(ems*emWidth)
 
     def paragraphPoints(points: Scalar): Context =
-      copy(paragraphWidth = points)
+      copy(parWidth = points)
 
   }
 
@@ -476,7 +477,7 @@ object GlyphML {
       // If the bounding box is unspecified, then use the column width
       val galley =
         styled.text.glyphParagraph(
-          overallWidth = local.paragraphWidth,
+          overallWidth = local.parWidth,
           align        = local.parAlign,
           leftMargin   = local.leftMargin * emWidth,
           rightMargin  = local.rightMargin * emWidth,
@@ -560,7 +561,7 @@ object GlyphML {
       val theGlyph: Glyph = body.length match {
         case 0 => NaturalSize.Col().centered()
         case 1 => body(0).toGlyph(local)
-        case _ => NaturalSize.Grid(fg = local.fg, bg = local.bg, pady = local.padY).uniformlyByRows(width)(body)
+        case _ => NaturalSize.Grid(fg = local.fg, bg = local.bg, pady = local.padY).rows(width)(body)
       }
       theGlyph.enlargedBy(dw = local.padX, dh = local.padY, fg = local.fg, bg = local.bg)
     }
@@ -571,7 +572,7 @@ object GlyphML {
       val theGlyph: Glyph = body.length match {
         case 0 => NaturalSize.Col().centered()
         case 1 => body(0).toGlyph(local)
-        case _ => NaturalSize.Grid(fg = local.fg, bg = local.bg, pady = local.padY).uniformlyByCols(height)(body)
+        case _ => NaturalSize.Grid(fg = local.fg, bg = local.bg, pady = local.padY).cols(height)(body)
       }
       theGlyph.enlargedBy(dw = local.padX, dh = local.padY, fg = local.fg, bg = local.bg)
     }
@@ -601,7 +602,7 @@ object GlyphML {
           // If the bounding box is unspecified, then use the column width
           val galley =
             styled.text.glyphParagraph(
-                 overallWidth = local.paragraphWidth,
+                 overallWidth = local.parWidth,
                  align        = local.parAlign,
                  leftMargin   = (local.leftMargin) * emWidth,
                  rightMargin  = (local.rightMargin) * emWidth,
