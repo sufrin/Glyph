@@ -2,6 +2,9 @@ package org.sufrin.glyph
 
 import ReactiveGlyphs.{ColourButton, Reaction}
 
+import org.sufrin.glyph.Brush.SQUARE
+import org.sufrin.glyph.Glyphs.BUTT
+
 object XML {
   val TOPLEVEL = List("")
   /** A column described by the given xml node translated in the default context using the given style sheet.  */
@@ -108,26 +111,31 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
     import org.sufrin.glyph.Brush.ROUND
 
     // TODO: better notation for brushes
-    def Brush(key: String, alt: Brush): Brush = attributes.get(key) match {
-      case None       => alt
-      case Some(s"0X$hex") if hex.matches("[0-9A-F][0-9A-F][0-9A-F][0-9A-F]") =>
-        org.sufrin.glyph.Brush(s"0X$hex").color(hexToInt(hex))
-      case Some(name) => name.toLowerCase match {
+    def namedColour(name: String): Brush =
+      name match {
         case "red"  => org.sufrin.glyph.Brush(s"red").color(0XFFFF0000)
         case "blue" => org.sufrin.glyph.Brush(s"blue").color(0XFF0000FF)
-        case "green" => org.sufrin.glyph.Brush(s"blue").color(0XFF00FF00)
+        case "green" => org.sufrin.glyph.Brush(s"green").color(0XFF00FF00)
         case "lightgrey" => DefaultBrushes.lightGrey
         case "darkgrey" => DefaultBrushes.darkGrey
         case "yellow" => DefaultBrushes.yellow
-        case "red4"  => org.sufrin.glyph.Brush(s"red").color(0XFFFF0000).strokeWidth(6).strokeCap(ROUND)
-        case "blue4" => org.sufrin.glyph.Brush(s"blue").color(0XFF0000FF).strokeWidth(6).strokeCap(ROUND)
-        case "green4" => org.sufrin.glyph.Brush(s"blue").color(0XFF00FF00).strokeWidth(6).strokeCap(ROUND)
-        case "lightgrey4" => DefaultBrushes.lightGrey.strokeWidth(6).strokeCap(ROUND)
-        case "darkgrey4" => DefaultBrushes.darkGrey.strokeWidth(6).strokeCap(ROUND)
-        case "yellow4" => DefaultBrushes.yellow.strokeWidth(6).strokeCap(ROUND)
         case "nothing" => DefaultBrushes.nothing
+        case s"0X$hex" if hex.matches("[0-9A-F][0-9A-F][0-9A-F][0-9A-F]") =>
+             org.sufrin.glyph.Brush(s"0X$hex").color(hexToInt(hex))
+        case s"$name[$stroke][ROUND]" if stroke.matches("[0-9]+([.][0-9]+)?") =>
+             namedColour(name).strokeWidth(stroke.toFloat).strokeCap(ROUND)
+        case s"$name[$stroke][SQUARE]" if stroke.matches("[0-9]+([.][0-9]+)?") =>
+          namedColour(name).strokeWidth(stroke.toFloat).strokeCap(SQUARE)
+        case s"$name[$stroke][BUTT]" if stroke.matches("[0-9]+([.][0-9]+)?") =>
+          namedColour(name).strokeWidth(stroke.toFloat).strokeCap(BUTT)
+        case s"$name[$stroke]" if stroke.matches("[0-9]+([.][0-9]+)?") =>
+          namedColour(name).strokeWidth(stroke.toFloat)
         case _ => DefaultBrushes.black
       }
+
+    def Brush(key: String, alt: Brush): Brush = attributes.get(key) match {
+      case None       => alt
+      case Some(name) => namedColour(name)
     }
 
     /**

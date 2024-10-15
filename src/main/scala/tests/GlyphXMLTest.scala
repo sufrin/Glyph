@@ -62,7 +62,7 @@ object GlyphXMLTest extends Application {
           This is an experiment in defining GUIs using
           (mainly) <b>XML</b>
         </p>
-        <p>
+        <p framed="yellow[16][ROUND]" bg="green">
           GlyphXML is a domain specific language expressed as XML: its elements denote sequences.
         </p>
 

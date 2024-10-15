@@ -137,21 +137,29 @@ object GlyphML {
         copy(style=newStyle)
       }
 
-    def gridStyle(fg: Brush=this.fg, bg: Brush=this.bg, padX: Scalar=this.padX, padY: Scalar=this.padY): Context =
-        copy(fg=fg, bg=bg, padX=padX, padY=padY)
+    def gridStyle(fg: Brush=this.fg, bg: Brush=this.bg, padX: Scalar=this.padX, padY: Scalar=this.padY): Context = {
+        if (fg==this.fg && bg==this.bg && padX==this.padX && padY==this.padY)
+          this
+        else
+          copy(fg=fg, bg=bg, padX=padX, padY=padY)
+    }
 
     def italicStyle: Context = copy(fontStyle=FontStyle.ITALIC)
     def boldStyle:   Context = copy(fontStyle=FontStyle.BOLD)
     def normalStyle: Context = copy(fontStyle=FontStyle.NORMAL)
     def boldItalicStyle: Context = copy(fontStyle=FontStyle.BOLD_ITALIC)
-    def fontFamily(familyName: String): Context = copy(fontFamily=FontFamily(familyName))
-    def fontSize(size: Scalar): Context = copy(fontSize = size)
-    def fontScale(scale: Scalar): Context = copy(fontSize = this.fontSize*scale)
+    def fontFamily(familyName: String): Context =
+      if (fontFamily.name==familyName) this else copy(fontFamily=FontFamily(familyName))
+    def fontSize(size: Scalar): Context =
+      if (fontSize==size) this else  copy(fontSize = size)
+    def fontScale(scale: Scalar): Context =
+      if (scale==1.0f) this else copy(fontSize = this.fontSize*scale)
     def parIndent(ems: Int = 2): Context = {
         copy(parIndent={ () => List(FixedSize.Space(ems*style.labelStyle.emWidth, 0f, 0f, fg, bg)) } )
     }
 
-    def parSkip(points: Scalar): Context = copy(parSkip=points)
+    def parSkip(points: Scalar): Context =
+      if (parSkip==points) this else copy(parSkip=points)
 
     def parEnum(start: Int = 0): Context = {
       var count = start-1
@@ -170,7 +178,7 @@ object GlyphML {
       paragraphPoints(ems*emWidth)
 
     def paragraphPoints(points: Scalar): Context =
-      copy(parWidth = points)
+      if (parWidth==points) this else copy(parWidth = points)
 
   }
 
