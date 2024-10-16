@@ -30,7 +30,8 @@ object GlyphXMLTest extends Application {
       .paragraphEms(45)
       .withEntity("circle")(styled.TextButton("circle"){ _ => println("Circle Pressed")})
       .withEntity("button")(styled.TextButton("button"){ _ => println("Button Pressed")})
-      .withEntity("RECT")(Glyphs.FilledRect(50, 30,fg=DefaultBrushes.red).framed(fg=DefaultBrushes.green.strokeWidth(4)))
+      .withEntity("RECT")(Glyphs.Rect(50, 30, fg=DefaultBrushes.red.strokeWidth(10), bg=DefaultBrushes.yellow)
+                                .framed(fg=DefaultBrushes.green.strokeWidth(6), bg=DefaultBrushes.yellow))
       .withElement("square"){
          case (localAttributes, local) =>
           val w = localAttributes.Units("w", 10f)(local)
