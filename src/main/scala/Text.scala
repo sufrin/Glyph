@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import GlyphTypes.{Font}
+import GlyphTypes.{Font, Scalar}
 
 /**
  * The given string in the given font. Used to derive textlayout glyphs.
@@ -24,6 +24,17 @@ object Text extends DefaultPaints {
     val spacing   = descent + ascent + leading
     val diagonal  = Vec(width, height + descent)
     val drop      = height - spacing
+
+    /**
+     * The index of the codepoint whose glyph is horizontal offset `x` from the
+     * start of the displayed text line.
+     */
+    def charIndexOf(x: Scalar): Int = implementation.getOffsetAtCoord(x)
+
+    /**
+     * The offset from the start of the displayed text line of the `index`th glyph
+     */
+    def charOffsetOf(index: Int): Scalar = implementation.getCoordAtOffset(index)
 
     def glyphs: List[Short] = implementation.getGlyphs.toList
 

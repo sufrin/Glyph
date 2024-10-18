@@ -177,7 +177,6 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
    */
   def draw(surface: Surface): Unit = {
     import TextField.{loggingLevel}
-
     import org.sufrin.logging._
     drawBackground(surface)
     surface.declareCurrentTransform(this)
@@ -192,26 +191,29 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
         surface.withOrigin(left.w, baseLine) {
           right.draw(surface)
         }
+
         // prepare to draw the cursor
         val cursorNudge = if (TextModel.left==0) focussedBrush.strokeWidth/2f else 0
         val cursorLeft = left.w + cursorNudge
         val cursorBrush: Brush = if (focussed) focussedBrush else unfocussedBrush
+
+        // show the text margins when logging
+        if (loggingLevel(FINER)) {
+          surface.drawPolygon$(cursorBrush(color=0XFFFF0000), w-TextModel.margin, 0, w-TextModel.margin, diagonal.y)
+          surface.drawPolygon$(cursorBrush(color=0XFFFF0000), TextModel.margin, 0, TextModel.margin, diagonal.y)
+        }
+        // Draw the cursor as an I-Beam
         surface.withOrigin(location.x, -atBaseLine) {
-          if (loggingLevel(FINER)) {
-            surface.drawPolygon$(cursorBrush(color=0XFFFF0000), w-TextModel.margin, 0, w-TextModel.margin, diagonal.y)
-            surface.drawPolygon$(cursorBrush(color=0XFFFF0000), TextModel.margin, 0, TextModel.margin, diagonal.y)
-          }
-          // Draw the "cursor" as an I-Beam
           surface.drawPolygon$(cursorBrush, cursorLeft, cursorSerifShrink, cursorLeft, diagonal.y - cursorSerifShrink) // ertical
           surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, cursorSerifShrink, cursorLeft + cursorSerifWidth, cursorSerifShrink)
           surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorSerifShrink, cursorLeft + cursorSerifWidth, diagonal.y - cursorSerifShrink)
 
-          // Indicate when there's invisible textlayout to the right
-          if (left.w + right.w >= w) {
+          // Indicate when there's invisible text to the right
+          if (left.w+right.w >= w) {
             surface.drawPolygon$(panWarningBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
           }
 
-          // Indicate when there's invisible textlayout to the left
+          // Indicate when there's invisible text to the left
           if (panBy > 0) {
             surface.drawPolygon$(panWarningBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
           }
@@ -240,29 +242,12 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
 
   override def accept(mouse: EventMouseButton, location: Vec, window: Window): Unit = {
     import Modifiers._
+    import TextModel.{markTo,moveTo}
     val mods = toBitmap(mouse)
     val ctrl = Control|Command
     if (mouse.isPressed)
       if (mods.include(ctrl)) markTo(location.x) else moveTo(location.x)
     reDraw() // window.requestFrame()
-  }
-
-  /**
-   * Inefficient implementation of cursor motion to a horizontal location, because
-   * a `Text` object is constructed on each iteration.
-   * The inefficiency can be overlooked at human-interaction speeds.
-   */
-  def moveTo(x: GlyphTypes.Scalar): Unit = {
-    import TextModel._
-    // println(s"${leftText(panBy).width} $x")
-    while (leftText(panBy).width < x && hasRight) mvRight()
-    while (leftText(panBy).width > x && hasLeft) mvLeft()
-  }
-
-  def markTo(x: GlyphTypes.Scalar): Unit = {
-    import TextModel._
-    while (leftText(panBy).width < x && hasRight) mvRight()
-    while (leftText(panBy).width > x && hasLeft) mvLeft()
   }
 
   /** Whether or not to pan right when the cursor is in the right margin. */
@@ -319,8 +304,25 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
     /** The `Text` to the left of the cursor from the `from`th character */
     @inline def leftText(from: Int): Text = Text(leftString(from), font)
 
+    @inline def allText(from: Int): Text = Text(new String(buffer, from, left+N-right-from), font)
+
     @inline def hasLeft:  Boolean = left!=0
     @inline def hasRight: Boolean = right!=N
+
+    /**
+     * Implementation of cursor motion to a horizontal location.
+     */
+    def moveTo(x: GlyphTypes.Scalar): Unit = {
+      val index = allText(panBy).charIndexOf(x)+panBy
+      while (left<index) mvRight()
+      while (left>index) mvLeft()
+    }
+
+    def markTo(x: GlyphTypes.Scalar): Unit = {
+      val index = allText(panBy).charIndexOf(x)+panBy
+      while (left<index) mvRight()
+      while (left>index) mvLeft()
+    }
 
     /**
      *   Grow buffer if necessary to make room for another few characters.
