@@ -47,8 +47,8 @@ object GlyphXMLTest extends Application {
       .withAttrs("#button")(ListMap("hover"->"yellow", "down"->"red", "bg"->"darkGrey", "up"->"blue", "label"->"Default Button",
                                     "framed"->"darkGrey"))
       .withAttrs("#but")(ListMap("hover"->"green", "down"->"blue",  "up"->"yellow", "label"->"Another Default Button",
-        "framed"->"blue4"))
-      .withAttrs("thisButton")(ListMap("label"->"Another Default Button", "framed"->"blue4"))
+        "framed"->"blue"))
+      .withAttrs("thisButton")(ListMap("label"->"Another Default Button", "framed"->"blue/10"))
 
   val square = <square fg="red" bg="blue" w="5.5em" h="2.5em"/>
   val button = <button action="act1" label="Act 1" id="thisButton" class="#but"/>
@@ -63,7 +63,7 @@ object GlyphXMLTest extends Application {
           This is an experiment in defining GUIs using
           (mainly) <b>XML</b>
         </p>
-        <p framed="yellow[16][ROUND]" bg="green">
+        <p framed="yellow/16/ROUND" bg="green">
           GlyphXML is a domain specific language expressed as XML: its elements denote sequences.
         </p>
 

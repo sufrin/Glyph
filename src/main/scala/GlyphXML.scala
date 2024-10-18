@@ -111,31 +111,50 @@ object GlyphXML extends org.sufrin.logging.SourceLoggable {
     import org.sufrin.glyph.Brush.ROUND
 
     // TODO: better notation for brushes
-    def namedColour(name: String): Brush =
-      name match {
-        case "red"  => org.sufrin.glyph.Brush(s"red").color(0XFFFF0000)
-        case "blue" => org.sufrin.glyph.Brush(s"blue").color(0XFF0000FF)
-        case "green" => org.sufrin.glyph.Brush(s"green").color(0XFF00FF00)
-        case "lightgrey" => DefaultBrushes.lightGrey
-        case "darkgrey" => DefaultBrushes.darkGrey
-        case "yellow" => DefaultBrushes.yellow
-        case "nothing" => DefaultBrushes.nothing
+    def namedColour(name: String): Brush = {
+      def common(name: String): Brush = name.toLowerCase match {
+        case "red" => org.sufrin.glyph.Brush(s"red")(color = 0XFFFF0000)
+        case "blue" => org.sufrin.glyph.Brush(s"blue")(color = 0XFF0000FF)
+        case "green" => org.sufrin.glyph.Brush(s"green")(color = 0XFF00FF00)
+        case "lightgrey" => org.sufrin.glyph.Brush(s"lightgrey")(color = 0XFFBBBBBB)
+        case "darkgrey" => org.sufrin.glyph.Brush(s"darkgrey")(color = 0XFF777777)
+        case "yellow" => org.sufrin.glyph.Brush(s"yellow")(color = 0XFFFFDD00)
+        case "nothing" => org.sufrin.glyph.Brush(s"nothing")(color = 0XFF00FF00)
         case s"0X$hex" if hex.matches("[0-9A-F][0-9A-F][0-9A-F][0-9A-F]") =>
-             org.sufrin.glyph.Brush(s"0X$hex").color(hexToInt(hex))
-        case s"$name[$stroke][ROUND]" if stroke.matches("[0-9]+([.][0-9]+)?") =>
-             namedColour(name).strokeWidth(stroke.toFloat).strokeCap(ROUND)
-        case s"$name[$stroke][SQUARE]" if stroke.matches("[0-9]+([.][0-9]+)?") =>
-          namedColour(name).strokeWidth(stroke.toFloat).strokeCap(SQUARE)
-        case s"$name[$stroke][BUTT]" if stroke.matches("[0-9]+([.][0-9]+)?") =>
-          namedColour(name).strokeWidth(stroke.toFloat).strokeCap(BUTT)
-        case s"$name[$stroke]" if stroke.matches("[0-9]+([.][0-9]+)?") =>
-          namedColour(name).strokeWidth(stroke.toFloat)
-        case _ => DefaultBrushes.black
+          org.sufrin.glyph.Brush(s"0X$hex")(color = hexToInt(hex))
+        case _ =>
+          warn(s"$name is not the name of a colour")
+          org.sufrin.glyph.Brush(s"red($name)")(color = 0X99FF0000)
       }
+      name match {
+        case s"$name/$stroke/$cap" if stroke.matches("[0-9]+([.][0-9]+)?") =>
+             val capShape = cap.toUpperCase match {
+               case "ROUND" => ROUND
+               case "SQUARE" => SQUARE
+               case "BUTT" | "FLAT" => BUTT
+               case _ => BUTT
+             }
+             common(name)(width=stroke.toFloat, cap=capShape)
+        case s"$name/$stroke" if stroke.matches("[0-9]+([.][0-9]+)?") =>
+          common(name)(width=stroke.toFloat, cap=SQUARE)
+        case _ =>
+          common(name)
+      }
+    }
+
+    val brushCache = collection.mutable.HashMap[String, Brush]()
 
     def Brush(key: String, alt: Brush): Brush = attributes.get(key) match {
       case None       => alt
-      case Some(name) => namedColour(name)
+      case Some(name) =>
+        brushCache.get(name) match {
+          case Some(brush) =>
+            brush
+          case None =>
+            val brush = namedColour(name)
+            brushCache(name)=brush
+            brush
+        }
     }
 
     /**
