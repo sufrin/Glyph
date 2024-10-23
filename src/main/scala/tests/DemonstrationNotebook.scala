@@ -155,7 +155,7 @@ trait DemonstrationPages extends Brushes {
     locally { HintManager(enableSaveCheckBox, 5, "Click this to enable the image-save bar")(HelpStyle) }
 
     import GlyphML.Context
-    import XML.XMLtoGlyph
+    import XML.ToGlyph
 
     import org.sufrin.SourceLocation.{sourceLocation => source}
 

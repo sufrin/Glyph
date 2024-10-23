@@ -27,10 +27,12 @@ class PortmanteauText(implicit style: StyleSheet) extends Notebook {
   abbrev("\uD83D\uDE00\uD83D\uDE00") = ":))"
   abbrev("\uD83D\uDE2E") = ":O"
 
+  import XML._
+
   val textField: TextField = TextField(size = 40, onEnter = { _ =>  }, onCursorLeave = { _ => anchor.guiRoot.giveupFocus() }, abbreviations = abbrev)
   val GUI: Glyph = NaturalSize.Col.centered(
     anchor,
-    XML(<xml width="50em" align="justify" fg="blue" parSkip="0.75em">
+    <body width="50em" align="justify" fg="blue" parSkip="0.75em">
       <p>
         This is an example of a TextField that has been set up by mapping a few abbreviations to emojis,
         namely:
@@ -52,8 +54,7 @@ class PortmanteauText(implicit style: StyleSheet) extends Notebook {
         Some of the emojis are also mapped back to their original abbreviations: something you can check
         by using the "any-shift-key-twice" method.
       </p>
-      </xml>
-    ),
+      </body>,
     text.Label("Log events") beside CheckBox(initially=false) {
       state => anchor.guiRoot.eventHandler.logEvents=state
     } beside

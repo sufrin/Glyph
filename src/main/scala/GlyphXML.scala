@@ -15,13 +15,16 @@ object XML {
   }
 
   /** A column described by the given xml node translated in the given local context.  */
-  def Col(node: xml.Node)(implicit local: GlyphML.Context): Glyph = {
+  private def Col(node: xml.Node)(implicit local: GlyphML.Context): Glyph = {
     val glyphs: Seq[Glyph] = GlyphXML.translate(TOPLEVEL)(TOPLEVEL)(node)(Map.empty)(local)
     NaturalSize.Col().centered$(glyphs)
   }
 
 
-  implicit def XMLtoGlyph(node: xml.Node)(implicit local: GlyphML.Context): Glyph = Col(node)(local)
+  //implicit def ToGlyph(node: scala.xml.Node)(implicit local: GlyphML.Context): Glyph = Col(node)(local)
+  implicit def ToGlyph(node: scala.xml.Elem)(implicit local: GlyphML.Context): Glyph = Col(node)(local)
+
+  implicit val Context: GlyphML.Context = GlyphML.Context(new Styles.DefaultSheet {})
 
 
   /** A row described by the given xml node translated in the given local context.  */

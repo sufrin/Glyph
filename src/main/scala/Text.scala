@@ -26,22 +26,26 @@ object Text extends DefaultPaints {
     val drop      = height - spacing
 
     /**
-     * The index of the codepoint whose glyph is horizontal offset `x` from the
-     * start of the displayed text line.
+     * The index of the codepoint whose glyph is laterally offset by `x` from the
+     * start of the displayed text.
      */
     def charIndexOf(x: Scalar): Int = implementation.getOffsetAtCoord(x)
 
     /**
-     * The offset from the start of the displayed text line of the `index`th glyph
+     * The lateral offset from the start of the displayed text of the `index`th glyph.
+     *
+     * {{{
+     *   charIndexOf(lateralOffsetOf(n)) = n (for 0<=n<string.length)
+     * }}}
      */
-    def charOffsetOf(index: Int): Scalar = implementation.getCoordAtOffset(index)
+    def lateralOffsetOf(index: Int): Scalar = implementation.getCoordAtOffset(index)
 
     def glyphs: List[Short] = implementation.getGlyphs.toList
 
 
     /**
-     * A textlayout glyph with the diagonal of this textlayout, that
-     * will be drawn with origin adjusted by the baseline of the textlayout.
+     * A glyph with the diagonal of this text that
+     * will be drawn with origin adjusted by the baseline of the text.
      */
     def atBaseline(fg: Brush = fg, bg: Brush = bg): Glyph = {
       val _fg = fg
@@ -66,7 +70,7 @@ object Text extends DefaultPaints {
 
     /**
      * A self-contained glyph whose diagonal is the diagonal of
-     * this textlayout.
+     * this text.
      */
     def asGlyph(fg: Brush = Text.defaultFG, bg: Brush = Text.defaultBG): Glyph = {
       val _fg = fg

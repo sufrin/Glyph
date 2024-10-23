@@ -54,10 +54,10 @@ object GlyphXMLTest extends Application {
   val button = <button action="act1" label="Act 1" id="thisButton" class="#but"/>
   val embedded = <p align="center">embedded &button; for you</p>
 
-  import org.sufrin.SourceLocation.sourceLocation
+  import XML.ToGlyph
 
+  import org.sufrin.SourceLocation.sourceLocation
   def GUI =
-    XML.Col(
       <body width="55em" fontFamily="Courier" fontSize="20" align="justify" parSkip="10pt" source={s"$sourceLocation"}>
         <p>
           This is an experiment in defining GUIs using
@@ -111,6 +111,5 @@ object GlyphXMLTest extends Application {
         </div>
 
       </body>
-    )
 
 }
