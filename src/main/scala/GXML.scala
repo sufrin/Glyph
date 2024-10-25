@@ -20,7 +20,7 @@ object TestGXML extends Application {
   }
   val test0w = "50em"
   val test0 =
-    <body width={test0w} align="justify" parSkip="0.4ex" framed="darkGrey" padX="3em" padY="3ex" background="0X11888800" textBackground="0X11888800">
+    <body fontFamily="Courier" fontSize="16" width={test0w} align="justify" parSkip="0.4ex" framed="darkGrey" padX="3em" padY="3ex" background="yellow" textBackground="yellow">
       <p>The rain in Spain falls mainly in the <i>hispanic</i> plain. This is justified in {s"$test0w"}</p>
       <p>The overall parSkip is 3.5ex</p>
       <p>
@@ -47,15 +47,18 @@ object TestGXML extends Application {
         This is some chatter to force the
         last part of the paragraph to the right edge.
       </p>
-      <row align="center">
-        <i>Columns</i>
+      <row width="50em" align="center">
+        <fill/>
+        <i>Columns: </i><fill stretch="0.3"/>
         <table cols="3" padY="1em">
           1 2 3 4 <col>5a 5b 5c</col> 6 7 8 9 10 11 12
         </table>
-        <i>Rows</i>
+        <fill stretch="3"/>
+        <i>Rows:</i><fill stretch="0.3"/>
         <table rows="3" padY="1em">
           1 2 3 4 <col>5a 5b 5c</col> 6 7 8 9 10 11 12
         </table>
+        <fill/>
       </row>
     </body>
 
@@ -323,8 +326,8 @@ class GXML {
     val inPara: Boolean = within.dropWhile(stylingTag).head=="p"
 
 
-    @inline def toGlyph(word: org.sufrin.glyph.Text): Glyph =
-      if (inPara) word.atBaseline() else word.asGlyph()
+    @inline def toGlyph(word: org.sufrin.glyph.Text, fg: Brush): Glyph =
+      if (inPara) word.atBaseline(fg=fg) else word.asGlyph(fg=fg)
 
     def framed(glyph: Glyph): Glyph = {
       val brush = attributes.Brush("framed", DefaultBrushes.nothing)
@@ -346,7 +349,7 @@ class GXML {
         import org.sufrin.glyph.{Text => TextChunk}
         val fg = textForegroundBrush
         val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
-        buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map{ word => toGlyph(TextChunk(word, textFont, fg, bg)) }
+        buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map{ word => toGlyph(TextChunk(word, textFont, fg, bg), fg) }
 
       case PCData(text) =>
         import context.core.{textBackgroundBrush, textFont, textForegroundBrush}
@@ -361,7 +364,7 @@ class GXML {
         import org.sufrin.glyph.{Text => TextChunk}
         val fg = textForegroundBrush
         val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
-        def glyphOf(text: String): Glyph = toGlyph(TextChunk(text, textFont, fg=fg, bg=bg))
+        def glyphOf(text: String): Glyph = toGlyph(TextChunk(text, textFont, fg=fg, bg=bg), fg)
         val glyph = id match {
           case "amp" => glyphOf("&")
           case "ls" => glyphOf("<")
@@ -398,6 +401,10 @@ class GXML {
 
       case <s></s> =>
         List(FixedSize.Space(1f, context.core.parSkip, 0f))
+
+      case <fill></fill> =>
+        val stretch = localAttributes.Float("stretch", 1f)
+        List(FixedSize.Space(1f, 1f, stretch))
 
       case <p>{child@_*}</p> =>
         val context$ = attributes.declareAttributes(context)
@@ -466,6 +473,24 @@ class GXML {
       case <n>{child@_*}</n> =>
         val context$   = attributes.declareAttributes(context).normalStyle
         child.flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
+
+      case <row>{child@_*}</row> if (localAttributes.get("width").isDefined) =>
+        val context$ = attributes.declareAttributes(context)
+        val width = localAttributes.Units("width", 0f)(context)
+        val fg=context.core.textForegroundBrush
+        val bg=context.core.textBackgroundBrush
+        val glyphs = child.filterNot(isBlank(_)).flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
+        val builder  = FixedSize.Row.apply(width, fg=fg, bg=bg)
+
+        val glyph = attributes.String("alignment", "center") match {
+          case "center" => builder.centered$(glyphs)
+          case "top"    => builder.atTop$(glyphs)
+          case "bottom" => builder.atBottom$(glyphs)
+          case other =>
+            warning(s"alignment(=$other) should be center/top/bottom [using 'top']\nat <${elem.label}${elem.attributes}>")
+            builder.atTop$(glyphs)
+        }
+        List(glyph)
 
       case <row>{child@_*}</row> =>
         val context$ = attributes.declareAttributes(context)
