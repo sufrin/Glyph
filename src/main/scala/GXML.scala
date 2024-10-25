@@ -3,7 +3,7 @@ package org.sufrin.glyph
 import Brush.SQUARE
 import Glyphs.BUTT
 import GlyphTypes.{Font, FontStyle, Scalar}
-import GlyphXML.{hexToInt, source, warn, AttributeMap}
+import GlyphXML.{source, warn, AttributeMap}
 import ReactiveGlyphs.{ColourButton, Reaction}
 import Styles._
 import Styles.Decoration.{Framed, Unframed}
@@ -18,10 +18,11 @@ object TestGXML extends Application {
     val within = List("TOP")
     NaturalSize.Col().atLeft$(translation.translate(List(""))(within)(elem)(Map.empty)(new Sheet()))
   }
+
   val test0w = "50em"
   val test0 =
-    <body width={test0w} align="justify" parSkip="0.4ex" framed="darkGrey" padX="3em" padY="3ex" background="0X11888800" textBackground="0X11888800">
-      <p>The rain in Spain falls mainly in the <i>hispanic</i> plain. This is justified in {s"$test0w"}</p>
+    <body fontFamily="Courier" fontScale="1.5" fontSize="16" width={test0w} align="justify" parSkip="0.4ex" framed="0XFF227722/1" padX="3em" padY="3ex" background="yellow" textBackground="yellow">
+      <p>The rain in Spain falls mainly in the <i>hispanic</i> plain. It is justified in a width of {test0w}</p>
       <p>The overall parSkip is 3.5ex</p>
       <p>
         This is some chatter to force the
@@ -47,15 +48,18 @@ object TestGXML extends Application {
         This is some chatter to force the
         last part of the paragraph to the right edge.
       </p>
-      <row align="center">
-        <i>Columns</i>
-        <table cols="3" padY="1em">
+      <row width={test0w}  align="center">
+        <fill/>
+        <i>Columns: </i><fill stretch="0.3"/>
+        <table cols="3" padY="2em" padX="2em">
           1 2 3 4 <col>5a 5b 5c</col> 6 7 8 9 10 11 12
         </table>
-        <i>Rows</i>
-        <table rows="3" padY="1em">
+        <fill stretch="3"/>
+        <i>Rows:</i><fill stretch="0.3"/>
+        <table rows="3" padY="2em"  padX="2em">
           1 2 3 4 <col>5a 5b 5c</col> 6 7 8 9 10 11 12
         </table>
+        <fill/>
       </row>
     </body>
 
@@ -145,11 +149,11 @@ object GXML {
         case "darkgrey" => org.sufrin.glyph.Brush(s"darkgrey")(color = 0XFF777777)
         case "yellow" => org.sufrin.glyph.Brush(s"yellow")(color = 0XFFFFDD00)
         case "nothing" => org.sufrin.glyph.Brush(s"nothing")(color = 0XFF00FF00)
-        case s"0X$hex" if hex.matches("[0-9A-F][0-9A-F][0-9A-F][0-9A-F]") =>
+        case s"0x${hex}" if hex.matches("([0-9a-f])+") =>
           org.sufrin.glyph.Brush(s"0X$hex")(color = hexToInt(hex))
-        case _ =>
-          warn(s"$name is not the name of a colour")
-          org.sufrin.glyph.Brush(s"red($name)")(color = 0X99FF0000)
+        case name =>
+          org.sufrin.logging.Default.warn(s"$name is not the name of a colour")
+          org.sufrin.glyph.Brush(s"red($name)")(color = 0XFFFF0000)
       }
       name match {
         case s"$name/$stroke/$cap" if stroke.matches("[0-9]+([.][0-9]+)?") =>
@@ -280,6 +284,13 @@ object GXML {
       column
   }
 
+  /**
+   *   Pre: `s` consists only of hexadecimal characters
+   *   @return the integer represented in hexadecimal by the string `s`.
+   */
+  def hexToInt(s: String): Int = {
+    s.toLowerCase.toList.map("0123456789abcdef".indexOf(_)).reduce (_ * 16 + _) // { (l,d) => (l * 16 + d)}
+  }
 
 }
 
@@ -323,8 +334,8 @@ class GXML {
     val inPara: Boolean = within.dropWhile(stylingTag).head=="p"
 
 
-    @inline def toGlyph(word: org.sufrin.glyph.Text): Glyph =
-      if (inPara) word.atBaseline() else word.asGlyph()
+    @inline def toGlyph(word: org.sufrin.glyph.Text, fg: Brush): Glyph =
+      if (inPara) word.atBaseline(fg=fg) else word.asGlyph(fg=fg)
 
     def framed(glyph: Glyph): Glyph = {
       val brush = attributes.Brush("framed", DefaultBrushes.nothing)
@@ -346,7 +357,7 @@ class GXML {
         import org.sufrin.glyph.{Text => TextChunk}
         val fg = textForegroundBrush
         val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
-        buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map{ word => toGlyph(TextChunk(word, textFont, fg, bg)) }
+        buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map{ word => toGlyph(TextChunk(word, textFont, fg, bg), fg) }
 
       case PCData(text) =>
         import context.core.{textBackgroundBrush, textFont, textForegroundBrush}
@@ -361,7 +372,7 @@ class GXML {
         import org.sufrin.glyph.{Text => TextChunk}
         val fg = textForegroundBrush
         val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
-        def glyphOf(text: String): Glyph = toGlyph(TextChunk(text, textFont, fg=fg, bg=bg))
+        def glyphOf(text: String): Glyph = toGlyph(TextChunk(text, textFont, fg=fg, bg=bg), fg)
         val glyph = id match {
           case "amp" => glyphOf("&")
           case "ls" => glyphOf("<")
@@ -398,6 +409,10 @@ class GXML {
 
       case <s></s> =>
         List(FixedSize.Space(1f, context.core.parSkip, 0f))
+
+      case <fill></fill> =>
+        val stretch = localAttributes.Float("stretch", 1f)
+        List(FixedSize.Space(1f, 1f, stretch))
 
       case <p>{child@_*}</p> =>
         val context$ = attributes.declareAttributes(context)
@@ -467,6 +482,24 @@ class GXML {
         val context$   = attributes.declareAttributes(context).normalStyle
         child.flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
 
+      case <row>{child@_*}</row> if (localAttributes.get("width").isDefined) =>
+        val context$ = attributes.declareAttributes(context)
+        val width = localAttributes.Units("width", 0f)(context)
+        val fg=context.core.textForegroundBrush
+        val bg=context.core.textBackgroundBrush
+        val glyphs = child.filterNot(isBlank(_)).flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
+        val builder  = FixedSize.Row.apply(width, fg=fg, bg=bg)
+
+        val glyph = attributes.String("alignment", "center") match {
+          case "center" => builder.centered$(glyphs)
+          case "top"    => builder.atTop$(glyphs)
+          case "bottom" => builder.atBottom$(glyphs)
+          case other =>
+            warning(s"alignment(=$other) should be center/top/bottom [using 'top']\nat <${elem.label}${elem.attributes}>")
+            builder.atTop$(glyphs)
+        }
+        List(glyph)
+
       case <row>{child@_*}</row> =>
         val context$ = attributes.declareAttributes(context)
         val builder = NaturalSize.Row(fg=context.core.textForegroundBrush, bg=context.core.textBackgroundBrush)
@@ -505,7 +538,7 @@ class GXML {
         val width = localAttributes.Int("columns", localAttributes.Int("cols", 0))
         val height = localAttributes.Int("rows", 0)
         val glyphs = child.filterNot(isBlank(_)).flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
-        List(framed(NaturalSize.Grid(fg = fg, bg = bg, pady = padY).table(height=height, width=width)(glyphs)))
+        List(framed(NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).table(height=height, width=width)(glyphs)))
 
       case <rows>{child@_*}</rows> =>
         val context$ = attributes.declareAttributes(context)
@@ -516,7 +549,7 @@ class GXML {
         val bg = local.textBackgroundBrush
         val padX = local.padX
         val padY = local.padY
-        List(framed(NaturalSize.Grid(fg = fg, bg = bg, pady = padY).rows(width=width)(glyphs)))
+        List(framed(NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).rows(width=width)(glyphs)))
 
       case <cols>{child@_*}</cols> =>
         val context$ = attributes.declareAttributes(context)
@@ -527,7 +560,7 @@ class GXML {
         val padY = local.padY
         val height = localAttributes.Int("rows", 0)
         val glyphs = child.filterNot(isBlank(_)).flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
-        List(framed(NaturalSize.Grid(fg = fg, bg = bg, pady = local.padY).cols(height=height)(glyphs)))
+        List(framed(NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).cols(height=height)(glyphs)))
 
 
       case <grid>{child@_*}</grid> =>
@@ -540,7 +573,7 @@ class GXML {
         val width = localAttributes.Int("columns", localAttributes.Int("cols", 0))
         val height = localAttributes.Int("rows", 0)
         val glyphs = child.filterNot(isBlank(_)).flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
-        List(framed(NaturalSize.Grid(fg = fg, bg = bg, pady = local.padY).grid(width=width, height=height)(glyphs)))
+        List(framed(NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).grid(width=width, height=height)(glyphs)))
 
       case <glyph>{child@_*}</glyph> =>
         val context$ = attributes.declareAttributes(context)
@@ -570,13 +603,24 @@ class GXML {
           case Some(generator) =>
             List(generator(localAttributes, attributes.declareAttributes(context)))
         }
-      case _ =>
-        Seq.empty[Glyph]
-    }
-  }
 
-  def hexToInt(s: String): Int = {
-    s.toLowerCase.toList.map("0123456789abcdef".indexOf(_)).reduce (_ * 16 + _) // { (l,d) => (l * 16 + d)}
+      case Text(buffer) =>
+        import context.core.{textBackgroundBrush, textFont, textForegroundBrush}
+        import org.sufrin.glyph.{Text => TextChunk}
+        val fg = textForegroundBrush
+        val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
+        buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map{ word => toGlyph(TextChunk(word, textFont, fg, bg), fg) }
+
+      /** Identical to a lump of text */
+      case elem  =>
+        val buffer=elem.toString
+        import context.core.{textBackgroundBrush, textFont, textForegroundBrush}
+        import org.sufrin.glyph.{Text => TextChunk}
+        val fg = textForegroundBrush
+        val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
+        buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map{ word => toGlyph(TextChunk(word, textFont, fg, bg), fg) }
+
+    }
   }
 
   private def indentation(s: String): Int = {
