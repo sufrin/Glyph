@@ -11,6 +11,11 @@ import Styles.Decoration.{Framed, Unframed}
 import scala.collection.mutable
 import scala.xml._
 
+object TestHex {
+  def main(args: Array[String]): Unit = {
+    for { arg <- args } println(s"$arg => ${GXML.hexToInt(arg)}")
+  }
+}
 object TestGXML extends Application {
   val translation = new GXML {}
 
@@ -18,6 +23,7 @@ object TestGXML extends Application {
     val within = List("TOP")
     NaturalSize.Col().atLeft$(translation.translate(List(""))(within)(elem)(Map.empty)(new Sheet()))
   }
+
   val test0w = "50em"
   val test0 =
     <body fontFamily="Courier" fontSize="16" width={test0w} align="justify" parSkip="0.4ex" framed="darkGrey" padX="3em" padY="3ex" background="yellow" textBackground="yellow">
@@ -50,12 +56,12 @@ object TestGXML extends Application {
       <row width="50em" align="center">
         <fill/>
         <i>Columns: </i><fill stretch="0.3"/>
-        <table cols="3" padY="1em">
+        <table cols="3" padY="2em" padX="2em">
           1 2 3 4 <col>5a 5b 5c</col> 6 7 8 9 10 11 12
         </table>
         <fill stretch="3"/>
         <i>Rows:</i><fill stretch="0.3"/>
-        <table rows="3" padY="1em">
+        <table rows="3" padY="2em"  padX="2em">
           1 2 3 4 <col>5a 5b 5c</col> 6 7 8 9 10 11 12
         </table>
         <fill/>
@@ -283,6 +289,9 @@ object GXML {
       column
   }
 
+  def hexToInt(s: String): Int = {
+    s.toLowerCase.toList.map("0123456789abcdef".indexOf(_)).reduce (_ * 16 + _) // { (l,d) => (l * 16 + d)}
+  }
 
 }
 
@@ -530,7 +539,7 @@ class GXML {
         val width = localAttributes.Int("columns", localAttributes.Int("cols", 0))
         val height = localAttributes.Int("rows", 0)
         val glyphs = child.filterNot(isBlank(_)).flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
-        List(framed(NaturalSize.Grid(fg = fg, bg = bg, pady = padY).table(height=height, width=width)(glyphs)))
+        List(framed(NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).table(height=height, width=width)(glyphs)))
 
       case <rows>{child@_*}</rows> =>
         val context$ = attributes.declareAttributes(context)
@@ -541,7 +550,7 @@ class GXML {
         val bg = local.textBackgroundBrush
         val padX = local.padX
         val padY = local.padY
-        List(framed(NaturalSize.Grid(fg = fg, bg = bg, pady = padY).rows(width=width)(glyphs)))
+        List(framed(NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).rows(width=width)(glyphs)))
 
       case <cols>{child@_*}</cols> =>
         val context$ = attributes.declareAttributes(context)
@@ -552,7 +561,7 @@ class GXML {
         val padY = local.padY
         val height = localAttributes.Int("rows", 0)
         val glyphs = child.filterNot(isBlank(_)).flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
-        List(framed(NaturalSize.Grid(fg = fg, bg = bg, pady = local.padY).cols(height=height)(glyphs)))
+        List(framed(NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).cols(height=height)(glyphs)))
 
 
       case <grid>{child@_*}</grid> =>
@@ -565,7 +574,7 @@ class GXML {
         val width = localAttributes.Int("columns", localAttributes.Int("cols", 0))
         val height = localAttributes.Int("rows", 0)
         val glyphs = child.filterNot(isBlank(_)).flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
-        List(framed(NaturalSize.Grid(fg = fg, bg = bg, pady = local.padY).grid(width=width, height=height)(glyphs)))
+        List(framed(NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).grid(width=width, height=height)(glyphs)))
 
       case <glyph>{child@_*}</glyph> =>
         val context$ = attributes.declareAttributes(context)
@@ -598,10 +607,6 @@ class GXML {
       case _ =>
         Seq.empty[Glyph]
     }
-  }
-
-  def hexToInt(s: String): Int = {
-    s.toLowerCase.toList.map("0123456789abcdef".indexOf(_)).reduce (_ * 16 + _) // { (l,d) => (l * 16 + d)}
   }
 
   private def indentation(s: String): Int = {
