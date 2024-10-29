@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 
 import Brush.SQUARE
-import Glyphs.BUTT
+import Glyphs.{BreakableGlyph, BUTT}
 import GlyphTypes.{Font, FontStyle, Scalar}
 import GlyphXML.{source, warn, AttributeMap}
 import ReactiveGlyphs.{ColourButton, Reaction}
@@ -9,6 +9,7 @@ import Styles._
 import Styles.Decoration.{Framed, Unframed}
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.xml._
 
 object TestGXML extends Application {
@@ -21,7 +22,7 @@ object TestGXML extends Application {
 
   val test0w = "50em"
   val test0 =
-    <body fontFamily="Courier" fontScale="1.5" fontSize="16" width={test0w} align="justify" parSkip="0.4ex" framed="0XFF227722/1" padX="3em" padY="3ex" background="yellow" textBackground="yellow">
+    <body fontFamily="Menlo" fontScale="1" fontSize="16" width={test0w} align="justify" parSkip="0.4ex" framed="0XFF227722/1" padX="3em" padY="3ex" background="yellow" textBackground="yellow">
       <p>The rain in Spain falls mainly in the <i>hispanic</i> plain. It is justified in a width of {test0w}</p>
       <p>The overall parSkip is 3.5ex</p>
       <p>
@@ -29,24 +30,28 @@ object TestGXML extends Application {
         first part of a <b>paragraph</b> to the right edge.
         You are about to see an indent within the paragraph.
       </p>
-      <p leftMargin="6em">
-        This is a paragraph indented by 6em. It should still extend to the
+      <p leftMargin="8em">
+        This is a paragraph indented by 8em. It should still extend to the
         rightmost margin and be justified  there.
       </p>
-      <p>This is just a short paragraph.</p>
+      <p>This is a short paragraph ending in Flocci​nauci​nihil​ipil​if​ication.</p>
       <p rightMargin="6em">
         This is a paragraph narrowed by 6em. It should still
         be justified at its right margin.
       </p>
-      <p>This is just another short paragraph.</p>
-      <p leftMargin="6em" rightMargin="6em">
-        This is a paragraph both indented and narrowed by 6em.
-        Its text should be justified, but as a whole it should appear centred
-        in the space occupied by the overall paragraph
+      <p leftMargin="12em" rightMargin="8em">This is just another short paragraph ending in Flocci​nauci​nihil​ipil​if​ication.</p>
+      <p leftMargin="12em" rightMargin="12em">
+        This is a paragraph both indented and narr​owed by 12em.
+        Its text should be right-justified, but as a whole it should appear obv​iously  centred
+        in the space occupied by the paragraph.
       </p>
-      <p>
-        This is some chatter to force the
-        last part of the paragraph to the right edge.
+      <p align="right">
+        This is some right-justified chatter. By right-justified I mean only that
+        the extra space on a line appears at the start of the line.
+      </p>
+      <p align="center">
+        This is some center-justified chatter. By center-justified I mean  that
+        the extra space on a line is evenly divided between the start and the end of the line.
       </p>
       <row width={test0w}  align="center">
         <fill/>
@@ -256,8 +261,11 @@ object GXML {
     val bg: Brush = glyph.bg
   }
 
-  /**  */
-  def glyphsToPara(glyphs: Seq[Glyph])(local: Sheet): Glyph = {
+  /**
+   *  Build a paragraph-formatted glyph formatted according to `local` from
+   *  the `glyphs` sequence.
+   */
+  def glyphsToParagraph(glyphs: Seq[Glyph])(local: Sheet): Glyph = {
     val emWidth   = local.emWidth
     val interWord = FixedSize.Space(w=emWidth / 1.5f, h=0f, stretch = 2f)
     val glyphs$   = local.core.parIndent() ++ glyphs
@@ -265,7 +273,7 @@ object GXML {
     // The overall width is determined by the context
     // If the bounding box is unspecified, then use the column width
     val galley =
-      styled.text.glyphParagraph(
+      formatParagraph(
         overallWidth = local.core.parWidth,
         align        = local.core.parAlign,
         leftMargin   = local.core.leftMargin,
@@ -275,6 +283,7 @@ object GXML {
       )
 
     val column = NaturalSize.Col(bg = local.core.textBackgroundBrush).atLeft$(galley.toSeq)
+
     if (local.core.leftMargin > 0f)
       NaturalSize.Row(bg = local.core.textBackgroundBrush)
         .centered(FixedSize.Space(w=local.core.leftMargin, h=0f, stretch=0f),
@@ -283,6 +292,99 @@ object GXML {
     else
       column
   }
+
+  /**
+   * Build a sequence of galleys representing the lines of a paragraph
+   * formed from `glyphs`.
+   */
+  def formatParagraph(overallWidth:  Scalar,
+                      align:         Alignment,
+                      leftMargin:    Scalar,
+                      rightMargin:   Scalar,
+                      interWord:     Glyph,
+                      glyphs:        Seq[Glyph]) = {
+    // As each line of the paragraph is assembled it is added to the galley
+    val galley = ArrayBuffer[Glyph]()
+    // maximum width of this paragraph: invariant
+    val maxWidth       = overallWidth - (leftMargin + rightMargin)
+    // avoid rounding
+    val maxWidthfloor  = maxWidth.floor
+    //println(s"[ov=$overallWidth,lm=$leftMargin,maxw=$maxWidthfloor]")
+    val interWordWidth = interWord.w
+    val words = new StreamIterator[Glyph](glyphs.iterator)
+
+    @inline def setLine(): (Scalar, Seq[Glyph]) = {
+      import scala.collection.mutable
+      val line = mutable.IndexedBuffer[Glyph]()
+      var lineWidth = 0f
+
+      line += align.leftFill()
+      while (words.hasElement && (lineWidth + words.element.w + interWordWidth < maxWidthfloor)) {
+        words.element match {
+          case BreakableGlyph(_, glyphs) =>
+            for { glyph <- glyphs } line += glyph
+          case other =>
+            line += other
+        }
+        line += interWord()
+        lineWidth += words.element.w + interWordWidth
+        words.nextElement()
+      }
+
+      // squeeze an extra chunk on by splitting a splittable?
+      if (words.hasElement) words.element match {
+        case breakable: BreakableGlyph =>
+          val breakPoint: Int = breakable.maximal(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w)
+          if (breakPoint!=0) {
+            val glyphs = breakable.glyphs
+            for { i <- 0 until breakPoint } {
+              lineWidth += glyphs(i).w
+              line += glyphs(i)
+            }
+            line += breakable.hyphen()
+            line += interWord()
+            lineWidth += breakable.hyphen.w
+            words.buffer = Some(new BreakableGlyph(breakable.hyphen, glyphs.drop(breakPoint)))
+          }
+        case _ =>
+      }
+
+      // line is full, erase the interword or leftfill
+      line.update(line.length - 1, align.rightFill())
+      // if this is the very last line, words will be empty
+      if (!words.hasElement) {
+        line += align.lastFill()
+      }
+      (lineWidth, line.toSeq)
+    }
+
+    var setting = true
+    while (setting && words.hasElement) {
+      // Maybe we have an overlong word
+      if (words.hasElement && words.element.w.ceil >= maxWidthfloor) {
+        // Shrink it somehow
+        words.element match {
+          // cram in as much as possible, and omit the rest
+          case breakableGlyph: BreakableGlyph if false  =>
+            val glyphs = breakableGlyph.glyphs
+            val breakPoint: Int = breakableGlyph.maximal(maxWidthfloor)
+            galley += NaturalSize.Row.atTop$(glyphs.take(breakPoint)).framed(fg = DefaultBrushes.red(width=2))
+          case other =>
+            galley += other.scaled(maxWidthfloor/other.w).framed(fg = DefaultBrushes.nothing, bg=DefaultBrushes.lightGrey)
+        }
+        words.nextElement()
+      } else {
+        val (width, glyphs) = setLine()
+        // the line had only its starting alignment glyph; nothing else to do
+        if (glyphs.length == 1 && width == 0) {
+          setting = false
+        } else
+          galley += FixedSize.Row(maxWidth).atTop$(glyphs)
+      }
+    }
+    galley
+  }
+
 
   /**
    *   Pre: `s` consists only of hexadecimal characters
@@ -302,7 +404,7 @@ class GXML {
   val sheetMap:     mutable.Map[String, Sheet] = mutable.LinkedHashMap[String, Sheet]()
   val reactionMap:  mutable.Map[String, Reaction] = mutable.LinkedHashMap[String, Reaction]()
 
-  private val stylingTags: Seq[String] = List("b", "em", "i", "indent", "bi", "n")
+  private val stylingTags: Seq[String] = List("b", "em", "i", "indent", "bi", "n", "hyph")
 
   def translate(sources: List[String])(within: List[String])(elem: Node)(inherited: AttributeMap)(context: Sheet): Seq[Glyph] = {
     def warning(message: => String): Unit = {
@@ -352,12 +454,12 @@ class GXML {
 
 
     elem match {
-      case Text(buffer) =>
-        import context.core.{textBackgroundBrush, textFont, textForegroundBrush}
-        import org.sufrin.glyph.{Text => TextChunk}
-        val fg = textForegroundBrush
-        val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
-        buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map{ word => toGlyph(TextChunk(word, textFont, fg, bg), fg) }
+//      case Text(buffer) =>
+//        import context.core.{textBackgroundBrush, textFont, textForegroundBrush}
+//        import org.sufrin.glyph.{Text => TextChunk}
+//        val fg = textForegroundBrush
+//        val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
+//        buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map{ word => toGlyph(TextChunk(word, textFont, fg, bg), fg) }
 
       case PCData(text) =>
         import context.core.{textBackgroundBrush, textFont, textForegroundBrush}
@@ -417,7 +519,7 @@ class GXML {
       case <p>{child@_*}</p> =>
         val context$ = attributes.declareAttributes(context)
         val skip = context$.core.parSkip
-        val thePara = framed(glyphsToPara(child.flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) })(context$))
+        val thePara = framed(glyphsToParagraph(child.flatMap { node => translate(sources$)(within$)(node)(attributes)(context$) })(context$))
         if (skip == 0.0f)
           List(thePara)
         else
@@ -593,6 +695,7 @@ class GXML {
             }
         }
 
+
       case elem: Elem =>
         val tag = elem.label
         generatorMap.get(tag) match {
@@ -604,12 +707,29 @@ class GXML {
             List(generator(localAttributes, attributes.declareAttributes(context)))
         }
 
+      // ZWSP unicodes are used at discretionary hyphen positions
       case Text(buffer) =>
         import context.core.{textBackgroundBrush, textFont, textForegroundBrush}
         import org.sufrin.glyph.{Text => TextChunk}
         val fg = textForegroundBrush
         val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
-        buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map{ word => toGlyph(TextChunk(word, textFont, fg, bg), fg) }
+        buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map {
+          word: String =>
+            val glyph: Glyph = {
+              // is there a discretionary hyphen // TODO: or more, eventually
+              if (word.contains('​')) {
+                val glyphs = word.toString.split("\u200B").toSeq.map { syllable => TextChunk(syllable, textFont, fg, bg).atBaseline(fg, bg) }
+                val hyphen = TextChunk("-", textFont, fg, bg).atBaseline(fg, bg)
+                new BreakableGlyph(hyphen, glyphs)
+              }
+              else
+                toGlyph(TextChunk(word, textFont, fg, bg), fg)
+            }
+            glyph
+        }
+
+
+
 
       /** Identical to a lump of text */
       case elem  =>
