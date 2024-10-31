@@ -7,6 +7,7 @@ import GlyphXML.{source, warn, AttributeMap}
 import ReactiveGlyphs.{ColourButton, Reaction}
 import Styles._
 import Styles.Decoration.{Framed, Unframed}
+import tests.DemonstrationNotebook.pageStyle
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -19,6 +20,10 @@ object TestGXML extends Application {
     val within = List("TOP")
     NaturalSize.Col().atLeft$(translation.translate(List(""))(within)(elem)(Map.empty)(new Sheet()))
   }
+
+  Brushes.buttonPointSize = 16
+  translation("PRESSME") = ReactiveGlyphs.TextButton("PRESS ME"){ _ => println("Pressed")}.framed()
+  translation("QUIT") = ReactiveGlyphs.TextButton("QUIT"){ _ => println("QuitPressed")}.framed()
 
   val test0w = "50em"
   val test0 =
@@ -34,14 +39,17 @@ object TestGXML extends Application {
         This is a paragraph indented by 8em. It should still extend to the
         rightmost margin and be justified  there.
       </p>
-      <p>This is a short paragraph ending in Flocci​nauci​nihil​ipil​if​ication.</p>
+      <row width={test0w}><fill/><glyph ref="PRESSME"/><fill/><glyph ref="QUIT"/></row>
+      <p>This is an ordinary paragraph ending in Flocci​nauci​nihil​ipil​if​ication.</p>
       <p rightMargin="6em">
         This is a paragraph narrowed by 6em. It should still
         be justified at its right margin.
       </p>
-      <p leftMargin="12em" rightMargin="8em">This is just another short paragraph ending in Flocci​nauci​nihil​ipil​if​ication.</p>
-      <p leftMargin="12em" rightMargin="12em">
-        This is a paragraph both indented and narr​owed by 12em.
+      <p leftMargin="12em" rightMargin="8em">
+        This is another indented and potentially much-​hyphenated paragraph ending in the hyph​enated long word Flocci​nauci​nihil​ipil​if​ication.
+      </p>
+      <p leftMargin="8em" rightMargin="8em">
+        This is a paragraph both indented and narr​owed by 8em.
         Its text should be right-justified, but as a whole it should appear obv​iously  centred
         in the space occupied by the paragraph.
       </p>
@@ -53,6 +61,10 @@ object TestGXML extends Application {
         This is some center-justified chatter. By center-justified I mean  that
         the extra space on a line is evenly divided between the start and the end of the line.
       </p>
+    </body>
+
+  val test1 =
+    <body fontFamily="Menlo" fontScale="1" fontSize="16" width={test0w} align="justify" parSkip="0.4ex" framed="0XFF227722/1" padX="3em" padY="3ex" background="yellow" textBackground="yellow">
       <row width={test0w}  align="center">
         <fill/>
         <i>Columns: </i><fill stretch="0.3"/>
@@ -68,8 +80,14 @@ object TestGXML extends Application {
       </row>
     </body>
 
+  val noteBook: Notebook = Notebook()
+  val Page: noteBook.DefinePage.type = noteBook.DefinePage
+
+  Page("Paragraphs", "")(test0)
+  Page("Grids", "")(test1)
+
   val title = "TestGXML"
-  val GUI: Glyph = test0
+  val GUI: Glyph = noteBook.Layout.rightButtons()
 }
 
 object GXML {
@@ -198,28 +216,26 @@ object GXML {
      * This is stinkingly inelegant.
      */
     def declareAttributes(context: Sheet): Sheet = {
-      val kore = context.core
-      val context$: Sheet = {
-        new Sheet(
-          kore
+      val fontDetail: Sheet =
+          context
             .copy(
-              parAlign = Align("align", kore.parAlign),
-              textFontFamily = FontFamily(String("fontFamily", kore.textFontFamily.name)),
-              textFontSize = Float("fontSize", kore.textFontSize),
+              textFontFamily  = FontFamily(String("fontFamily", context.textFontFamily.name)),
+              textFontSize    = Float("fontSize",               context.textFontSize),
+              fontScale       = Float("fontScale",              1.0f),
               // TODO: button and label font attributes
-              fontScale = Float("fontScale", 1.0f),
-              textBackgroundBrush = Brush("textBackground", kore.textBackgroundBrush),
-              textForegroundBrush = Brush("textForeground", kore.textForegroundBrush)
             )
-        )
-      }
-      val padX = Units("padX", kore.padX)(context$)
-      val padY = Units("padY", kore.padY)(context$)
-      val parWidth = Units("width", kore.parWidth)(context$)
-      val parSkip = Units("parSkip", kore.parSkip)(context$)
-      val leftMargin = Units("leftMargin", kore.leftMargin)(context$)
-      val rightMargin = Units("rightMargin", kore.rightMargin)(context$)
-        new Sheet(context$.core.copy(padX=padX, padY=padY, parWidth=parWidth, parSkip=parSkip, leftMargin=leftMargin, rightMargin = rightMargin))
+      // Units are computed relative to the font details, which may have been redeclared
+      fontDetail.copy(
+        padX                = Units("padX",           context.padX)         (fontDetail),
+        padY                = Units("padY",           context.padY)         (fontDetail),
+        parWidth            = Units("width",          context.parWidth)     (fontDetail),
+        parSkip             = Units("parSkip",        context.parSkip)      (fontDetail),
+        leftMargin          = Units("leftMargin",     context.leftMargin)   (fontDetail),
+        rightMargin         = Units("rightMargin",    context.rightMargin)  (fontDetail),
+        parAlign            = Align("align",          context.parAlign),
+        textBackgroundBrush = Brush("textBackground", context.textBackgroundBrush),
+        textForegroundBrush = Brush("textForeground", context.textForegroundBrush)
+      )
     }
   }
 
@@ -404,6 +420,8 @@ class GXML {
   val sheetMap:     mutable.Map[String, Sheet] = mutable.LinkedHashMap[String, Sheet]()
   val reactionMap:  mutable.Map[String, Reaction] = mutable.LinkedHashMap[String, Reaction]()
 
+  def update(id: String, glyph: Glyph): Unit = glyphMap(id)=glyph
+
   private val stylingTags: Seq[String] = List("b", "em", "i", "indent", "bi", "n", "hyph")
 
   def translate(sources: List[String])(within: List[String])(elem: Node)(inherited: AttributeMap)(context: Sheet): Seq[Glyph] = {
@@ -479,6 +497,7 @@ class GXML {
           case "amp" => glyphOf("&")
           case "ls" => glyphOf("<")
           case "gt" => glyphOf(">")
+          case "nbsp" => glyphOf("\u00A0")
           case _ =>
             glyphMap.get(id) match {
               case None =>
@@ -682,16 +701,16 @@ class GXML {
         val id = localAttributes.String("ref", "")
         id match {
           case "" =>
-            val glyphs = child.flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
-            glyphs.map(simulateBaseline(_, context$.exHeight))
+            warning (s"Missing glyph reference <glyph>...")
+            Seq.empty[Glyph]
 
           case _ =>
             glyphMap.get (id) match {
               case None =>
-                warning (s"Unknown named glyph <glyph ref=$id ...>...")
+                warning (s"Unknown glyph reference <glyph ref=$id ...>...")
                 Seq.empty[Glyph]
               case Some (glyph) =>
-                List (simulateBaseline(glyph, context.exHeight).framed() )
+                List (if (inPara) simulateBaseline(glyph, context.exHeight) else glyph)
             }
         }
 
@@ -764,7 +783,7 @@ class GXML {
 
 }
 
-case class CoreSheet
+case class Sheet
 ( fontScale: Scalar = 1.0f,
   textFontFamily: FontFamily  = FontFamily(),
   textFontStyle: FontStyle = FontStyle.NORMAL,
@@ -798,6 +817,8 @@ case class CoreSheet
   padX: Scalar = 0f,
   padY: Scalar = 0f,
 ) {
+  val core: Sheet = this
+
   val toggleOn = new GlyphColours {
     val fg: Brush = toggleOnBrush;
     val bg: Brush = toggleBackgroundBrush
@@ -810,20 +831,14 @@ case class CoreSheet
   def textFont: Font = textFontFamily.makeFont(textFontStyle, textFontSize*fontScale)
   def buttonFont: Font = buttonFontFamily.makeFont(buttonFontStyle, buttonFontSize*fontScale)
   def buttonBorderWidth: Scalar = buttonBorderBrush.strokeWidth
-  def parNarrow(left: Scalar, right: Scalar): CoreSheet = {
+  def parNarrow(left: Scalar, right: Scalar): Sheet = {
     val lm = leftMargin
     val rm = rightMargin
     org.sufrin.logging.Default.info(s"parNarrow($left,$right) => ${(lm + left, rm+right)}")
     copy(leftMargin = lm + left, rightMargin = rm + right)
   }
-}
 
-/** A stylesheet is derived from its core parameters */
-class Sheet(val core: CoreSheet = CoreSheet()) {
-  baseSheet =>
-
-  import core._
-
+  // derived
   lazy val labelStyle: GlyphStyle = GlyphStyle(labelFont, labelForegroundBrush, labelBackgroundBrush)
 
   lazy val buttonStyle: ButtonStyle = ButtonStyle(
@@ -836,8 +851,8 @@ class Sheet(val core: CoreSheet = CoreSheet()) {
     checkbox = CheckboxStyle(tick = "✔", cross = "✖", on = toggleOn, off = toggleOff)
   )
 
-  lazy val unFramed: Sheet = new Sheet(core) {
-    override lazy val buttonStyle: ButtonStyle = baseSheet.buttonStyle.copy(frame = Decoration.Unframed)
+  lazy val unFramed: Sheet = new Sheet() {
+    override lazy val buttonStyle: ButtonStyle = buttonStyle.copy(frame = Decoration.Unframed)
   }
 
   lazy val menuStyle: MenuStyle = MenuStyle(
@@ -852,21 +867,13 @@ class Sheet(val core: CoreSheet = CoreSheet()) {
   lazy val emWidth: Scalar = textFont.measureTextWidth("m")
   lazy val exHeight: Scalar = textFont.measureText("X").getHeight
 
-
-
-  //  lazy val notebookStyle: NotebookStyle = NotebookStyle(
-  //    buttonStyle = baseSheet.buttonStyle,
-  //    pageStyle = baseSheet.buttonStyle
-  //  )
-
-  private def styled(fontStyle: FontStyle): Sheet = new Sheet(core.copy(textFontStyle = fontStyle))
+  @inline private def styled(fontStyle: FontStyle): Sheet = copy(textFontStyle = fontStyle)
   def italicStyle: Sheet = styled(FontStyle.ITALIC)
   def boldStyle: Sheet = styled(FontStyle.BOLD)
   def boldItalicStyle: Sheet = styled(FontStyle.BOLD_ITALIC)
   def normalStyle: Sheet = styled(FontStyle.NORMAL)
 
-  def parNarrow(left: Scalar, right: Scalar): Sheet = new Sheet(core.parNarrow(left, right))
-
 }
+
 
 
