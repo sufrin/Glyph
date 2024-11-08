@@ -171,6 +171,7 @@ object ReactiveGlyphs extends Brushes {
     override def toString: String =
       s"ColourButton($up, $down, $hover, $background)"
 
+
     val up: Brush           = if (background) appearance.bg else appearance.fg
     val currentBrush: Brush = up.copy()
     val glyph: Glyph        = if (background) appearance(bg=currentBrush) else appearance(fg=currentBrush)
@@ -221,7 +222,8 @@ object ReactiveGlyphs extends Brushes {
     override def diagonal: Vec = glyph.diagonal
 
     /** A copy of this glyph; perhaps with different foreground/background */
-    def copy(fg: Brush=this.fg, bg: Brush=this.bg): Glyph = new ColourButton(appearance(fg.copy(), bg.copy()), down, hover, background, react)
+    def copy(fg: Brush=this.fg, bg: Brush=this.bg): Glyph =
+      new ColourButton(appearance(fg.copy(), bg.copy()), down, hover, background, react)
 
   }
 
@@ -368,11 +370,12 @@ object ReactiveGlyphs extends Brushes {
 
   object TextButton extends DefaultPaints {
 
-      def apply(text: String, fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, background: Boolean = true)(reaction: Reaction): ColourButton = {
-        val up = Brushes.buttonText(text).asGlyph(fg, bg).enlarged(Brushes.upFrame.strokeWidth*4)
-        // new RawButton(up, up(fg=red), up(fg=green), up.fg, up.bg, reaction)
-        new ColourButton(up, red, green, background, reaction)
-      }
+    def apply(text: String, fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, background: Boolean = true)
+             (reaction: Reaction): ColourButton = {
+         val up = Brushes.buttonText(text).asGlyph(fg, bg).enlarged(Brushes.upFrame.strokeWidth * 4)
+         //new RawButton(up, up(fg = red), up(fg = green), up.fg, up.bg, reaction)
+         new ColourButton(up, red, green, background, reaction)
+       }
     }
 
   object FramedButton extends DefaultPaints {

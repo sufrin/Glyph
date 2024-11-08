@@ -210,7 +210,8 @@ object GlyphTransforms {
     override def toString: String = s"Mounted($fg, $bg)($glyph)"
     override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)
     override def glyphContaining(p: Vec): Option[Hit] = delegate.glyphContaining(p)
-    override def copy(fg: Brush = fg, bg: Brush = bg): Framed = new Framed(glyph.copy(), fg, bg)
+    override def contains(p: Vec): Boolean = delegate.contains(p)
+    override def copy(fg: Brush = fg, bg: Brush = bg): Framed = new Framed(glyph.copy(), fg, bg, radiusFactor)
 
 
     val delegate: Glyph = {
@@ -243,7 +244,6 @@ object GlyphTransforms {
     }
 
     locally { delegate.parent = this }
-
 
   }
 
@@ -403,7 +403,7 @@ object GlyphTransforms {
     @inline def translate(p: Vec): Vec = quadrants%4 match {
       case 0 => p                       // p
       case 2 => Vec(dx-p.x, dy-p.y)     // d-p
-      case 1 => Vec(dy-p.x, p.y)
+      case 1 => Vec(p.y, dy-p.x)
       case 3 => Vec(dx-p.y, p.x)
     }
 
@@ -605,7 +605,7 @@ object GlyphTransforms {
     val (xf, dx) = if (leftRight) (-1f, diagonal.x) else (1f, 0f)
     val (yf, dy) = if (topBottom) (-1f, diagonal.y) else (1f, 0f)
 
-    def translate(p: Vec): Vec = Vec(dx-p.x, dy-p.y)
+    def translate(p: Vec): Vec = Vec(if (leftRight) diagonal.x-p.x else p.x, if (topBottom) diagonal.y-p.y else p.y)
 
     val mirror: Array[Float] = Array(
       xf, 0f, dx,

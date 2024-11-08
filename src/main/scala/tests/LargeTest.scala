@@ -881,18 +881,138 @@ trait LargeTestGUI extends Brushes {
   }
 
   private val scene20 = {
-    import ReactiveGlyphs.{ColourButton, TextButton}
+    import ReactiveGlyphs.{TextButton => But}
+
     val fatYellow: Brush = yellow.copy strokeWidth 40
     val fatGreen: Brush = fatYellow.copy col 0xff00ff00
     val fatRed: Brush = fatYellow.copy col 0xffff0000
-    val l1 = Label("ColourButton", fg=fatRed, bg=white)
-    val b1 = new ColourButton(l1, fatYellow, fatGreen, react = { _ => }, background = false)
-    val b2 = TextButton("TextButton", fg=fatRed, bg=white) { _ => }
 
-    Col.centered(
-       b1.framed(), b2.framed()
+    val title = textColumn(smallFont, black)("(20) Reactive elements within transformed rows/columns.")
+
+    def Tb(title: String) = But(title) { _ => println(s"Button $title") }
+
+    def b1 = Tb("b1")
+    def b2 = Tb("b2")
+    def b3 = Tb("b3").scaled(1.4f)
+    def b4 = Tb("b4").scaled(1.4f)
+    val buttons = List(b1, b2, b3, b4)
+    val reddish = redFrame.copy(width=0)
+    val blueish = blueLine.copy(width=0)
+    val greenish = green.copy(width=0)
+    val triv = false
+
+    def separator: Rect = {
+      Rect(100, 20, nothing)
+    }
+
+    if (triv)
+      Col()(
+        Col(b1, b2, b3, b4),
+        separator,
+        (Col(b1, b2, b3, b4, b3, b2, b1)).rotated(1),
+        separator,
+        (Col(b1, b2, b3, b4)).rotated(2),
+        separator,
+        (Col(b1, b2, b3, b4)).rotated(3)
+      )
+    else
+    Col().centered(
+      title,  separator,
+      Col(uniform=false, frame=reddish)(Row(frame=blueish).centered(b1, b2, b3, b4),
+                                        Row(frame=blueish).centered(b2, b3),
+                                        Col(uniform=true, frame=blueish)(b1,b3).framed(blueish)).framed(reddish),
+      separator,
+      Row(frame=reddish, skip=0f, uniform=true).atTop(
+        Col(frame=blueish)(b1, b2, b3, b4),
+        Col(frame=blueish)(b2, b3),
+        Col(uniform=true, frame=blueish)(b1,b3).framed(blueish)).framed(reddish) beside separator beside
+      Row(frame=greenish, skip=0f, uniform=true).atTop(
+        Col(frame=blueish)(b1, b2, b3, b4),
+        Col(frame=blueish)(b2, b3),
+        Col(uniform=true, frame=blueish)(b1,b3).framed(blueish)).framed(reddish),
+      separator,
+      Row().centered(
+        Row(frame=reddish, skip=100f, uniform=true).atTop(
+          Col(uniform=true, frame=blueish).centered(b1, b2, b3, b4),
+          Col(uniform=true, frame=blueish).centered(b2, b3),
+          Col(uniform=true, frame=blueish)(b1,b3).framed(blueish)).framed(reddish),
+        separator,
+        Row(frame=reddish).atTop(
+          Col(uniform=true, frame=blueish).centered(b1, b2, b3, b4),
+          Col(uniform=true, frame=blueish).centered(b2, b3).rotated(3),
+          Col(uniform=true,frame=greenish)(b1,b3).framed(blueish).rotated(2),
+          Col(uniform=true,frame=greenish)(b1,b3).framed(blueish).rotated(3)
+        ).framed(reddish)
+      )
     )
   }
+
+  private val scene21 = {
+    // TODO: tracking reactives in {turned, negative-skewed} columns needs translate fix (Nov: 24)
+    import ReactiveGlyphs.{TextButton => But}
+
+    val fatYellow: Brush = yellow.copy strokeWidth 40
+    val fatGreen: Brush = fatYellow.copy col 0xff00ff00
+    val fatRed: Brush = fatYellow.copy col 0xffff0000
+
+    val title = textColumn(smallFont, black)(
+      """(21) Reactive elements within transformed grids/rows/columns.
+        |
+        |(tracking needs translate fix)
+        |
+        |""".stripMargin)
+
+    def Tb(title: String) = But(title) { _ => println(s"Button $title") }
+
+    def b1 = Tb("b1")
+    def b2 = Tb("b2")
+    def b3 = Tb("b3").scaled(1.4f)
+    def b4 = Tb("b4").scaled(1.6f)
+    def buttons = List(b1, b2, b3, b4)
+    val reddish = redFrame.copy(width=0)
+    val blueish = blueLine.copy(width=0)
+    val greenish = green.copy(width=0)
+
+    def grid = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(height=2)(buttons).enlarged(10f)
+    def table = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(width=2)(buttons).enlarged(10f)
+    val column = Col(uniform=true).centered(b1().enlargedTo(b1.w*2, b1.h*2), b2().rotated(1), b3().rotated(2)).framed(blue)
+    val rho = Row(uniform=true).centered(b1().enlargedTo(b1.w*2, b1.h*2), b2().rotated(1), b3().rotated(2)).framed(blue)
+
+    def separator: Rect = {
+      Rect(100, 50, nothing)
+    }
+
+    Col.centered(
+      title,
+      separator,
+      NaturalSize.Grid(padx=50).Table(width=2) (
+          NaturalSize.Grid(padx=20, pady=20).Table(height=4)(
+            grid,
+            grid.rotated(1),
+            grid.rotated(2),
+            grid.rotated(3),
+            table,
+            table.rotated(1),
+            table.rotated(2),
+            table.rotated(3)
+          ),
+          NaturalSize.Grid(pady=15).Table(width=1)(
+            Row().centered(rho().mirrored(true, false), rho().skewed(-0.2f, 0f), rho().skewed(0.5f, 0f)),
+            Row()(column().rotated(3), column().rotated(1)),
+            Row(frame=reddish, uniform=true)(b1, b2, b3, b4).framed(reddish).skewed(0.2f, 0),
+            Row(frame=reddish, uniform=true)(b1, b2, b3, b4).framed(reddish).skewed(0.5f, 0),
+            Row(frame=reddish, uniform=true)(b1, b2, b3, b4).framed(reddish).skewed(-0.2f, 0),
+            Row(frame=reddish, uniform=true)(b1, b2, b3, b4).framed(reddish).skewed(-0.5f, 0),
+          ),
+          Row()(column().turned(270f), column().turned(90f)).framed(redLine(width=3)),
+            (column().skewed(-0.2f, 0f) beside column().skewed(0.2f, 0f)) beside
+            (rho().skewed(0f, 0.2f) above rho().skewed(0f, -0.2f))
+
+      ))
+  }
+
+
+
 
   private val helpGUI = Framed(whiteFrame)(
     textColumn(smallFont, black)(
@@ -933,7 +1053,8 @@ trait LargeTestGUI extends Brushes {
     scene17,
     scene18,
     scene19,
-    scene20
+    scene20,
+    scene21
   )
   /** Width of the menu bar */
   private val screenWidth = scenes.map(_.w).max
