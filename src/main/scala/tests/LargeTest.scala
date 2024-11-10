@@ -958,7 +958,7 @@ trait LargeTestGUI extends Brushes {
     val title = textColumn(smallFont, black)(
       """(21) Reactive elements within transformed grids/rows/columns.
         |
-        |(tracking needs translate fix)
+        |(turned-glyph tracking needs to be fixed)
         |
         |""".stripMargin)
 
@@ -972,6 +972,7 @@ trait LargeTestGUI extends Brushes {
     val reddish = redFrame.copy(width=0)
     val blueish = blueLine.copy(width=0)
     val greenish = green.copy(width=0)
+    val t1=Row()(Tb("text "),Tb("button"))
 
     def grid = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(height=2)(buttons).enlarged(10f)
     def table = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(width=2)(buttons).enlarged(10f)
@@ -1004,7 +1005,7 @@ trait LargeTestGUI extends Brushes {
             Row(frame=reddish, uniform=true)(b1, b2, b3, b4).framed(reddish).skewed(-0.2f, 0),
             Row(frame=reddish, uniform=true)(b1, b2, b3, b4).framed(reddish).skewed(-0.5f, 0),
           ),
-          Row()(column().turned(270f), column().turned(90f)).framed(redLine(width=3)),
+          Row()(t1().turned(45f, true).framed(), t1().turned(22.5f, false).framed(), t1().turned(67.5f, false).framed()),
             (column().skewed(-0.2f, 0f) beside column().skewed(0.2f, 0f)) beside
             (rho().skewed(0f, 0.2f) above rho().skewed(0f, -0.2f))
 
