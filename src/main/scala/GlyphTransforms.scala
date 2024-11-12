@@ -496,13 +496,8 @@ object GlyphTransforms {
     // Distance of the new centre from the old centre
     private val delta  = (diagonal scaled .5f) - center
 
-    // THIS IS WRONG
-    def translate(pt: Vec): Vec = {
-      val theta = (Theta/`pi`)*180f
-      val p = pt-delta
-      println(s"tr($pt)=>$p")
-      p
-    }
+
+    def translate(pt: Vec): Vec = pt-delta
 
     def draw(surface: Surface): Unit = {
         drawBackground(surface)
@@ -513,14 +508,6 @@ object GlyphTransforms {
             }
           }
         }
-
-//        val R=DefaultBrushes.red(width=1)
-//        val G=DefaultBrushes.green(width=1)
-//        surface.drawLine(DefaultBrushes.blue(width=1), diagonal)
-//        surface.drawLine(R, center)       // centre of the original
-//        surface.drawLine(G, center+delta) // centre of the rotated original
-//        surface.drawPoint(center+delta, DefaultBrushes.red(width=6)) // centre of the rotated original
-//        println(s"oc=$center rc=${center+delta}")
     }
 
     locally { glyph.parent = this }

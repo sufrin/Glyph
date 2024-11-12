@@ -958,11 +958,15 @@ trait LargeTestGUI extends Brushes {
     val title = textColumn(smallFont, black)(
       """(21) Reactive elements within transformed grids/rows/columns.
         |
-        |(turned-glyph tracking needs to be fixed)
+        |(turned reactives track erratically, rotated reactives track ok)
         |
         |""".stripMargin)
 
     def Tb(title: String) = But(title) { _ => println(s"Button $title") }
+    def Rb(w: Scalar, h: Scalar, brush1: Brush=fatYellow, brush2: Brush=fatGreen, brush3: Brush=fatRed): RawButton = {
+      val r = FilledRect(w, h, brush1)
+      ReactiveGlyphs.RawButton(r, r(brush2), r(brush3)){ _ => println(s"Button ($w,$h)") }
+    }
 
     def b1 = Tb("b1")
     def b2 = Tb("b2")
@@ -972,7 +976,8 @@ trait LargeTestGUI extends Brushes {
     val reddish = redFrame.copy(width=0)
     val blueish = blueLine.copy(width=0)
     val greenish = green.copy(width=0)
-    val t1=Row()(Tb("text "),Tb("button"))
+    val t1=Col(bg=blueish)(Rb(50, 50), Rb(75, 50), Rb(100, 50))
+    val t2=Rb(20, 100)
 
     def grid = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(height=2)(buttons).enlarged(10f)
     def table = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(width=2)(buttons).enlarged(10f)
@@ -985,6 +990,13 @@ trait LargeTestGUI extends Brushes {
 
     Col.centered(
       title,
+      separator,
+      Row() (t1().turned(45f, false).framed(), t1().turned(22.5f, false).framed(),
+        t1().turned(67.5f, false).framed(), t1().turned(270f, false).framed(),
+        separator, t1().rotated(1).framed(), t1.rotated(3).framed(), t1().framed()),
+      Row()(t2().turned(45f, false).framed(), t2().turned(22.5f, false).framed(),
+        t2().turned(67.5f, false).framed(), t2().turned(270f, false).framed(),
+        separator, t2().rotated(1).framed(), t2.rotated(3).framed(), t2().framed()),
       separator,
       NaturalSize.Grid(padx=50).Table(width=2) (
           NaturalSize.Grid(padx=20, pady=20).Table(height=4)(
@@ -1005,9 +1017,8 @@ trait LargeTestGUI extends Brushes {
             Row(frame=reddish, uniform=true)(b1, b2, b3, b4).framed(reddish).skewed(-0.2f, 0),
             Row(frame=reddish, uniform=true)(b1, b2, b3, b4).framed(reddish).skewed(-0.5f, 0),
           ),
-          Row()(t1().turned(45f, true).framed(), t1().turned(22.5f, false).framed(), t1().turned(67.5f, false).framed()),
-            (column().skewed(-0.2f, 0f) beside column().skewed(0.2f, 0f)) beside
-            (rho().skewed(0f, 0.2f) above rho().skewed(0f, -0.2f))
+           // (column().skewed(-0.2f, 0f) beside column().skewed(0.2f, 0f)),
+           // (rho().skewed(0f, 0.2f) above rho().skewed(0f, -0.2f))
 
       ))
   }
