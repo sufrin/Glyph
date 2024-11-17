@@ -286,6 +286,10 @@ trait Surface {
       glyph.declareCurrentTransform(AffineTransform.from(transform), scale, _scope)
   }
 
+  @inline private def currentTransform: AffineTransform.Transform = AffineTransform.from(canvas.getLocalToDeviceAsMatrix33)
+
+  def currentReverseTransform: Vec => Vec = AffineTransform.reverse(currentTransform)
+
 }
 
 object Surface {

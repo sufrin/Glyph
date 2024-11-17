@@ -958,14 +958,18 @@ trait LargeTestGUI extends Brushes {
     val title = textColumn(smallFont, black)(
       """(21) Reactive elements within transformed grids/rows/columns.
         |
-        |(turned reactives track erratically, rotated reactives track ok)
+        |(BUG: turned reactives track erratically, so use rotate)
         |
         |""".stripMargin)
 
     def Tb(title: String) = But(title) { _ => println(s"Button $title") }
     def Rb(w: Scalar, h: Scalar, brush1: Brush=fatYellow, brush2: Brush=fatGreen, brush3: Brush=fatRed): RawButton = {
-      val r = FilledRect(w, h, brush1)
+      val r = FilledRect(w, h, brush1) // Row(FilledRect(w, h, brush1), FilledRect(w/20, h, brush2))
       ReactiveGlyphs.RawButton(r, r(brush2), r(brush3)){ _ => println(s"Button ($w,$h)") }
+    }
+    def Eb(w: Scalar, h: Scalar, brush1: Brush=fatYellow, brush2: Brush=fatGreen, brush3: Brush=fatRed): RawButton = {
+      val r = FilledOval(w, h, brush1)
+      ReactiveGlyphs.RawButton.exact(r, r(brush2), r(brush3)){ _ => println(s"Button ($w,$h)") }
     }
 
     def b1 = Tb("b1")
@@ -976,8 +980,8 @@ trait LargeTestGUI extends Brushes {
     val reddish = redFrame.copy(width=0)
     val blueish = blueLine.copy(width=0)
     val greenish = green.copy(width=0)
-    val t1=Col(bg=blueish)(Rb(50, 50), Rb(75, 50), Rb(100, 50))
-    val t2=Rb(20, 100)
+    val t1=Col(bg=blueish(alpha = 0.1f))(Eb(50, 50), Rb(75, 50), Rb(100, 50))
+    val t2=(b4.enlarged(50, bg=blueish(alpha = 0.1f))).turned(-30f)
 
     def grid = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(height=2)(buttons).enlarged(10f)
     def table = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(width=2)(buttons).enlarged(10f)
@@ -987,17 +991,19 @@ trait LargeTestGUI extends Brushes {
     def separator: Rect = {
       Rect(100, 50, nothing)
     }
-
+    val tT = false
     Col.centered(
       title,
       separator,
-      Row() (t1().turned(45f, false).framed(), t1().turned(22.5f, false).framed(),
-        t1().turned(67.5f, false).framed(), t1().turned(270f, false).framed(),
-        separator, t1().rotated(1).framed(), t1.rotated(3).framed(), t1().framed()),
-      Row()(t2().turned(45f, false).framed(), t2().turned(22.5f, false).framed(),
-        t2().turned(67.5f, false).framed(), t2().turned(270f, false).framed(),
-        separator, t2().rotated(1).framed(), t2.rotated(3).framed(), t2().framed()),
-      separator,
+      NaturalSize.Grid(padx=50, pady=20, fg=reddish).Table(width=2)(
+      textColumn(smallFont, black)("Turned 0.1,45,67.5,85.5"), textColumn(smallFont, black)("Rotated 0,1,2,3"),
+      Row() (t1().turned(0.1f, tT).framed(), t1().turned(45f, tT).framed(),
+             t1().turned(67.5f, tT).framed(), t1().turned(85.5f, tT).framed()),
+      Row()(t1().rotated(0).framed(), t1().rotated(1).framed(), t1.rotated(2).framed(), t1().rotated(3).framed()),
+      Row()(t2().turned(0.01f, tT).framed(), t2().turned(55f, tT).framed(),
+            t2().turned(67.5f, tT).framed(), t2().turned(85.5f, tT).framed()),
+      Row()(t2().rotated(0).framed(), t2().rotated(1).framed(), t2.rotated(2).framed(), t2().rotated(3).framed())),
+      separator scaled 0.5f,
       NaturalSize.Grid(padx=50).Table(width=2) (
           NaturalSize.Grid(padx=20, pady=20).Table(height=4)(
             grid,
@@ -1017,10 +1023,10 @@ trait LargeTestGUI extends Brushes {
             Row(frame=reddish, uniform=true)(b1, b2, b3, b4).framed(reddish).skewed(-0.2f, 0),
             Row(frame=reddish, uniform=true)(b1, b2, b3, b4).framed(reddish).skewed(-0.5f, 0),
           ),
-           // (column().skewed(-0.2f, 0f) beside column().skewed(0.2f, 0f)),
-           // (rho().skewed(0f, 0.2f) above rho().skewed(0f, -0.2f))
+           (column().skewed(-0.2f, 0f) beside column().skewed(0.2f, 0f)),
+           (rho().skewed(0f, 0.2f) above rho().skewed(0f, -0.2f))
 
-      ))
+      ).scaled(0.75f))
   }
 
 

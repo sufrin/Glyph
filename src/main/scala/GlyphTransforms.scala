@@ -1,5 +1,6 @@
 package org.sufrin.glyph
 
+import Brush.ROUND
 import Glyphs.nothing
 import GlyphTypes._
 import NaturalSize.{Col, Row}
@@ -496,15 +497,31 @@ object GlyphTransforms {
     // Distance of the new centre from the old centre
     private val delta  = (diagonal scaled .5f) - center
 
+    val debug = false
+    var lastRel: Vec = Vec.Zero
+    val RED = DefaultBrushes.red(width=10, cap=ROUND)
+    val GREEN = DefaultBrushes.blue(width=2, cap=ROUND)
 
-    def translate(pt: Vec): Vec = pt-delta
+    var reverseTransform: Option[Vec=>Vec] = None
 
     def draw(surface: Surface): Unit = {
+        import AffineTransform._
         drawBackground(surface)
         surface.withClip(diagonal) {
           surface.withOrigin(delta) {
             surface.withRot(degrees, center) {
+              // capture the current reverse transform
+              reverseTransform match {
+                case None =>
+                  reverseTransform = Some(surface.currentReverseTransform)
+                case _ =>
+              }
               glyph.draw(surface)
+              if (debug) {
+                surface.drawPoint(lastRel, RED)
+                surface.drawPoint(center, RED)
+                surface.drawLines(GREEN, List(center, lastRel))
+              }
             }
           }
         }
@@ -512,9 +529,32 @@ object GlyphTransforms {
 
     locally { glyph.parent = this }
 
-    override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(translate(p))
+    /**
+     * The result is off-by-?? from the relative location of the mouse cursor
+     * TODO: Investigate (currently using relativeMouseLocation within reactiveContaining and glyphContaining)
+     */
+    @inline private def translate(relativeLocation: Vec): Vec = {
+      val absoluteLocation = rootDistance+relativeLocation
+      val glyphRelative = reverseTransform.get(absoluteLocation)
+      if (debug) println(s"($absoluteLocation => $relativeLocation => $glyphRelative")
+      lastRel = glyphRelative
+      glyphRelative
+    }
 
-    override def glyphContaining(p: Vec): Option[Hit] = glyph.glyphContaining(translate(p))
+    @inline private def relativeMouseLocation: Vec = {
+      val absoluteLocation = guiRoot._mouseLoc //should be, but isn't, rootDistance+relativeLocation
+      val glyphRelative = reverseTransform.get(absoluteLocation)
+      lastRel = glyphRelative
+      glyphRelative
+    }
+
+    override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = {
+      glyph.reactiveContaining(relativeMouseLocation)
+    }
+
+    override def glyphContaining(p: Vec): Option[Hit] = {
+      glyph.glyphContaining(relativeMouseLocation)
+    }
 
     def copy(fg: Brush = fg, bg: Brush = bg): Turned =
       new Turned(glyph.copy(), degrees, tight, fg, bg)
