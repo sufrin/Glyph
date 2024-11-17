@@ -8,6 +8,8 @@ import Styles.GlyphStyle
 import windowdialogues.Dialogue.OK
 import PolygonLibrary._
 
+import io.github.humbleui.skija.BlendMode
+
 trait LargeTestGUI extends Brushes {
 
   import DynamicGlyphs.OneOf
@@ -958,18 +960,20 @@ trait LargeTestGUI extends Brushes {
     val title = textColumn(smallFont, black)(
       """(21) Reactive elements within transformed grids/rows/columns.
         |
-        |(BUG: turned reactives track erratically, so use rotate)
         |
         |""".stripMargin)
 
+    val thinBlue = DefaultBrushes.blue(width=4)
+
     def Tb(title: String) = But(title) { _ => println(s"Button $title") }
-    def Rb(w: Scalar, h: Scalar, brush1: Brush=fatYellow, brush2: Brush=fatGreen, brush3: Brush=fatRed): RawButton = {
+
+    def Rb(w: Scalar, h: Scalar, brush1: Brush=fatYellow, brush2: Brush=fatGreen, brush3: Brush=fatRed) = {
       val r = FilledRect(w, h, brush1) // Row(FilledRect(w, h, brush1), FilledRect(w/20, h, brush2))
-      ReactiveGlyphs.RawButton(r, r(brush2), r(brush3)){ _ => println(s"Button ($w,$h)") }
+      ReactiveGlyphs.RawButton(r, r(brush2), r(brush3)){ _ => println(s"Button ($w,$h)") }  . framed(thinBlue)
     }
-    def Eb(w: Scalar, h: Scalar, brush1: Brush=fatYellow, brush2: Brush=fatGreen, brush3: Brush=fatRed): RawButton = {
+    def Eb(w: Scalar, h: Scalar, brush1: Brush=fatYellow, brush2: Brush=fatGreen, brush3: Brush=fatRed) = {
       val r = FilledOval(w, h, brush1)
-      ReactiveGlyphs.RawButton.exact(r, r(brush2), r(brush3)){ _ => println(s"Button ($w,$h)") }
+      ReactiveGlyphs.RawButton.exact(r, r(brush2), r(brush3)){ _ => println(s"Button ($w,$h)") } . framed(thinBlue, bg=thinBlue)
     }
 
     def b1 = Tb("b1")
@@ -977,11 +981,11 @@ trait LargeTestGUI extends Brushes {
     def b3 = Tb("b3").scaled(1.4f)
     def b4 = Tb("b4").scaled(1.6f)
     def buttons = List(b1, b2, b3, b4)
-    val reddish = redFrame.copy(width=0)
-    val blueish = blueLine.copy(width=0)
-    val greenish = green.copy(width=0)
+    val reddish: Brush = redFrame.copy(width=0, blendMode=BlendMode.SRC, alpha = 0.1f)
+    val blueish: Brush = blueLine.copy(width=0)
+    val greenish: Brush = green.copy(width=0)
     val t1=Col(bg=blueish(alpha = 0.1f))(Eb(50, 50), Rb(75, 50), Rb(100, 50))
-    val t2=(b4.enlarged(50, bg=blueish(alpha = 0.1f))).turned(-30f)
+    val t2=(b4.enlarged(20, bg=blueish(blendMode=BlendMode.SRC, alpha = 0.3f))).turned(-30f, bg=reddish(alpha=0.1f))
 
     def grid = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(height=2)(buttons).enlarged(10f)
     def table = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(width=2)(buttons).enlarged(10f)
@@ -1004,7 +1008,7 @@ trait LargeTestGUI extends Brushes {
             t2().turned(67.5f, tT).framed(), t2().turned(85.5f, tT).framed()),
       Row()(t2().rotated(0).framed(), t2().rotated(1).framed(), t2.rotated(2).framed(), t2().rotated(3).framed())),
       separator scaled 0.5f,
-      NaturalSize.Grid(padx=50).Table(width=2) (
+      NaturalSize.Grid(padx=50, fg=reddish).Table(width=2) (
           NaturalSize.Grid(padx=20, pady=20).Table(height=4)(
             grid,
             grid.rotated(1),

@@ -6,6 +6,8 @@ package org.sufrin.glyph
 
 import GlyphTypes.Paint
 
+import io.github.humbleui.skija.BlendMode
+
 object Brush {
 
   import io.github.humbleui.skija.PaintStrokeCap
@@ -99,8 +101,9 @@ class Brush(var name: String) extends Paint {
             alpha: Float        = this.alpha,
             miter: Float        = this.strokeMiter,
             pathEffect: PathEffect = this.pathEffect,
-            filter: ImageFilter = this.getImageFilter,
-            shader: Shader      = this.shader
+            filter: ImageFilter    = this.getImageFilter,
+            shader: Shader         = this.shader,
+            blendMode: BlendMode   = this.getBlendMode
            ): Brush =
     Brush(name)
       . col(color)
@@ -113,6 +116,7 @@ class Brush(var name: String) extends Paint {
       . strokeMiter(miter)
       . pathEffect(pathEffect)
       . shader(shader)
+      . blendMode(blendMode)
 
   /** A copy of this brush with the same name. */
   def copy: Brush =
@@ -128,11 +132,18 @@ class Brush(var name: String) extends Paint {
       .pathEffect(getPathEffect)
       .filter(getImageFilter)
       .shader(getShader)
+      .blendMode(getBlendMode)
 
   /** Mutation */
   @inline def color(i: Int): Brush = {
     super.setColor(i); this
   }
+
+  @inline def blendMode(blendMode: BlendMode): Brush = {
+    super.setBlendMode(blendMode); this
+  }
+
+  @inline def blendMode: BlendMode = getBlendMode
 
   /** Mutation */
   @inline def name(newName: String): Brush = {
