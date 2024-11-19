@@ -4,12 +4,12 @@ package tests
 import GlyphML.Context
 import Glyphs.{blue, nothing, white}
 import GlyphTypes.Scalar
-import GlyphXML._
+import OldGlyphXML._
 import Styles.{Decoration, GlyphStyle}
 
 import scala.collection.immutable.ListMap
 
-object GlyphXMLTest extends Application {
+object OldGlyphXMLTest extends Application {
 
   def title: String = "GlyphXML"
 
