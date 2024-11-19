@@ -509,12 +509,11 @@ class GlyphXML {
         List()
 
       case PCData(text) =>
-        import context.{textBackgroundBrush, textFont, textForegroundBrush}
+        import context.{textFont, textBackgroundBrush => bg, textForegroundBrush => fg}
         import org.sufrin.glyph.{Text => TextChunk}
-        val fg = textForegroundBrush
-        val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
+
         val glyphs = text.split('\n').toSeq.map(TextChunk(_, textFont, fg, bg).asGlyph(fg, bg))
-        List(NaturalSize.Col.atLeft$(glyphs))
+        List(NaturalSize.Col(bg=bg).atLeft$(glyphs))
 
       case EntityRef(id) =>
         import context.{textBackgroundBrush, textFont, textForegroundBrush}
