@@ -497,31 +497,40 @@ object GlyphTransforms {
     // Distance of the new centre from the old centre
     private val delta  = (diagonal scaled .5f) - center
 
-    val debug = false
-    var lastRel: Vec = Vec.Zero
-    val RED = DefaultBrushes.red(width=10, cap=ROUND)
-    val GREEN = DefaultBrushes.blue(width=2, cap=ROUND)
+    // Debugging (urghh) machinery
+    private val debug = false
+    private var lastRel: Vec = Vec.Zero
+    private val RED = DefaultBrushes.red(width=10, cap=ROUND)
+    private val GREEN = DefaultBrushes.blue(width=2, cap=ROUND)
+    // ---
 
-    var reverseTransform: Option[Vec=>Vec] = None
+    /**
+     * The reverse of the current (absolute) drawing transform, if this
+     * glyph has been drawn at least once.
+     * TODO: the reverse transform could be calculated at glyph-construction time. But I've
+     *       failed to do it accurately too many times for comfort.
+     */
+    private var reverseTransform: Option[Vec=>Vec] = None
 
     def draw(surface: Surface): Unit = {
-        import AffineTransform._
         drawBackground(surface)
         surface.withClip(diagonal) {
           surface.withOrigin(delta) {
             surface.withRot(degrees, center) {
-              // capture the current reverse transform
+              // capture the reverse of the current drawing transform
               reverseTransform match {
                 case None =>
                   reverseTransform = Some(surface.currentReverseTransform)
                 case _ =>
               }
               glyph.draw(surface)
+              // ---
               if (debug) {
                 surface.drawPoint(lastRel, RED)
                 surface.drawPoint(center, RED)
                 surface.drawLines(GREEN, List(center, lastRel))
               }
+              // ---
             }
           }
         }
@@ -530,30 +539,29 @@ object GlyphTransforms {
     locally { glyph.parent = this }
 
     /**
-     * The result is off-by-?? from the relative location of the mouse cursor
-     * TODO: Investigate (currently using relativeMouseLocation within reactiveContaining and glyphContaining)
+     * Yields the mouse location relative to the (turned) glyph (if this glyph
+     * has been drawn at least once) else yields an approximation to it calculated
+     * from `parentRelative`.
+     *
+     * TODO: this complexity (capturing the transform in draw) is expedient, not necessary. The
+     *       transform could be captured at the point this glyph is constructed.
      */
-    @inline private def translate(relativeLocation: Vec): Vec = {
-      val absoluteLocation = rootDistance+relativeLocation
-      val glyphRelative = reverseTransform.get(absoluteLocation)
-      if (debug) println(s"($absoluteLocation => $relativeLocation => $glyphRelative")
+    @inline private def glyphRelativeLocation(parentRelative: Vec): Vec = {
+      val absoluteLocation = guiRoot._mouseLoc  // ** should be, but isn't, rootDistance+parentRelative
+      val glyphRelative=reverseTransform match {
+        case None => parentRelative-delta
+        case Some(transform) => transform(parentRelative)
+      }
       lastRel = glyphRelative
       glyphRelative
     }
 
-    @inline private def relativeMouseLocation: Vec = {
-      val absoluteLocation = guiRoot._mouseLoc //should be, but isn't, rootDistance+relativeLocation
-      val glyphRelative = reverseTransform.get(absoluteLocation)
-      lastRel = glyphRelative
-      glyphRelative
+    override def reactiveContaining(parentRelative: Vec): Option[ReactiveGlyph] = {
+      glyph.reactiveContaining(glyphRelativeLocation(parentRelative))
     }
 
-    override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = {
-      glyph.reactiveContaining(relativeMouseLocation)
-    }
-
-    override def glyphContaining(p: Vec): Option[Hit] = {
-      glyph.glyphContaining(relativeMouseLocation)
+    override def glyphContaining(parentRelative: Vec): Option[Hit] = {
+      glyph.glyphContaining(glyphRelativeLocation(parentRelative))
     }
 
     def copy(fg: Brush = fg, bg: Brush = bg): Turned =
