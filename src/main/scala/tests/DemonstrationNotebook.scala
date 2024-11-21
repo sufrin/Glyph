@@ -7,10 +7,13 @@ import PolygonLibrary.brown
 import ReactiveGlyphs.RawButton
 import Styles.NotebookStyle
 
+import org.sufrin.SourceLocation.SourceLocation
+
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import scala.annotation.unused
 import scala.collection.immutable.ListMap
+import scala.xml.Elem
 
 /**
  * An expansive test comprising examples of UI components
@@ -155,15 +158,27 @@ trait DemonstrationPages extends Brushes {
     locally { HintManager(enableSaveCheckBox, 5, "Click this to enable the image-save bar")(HelpStyle) }
 
     import GlyphML.Context
-    import XML.ToGlyph
+    import GlyphXML._
 
     import org.sufrin.SourceLocation.{sourceLocation => source}
+
+    val defs = new GlyphXML{}
+    defs ("#cdata") = (ListMap("textForeground"->"red", "textBackground"->"lightGrey", "fontFamily"->"Courier" ))
+
+    /**
+     * Applied when an (outermost) xml `Elem`ent is intended to denote a `Glyph`. This
+     * translates the element in a context that records its source location in scala text.
+     */
+    implicit def XML(elem: Elem)(implicit source: SourceLocation): Glyph = {
+      val within = List("")
+      NaturalSize.Col().atLeft$(defs.translate(List(s"$source"))(within)(elem)(Map.empty)(new Sheet()))
+    }
 
     implicit val local: Context =
       Context(style=ApplicationStyle)
         .fontFamily("Menlo")
         .fontSize(20)
-        .withAttrs("#cdata")(ListMap("fg"->"red", "bg"->"lightGrey", "fontFamily"->"Courier" ))
+        .withAttrs("#cdata")(ListMap("textForeground"->"red", "textBackground"->"lightGrey", "fontFamily"->"Courier" ))
 
     Col.centered(
       anchor,
@@ -181,18 +196,19 @@ trait DemonstrationPages extends Brushes {
             Command-line arguments affect the notebook style (normally -notebook)
             and scale (normally 1.00).</p>
           <div id="#cdata" >
-          <![CDATA[
-            -notebook   => tabs to the right (the default)
-            -rnotebook  => tabs to the right
-            -lnotebook  => tabs to the left
-            -vnotebook  => rotated tabs along the top
-            -tnotebook  => tabs along the top
-            -snotebook  => rotated and skewed tabs along the top
+<![CDATA[
+  -notebook   => tabs to the right (the default)
+  -rnotebook  => tabs to the right
+  -lnotebook  => tabs to the left
+  -vnotebook  => rotated tabs along the top
+  -tnotebook  => tabs along the top
+  -snotebook  => rotated and skewed tabs along the top
 
-            -menu       => individual popup windows selected from a menu bar
+  -menu       => individual popup windows
+                 selected from a menu bar
 
-            -scale=d.dd => the viewing scale is d.dd (1.00 by default)
-            ]]>
+  -scale=d.dd => the viewing scale is d.dd (1.00 by default)
+  ]]>
           </div>
           <p>The "New" page enables instantiation of a new GUI with
             a choice of tab style, viewing scale and starting screen.

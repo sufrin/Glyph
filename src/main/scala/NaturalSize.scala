@@ -1,6 +1,8 @@
 package org.sufrin.glyph
 
 import scala.collection.mutable.ArrayBuffer
+import GlyphTypes.Scalar
+
 
 object NaturalSize {
 
@@ -21,6 +23,9 @@ object NaturalSize {
 
     val fg: Brush
     val bg: Brush
+    val uniform: Boolean
+    val frame: Brush
+    val skip: Scalar
 
     /** The glyphs are drawn so their centre lines are at the centre line of the row. */
     def centered(theGlyphs: Glyph*): Composite = aligned(0.5f, theGlyphs)
@@ -44,11 +49,14 @@ object NaturalSize {
     /** Same as `atTop` */
     def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(0.0f, first :: theGlyphs.toList)
 
-    def apply(fg: Brush = nothing, bg: Brush = nothing): RowGenerators = {
-      val (_fg, _bg) = (fg, bg)
+    def apply(fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f): RowGenerators = {
+      val (_fg, _bg, _un, _fr, _sk) = (fg, bg, uniform, frame, skip)
       new RowGenerators {
         val fg: Brush = _fg
         val bg: Brush = _bg
+        val uniform: Boolean = _un
+        val frame: Brush = _fr
+        val skip = _sk
       }
     }
 
@@ -62,18 +70,33 @@ object NaturalSize {
       // require(theGlyphs.nonEmpty)
       val height = Measure.maxHeight(theGlyphs)
       val width = Measure.totalWidth(theGlyphs)
-      var x, y = 0f
-      for {glyph <- theGlyphs} {
+      val maxWidth = skip+Measure.maxWidth(theGlyphs)
+      val theUniformGlyphs = if (uniform) theGlyphs.map(_.enlargedTo(maxWidth, height, bg=bg)) else theGlyphs
+      var x = 0f
+      var y = 0f
+      for {glyph <- theUniformGlyphs} {
         val extra = glyph.vStretch(height, proportion, glyph.h)
         glyph @@ Vec(x, extra + y)
         x += glyph.w
       }
-      new Composite(theGlyphs) {
+      new Composite(theUniformGlyphs) {
         override val kind: String = "Row"
-        val glyphs = theGlyphs
-        val diagonal = Vec(width, height)
+        val glyphs = theUniformGlyphs
+        val diagonal = Vec(x, height)
         override
         val baseLine = glyphs.map(_.baseLine).max
+
+        lazy val locs: Seq[Scalar] =
+          if (frame.getAlpha==0) Seq.empty else
+            for { glyph <- glyphs.tail } yield glyph.location.x
+
+        def drawLines(surface: Surface): Unit =
+          for { loc<-locs } surface.drawLines$(frame, loc,0f, loc,height)
+
+        override def draw(surface: Surface): Unit = {
+          super.draw(surface)
+          drawLines(surface)
+        }
 
         val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
         val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
@@ -105,6 +128,10 @@ object NaturalSize {
     theseGenerators =>
     val fg: Brush
     val bg: Brush
+    val uniform: Boolean
+    val frame: Brush
+    val skip: Scalar
+
 
 
     /** Glyphs drawn with their centres at the centre line of the column. */
@@ -129,11 +156,14 @@ object NaturalSize {
     /** Same as `atLeft`. */
     def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(0.0f, first :: theGlyphs.toList)
 
-    def apply(fg: Brush = nothing, bg: Brush = nothing): ColumnGenerators = {
-      val (_fg, _bg) = (fg, bg)
+    def apply(fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush=nothing, skip: Scalar=0f): ColumnGenerators = {
+      val (_fg, _bg, _un, _fr, _sk) = (fg, bg, uniform, frame, skip)
       new ColumnGenerators {
         val fg: Brush = _fg
         val bg: Brush = _bg
+        val uniform: Boolean = _un
+        val frame: Brush = _fr
+        val skip: Scalar = _sk
       }
     }
 
@@ -159,17 +189,31 @@ object NaturalSize {
       //require(theGlyphs.nonEmpty)
       val width = Measure.maxWidth(theGlyphs)
       val height = Measure.totalHeight(theGlyphs)
+      val maxHeight = skip+Measure.maxHeight(theGlyphs)
+      val theUniformGlyphs = if (uniform) theGlyphs.map(_.enlargedTo(width, maxHeight, bg=bg)) else theGlyphs
       var x, y = 0f
-      for {glyph <- theGlyphs} {
+      for {glyph <- theUniformGlyphs} {
         val extra = glyph.hStretch(width, proportion, glyph.w)
         glyph @@ Vec(x + extra, y)
         y += glyph.h
       }
-      new Composite(theGlyphs) {
+      new Composite(theUniformGlyphs) {
         override val kind: String = "Col"
-        val glyphs = theGlyphs
-        val diagonal = Vec(width, height)
 
+        val glyphs = theUniformGlyphs
+        val diagonal = Vec(width, y)
+
+        lazy val locs: Seq[Scalar] =
+          if (frame.getAlpha==0) Seq.empty else
+            for { glyph <- glyphs.tail } yield glyph.location.y
+
+        def drawLines(surface: Surface): Unit =
+          for { loc<-locs } surface.drawLines$(frame, 0f,loc, width,loc)
+
+        override def draw(surface: Surface): Unit = {
+          super.draw(surface)
+          drawLines(surface)
+        }
 
         val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
         val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
@@ -186,11 +230,17 @@ object NaturalSize {
   object Row extends RowGenerators {
     val bg: Brush = nothing
     val fg: Brush = nothing
+    val uniform: Boolean = false
+    val frame: Brush = nothing
+    val skip: Scalar = 0f
   }
 
   object Col extends ColumnGenerators {
     val fg: Brush = nothing
     val bg: Brush = nothing
+    val uniform: Boolean = false
+    val frame: Brush = nothing
+    val skip: Scalar = 0f
   }
 
   import GlyphTypes.Scalar

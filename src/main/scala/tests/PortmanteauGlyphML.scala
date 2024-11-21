@@ -36,7 +36,7 @@ class PortmanteauGlyphML(implicit sheet: StyleSheet) {
           |from contexts to glyphs. Contexts provide the style and dimension
           |information needed when an element is translated to a Glyph for use in a GUI.
           |
-          |The translation context can be modified in the scope of an element,
+          |The defs context can be modified in the scope of an element,
           |by applying transforms to the element itself.
           |
           |For example, the current

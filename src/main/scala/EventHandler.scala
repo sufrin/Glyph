@@ -314,7 +314,7 @@ trait EventHandler extends Consumer[Event] {
         // MouseStateTracker.discover(root.asInstanceOf[RootGlyph], mouse, window) // obsolescent
         val mouseLoc = mouseLocation(mouse.getX, mouse.getY)
         root.asInstanceOf[RootGlyph].onMotion(mouseLoc, mouse)
-        // println(s"$mouseLoc (scaled $scaleFactor) #grid{screen.getScale} $mouse")
+        //println(s"$mouseLoc  $mouse")
         mouseFocus match {
           case Some(focussed) =>
             if (focussed.contains(mouseLoc)) {

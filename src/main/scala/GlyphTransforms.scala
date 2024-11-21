@@ -1,5 +1,6 @@
 package org.sufrin.glyph
 
+import Brush.ROUND
 import Glyphs.nothing
 import GlyphTypes._
 import NaturalSize.{Col, Row}
@@ -210,7 +211,8 @@ object GlyphTransforms {
     override def toString: String = s"Mounted($fg, $bg)($glyph)"
     override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)
     override def glyphContaining(p: Vec): Option[Hit] = delegate.glyphContaining(p)
-    override def copy(fg: Brush = fg, bg: Brush = bg): Framed = new Framed(glyph.copy(), fg, bg)
+    override def contains(p: Vec): Boolean = delegate.contains(p)
+    override def copy(fg: Brush = fg, bg: Brush = bg): Framed = new Framed(glyph.copy(), fg, bg, radiusFactor)
 
 
     val delegate: Glyph = {
@@ -243,7 +245,6 @@ object GlyphTransforms {
     }
 
     locally { delegate.parent = this }
-
 
   }
 
@@ -384,6 +385,9 @@ object GlyphTransforms {
       case 3 => (d.rotate, 0f, dx)
     }
 
+
+
+
     def draw(surface: Surface): Unit = {
       drawBackground(surface)
       surface.withOrigin(x, y) {
@@ -400,11 +404,14 @@ object GlyphTransforms {
     /**
      *  Translate `p` to its location relative to the new origin
      */
-    @inline def translate(p: Vec): Vec = quadrants%4 match {
-      case 0 => p                       // p
-      case 2 => Vec(dx-p.x, dy-p.y)     // d-p
-      case 1 => Vec(dy-p.x, p.y)
-      case 3 => Vec(dx-p.y, p.x)
+    @inline def translate(p: Vec): Vec = {
+      val res = quadrants % 4 match {
+        case 0 => p // p
+        case 2 => Vec(dx - p.x, dy - p.y) // d-p
+        case 1 => Vec(p.y, dy - p.x)
+        case 3 => Vec(dx - p.y, p.x)
+      }
+      res
     }
 
     override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(translate(p))
@@ -496,20 +503,71 @@ object GlyphTransforms {
     // Distance of the new centre from the old centre
     private val delta  = (diagonal scaled .5f) - center
 
-    def translate(p: Vec): Vec = p - delta
+    // Debugging (urghh) machinery
+    private val debug = true
+    private var lastRel: Vec = Vec.Origin
+    private var lastLoc: Vec = Vec.Origin
+    private var lastCursor: Vec = Vec.Origin
+    private var lastScreenPos: Vec = Vec.Origin
+    private val RED = DefaultBrushes.red(width=12, cap=ROUND)
+    private val GREEN = DefaultBrushes.green(width=6, cap=ROUND)
+    private val BLUE = DefaultBrushes.blue(width=8, cap=ROUND)
+    // ---
+
+    /**
+     * The reverse of the current (absolute) drawing transform, if this
+     * glyph has been drawn at least once.
+     * TODO: the reverse transform could be calculated at glyph-construction time. But I've
+     *       failed to do it accurately too many times for comfort.
+     */
+    private var reverseTransform: Option[Vec=>Vec] = None
 
     def draw(surface: Surface): Unit = {
         drawBackground(surface)
         surface.withClip(diagonal) {
-          surface.withOrigin(delta) { surface.withRot(degrees, center) { glyph.draw(surface) } }
+          surface.withOrigin(delta) {
+            surface.withRot(degrees, center) {
+              glyph.draw(surface)
+              // capture the reverse of the current drawing transform
+              reverseTransform match {
+                case None =>
+                  reverseTransform = Some(surface.currentReverseTransform)
+                case _ =>
+              }
+              if (debug) {
+                lastRel=reverseTransform.get(glyph.rootDistance)
+                println(s"LR=$lastRel")
+                surface.drawPoint(lastRel+(20,20), DefaultBrushes.black(width=10))
+                surface.drawPoint(Vec.Origin, DefaultBrushes.red(width=10))
+              }
+            }
+          }
+        }
+      //--
+        if (debug) {
+          surface.drawPoint(Vec.Origin, RED)
+          surface.drawPoint(lastCursor, GREEN)
+          surface.drawPoint(lastScreenPos, BLUE)
         }
     }
 
     locally { glyph.parent = this }
 
-    override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(translate(p))
 
-    override def glyphContaining(p: Vec): Option[Hit] = glyph.glyphContaining(translate(p))
+    @inline private def relativeLocation(glyphPos: Vec): Vec = {
+      lastCursor = glyphPos
+      val screenPos: Vec = rootDistance+glyphPos // guiRoot._mouseLoc //should be, but isn't, rootDistance+relativeLocation
+      val thisRelative   = reverseTransform.get(screenPos)
+      thisRelative
+    }
+
+    override def reactiveContaining(glyphPos: Vec): Option[ReactiveGlyph] = {
+      glyph.reactiveContaining(relativeLocation(glyphPos))
+    }
+
+    override def glyphContaining(glyphPos: Vec): Option[Hit] = {
+      glyph.glyphContaining(relativeLocation(glyphPos))
+    }
 
     def copy(fg: Brush = fg, bg: Brush = bg): Turned =
       new Turned(glyph.copy(), degrees, tight, fg, bg)
@@ -605,7 +663,7 @@ object GlyphTransforms {
     val (xf, dx) = if (leftRight) (-1f, diagonal.x) else (1f, 0f)
     val (yf, dy) = if (topBottom) (-1f, diagonal.y) else (1f, 0f)
 
-    def translate(p: Vec): Vec = Vec(dx-p.x, dy-p.y)
+    def translate(p: Vec): Vec = Vec(if (leftRight) diagonal.x-p.x else p.x, if (topBottom) diagonal.y-p.y else p.y)
 
     val mirror: Array[Float] = Array(
       xf, 0f, dx,

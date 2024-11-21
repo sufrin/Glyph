@@ -571,6 +571,28 @@ object Glyphs extends Brushes {
   }
 
 
+  case class BreakableGlyph(hyphen: Glyph, glyphs: Seq[Glyph]) extends Glyph {
+    val rep = NaturalSize.Row.atTop$(glyphs)
+    override val baseLine = glyphs.head.baseLine
+    def draw(surface: Surface): Unit = rep.draw(surface)
+    def diagonal: Vec = rep.diagonal
+    def copy(fg: Brush=this.fg, bg: Brush=this.bg): Glyph = new BreakableGlyph(hyphen, glyphs)
+    val fg: Brush = glyphs.head.fg
+    val bg: Brush = glyphs.head.bg
+    /** Index of the first of the glyphs that doesn't
+     * fit within `w`.
+     */
+    def maximal(width: Scalar):Int = {
+      var w: Scalar = 0
+      var i = 0
+      while (i<glyphs.length && w+glyphs(i).w<width) {
+        w += glyphs(i).w
+        i += 1
+      }
+      i
+    }
+  }
+
   object Label extends DefaultPaints
   {
 

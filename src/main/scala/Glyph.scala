@@ -111,7 +111,7 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
   def reactiveContaining(p: Vec): Option[ReactiveGlyph]  =
     glyphContaining(p) match {
-      case None                    => None
+      case None                => None
       case Some(Hit(glyph, _)) =>
         glyph.reactiveParent
         /*match { //TODO: relativise the hit
