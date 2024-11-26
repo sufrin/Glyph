@@ -984,7 +984,7 @@ trait LargeTestGUI extends Brushes {
     val reddish: Brush = redFrame.copy(width=0, blendMode=BlendMode.SRC, alpha = 0.1f)
     val blueish: Brush = blueLine.copy(width=0)
     val greenish: Brush = green.copy(width=0)
-    val t1=FilledRect(300, 400, fg=yellow)//Col(bg=blueish(alpha = 0.1f))(Eb(50, 50), Rb(75, 50), Rb(100, 50))
+    val t1=FilledRect(30, 40, fg=yellow)//Col(bg=blueish(alpha = 0.1f))(Eb(50, 50), Rb(75, 50), Rb(100, 50))
     val t2=(b4)//.enlarged(20, bg=blueish(blendMode=BlendMode.SRC, alpha = 0.3f)))//.turned(-30f, bg=reddish(alpha=0.1f))
 
     def grid = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(height=2)(buttons).enlarged(10f)

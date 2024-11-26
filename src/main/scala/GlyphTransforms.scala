@@ -535,9 +535,8 @@ object GlyphTransforms {
                 case _ =>
               }
               if (debug) {
-                lastRel=reverseTransform.get(glyph.rootDistance)
-                println(s"LR=$lastRel")
-                surface.drawPoint(lastRel+(20,20), DefaultBrushes.black(width=10))
+                println(s"D:$delta R:$rootDistance TD:${surface.currentForwardTransform(rootDistance+delta)}")
+                surface.drawPoint(lastScreenPos, BLUE)
                 surface.drawPoint(Vec.Origin, DefaultBrushes.red(width=10))
               }
             }
@@ -547,7 +546,6 @@ object GlyphTransforms {
         if (debug) {
           surface.drawPoint(Vec.Origin, RED)
           surface.drawPoint(lastCursor, GREEN)
-          surface.drawPoint(lastScreenPos, BLUE)
         }
     }
 
@@ -558,6 +556,7 @@ object GlyphTransforms {
       lastCursor = glyphPos
       val screenPos: Vec = rootDistance+glyphPos // guiRoot._mouseLoc //should be, but isn't, rootDistance+relativeLocation
       val thisRelative   = reverseTransform.get(screenPos)
+      lastScreenPos = thisRelative
       thisRelative
     }
 
