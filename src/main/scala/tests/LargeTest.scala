@@ -978,14 +978,14 @@ trait LargeTestGUI extends Brushes {
 
     def b1 = Tb("b1")
     def b2 = Tb("b2")
-    def b3 = Tb("b3").scaled(1.4f)
-    def b4 = Tb("b4").scaled(1.6f)
+    def b3 = Tb("b3")//.scaled(1.4f)
+    def b4 = Tb("b4")//.scaled(1.6f)
     def buttons = List(b1, b2, b3, b4)
     val reddish: Brush = redFrame.copy(width=0, blendMode=BlendMode.SRC, alpha = 0.1f)
     val blueish: Brush = blueLine.copy(width=0)
     val greenish: Brush = green.copy(width=0)
-    val t1=FilledRect(30, 40, fg=yellow)//Col(bg=blueish(alpha = 0.1f))(Eb(50, 50), Rb(75, 50), Rb(100, 50))
-    val t2=(b4)//.enlarged(20, bg=blueish(blendMode=BlendMode.SRC, alpha = 0.3f)))//.turned(-30f, bg=reddish(alpha=0.1f))
+    val t1=Col(bg=blueish(alpha = 0.1f))(Eb(50, 50), Rb(75, 50), Rb(100, 50))
+    val t2=(b4.enlarged(20, bg=blueish(blendMode=BlendMode.SRC, alpha = 0.3f))).turned(-30f, bg=reddish(alpha=0.1f))
 
     def grid = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(height=2)(buttons).enlarged(10f)
     def table = NaturalSize.Grid(fg=black, padx=5f, pady=5f).table(width=2)(buttons).enlarged(10f)
