@@ -443,8 +443,11 @@ object GlyphTransforms {
   /**
    *  The given `glyph` rotated by `degrees` degrees. Unless `tight` the bounding box of the
    *  result is calculated by rotating the glyph's bounding box, and may (for near-circular glyphs)
-   *  be insufficnelty tight. When `tight` is true, then the bounding box is a square whose side is the
+   *  be insufficiently tight. When `tight` is true, then the bounding box is a square whose side is the
    *  larger of the sides of the glyph's box: this is tighter for near-circular glyphs.
+   *
+   *  It took me an uncosnscionably long time to get the `relativeLocation' function right. In the end
+   *  it turned out to be obvious.
    */
   class Turned(val glyph: Glyph, degrees: Scalar, tight: Boolean, val fg: Brush, val bg: Brush) extends TransformedGlyph {
     import Math.PI
@@ -466,12 +469,13 @@ object GlyphTransforms {
       (norm * PI / 180f).toFloat
     }
 
-    def cos(theta: Double): Scalar = Math.cos(theta).toFloat
-    def sin(theta: Double): Scalar = Math.sin(theta).toFloat
+    private def cos(theta: Double): Scalar = Math.cos(theta).toFloat
+    private def sin(theta: Double): Scalar = Math.sin(theta).toFloat
 
 
-    // Centre of the glyph's bounding box
-    private val center = d scaled 0.5f
+    private val cosTheta     = cos(Theta)
+    private val sinTheta     = sin(Theta)
+
 
     val (ww, hh) =
       if (tight) {
@@ -479,19 +483,20 @@ object GlyphTransforms {
         (D,D)
       }
       else {
-        // calculations dispatch on the quadrant.
-        @inline def f(theta: Double): (Scalar, Scalar)    = ((d.x*cos(theta) + d.y*sin(theta)).abs, (d.x*sin(theta)+d.y*cos(theta)).abs)
-        @inline def rotf(theta: Double): (Scalar, Scalar) = ((d.x*sin(theta)+d.y*cos(theta)).abs, (d.x*cos(theta) + d.y*sin(theta)).abs)
-        if (Theta<=`pi/2`) f(Theta)
-        else
-        if (Theta<=`pi`)
-          rotf(Theta-`pi/2`)
-        else
-        if (Theta<=`3pi/2`)
-          f(Theta-`pi`)
-        else
-          rotf(Theta-`3pi/2`)
-      }
+          // Dispatch on the quadrant
+          @inline def f(theta: Double): (Scalar, Scalar)    = ((d.x * cos(theta) + d.y * sin(theta)).abs, (d.x * sin(theta) + d.y * cos(theta)).abs)
+          @inline def rotf(theta: Double): (Scalar, Scalar) = ((d.x * sin(theta) + d.y * cos(theta)).abs, (d.x * cos(theta) + d.y * sin(theta)).abs)
+          if (Theta <= `pi/2`)
+            f(Theta)
+          else
+          if (Theta <= `pi`)
+            rotf(Theta - `pi/2`)
+          else if (Theta <= `3pi/2`)
+            f(Theta - `pi`)
+          else
+            rotf(Theta - `3pi/2`)
+        }
+
 
 
     // default bounding box: overridden for `turnedBoxed`
@@ -500,64 +505,55 @@ object GlyphTransforms {
     // Bounding box of the transformed glyph
     val diagonal = box
 
+    // Centre of the glyph's bounding box
+    private val glyphCentre = d scaled 0.5f
+    // Centre of this bounding box
+    private val thisCentre = diagonal scaled 0.5f
+
     // Distance of the new centre from the old centre
-    private val delta  = (diagonal scaled .5f) - center
+    private val delta  = thisCentre - glyphCentre
 
     // Debugging (urghh) machinery
-    private val debug = true
-    private var lastRel: Vec = Vec.Origin
-    private var lastLoc: Vec = Vec.Origin
-    private var lastCursor: Vec = Vec.Origin
-    private var lastScreenPos: Vec = Vec.Origin
-    private val RED = DefaultBrushes.red(width=12, cap=ROUND)
-    private val GREEN = DefaultBrushes.green(width=6, cap=ROUND)
-    private val BLUE = DefaultBrushes.blue(width=8, cap=ROUND)
+//    private val debug = true
+//    private var lastRel, lastLoc, lastCursor: Vec = Vec.Origin
+//    private val RED = DefaultBrushes.red(width=12, cap=ROUND)
+//    private val GREEN = DefaultBrushes.green(width=6, cap=ROUND)
+//    private val BLUE = DefaultBrushes.blue(width=8, cap=ROUND)
     // ---
-
-    /**
-     * The reverse of the current (absolute) drawing transform, if this
-     * glyph has been drawn at least once.
-     * TODO: the reverse transform could be calculated at glyph-construction time. But I've
-     *       failed to do it accurately too many times for comfort.
-     */
-    private var reverseTransform: Option[Vec=>Vec] = None
 
     def draw(surface: Surface): Unit = {
         drawBackground(surface)
         surface.withClip(diagonal) {
           surface.withOrigin(delta) {
-            surface.withRot(degrees, center) {
+            surface.withRot(degrees, glyphCentre) {
               glyph.draw(surface)
-              // capture the reverse of the current drawing transform
-              reverseTransform match {
-                case None =>
-                  reverseTransform = Some(surface.currentReverseTransform)
-                case _ =>
-              }
-              if (debug) {
-                println(s"D:$delta R:$rootDistance TD:${surface.currentForwardTransform(rootDistance+delta)}")
-                surface.drawPoint(lastScreenPos, BLUE)
-                surface.drawPoint(Vec.Origin, DefaultBrushes.red(width=10))
-              }
+//              if (debug) {
+//                surface.drawPoint(lastLoc, BLUE)
+//                surface.drawPoint(glyphCentre, RED)
+//              }
             }
           }
-        }
-      //--
-        if (debug) {
-          surface.drawPoint(Vec.Origin, RED)
-          surface.drawPoint(lastCursor, GREEN)
+//          if (debug) {
+//            surface.drawPoint(thisCentre, GREEN)
+//            surface.drawPoint(lastCursor, RED)
+//          }
         }
     }
 
     locally { glyph.parent = this }
 
 
+
     @inline private def relativeLocation(glyphPos: Vec): Vec = {
-      lastCursor = glyphPos
-      val screenPos: Vec = rootDistance+glyphPos // guiRoot._mouseLoc //should be, but isn't, rootDistance+relativeLocation
-      val thisRelative   = reverseTransform.get(screenPos)
-      lastScreenPos = thisRelative
-      thisRelative
+      val Vec(x, y) = glyphPos - thisCentre  // vector to the centre of this glyph
+      val xr = (x*cosTheta + y*sinTheta)     // rotated by theta
+      val yr = (-x*sinTheta + y*cosTheta)
+//      if (debug) {
+//        lastLoc = glyphCentre+(xr, yr)
+//        lastCursor = glyphPos
+//        lastLoc
+//      } else
+        glyphCentre+Vec(xr, yr)
     }
 
     override def reactiveContaining(glyphPos: Vec): Option[ReactiveGlyph] = {
