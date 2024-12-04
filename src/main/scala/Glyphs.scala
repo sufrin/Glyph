@@ -234,11 +234,6 @@ object Glyphs extends Brushes {
         val fg = theGlyphs.head.fg
         val bg = theGlyphs.head.bg
 
-        /** A geometry-debugging glyph surrounding this glyph */
-        override
-        def $$$$(enable: Variable[Boolean] = DebugGeometry.enableFrame, framePaint: Brush = DebugGeometry.frameColor): Glyph =
-          new DebugGeometry(this, enable, fg=framePaint, false)
-
         locally {
           setParents()
         }

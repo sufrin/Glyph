@@ -145,11 +145,6 @@ object FixedSize extends DefaultPaints {
         val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
         val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
 
-        /** A geometry-debugging glyph surrounding this glyph */
-        override
-        def $$$$(enable: Variable[Boolean] = DebugGeometry.enableFrame, framePaint: Brush = DebugGeometry.frameColor): Glyph =
-          new DebugGeometry(this, enable, fg = framePaint, false)
-
         locally {
           setParents()
         }
