@@ -65,17 +65,21 @@ case class Sheet
   lazy val labelStyle: GlyphStyle = GlyphStyle(labelFont, labelForegroundBrush, labelBackgroundBrush)
 
   lazy val buttonStyle: ButtonStyle = ButtonStyle(
-    up = GlyphStyle(font = buttonFont, fg = buttonForegroundBrush, bg = buttonBackgroundBrush),
-    down = GlyphStyle(font = buttonFont, fg = buttonDownBrush, bg = buttonBackgroundBrush),
-    hover = GlyphStyle(font = buttonFont, fg = buttonHoverBrush, bg = buttonBackgroundBrush),
-    frame = Framed(fg = buttonBorderBrush, bg = buttonBackgroundBrush, radiusFactor = 0.5f),
+    up     = GlyphStyle(font = buttonFont, fg = buttonForegroundBrush, bg = buttonBackgroundBrush),
+    down   = GlyphStyle(font = buttonFont, fg = buttonDownBrush, bg = buttonBackgroundBrush),
+    hover  = GlyphStyle(font = buttonFont, fg = buttonHoverBrush, bg = buttonBackgroundBrush),
+    frame  = Framed(fg = buttonBorderBrush, bg = buttonBackgroundBrush, radiusFactor = 0.5f),
     border = 6f,
     toggle = ToggleStyle(on = toggleOn, off = toggleOff),
     checkbox = CheckboxStyle(tick = "✔", cross = "✖", on = toggleOn, off = toggleOff)
   )
 
-  lazy val unFramed: Sheet = new Sheet() {
-    override lazy val buttonStyle: ButtonStyle = buttonStyle.copy(frame = Decoration.Unframed)
+  /** A stylesheet derived from this one, but with button framing specified by `border`, and decor`. */
+  def withButtonFrame(decor: Styles.Decoration.Decoration = Decoration.Unframed): Sheet = {
+    val style  = buttonStyle.copy(frame = decor)
+    new Sheet() {
+      override lazy val buttonStyle: ButtonStyle = style
+    }
   }
 
   lazy val menuStyle: MenuStyle = MenuStyle(
