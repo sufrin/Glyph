@@ -262,6 +262,35 @@ object UniformSize {
   }
 }
 
+object Label {
+
+  def apply(text: String, align: Alignment = Center)(implicit sheet: Sheet): Glyph = Label(text, align, sheet.labelStyle)
+
+  def Label(text: String, align: Alignment = Center)(implicit sheet: Sheet): Glyph = Label(text, align, sheet.labelStyle)
+
+  def apply(text: String, align: Alignment, detail: Styles.GlyphStyle): Glyph = Label(text, align, detail)
+
+  /**
+   * As `Label` above but with an explicit `GlyphStyle` parameter
+   */
+  def Label(text: String, align: Alignment, detail: Styles.GlyphStyle): Glyph = {
+    import NaturalSize.Col
+    val lines = text.split('\n').toList
+    lines.length match {
+      case 1 => Text(text, detail.font).asGlyph(detail.fg, detail.bg)
+      case _ => {
+        val texts = lines.map { line => Text(line, detail.font).asGlyph(detail.fg, detail.bg) }
+        align match {
+          case Right => Col(bg = detail.bg).atRight$(texts)
+          case Left | Justify => Col(bg = detail.bg).atLeft$(texts)
+          case Center => Col(bg = detail.bg).centered$(texts)
+        }
+      }
+    }
+  }
+}
+
+
 /**
  * Generates a button on which the given texts are shown, according to
  * its internal boolean state. The details
@@ -276,7 +305,7 @@ object UniformSize {
 
 case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean) extends ToggleButton {
   def apply(reaction: Boolean => Unit)(implicit sheet: Sheet): OnOffButton = {
-    import styled.text.Label
+    //import styled.text.Label
     val detail = sheet.buttonStyle
     val offFG = detail.toggle.off.fg
     val offBG = detail.toggle.off.bg
@@ -302,7 +331,7 @@ case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean) e
  */
 case class MenuTextToggle(whenTrue: String, whenFalse: String, initially: Boolean) extends ToggleButton {
   def apply(reaction: Boolean => Unit)(implicit sheet: Sheet): OnOffButton = {
-    import styled.text.Label
+    //import styled.text.Label
     val detail = sheet.buttonStyle
     val offFG = detail.toggle.off.fg
     val offBG = detail.toggle.off.bg
@@ -332,8 +361,9 @@ case class GlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean) ex
     val hh=whenTrue.h max whenFalse.h
     val detail = sheet.buttonStyle
     BooleanGlyphs(new OnOff(whenTrue=Decorate(whenTrue.enlargedTo(ww,hh)),
-      whenFalse=Decorate(whenFalse.enlargedTo(ww,hh)),
-      initially=initially, fg=NOTHING, bg=NOTHING),
+                            whenFalse=Decorate(whenFalse.enlargedTo(ww,hh)),
+                            initially=initially, fg=NOTHING, bg=NOTHING
+                           ),
       initially=initially,
       fg=detail.toggle.off.fg,
       bg=detail.toggle.off.bg,
@@ -468,6 +498,8 @@ object TextField {
   }
 }
 
+
+
 object RadioCheckBoxes {
   def apply(captions: Seq[String], prefer: String = null, inheritFramed: Boolean = false)(action: Option[Int]=>Unit)
            (implicit sheet: Sheet): RadioCheckBoxes =
@@ -489,7 +521,7 @@ object RadioCheckBoxes {
  */
 class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Boolean,
                       action: Option[Int]=>Unit)(implicit sheet: Sheet) {
-  import styled.text.Label
+  //import styled.text.Label
 
   val preferred  = if (prefer eq null) captions(0) else prefer
 
@@ -536,10 +568,10 @@ class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Bool
   }
 
   def arrangedVertically(): Glyph =
-    NaturalSize.Grid(fg=DefaultBrushes.black, bg=sheet.labelBackgroundBrush).table(width=2)(glyphRows)
+    NaturalSize.Grid(bg=sheet.buttonBackgroundBrush).table(width=2)(glyphRows)
 
   def arrangedHorizontally(): Glyph =
-    NaturalSize.Grid(bg=sheet.labelBackgroundBrush, padx=5).table(width=captions.length)(glyphCols)
+    NaturalSize.Grid(bg=sheet.buttonBackgroundBrush, padx=5).table(width=captions.length)(glyphCols)
 
 }
 

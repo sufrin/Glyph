@@ -286,8 +286,8 @@ object DynamicGlyphs extends Brushes {
     def withNoBackground(fg: Brush = defaultFG, bg: Brush = null, align: Alignment=Center)(glyphs: Glyph*): OneOf =
       new OneOf(glyphs, align, fg = fg, BG = bg, enableBG = false)
 
-    def seq(fg: Brush=defaultFG, align: Alignment=Center)(glyphs: Seq[Glyph]): OneOf =
-        new OneOf(glyphs, align, fg=fg)
+    def seq(fg: Brush=defaultFG, bg: Brush=defaultFG, align: Alignment=Center)(glyphs: Seq[Glyph]): OneOf =
+        new OneOf(glyphs, align, fg=fg, BG=bg)
 
     def $(fg: Brush = defaultFG, align: Alignment=Center)(glyphs: Seq[Glyph]): OneOf =
       new OneOf(glyphs, align, fg = fg)
