@@ -3,6 +3,8 @@ package tests
 import Glyphs._
 import GlyphTypes._
 
+import org.sufrin.glyph.DefaultBrushes.{blueLine, lightGrey, redFrame}
+
 
 /**
  *  Glyph examples for use in documentation
@@ -13,6 +15,7 @@ object DocumentationDiagrams {
   import GlyphTransforms.{Edged => Framed}
   import NaturalSize.Col
   import PolygonLibrary._
+  import DefaultBrushes.{ROUND,SQUARE,BUTT}
 
   val yellow   = Brush("yellow") color (0xFFffff00) strokeWidth (1.0f) strokeCap(ROUND)
   val green    = Brush("green") color (0xFF00ff00) strokeWidth (5.0f) strokeCap(ROUND)

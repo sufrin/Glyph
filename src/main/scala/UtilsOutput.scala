@@ -21,7 +21,7 @@ object Output
   def withWriteBar(folder: String="SAVEDGUI")(gui: Glyph): Glyph = {
     import Glyphs._
     implicit object Style extends Styles.DefaultSheet
-    val r = FilledRect(gui.w - 5, 6f, fg = lightGrey)
+    val r = FilledRect(gui.w - 5, 6f, fg = DefaultBrushes.lightGrey)
     lazy val writeBar: Glyph = ReactiveGlyphs.RawButton(r(), r(), r()) {
       _ =>
         val fileName = stringOfDate() + ".png"

@@ -3,7 +3,7 @@ package tests
 
 import CellFit.ShiftEast
 import FixedSize.Space.tab
-import PolygonLibrary.brown
+import DefaultBrushes.brown
 import ReactiveGlyphs.RawButton
 import Styles.NotebookStyle
 

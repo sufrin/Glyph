@@ -3,7 +3,7 @@ package sheeted
 
 /** Intermediate definitions refactored from `styled` by (more or less) substitution */
 
-import Glyphs.nothing
+import DefaultBrushes.nothing
 import BooleanGlyphs._
 import ReactiveGlyphs.Reaction
 import Styles.GlyphStyle

@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import Glyphs.nothing
+import DefaultBrushes.nothing
 import GlyphTypes._
 import NaturalSize.{Col, Row}
 

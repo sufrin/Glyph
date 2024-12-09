@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 
-import Brush.SQUARE
-import Glyphs.{BreakableGlyph, BUTT}
+import Brush.BUTT
+import Glyphs.{BreakableGlyph}
 import GlyphTypes.Scalar
 import ReactiveGlyphs.{ColourButton, Reaction}
 
@@ -84,44 +84,6 @@ object GlyphXML extends SourceLoggable {
 
     import org.sufrin.glyph.Brush.ROUND
 
-    // TODO: better notation for brushes
-    def namedColour(name: String): Brush = {
-      def common(name: String): Brush = name.toLowerCase match {
-        case "red" => org.sufrin.glyph.Brush(s"red")(color = 0XFFFF0000)
-        case "blue" => org.sufrin.glyph.Brush(s"blue")(color = 0XFF0000FF)
-        case "green" => org.sufrin.glyph.Brush(s"green")(color = 0XFF00FF00)
-        case "white" => org.sufrin.glyph.Brush(s"white")(color = 0XFFFFFFFF)
-        case "grey1" => org.sufrin.glyph.Brush(s"grey1")(color = 0XFFBBBBBB)
-        case "grey2" => org.sufrin.glyph.Brush(s"grey2")(color = 0XFFCDCDCD)
-        case "grey3" => org.sufrin.glyph.Brush(s"grey3")(color = 0XFFC5C5C5)
-        case "grey4" => org.sufrin.glyph.Brush(s"grey4")(color = 0XFFC2C2C2)
-        case "lightgrey" => org.sufrin.glyph.Brush(s"lightgrey")(color = 0XFFBBBBBB)
-        case "darkgrey" => org.sufrin.glyph.Brush(s"darkgrey")(color = 0XFF777777)
-        case "yellow" => org.sufrin.glyph.Brush(s"yellow")(color = 0XFFFFDD00)
-        case "nothing" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000)
-        case "" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000)
-        case s"0x${hex}" if hex.matches("([0-9a-f])+") =>
-          org.sufrin.glyph.Brush(s"0X$hex")(color = hexToInt(hex))
-        case name =>
-          org.sufrin.logging.Default.warn(s"$name is not the name of a colour")
-          org.sufrin.glyph.Brush(s"red($name)")(color = 0XFFFF0000)
-      }
-      name match {
-        case s"$name/$stroke/$cap" if stroke.matches("[0-9]+([.][0-9]+)?") =>
-          val capShape = cap.toUpperCase match {
-            case "ROUND" => ROUND
-            case "SQUARE" => SQUARE
-            case "BUTT" | "FLAT" => BUTT
-            case _ => BUTT
-          }
-          common(name)(width=stroke.toFloat, cap=capShape)
-        case s"$name/$stroke" if stroke.matches("[0-9]+([.][0-9]+)?") =>
-          common(name)(width=stroke.toFloat, cap=SQUARE)
-        case _ =>
-          common(name)
-      }
-    }
-
     val brushCache = collection.mutable.HashMap[String, Brush]()
 
     def Brush(key: String, alt: Brush): Brush = attributes.get(key) match {
@@ -131,7 +93,7 @@ object GlyphXML extends SourceLoggable {
           case Some(brush) =>
             brush
           case None =>
-            val brush = namedColour(name)
+            val brush = DefaultBrushes.namedColour(name)
             brushCache(name)=brush
             brush
         }
@@ -369,6 +331,10 @@ class GlyphXML {
   /** Declare a new text entity */
   def update(id: String, expansion: String) = entityMap(id) = expansion
 
+  locally {
+      entityMap ++= List("amp" -> "&", "ls"-> "<", "gt" -> ">", "nbsp" -> "\u00A0")
+  }
+
 
   private val stylingTags: Seq[String] = List("b", "em", "i", "bi", "n", "hyph", "glyph")
   def stylingTag(tag: String): Boolean = stylingTags.contains(tag)
@@ -386,9 +352,8 @@ class GlyphXML {
    *         TODO: this should be transformed into a streaming translator. The problem is that adjacent nodes can (and generally do) give rise to
    *               distinct "word glyphs" within paragraphs. EG: "<i>italic</i>" gives rise to 3 distinct word glyphs, and
    *               "&entityref;" gives rise to (n+2) when the referenced entity gives rise to n.
-   *               The words will (in  general) be set with spaces between them. There is no systematic workaround, though the
-   *               notation <embed>prefix&entityref;suffix</embed> adjoins the prefix to the opening "word" of the referenced entity;
-   *               and the suffix to its closing "word".
+   *               The "words" will (in  general) be set with spaces between them. There is no systematic workaround, though the
+   *               notation <nobreak>....</nobreak> treats its body (....) as a single chunk of text with no breaks.
    */
   def translate(sources: List[String])(within: List[String])(elem: Node)(inherited: AttributeMap)(context: Sheet): Seq[Glyph] = {
 
@@ -530,12 +495,6 @@ class GlyphXML {
         val fg = textForegroundBrush
         val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
         def textOf(text: String): Seq[Glyph] = List(toGlyph(TextChunk(text, textFont, fg=fg, bg=bg), fg))
-        id match {
-          case "amp" => textOf("&")
-          case "ls" => textOf("<")
-          case "gt" => textOf(">")
-          case "nbsp" => textOf("\u00A0")
-          case _ =>
             entityMap.get(id) match {
               case None =>
                 warning(s"Unknown entity reference &$id;")
@@ -543,30 +502,21 @@ class GlyphXML {
               case Some(text) =>
                 translateText(text)
             }
-        }
 
-      /** A text entity prefixed, and/or suffixed by some text, with no intervening space, is written
-       *  as
-       *  {{{ <entity>prefix&entityname;suffix<entity> }}}
+
+      /**
+       * Glue together children without intervening spaces.
        */
-      case <embed>{child@_*}</embed> =>
-        val (prefix, id, suffix) = child match {
-          case Seq(Text(id)) => ("", id, "")
-          case Seq(EntityRef(id)) => ("", id, "")
-          case Seq(Text(l), EntityRef(id), Text(r)) => (l, id, r)
-          case Seq(EntityRef(id), Text(r)) => ("", id, r)
-          case Seq(Text(l), EntityRef(id)) => (l, id, "")
-          case other =>
-            warn(s"Bad <embed>")
-            ("", "arising from bad <embed>", "")
+      case <nobreak>{child@_*}</nobreak> =>
+        val buffer = new StringBuffer()
+        for { elt <- child } elt match {
+          case EntityRef(id) => buffer append entityMap.getOrElse(id, "")
+          case Text(t) => buffer append t.strip()
+          case other => buffer append other.toString.strip()
         }
-        entityMap.get(id) match {
-          case None =>
-            warning(s"Unknown entity reference $id")
-            translateText(s"$prefix$suffix")
-          case Some(text) =>
-            translateText(s"$prefix$text$suffix")
-        }
+        import context.{textFont, textForegroundBrush => fg, textBackgroundBrush => bg}
+        import org.sufrin.glyph.{Text => TextChunk}
+        List(TextChunk(buffer.toString, textFont, fg=fg, bg=bg).atBaseline(fg=fg, bg=bg))
 
 
       case <s></s> =>

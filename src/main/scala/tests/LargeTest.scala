@@ -11,12 +11,13 @@ import PolygonLibrary._
 import io.github.humbleui.skija.BlendMode
 import org.sufrin.glyph.GlyphTransforms.Turned
 
-trait LargeTestGUI extends Brushes {
+trait LargeTestGUI  {
 
   import DynamicGlyphs.OneOf
   import GlyphTransforms.{Framed, Scaled}
   import NaturalSize.{Col, Row}
   import ReactiveGlyphs.{FramedButton, RawButton, ShadedButton}
+  import DefaultBrushes._
   implicit object Sheet extends Styles.DefaultSheet
 
   private lazy val atPopupAnchor = East(popupAnchor)
@@ -956,7 +957,6 @@ trait LargeTestGUI extends Brushes {
   }
 
   private val scene21 = {
-    // TODO: tracking reactives in {turned, negative-skewed} columns needs translate fix (Nov: 24)
     import ReactiveGlyphs.{TextButton => But}
 
     val fatYellow: Brush = yellow.copy strokeWidth 40
@@ -1086,7 +1086,7 @@ trait LargeTestGUI extends Brushes {
   )
   /** Width of the menu bar */
   private val screenWidth = scenes.map(_.w).max
-  val oneOf: OneOf = OneOf.seq()(scenes)
+  val oneOf: OneOf = OneOf.seq(bg=white)(scenes)
   val menu: Glyph = FixedSize
     .Row(screenWidth)
     .atTop(
@@ -1173,7 +1173,7 @@ trait LargeTestGUI extends Brushes {
 }
 
 object LargeTest extends Application {
-  override val defaultIconPath: Option[String] = Some("./flag.png")
+  override val defaultIconPath: Option[String] = Some("./parrot.png")
   val title = "LargeTest"
   val GUI: Glyph = new LargeTestGUI {}.root
 }

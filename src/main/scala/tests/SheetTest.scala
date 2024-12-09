@@ -6,6 +6,7 @@ import org.sufrin.glyph.Application
 import org.sufrin.glyph.DynamicGlyphs.ActiveString
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.GlyphXML.source
+import org.sufrin.glyph.ReactiveGlyphs.Enterable
 
 import scala.collection.immutable.ListMap
 import scala.xml.Elem
@@ -132,17 +133,22 @@ trait SheetTestInterface {
   import org.sufrin.glyph.Styles.Decoration._
   val fontSize = 18f
   val pageWidthEms = 60f
+  val background = DefaultBrushes.lightGrey
+  val dimension = Vec(700f, 500f)
+
 
   def EMS(ems: Scalar): String = s"${ems}em"
 
 
-  val rootStyle   = Sheet(
+  val rootStyle = Sheet(
     textFontSize = fontSize,
     buttonFontSize = fontSize,
     labelFontSize = fontSize,
-    labelBackgroundBrush = DefaultBrushes.lightGrey,
-    textBackgroundBrush = DefaultBrushes.lightGrey,
-    buttonBackgroundBrush = DefaultBrushes.lightGrey
+    backgroundBrush = background,
+    labelBackgroundBrush = background,
+    textBackgroundBrush = background,
+    buttonBackgroundBrush = background,
+    containerDimension = dimension
   )
 
   val buttonStyle = rootStyle.withButtonFrame(Blurred(fg=rootStyle.buttonForegroundBrush, blur=6, spread=6))
@@ -167,7 +173,8 @@ trait SheetTestInterface {
 
 
   xml("#p")    = ListMap("align"->"justify")
-  xml("#body") = ListMap("align"->"center", "background"->"lightGrey", "padX"->"2em", "padY"->"2ex", "width"->EMS(pageWidthEms))
+  xml("#body") = ListMap("align"->"center", "padX"->"2em", "padY"->"2ex", "width"->EMS(pageWidthEms))
+  xml("#glyph") = ListMap("framed"->"false")
 
 
   //******************
@@ -175,28 +182,42 @@ trait SheetTestInterface {
       <body>
         <p align="center"><b>Welcome</b></p>
         <p>This little app​lic​ation is a testbed for Glyphs styled imp​licitly with style​sheets.</p>
+        <p>The text <nobreak>"&amp;"</nobreak> without spurious spaces, is denoted as follows:</p>
+        <![CDATA[<nobreak>"&amp;"</nobreak> ]]>
       </body>
   }
 
   //******************
   Page("Reactive Glyphs 1"){
-    val active = ActiveString(font=pageStyle.textFont, fg=pageStyle.textForegroundBrush, bg=pageStyle.textBackgroundBrush)(" "*20)
-    xml("boxes") = RadioCheckBoxes(List("0", "1", "2"), "0"){
-      case Some(n) => active.set(s"Ticked $n"); case None => active.set("Unticked")
-    }.arrangedVertically()
+    // Declare a local "active" glyph
+    val active = ActiveString(font=pageStyle.textFont, fg=pageStyle.textForegroundBrush, bg=pageStyle.textBackgroundBrush)("  Unticked  ")
     xml("active") = active
+
+    // Declare two reactive glyphs
+    xml("boxesL") = RadioCheckBoxes(List("0", "1", "2"), "0"){
+      case Some(n) => active.set(s"L ticked $n"); case None => active.set("L Unticked")
+    }.arrangedVertically()
+    xml("boxesR") = RadioCheckBoxes(List("0", "1", "2"), "0"){
+      case Some(n) => active.set(s"R ticked $n"); case None => active.set("R Unticked")
+    }.arrangedVertically()
+
+    val anchor = sheeted.TextButton("Hover here for an explanation"){ _ => }
+    val theHint: Glyph = <p>This is how it was done</p>
+    new HintManager(anchor.asInstanceOf[Enterable], theHint, 10f)
+    xml("anchor") = anchor
 
     <body>
       <p align="center"><b>Reactive Glyphs embedded in XML</b></p>
 
-      <p align="centre">A fixed-width row with 2 glyphs</p>
+      <p align="centre">A fixed-width row with 2 reactive glyphs &amp; an active glyph</p>
       <row width={EMS(pageWidthEms)}>
         <fill/>
-        <row width={EMS(pageWidthEms*2/3)}>
-          <glyph ref="boxes" turned="35"/> <fill/> <col frame="green">$active </col><fill/> $boxes
+        <row width={EMS(pageWidthEms*2/3)} frame="yellow/4">
+          <glyph ref="boxesL" turned="35"/> <fill/> <col frame="green">$active </col><fill/> $boxesR
         </row>
         <fill/>
       </row>
+      <glyph ref="anchor"/>
     </body>
   }
 

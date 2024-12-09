@@ -4,6 +4,7 @@ package tests
 import Glyphs._
 import NaturalSize.{Col, Row}
 import ReactiveGlyphs.TextButton
+import DefaultBrushes._
 
 /**
  * Interface using non-styled glyphs
