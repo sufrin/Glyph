@@ -111,20 +111,20 @@ trait SheetTestInterface {
     xml("active") = active
 
     // Declare two reactive glyphs
-    xml("boxesL") = RadioCheckBoxes(List("0", "1", "2"), "0"){
+    xml("boxesL") = RadioCheckBoxes(List("0", "1", "2"), ""){
       case Some(n) => active.set(s"L ticked $n"); case None => active.set("L Unticked")
     }.arrangedVertically()
-    xml("boxesR") = RadioCheckBoxes(List("0", "1", "2"), "0"){
+    xml("boxesR") = RadioCheckBoxes(List("0", "1", "2"), ""){
       case Some(n) => active.set(s"R ticked $n"); case None => active.set("R Unticked")
     }.arrangedVertically()
 
     xml("explain1") = explainButton("Source of Reactive Glyphs")(<body>
       <![CDATA[
     val active = ActiveString(font=pageStyle.textFont, fg=pageStyle.textForegroundBrush, bg=pageStyle.textBackgroundBrush)("  Unticked  ")
-    xml("boxesL") = RadioCheckBoxes(List("0", "1", "2"), "0"){
+    xml("boxesL") = RadioCheckBoxes(List("0", "1", "2"), ""){
       case Some(n) => active.set(s"L ticked $n"); case None => active.set("L Unticked")
     }.arrangedVertically()
-    xml("boxesR") = RadioCheckBoxes(List("0", "1", "2"), "0"){
+    xml("boxesR") = RadioCheckBoxes(List("0", "1", "2"), ""){
       case Some(n) => active.set(s"R ticked $n"); case None => active.set("R Unticked")
     }.arrangedVertically()
     <body>
@@ -133,7 +133,9 @@ trait SheetTestInterface {
         <row class="#wide">
           <fill/>
           <row width={EMS(pageWidthEms*2/3)} frame="yellow/4">
-               <glyph ref="boxesL" turned="35"/> <fill/> <col frame="green">$active </col><fill/> $boxesR
+               <glyph ref="boxesL" turned="35"/>
+               <fill/> <col frame="green">$active </col><fill/>
+               $boxesR
           </row>
           <fill/>
         </row>
