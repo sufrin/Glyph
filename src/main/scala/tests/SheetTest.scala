@@ -86,24 +86,21 @@ trait SheetTestInterface {
   xml("#body")  = ListMap("align"->"center", "padX"->"2em", "padY"->"2ex", "width"->EMS(pageWidthEms))
   xml("#glyph") = ListMap("framed"->"false")
   xml("wide")   = ListMap("width"->EMS(pageWidthEms))
-  xml("PARAS")  = ListMap("align"->"left", "textFontSize"->"14")
 
 
   //******************
   Page("Welcome"){
-      <body>
+      <body parSkip="1.5ex">
         <p align="center"><b>Welcome</b></p>
         <p>
-            This little app_lic_ation is a testbed for Glyphs styled imp_licitly with style_sheets.
-            Textual glyphs herein have (for the most part) been specified in <b>GlyphXML</b> -- which bears
-            a <i>passing</i> resemblance to <b>xml</b>.
+            This notebook is a testbed for Glyphs styled imp_licitly with style_sheets.
+            Its pages have for the most part been specified directly in <b>GlyphXML,</b> which bears
+            a <i>passing</i> resemblance to <b>xhtml.</b>
         </p>
         <p>
             The <b>Glyph</b> API has convenient facilities for the mutual em_bedding
-            of <b>Scala</b> glyph objects and GlyphXML.
+            of <b>Scala</b> glyph objects and <b>GlyphXML.</b>
         </p>
-        <p>The text <nobreak>"&amp;"</nobreak> without spurious spaces, is denoted as follows:</p>
-        <![CDATA[<nobreak>"&amp;"</nobreak> ]]>
       </body>
   }
 
@@ -166,8 +163,8 @@ trait SheetTestInterface {
     xml("explain2") = explainButton("Source of Hyphenation")(<body>
     <![CDATA[
 
-    xml("flocci")   = "Flo_cci_nau_ci_ihil_ipil_if_icat_ion"
-    xml("longText") = (<splice>
+    xml("flocci")     = "Flo_cci_nau_ci_nihil_ipil_if_icat_ion"
+    xml("hyphenated") = (<splice>
       Hyphenation of text within para_graphs is done at dis_cret_ion_ary break_points.
       The  word &flocci; has many places at which it can be broken.
     </splice>)
@@ -175,41 +172,60 @@ trait SheetTestInterface {
     <body parSkip="1.7ex">
       <p align="center"><b>Hyphenation</b></p>
       <p align="centre">Paragraphs of different widths</p>
-
-      <div id="PARAS">
-        <p width={EMS(55)}><expand ref="longText"/></p>
-        <p width={EMS(50)}><expand ref="longText"/></p>
-        <p width={EMS(45)}><expand ref="longText"/></p>
-        <p width={EMS(40)}><expand ref="longText"/></p>
-        <p width={EMS(35)}><expand ref="longText"/></p>
-        <p width={EMS(30)}><expand ref="longText"/></p>
+      <div align="center">
+        <div frame="yellow/2">
+          <p width={EMS(55)}><use ref="hyphenated"/></p>
+          <p width={EMS(50)}><use ref="hyphenated"/></p>
+          <p width={EMS(45)}><use ref="hyphenated"/></p>
+          <p width={EMS(40)}><use ref="hyphenated"/></p>
+          <p width={EMS(35)}><use ref="hyphenated"/></p>
+          <p width={EMS(30)}><use ref="hyphenated"/></p>
+        </div>
         <s/>
         <row class="wide"><fill/><glyph ref="explain2"/><fill/></row>
       </div>
-     </body>  ]]>
+    </body>
+    ]]>
     </body>)
 
-    xml("flocci")   = "Flo_cci_nau_ci_ihil_ipil_if_icat_ion"
-    xml("longText") = (<splice>
+    xml("flocci")     = "Flo_cci_nau_ci_nihil_ipil_if_icat_ion"
+    xml("hyphenated") = (<splice>
       Hyphenation of text within para_graphs is done at dis_cret_ion_ary break_points.
       The  word &flocci; has many places at which it can be broken.
     </splice>)
-
 
     <body parSkip="1.7ex">
       <p align="center"><b>Hyphenation</b></p>
       <p align="centre">Paragraphs of different widths</p>
 
-      <div id="PARAS">
-        <p width={EMS(55)}><expand ref="longText"/></p>
-        <p width={EMS(50)}><expand ref="longText"/></p>
-        <p width={EMS(45)}><expand ref="longText"/></p>
-        <p width={EMS(40)}><expand ref="longText"/></p>
-        <p width={EMS(35)}><expand ref="longText"/></p>
-        <p width={EMS(30)}><expand ref="longText"/></p>
+      <div align="center">
+        <div frame="yellow/2">
+          <p width={EMS(55)}><use ref="hyphenated"/></p>
+          <p width={EMS(50)}><use ref="hyphenated"/></p>
+          <p width={EMS(45)}><use ref="hyphenated"/></p>
+          <p width={EMS(40)}><use ref="hyphenated"/></p>
+          <p width={EMS(35)}><use ref="hyphenated"/></p>
+          <p width={EMS(30)}><use ref="hyphenated"/></p>
+        </div>
         <s/>
         <row class="wide"><fill/><glyph ref="explain2"/><fill/></row>
       </div>
+    </body>
+  }
+
+  Page("Etc"){
+    <body>
+      <p align="center"><b>Etc</b></p>
+      <p align="center">Miscellaneous notes</p>
+
+      <p>The text <nobreak>"&amp;"</nobreak> is denoted by:</p>
+      <row class="wide"><fill/><![CDATA[<nobreak>"&amp;"</nobreak>]]> &nbsp;<verb> rather than </verb><![CDATA["&amp;"]]><fill/></row>
+      <s/>
+      <p>Without the <nobreak>&ls;nobreak&gt;</nobreak> embedding the three
+        elements appear sep_arated by spaces: "&amp;".
+      </p>
+
+
     </body>
   }
 

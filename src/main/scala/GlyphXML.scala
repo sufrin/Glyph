@@ -335,11 +335,11 @@ class GlyphXML {
   def update(id: String, element: Elem) : Unit = elementMap(id) = element
 
   locally {
-      entityMap ++= List("amp" -> "&", "ls"-> "<", "gt" -> ">", "nbsp" -> "\u00A0")
+      entityMap ++= List("amp" -> "&", "ls"-> "<", "gt" -> ">", "nbsp" -> "\u00A0" )
   }
 
 
-  private val stylingTags: Seq[String] = List("b", "em", "i", "bi", "n", "hyph", "glyph", "splice", "expand")
+  private val stylingTags: Seq[String] = List("b", "em", "i", "bi", "n", "hyph", "glyph", "splice", "use")
   def stylingTag(tag: String): Boolean = stylingTags.contains(tag)
 
   /**
@@ -497,17 +497,30 @@ class GlyphXML {
         import org.sufrin.glyph.{Text => TextChunk}
         val fg = textForegroundBrush
         val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
-        def textOf(text: String): Seq[Glyph] = List(toGlyph(TextChunk(text, textFont, fg=fg, bg=bg), fg))
+
+        def textOf(text: String): Seq[Glyph] = List(toGlyph(TextChunk(text, textFont, fg=DefaultBrushes.red, bg=bg), fg=DefaultBrushes.red))
+        elementMap.get(id) match {
+          //case None =>
+          //import context.{textFont, textForegroundBrush => fg, textBackgroundBrush => bg}
+          //import org.sufrin.glyph.{Text => TextChunk}
+          //List(TextChunk(s"No defined macro ref=$id", textFont, fg, bg).atBaseline(fg, bg))
+
+          case Some(node) =>
+            //println(s"Expanding $id as $node ")
+            translate(sources$)("use" :: within)(node)(attributes)(context)
+
+          case None =>
             entityMap.get(id) match {
               case None =>
-                warning(s"Unknown entity reference &$id;")
-                textOf(s"&$id;")
+                warning(s"Unknown entity/macro reference &$id;")
+                textOf(s"Unknown entity/macro reference &$id;")
               case Some(text) =>
                 translateText(text)
             }
+        }
 
       /** Simple macro */
-      case <expand>{child@_*}</expand> =>
+      case <use>{child@_*}</use> =>
         val id = localAttributes.String("ref", "")
         elementMap.get(id) match {
           case None =>
@@ -515,18 +528,14 @@ class GlyphXML {
             import org.sufrin.glyph.{Text => TextChunk}
             List(TextChunk(s"No defined macro ref=$id", textFont, fg, bg).atBaseline(fg, bg))
 
-
-          case Some(<splice>{child@_*}</splice>) =>
-            //println(s"Expanding $id as $child ")
-            child.flatMap { node => translate(sources$)(within$)(node)(localAttributes)(context) }
-
           case Some(node) =>
             //println(s"Expanding $id as $node ")
-            translate (sources$) (s"expand ref=$id" :: within) (node) (attributes) (context)
+            translate (sources$) (within$) (node) (attributes) (context)
         }
 
       case <splice>{child@_*}</splice> =>
-        child.flatMap { elt => translate(sources$)(within$)(elt)(localAttributes)(context) }
+        val context$ = attributes.declareAttributes(context)
+        child.flatMap { elt => translate(sources$)(within$)(elt)(localAttributes)(context$) }
 
       /**
        * Glue together children without intervening spaces.
@@ -564,12 +573,12 @@ class GlyphXML {
         val context$ = attributes.declareAttributes(context)
         val local = context$
         val font = local.textFont
-        val fg = local.textForegroundBrush
-        val bg = local.textBackgroundBrush
+        val fg = context$.textForegroundBrush
+        val bg = context$.textBackgroundBrush
         val background = attributes.Brush("bg", DefaultBrushes.nothing)
         val lines      = child.toString.split('\n').toSeq
         val lines$     = stripIndentation(lines)
-        val texts      = lines$.map{ line => TextChunk(line, font, fg, bg).asGlyph()}
+        val texts      = lines$.map{ line => TextChunk(line, font, fg, bg).asGlyph(fg, bg)}
         List(decorated(NaturalSize.Col(bg=background).atLeft$(texts)))
 
       case <body>{child@_*}</body> =>
