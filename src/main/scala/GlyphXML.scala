@@ -321,6 +321,7 @@ class GlyphXML {
   private val sheetMap:     mutable.Map[String, Sheet] = mutable.LinkedHashMap[String, Sheet]()
   private val reactionMap:  mutable.Map[String, Reaction] = mutable.LinkedHashMap[String, Reaction]()
   private val entityMap:    mutable.Map[String, String] = mutable.LinkedHashMap[String, String]()
+  private val elementMap:   mutable.Map[String, Node] = mutable.LinkedHashMap[String, Node]()
 
   /** Declare a named glyph */
   def update(id: String, glyph: => Glyph): Unit = glyphMap(id)={ ()=> glyph }
@@ -330,13 +331,15 @@ class GlyphXML {
   def update(id: String, generator: (AttributeMap, Sheet)=>Glyph) = generatorMap(id) = generator
   /** Declare a new text entity */
   def update(id: String, expansion: String) = entityMap(id) = expansion
+  /** Declare a new expandable entity */
+  def update(id: String, element: Elem) : Unit = elementMap(id) = element
 
   locally {
       entityMap ++= List("amp" -> "&", "ls"-> "<", "gt" -> ">", "nbsp" -> "\u00A0")
   }
 
 
-  private val stylingTags: Seq[String] = List("b", "em", "i", "bi", "n", "hyph", "glyph")
+  private val stylingTags: Seq[String] = List("b", "em", "i", "bi", "n", "hyph", "glyph", "splice", "expand")
   def stylingTag(tag: String): Boolean = stylingTags.contains(tag)
 
   /**
@@ -377,7 +380,7 @@ class GlyphXML {
               warning(s"no defaults for $attrId=\"$attr\"")
               Map.empty
             case Some(attrs) =>
-              org.sufrin.logging.Default.info(s"attrsFor($attrId) $attr = $attrs")
+              //org.sufrin.logging.Default.info(s"attrsFor($attrId) $attr = $attrs")
               attrs
           }
       }
@@ -449,6 +452,7 @@ class GlyphXML {
     }
 
     def translateText(buffer: String): Seq[Glyph] = {
+      import context.discretionaryWordBreak
       import context.{textFont, textForegroundBrush => fg}
       import org.sufrin.glyph.{Text => TextChunk}
       val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
@@ -465,8 +469,8 @@ class GlyphXML {
         case word: String =>
           val glyph: Glyph = {
             // is there a discretionary hyphen // TODO: or more, eventually
-            if (word.contains('​')) {
-              val glyphs = word.toString.split("\u200B").toSeq.map { syllable => TextChunk(syllable, textFont, fg, bg).atBaseline(fg, bg) }
+            if (word.contains(discretionaryWordBreak)) {
+              val glyphs = word.toString.split(discretionaryWordBreak).toSeq.map { syllable => TextChunk(syllable, textFont, fg, bg).atBaseline(fg, bg) }
               val hyphen = TextChunk("-", textFont, fg, bg).atBaseline(fg, bg)
               new BreakableGlyph(hyphen, glyphs)
             }
@@ -485,7 +489,6 @@ class GlyphXML {
       case PCData(text) =>
         import context.{textFont, textBackgroundBrush => bg, textForegroundBrush => fg}
         import org.sufrin.glyph.{Text => TextChunk}
-
         val glyphs = text.split('\n').toSeq.map(TextChunk(_, textFont, fg, bg).asGlyph(fg, bg))
         List(NaturalSize.Col(bg=bg).atLeft$(glyphs))
 
@@ -503,6 +506,27 @@ class GlyphXML {
                 translateText(text)
             }
 
+      /** Simple macro */
+      case <expand>{child@_*}</expand> =>
+        val id = localAttributes.String("ref", "")
+        elementMap.get(id) match {
+          case None =>
+            import context.{textFont, textForegroundBrush => fg, textBackgroundBrush => bg}
+            import org.sufrin.glyph.{Text => TextChunk}
+            List(TextChunk(s"No defined macro ref=$id", textFont, fg, bg).atBaseline(fg, bg))
+
+
+          case Some(<splice>{child@_*}</splice>) =>
+            //println(s"Expanding $id as $child ")
+            child.flatMap { node => translate(sources$)(within$)(node)(localAttributes)(context) }
+
+          case Some(node) =>
+            //println(s"Expanding $id as $node ")
+            translate (sources$) (s"expand ref=$id" :: within) (node) (attributes) (context)
+        }
+
+      case <splice>{child@_*}</splice> =>
+        child.flatMap { elt => translate(sources$)(within$)(elt)(localAttributes)(context) }
 
       /**
        * Glue together children without intervening spaces.
@@ -558,6 +582,7 @@ class GlyphXML {
 
       case <div>{child@_*}</div> =>
         val context$ = attributes.declareAttributes(context)
+        val glyphs =
         localAttributes.get("id") match {
           case None =>
             child.flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
@@ -570,6 +595,13 @@ class GlyphXML {
                 val attributes$ = attrs++(localAttributes.removed("id"))
                 child.flatMap {  node => translate(sources$)(within$)(node)(attributes$)(attributes$.declareAttributes(context)) }
             }
+        }
+        val align = localAttributes.String("align", "")
+        align match {
+          case "center" => List(decorated(NaturalSize.Col(bg=attributes.Brush("bg", DefaultBrushes.nothing)).centered$(glyphs)))
+          case "left" => List(decorated(NaturalSize.Col(bg=attributes.Brush("bg", DefaultBrushes.nothing)).atLeft$(glyphs)))
+          case "right" => List(decorated(NaturalSize.Col(bg=attributes.Brush("bg", DefaultBrushes.nothing)).atRight$(glyphs)))
+          case _ => glyphs
         }
 
       case <i>{child@_*}</i> =>
@@ -603,6 +635,23 @@ class GlyphXML {
           case other =>
             warning(s"alignment(=$other) should be center/top/bottom [using 'top']\nat <${elem.label}${elem.attributes}>")
             builder.atTop$(glyphs)
+        }
+        List(decorated(glyph))
+
+      case <col>{child@_*}</col> if (localAttributes.get("height").isDefined) =>
+        val context$ = attributes.declareAttributes(context)
+        val height = localAttributes.Units("width", 0f)(context)
+        val fg=context.textForegroundBrush
+        val bg=context.textBackgroundBrush
+        val glyphs = child.filterNot(isBlank(_)).flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
+        val builder  = FixedSize.Col.apply(height, fg=fg, bg=bg)
+        val glyph = attributes.String("alignment", "center") match {
+          case "center" => builder.centered$(glyphs)
+          case "left"   => builder.atLeft$(glyphs)
+          case "right"  => builder.atRight$(glyphs)
+          case other =>
+            warning(s"alignment(=$other) should be center/left/right [using 'top']\nat <${elem.label}${elem.attributes}>")
+            builder.centered$(glyphs)
         }
         List(decorated(glyph))
 

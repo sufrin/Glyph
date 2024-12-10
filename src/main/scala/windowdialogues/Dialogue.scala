@@ -59,7 +59,7 @@ object Dialogue extends Loggable {
 
 }
 
-class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, theTitle: String) { thisPopup =>
+class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, theTitle: String, bg: Brush=DefaultBrushes.nothing) { thisPopup =>
   /**
    * Make a primitive popup from `blurb` atop `bottomRow`; placing it at `location` on the screen.
    */
@@ -97,9 +97,9 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
 
     val ex = Label("X")
 
-    val theBottomRow = Row.atTop$(bottomRow)
+    val theBottomRow = Row(bg=bg).atTop$(bottomRow)
 
-    val theRoot = Col.centered(blurb, theBottomRow)
+    val theRoot = Col(bg=bg).centered(blurb, theBottomRow)
 
     var running: Option[Interaction] = None
 

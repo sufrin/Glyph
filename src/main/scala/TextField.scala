@@ -491,7 +491,7 @@ object TextField extends org.sufrin.logging.Loggable {
     Dialogue.OK(Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
   }
 
-  def apply(fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, font: Font=Brushes.buttonFont,
+  def apply(fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, font: Font=DefaultBrushes.buttonFont,
             onEnter: String=>Unit              = { case text: String => },
             onError: (EventKey, Glyph) => Unit = popupError(_,_),
             onCursorLeave: String=>Unit        = { case text: String => },

@@ -40,7 +40,9 @@ case class Sheet
   padY: Scalar = 0f,
   buttonFrame: Styles.Decoration.Decoration = Styles.Decoration.Unframed,
   // Container constraints
-  containerDimension: Vec = Vec.Zero
+  containerDimension: Vec = Vec.Zero,
+  //
+  discretionaryWordBreak: String = "_"
 ) {
 
   val toggleOn = new GlyphColours {

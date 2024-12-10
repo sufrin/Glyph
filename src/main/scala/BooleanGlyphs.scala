@@ -42,6 +42,6 @@ object BooleanGlyphs {
       }
     }
 
-    def apply(tickBox: OnOff, initially: Boolean, fg: Brush=Brushes.buttonForeground, bg: Brush=Brushes.buttonBackground, reaction: Boolean => Unit): OnOffButton =
+    def apply(tickBox: OnOff, initially: Boolean, fg: Brush=DefaultBrushes.buttonForeground, bg: Brush=DefaultBrushes.buttonBackground, reaction: Boolean => Unit): OnOffButton =
       new OnOffButton(tickBox: OnOff, initially: Boolean, fg, bg, reaction: Boolean => Unit)
 }

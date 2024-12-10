@@ -25,7 +25,7 @@ object TestGXML extends Application {
   }
 
 
-  Brushes.buttonPointSize = 16
+  DefaultBrushes.buttonPointSize = 16
   val PRESSME = ReactiveGlyphs.TextButton("PRESS ME"){ _ => println("Pressed")}.framed()
   val QUIT    = ReactiveGlyphs.TextButton("QUIT"){ _ => println("Quit Pressed")}.framed()
   // Definitions whose scope is the translation.

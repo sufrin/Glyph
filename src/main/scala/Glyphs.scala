@@ -74,7 +74,7 @@ object Glyphs  {
      * Shown (when `down.value` is true)  as glyph, with shading of width zdelta` around the bottom-left corner of glyph.
      * Shown (when `down.value` is false) as glyph, in the bottom-left corner of the whole.
      */
-    def Dynamic(fg: Brush=Brushes.buttonForeground, bg: Brush=Brushes.buttonBackground, delta: Scalar, down: Variable[Boolean] = Variable(false))(glyph: Glyph) =
+    def Dynamic(fg: Brush=DefaultBrushes.buttonForeground, bg: Brush=DefaultBrushes.buttonBackground, delta: Scalar, down: Variable[Boolean] = Variable(false))(glyph: Glyph) =
       new Dynamic(glyph, fg, bg, delta, down)
 
     /**
@@ -83,7 +83,7 @@ object Glyphs  {
      * Shown (when `down` is true)  as glyph, with shading of width zdelta` around the bottom-left corner of glyph.
      * Shown (when `down` is false) as glyph, in the bottom-left corner of the whole.
      */
-    def Static(fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, delta: Scalar, down: Boolean=false)(glyph: Glyph) =
+    def Static(fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, delta: Scalar, down: Boolean=false)(glyph: Glyph) =
         GlyphTransforms.Shaded(glyph, fg, bg, 0f, delta, down)
 
     class  Dynamic(glyph: Glyph, val fg: Brush, val bg: Brush, delta: Scalar, val down: Variable[Boolean]) extends Glyph {
@@ -593,7 +593,7 @@ object Glyphs  {
 
     import io.github.humbleui.skija.Font
 
-    def apply(text: String, font: Font = Brushes.buttonFont, fg: Brush = defaultFG, bg: Brush = defaultBG): Glyph =
+    def apply(text: String, font: Font = DefaultBrushes.buttonFont, fg: Brush = defaultFG, bg: Brush = defaultBG): Glyph =
         Text(text, font).asLabel(fg, bg)
   }
 
