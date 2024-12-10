@@ -183,7 +183,7 @@ object GlyphML {
   }
 
   val Default: Context =
-        Context(Styles.Default, Vec.Zero, 1200f, 10, 10, fg=Glyphs.black, bg=Glyphs.nothing, padX=0, padY=0)
+        Context(Styles.Default, Vec.Zero, 1200f, 10, 10, fg=DefaultBrushes.black, bg=DefaultBrushes.nothing, padX=0, padY=0)
 
   type ContextTransform = Context => Context
   type GlyphTransform   = Glyph   => Glyph

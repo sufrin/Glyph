@@ -9,13 +9,15 @@ import windowdialogues.Dialogue.OK
 import PolygonLibrary._
 
 import io.github.humbleui.skija.BlendMode
+import org.sufrin.glyph.GlyphTransforms.Turned
 
-trait LargeTestGUI extends Brushes {
+trait LargeTestGUI  {
 
   import DynamicGlyphs.OneOf
   import GlyphTransforms.{Framed, Scaled}
   import NaturalSize.{Col, Row}
   import ReactiveGlyphs.{FramedButton, RawButton, ShadedButton}
+  import DefaultBrushes._
   implicit object Sheet extends Styles.DefaultSheet
 
   private lazy val atPopupAnchor = East(popupAnchor)
@@ -327,27 +329,22 @@ trait LargeTestGUI extends Brushes {
     def space = sp.asGlyph()
     val texts = List(huge, sp, large, sp, med, sp, small, sp, huge)
 
-
+    val asG = DebugGeometry(redFrame, Row.atTop$(texts.map(_.asGlyph())))
+    val atB = DebugGeometry(redFrame, Row.atTop$(texts.map(_.atBaseline())))
     Col.centered(
       textColumn()(
         """(7) Showing the difference between making a Row.atTop of from .asGlyph
-          |texts of different sides, and from the same .atBaseLine.
+          |texts of different sizes, and from the same .atBaseLine texts.
           |[We may eventually change the API to avoid the distinction.]
           |
-          |The .asGlyph version.
+          |Two rows of .asGlyph texts, with bounding boxes shown
           |""".stripMargin
       ),
-      medex,
-      medex,
-      Row.atTop$(texts.map(_.asGlyph())),
+      medex, asG above asG(),
       space,
-      textColumn()("""The .atBaseLine version"""),
+      textColumn()("""Two rows of .atBaseLine texts, with bounding boxes&baseLines shown"""),
       medex,
-      Row.atTop$(texts.map(_.atBaseline())),
-      medex,
-      textColumn()("""The .atBaseLine version (with baseline shown)"""),
-      medex,
-      Row.atTop$(texts.map(_.atBaseline())).$$$$()
+      atB above atB()
     )
   }
   private val scene8 = {
@@ -564,8 +561,10 @@ trait LargeTestGUI extends Brushes {
     val text = Text("Text", medFont).asGlyph(fg = blue)
     val rawbut: Glyph = RawButton(text, text(red), text(green)) { _ => }
 
-    def badRotOfBut(q: Int): Glyph =
+    def rotOfBut(q: Int): Glyph =
       Col.centered(Label(s"Rot($q)(But(Text))"), Rotated(q)(rawbut()))
+
+    def turnOfBut(degrees: Scalar): Glyph = Col.centered(Label(s"Turned($degrees)(But(Text))"), Turned(degrees)(rawbut()).framed())
 
     def butOfRot(q: Int): Glyph = Col.centered(
       Label(s"But(Text.rot($q))"),
@@ -586,15 +585,23 @@ trait LargeTestGUI extends Brushes {
         sp,
         textColumn(buttonFont, blue)("Post-Rotated buttons of the same glyph"),
         Row(
-          badRotOfBut(0),
+          rotOfBut(0),
           sp,
-          badRotOfBut(2),
+          rotOfBut(2),
           sp,
-          badRotOfBut(1),
+          rotOfBut(1),
           sp,
-          badRotOfBut(3)
+          rotOfBut(3)
         ),
-        sp
+        Row(
+          turnOfBut(20),
+          sp,
+          turnOfBut(40),
+          sp,
+          turnOfBut(60),
+          sp,
+          turnOfBut(80)
+        ),
       )
       .enlarged(sp.w)
   }
@@ -950,7 +957,6 @@ trait LargeTestGUI extends Brushes {
   }
 
   private val scene21 = {
-    // TODO: tracking reactives in {turned, negative-skewed} columns needs translate fix (Nov: 24)
     import ReactiveGlyphs.{TextButton => But}
 
     val fatYellow: Brush = yellow.copy strokeWidth 40
@@ -1080,7 +1086,7 @@ trait LargeTestGUI extends Brushes {
   )
   /** Width of the menu bar */
   private val screenWidth = scenes.map(_.w).max
-  val oneOf: OneOf = OneOf.seq()(scenes)
+  val oneOf: OneOf = OneOf.seq(bg=white)(scenes)
   val menu: Glyph = FixedSize
     .Row(screenWidth)
     .atTop(
@@ -1167,7 +1173,7 @@ trait LargeTestGUI extends Brushes {
 }
 
 object LargeTest extends Application {
-  override val defaultIconPath: Option[String] = Some("./flag.png")
+  override val defaultIconPath: Option[String] = Some("./parrot.png")
   val title = "LargeTest"
   val GUI: Glyph = new LargeTestGUI {}.root
 }

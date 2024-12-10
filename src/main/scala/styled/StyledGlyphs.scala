@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 package styled
 
-import Glyphs.nothing
+import DefaultBrushes.nothing
 import BooleanGlyphs._
 import ReactiveGlyphs.Reaction
 import Styles.GlyphStyle

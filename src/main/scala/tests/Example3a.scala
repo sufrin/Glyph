@@ -4,6 +4,8 @@ package tests
 
 import Glyphs._
 import NaturalSize._
+import DefaultBrushes._
+
 
 /**
  * Style to be used throughout the interface

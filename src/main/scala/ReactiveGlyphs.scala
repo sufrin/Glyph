@@ -5,12 +5,18 @@ import io.github.humbleui.jwm.{EventMouseScroll, Window}
 /**
  *  A collection of `Reactive` glyph types.
  */
-object ReactiveGlyphs extends Brushes {
+object ReactiveGlyphs {
 
   type Reaction = Modifiers.Bitmap => Unit
 
   import GlyphTypes.Scalar
+  import DefaultBrushes._
 
+  /**
+   *  A mixin for reactive glyphs that can make nonstandard responses to
+   *  the cursor entering or leaving them. `HintManager`s can be
+   *  declared for such glyphs; and
+   */
   trait Enterable {
     def guiRoot:  RootGlyph
     def reDraw(): Unit

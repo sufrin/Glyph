@@ -5,6 +5,7 @@ import GlyphML._
 import Glyphs._
 import GlyphTypes.Scalar
 import Styles.{Decoration, GlyphStyle}
+import DefaultBrushes._
 
 import org.sufrin.logging.{FINE, OFF}
 
@@ -26,11 +27,11 @@ object GlyphMLTest extends Application {
       leftMargin     = 0,
       rightMargin    = 0,
       parAlign       = Justify,
-      fg             = Glyphs.black)
+      fg             = black)
       .copy(fontFamily=FontFamily("Menlo"))
       .fontSize(20)
-      .labelStyle(fg=Glyphs.black, bg=Glyphs.nothing)
-      .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
+      .labelStyle(fg=black, bg=nothing)
+      .gridStyle(bg=nothing, fg=nothing, padY=8, padX=8)
       .frameStyle(Decoration.Blurred(fg=blue, blur=15f, spread=15f), fg=white)
       .paragraphEms(45)
       //.frameStyle(decoration=Decoration.Shaded(fg=blue, bg=darkGrey))

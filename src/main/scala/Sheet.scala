@@ -27,6 +27,7 @@ case class Sheet
   labelForegroundBrush: Brush = Brush("buttonForeground")(color=0xFF0000FF),  // blue
   textBackgroundBrush: Brush = Brush("textBackground")(color=0X00FFFFFF),     // transparent
   textForegroundBrush: Brush = Brush("textForeground")(color=0xFF0000FF),     // blue
+  backgroundBrush: Brush = Brush("background")(color=0XFFBBBBBB),
   // Paragraph layout properties
   parHang:     Boolean   = false,
   parAlign:    Alignment = Left,
@@ -37,23 +38,26 @@ case class Sheet
   parIndent:   ()=>Seq[Glyph] = { ()=>Nil },
   padX: Scalar = 0f,
   padY: Scalar = 0f,
+  buttonFrame: Styles.Decoration.Decoration = Styles.Decoration.Unframed,
   // Container constraints
   containerDimension: Vec = Vec.Zero
 ) {
-  val core: Sheet = this
 
   val toggleOn = new GlyphColours {
     val fg: Brush = toggleOnBrush;
     val bg: Brush = toggleBackgroundBrush
   }
+
   val toggleOff = new GlyphColours {
     val fg: Brush = toggleOffBrush;
     val bg: Brush = toggleBackgroundBrush
   }
+
   def labelFont: Font = labelFontFamily.makeFont(labelFontStyle, labelFontSize*fontScale)
   def textFont: Font = textFontFamily.makeFont(textFontStyle, textFontSize*fontScale)
   def buttonFont: Font = buttonFontFamily.makeFont(buttonFontStyle, buttonFontSize*fontScale)
   def buttonBorderWidth: Scalar = buttonBorderBrush.strokeWidth
+
   def parNarrow(left: Scalar, right: Scalar): Sheet = {
     val lm = leftMargin
     val rm = rightMargin
@@ -65,18 +69,17 @@ case class Sheet
   lazy val labelStyle: GlyphStyle = GlyphStyle(labelFont, labelForegroundBrush, labelBackgroundBrush)
 
   lazy val buttonStyle: ButtonStyle = ButtonStyle(
-    up = GlyphStyle(font = buttonFont, fg = buttonForegroundBrush, bg = buttonBackgroundBrush),
-    down = GlyphStyle(font = buttonFont, fg = buttonDownBrush, bg = buttonBackgroundBrush),
-    hover = GlyphStyle(font = buttonFont, fg = buttonHoverBrush, bg = buttonBackgroundBrush),
-    frame = Framed(fg = buttonBorderBrush, bg = buttonBackgroundBrush, radiusFactor = 0.5f),
+    up     = GlyphStyle(font = buttonFont, fg = buttonForegroundBrush, bg = buttonBackgroundBrush),
+    down   = GlyphStyle(font = buttonFont, fg = buttonDownBrush, bg = buttonBackgroundBrush),
+    hover  = GlyphStyle(font = buttonFont, fg = buttonHoverBrush, bg = buttonBackgroundBrush),
+    frame  = buttonFrame,
     border = 6f,
     toggle = ToggleStyle(on = toggleOn, off = toggleOff),
     checkbox = CheckboxStyle(tick = "✔", cross = "✖", on = toggleOn, off = toggleOff)
   )
 
-  lazy val unFramed: Sheet = new Sheet() {
-    override lazy val buttonStyle: ButtonStyle = buttonStyle.copy(frame = Decoration.Unframed)
-  }
+  /** A stylesheet derived from this one, but with button framing specified by `border`, and decor`. */
+  def withButtonFrame(frame: Styles.Decoration.Decoration = Decoration.Unframed): Sheet = copy(buttonFrame=frame)
 
   lazy val menuStyle: MenuStyle = MenuStyle(
     button = buttonStyle,

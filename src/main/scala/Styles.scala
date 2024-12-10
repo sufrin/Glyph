@@ -106,7 +106,7 @@ object Styles {
       def decorate(glyph: Glyph): Glyph = glyph.shaded(fg, bg, enlarge, delta, down)
     }
 
-    case class Blurred(fg: Brush, bg: Brush = Glyphs.nothing, blur: Scalar, spread: Scalar, delta: Scalar = 0f) extends Decoration {
+    case class Blurred(fg: Brush, bg: Brush = DefaultBrushes.nothing, blur: Scalar, spread: Scalar, delta: Scalar = 0f) extends Decoration {
       def decorate(glyph: Glyph): Glyph = Glyphs.BlurredFrame(blur, spread, fg, bg, dx = delta, dy = delta)(glyph)
     }
 

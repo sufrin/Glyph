@@ -402,13 +402,7 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    /** False unless `atSize` will generate a distinct glyph */
    def resizeable: Boolean = false
 
-  /**
-   *  A glyph derived from this glyph, and intended to be used for visual checks of geometry.
-   *
-   * @see DebugGeometry
-   */
-  def $$$$(enable: Variable[Boolean]=DebugGeometry.enableFrame, fg: Brush = DebugGeometry.frameColor): Glyph =
-           new DebugGeometry(this, enable, fg, true)
+
 }
 
 /**

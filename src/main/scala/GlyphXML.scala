@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 
-import Brush.SQUARE
-import Glyphs.{BreakableGlyph, BUTT}
+import Brush.BUTT
+import Glyphs.{BreakableGlyph}
 import GlyphTypes.Scalar
 import ReactiveGlyphs.{ColourButton, Reaction}
 
@@ -84,39 +84,6 @@ object GlyphXML extends SourceLoggable {
 
     import org.sufrin.glyph.Brush.ROUND
 
-    // TODO: better notation for brushes
-    def namedColour(name: String): Brush = {
-      def common(name: String): Brush = name.toLowerCase match {
-        case "red" => org.sufrin.glyph.Brush(s"red")(color = 0XFFFF0000)
-        case "blue" => org.sufrin.glyph.Brush(s"blue")(color = 0XFF0000FF)
-        case "green" => org.sufrin.glyph.Brush(s"green")(color = 0XFF00FF00)
-        case "lightgrey" => org.sufrin.glyph.Brush(s"lightgrey")(color = 0XFFBBBBBB)
-        case "darkgrey" => org.sufrin.glyph.Brush(s"darkgrey")(color = 0XFF777777)
-        case "yellow" => org.sufrin.glyph.Brush(s"yellow")(color = 0XFFFFDD00)
-        case "nothing" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000)
-        case "" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000)
-        case s"0x${hex}" if hex.matches("([0-9a-f])+") =>
-          org.sufrin.glyph.Brush(s"0X$hex")(color = hexToInt(hex))
-        case name =>
-          org.sufrin.logging.Default.warn(s"$name is not the name of a colour")
-          org.sufrin.glyph.Brush(s"red($name)")(color = 0XFFFF0000)
-      }
-      name match {
-        case s"$name/$stroke/$cap" if stroke.matches("[0-9]+([.][0-9]+)?") =>
-          val capShape = cap.toUpperCase match {
-            case "ROUND" => ROUND
-            case "SQUARE" => SQUARE
-            case "BUTT" | "FLAT" => BUTT
-            case _ => BUTT
-          }
-          common(name)(width=stroke.toFloat, cap=capShape)
-        case s"$name/$stroke" if stroke.matches("[0-9]+([.][0-9]+)?") =>
-          common(name)(width=stroke.toFloat, cap=SQUARE)
-        case _ =>
-          common(name)
-      }
-    }
-
     val brushCache = collection.mutable.HashMap[String, Brush]()
 
     def Brush(key: String, alt: Brush): Brush = attributes.get(key) match {
@@ -126,7 +93,7 @@ object GlyphXML extends SourceLoggable {
           case Some(brush) =>
             brush
           case None =>
-            val brush = namedColour(name)
+            val brush = DefaultBrushes.namedColour(name)
             brushCache(name)=brush
             brush
         }
@@ -141,11 +108,18 @@ object GlyphXML extends SourceLoggable {
       val fontDetail: Sheet =
         context
           .copy(
-            textFontFamily  = FontFamily(String("fontFamily", context.textFontFamily.name)),
-            textFontSize    = Float("fontSize",               context.textFontSize),
             fontScale       = Float("fontScale",              1.0f),
-            // TODO: button and label font attributes
+
+            textFontFamily  = FontFamily(String("fontFamily", String("textFontFamily", context.textFontFamily.name))),
+            textFontSize    = Float("fontSize", Float("textFontSize", context.textFontSize)),
+
+            labelFontFamily = FontFamily(String("fontFamily", String("labelFontFamily", context.labelFontFamily.name))),
+            labelFontSize   = Float("fontSize", Float("labelFontSize", context.labelFontSize)),
+
+            buttonFontFamily = FontFamily(String("fontFamily", String("buttonFontFamily", context.buttonFontFamily.name))),
+            buttonFontSize   = Float("fontSize", Float("buttonFontSize",                  context.buttonFontSize)),
           )
+
       // Units are computed relative to the font details, which may have been redeclared
       fontDetail.copy(
         padX                = Units("padX",           context.padX)         (fontDetail),
@@ -163,8 +137,7 @@ object GlyphXML extends SourceLoggable {
 
 
   /**  Derive a glyph from `glyph`. The result has the same dimensions, appearance and behaviour, but
-   *   will appear to have a baseline of `exHeight`, and will align with any `atBaseline`d texts set in
-   *   the row in which it will be composed.
+   *   will appear to have a baseline of `baseLine$`.
    *
    *   TODO: (Sept 2024) the entire business of baselines needs rethinking. Right now glyphs have
    *         baselines (0 except for atBaselined text glyphs) that allow them to be composed in
@@ -174,20 +147,17 @@ object GlyphXML extends SourceLoggable {
    *         compute their own baselines from their constituents, and align their constituents
    *         accordingly.
    */
-  def atBaseline(glyph: Glyph, baseLine$: Scalar): Glyph = new Glyph { thisGlyph =>
+  def withBaseline(glyph: Glyph, baseLine$: Scalar): Glyph = new Glyph { thisGlyph =>
+
     locally { glyph.parent=thisGlyph }
 
-    def draw(surface: Surface): Unit = {
-      surface.withOrigin(0, -baseLine) {
+    def draw(surface: Surface): Unit = surface.withOrigin(0, -baseLine) {
         glyph.draw(surface)
       }
-    }
 
-    override def reactiveContaining(p: Vec): Option[ReactiveGlyph] =
-      glyph.reactiveContaining(p-(0, baseLine))
+    override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(p)
 
-    override def glyphContaining(p: Vec): Option[Hit] =
-      glyph.glyphContaining(p-(0, baseLine))
+    override def glyphContaining(p: Vec): Option[Hit] = glyph.glyphContaining(p)
 
     override def baseLine: Scalar = baseLine$
 
@@ -195,14 +165,15 @@ object GlyphXML extends SourceLoggable {
 
     def copy(fg: Brush=fg, bg: Brush=bg): Glyph = {
       org.sufrin.logging.Default.info(s"copying $glyph.atBaseline($baseLine)")
-      atBaseline(glyph.copy(fg, bg), baseLine)
+      withBaseline(glyph.copy(fg, bg), baseLine$)
     }
 
     val fg: Brush = glyph.fg
     val bg: Brush = glyph.bg
   }
 
-  /**
+
+    /**
    *  Build a paragraph-formatted glyph formatted according to `sheet` from
    *  the `glyphs` sequence.
    */
@@ -337,36 +308,35 @@ object GlyphXML extends SourceLoggable {
 
 }
 
+/**
+ * The semantic specification of XML that denotes a glyph.
+ */
 class GlyphXML {
   import GlyphXML._
 
-  val glyphMap:     mutable.Map[String, Glyph] = mutable.LinkedHashMap[String, Glyph]()
-  val generatorMap: mutable.Map[String, (AttributeMap, Sheet)=>Glyph] = mutable.LinkedHashMap[String, (AttributeMap, Sheet)=>Glyph]()
-  val attrMap:      mutable.Map[String, AttributeMap] = mutable.LinkedHashMap[String, AttributeMap]()
-  val sheetMap:     mutable.Map[String, Sheet] = mutable.LinkedHashMap[String, Sheet]()
-  val reactionMap:  mutable.Map[String, Reaction] = mutable.LinkedHashMap[String, Reaction]()
-  val entityMap:    mutable.Map[String, String] = mutable.LinkedHashMap[String, String]()
+  // Mappings from names (used within XML) to relevant glyphs or their aspects.
+  private val glyphMap:     mutable.Map[String, ()=>Glyph] = mutable.LinkedHashMap[String, ()=>Glyph]()
+  private val generatorMap: mutable.Map[String, (AttributeMap, Sheet)=>Glyph] = mutable.LinkedHashMap[String, (AttributeMap, Sheet)=>Glyph]()
+  private val attrMap:      mutable.Map[String, AttributeMap] = mutable.LinkedHashMap[String, AttributeMap]()
+  private val sheetMap:     mutable.Map[String, Sheet] = mutable.LinkedHashMap[String, Sheet]()
+  private val reactionMap:  mutable.Map[String, Reaction] = mutable.LinkedHashMap[String, Reaction]()
+  private val entityMap:    mutable.Map[String, String] = mutable.LinkedHashMap[String, String]()
 
-  def update(id: String, glyph: Glyph): Unit = glyphMap(id)=glyph
+  /** Declare a named glyph */
+  def update(id: String, glyph: => Glyph): Unit = glyphMap(id)={ ()=> glyph }
+  /** Declare a named attribute map: used for inheritance of attributes */
   def update(id: String, map: AttributeMap): Unit = attrMap(id)=map
-  def update(id: String, reaction: Reaction): Unit = reactionMap(id)=reaction
+  /** Declare a new kind of tag */
   def update(id: String, generator: (AttributeMap, Sheet)=>Glyph) = generatorMap(id) = generator
+  /** Declare a new text entity */
   def update(id: String, expansion: String) = entityMap(id) = expansion
 
-//  def glyph(id: String)(elem: xml.Elem)(implicit source: SourceLocation): Glyph = {
-//    val within = List("")
-//    val glyph = NaturalSize.Col().atLeft$(this.translate(List(s"$source"))(within)(elem)()(new Sheet()))
-//    glyphMap(id)=glyph
-//    glyph
-//  }
-
-  def glyph(id: String)(glyph: Glyph): Glyph = {
-    val within = List("")
-    glyphMap(id)=glyph
-    glyph
+  locally {
+      entityMap ++= List("amp" -> "&", "ls"-> "<", "gt" -> ">", "nbsp" -> "\u00A0")
   }
 
-  private val stylingTags: Seq[String] = List("b", "em", "i", "bi", "n", "hyph")
+
+  private val stylingTags: Seq[String] = List("b", "em", "i", "bi", "n", "hyph", "glyph")
   def stylingTag(tag: String): Boolean = stylingTags.contains(tag)
 
   /**
@@ -382,9 +352,8 @@ class GlyphXML {
    *         TODO: this should be transformed into a streaming translator. The problem is that adjacent nodes can (and generally do) give rise to
    *               distinct "word glyphs" within paragraphs. EG: "<i>italic</i>" gives rise to 3 distinct word glyphs, and
    *               "&entityref;" gives rise to (n+2) when the referenced entity gives rise to n.
-   *               The words will (in  general) be set with spaces between them. There is no systematic workaround, though the
-   *               notation <embed>prefix&entityref;suffix</embed> adjoins the prefix to the opening "word" of the referenced entity;
-   *               and the suffix to its closing "word".
+   *               The "words" will (in  general) be set with spaces between them. There is no systematic workaround, though the
+   *               notation <nobreak>....</nobreak> treats its body (....) as a single chunk of text with no breaks.
    */
   def translate(sources: List[String])(within: List[String])(elem: Node)(inherited: AttributeMap)(context: Sheet): Seq[Glyph] = {
 
@@ -450,9 +419,15 @@ class GlyphXML {
         val rotated = localAttributes.Int("rotated", 0)
         rotated % 4 match {
           case 0     => glyph
-          case 1 | 3 => atBaseline(glyph.rotated(rotated), glyph.w)
-          case 2     => atBaseline(glyph.rotated(rotated), glyph.h)
+          case 1 | 3 => withBaseline(glyph.rotated(rotated), glyph.w)
+          case 2     => withBaseline(glyph.rotated(rotated), glyph.h)
         }
+      }
+
+      def turn(glyph: Glyph): Glyph = {
+        val degrees: Scalar = localAttributes.Int("turned", 0).toFloat
+        val glyph$ = glyph.turned(degrees, false)
+         glyph$//atBaseline(glyph$, glyph$.h)
       }
 
       def frame(glyph: Glyph): Glyph = {
@@ -464,7 +439,7 @@ class GlyphXML {
           glyph
       }
 
-      rotate(frame(glyph))
+      rotate(frame(turn(glyph)))
     }
 
 
@@ -479,14 +454,13 @@ class GlyphXML {
       val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
       buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map {
         case s"$$$word" =>
-          val copied = word.endsWith("()")
-          val id = if (copied) word.take(word.length - 2) else word
+          val id = if (word endsWith "$") word.substring(0, word.length-1) else word
           glyphMap.get(id) match {
-            case None => warning(s"Reference $$$id to an unknown glyph")
+            case None => warning(s"Reference $$$word to an unknown glyph")
               toGlyph(TextChunk(s"$$$id", textFont, fg, bg), fg)
             case Some(glyph) =>
-              val copy = if (copied) glyph.copy() else glyph
-              ((if (inPara) atBaseline(copy, context.baseLine) else copy))
+              val copy = glyph()
+              if (inPara) withBaseline(copy, (context.baseLine+copy.h)/2.3f) else copy
           }
         case word: String =>
           val glyph: Glyph = {
@@ -521,12 +495,6 @@ class GlyphXML {
         val fg = textForegroundBrush
         val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
         def textOf(text: String): Seq[Glyph] = List(toGlyph(TextChunk(text, textFont, fg=fg, bg=bg), fg))
-        id match {
-          case "amp" => textOf("&")
-          case "ls" => textOf("<")
-          case "gt" => textOf(">")
-          case "nbsp" => textOf("\u00A0")
-          case _ =>
             entityMap.get(id) match {
               case None =>
                 warning(s"Unknown entity reference &$id;")
@@ -534,43 +502,22 @@ class GlyphXML {
               case Some(text) =>
                 translateText(text)
             }
-        }
 
-      case <embed>{child@_*}</embed> =>
-        val (prefix, id, suffix) = child match {
-          case Seq(Text(id)) => ("", id, "")
-          case Seq(EntityRef(id)) => ("", id, "")
-          case Seq(Text(l), EntityRef(id), Text(r)) => (l, id, r)
-          case Seq(EntityRef(id), Text(r)) => ("", id, r)
-          case Seq(Text(l), EntityRef(id)) => (l, id, "")
-          case other =>
-            warn(s"Bad <embed>")
-            ("", "arising from bad <embed>", "")
-        }
-        entityMap.get(id) match {
-          case None =>
-            warning(s"Unknown entity reference $id")
-            translateText(s"$prefix$suffix")
-          case Some(text) =>
-            translateText(s"$prefix$text$suffix")
-        }
 
-      // TODO: NEEDS COMPLETE REVISION (styled glyph?)
-      case <button>{child@_*}</button> =>
-        val context$   = attributes.declareAttributes(context)
-        val act        = localAttributes.Reaction("action", { _ => })(this)
-        val label      = localAttributes.String("label", "")
-        val fg         = localAttributes.Brush("fg", context$.buttonStyle.up.fg)
-        val bg         = localAttributes.Brush("bg", context$.buttonStyle.up.bg)
-        val up         = localAttributes.Brush("up", fg)
-        val down       = attributes.Brush("down", ColourButton.down)
-        val hover      = attributes.Brush("hover", ColourButton.hover)
-        val background = attributes.Bool("background", false)
-        lazy val glyphs = NaturalSize.Row(bg=bg).centered$(child.flatMap { node => translate(sources$)(within$)(node)(attributes)(context$) })
-        if (label.isEmpty)
-          List(decorated(ReactiveGlyphs.ColourButton(glyphs, down, hover, background)(act)))
-        else
-          List(decorated(ReactiveGlyphs.ColourButton(label, up, down, hover, bg, background)(act)))
+      /**
+       * Glue together children without intervening spaces.
+       */
+      case <nobreak>{child@_*}</nobreak> =>
+        val buffer = new StringBuffer()
+        for { elt <- child } elt match {
+          case EntityRef(id) => buffer append entityMap.getOrElse(id, "")
+          case Text(t) => buffer append t.strip()
+          case other => buffer append other.toString.strip()
+        }
+        import context.{textFont, textForegroundBrush => fg, textBackgroundBrush => bg}
+        import org.sufrin.glyph.{Text => TextChunk}
+        List(TextChunk(buffer.toString, textFont, fg=fg, bg=bg).atBaseline(fg=fg, bg=bg))
+
 
       case <s></s> =>
         List(FixedSize.Space(1f, context.parSkip, 0f))
@@ -603,8 +550,7 @@ class GlyphXML {
 
       case <body>{child@_*}</body> =>
         val context$ = attributes.declareAttributes(context)
-        val background = attributes.Brush("background", DefaultBrushes.nothing)
-        //TODO: maybe these are strictly local to body
+        val background = defaultAttributes.Brush("background", DefaultBrushes.nothing)
         import context$.{padX, padY}
         //context.xmlSource=attributes.String("source", "<unknown>")
         val glyphs = child.flatMap {  node => translate(sources$)(within$)(node)(attributes)(context$) }
@@ -733,8 +679,8 @@ class GlyphXML {
                 warning (s"Unknown glyph reference <glyph ref=$id ...>...")
                 Seq.empty[Glyph]
               case Some (glyph) =>
-                val copy = if (attributes.Bool("copy", false)) glyph.copy() else glyph
-                List ((if (inPara) atBaseline(copy, context.baseLine) else copy))
+                val copy = glyph()
+                List (decorated((if (inPara) withBaseline(copy, context.baseLine) else copy)))
             }
         }
 

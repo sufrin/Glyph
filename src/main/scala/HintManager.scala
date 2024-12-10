@@ -1,6 +1,12 @@
 package org.sufrin.glyph
 import ReactiveGlyphs.Enterable
 
+/**
+ *
+ * @param target a reactive glyph for which a popup hint is to be attached.
+ * @param hint the glyph that will be popped-up when the mouse enters the reactive glyph
+ * @param seconds the time for which the hint will remain popped-up
+ */
 class HintManager(val target: Enterable, val hint: Glyph, val seconds: Double) {
   private var _allow: () => Boolean = ()=>true
 

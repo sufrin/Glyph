@@ -13,6 +13,8 @@ object TestGXML extends Application {
   val defs = new GlyphXML {}
 
 
+
+
   /**
    * Applied when an (outermost) xml `Elem`ent is intended to denote a `Glyph`. This
    * translates the element in a context that records its source location in scala text.
@@ -31,8 +33,8 @@ object TestGXML extends Application {
   defs("QUIT")     = QUIT
   defs("TWIT")     = ReactiveGlyphs.TextButton("TWIT"){ _ => println("Twit Pressed")}.framed()
   defs("#p")       = ListMap("framed"->"true", "frame"->"red")
-  defs("#row")     = ListMap("framed"->"true", "frame"->"blue")
-  defs("unframed") = ListMap("framed"->"false", "frame"->"green/4")
+  defs("#row")     = ListMap("framed"->"true", "frame"->"green")
+  defs("unframed") = ListMap("framed"->"false", "frame"->"green/2")
   defs("RTWIT")    = ReactiveGlyphs.TextButton("TWIT"){ _ => println("Twit Pressed")}.rotated(3)
   defs("BUTTONS")  = NaturalSize.Row().centered(PRESSME.copy(), QUIT.copy()).rotated(2)
   defs("FLOCCI")   = "Flocci\u200Bnauci\u200Bnihil\u200Bipil\u200Bif\u200Bicat\u200Bion"

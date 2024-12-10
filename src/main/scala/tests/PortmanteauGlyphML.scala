@@ -5,7 +5,7 @@ package tests
 
 class PortmanteauGlyphML(implicit sheet: StyleSheet) {
   import GlyphML._
-  import Glyphs.{blue, lightGrey, nothing, red}
+  import DefaultBrushes.{blue, black, nothing, red}
   implicit val local: Context =
     Context(     style        = sheet,
                  parWidth  = 800f,
@@ -14,8 +14,8 @@ class PortmanteauGlyphML(implicit sheet: StyleSheet) {
                  parAlign     = Justify,
                  fontFamily   = FontFamily("Menlo"),
                  fontSize     = 22)
-      .labelStyle(fg=Glyphs.black, bg=Glyphs.nothing)
-      .gridStyle(bg=Glyphs.nothing, fg=nothing, padY=8, padX=8)
+      .labelStyle(fg=black, bg=nothing)
+      .gridStyle(bg=nothing, fg=nothing, padY=8, padX=8)
 
   val intro = Row(S("An introduction to "), S("GlyphML")(boldStyle))(fontFamily("Arial"))(fontScale(1.6f))
 
