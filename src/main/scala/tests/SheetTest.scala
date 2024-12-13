@@ -215,19 +215,34 @@ trait SheetTestInterface {
     </body>
   }
 
-  Page("Etc"){
-    <body>
-      <p align="center"><b>Etc</b></p>
-      <p align="center">Miscellaneous notes</p>
+  Page("Spaces"){
+    xml("explain3") = explainButton("Source of Spaces")(<body>
+        <![CDATA[
+  <p>Here's what happens when you <b>don't</b>, if you see what I mean.</p>
+  <p>Here's what happens when you <nobreak><b>do</b>,</nobreak>if you see what I mean.</p>
+  <p>If you're not too fussy, just style the punctuation <b>in add_ition,</b>if you see what I mean.</p>
 
-      <p>The text <nobreak>"&amp;"</nobreak> is denoted by:</p>
-      <row class="wide"><fill/><![CDATA[<nobreak>"&amp;"</nobreak>]]> &nbsp;<verb> rather than </verb><![CDATA["&amp;"]]><fill/></row>
-      <s/>
-      <p>Without the <nobreak>&ls;nobreak&gt;</nobreak> embedding the three
-        elements appear sep_arated by spaces: "&amp;".
+   <p>A <string><nobreak>...</nobreak></string> element can be used to avoid putting spurious spaces around entity expansions.</p>
+   <p>This avoids generating "(&amp;)" when you meant to generate <nobreak>"(&amp;)".</nobreak></p>
+  ]]></body>)
+    <body parSkip="1.3ex">
+      <p align="center"><b></b></p>
+      <p align="center">Avoiding spurious spaces</p>
+
+      <p>To avoid a spurious space being placed between the end of a text styling element and
+         a natural following punctuation symbol embed the styled text in a <string><nobreak>...</nobreak></string>
+         element.
       </p>
 
+      <p>Here's what happens when you <b>don't</b>, if you see what I mean.</p>
+      <p>Here's what happens when you <nobreak><b>do</b>,</nobreak>if you see what I mean.</p>
+      <p>If you're not too fussy, just style the punctuation <b>in add_ition,</b>if you see what I mean.</p>
 
+
+      <p>A <string><nobreak>...</nobreak></string> element can be used to avoid putting spurious spaces around entity expansions.</p>
+      <p>This avoids generating "(&amp;)" when you meant to generate <nobreak>"(&amp;)".</nobreak></p>
+      <s/>
+      <row class="wide"><fill/><glyph ref="explain3"/><fill/></row>
     </body>
   }
 

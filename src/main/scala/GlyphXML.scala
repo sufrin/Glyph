@@ -339,7 +339,7 @@ class GlyphXML {
   }
 
 
-  private val stylingTags: Seq[String] = List("b", "em", "i", "bi", "n", "hyph", "glyph", "splice", "use")
+  private val stylingTags: Seq[String] = List("b", "em", "i", "bi", "n", "hyph", "glyph", "splice", "use", "nobreak")
   def stylingTag(tag: String): Boolean = stylingTags.contains(tag)
 
   /**
@@ -540,7 +540,7 @@ class GlyphXML {
       /**
        * Glue together children without intervening spaces.
        */
-      case <nobreak>{child@_*}</nobreak> =>
+      case <string>{child@_*}</string> =>
         val buffer = new StringBuffer()
         for { elt <- child } elt match {
           case EntityRef(id) => buffer append entityMap.getOrElse(id, "")
@@ -549,7 +549,14 @@ class GlyphXML {
         }
         import context.{textFont, textForegroundBrush => fg, textBackgroundBrush => bg}
         import org.sufrin.glyph.{Text => TextChunk}
-        List(TextChunk(buffer.toString, textFont, fg=fg, bg=bg).atBaseline(fg=fg, bg=bg))
+        List(toGlyph(TextChunk(buffer.toString, textFont, fg=fg, bg=bg), fg))
+
+      case <nobreak>{child@_*}</nobreak> =>
+        val context$ = attributes.declareAttributes(context)
+        val glyphs = child.flatMap { node => translate(sources$)(within$)(node)(attributes)(context$) }
+        val row = NaturalSize.Row.atTop$(glyphs)
+        println(row.h, glyphs.map(g => (g.baseLine, g.toString)))
+        List(withBaseline(row, row.baseLine))
 
 
       case <s></s> =>
