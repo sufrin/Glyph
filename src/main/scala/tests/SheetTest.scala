@@ -5,14 +5,30 @@ import org.sufrin.SourceLocation.SourceLocation
 import org.sufrin.glyph.Application
 import org.sufrin.glyph.DynamicGlyphs.ActiveString
 import org.sufrin.glyph.GlyphTypes.Scalar
-import org.sufrin.glyph.GlyphXML.source
+import org.sufrin.glyph.GlyphXML.{source, AttributeMap}
 import org.sufrin.glyph.Location.Location
 import org.sufrin.glyph.ReactiveGlyphs.Enterable
 import org.sufrin.glyph.windowdialogues.Dialogue
 
+import scala.::
 import scala.collection.immutable.ListMap
 import scala.xml.{Elem, Node}
 
+class ListItem(format: String, var listItem: Int=0) extends ElementGenerator {
+  private var current: Text = null
+
+  def translate(xml: GlyphXML)(sources: List[String])(within: List[String])(child: Seq[Node])(localAttributes: AttributeMap)(sheet: Sheet): Seq[Glyph] = {
+    listItem += 1
+    current = Text(format.replace("%", s"$listItem"), sheet.labelFont, sheet.labelForegroundBrush, sheet.labelBackgroundBrush)
+    val skip = sheet.parSkip
+    val lead = current.atBaseline()
+    val thePara = GlyphXML.glyphsToParagraph(List(lead) ++ child.flatMap { node => xml.translate(sources)("p"::within)(node)(localAttributes)(sheet) })(sheet)
+    if (skip == 0.0f)
+       List(thePara)
+    else
+       List(thePara above FixedSize.Space(1f, sheet.parSkip, 0f))
+  }
+}
 
 trait SheetTestInterface {
   import sheeted._
@@ -88,6 +104,7 @@ trait SheetTestInterface {
   xml("wide")   = ListMap("width"->EMS(pageWidthEms))
 
 
+
   //******************
   Page("Welcome"){
       <body parSkip="1.5ex">
@@ -127,6 +144,8 @@ trait SheetTestInterface {
     xml("boxesR") = RadioCheckBoxes(List("0", "1", "2"), ""){
       case Some(n) => active.set(s"R ticked $n"); case None => active.set("R Unticked")
     }.arrangedVertically()
+
+
     <body>
         <p align="center"><b>Reactive Glyphs</b></p>
         <p align="centre">A fixed-width row with 2 reactive glyphs &amp; an active glyph</p>
@@ -220,30 +239,59 @@ trait SheetTestInterface {
         <![CDATA[
   <p>Here's what happens when you <b>don't</b>, if you see what I mean.</p>
   <p>Here's what happens when you <nobreak><b>do</b>,</nobreak>if you see what I mean.</p>
-  <p>If you're not too fussy, just style the punctuation <b>in add_ition,</b>if you see what I mean.</p>
+  <p>If you don't care to be too <nobreak><i>meticulous</i>,</nobreak> <b>just include any foll_owing punc_tuation
+     in the styled text,</b>if you see what I mean.
+  </p>
 
    <p>A <string><nobreak>...</nobreak></string> element can be used to avoid putting spurious spaces around entity expansions.</p>
-   <p>This avoids generating "(&amp;)" when you meant to generate <nobreak>"(&amp;)".</nobreak></p>
+   <p>For example, its use avoids generating "(&amp;)" when you mean to generate <nobreak>"(&amp;)".</nobreak></p>
   ]]></body>)
     <body parSkip="1.3ex">
       <p align="center"><b></b></p>
       <p align="center">Avoiding spurious spaces</p>
 
-      <p>To avoid a spurious space being placed between the end of a text styling element and
-         a natural following punctuation symbol embed the styled text in a <string><nobreak>...</nobreak></string>
+      <p>To avoid spurious spaces being placed around a styled element and
+         adjacent text, embed the text and the element in a <string><nobreak>...</nobreak></string>
          element.
       </p>
 
       <p>Here's what happens when you <b>don't</b>, if you see what I mean.</p>
       <p>Here's what happens when you <nobreak><b>do</b>,</nobreak>if you see what I mean.</p>
-      <p>If you're not too fussy, just style the punctuation <b>in add_ition,</b>if you see what I mean.</p>
+      <p>If you don't care to be too <nobreak><i>meticulous</i>,</nobreak> <b>just include any foll_owing punc_tuation in the styled text,</b>if you see what I mean.</p>
 
 
       <p>A <string><nobreak>...</nobreak></string> element can be used to avoid putting spurious spaces around entity expansions.</p>
-      <p>This avoids generating "(&amp;)" when you meant to generate <nobreak>"(&amp;)".</nobreak></p>
+      <p>For example, its use avoids generating "(&amp;)" when you mean to generate <nobreak>"(&amp;)".</nobreak></p>
       <s/>
       <row class="wide"><fill/><glyph ref="explain3"/><fill/></row>
     </body>
+  }
+
+  Page("Enumeration") {
+
+    val listItem     = new ListItem("%.")
+    xml("listItem")  = listItem
+    xml("#listItem") = ListMap("align"->"justify", "fontFamily"->"Courier")
+
+
+    <body>
+      <p align="center"><b>Numeric labels can be generated automatically.</b></p>
+      <div leftMargin="3em" rightMargin="3em" >
+        <listItem>
+          This is the first of a list of explanatory para_graphs.
+        </listItem>
+        <listItem>
+          This is the second of a list of explanatory para_graphs.
+        </listItem>
+        <listItem>
+          This is the first of a list of explanatory para_graphs.
+        </listItem>
+      </div>
+      <s/>
+      <!--row class="wide"><fill/><glyph ref="explain4"/><fill/></row-->
+    </body>
+
+
   }
 
   val GUI: Glyph = book.Layout.leftButtons()

@@ -47,7 +47,7 @@ object Text extends DefaultPaints {
      * A glyph with the diagonal of this text that
      * will be drawn with origin adjusted by the baseline of the text.
      */
-    def atBaseline(fg: Brush = fg, bg: Brush = bg): Glyph = {
+    def atBaseline(fg: Brush = this.fg, bg: Brush = this.bg): Glyph = {
       val _fg = fg
       val _bg = bg
 
@@ -72,7 +72,7 @@ object Text extends DefaultPaints {
      * A self-contained glyph whose diagonal is the diagonal of
      * this text.
      */
-    def asGlyph(fg: Brush = Text.defaultFG, bg: Brush = Text.defaultBG): Glyph = {
+    def asGlyph(fg: Brush = this.fg, bg: Brush = this.bg): Glyph = {
       val _fg = fg
       val _bg = bg
       new Glyph {
