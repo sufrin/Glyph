@@ -211,9 +211,6 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    */
   def baseLine: Scalar = 0f
 
-  ////////////// TODO: Layout everything up to the root
-  def reLayout(): Unit = {}
-
   ////////////// TODO: invoke an efficient redrawing
   /**
    *  Request a redraw of the (entire) associated window
@@ -226,6 +223,7 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    */
   def reDraw(): Unit = guiRoot.reDraw()
 
+  /** Is this an enabled reactive glyph */
   def enabled(state: Boolean): Boolean = {
     false
   }

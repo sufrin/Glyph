@@ -317,8 +317,9 @@ case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean) e
     val Vec(w, h) = (whenTTrue.diagonal union whenFFalse.diagonal)
 
     BooleanGlyphs(
-      new OnOff(whenTrue  = Decorate(whenTTrue.enlargedTo(w, h)),
-        whenFalse = Decorate(whenFFalse.enlargedTo(w, h)), initially = initially, fg = offFG, bg = offBG),
+      new OnOff(whenTrue  =
+        Decorate(whenTTrue.enlargedTo(w, h)),
+                 whenFalse = Decorate(whenFFalse.enlargedTo(w, h)), initially = initially, fg = offFG, bg = offBG),
       initially = initially,
       fg = detail.toggle.off.fg,
       bg = detail.toggle.off.bg,

@@ -1,14 +1,16 @@
 package org.sufrin.glyph
 package tests
 
+import io.github.humbleui.skija.PaintStrokeCap
 import org.sufrin.SourceLocation.SourceLocation
 import org.sufrin.glyph.Application
 import org.sufrin.glyph.DynamicGlyphs.ActiveString
 import org.sufrin.glyph.GlyphTypes.Scalar
-import org.sufrin.glyph.GlyphXML.{source, AttributeMap}
+import org.sufrin.glyph.GlyphXML.{glyphsToParagraph, source, withBaseline, Abstraction, AttributeMap}
 import org.sufrin.glyph.Location.Location
 import org.sufrin.glyph.ReactiveGlyphs.Enterable
 import org.sufrin.glyph.windowdialogues.Dialogue
+import org.sufrin.glyph.DefaultBrushes.blue
 
 import scala.::
 import scala.collection.immutable.ListMap
@@ -33,7 +35,7 @@ class ListItem(format: String, var listItem: Int=0) extends ElementGenerator {
 trait SheetTestInterface {
   import sheeted._
   import org.sufrin.glyph.Styles.Decoration._
-  val fontSize = 18f
+  val fontSize = 24f
   val pageWidthEms = 60f
   val background = DefaultBrushes.lightGrey
   val dimension = Vec(700f, 500f)
@@ -55,7 +57,7 @@ trait SheetTestInterface {
   )
 
   val buttonStyle = rootStyle.withButtonFrame(Blurred(fg=rootStyle.buttonForegroundBrush, blur=6, spread=6))
-  implicit val pageStyle: Sheet = rootStyle.withButtonFrame(Framed(fg=rootStyle.buttonForegroundBrush, bg=rootStyle.buttonBackgroundBrush))
+  implicit val pageStyle: Sheet = rootStyle.withButtonFrame(Framed(fg=rootStyle.buttonForegroundBrush(width=2, cap=PaintStrokeCap.SQUARE), bg=rootStyle.buttonBackgroundBrush))
   implicit val bookStyle: BookStyle = BookStyle(buttonStyle, pageStyle)
   val explainStyle: Sheet = rootStyle.copy(backgroundBrush = DefaultBrushes.lightGrey, fontScale=0.7f, textFontFamily=FontFamily("Courier"))
 
@@ -98,12 +100,13 @@ trait SheetTestInterface {
     button
   }
 
-  xml("#p")     = ListMap("align"->"justify")
-  xml("#body")  = ListMap("align"->"center", "padX"->"2em", "padY"->"2ex", "width"->EMS(pageWidthEms))
-  xml("#glyph") = ListMap("framed"->"false")
-  xml("wide")   = ListMap("width"->EMS(pageWidthEms))
 
-
+  xml("#p")      = ListMap("align"->"justify")
+  xml("#body")   = ListMap("align"->"center", "padX"->"2em", "padY"->"2ex", "width"->EMS(pageWidthEms))
+  xml("#glyph")  = ListMap("framed"->"false")
+  xml("wide")    = ListMap("width"->EMS(pageWidthEms))
+  xml("caption")  = new Abstraction(<p align="center" width={EMS(pageWidthEms)}> &BODY; </p>)
+  xml("centered") = new Abstraction(<row width={EMS(pageWidthEms)}><fill/> &BODY; <fill/></row>)
 
   //******************
   Page("Welcome"){
@@ -122,7 +125,7 @@ trait SheetTestInterface {
   }
 
   //******************
-  Page("Reactive Glyphs"){
+  Page("TextToggles&CheckBoxes"){
     // Declare a local "active" glyph
     val active = ActiveString(font=pageStyle.textFont, fg=pageStyle.textForegroundBrush, bg=pageStyle.textBackgroundBrush)("  Unticked  ")
     xml("active") = active
@@ -135,47 +138,45 @@ trait SheetTestInterface {
       case Some(n) => active.set(s"R ticked $n"); case None => active.set("R Unticked")
     }.arrangedVertically()
 
-    xml("explain1") = explainButton("Source of Reactive Glyphs")(<body>
+    xml("toggle") = TextToggle(whenTrue="This toggle is set: click to clear it",
+                               whenFalse="This toggle is clear: click to set", initially = true) { state => }
+
+
+    xml("explain1") = explainButton("TextToggles & CheckBoxes")(<body textForeground="black">
       <![CDATA[
-    val active = ActiveString(font=pageStyle.textFont, fg=pageStyle.textForegroundBrush, bg=pageStyle.textBackgroundBrush)("  Unticked  ")
-    xml("boxesL") = RadioCheckBoxes(List("0", "1", "2"), ""){
-      case Some(n) => active.set(s"L ticked $n"); case None => active.set("L Unticked")
-    }.arrangedVertically()
-    xml("boxesR") = RadioCheckBoxes(List("0", "1", "2"), ""){
-      case Some(n) => active.set(s"R ticked $n"); case None => active.set("R Unticked")
-    }.arrangedVertically()
+      xml("caption") = new Abstraction(<p align="center" width={EMS(pageWidthEms)}>&BODY;</p>)
 
-
-    <body>
-        <p align="center"><b>Reactive Glyphs</b></p>
-        <p align="centre">A fixed-width row with 2 reactive glyphs &amp; an active glyph</p>
-        <row class="#wide">
-          <fill/>
-          <row width={EMS(pageWidthEms*2/3)} frame="yellow/4">
-               <glyph ref="boxesL" turned="35"/>
-               <fill/> <col frame="green">$active </col><fill/>
-               $boxesR
-          </row>
-          <fill/>
+      <caption><b>TextToggles &amp; CheckBoxes</b></caption>
+      <caption>(notice the slight dimming when hovering over one)</caption>
+      <caption>A fixed-width row with radio-like checkboxes</caption>
+      <centered turnLeft="45" turnRight="-45">
+        <row width={EMS(pageWidthEms*2/3)} frame="yellow/4">
+          <glyph ref="boxesL" turned="$turnLeft(0)"/> <fill/> <col frame="green">$active </col><fill/> <glyph ref="boxesR" turned="$turnRight(0)"/>
         </row>
-        <s/>
-    </body>
+      </centered>
+      <s/><s/><s/>
+      <caption>A fixed-width row with a single text toggle</caption>
+      <centered>$toggle</centered>
+      <s/><s/><s/>
+      <centered><glyph ref="explain1"/></centered>
       ]]>
     </body>)
 
-    <body>
-      <p align="center"><splice><b>Reactive Glyphs</b></splice></p>
 
-      <p align="centre">A fixed-width row with 2 reactive glyphs &amp; an active glyph</p>
-      <row class="wide">
-        <fill/>
+    <body>
+      <caption><b>TextToggles &amp; CheckBoxes</b></caption>
+      <caption>(notice the slight dimming when hovering over one)</caption>
+      <caption>A fixed-width row with radio-like checkboxes</caption>
+      <centered turnLeft="45" turnRight="-45">
         <row width={EMS(pageWidthEms*2/3)} frame="yellow/4">
-          <glyph ref="boxesL" turned="35"/> <fill/> <col frame="green">$active </col><fill/> $boxesR
+          <glyph ref="boxesL" turned="$turnLeft(0)"/> <fill/> <col frame="green">$active </col><fill/> <glyph ref="boxesR" turned="$turnRight(0)"/>
         </row>
-        <fill/>
-      </row>
-      <s/>
-      <row class="wide"><fill/><glyph ref="explain1"/><fill/></row>
+      </centered>
+      <s/><s/><s/>
+      <caption>A fixed-width row with a single text toggle</caption>
+      <centered>$toggle</centered>
+      <s/><s/><s/>
+      <centered><glyph ref="explain1"/></centered>
     </body>
   }
 

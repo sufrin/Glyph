@@ -282,7 +282,7 @@ object ReactiveGlyphs {
     def extra:      Vec = Vec(5, 5)
     def alphaDown:  Int = 0xFF
     def alphaUp:    Int = 0xFF
-    def alphaHover: Int = 0xFF
+    def alphaHover: Int = 0x9F
     def alphaDisabled: Int = 0x70
 
     val downOffset  = diagonal - down.diagonal - (extra scaled 0.5f)
