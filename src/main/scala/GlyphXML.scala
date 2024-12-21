@@ -8,6 +8,7 @@ import ReactiveGlyphs.{ColourButton, Reaction}
 import org.sufrin.glyph.GlyphXML.AttributeMap
 import org.sufrin.logging.SourceLoggable
 
+import scala.::
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.xml._
@@ -111,12 +112,15 @@ object GlyphXML extends SourceLoggable {
           .copy(
             fontScale       = Float("fontScale",              1.0f),
 
+            textFontStyle   = FontFamily.styleNamed(String("textStyle", "")),
             textFontFamily  = FontFamily(String("fontFamily", String("textFontFamily", context.textFontFamily.name))),
             textFontSize    = Float("fontSize", Float("textFontSize", context.textFontSize)),
 
+            labelFontStyle   = FontFamily.styleNamed(String("labelStyle", "")),
             labelFontFamily = FontFamily(String("fontFamily", String("labelFontFamily", context.labelFontFamily.name))),
             labelFontSize   = Float("fontSize", Float("labelFontSize", context.labelFontSize)),
 
+            buttonFontStyle   = FontFamily.styleNamed(String("buttonStyle", "")),
             buttonFontFamily = FontFamily(String("fontFamily", String("buttonFontFamily", context.buttonFontFamily.name))),
             buttonFontSize   = Float("fontSize", Float("buttonFontSize",                  context.buttonFontSize)),
           )
@@ -182,10 +186,17 @@ object GlyphXML extends SourceLoggable {
    *  Build a paragraph-formatted glyph formatted according to `sheet` from
    *  the `glyphs` sequence.
    */
-  def glyphsToParagraph(glyphs: Seq[Glyph])(sheet: Sheet): Glyph = {
+  def glyphsToParagraph(glyphs: Seq[Glyph], parHang: Option[Glyph])(sheet: Sheet): Glyph = {
     val emWidth   = sheet.emWidth
     val interWord = FixedSize.Space(w=emWidth / 1.5f, h=0f, stretch = 2f)
-    val glyphs$   = sheet.parIndent() ++ glyphs
+    val glyphs$   =
+      (if (sheet.parIndent>0) List(FixedSize.Space(sheet.parIndent, h=0f, stretch=0f)) else Nil) ++ glyphs
+    val (hangGlyph, hangWidth) = parHang match {
+      case None    => (None, 0f)
+      case Some(h) => (Some(h), h.w)
+    }
+
+    val leftMargin = sheet.leftMargin max hangWidth
 
     // The overall width is determined by the context
     // If the bounding box is unspecified, then use the column width
@@ -201,13 +212,23 @@ object GlyphXML extends SourceLoggable {
 
     val column = NaturalSize.Col(bg = sheet.textBackgroundBrush).atLeft$(galley.toSeq)
 
-    if (sheet.leftMargin > 0f)
-      NaturalSize.Row(bg = sheet.textBackgroundBrush)
-        .centered(FixedSize.Space(w=sheet.leftMargin, h=0f, stretch=0f),
-          column,
-          FixedSize.Space(w=sheet.rightMargin, h=0f, stretch=0f))
-    else
-      column
+    hangGlyph match {
+      case None =>
+        if (leftMargin > 0f)
+          NaturalSize.Row(bg = sheet.textBackgroundBrush)
+            .centered(
+              FixedSize.Space(w =  leftMargin, h = 0f, stretch = 0f),
+              column,
+              FixedSize.Space(w = sheet.rightMargin, h = 0f, stretch = 0f))
+        else
+          column
+
+      case Some(theGlyph) =>
+        NaturalSize.Row(bg = sheet.textBackgroundBrush)
+          .centered(
+            NaturalSize.Row(bg = sheet.textBackgroundBrush).atTop(theGlyph.enlargedTo(leftMargin, theGlyph.h), column),
+            FixedSize.Space(w = sheet.rightMargin, h = 0f, stretch = 0f))
+    }
   }
 
   /**
@@ -516,6 +537,7 @@ class GlyphXML {
      */
     val attributes = inherited ++ localAttributes
 
+
     val within$ = elem.label :: within
     val sources$ = (attributes.getOrElse("source", "")) :: sources
 
@@ -680,7 +702,12 @@ class GlyphXML {
       case <p>{child@_*}</p> =>
         val context$ = attributes.declareAttributes(context)
         val skip = context$.parSkip
-        val thePara = decorated(glyphsToParagraph(child.flatMap { node => translate(sources$)(within$)(node)(attributes)(context$) })(context$))
+
+
+        val hangString = attributes.String("hang", "")
+        val hang = if (hangString.isEmpty) None else Some(sheeted.Label(hangString)(context$))
+
+        val thePara = decorated(glyphsToParagraph(child.flatMap { node => translate(sources$)(within$)(node)(attributes)(context$) }, hang)(context$))
         if (skip == 0.0f)
           List(thePara)
         else

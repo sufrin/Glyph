@@ -24,7 +24,7 @@ class ListItem(format: String, var listItem: Int=0) extends ElementGenerator {
     current = Text(format.replace("%", s"$listItem"), sheet.labelFont, sheet.labelForegroundBrush, sheet.labelBackgroundBrush)
     val skip = sheet.parSkip
     val lead = current.atBaseline()
-    val thePara = GlyphXML.glyphsToParagraph(List(lead) ++ child.flatMap { node => xml.translate(sources)("p"::within)(node)(localAttributes)(sheet) })(sheet)
+    val thePara = GlyphXML.glyphsToParagraph(List(lead) ++ child.flatMap { node => xml.translate(sources)("p"::within)(node)(localAttributes)(sheet) }, None)(sheet)
     if (skip == 0.0f)
        List(thePara)
     else
@@ -185,7 +185,7 @@ trait SheetTestInterface {
     xml("explain2") = explainButton("Source of Hyphenation")(<body>
     <![CDATA[
 
-    xml("flocci")     = "Flo_cci_nau_ci_nihil_ipil_if_icat_ion"
+    xml("flocci")     = ""Flo_cci_nau_ci_nihil_ipili_fi_cat_ion""
     xml("hyphenated") = (<splice>
       Hyphenation of text within para_graphs is done at dis_cret_ion_ary break_points.
       The  word &flocci; has many places at which it can be broken.
@@ -210,24 +210,29 @@ trait SheetTestInterface {
     ]]>
     </body>)
 
-    xml("flocci")     = "Flo_cci_nau_ci_nihil_ipil_if_icat_ion"
+    xml("flocci")     = "Flo_cci_nau_ci_nihil_ipili_fi_cat_ion"
     xml("hyphenated") = (<splice>
       Hyphenation of text within para_graphs is done at dis_cret_ion_ary break_points.
       The  word &flocci; has many places at which it can be broken.
+    </splice>)
+    xml("hyphenated2") = (<splice>
+      Hyphenation of text within para_graphs is done at dis_cret_ion_ary break_points.
+      Hanging material isn't counted in the paragraph width <i>(here it is 40em).</i>
     </splice>)
 
     <body parSkip="1.7ex">
       <p align="center"><b>Hyphenation</b></p>
       <p align="centre">Paragraphs of different widths</p>
 
-      <div align="center">
-        <div frame="yellow/2">
-          <p width={EMS(55)}><use ref="hyphenated"/></p>
-          <p width={EMS(50)}><use ref="hyphenated"/></p>
-          <p width={EMS(45)}><use ref="hyphenated"/></p>
-          <p width={EMS(40)}><use ref="hyphenated"/></p>
-          <p width={EMS(35)}><use ref="hyphenated"/></p>
-          <p width={EMS(30)}><use ref="hyphenated"/></p>
+      <div align="right">
+        <div frame="yellow/2" labelStyle="Italic">
+          <p hang=" 55em " width={EMS(55)}><use ref="hyphenated"/></p>
+          <p hang=" 50em " width={EMS(50)}><use ref="hyphenated"/></p>
+          <p hang=" 45em " width={EMS(45)}><use ref="hyphenated"/></p>
+          <p hang=" 40em " width={EMS(40)}><use ref="hyphenated"/></p>
+          <p xhang=" 40em " width={EMS(40)}><use ref="hyphenated2"/></p>
+          <p hang=" 35em " width={EMS(35)}><use ref="hyphenated"/></p>
+          <p hang=" 30em " width={EMS(30)}><use ref="hyphenated"/></p>
         </div>
         <s/>
         <row class="wide"><fill/><glyph ref="explain2"/><fill/></row>

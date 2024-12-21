@@ -29,13 +29,12 @@ case class Sheet
   textForegroundBrush: Brush = Brush("textForeground")(color=0xFF0000FF),     // blue
   backgroundBrush: Brush = Brush("background")(color=0XFFBBBBBB),
   // Paragraph layout properties
-  parHang:     Boolean   = false,
   parAlign:    Alignment = Left,
   parSkip:     Scalar    = 5f,
   parWidth:    Scalar    = 200f,
   leftMargin:  Scalar=0f,
   rightMargin: Scalar=0f,
-  parIndent:   ()=>Seq[Glyph] = { ()=>Nil },
+  parIndent:   Scalar=0f,
   padX: Scalar = 0f,
   padY: Scalar = 0f,
   buttonFrame: Styles.Decoration.Decoration = Styles.Decoration.Unframed,
