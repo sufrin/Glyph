@@ -35,14 +35,15 @@ object TestGXML extends Application {
   defs("#p")       = ListMap("framed"->"true", "frame"->"red")
   defs("#row")     = ListMap("framed"->"true", "frame"->"green")
   defs("unframed") = ListMap("framed"->"false", "frame"->"green/2")
-  defs("RTWIT")    = ReactiveGlyphs.TextButton("TWIT"){ _ => println("Twit Pressed")}.rotated(3)
+  defs("DIFFB")    = ReactiveGlyphs.TextButton("A DIFFERENT BUTTON"){ _ => println("Different Pressed")}
+  defs("DIFFB2")   = ReactiveGlyphs.TextButton("A DIFFERENT BUTTON"){ _ => println("Different2 Pressed")}.framed()
   defs("BUTTONS")  = NaturalSize.Row().centered(PRESSME.copy(), QUIT.copy()).rotated(2)
-  defs("FLOCCI")   = "Flocci\u200Bnauci\u200Bnihil\u200Bipil\u200Bif\u200Bicat\u200Bion"
+  defs("FLOCCI")   = "''Flocci_nauci_nihil_ipil_if_icat_ion''"
 
   val test0w = "50em"
   val test0 =
     <body fontFamily="Menlo" fontScale="1" fontSize="16" width={test0w} align="justify" parSkip="0.4ex" framed="0XFF227722/1" padX="3em" padY="3ex" background="yellow" textBackground="yellow">
-      <p source={source.toString}>This is a test of  <i>paragraphing</i> and related features. It is justified in a width of {test0w},
+      <p source={source.toString}>This is a test of  <i>paragraphing</i> and related features. It is justified in a width of {test0w}
           with an overall <row rotated="1"><b>parSkip</b></row> of <row rotated="2"><b>3.5ex</b></row>.
       </p>
       <p>
@@ -55,16 +56,18 @@ object TestGXML extends Application {
         rightmost margin and be justified  there.
       </p>
       <row width={test0w}><fill/><glyph ref="PRESSME"/><fill/><glyph ref="QUIT"/></row>
-      <p>This is an ordinary paragraph that has <embed>''&FLOCCI;''</embed>in it.</p>
-      <p>Here is the button <glyph copy="true" ref="RTWIT"/> again!</p>
+      <p>This is an ordinary paragraph that has &FLOCCI; in it, as well as the button $TWIT</p>
+      <p>Here is  $DIFFB and here it is again maybe, maybe...</p>
+
+      <glyph ref="DIFFB2"/>
       <glyph ref="BUTTONS"/>
       <p rightMargin="6em">
         This is a paragraph narrowed by 6em. It should still
         be justified at its right margin.
       </p>
       <p leftMargin="12em" rightMargin="8em">
-        This is another indented and potentially much-​hyphenated paragraph ending in the hyph​enated long word
-        <embed>"&FLOCCI;".</embed>
+        This is another indented and potentially much-_hyphen_ated para_graph end_ing in the hyph_enated long word
+        <splice>&FLOCCI;</splice>.
       </p>
       <p leftMargin="8em" rightMargin="8em">
         This is a paragraph both indented and narr​owed by 8em.
