@@ -23,8 +23,9 @@ class ListItem(format: String, var listItem: Int=0) extends ElementGenerator {
     listItem += 1
     current = Text(format.replace("%", s"$listItem"), sheet.labelFont, sheet.labelForegroundBrush, sheet.labelBackgroundBrush)
     val skip = sheet.parSkip
-    val lead = current.atBaseline()
-    val thePara = GlyphXML.glyphsToParagraph(List(lead) ++ child.flatMap { node => xml.translate(sources)("p"::within)(node)(localAttributes)(sheet) }, None)(sheet)
+    val lead = current.asGlyph()
+    val thePara = GlyphXML.glyphsToParagraph(child.flatMap { node => xml.translate(sources)("p"::within)(node)(localAttributes)(sheet) },
+                                             Some(lead))(sheet)
     if (skip == 0.0f)
        List(thePara)
     else
@@ -243,31 +244,34 @@ trait SheetTestInterface {
   Page("Spaces"){
     xml("explain3") = explainButton("Source of Spaces")(<body>
         <![CDATA[
-  <p>Here's what happens when you <b>don't</b>, if you see what I mean.</p>
-  <p>Here's what happens when you <nobreak><b>do</b>,</nobreak>if you see what I mean.</p>
-  <p>If you don't care to be too <nobreak><i>meticulous</i>,</nobreak> <b>just include any foll_owing punc_tuation
-     in the styled text,</b>if you see what I mean.
-  </p>
+       <p>To avoid spurious spaces being placed around a styled element and
+         adjacent text, place a <string><nb/></string> between element and text.
+         element; or embed the whole in <string><nobreak>...</nobreak></string>
+      </p>
 
-   <p>A <string><nobreak>...</nobreak></string> element can be used to avoid putting spurious spaces around entity expansions.</p>
-   <p>For example, its use avoids generating "(&amp;)" when you mean to generate <nobreak>"(&amp;)".</nobreak></p>
+      <p>Here's what happens when you <b>don't</b>, if you see what I mean.</p>
+      <p>Here's what happens when you <b>do</b><nb/>, if you see what I mean.</p>
+      <p>If you don't care to be too <nobreak><i>meticulous</i>,</nobreak> <b>just include any foll_owing punc_tuation in the styled text,</b>if you see what I mean.</p>
+
+      <p>An <string><nb/></string> element can be used to avoid putting spurious spaces around entity expansions.</p>
+      <p>For example, its use avoids generating "(&amp;)" when you mean to generate "(<nb/>&amp;<nb/>)".</p>
   ]]></body>)
     <body parSkip="1.3ex">
       <p align="center"><b></b></p>
       <p align="center">Avoiding spurious spaces</p>
 
       <p>To avoid spurious spaces being placed around a styled element and
-         adjacent text, embed the text and the element in a <string><nobreak>...</nobreak></string>
-         element.
+         adjacent text, place a <string><nb/></string> between element and text.
+         element; or embed the whole in <string><nobreak>...</nobreak></string>
       </p>
 
       <p>Here's what happens when you <b>don't</b>, if you see what I mean.</p>
-      <p>Here's what happens when you <nobreak><b>do</b>,</nobreak>if you see what I mean.</p>
+      <p>Here's what happens when you <b>do</b><nb/>, if you see what I mean.</p>
       <p>If you don't care to be too <nobreak><i>meticulous</i>,</nobreak> <b>just include any foll_owing punc_tuation in the styled text,</b>if you see what I mean.</p>
 
 
-      <p>A <string><nobreak>...</nobreak></string> element can be used to avoid putting spurious spaces around entity expansions.</p>
-      <p>For example, its use avoids generating "(&amp;)" when you mean to generate <nobreak>"(&amp;)".</nobreak></p>
+      <p>An <string><nb/></string> element can be used to avoid putting spurious spaces around entity expansions.</p>
+      <p>For example, its use avoids generating "(&amp;)" when you mean to generate "(<nb/>&amp;<nb/>)".</p>
       <s/>
       <row class="wide"><fill/><glyph ref="explain3"/><fill/></row>
     </body>
@@ -282,7 +286,7 @@ trait SheetTestInterface {
 
     <body>
       <p align="center"><b>Numeric labels can be generated automatically.</b></p>
-      <div leftMargin="3em" rightMargin="3em" >
+      <div leftMargin="5em" rightMargin="3em" >
         <listItem>
           This is the first of a list of explanatory para_graphs.
         </listItem>

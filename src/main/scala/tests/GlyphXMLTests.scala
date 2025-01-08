@@ -38,7 +38,7 @@ object TestGXML extends Application {
   defs("DIFFB")    = ReactiveGlyphs.TextButton("A DIFFERENT BUTTON"){ _ => println("Different Pressed")}
   defs("DIFFB2")   = ReactiveGlyphs.TextButton("A DIFFERENT BUTTON"){ _ => println("Different2 Pressed")}.framed()
   defs("BUTTONS")  = NaturalSize.Row().centered(PRESSME.copy(), QUIT.copy()).rotated(2)
-  defs("FLOCCI")   = "''Flocci_nauci_nihil_ipil_if_icat_ion''"
+  defs("FLOCCI")   = "Flocci_nauci_nihil_ipil_if_icat_ion"
 
   val test0w = "50em"
   val test0 =
@@ -56,7 +56,7 @@ object TestGXML extends Application {
         rightmost margin and be justified  there.
       </p>
       <row width={test0w}><fill/><glyph ref="PRESSME"/><fill/><glyph ref="QUIT"/></row>
-      <p>This is an ordinary paragraph that has &FLOCCI; in it, as well as the button $TWIT</p>
+      <p>This is an ordinary paragraph that has ''<nb/>&FLOCCI;<nb/>'' in it, as well as the button $TWIT</p>
       <p>Here is  $DIFFB and here it is again maybe, maybe...</p>
 
       <glyph ref="DIFFB2"/>
@@ -67,11 +67,11 @@ object TestGXML extends Application {
       </p>
       <p leftMargin="12em" rightMargin="8em">
         This is another indented and potentially much-_hyphen_ated para_graph end_ing in the hyph_enated long word
-        <splice>&FLOCCI;</splice>.
+        ''<nb/>&FLOCCI;<nb/>'' --<nb/><b>and this is bold</b><nb/>.
       </p>
       <p leftMargin="8em" rightMargin="8em">
-        This is a paragraph both indented and narr​owed by 8em.
-        Its text should be right-justified, but as a whole it should appear obv​iously  centred
+        This is a paragraph both indented and narr_owed by 8em.
+        Its text should be right-justified, but as a whole it should appear obv_iously  centred
         in the space occupied by the paragraph.
       </p>
       <p align="right">

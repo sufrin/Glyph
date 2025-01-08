@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 
 
-import Glyphs.BreakableGlyph
+import Glyphs.{BreakableGlyph, NOBREAK}
 import GlyphTypes.Scalar
 import ReactiveGlyphs.{ColourButton, Reaction}
 
@@ -345,12 +345,24 @@ object GlyphXML extends SourceLoggable {
         words.element match {
           case BreakableGlyph(_, glyphs) =>
             for { glyph <- glyphs } line += glyph
+            line += interWord()
+            lineWidth += words.element.w + interWordWidth
+            words.nextElement()
+
+          // REMOVE THE IMMEDIATELY PRECEDING INTERWORD SPACE
+          case NOBREAK =>
+            val w = line.last.w
+            line.update(line.length - 1, NOBREAK)
+            lineWidth -= w
+            words.nextElement()
+
           case other =>
             line += other
+            line += interWord()
+            lineWidth += words.element.w + interWordWidth
+            words.nextElement()
         }
-        line += interWord()
-        lineWidth += words.element.w + interWordWidth
-        words.nextElement()
+
       }
 
       // squeeze an extra chunk on by splitting a splittable?
@@ -589,7 +601,9 @@ class GlyphXML {
       import context.{textFont, textForegroundBrush => fg}
       import org.sufrin.glyph.{Text => TextChunk}
       val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
-      buffer.toString.split("[\n\t ]+").toSeq.filterNot(_.isBlank).map {
+      val text = buffer.toString
+      val textChunks = text.split("[\n\t ]+").toSeq
+      val glyphs = textChunks.filterNot(_.isBlank).map {
         case s"$$$word" =>
           val id = if (word endsWith "$") word.substring(0, word.length-1) else word
           glyphMap.get(id) match {
@@ -611,6 +625,16 @@ class GlyphXML {
               toGlyph(TextChunk(word, textFont, fg, bg), fg)
           }
           glyph
+      }
+      // ADD NOBREAK appropriately TODO: not working; use <nb/> to eliminate spurious spaces
+      if (glyphs.isEmpty) glyphs else {
+        //        (text.startsWith(" "), text.endsWith(" ")) match {
+        //          case (false, false) => List(NOBREAK) ++ glyphs ++ List(NOBREAK)
+        //          case (false, true) => List(NOBREAK) ++ glyphs
+        //          case (true, false) => glyphs ++ List(NOBREAK)
+        //          case (_, _) => glyphs
+        // }
+        glyphs
       }
     }
 
@@ -652,6 +676,9 @@ class GlyphXML {
             }
         }
 
+
+      case <nb>{child@_*}</nb> =>
+        List(NOBREAK)
 
       /** Simple macro */
       case <use>{child@_*}</use> =>
