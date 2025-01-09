@@ -182,15 +182,21 @@ object GlyphXML extends SourceLoggable {
   }
 
 
-    /**
+  /**
    *  Build a paragraph-formatted glyph formatted according to `sheet` from
    *  the `glyphs` sequence.
+   *
+   *  TODO: Aligment for hanging material should be specifiable. Right now it's always "left"
+   *  TODO: Solve the mystery of the space-expansion within "short last lines" of paragraphs in justify mode,
+   *        when a nested paragraph-form appears immediately afterwards (see SheetTest).
+   *
    */
   def glyphsToParagraph(glyphs: Seq[Glyph], parHang: Option[Glyph])(sheet: Sheet): Glyph = {
     val emWidth   = sheet.emWidth
     val interWord = FixedSize.Space(w=emWidth / 1.5f, h=0f, stretch = 2f)
     val glyphs$   =
       (if (sheet.parIndent>0) List(FixedSize.Space(sheet.parIndent, h=0f, stretch=0f)) else Nil) ++ glyphs
+
     val (hangGlyph, hangWidth) = parHang match {
       case None    => (None, 0f)
       case Some(h) => (Some(h), h.w)
@@ -224,9 +230,10 @@ object GlyphXML extends SourceLoggable {
           column
 
       case Some(theGlyph) =>
+        val space = FixedSize.Space(leftMargin-theGlyph.w,theGlyph.h, 0f)
         NaturalSize.Row(bg = sheet.textBackgroundBrush)
           .centered(
-            NaturalSize.Row(bg = sheet.textBackgroundBrush).atTop(theGlyph.enlargedTo(leftMargin, theGlyph.h), column),
+            NaturalSize.Row(bg = sheet.textBackgroundBrush).atTop(theGlyph, space, column),
             FixedSize.Space(w = sheet.rightMargin, h = 0f, stretch = 0f))
     }
   }
@@ -362,7 +369,6 @@ object GlyphXML extends SourceLoggable {
             lineWidth += words.element.w + interWordWidth
             words.nextElement()
         }
-
       }
 
       // squeeze an extra chunk on by splitting a splittable?
@@ -483,7 +489,7 @@ class GlyphXML {
   }
 
 
-  private val stylingTags: Seq[String] = List("b", "em", "i", "bi", "n", "hyph", "glyph", "splice", "use", "nobreak")
+  private val stylingTags: Seq[String] = List("b", "em", "i", "bi", "n", "hyph", "glyph", "splice", "use", "nb")
   def stylingTag(tag: String): Boolean = stylingTags.contains(tag)
 
   /**
@@ -596,6 +602,39 @@ class GlyphXML {
       case _ => false
     }
 
+    def textOf(text: String): Seq[Glyph] = {
+      import context.{textBackgroundBrush=>bg, textFont, textForegroundBrush}
+      import org.sufrin.glyph.{Text => TextChunk}
+      List(toGlyph(TextChunk(text, textFont, fg=DefaultBrushes.red, bg=bg), fg=DefaultBrushes.red))
+    }
+
+    def expandDollar(word: String): Seq[Glyph] = {
+      import context.{textFont, textForegroundBrush => fg}
+      import org.sufrin.glyph.{Text => TextChunk}
+      val id = if (word endsWith "$") word.substring(0, word.length-1) else word
+      val bg = DefaultBrushes.nothing
+      glyphMap.get(id) match {
+        case Some(glyph) =>
+          val copy = glyph.generate
+          List(if (inPara) withBaseline(copy, (context.baseLine+copy.h)/2.3f) else copy)
+
+        case None => elementMap.get(id) match {
+            case Some(node) =>  translate(sources$)("use" :: within)(node)(attributes)(context)
+
+            case None       =>
+                 entityMap.get(id) match {
+                   case None =>
+                     warning(s"Unknown glyph/macro reference $id")
+                     textOf(s"$$$word")
+
+                   case Some(text) =>
+                     translateText(text)
+
+                 }
+        }
+      }
+    }
+
     def translateText(buffer: String): Seq[Glyph] = {
       import context.discretionaryWordBreak
       import context.{textFont, textForegroundBrush => fg}
@@ -603,18 +642,11 @@ class GlyphXML {
       val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
       val text = buffer.toString
       val textChunks = text.split("[\n\t ]+").toSeq
-      val glyphs = textChunks.filterNot(_.isBlank).map {
+      val glyphs = textChunks.filterNot(_.isBlank).flatMap {
         case s"$$$word" =>
-          val id = if (word endsWith "$") word.substring(0, word.length-1) else word
-          glyphMap.get(id) match {
-            case None => warning(s"Reference $$$word to an unknown glyph")
-              toGlyph(TextChunk(s"$$$id", textFont, fg, bg), fg)
-            case Some(glyph) =>
-              val copy = glyph.generate
-              if (inPara) withBaseline(copy, (context.baseLine+copy.h)/2.3f) else copy
-          }
+            expandDollar(word)
         case word: String =>
-          val glyph: Glyph = {
+          val glyph = {
             // is there a discretionary hyphen // TODO: or more, eventually
             if (word.contains(discretionaryWordBreak)) {
               val glyphs = word.toString.split(discretionaryWordBreak).toSeq.map { syllable => TextChunk(syllable, textFont, fg, bg).atBaseline(fg, bg) }
@@ -624,18 +656,10 @@ class GlyphXML {
             else
               toGlyph(TextChunk(word, textFont, fg, bg), fg)
           }
-          glyph
+          List(glyph)
       }
-      // ADD NOBREAK appropriately TODO: not working; use <nb/> to eliminate spurious spaces
-      if (glyphs.isEmpty) glyphs else {
-        //        (text.startsWith(" "), text.endsWith(" ")) match {
-        //          case (false, false) => List(NOBREAK) ++ glyphs ++ List(NOBREAK)
-        //          case (false, true) => List(NOBREAK) ++ glyphs
-        //          case (true, false) => glyphs ++ List(NOBREAK)
-        //          case (_, _) => glyphs
-        // }
-        glyphs
-      }
+      // TODO: eventually add NOBREAKs in the right places
+      glyphs
     }
 
     elem match {
@@ -655,13 +679,8 @@ class GlyphXML {
         val fg = textForegroundBrush
         val bg = DefaultBrushes.nothing // To avoid the glyph outline extending below the bounding box of a glyph at the baseline
 
-        def textOf(text: String): Seq[Glyph] = List(toGlyph(TextChunk(text, textFont, fg=DefaultBrushes.red, bg=bg), fg=DefaultBrushes.red))
-        elementMap.get(id) match {
-          //case None =>
-          //import context.{textFont, textForegroundBrush => fg, textBackgroundBrush => bg}
-          //import org.sufrin.glyph.{Text => TextChunk}
-          //List(TextChunk(s"No defined macro ref=$id", textFont, fg, bg).atBaseline(fg, bg))
 
+        elementMap.get(id) match {
           case Some(node) =>
             //println(s"Expanding $id as $node ")
             translate(sources$)("use" :: within)(node)(attributes)(context)
@@ -669,30 +688,18 @@ class GlyphXML {
           case None =>
             entityMap.get(id) match {
               case None =>
-                warning(s"Unknown entity/macro reference &$id;")
-                textOf(s"Unknown entity/macro reference &$id;")
+                warning(s"Unknown entity reference &$id;")
+                textOf(s"&$id;")
               case Some(text) =>
                 translateText(text)
             }
         }
 
 
-      case <nb>{child@_*}</nb> =>
-        List(NOBREAK)
-
       /** Simple macro */
       case <use>{child@_*}</use> =>
         val id = localAttributes.String("ref", "")
-        elementMap.get(id) match {
-          case None =>
-            import context.{textFont, textForegroundBrush => fg, textBackgroundBrush => bg}
-            import org.sufrin.glyph.{Text => TextChunk}
-            List(TextChunk(s"No defined macro ref=$id", textFont, fg, bg).atBaseline(fg, bg))
-
-          case Some(node) =>
-            //println(s"Expanding $id as $node ")
-            translate (sources$) (within$) (node) (attributes) (context)
-        }
+        expandDollar(id)
 
       case <splice>{child@_*}</splice> =>
         val context$ = attributes.declareAttributes(context)
@@ -712,11 +719,14 @@ class GlyphXML {
         import org.sufrin.glyph.{Text => TextChunk}
         List(toGlyph(TextChunk(buffer.toString, textFont, fg=fg, bg=bg), fg))
 
-      case <nobreak>{child@_*}</nobreak> =>
-        val context$ = attributes.declareAttributes(context)
-        val glyphs = child.flatMap { node => translate(sources$)(within$)(node)(attributes)(context$) }
-        val row = NaturalSize.Row.atTop$(glyphs)
-        List((withBaseline(row, row.baseLine)))
+
+      case <nb>{child@_*}</nb> =>
+        if (child.isEmpty)  List(NOBREAK) else {
+          val context$ = attributes.declareAttributes(context)
+          val glyphs = child.flatMap { node => translate(sources$)(within$)(node)(attributes)(context$) }
+          val row = NaturalSize.Row.atTop$(glyphs)
+          List((withBaseline(row, row.baseLine)))
+        }
 
 
       case <s></s> =>

@@ -11,8 +11,8 @@ object gxml {
       <foo xmlns:h="http://www.w3.org/TR/html4/" kind="mine" space="40">
         is
         <bar unkind="what" kind="yours">fig leaves are silly
-               <no>jose is an <i>interesing</i> <!-- and this is a comment --> slogan</no>
-        </bar>
+               <no> jose is an <i>interesing</i> <!-- and this is a comment --> slogan</no>
+         unbar </bar>
         today
       </foo>
   val ha: MetaData = h.attributes

@@ -88,12 +88,12 @@ object TestGXML extends Application {
   val table1 =
     <table cols="3" padY="2em" padX="2em" background="yellow" textBackground="yellow">
       1 2 3 4
-      <col>5a 5b 5c</col>
-      6 7 8
-      &error;
-      10 11
-      <glyph ref="TWIT" copy="true"/>
-    </table>
+        <col>5a 5b 5c</col>
+        6 7 8
+
+        10 11
+        <glyph ref="TWIT" copy="true"/>
+      </table>
   defs("table1") = table1
 
 
@@ -104,6 +104,7 @@ object TestGXML extends Application {
       6 7 8 9 10 11
       <glyph ref="QUIT" copy="true"/>
     </table>
+
   defs("table2") = table2.rotated(1)
 
   val gridsWidth = s"${(table1.w + table2.h)*1.1f}pt"
@@ -139,6 +140,11 @@ object TestGXML extends Application {
 
   Page("Paragraphs", "")(test0)
   Page("Grids", "")(test1)
+  Page("Spaces", "")(
+    <body width="40em">
+      <p>Punctuation --<nb/><i>&FLOCCI;<nb/></i>.</p>
+    </body>
+  )
 
   val title = "TestGXML"
   val GUI: Glyph = noteBook.Layout.rightButtons()

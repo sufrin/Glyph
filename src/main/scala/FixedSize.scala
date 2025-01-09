@@ -22,6 +22,8 @@ object FixedSize extends DefaultPaints {
     override val xStretch: Scalar = xS
     override val yStretch: Scalar = yS
 
+    override def toString: String = s"FixedSpace(${_w}±$xS, ${_h}±$yS)"
+
     def draw(surface: Surface): Unit = {
       if (bg.color!=0) {
         //surface.fillRect(bg, diagonal)
