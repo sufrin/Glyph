@@ -16,6 +16,10 @@ import scala.xml._
 object GlyphXML extends SourceLoggable {
   type AttributeMap = Map[String,String]
 
+  implicit class Attributes(element: Elem) {
+    def mapping: Map[String,String] = element.attributes.asAttrMap
+  }
+
   implicit class TypedAttributeMap(attributes: AttributeMap) {
 
     def String(key: String, alt: String): String = attributes.getOrElse(key, alt)
@@ -480,7 +484,11 @@ class GlyphXML {
   /** Declare a new text entity */
   def update(id: String, expansion: String) = entityMap(id) = expansion
   /** Declare a new expandable entity */
-  def update(id: String, element: Elem) : Unit = elementMap(id) = element
+  def update(id: String, element: Elem) : Unit =
+      if (element.label.toUpperCase=="ATTRIBUTES")
+        attrMap(id) = element.attributes.asAttrMap
+      else
+        elementMap(id) = element
   /** Declare a new macro */
   def update(id: String, abbr: Abstraction) : Unit = abstractionMap(id) = abbr
 

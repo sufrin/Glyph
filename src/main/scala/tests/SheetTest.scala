@@ -114,10 +114,10 @@ trait SheetTestInterface {
   }
 
 
-  xml("#p")      = ListMap("align"->"justify")
-  xml("#body")   = ListMap("align"->"center", "padX"->"2em", "padY"->"2ex", "width"->EMS(pageWidthEms))
-  xml("#glyph")  = ListMap("framed"->"false")
-  xml("wide")    = ListMap("width"->EMS(pageWidthEms))
+  xml("#p")      = <ATTRIBUTES align="justify"/>
+  xml("#body")   = <ATTRIBUTES align="center" padX="2em" padY="2ex" width={EMS(pageWidthEms)}/> //ListMap("align"->"center", "padX"->"2em", "padY"->"2ex", "width"->EMS(pageWidthEms))
+  xml("#glyph")  = <ATTRIBUTES framed="false"/>
+  xml("wide")    = <ATTRIBUTES width={EMS(pageWidthEms)}/>
   xml("caption")  = new Abstraction(<p align="center" width={EMS(pageWidthEms)}> &BODY; </p>)
   xml("centered") = new Abstraction(<row width={EMS(pageWidthEms)}><fill/> &BODY; <fill/></row>)
   xml("BREAK")    = new Abstraction(<fill stretch="100000"/>)
@@ -198,24 +198,28 @@ trait SheetTestInterface {
   Page("Hyphenation"){
     xml("explain2") = explainButton("Source of Hyphenation")(<body>
     <![CDATA[
-
     xml("flocci")     = ""Flo_cci_nau_ci_nihil_ipili_fi_cat_ion""
     xml("hyphenated") = (<splice>
       Hyphenation of text within para_graphs is done at dis_cret_ion_ary break_points.
       The  word &flocci; has many places at which it can be broken.
     </splice>)
+    xml("hyphenated2") = (<splice>
+      Hyphenation of text within para_graphs is done at dis_cret_ion_ary break_points.
+      Hanging material isn't counted in the paragraph width <i>(here it is 40em).</i>
+    </splice>)
 
     <body parSkip="1.7ex">
       <p align="center"><b>Hyphenation</b></p>
       <p align="centre">Paragraphs of different widths</p>
-      <div align="center">
-        <div frame="yellow/2">
-          <p width={EMS(55)}><use ref="hyphenated"/></p>
-          <p width={EMS(50)}><use ref="hyphenated"/></p>
-          <p width={EMS(45)}><use ref="hyphenated"/></p>
-          <p width={EMS(40)}><use ref="hyphenated"/></p>
-          <p width={EMS(35)}><use ref="hyphenated"/></p>
-          <p width={EMS(30)}><use ref="hyphenated"/></p>
+      <div align="right" fontScale="0.9">
+        <div frame="yellow/2" labelStyle="Italic">
+          <p hang=" 55em " width={EMS(55)}><use ref="hyphenated"/></p>
+          <p hang=" 50em " width={EMS(50)}><use ref="hyphenated"/></p>
+          <p hang=" 45em " width={EMS(45)}><use ref="hyphenated"/></p>
+          <p hang=" 40em " width={EMS(40)}><use ref="hyphenated"/></p>
+          <p xhang=" 40em " width={EMS(40)}><use ref="hyphenated2"/></p>
+          <p hang=" 35em " width={EMS(35)}><use ref="hyphenated"/></p>
+          <p hang=" 30em " width={EMS(30)}><use ref="hyphenated"/></p>
         </div>
         <s/>
         <row class="wide"><fill/><glyph ref="explain2"/><fill/></row>
@@ -238,7 +242,7 @@ trait SheetTestInterface {
       <p align="center"><b>Hyphenation</b></p>
       <p align="centre">Paragraphs of different widths</p>
 
-      <div align="right">
+      <div align="right" fontScale="0.9">
         <div frame="yellow/2" labelStyle="Italic">
           <p hang=" 55em " width={EMS(55)}><use ref="hyphenated"/></p>
           <p hang=" 50em " width={EMS(50)}><use ref="hyphenated"/></p>
@@ -304,18 +308,18 @@ trait SheetTestInterface {
 
   Page("Enumeration") {
     xml("listItem")  = new ListItem("%d.")
-    xml("#listItem") = ListMap("align"->"justify", "fontFamily"->"Menlo")
+    xml("#listItem") = <Attributes  align="justify"/> //"align"->"justify", "fontFamily"->"Menlo")
     xml("Item")      = new ListItem("(%a)")
-    xml("#Item")     = ListMap("align"->"justify", "fontFamily"->"Menlo", "fontScale"->"0.9", "textStyle"->"Italic", "labelStyle"->"bold")
+    xml("#Item")     = <Attributes  align="justify" fontFamily="Menlo" fontScale="0.9" textStyle="Italic" labelStyle="Bold"/>
 
     xml("explain4")  = explainButton("Source of Enumeration") (
       <body>
       <![CDATA[
     xml("BREAK")     = new Abstraction(<fill stretch="100000"/>)
     xml("listItem")  = new ListItem("%d.")
-    xml("#listItem") = ListMap("align"->"justify", "fontFamily"->"Menlo")
+    xml("#listItem") = <Attributes  align="justify" fontFamily="Menlo" /> //"align"->"justify", "fontFamily"->"Menlo")
     xml("Item")      = new ListItem("(%a)")
-    xml("#Item")     = ListMap("align"->"justify", "fontFamily"->"Menlo", "fontScale"->"0.9", "textStyle"->"Italic", "labelStyle"->"bold")
+    xml("#Item")     = <Attributes  align="justify" fontFamily="Menlo" fontScale="0.9" textStyle="Italic" labelStyle="Bold"/>
 
         <listItem>
           This is the first of a list of explanatory para_graphs. It's short.
@@ -390,14 +394,13 @@ trait SheetTestInterface {
   Page("Numeral styles"){
     val testedItem   = new ListItem("%d %i %I %a %A")
     xml("tItem")     = testedItem
-    xml("#tItem")    = ListMap("align"->"justify", "fontFamily"->"Menlo", "fontScale"->"0.9", "labelStyle"->"bold")
+    xml("#tItem")    = <Attributes align="justify" fontFamily="Menlo" fontScale="0.9" labelStyle="Bold" />
     xml("text")      = "More than one numeral style can be specified"
     <body>
         <caption>Definition and use of a new ListItem style</caption>
         <![CDATA[
   xml("tItem")  = new ListItem("%d %i %I %a %A")
-  xml("#tItem") = ListMap("align"->"justify", "fontFamily"->"Menlo",
-                          "fontScale"->"0.9", "labelStyle"->"Bold")
+  xml("#tItem") = <Attributes align="justify" fontFamily="Menlo" fontScale="0.9" labelStyle="Bold" />
       ]]>
       <div align="justify" leftMargin="30em" rightMargin="4em" >
       <tItem>&text; for a ListItem generator. Here we use all 5 for each num_eral, namely: %d %i %I %a %A.</tItem>

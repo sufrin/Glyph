@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 package tests
 
-import GlyphXML.source
+import GlyphXML._
 import tests.DemonstrationNotebook.pageStyle
 
 import org.sufrin.SourceLocation.SourceLocation
@@ -32,9 +32,9 @@ object TestGXML extends Application {
   defs("PRESSME")  = PRESSME
   defs("QUIT")     = QUIT
   defs("TWIT")     = ReactiveGlyphs.TextButton("TWIT"){ _ => println("Twit Pressed")}.framed()
-  defs("#p")       = ListMap("framed"->"true", "frame"->"red")
-  defs("#row")     = ListMap("framed"->"true", "frame"->"green")
-  defs("unframed") = ListMap("framed"->"false", "frame"->"green/2")
+  defs("#p")       = <ATTTRIBUTES framed="true" frame="red"/>
+  defs("#row")     = <ATTRIBUTES framed="true" frame="green"/>
+  defs("unframed") = <ATTRIBUTES framed="true" frame="green"/>
   defs("DIFFB")    = ReactiveGlyphs.TextButton("A DIFFERENT BUTTON"){ _ => println("Different Pressed")}
   defs("DIFFB2")   = ReactiveGlyphs.TextButton("A DIFFERENT BUTTON"){ _ => println("Different2 Pressed")}.framed()
   defs("BUTTONS")  = NaturalSize.Row().centered(PRESSME.copy(), QUIT.copy()).rotated(2)
