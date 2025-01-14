@@ -22,48 +22,7 @@ import scala.xml.{Elem, Node}
 class ListItem(format: String, var listItem: Int=0) extends ElementGenerator {
   private var current: Text = null
 
-  def alpha(num: Int): String = Alpha(num).toLowerCase
-  def Alpha(num: Int): String = {
-    var n = num
-    var b = ""
-    val d: Seq[Char] = "?"++('A' until 'Z')
-    while (n!=0) { b=s"${d(n%26)}$b"; n=n/26 }
-    b
-  }
-
-  val romanNumerals = List(
-    1000 -> "M",
-    900 -> "CM",
-    500 -> "D",
-    400 -> "CD",
-    100 -> "C",
-    90 -> "XC",
-    50 -> "L",
-    40 -> "XL",
-    10 -> "X",
-    9 -> "IX",
-    5 -> "V",
-    4 -> "IV",
-    1 -> "I"
-  )
-
-  def roman(num: Int): String = Roman(num).toLowerCase
-  def Roman(num: Int): String = {
-    if (num <= 0 || num > 3999) {
-      throw new IllegalArgumentException("Number out of range (1-3999)")
-    }
-
-    var b = ""
-    var n = num
-
-    for ((value, numeral) <- romanNumerals) {
-      while (n >= value) {
-        b = s"$b$numeral"
-        n -= value
-      }
-    }
-    b
-  }
+  import NumberUtils._
 
   def translate(xml: GlyphXML)(sources: List[String])(within: List[String])(child: Seq[Node])(localAttributes: AttributeMap)(sheet: Sheet): Seq[Glyph] = {
     import GlyphXML.TypedAttributeMap

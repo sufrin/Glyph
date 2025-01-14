@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import GlyphXML.hexToInt
+import NumberUtils.hexToInt
 
 /**
  * A convenience trait that defines several brushes.
