@@ -2,6 +2,8 @@ package org.sufrin.glyph
 
 import GlyphTypes.{Font, FontManager, FontStyle, Scalar, Typeface}
 
+import org.sufrin.glyph.FontFamily.fontDescription
+
 object FontFamily extends org.sufrin.logging.Loggable {
   private val cache=collection.mutable.LinkedHashMap[(String, FontStyle, Scalar), Font]()
   def apply(name: String="Menlo"): FontFamily = new FontFamily(name)
@@ -17,6 +19,21 @@ object FontFamily extends org.sufrin.logging.Loggable {
       case "bolditalic" => FontStyle.BOLD_ITALIC
       case _ => FontStyle.NORMAL
     }
+
+  private val fontDescription = collection.mutable.LinkedHashMap[Long, String]()
+  def fontString(font: Font): String = fontDescription.getOrElse(font._ptr, font.toString)
+
+  def styleString(fontStyle: FontStyle): String = {
+    import FontStyle._
+    fontStyle match {
+      case NORMAL =>  "NORMAL"
+      case BOLD => "BOLD"
+      case ITALIC => "ITALIC"
+      case BOLD_ITALIC => "BOLD_ITALIC"
+      case _ => fontStyle.toString
+    }
+  }
+
 }
 
 /**
@@ -38,6 +55,7 @@ class FontFamily(val name: String) {
     val id=(name, style, size)
     FontFamily.cache.get(id) match {
       case Some(font) =>
+        fontDescription(font._ptr) = s"$name($size, ${FontFamily.styleString(style)})"
         font
 
       case None =>

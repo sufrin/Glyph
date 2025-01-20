@@ -2,220 +2,13 @@ package org.sufrin.glyph
 package gxml
 
 
+import io.github.humbleui.skija.Font
+import org.sufrin.glyph.gxml.Translation.Target
 import org.sufrin.glyph.gxml.Visitor.AttributeMap
 
 import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.xml._
-
-
-
-trait Visitor {
-  import Visitor.AttributeMap
-  def visitText(attributes: AttributeMap, text: String): Unit
-  def visitElement(attributes: AttributeMap, tag: String, child: Seq[Node]): Unit = for {node <- child} visit(attributes, node)
-  def visitEntity(attributes: AttributeMap, name: String): Unit
-  def visitPCData(attributes: AttributeMap, text: String): Unit
-  def visitProcInstr(attributes: AttributeMap, target: String, text: String): Unit = {}
-  def visitComment(attributes: AttributeMap, text: String): Unit = {}
-
-  def extendContextFor(attributes: AttributeMap, tag: String, attrMap: Map[String,String]): AttributeMap = attributes ++ attrMap
-
-  def visit(attributes: AttributeMap, source: Node): Unit = {
-    source match {
-      case xml.EntityRef(name) => visitEntity(attributes, name)
-
-      case xml.Elem(str, tag, attrs, binding, child@_*) =>
-        val attributes$ : AttributeMap = extendContextFor(attributes, tag, attrs.asAttrMap)
-        visitElement(attributes$, tag, child)
-
-      case xml.Text(buffer) =>
-        visitText(attributes, buffer.toString)
-
-      case xml.Comment(text: String) =>
-        visitComment(attributes, text)
-
-      case xml.PCData(text: String) =>
-        visitPCData(attributes, text)
-
-      case xml.ProcInstr(target, text) =>
-        visitProcInstr(attributes, target, text)
-
-    }
-  }
-}
-
-object Visitor {
-  type AttributeMap = Map[String, String]
-}
-
-object PrettyPrint {
-
-  implicit class XMLPretty (xobj: xml.Node) {
-    def prettyPrint(): Unit = PrettyPrint.prettyPrint(XMLElem(xobj))
-  }
-
-  implicit class AnyPretty (obj: Any) {
-    def prettyPrint(): Unit = PrettyPrint.prettyPrint(obj)
-  }
-
-  def XMLElem(xobj: xml.Node): PrettyPrintable =
-    new PrettyPrintable {
-      /** The name of the class (or object) */
-      def prefix: String = xobj match {
-        case xml.Elem(str, str1, data, binding, child @ _*) => s"<$str1$data>"
-        case xml.Text(buffer) => s"\"${buffer.replaceAll("[\\n][ ]*", "⎆")}\""
-        case xml.Comment(text) => s"<!--$text-->"
-        case xml.EntityRef(text) => s"&$text;"
-      }
-
-      /** The number of fields/elements of the object */
-      def arity: Int = xobj match {
-        case xml.Elem(str, str1, data, binding, child @ _*) => child.length
-        case _ => 0
-      }
-
-      override def field(i: Int): (String, Any) = xobj match {
-        case Elem(str, str1, data, binding, child @ _*) => (i.toString, XMLElem(child(i)))
-        case _ => ("", "")
-      }
-    }
-
-
-  /**
-   *  All objects of all structured classes can present a
-   *  custom "face" to the pretty-printer.
-   */
-  trait PrettyPrintable {
-    /** The name of the class (or object)  */
-    def prefix:  String
-
-    /** The number of fields/elements of the object */
-    def arity:   Int
-
-    /** The `i`'th field/element of the object as a name-value pair */
-    def field(i: Int): (String, Any) = ("?", "?")
-
-    def name(i: Int):  String = field(i)._1
-    def value(i: Int): Any    = field(i)._2
-  }
-
-  @inline private def allPrim(p: Product): Boolean = p.productIterator.forall(isPrim)
-
-  @inline private def isPrimTuple(p: Any): Boolean = p match {
-    case obj : Tuple2[Any, Any]                     => allPrim(obj)
-    case obj : Tuple3[Any, Any, Any]                => allPrim(obj)
-    case obj : Tuple4[Any, Any, Any, Any]           => allPrim(obj)
-    case obj : Tuple5[Any, Any, Any, Any, Any]      => allPrim(obj)
-    case obj : Tuple6[Any, Any, Any, Any, Any, Any] => allPrim(obj)
-    case _   => false
-  }
-
-  private def isPrim(obj: Any): Boolean =
-    obj match {
-      case _ : Int | _ : Long | _ : Char | _ : String | _ : Double | _ : Float => true
-      case _ => false
-    }
-
-  private def isSingleton(obj: Any): Boolean =
-    obj match {
-      case prod : Product            => prod.productArity==1 && isPrim(prod.productElement(0))
-      case _                         => false
-    }
-
-  /**
-   *  Vertical bar -- indentation token for all
-   *  but the last field/element of a product/sequence
-   */
-  val verticalBar = "\u2502 "
-  /** Field indent -- always appears as the last indentation token on a line  */
-  val fieldIndent  = "\u2514\u2500"
-
-  /**
-   * Pretty-prints a (possibly-structured) object
-   *
-   * 1. as itself if it is a (non-function) primitive
-   *
-   * 2. as the vertically-aligned fields of a case object if it is a product, unless
-   *
-   *  2.1 it is a product with a single primitive-valued field, in which case its `toString` is printed
-   *
-   *  2.2 or it is a tuple of primitive values, in which case its `toString` is printed
-   *
-   *
-   * 3. as its vertically aligned elements, if it is an `Iterable`
-   *
-   *    3.1 prefixed by `[#${seq.length}]` if it is a sequence
-   *
-   *    3.2 prefixed by `...` if it is not a sequence
-   *
-   *
-   * @param obj the object to be prettyprinted
-   * @param lastInSeq is it being printed as the last element/field of a sequence or product
-   * @param indentStack specification, in reverse order, of the indentation to be printed on each line
-   * @param fieldName the field name (within a product) of the object if it is within a product, else `None`
-   */
-  def prettyPrint(obj: Any, lastInSeq: Boolean = true, indentStack: List[String] = List(), fieldName: Option[String] = None): Unit = {
-    if (indentStack.length>15) return
-
-    val indentToken = if (lastInSeq) "  " else verticalBar
-
-    val prettyName  = fieldName.fold("")(x => s"$x: ") // name: or ""
-
-    @nowarn("msg=non-variable") val prettyVal = obj match {
-      case obj : PrettyPrintable              => obj.prefix
-      case obj : Product if isPrimTuple(obj)  => obj.toString
-      case obj : Seq[Any]                     => s"[#${obj.length}]"
-      case _   : Iterable[Any]                => "..."
-
-      case obj : Product => obj.productPrefix
-      case _ : Function10[Any,Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]
-           |    _ : Function9[Any,Any, Any, Any, Any, Any, Any, Any, Any, Any]
-           |    _ : Function8[Any, Any, Any, Any, Any, Any, Any, Any, Any]
-           |    _ : Function7[Any, Any, Any, Any, Any, Any, Any, Any]
-           |    _ : Function6[Any, Any, Any, Any, Any, Any, Any]
-           |    _ : Function5[Any, Any, Any, Any, Any, Any]
-           |    _ : Function4[Any, Any, Any, Any, Any]
-           |    _ : Function3[Any, Any, Any, Any]
-           |    _ : Function2[Any, Any, Any]
-           |    _ : Function1[Any, Any]       => "<fun>"
-      case _                             => obj.toString
-    }
-
-    indentStack.foldRight(()){ case (l, _) => print(l) } // indent stack is in reverse
-    print(s"$fieldIndent$prettyName$prettyVal")
-    if (!isSingleton(obj)) println()
-
-    obj match {
-      case obj: PrettyPrintable =>
-        val length = obj.arity
-        for {i <- 0 until length - 1}
-          prettyPrint(obj.value(i), false, indentToken :: indentStack, Some(obj.name(i)))
-        if (length>0) prettyPrint(obj.value(length - 1), true, indentToken :: indentStack, Some(obj.name(length - 1)))
-
-      case seq: Iterable[Any]   =>
-      { val s = seq.toSeq
-        for { i <-0 until s.length-1 }
-          prettyPrint(s(i), false, "  " :: indentStack)
-        prettyPrint(s(s.length-1), true, "  " :: indentStack)
-      }
-
-      case obj: Product if isPrimTuple(obj)  => // already printed
-
-      case obj: Product  =>
-        if (isSingleton(obj))
-          println(s"(${obj.productElement(0)})")
-        else
-        { val length = obj.productArity
-          for { i <-0 until length-1 }
-            prettyPrint(obj.productElement(i), false, indentToken :: indentStack, Some(obj.productElementName(i)))
-          prettyPrint(obj.productElement(length-1), true, indentToken :: indentStack, Some(obj.productElementName(length-1)))
-        }
-
-      case _ =>
-    }
-  }
-}
 
 
 class Abstraction(body: Node) {
@@ -291,7 +84,7 @@ class Abstraction(body: Node) {
 }
 
 trait Primitives {
-  val generatorMap:     mutable.Map[String, Translation]    = mutable.LinkedHashMap[String, Translation]()
+  val translationMap:   mutable.Map[String, Translation]  = mutable.LinkedHashMap[String, Translation]()
   val abstractionMap:   mutable.Map[String, Abstraction]  = mutable.LinkedHashMap[String, Abstraction]()
   val attrMap:          mutable.Map[String, AttributeMap] = mutable.LinkedHashMap[String, AttributeMap]()
   val entityMap:        mutable.Map[String, String]       = mutable.LinkedHashMap[String, String]()
@@ -303,7 +96,7 @@ trait Primitives {
   /** Declare a named attribute map: used for inheritance of attributes */
   def update(id: String, map: AttributeMap): Unit = attrMap(id)=map
   /** Declare a new kind of tag */
-  def update(id: String, generator: Translation) = generatorMap(id) = generator
+  def update(id: String, generator: Translation) = translationMap(id) = generator
   /** Declare a new text entity */
   def update(id: String, expansion: String) = entityMap(id) = expansion
   /** Declare a new expandable entity */
@@ -316,9 +109,39 @@ trait Primitives {
   def update(id: String, abbr: Abstraction) : Unit = abstractionMap(id) = abbr
 }
 
+object Translation {
+  object Target {
+    trait Target
+
+    case object SpaceTarget extends Target with PrettyPrint.PrettyPrintable {
+      /** The name of the class (or object) */
+      def prefix: String = "Space"
+
+      /** The number of fields/elements of the object */
+      def arity: Int = 0
+    }
+
+    case class TextTarget(atBase: Boolean, text: String, font: Font, fg: Brush, bg: Brush) extends Target with PrettyPrint.PrettyPrintable {
+      val arity = 5
+      val prefix = "Text"
+      override def field(i: Int): (String, Any) = i match {
+        case 0=>("atBase", atBase)
+        case 1=>("text", text)
+        case 2=>("font", FontFamily.fontString(font))
+        case 3=>("fg", fg)
+        case 4=>("bg", bg)
+      }
+    }
+
+    case class ParaTarget(chunks: Seq[Target]) extends Target
+
+    case class ColTarget(chunks: Seq[Target]) extends Target
+  }
+}
 
 class Translation extends Primitives {
   import Visitor.AttributeMap
+  import Translation.Target._
 
   implicit class TypedAttributeMap(attributes: AttributeMap) {
     import org.sufrin.SourceLocation.SourceLocation
@@ -447,71 +270,88 @@ class Translation extends Primitives {
     inherited ++ local
   }
 
-  trait Target
-  case class Word(text: String) extends Target
-  case object Space extends Target
-  case class SimpleGlyph(glyph: Glyph) extends Target
-  case class Para(chunks: Seq[Target]) extends Target
-
 
   def translateText(paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
-    def wordGlyph(text: String): Glyph = org.sufrin.glyph.Text(text, sheet.textFont, sheet.textForegroundBrush, sheet.textBackgroundBrush).asGlyph()
-    def wordAtBaseline(text: String): Glyph = org.sufrin.glyph.Text(text, sheet.textFont, sheet.textForegroundBrush, sheet.textBackgroundBrush).atBaseline()
+
+    @inline def wordGlyph(text: String): Target = TextTarget(paragraph, text, sheet.textFont, sheet.textForegroundBrush, sheet.textBackgroundBrush)
 
     if (paragraph) {
       val chunks = mutable.ArrayBuffer[Target]()
       def out(t: Target): Unit = chunks += t
-      if (text.startsWith(" ") || text.startsWith("\n") || text.startsWith("\t")) out(Space)
+      if (text.startsWith(" ") || text.startsWith("\n") || text.startsWith("\t")) out(SpaceTarget)
       val it = text.split("[\t\n ]+").filterNot(_.isBlank).iterator // TODO: precompile the pattern
       while (it.hasNext) {
-        out(SimpleGlyph(wordAtBaseline(it.next())))
-        if (it.hasNext) out(Space)
+        // out(WordGlyph(wordAtBaseline(it.next()), sheet.textFontStyle.toString))
+        out(wordGlyph(it.next()))
+        if (it.hasNext) out(SpaceTarget)
       }
-      if (text.endsWith(" ") || text.endsWith("\n") || text.endsWith("\t")) out(Space)
-
+      if (text.endsWith(" ") || text.endsWith("\n") || text.endsWith("\t")) out(SpaceTarget)
       chunks.toSeq
     } else {
       val lines = text.split("[\n]").toSeq.map(wordGlyph(_))
-      List(SimpleGlyph(NaturalSize.Col(bg=sheet.textBackgroundBrush).atLeft$(lines)))
+      // List(WordGlyph(NaturalSize.Col(bg=sheet.textBackgroundBrush).atLeft$(lines), sheet.textFontStyle.toString))
+      List(ColTarget(lines))
     }
   }
 
+  def translate(paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
+    val sheet$ = attributes.declareAttributes(sheet)
+    child.flatMap { source => translate(paragraph, attributes, sheet$, source) }
+  }
 
   def translate(paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, source: Node): Seq[Target] = {
+    val sheet$ = attributes.declareAttributes(sheet)
+
     source match {
-      case xml.EntityRef(name) => translateText(paragraph, attributes, sheet, entityMap.getOrElse(name, s"&name;"))
+      case xml.EntityRef(name) => translateText(paragraph, attributes, sheet$, entityMap.getOrElse(name, s"&name;"))
 
       case xml.Elem(str, tag, localAttrs, binding, child@_*) =>
         val attributes$ : AttributeMap = extendContextFor(tag)(attributes, localAttrs.asAttrMap)
         tag match {
           case "p" =>
-            val chunks = child.flatMap { source => translate(true, attributes$, sheet, source) }
+            val chunks = child.flatMap { source => translate(true, attributes$, sheet$, source) }
             // MAKE CHUNKS A PARAGRAPH GLYPH
-            List(Para(chunks))
+            List(ParaTarget(chunks))
 
-          case other =>
-            child.flatMap { source => translate(false, attributes$, sheet, source) }
+          case _ =>
+            translationMap.get(tag) match {
+              case Some(translation) =>
+                //println(s"<$tag special translation")
+                translation.translate(paragraph, attributes$, sheet$, child)
+
+              case None =>
+                //println(s"<$tag default translation")
+                child.flatMap { source => translate(false, attributes$, sheet$, source) }
+            }
+
         }
 
       case xml.Text(text) =>
-        translateText(paragraph, attributes, sheet, text)
+           translateText(paragraph, attributes, sheet, text)
 
       case xml.PCData(text: String) =>
-        translateText(paragraph, attributes, sheet, text)
+           translatePCData(paragraph, attributes, sheet$, text)
 
-      case xml.ProcInstr(target, text) => Seq.empty
+      case xml.ProcInstr(target, text) =>
+           translateProcInstr(target, text)
 
       case xml.Comment(text) => Seq.empty
 
     }
-}
 
 
+  }
+
+  def translatePCData(paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] =
+      translateText(paragraph, attributes, sheet, text)
+
+  def translateProcInstr(target: String, text: String): Seq[Target] = Seq.empty
 }
 
 
 object gxml {
   import xml._
+  import Translation.Target._
 
   def flatten(node: Node): Unit = {
     import Visitor.AttributeMap
@@ -548,11 +388,24 @@ object gxml {
     v.visit(Map.empty, node)
   }
 
+  def textStyleTranslation(textStyle: String): Translation = new Translation {
+    override def translate(paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] =
+      super.translate(paragraph, attributes.updated("textStyle", textStyle), sheet, child)
+  }
+
   val translator: Translation = new Translation
+
+  locally {
+    translator("i")  = textStyleTranslation("Italic")
+    translator("b")  = textStyleTranslation("Bold")
+    translator("bi") = textStyleTranslation("BoldItalic")
+    translator("n")  = textStyleTranslation("Normal")
+  }
+
 
   def translate(source: Node): Unit = {
     import PrettyPrint.AnyPretty
-    for { t <- (translator.translate(false, Map.empty, Sheet(), source)) } println(t)
+    for { t <- (translator.translate(false, Map.empty, Sheet(), source)) } t.prettyPrint()
   }
 
 
@@ -560,24 +413,17 @@ object gxml {
     <body xmlns:h="http://www.w3.org/TR/html4/" width="40em" face="Courier">
       the first body line
       <div class="level1" width="20em">
-        <p class="level2"> this&today;is a very<i class="level3">interesing</i>'ed
+        <p class="level2"> this&today;is a very<i class="level3">interesting</i>'ed
             paragraph
-          <foo/>
-        </p>
-        a level1 line
+            <bi>and this is bold italic text</bi><foo/></p>
+        a <i>completely</i> level1 line
       </div>
       the last body lump&yesterday;what?
     </body>
 
   def main(args: Array[String]): Unit = {
-    //flatten(h)
-    //println("-----")
     translate(h)
     println("-----")
-    //println(h)
-    //println("-----")
-    //import PrettyPrint.XMLPretty
-    //h.prettyPrint()
   }
 
 }

@@ -43,7 +43,7 @@ object TestGXML extends Application {
   val test0w = "50em"
   val test0 =
     <body fontFamily="Menlo" fontScale="1" fontSize="16" width={test0w} align="justify" parSkip="0.4ex" framed="0XFF227722/1" padX="3em" padY="3ex" background="yellow" textBackground="yellow">
-      <p source={source.toString}>This is a test of  <i>paragraphing</i> and related features. It is justified in a width of {test0w}
+      <p>This is a test of  <i>paragraphing</i> and related features. It is justified in a width of {test0w}
           with an overall <row rotated="1"><b>parSkip</b></row> of <row rotated="2"><b>3.5ex</b></row>.
       </p>
       <p>

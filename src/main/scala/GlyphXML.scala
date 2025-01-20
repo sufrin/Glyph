@@ -27,7 +27,7 @@ object GlyphXML extends SourceLoggable {
     def Int(key: String, alt: Int): Int = attributes.get(key) match {
       case Some (s) if s.matches("-?[0-9]+") => s.toInt
       case Some(s)  =>
-        warn(s"$key(=$s) should be an Int [using $alt]")(source)
+        warn(s"$key(=$s) should be an Int [using $alt]")
         alt
       case None     => alt
     }
@@ -36,7 +36,7 @@ object GlyphXML extends SourceLoggable {
       case Some (s) =>
         try { s.toFloat }
         catch {
-          case exn: Throwable  => warn(s"$key(=$s) should be a Float [using $alt]")(source)
+          case exn: Throwable  => warn(s"$key(=$s) should be a Float [using $alt]")
             alt
         }
       case None     => alt
@@ -57,7 +57,7 @@ object GlyphXML extends SourceLoggable {
           case (s"${s}px") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
           case (s"${s}pt") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
           case (other) =>
-            warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt")(source)
+            warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt")
             alt
         }
       case None =>

@@ -16,17 +16,17 @@ case class Sheet
   buttonFontStyle: FontStyle = FontStyle.NORMAL,
   buttonFontSize: Scalar  = 22f,
   buttonBorderBrush: Brush = Brush("buttonBorder")(color=0XFF777777, width=5f),
-  buttonBackgroundBrush: Brush = Brush("buttonBackground")(color=0X00FFFFFF), // transparent
-  buttonForegroundBrush: Brush = Brush("buttonForeground")(color=0xFF0000FF), // blue
-  buttonHoverBrush: Brush = Brush("buttonHover")(color=0xFF00FF00),           // green
+  buttonBackgroundBrush: Brush = Brush("transparent")(color=0X00FFFFFF), // transparent
+  buttonForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF), // blue
+  buttonHoverBrush: Brush = Brush("green")(color=0xFF00FF00),           // green
   buttonDownBrush: Brush = Brush("buttonDown")(color=0xFFFF0000),             // red
-  toggleBackgroundBrush: Brush = Brush("buttonBackground")(color=0X00FFFFFF), // transparent
-  toggleOnBrush: Brush = Brush("toggleOn")(color=0xFFFF0000),                 // red
-  toggleOffBrush: Brush = Brush("toggleOn")(color=0xFF0000FF),                // blue
+  toggleBackgroundBrush: Brush = Brush("red")(color=0X00FFFFFF), // transparent
+  toggleOnBrush: Brush = Brush("red")(color=0xFFFF0000),                 // red
+  toggleOffBrush: Brush = Brush("blue")(color=0xFF0000FF),                // blue
   labelBackgroundBrush: Brush = Brush("buttonBackground")(color=0X00FFFFFF),  // transparent
-  labelForegroundBrush: Brush = Brush("buttonForeground")(color=0xFF0000FF),  // blue
-  textBackgroundBrush: Brush = Brush("textBackground")(color=0X00FFFFFF),     // transparent
-  textForegroundBrush: Brush = Brush("textForeground")(color=0xFF0000FF),     // blue
+  labelForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF),  // blue
+  textBackgroundBrush: Brush = Brush("transparent")(color=0X00FFFFFF),     // transparent
+  textForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF),     // blue
   backgroundBrush: Brush = Brush("background")(color=0XFFBBBBBB),
   // Paragraph layout properties
   parAlign:    Alignment = Left,

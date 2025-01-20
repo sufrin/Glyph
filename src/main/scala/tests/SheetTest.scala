@@ -6,7 +6,7 @@ import org.sufrin.SourceLocation.SourceLocation
 import org.sufrin.glyph.Application
 import org.sufrin.glyph.DynamicGlyphs.ActiveString
 import org.sufrin.glyph.GlyphTypes.Scalar
-import org.sufrin.glyph.GlyphXML.{glyphsToParagraph, source, withBaseline, Abstraction, AttributeMap}
+import org.sufrin.glyph.GlyphXML.{glyphsToParagraph, withBaseline, Abstraction, AttributeMap}
 import org.sufrin.glyph.Location.Location
 import org.sufrin.glyph.ReactiveGlyphs.Enterable
 import org.sufrin.glyph.windowdialogues.Dialogue
@@ -97,7 +97,7 @@ trait SheetTestInterface {
    */
   implicit def XMLtoGlyph(elem: Elem)(implicit sheet: Sheet): Glyph = {
     val within = List("")
-    NaturalSize.Col().atLeft$(xml.translate(List(s"$source"))(within)(elem)(Map.empty)(sheet))
+    NaturalSize.Col().atLeft$(xml.translate(List(s"source"))(within)(elem)(Map.empty)(sheet))
   }
 
   /**
