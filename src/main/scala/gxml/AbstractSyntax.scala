@@ -2,14 +2,20 @@ package org.sufrin.glyph
 package gxml
 
 object AbstractSyntax {
-  trait Tree {
 
+  case class Context(attributes: Visitor.AttributeMap, sheet: Sheet, text: Boolean)
+
+  trait Tree {
   }
 
   case class Element(tag: String, attributes: Visitor.AttributeMap, child: Seq[Tree]) extends Tree
+
   case class Text(text: String)   extends Tree
+
   case class Quoted(text: String) extends Tree
+
   case class Entity(name: String) extends Tree
+
   case class Comment(target: String, text: String) extends Tree
 
   import scala.xml

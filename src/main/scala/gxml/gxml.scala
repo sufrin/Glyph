@@ -4,11 +4,12 @@ package gxml
 
 import io.github.humbleui.skija.Font
 import org.sufrin.glyph.gxml.Visitor.AttributeMap
+import org.sufrin.glyph.Glyphs.{BreakableGlyph, NOBREAK}
 import org.sufrin.glyph.GlyphTypes.Scalar
-import org.sufrin.logging.Default
+import org.sufrin.glyph.GlyphXML.withBaseline
 
-import scala.annotation.nowarn
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.xml._
 
 
@@ -84,19 +85,19 @@ class Abstraction(body: Node) {
   }
 }
 
-trait Primitives {
-  val translationMap:   mutable.Map[String, Translation]  = mutable.LinkedHashMap[String, Translation]()
-  val abstractionMap:   mutable.Map[String, Abstraction]  = mutable.LinkedHashMap[String, Abstraction]()
-  val attrMap:          mutable.Map[String, AttributeMap] = mutable.LinkedHashMap[String, AttributeMap]()
-  val entityMap:        mutable.Map[String, String]       = mutable.LinkedHashMap[String, String]()
-  val elementMap:       mutable.Map[String, Elem]         = mutable.LinkedHashMap[String, Elem]()
-  val glyphMap:         mutable.Map[String, Glyph]         = mutable.LinkedHashMap[String, Glyph]()
+class Primitives {
+  val translationMap:       mutable.Map[String, Translation]  = mutable.LinkedHashMap[String, Translation]()
+  val abstractionMap:       mutable.Map[String, Abstraction]  = mutable.LinkedHashMap[String, Abstraction]()
+  val genericAttributesMap: mutable.Map[String, AttributeMap] = mutable.LinkedHashMap[String, AttributeMap]()
+  val entityMap:            mutable.Map[String, String]       = mutable.LinkedHashMap[String, String]()
+  val elementMap:           mutable.Map[String, Elem]         = mutable.LinkedHashMap[String, Elem]()
+  val glyphMap:             mutable.Map[String, Glyph]        = mutable.LinkedHashMap[String, Glyph]()
 
 
   /** Declare a named glyph */
   def update(id: String, glyph: Glyph): Unit      = glyphMap(id)=glyph
   /** Declare a named attribute map: used for inheritance of attributes */
-  def update(id: String, map: AttributeMap): Unit = attrMap(id)=map
+  def update(id: String, map: AttributeMap): Unit = genericAttributesMap(id)=map
   /** Declare a new kind of tag */
   def update(id: String, generator: Translation) = translationMap(id) = generator
   /** Declare a new text entity */
@@ -104,17 +105,181 @@ trait Primitives {
   /** Declare a new expandable entity */
   def update(id: String, element: Elem) : Unit =
     if (element.label.toUpperCase=="ATTRIBUTES")
-      attrMap(id) = element.attributes.asAttrMap
+      genericAttributesMap(id) = element.attributes.asAttrMap
     else
       elementMap(id) = element
   /** Declare a new macro */
   def update(id: String, abbr: Abstraction) : Unit = abstractionMap(id) = abbr
 }
 
+object Paragraph {
+
+  def fromGlyphs(sheet: Sheet, glyphs: Seq[Glyph], parHang: Option[Glyph]): Glyph = {
+    val emWidth   = sheet.emWidth
+    val interWord = FixedSize.Space(w=emWidth / 1.5f, h=0f, stretch = 2f)
+    val glyphs$   =
+      (if (sheet.parIndent>0) List(FixedSize.Space(sheet.parIndent, h=0f, stretch=0f)) else Nil) ++ glyphs
+
+    val (hangGlyph, hangWidth) = parHang match {
+      case None    => (None, 0f)
+      case Some(h) => (Some(h), h.w)
+    }
+
+    val leftMargin = sheet.leftMargin max hangWidth
+
+
+    // The overall width is determined by the context
+    // If the bounding box is unspecified, then use the column width
+    val galley =
+      formatParagraph(
+        overallWidth = sheet.parWidth,
+        align        = sheet.parAlign,
+        leftMargin   = sheet.leftMargin,
+        rightMargin  = sheet.rightMargin,
+        interWord,
+        glyphs$
+      )
+
+    val column = NaturalSize.Col(bg = sheet.textBackgroundBrush).atLeft$(galley.toSeq)
+
+    hangGlyph match {
+      case None =>
+        if (leftMargin > 0f)
+          NaturalSize.Row(bg = sheet.textBackgroundBrush)
+            .centered(
+              FixedSize.Space(w =  leftMargin, h = 0f, stretch = 0f),
+              column,
+              FixedSize.Space(w = sheet.rightMargin, h = 0f, stretch = 0f))
+        else
+          column
+
+      case Some(theGlyph) =>
+        val space = FixedSize.Space(leftMargin-theGlyph.w,theGlyph.h, 0f)
+        NaturalSize.Row(bg = sheet.textBackgroundBrush)
+          .centered(
+            NaturalSize.Row(bg = sheet.textBackgroundBrush).atTop(theGlyph, space, column),
+            FixedSize.Space(w = sheet.rightMargin, h = 0f, stretch = 0f))
+    }
+  }
+
+  /**
+   * Build a sequence of galleys representing the lines of a paragraph
+   * formed from `glyphs`.
+   */
+  def formatParagraph(overallWidth:  Scalar,
+                      align:         Alignment,
+                      leftMargin:    Scalar,
+                      rightMargin:   Scalar,
+                      interWord:     Glyph,
+                      glyphs:        Seq[Glyph]) = {
+    // As each line of the paragraph is assembled it is added to the galley
+    val galley = ArrayBuffer[Glyph]()
+    // maximum width of this paragraph: invariant
+    val maxWidth       = overallWidth - (leftMargin + rightMargin)
+    // avoid rounding
+    val maxWidthfloor  = maxWidth.floor
+    //println(s"[ov=$overallWidth,lm=$leftMargin,maxw=$maxWidthfloor]")
+    val interWordWidth = interWord.w
+    val words = new StreamIterator[Glyph](glyphs.iterator)
+
+    @inline def setLine(): (Scalar, Seq[Glyph]) = {
+      import scala.collection.mutable
+      val line = mutable.IndexedBuffer[Glyph]()
+      var lineWidth = 0f
+
+      line += align.leftFill()
+      while (words.hasElement && (lineWidth + words.element.w + interWordWidth < maxWidthfloor)) {
+        words.element match {
+          case BreakableGlyph(_, glyphs) =>
+            for { glyph <- glyphs } line += glyph
+            line += interWord()
+            lineWidth += words.element.w + interWordWidth
+            words.nextElement()
+
+          // REMOVE THE IMMEDIATELY PRECEDING INTERWORD SPACE
+          case NOBREAK =>
+            val w = line.last.w
+            line.update(line.length - 1, NOBREAK)
+            lineWidth -= w
+            words.nextElement()
+
+          case other =>
+            line += other
+            line += interWord()
+            lineWidth += words.element.w + interWordWidth
+            words.nextElement()
+        }
+      }
+
+      // squeeze an extra chunk on by splitting a splittable?
+      if (words.hasElement) words.element match {
+        case breakable: BreakableGlyph =>
+          val breakPoint: Int = breakable.maximal(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w)
+          if (breakPoint!=0) {
+            val glyphs = breakable.glyphs
+            for { i <- 0 until breakPoint } {
+              lineWidth += glyphs(i).w
+              line += glyphs(i)
+            }
+            line += breakable.hyphen()
+            line += interWord()
+            lineWidth += breakable.hyphen.w
+            words.buffer = Some(new BreakableGlyph(breakable.hyphen, glyphs.drop(breakPoint)))
+          }
+        case _ =>
+      }
+
+      // line is full, erase the interword or leftfill
+      line.update(line.length - 1, align.rightFill())
+      // if this is the very last line, words will be empty
+      if (!words.hasElement) {
+        line += align.lastFill()
+      }
+      (lineWidth, line.toSeq)
+    }
+
+    var setting = true
+    while (setting && words.hasElement) {
+      // Maybe we have an overlong word
+      if (words.hasElement && words.element.w.ceil >= maxWidthfloor) {
+        // Shrink it somehow
+        words.element match {
+          // cram in as much as possible, and omit the rest
+          case breakableGlyph: BreakableGlyph if false  =>
+            val glyphs = breakableGlyph.glyphs
+            val breakPoint: Int = breakableGlyph.maximal(maxWidthfloor)
+            galley += NaturalSize.Row.atTop$(glyphs.take(breakPoint)).framed(fg = DefaultBrushes.red(width=2))
+          case other =>
+            galley += other.scaled(maxWidthfloor/other.w).framed(fg = DefaultBrushes.nothing, bg=DefaultBrushes.lightGrey)
+        }
+        words.nextElement()
+      } else {
+        val (width, glyphs) = setLine()
+        // the line had only its starting alignment glyph; nothing else to do
+        if (glyphs.length == 1 && width == 0) {
+          setting = false
+        } else
+          galley += FixedSize.Row(maxWidth).atTop$(glyphs)
+      }
+    }
+    galley
+  }
+}
+
 object Translation {
 
+  /**
+   *   Translation takes place in stages: the `Target` stage
+   *  is a convenient intermediate between GlyphXML notation and
+   *  glyphs themselves. It's not strictly needed, but its objects
+   *  are all prettyprintable, and it supports the debugging of
+   *  complicated layouts.
+   */
   object Target {
-    trait Target
+    trait Target {
+      def asGlyph: Glyph
+    }
+
     /** Joins its predecessor to its successor */
     case object JoinTarget extends Target with PrettyPrint.PrettyPrintable {
       /** The name of the class (or object) */
@@ -122,25 +287,87 @@ object Translation {
 
       /** The number of fields/elements of the object */
       def arity: Int = 0
+
+      val asGlyph: Glyph = NOBREAK
     }
 
+    /** The text of a word or a line */
     case class TextTarget(text: String, atBase: Boolean, font: Font, fg: Brush, bg: Brush) extends Target with PrettyPrint.PrettyPrintable {
       val arity = 5
       val prefix = "Text"
+
       override def field(i: Int): (String, Any) = i match {
-        case 1=>("atBase", atBase)
-        case 0=>("", s""""$text"""")
-        case 2=>("font", FontFamily.fontString(font))
-        case 3=>("fg", fg)
-        case 4=>("bg", bg)
+        case 1 => ("atBase", atBase)
+        case 0 => ("", s""""$text"""")
+        case 2 => ("font", FontFamily.fontString(font))
+        case 3 => ("fg", fg)
+        case 4 => ("bg", bg)
+      }
+
+      val asGlyph: Glyph = {
+        val source = org.sufrin.glyph.Text(text, font, fg, bg)
+        if (atBase) source.atBaseline() else source.asGlyph()
       }
     }
 
-    case class ParaTarget(width: Scalar, leftMargin: Scalar, rightMargin: Scalar, chunks: Seq[Target]) extends Target
+    /** The structure of a paragraph to be made from chunks */
+    case class ParaTarget(sheet: Sheet, chunks: Seq[Target], parHang: Option[Glyph]) extends Target with PrettyPrint.PrettyPrintable
+    { val arity=3
+      val prefix="Para"
+      override def field(i: Int): (String, Any) = i match {
+        case 2 => ("chunks", chunks)
+        case 1 => ("", s"w: ${sheet.parWidth}")
+        case 0 => ("hang", parHang)
+      }
+      val asGlyph: Glyph = Paragraph.fromGlyphs(sheet, chunks.map(_.asGlyph), parHang)
+    }
 
-    case class ColTarget(chunks: Seq[Target]) extends Target
+    case class ColTarget(background: Brush, chunks: Seq[Target]) extends Target {
+      val asGlyph: Glyph = NaturalSize.Col(bg=background).atLeft$(chunks.map(_.asGlyph))
+    }
 
-    case class GlyphTarget(glyph: Glyph) extends Target
+    case class GlyphTarget(paragraph: Boolean, sheet: Sheet, glyph: Glyph) extends Target with PrettyPrint.PrettyPrintable {
+      val arity=2
+      val prefix="GlyphTarget"
+      override def field(i: Int): (String, Any) = i match {
+        case 1 => ("glyph", glyph)
+        case 0 => ("para",  paragraph)
+      }
+
+      val glyph$ = if (paragraph) withBaseline(glyph, sheet.baseLine) else glyph
+      val asGlyph: Glyph = glyph$
+    }
+
+    def withBaseline(glyph: Glyph, baseLine$: Scalar): Glyph = new Glyph { thisGlyph =>
+
+      locally { glyph.parent=thisGlyph }
+
+      def draw(surface: Surface): Unit = surface.withOrigin(0, -baseLine) {
+        glyph.draw(surface)
+      }
+
+      override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(p)
+
+      override def glyphContaining(p: Vec): Option[Hit] = glyph.glyphContaining(p)
+
+      override def baseLine: Scalar = baseLine$
+
+      def diagonal: Vec = Vec(glyph.w, glyph.h)
+
+      def copy(fg: Brush=fg, bg: Brush=bg): Glyph = {
+        org.sufrin.logging.Default.info(s"copying $glyph.atBaseline($baseLine)")
+        withBaseline(glyph.copy(fg, bg), baseLine$)
+      }
+
+      val fg: Brush = glyph.fg
+      val bg: Brush = glyph.bg
+    }
+
+  }
+
+  def isBlank(elem: Node): Boolean = elem match {
+    case Text(data) => data.isBlank
+    case _ => false
   }
 }
 
@@ -195,17 +422,19 @@ class TypedAttributeMap(attributes: AttributeMap) {
       }
   }
 
-  def Align(key: String, default: Alignment)(implicit source: SourceLocation): Alignment = attributes.get(key) match {
-    case Some("left") => Left
-    case Some("right") => Right
-    case Some("center") => Center
-    case Some("justify") => Justify
-    case Some(other) =>
-      warn(s"$key=\"$other\" [not an alignment name: using \"center\"]")
-      Center
-    case None =>
-      default
+  def Align(key: String, default: Alignment): Alignment = attributes.get(key) match {
+    case None => default
+    case Some(alignment) => alignment.toLowerCase match {
+      case ("left") => Left
+      case ("right") => Right
+      case ("center") => Center
+      case ("justify") => Justify
+      case (other) =>
+        warn(s"$key=\"$other\" [not an alignment name: using \"center\"]")
+        Center
+    }
   }
+
 
   val brushCache = collection.mutable.HashMap[String, Brush]()
 
@@ -265,20 +494,18 @@ class TypedAttributeMap(attributes: AttributeMap) {
   }
 }
 
-class Translation extends Primitives {
+class Translation(primitives: Primitives)  {
   import Visitor.AttributeMap
   import Translation.Target._
+  import primitives._
 
   implicit class TypedMap(attributes: AttributeMap) extends TypedAttributeMap(attributes)
 
-  def extendContextFor(tag: String)(inherited: AttributeMap, local: Map[String,String]): AttributeMap = {
-    inherited ++ local
-  }
-
+  def extendContextFor(tag: String)(inherited: AttributeMap, local: Map[String,String]): AttributeMap = inherited ++ local
 
   def translateText(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
 
-    @inline def wordGlyph(text: String): Target = TextTarget(text, paragraph, sheet.textFont, sheet.textForegroundBrush, sheet.textBackgroundBrush)
+    @inline def wordGlyph(text: String): Target = TextTarget(text, paragraph, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
 
     if (paragraph) {
       // Generate the target chunks of texts;  with `JoinTarget` before (after) unless the text as a whole starts with a space, tab, or newline
@@ -300,9 +527,9 @@ class Translation extends Primitives {
       if (text.endsWith(" ") || text.endsWith("\n") || text.endsWith("\t")) {} else out(JoinTarget)
       chunks.toSeq
     } else {
-      val lines = text.split("[\n]").toSeq.map(wordGlyph(_))
+      val lines = text.split("[\n]").map(_.trim).map(wordGlyph(_)).toSeq
       // List(WordGlyph(NaturalSize.Col(bg=sheet.textBackgroundBrush).atLeft$(lines), sheet.textFontStyle.toString))
-      List(ColTarget(lines))
+      List(ColTarget(sheet.backgroundBrush, lines ))
     }
   }
 
@@ -319,18 +546,20 @@ class Translation extends Primitives {
 
       case xml.Elem(str, tag, metaData, binding, child@_*) =>
 
+        val localAttributes = metaData.asAttrMap
+
         def attrsFor(attrId: String): AttributeMap = {
-          metaData.asAttrMap.get(attrId) match {
+          localAttributes.get(attrId) match {
             case None       => Map.empty
             case Some(attr) =>
-              attrMap.get(attr) match {
+              genericAttributesMap.get(attr) match {
                 case None =>
                   import org.sufrin.logging.Default.warn
-                  warn(s"No defaults for $attrId=\"$attr\"  in ${tags.reverse.mkString("<", "<", "...>")} ")
+                  warn(s"No attribute defaults for $attrId=\"$attr\" in ${tags.reverse.mkString("<", "<", "...>")} ")
                   Map.empty
 
                 case Some(attrs) =>
-                  org.sufrin.logging.Default.info(s"attrsFor($attrId) $attr = $attrs")
+                  //org.sufrin.logging.Default.info(s"attrsFor($attrId) $attr = $attrs")
                   attrs
               }
           }
@@ -341,32 +570,35 @@ class Translation extends Primitives {
          * globally-declared attributes for `tag:label`, then those of its declared "class",
          * then those of its specific "id".
          */
-        val inheritedAttributes: AttributeMap = attrMap.getOrElse(s"tag:${tag}", Map.empty) ++ attrsFor("class") ++ attrsFor("id")
+        val specifiedAttributes: AttributeMap = genericAttributesMap.getOrElse(s"tag:${tag}", Map.empty) ++ attrsFor("class") ++ attrsFor("id")
 
         /**
          * The effective attributes of an element are the catenation of its default attributes and its actually-appearing
-         * attributes.
+         * attributes, without "id" and "class"
          */
-        val attributes$ : AttributeMap = inheritedAttributes ++ metaData.asAttrMap
+        val attributes$$ : AttributeMap = specifiedAttributes ++ localAttributes.filterNot{ case (key, _) => key=="class" || key=="id"}
+        val attributes$ : AttributeMap = specifiedAttributes ++ localAttributes
         val sheet$ = attributes$.declareAttributes(sheet)
         val tags$ = tag::tags
         tag match {
           case "p" =>
-            val chunks = child.flatMap { source => translate(tags$, true, attributes$, sheet$, source) }
-            // MAKE CHUNKS A PARAGRAPH GLYPH
-            import sheet$.{parWidth, leftMargin, rightMargin}
-            List(ParaTarget(parWidth, leftMargin, rightMargin, chunks))
+            println(s"<p ${Visitor.toString(attributes$)}")
+            val hangString = attributes$.String("hang", "")
+            val hang = if (hangString.isEmpty) None else Some(sheeted.Label(hangString)(sheet$))
+            val chunks = child.flatMap { source => translate(tags$, true, attributes$$, sheet$, source) }
+            List(ParaTarget(sheet$, chunks, hang))
 
           case "glyph" =>
+            println (s"<glyph ${Visitor.toString(attributes$)}/>")
             val id: String     = attributes$.String("id", alt="")
             val copy: Boolean  = attributes$.Bool("copy", !attributes$.Bool("share", true))
             val fg             = attributes$.Brush("fg",   DefaultBrushes.black)
             val bg             = attributes$.Brush("bg",   DefaultBrushes.nothing)
             glyphMap.get(id)  match {
               case None =>
-                Seq.empty
+                translateText(tags$, paragraph, attributes$, sheet$, s"<glyph $id ${Visitor.toString(attributes$)}")
               case Some(glyph: Glyph) =>
-                List(GlyphTarget(if (copy) glyph(fg, bg) else glyph))
+                List(GlyphTarget(paragraph, sheet$, if (copy) glyph(fg, bg) else glyph))
             }
 
 
@@ -374,12 +606,13 @@ class Translation extends Primitives {
           case _ =>
             translationMap.get(tag) match {
               case Some(translation) =>
-                //println(s"<$tag special translation")
+                println(s"<$tag special translation ${Visitor.toString(attributes$)}")
                 translation.translate(tags$, paragraph, attributes$, sheet$, child)
 
               case None =>
-                //println(s"<$tag default translation")
-                child.flatMap { source => translate(tags$, false, attributes$, sheet$, source) }
+                //println(s"<$tag default translation  ${Visitor.toString(attributes$)}")
+                //child.flatMap { source => translate(tags$, false, attributes$, sheet$, source) }
+                translatePCData(tags$, false, Map.empty, Sheet(), source.toString())
             }
 
         }
@@ -397,85 +630,67 @@ class Translation extends Primitives {
 
     }
 
-
   }
 
-  def translatePCData(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] =
-      translateText(tags, false, attributes, sheet, text)
+  /** Perhaps better to introduce a PCData target .... */
+  def translatePCData(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
+    import sheet.{textFont, textBackgroundBrush => bg, textForegroundBrush => fg}
+    import org.sufrin.glyph.{Text => TextChunk}
+    val glyphs = text.split('\n').toSeq.map(TextChunk(_, textFont, fg, bg).asGlyph(fg, bg))
+    List(GlyphTarget(paragraph, sheet, NaturalSize.Col(bg = bg).atLeft$(glyphs)))
+  }
+
 
   def translateProcInstr(tags: List[String], target: String, text: String): Seq[Target] = Seq.empty
 }
 
 
-object gxml {
+object gxml extends Application {
   import xml._
   import Translation.Target._
 
-  def flatten(node: Node): Unit = {
-    import Visitor.AttributeMap
-    val v = new Visitor {
-
-      def visitText(attributes: AttributeMap, text: String): Unit = println(s"$attributes: \"${text.replaceAll("[\\n][ ]*", "⎆")}\"")
-
-      def visitEntity(attributes: AttributeMap, name: String): Unit = println(s"$attributes: &$name;")
-
-      override def extendContextFor(attributes: AttributeMap, tag: String, attrMap: Map[String,String]): AttributeMap = {
-        val map$ : Map[String,String] = attrMap.map{ case (k, d) => (k, s"$tag:$d")}
-        attributes ++ map$
-      }
-
-      override def visitPCData(attributes: AttributeMap, text: String): Unit = visitText(attributes, s"<![PCDATA[$text]]")
-
-      override def visitProcInstr(attributes: AttributeMap, target: String, text: String): Unit = {}
-    }
-    v.visit(Map.empty, node)
-  }
-
-  def trans(node: Node): Unit = {
-    import Visitor.AttributeMap
-    val v = new Visitor {
-
-      override def visitText(attributes: AttributeMap, text: String): Unit = print(text)
-
-      override def visitEntity(attributes: AttributeMap, name: String): Unit = print(s"&$name;")
-
-      override def visitPCData(attributes: AttributeMap, text: String): Unit = visitText(attributes, s"<![PCDATA[$text]]")
-
-      override def visitProcInstr(attributes: AttributeMap, target: String, text: String): Unit = {}
-    }
-    v.visit(Map.empty, node)
-  }
-
-  def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation {
-    override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] =
-      super.translate(tag::tags, paragraph, attributes.updated("textStyle", textStyle), sheet, child)
-  }
-
-  val translator: Translation = new Translation
-
+  val primitives: Primitives = new Primitives
   locally {
-    translator("i")  = textStyleTranslation("i", "Italic")
-    translator("b")  = textStyleTranslation("b", "Bold")
-    translator("bi") = textStyleTranslation("bi", "BoldItalic")
-    translator("n")  = textStyleTranslation("n", "Normal")
-    translator("today") = "Expansion of today"
-    translator("yesterday") = "Expansion of yesterday"
-    implicit val sheet = Sheet()
+    primitives("i")  = textStyleTranslation("i", "Italic")
+    primitives("b")  = textStyleTranslation("b", "Bold")
+    primitives("bi") = textStyleTranslation("bi", "BoldItalic")
+    primitives("n")  = textStyleTranslation("n", "Normal")
+    primitives("today") = " Expansion of today "
+    primitives("yesterday") = " Expansion of yesterday "
+    primitives("body") = new Translation(primitives) {
+      override def toString: String = "body translation"
+      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
+        val child$ = child.filterNot(Translation.isBlank(_))
+        List(ColTarget(sheet.backgroundBrush, chunks=super.translate("body"::tags, false, attributes, sheet, child$)))
+      }
+    }
+    implicit val sheet = Sheet(labelForegroundBrush = DefaultBrushes.green)
     import sheeted.{Label,TextButton}
-    translator("B1")     = Label("B1")
-    translator("B2")     = Label("B2") // TextButton("UNSHARED") { _=> }
-    translator("B3")     = Label("B3") // TextButton("UNSHARED") { _=> }
-    translator("level1")   = <ATTRIBUTES width="500px"/>
-    translator("B1")       = <ATTRIBUTES fg="red/60" copy="true"/>
-    translator("B2")       = <ATTRIBUTES fg="lightGrey/60" copy="true"/>
-    translator("B3")       = <ATTRIBUTES fg="lightGrey/60" share="true"/>
-    translator("tag:p")    = <ATTRIBUTES bg="lightGrey/60" width="60px" leftMargin="10px"/>
+    primitives("B1")     = Label("B1")
+    primitives("B2")     = Label("B2") // TextButton("UNSHARED") { _=> }
+    primitives("B3")     = Label("B3") // TextButton("UNSHARED") { _=> }
+    primitives("B1")       = <ATTRIBUTES fg="red/2"       copy="true" bg="yellow"/>
+    primitives("B2")       = <ATTRIBUTES fg="lightGrey/2" copy="true" bg="green"/>
+    primitives("B3")       = <ATTRIBUTES fg="lightGrey/60" share="true"/>
+    primitives("tag:p")    = <ATTRIBUTES background="black/60" leftMargin="2em"/>
   }
 
 
-  def translate(source: Node): Unit = {
+  def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(primitives) {
+    override def toString: String = s"StyleTranslation($tag, $textStyle)"
+    override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
+      super.translate(tag::tags, paragraph, attributes.updated("textStyle", textStyle), sheet, child)
+    }
+  }
+
+  val translator: Translation = new Translation(primitives)
+
+
+  def translate(source: Node): Glyph = {
     import PrettyPrint.AnyPretty
     for { t <- (translator.translate(Nil, false, Map.empty, Sheet(), source)) } t.prettyPrint()
+    NaturalSize.Col()
+               .centered$(translator.translate(Nil, false, Map.empty, Sheet(), source).map(_.asGlyph)).framed()
   }
 
 
@@ -507,10 +722,45 @@ object gxml {
       </p>
     </body>
 
-  def main(args: Array[String]): Unit = {
-    translate(h)
-    println("-----")
-  }
+  val p1: Node =
+    <body  width="40em" textFontFamily="Menlo" textFontSize="18">
 
+      <glyph id="B2"/>
+
+
+      <p align="justify" leftMargin="20em">
+         The rain in spain falls <i>mainly</i> in the plain. <glyph id="B1"/>
+         Oh! Does it? <b>Oh</b>, Yes!, it does. &yesterday;  eh? &today;
+      </p>
+
+      <glyph id="B1"/>
+
+      <p textBackground="yellow" leftMargin="0em" rightMargin="20em">
+        The rain in spain falls <i>mainly</i> in the plain.
+        Oh! Does it? <b>Oh, </b>Yes!, it does.
+        Why do<bi>-you-</bi>want to control spacing so tightly? Here&yesterday;we go!
+      </p>
+
+    This is what happens
+    to material  <glyph id="B1"/> outside
+    paragraph boundaries
+
+      <p><i>the wage of gin is <and fg="red">
+        this is
+         <what> happens
+         </what>
+        when a tag is not defined
+      </and> BREATH!</i></p>
+
+      <![CDATA[
+      And this is a lump
+      of ![CDATA ..]]
+      OK?
+      ]]>
+    </body>
+
+  def GUI: Glyph = translate(p1)
+
+  def title: String = "gxml"
 }
 

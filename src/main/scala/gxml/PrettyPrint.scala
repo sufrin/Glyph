@@ -168,7 +168,7 @@ object PrettyPrint {
         { val length = obj.productArity
           for { i <-0 until length-1 }
             prettyPrint(obj.productElement(i), false, indentToken :: indentStack, Some(obj.productElementName(i)))
-          prettyPrint(obj.productElement(length-1), true, indentToken :: indentStack, Some(obj.productElementName(length-1)))
+          if (length>0) prettyPrint(obj.productElement(length-1), true, indentToken :: indentStack, Some(obj.productElementName(length-1)))
         }
 
       case _ =>
