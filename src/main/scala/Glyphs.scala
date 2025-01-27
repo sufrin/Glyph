@@ -369,6 +369,7 @@ object Glyphs  {
     override def toString: String = s"BlurredFrame($diagonal, $blur, $spread dx=$dx, dy=$dy fg=$fg, bg=$bg)"
 
     def draw(surface: Surface): Unit = {
+      //println(s"$this.draw($inside)")
       surface.withOrigin(-dx, -dy) {
         surface.drawShadow(fg.color, diagonal, dx, dy, blur, spread, true)
         surface.withClip(diagonal) { drawBackground(surface) }

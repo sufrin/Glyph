@@ -53,6 +53,7 @@ object DefaultBrushes extends Brushes {
       case "grey4" => org.sufrin.glyph.Brush(s"grey4")(color = 0XFFC2C2C2)
       case "lightgrey" => org.sufrin.glyph.Brush(s"lightgrey")(color = 0XFFBBBBBB)
       case "darkgrey" => org.sufrin.glyph.Brush(s"darkgrey")(color = 0XFF777777)
+      case "black" => org.sufrin.glyph.Brush(s"black")(color = 0XFF000000)
       case "yellow" => org.sufrin.glyph.Brush(s"yellow")(color = 0XFFFFDD00)
       case "nothing" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000)
       case "" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000)

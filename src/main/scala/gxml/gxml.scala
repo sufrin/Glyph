@@ -91,11 +91,12 @@ class Primitives {
   val genericAttributesMap: mutable.Map[String, AttributeMap] = mutable.LinkedHashMap[String, AttributeMap]()
   val entityMap:            mutable.Map[String, String]       = mutable.LinkedHashMap[String, String]()
   val elementMap:           mutable.Map[String, Elem]         = mutable.LinkedHashMap[String, Elem]()
-  val glyphMap:             mutable.Map[String, Glyph]        = mutable.LinkedHashMap[String, Glyph]()
+  val generatorMap:         mutable.Map[String, Sheet=>Glyph] = mutable.LinkedHashMap[String, Sheet=>Glyph]()
 
 
-  /** Declare a named glyph */
-  def update(id: String, glyph: Glyph): Unit      = glyphMap(id)=glyph
+
+  /** Declare a named glyph generator */
+  def update(id: String, glyph: Sheet=>Glyph): Unit = generatorMap(id)=glyph
   /** Declare a named attribute map: used for inheritance of attributes */
   def update(id: String, map: AttributeMap): Unit = genericAttributesMap(id)=map
   /** Declare a new kind of tag */
@@ -144,7 +145,7 @@ object Paragraph {
 
     hangGlyph match {
       case None =>
-        if (leftMargin > 0f)
+        if (true || leftMargin > 0f)
           NaturalSize.Row(bg = sheet.textBackgroundBrush)
             .centered(
               FixedSize.Space(w =  leftMargin, h = 0f, stretch = 0f),
@@ -375,6 +376,9 @@ class TypedAttributeMap(attributes: AttributeMap) {
   import org.sufrin.SourceLocation.SourceLocation
   import org.sufrin.logging.SourceDefault.{warn}
 
+  def asString: String = Visitor.toString(attributes)
+  override def toString: String = Visitor.toString(attributes)
+
   def String(key: String, alt: String): String = attributes.getOrElse(key, alt)
 
   def Int(key: String, alt: Int)(implicit source: SourceLocation): Int = attributes.get(key) match {
@@ -484,6 +488,7 @@ class TypedAttributeMap(attributes: AttributeMap) {
       leftMargin            = Units("leftMargin",     sheet.leftMargin)   (attributes, fontDetail),
       rightMargin           = Units("rightMargin",    sheet.rightMargin)  (attributes, fontDetail),
       parAlign              = Align("align",          sheet.parAlign),
+      backgroundBrush       = Brush("background",     sheet.backgroundBrush),
       textBackgroundBrush   = Brush("textBackground", sheet.textBackgroundBrush),
       textForegroundBrush   = Brush("textForeground", sheet.textForegroundBrush),
       buttonBackgroundBrush = Brush("buttonBackground", sheet.buttonBackgroundBrush),
@@ -494,12 +499,29 @@ class TypedAttributeMap(attributes: AttributeMap) {
   }
 }
 
-class Translation(primitives: Primitives)  {
+class Translation(val primitives: Primitives=new Primitives) {
   import Visitor.AttributeMap
   import Translation.Target._
   import primitives._
-
   implicit class TypedMap(attributes: AttributeMap) extends TypedAttributeMap(attributes)
+
+  import primitives.{generatorMap, translationMap, entityMap, genericAttributesMap}
+  /** Declare a named glyph generator */
+  def update(id: String, glyph: Sheet=>Glyph): Unit = generatorMap(id)=glyph
+  /** Declare a named attribute map: used for inheritance of attributes */
+  def update(id: String, map: AttributeMap): Unit = genericAttributesMap(id)=map
+  /** Declare a new kind of tag */
+  def update(id: String, generator: Translation) = translationMap(id) = generator
+  /** Declare a new text entity */
+  def update(id: String, expansion: String) = entityMap(id) = expansion
+  /** Declare a new expandable entity */
+  def update(id: String, element: Elem) : Unit =
+    if (element.label.toUpperCase=="ATTRIBUTES")
+      genericAttributesMap(id) = element.attributes.asAttrMap
+    else
+      elementMap(id) = element
+  /** Declare a new macro */
+  def update(id: String, abbr: Abstraction) : Unit = abstractionMap(id) = abbr
 
   def extendContextFor(tag: String)(inherited: AttributeMap, local: Map[String,String]): AttributeMap = inherited ++ local
 
@@ -527,7 +549,7 @@ class Translation(primitives: Primitives)  {
       if (text.endsWith(" ") || text.endsWith("\n") || text.endsWith("\t")) {} else out(JoinTarget)
       chunks.toSeq
     } else {
-      val lines = text.split("[\n]").map(_.trim).map(wordGlyph(_)).toSeq
+      val lines = text.split("[\n]").map(_.trim).filterNot(_.isEmpty).map(wordGlyph(_)).toSeq
       // List(WordGlyph(NaturalSize.Col(bg=sheet.textBackgroundBrush).atLeft$(lines), sheet.textFontStyle.toString))
       List(ColTarget(sheet.backgroundBrush, lines ))
     }
@@ -582,24 +604,25 @@ class Translation(primitives: Primitives)  {
         val tags$ = tag::tags
         tag match {
           case "p" =>
-            println(s"<p ${Visitor.toString(attributes$)}")
+            //println(s"<p ${attributes$.asString}")
             val hangString = attributes$.String("hang", "")
-            val hang = if (hangString.isEmpty) None else Some(sheeted.Label(hangString)(sheet$))
+            val hangRef    = attributes$.String("hangref", "")
+            val hang: Option[Glyph] = if (hangString.isEmpty)
+                       if (hangRef.isEmpty) None
+                       else Some(generateGlyph(tags$, paragraph, attributes$, sheet$, hangRef))
+                       else Some(sheeted.Label(hangString)(sheet$))
             val chunks = child.flatMap { source => translate(tags$, true, attributes$$, sheet$, source) }
             List(ParaTarget(sheet$, chunks, hang))
 
+          case "col" =>
+            //println(s"<col ${attributes.asString} / ${attributes$.asString} / ${attributes$$.asString} / ${sheet$.backgroundBrush}")
+            val chunks = child.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, paragraph, attributes$$, sheet$, source) }
+            List(ColTarget(sheet$.backgroundBrush, chunks))
+
           case "glyph" =>
-            println (s"<glyph ${Visitor.toString(attributes$)}/>")
-            val id: String     = attributes$.String("id", alt="")
-            val copy: Boolean  = attributes$.Bool("copy", !attributes$.Bool("share", true))
-            val fg             = attributes$.Brush("fg",   DefaultBrushes.black)
-            val bg             = attributes$.Brush("bg",   DefaultBrushes.nothing)
-            glyphMap.get(id)  match {
-              case None =>
-                translateText(tags$, paragraph, attributes$, sheet$, s"<glyph $id ${Visitor.toString(attributes$)}")
-              case Some(glyph: Glyph) =>
-                List(GlyphTarget(paragraph, sheet$, if (copy) glyph(fg, bg) else glyph))
-            }
+            // println (s"<glyph ${attributes$.asString}/>")
+            val id: String = attributes$.String("id", alt="")
+            List(GlyphTarget(paragraph, sheet$, generateGlyph(tags$, paragraph, attributes$, sheet$, id)))
 
 
 
@@ -632,6 +655,16 @@ class Translation(primitives: Primitives)  {
 
   }
 
+  /** Generate a glyph from the given glyph `ref`erence */
+  private def generateGlyph(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, ref: String): Glyph =
+    generatorMap.get(ref) match {
+      case None =>
+        org.sufrin.logging.Default.warn(s"<glyph ${attributes.asString}/> UNDEFINED (no generator)")
+        sheeted.Label("UNDEFINED")(sheet.copy(labelFontSize = 10, labelForegroundBrush = DefaultBrushes.red))
+      case Some(glyph) =>
+        glyph(sheet)
+    }
+
   /** Perhaps better to introduce a PCData target .... */
   def translatePCData(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
     import sheet.{textFont, textBackgroundBrush => bg, textForegroundBrush => fg}
@@ -642,6 +675,18 @@ class Translation(primitives: Primitives)  {
 
 
   def translateProcInstr(tags: List[String], target: String, text: String): Seq[Target] = Seq.empty
+
+  /** Make this translation accessible */
+  def apply(source: Node)(implicit sheet: Sheet): Glyph = {
+    val translator = this
+    import PrettyPrint.AnyPretty
+    for { t <- (translator.translate(Nil, false, Map.empty, sheet, source)) } t.prettyPrint()
+    NaturalSize.Col()
+      .centered$(translator.translate(Nil, false, Map.empty, sheet, source).map(_.asGlyph)).framed()
+  }
+
+  implicit def XMLtoGlyph(source: Node)(implicit sheet: Sheet): Glyph = this(source)(sheet)
+
 }
 
 
@@ -649,91 +694,72 @@ object gxml extends Application {
   import xml._
   import Translation.Target._
 
-  val primitives: Primitives = new Primitives
+
+
+  val translator: Translation = new Translation()
+  // Extend the basic XML semantics
   locally {
-    primitives("i")  = textStyleTranslation("i", "Italic")
-    primitives("b")  = textStyleTranslation("b", "Bold")
-    primitives("bi") = textStyleTranslation("bi", "BoldItalic")
-    primitives("n")  = textStyleTranslation("n", "Normal")
-    primitives("today") = " Expansion of today "
-    primitives("yesterday") = " Expansion of yesterday "
-    primitives("body") = new Translation(primitives) {
+    translator("body") = new Translation(translator.primitives) {
       override def toString: String = "body translation"
       override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
         val child$ = child.filterNot(Translation.isBlank(_))
         List(ColTarget(sheet.backgroundBrush, chunks=super.translate("body"::tags, false, attributes, sheet, child$)))
       }
     }
-    implicit val sheet = Sheet(labelForegroundBrush = DefaultBrushes.green)
-    import sheeted.{Label,TextButton}
-    primitives("B1")     = Label("B1")
-    primitives("B2")     = Label("B2") // TextButton("UNSHARED") { _=> }
-    primitives("B3")     = Label("B3") // TextButton("UNSHARED") { _=> }
-    primitives("B1")       = <ATTRIBUTES fg="red/2"       copy="true" bg="yellow"/>
-    primitives("B2")       = <ATTRIBUTES fg="lightGrey/2" copy="true" bg="green"/>
-    primitives("B3")       = <ATTRIBUTES fg="lightGrey/60" share="true"/>
-    primitives("tag:p")    = <ATTRIBUTES background="black/60" leftMargin="2em"/>
-  }
 
-
-  def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(primitives) {
-    override def toString: String = s"StyleTranslation($tag, $textStyle)"
-    override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
-      super.translate(tag::tags, paragraph, attributes.updated("textStyle", textStyle), sheet, child)
+    def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(translator.primitives) {
+      override def toString: String = s"StyleTranslation($tag, $textStyle)"
+      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
+        super.translate(tag::tags, paragraph, attributes.updated("textStyle", textStyle), sheet, child)
+      }
     }
-  }
 
-  val translator: Translation = new Translation(primitives)
-
-
-  def translate(source: Node): Glyph = {
-    import PrettyPrint.AnyPretty
-    for { t <- (translator.translate(Nil, false, Map.empty, Sheet(), source)) } t.prettyPrint()
-    NaturalSize.Col()
-               .centered$(translator.translate(Nil, false, Map.empty, Sheet(), source).map(_.asGlyph)).framed()
+    translator("i")  = textStyleTranslation("i",  "Italic")
+    translator("b")  = textStyleTranslation("b",  "Bold")
+    translator("bi") = textStyleTranslation("bi", "BoldItalic")
+    translator("n")  = textStyleTranslation("n",  "Normal")
   }
 
 
-  val h: Node  =
-    <body xmlns:h="http://www.w3.org/TR/html4/" width="40em" face="Courier">
-      the first body line
-      <div class="level1" width="2000px">
-        <p> this&today;is a very<i>interesting</i>'ed
-            paragraph
-            <bi>and this is bold italic text</bi><foo/>
-            <![CDATA[
-            and
-            this
-            is
-            cdata]]>
-            with <i>some</i>more text
-        </p>
-        a <i>completely</i> level1 line
-      </div>
-      the last body lump&yesterday;what?
-      <p>
-        Several buttons:
-        <glyph id="B1"/> and
-        <glyph id="B2"/> and
-        <glyph id="B3"/>
-        <glyph id="B3" copy="true" bg="yellow"/>
-        <glyph id="B3" copy="false" bg="yellow"/>
 
-      </p>
-    </body>
+  // Specify application-specific material
+  locally {
+    translator("today")     = " Expansion of today "
+    translator("yesterday") = " Expansion of yesterday "
+    translator("B1")        =  { sheet => sheeted.TextButton("B1"){ _ => println(s"B1") }(sheet)}
+    translator("B2")        =  { sheet => sheeted.TextButton("B2"){ _ => println(s"B2") }(sheet) }
+    translator("B3")        =  { sheet => sheeted.TextButton("B3"){ _ => println(s"B3") }(sheet) }
+    translator("L1")        =  { sheet => sheeted.Label("L1")(sheet) }
+    translator("L2")        =  { sheet => sheeted.Label("L2")(sheet) }
+    translator("L3")        =  { sheet => sheeted.Label("L3")(sheet) }
+    translator("B1")        = <ATTRIBUTES buttonForeground="red/2"  buttonBackground="yellow"/>
+    translator("B2")        = <ATTRIBUTES buttonForeground="green/2"  buttonBackground="yellow"/>
+    translator("B3")        = <ATTRIBUTES buttonForeground="lightgrey/2"  buttonBackground="black"/>
+    translator("tag:p")     = <ATTRIBUTES background="black/60" leftMargin="2em"/>
+  }
+
+
+  // set up the interface
+  implicit val sheet: Sheet =
+    Sheet().copy(
+      textForegroundBrush = DefaultBrushes.red,
+      buttonFrame = Styles.Decoration.Blurred(fg=DefaultBrushes.red(width=16), bg=DefaultBrushes.nothing, blur=20f, spread=10f)
+    )
+
+  import translator.XMLtoGlyph
 
   val p1: Node =
-    <body  width="40em" textFontFamily="Menlo" textFontSize="18">
+    <body  width="40em" textFontFamily="Menlo" textFontSize="18" background="pink">
 
       <glyph id="B2"/>
 
 
-      <p align="justify" leftMargin="20em">
+      <p align="justify" leftMargin="20em" hangref="B3">
          The rain in spain falls <i>mainly</i> in the plain. <glyph id="B1"/>
          Oh! Does it? <b>Oh</b>, Yes!, it does. &yesterday;  eh? &today;
       </p>
 
-      <glyph id="B1"/>
+      <glyph id="B1" fg="green" bg="black"/>
 
       <p textBackground="yellow" leftMargin="0em" rightMargin="20em">
         The rain in spain falls <i>mainly</i> in the plain.
@@ -741,9 +767,10 @@ object gxml extends Application {
         Why do<bi>-you-</bi>want to control spacing so tightly? Here&yesterday;we go!
       </p>
 
+    <!--
     This is what happens
     to material  <glyph id="B1"/> outside
-    paragraph boundaries
+    paragraph boundaries <glyph id="B3"/>
 
       <p><i>the wage of gin is <and fg="red">
         this is
@@ -757,9 +784,14 @@ object gxml extends Application {
       of ![CDATA ..]]
       OK?
       ]]>
+      -->
+      <p>
+        Here is a longish column in the midst  <col background="yellow"><glyph id="L1"/> <glyph id="L2"/><glyph id="L3"/></col> of a paragraph. What does it look like?
+      </p>
+      <col background="yellow"><glyph id="L1"/> <glyph id="L2"/><glyph id="L3"/></col>
     </body>
 
-  def GUI: Glyph = translate(p1)
+  val GUI: Glyph = p1
 
   def title: String = "gxml"
 }
