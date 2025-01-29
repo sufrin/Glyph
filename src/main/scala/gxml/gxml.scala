@@ -106,7 +106,7 @@ class Primitives {
   /** Declare a new expandable entity */
   def update(id: String, element: Elem) : Unit =
     if (element.label.toUpperCase=="ATTRIBUTES")
-      genericAttributesMap(id) = element.attributes.asAttrMap
+      genericAttributesMap(id) = Translation.normalizeKeys(element.attributes.asAttrMap)
     else
       elementMap(id) = element
   /** Declare a new macro */
@@ -269,6 +269,8 @@ object Paragraph {
 
 object Translation {
 
+  def normalizeKeys(map: AttributeMap): AttributeMap = map
+
   /**
    *   Translation takes place in stages: the `Target` stage
    *  is a convenient intermediate between GlyphXML notation and
@@ -324,7 +326,9 @@ object Translation {
     }
 
     case class ColTarget(background: Brush, chunks: Seq[Target]) extends Target {
-      val asGlyph: Glyph = NaturalSize.Col(bg=background).atLeft$(chunks.map(_.asGlyph))
+      val theGlyphs = chunks.map(_.asGlyph)
+      val theGlyph =  NaturalSize.Col(bg=background).atLeft$(theGlyphs)
+      val asGlyph: Glyph = theGlyph
     }
 
     case class GlyphTarget(paragraph: Boolean, sheet: Sheet, glyph: Glyph) extends Target with PrettyPrint.PrettyPrintable {
@@ -335,15 +339,24 @@ object Translation {
         case 0 => ("para",  paragraph)
       }
 
-      val glyph$ = if (paragraph) withBaseline(glyph, sheet.baseLine) else glyph
+      val glyph$ = if (paragraph) withBaseline(glyph, (sheet.baseLine+glyph.h)/2) else glyph //**
       val asGlyph: Glyph = glyph$
     }
 
+    /**
+     * Construct a new glyph from `glyph` and treat it (as far as possible) as if it were text with the given baseline.
+     * The result is a glyph whose dimensions are those of `glyph`, but which is drawn as `glyph` displaced by `-baseLine`.
+     * The result does not compose properly with glyph transforms; which should be avoided.
+     * TODO: the problem should/could be solved by treating glyphs with baselines properly while assembling rows.
+     *       the issue arises from a poor design decision made early, namely that glyphs should align "naturally" in rows,
+     *       whether made of text or otherwise. This led to a separation between Text.asGlyph, and Text.atBaseline. As I write
+     *       I have an inkling that this can be recovered by simply introducing an atBaseline form of row composition.
+     */
     def withBaseline(glyph: Glyph, baseLine$: Scalar): Glyph = new Glyph { thisGlyph =>
 
       locally { glyph.parent=thisGlyph }
 
-      def draw(surface: Surface): Unit = surface.withOrigin(0, -baseLine) {
+      def draw(surface: Surface): Unit = surface.withOrigin(0, -baseLine$) {
         glyph.draw(surface)
       }
 
@@ -372,9 +385,11 @@ object Translation {
   }
 }
 
-class TypedAttributeMap(attributes: AttributeMap) {
+class TypedAttributeMap(unNormalized: AttributeMap) {
   import org.sufrin.SourceLocation.SourceLocation
   import org.sufrin.logging.SourceDefault.{warn}
+
+  val attributes: AttributeMap = unNormalized // .map{ case (k,d) => (k.toLowerCase, d)}
 
   def asString: String = Visitor.toString(attributes)
   override def toString: String = Visitor.toString(attributes)
@@ -399,22 +414,24 @@ class TypedAttributeMap(attributes: AttributeMap) {
     case None     => alt
   }
 
-  def Units(key: String, alt: Float)(attributes: AttributeMap, sheet: Sheet)(implicit source: SourceLocation): Float = attributes.get(key) match {
-    case Some(spec) =>
-      spec.toLowerCase match {
-        case (s"${s}em") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.emWidth
-        case (s"${s}ex") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.exHeight
-        case (s"${s}px") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
-        case (s"${s}pt") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
-        case (other) =>
-          warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt")
-          alt
-      }
-    case None =>
-      alt
+  def Units(key: String, alt: Float)(attributes: AttributeMap, sheet: Sheet)(implicit source: SourceLocation): Float = {
+    attributes.get(key) match {
+      case Some(spec) =>
+        spec.toLowerCase match {
+          case (s"${s}em") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.emWidth
+          case (s"${s}ex") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.exHeight
+          case (s"${s}px") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
+          case (s"${s}pt") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
+          case (other) =>
+            warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt")
+            alt
+        }
+      case None =>
+        alt
+    }
   }
 
-  def Bool(key: String, default: Boolean): Boolean = attributes.get(key.toLowerCase) match {
+  def Bool(key: String, default: Boolean): Boolean = attributes.get(key) match {
     case None => default
     case Some(boolean) =>
       boolean.toLowerCase match {
@@ -517,7 +534,7 @@ class Translation(val primitives: Primitives=new Primitives) {
   /** Declare a new expandable entity */
   def update(id: String, element: Elem) : Unit =
     if (element.label.toUpperCase=="ATTRIBUTES")
-      genericAttributesMap(id) = element.attributes.asAttrMap
+      genericAttributesMap(id) = Translation.normalizeKeys(element.attributes.asAttrMap)
     else
       elementMap(id) = element
   /** Declare a new macro */
@@ -568,7 +585,7 @@ class Translation(val primitives: Primitives=new Primitives) {
 
       case xml.Elem(str, tag, metaData, binding, child@_*) =>
 
-        val localAttributes = metaData.asAttrMap
+        val localAttributes = Translation.normalizeKeys(metaData.asAttrMap)
 
         def attrsFor(attrId: String): AttributeMap = {
           localAttributes.get(attrId) match {
@@ -595,10 +612,10 @@ class Translation(val primitives: Primitives=new Primitives) {
         val specifiedAttributes: AttributeMap = genericAttributesMap.getOrElse(s"tag:${tag}", Map.empty) ++ attrsFor("class") ++ attrsFor("id")
 
         /**
-         * The effective attributes of an element are the catenation of its default attributes and its actually-appearing
+         * The effective attributes of an element are the catenation of its default attributes and its actually appearing
          * attributes, without "id" and "class"
          */
-        val attributes$$ : AttributeMap = specifiedAttributes ++ localAttributes.filterNot{ case (key, _) => key=="class" || key=="id"}
+        val attributes$$ : AttributeMap = specifiedAttributes ++ localAttributes.filterNot{ case (key, _) => key.toLowerCase=="class" || key.toLowerCase=="id"}
         val attributes$ : AttributeMap = specifiedAttributes ++ localAttributes
         val sheet$ = attributes$.declareAttributes(sheet)
         val tags$ = tag::tags
@@ -615,15 +632,30 @@ class Translation(val primitives: Primitives=new Primitives) {
             List(ParaTarget(sheet$, chunks, hang))
 
           case "col" =>
-            //println(s"<col ${attributes.asString} / ${attributes$.asString} / ${attributes$$.asString} / ${sheet$.backgroundBrush}")
-            val chunks = child.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, paragraph, attributes$$, sheet$, source) }
-            List(ColTarget(sheet$.backgroundBrush, chunks))
+            val glyphs = child.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }.map(_.asGlyph)
+            val glyph = NaturalSize.Col(bg=sheet$.backgroundBrush).atLeft$(glyphs)
+            List(GlyphTarget(paragraph, sheet$, glyph))
+
+          case "row" =>
+            val width = attributes$.Units("width", 0f)(attributes$, sheet$)
+            val glyphs = child.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }.map(_.asGlyph)
+            val glyph = if (width==0f)
+                 NaturalSize.Row(bg=sheet$.backgroundBrush).atTop$(glyphs)
+            else
+                 FixedSize.Row(width=width, bg=sheet$.backgroundBrush).atTop$(glyphs)
+            List(GlyphTarget(paragraph, sheet$, glyph))
+
+          case "fill" =>
+            val width  = attributes$.Units("width", 0f)(attributes$, sheet$)
+            val height = attributes$.Units("height", 0f)(attributes$, sheet$)
+            val stretch = attributes$.Float("stretch", 0f)
+            val background = attributes$.Brush("background", attributes$.Brush("bg", DefaultBrushes.nothing))
+            List(GlyphTarget(paragraph, sheet$, FixedSize.Space(width, height, stretch, fg=DefaultBrushes.nothing, bg=background)))
 
           case "glyph" =>
             // println (s"<glyph ${attributes$.asString}/>")
-            val id: String = attributes$.String("id", alt="")
+            val id: String = localAttributes.String("gid", alt="")
             List(GlyphTarget(paragraph, sheet$, generateGlyph(tags$, paragraph, attributes$, sheet$, id)))
-
 
 
           case _ =>
@@ -703,7 +735,7 @@ object gxml extends Application {
       override def toString: String = "body translation"
       override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
         val child$ = child.filterNot(Translation.isBlank(_))
-        List(ColTarget(sheet.backgroundBrush, chunks=super.translate("body"::tags, false, attributes, sheet, child$)))
+        List(ColTarget(sheet.backgroundBrush, chunks=super.translate(tags, false, attributes, sheet, child$)))
       }
     }
 
@@ -729,66 +761,65 @@ object gxml extends Application {
     translator("B1")        =  { sheet => sheeted.TextButton("B1"){ _ => println(s"B1") }(sheet)}
     translator("B2")        =  { sheet => sheeted.TextButton("B2"){ _ => println(s"B2") }(sheet) }
     translator("B3")        =  { sheet => sheeted.TextButton("B3"){ _ => println(s"B3") }(sheet) }
+    translator("LINK")      =  { sheet => sheeted.TextButton("LINK"){ _ => println(s"LINK") }(sheet.copy(buttonFrame = Styles.Decoration.Unframed)) }
     translator("L1")        =  { sheet => sheeted.Label("L1")(sheet) }
     translator("L2")        =  { sheet => sheeted.Label("L2")(sheet) }
     translator("L3")        =  { sheet => sheeted.Label("L3")(sheet) }
+    translator("LS")        =  { sheet => NaturalSize.Col()(sheeted.Label("LS1")(sheet), sheeted.Label("LS2")(sheet), sheeted.Label("LS3")(sheet)) }
     translator("B1")        = <ATTRIBUTES buttonForeground="red/2"  buttonBackground="yellow"/>
     translator("B2")        = <ATTRIBUTES buttonForeground="green/2"  buttonBackground="yellow"/>
     translator("B3")        = <ATTRIBUTES buttonForeground="lightgrey/2"  buttonBackground="black"/>
-    translator("tag:p")     = <ATTRIBUTES background="black/60" leftMargin="2em"/>
+    translator("tag:p")     = <ATTRIBUTES background="nothing" leftMargin="2em"/>
   }
 
 
   // set up the interface
   implicit val sheet: Sheet =
     Sheet().copy(
-      textForegroundBrush = DefaultBrushes.red,
-      buttonFrame = Styles.Decoration.Blurred(fg=DefaultBrushes.red(width=16), bg=DefaultBrushes.nothing, blur=20f, spread=10f)
+      buttonForegroundBrush = DefaultBrushes.red,
+      buttonFrame = Styles.Decoration.Blurred(fg=DefaultBrushes.red(width=10), bg=DefaultBrushes.nothing, blur=5f, spread=5f)
     )
 
   import translator.XMLtoGlyph
 
   val p1: Node =
-    <body  width="40em" textFontFamily="Menlo" textFontSize="18" background="pink">
+    <body  width="40em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="lightGrey">
 
-      <glyph id="B2"/>
+      <glyph gid="B2"/>
 
 
       <p align="justify" leftMargin="20em" hangref="B3">
-         The rain in spain falls <i>mainly</i> in the plain. <glyph id="B1"/>
+         The rain in spain falls <b>mainly</b> in the <glyph gid="B2"/>plain. <glyph gid="B1"/>
          Oh! Does it? <b>Oh</b>, Yes!, it does. &yesterday;  eh? &today;
       </p>
 
-      <glyph id="B1" fg="green" bg="black"/>
+      <glyph gid="B1" fg="green" bg="black"/>
 
       <p textBackground="yellow" leftMargin="0em" rightMargin="20em">
-        The rain in spain falls <i>mainly</i> in the plain.
-        Oh! Does it? <b>Oh, </b>Yes!, it does.
+        The rain (<glyph gid="LINK"/>) in spain falls <i>mainly</i> in the plain.
+        Oh! Does it? <b>Oh</b><i> Yes</i>!, it does.
         Why do<bi>-you-</bi>want to control spacing so tightly? Here&yesterday;we go!
       </p>
 
-    <!--
-    This is what happens
-    to material  <glyph id="B1"/> outside
-    paragraph boundaries <glyph id="B3"/>
-
-      <p><i>the wage of gin is <and fg="red">
-        this is
-         <what> happens
-         </what>
-        when a tag is not defined
-      </and> BREATH!</i></p>
-
-      <![CDATA[
-      And this is a lump
-      of ![CDATA ..]]
-      OK?
-      ]]>
-      -->
       <p>
-        Here is a longish column in the midst  <col background="yellow"><glyph id="L1"/> <glyph id="L2"/><glyph id="L3"/></col> of a paragraph. What does it look like?
+        Here is a longish column in the midst
+        <col><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
+        of a paragraph. What does it look like?
       </p>
-      <col background="yellow"><glyph id="L1"/> <glyph id="L2"/><glyph id="L3"/></col>
+      <p>
+        Here is another longish column in the midst  <glyph gid="LS"/> of a paragraph. What does it look like?
+      </p>
+      <row width="20em"><glyph gid="L1"/><fill stretch="1"/> <glyph gid="L2"/> <fill stretch="3"/><glyph gid="L3"/></row>
+      <row textFontFamily="Menlo" textFontSize="10">
+         <p align="justify" width="14em" >This is the left hand column of the two columns that are on this row</p>
+         <fill width="35em" stretch="1"/>
+        <p align="justify"  width="14em">This is the right hand column of two</p>
+      </row>
+      <col>
+        <glyph gid="L1"/>
+        <glyph gid="LINK"/>
+        <glyph gid="LINK" fontScale="1.7" buttonBackground="lightgrey" buttonForeground="darkGrey" buttonFontFamily="Courier" background="green"/>
+      </col>
     </body>
 
   val GUI: Glyph = p1

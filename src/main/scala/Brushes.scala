@@ -26,10 +26,14 @@ trait Brushes {
   val white      = Brush("white")     col 0xFFffffff
   val whiteFrame = Brush("white")     col 0xFFffffff width 5
   val black      = Brush("black")     col 0xFF000000 width 1
-  val nothing    = Brush("nothing")   col 0
-  val invisible  = Brush("invisible") col 0 width 1
+  val nothing    = Brush("nothing")   col 0 alpha(0f)
+  val invisible  = Brush("invisible") col 0 width 1 alpha(0f)
   val lightGrey  = Brush("lightGrey") col 0xFFbbbbbb width 1
   val darkGrey   = Brush("darkGrey")  col 0xFF777777 width 1
+  val grey1      = Brush(s"grey1")(color = 0XFFBBBBBB)
+  val grey2      = Brush(s"grey2")(color = 0XFFCDCDCD)
+  val grey3      = Brush(s"grey3")(color = 0XFFC5C5C5)
+  val grey4      = Brush(s"grey4")(color = 0XFFC2C2C2)
   /** Using the new Brush API */
   val yellow     = Brush("yellow")(color=0xFFffdd00, width=75f, cap=ROUND, antiAlias = true)
   val brown: Brush = Brush("brown")(color=0xFF964b00)
@@ -55,8 +59,8 @@ object DefaultBrushes extends Brushes {
       case "darkgrey" => org.sufrin.glyph.Brush(s"darkgrey")(color = 0XFF777777)
       case "black" => org.sufrin.glyph.Brush(s"black")(color = 0XFF000000)
       case "yellow" => org.sufrin.glyph.Brush(s"yellow")(color = 0XFFFFDD00)
-      case "nothing" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000)
-      case "" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000)
+      case "nothing" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000, alpha=0f)
+      case "" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000, alpha=0f)
       case s"0x${hex}" if hex.matches("([0-9a-f])+") =>
         org.sufrin.glyph.Brush(s"0X$hex")(color = hexToInt(hex))
       case name =>
