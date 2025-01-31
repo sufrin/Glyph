@@ -611,12 +611,4 @@ object Glyphs  {
     }
   }
 
-  case object NOBREAK extends Glyph {
-    def draw(surface: Surface): Unit = {}
-    def diagonal: Vec = Vec(0,0)
-    def copy(fg: Brush, bg: Brush): Glyph = this
-    val fg: Brush = DefaultBrushes.nothing
-    val bg: Brush = DefaultBrushes.nothing
-  }
-
 }

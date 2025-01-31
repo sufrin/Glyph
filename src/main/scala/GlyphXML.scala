@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 
 
-import Glyphs.{BreakableGlyph, NOBREAK}
+import Glyphs.{BreakableGlyph}
 import GlyphTypes.Scalar
 import ReactiveGlyphs.{ColourButton, Reaction}
 
@@ -14,6 +14,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.xml._
 
 object GlyphXML extends SourceLoggable {
+  val NOBREAK: Glyph = FixedSize.Space(0,0,0)
   type AttributeMap = Map[String,String]
 
   implicit class Attributes(element: Elem) {

@@ -4,7 +4,7 @@ package gxml
 
 import io.github.humbleui.skija.Font
 import org.sufrin.glyph.gxml.Visitor.AttributeMap
-import org.sufrin.glyph.Glyphs.{BreakableGlyph, NOBREAK}
+import org.sufrin.glyph.Glyphs.{BreakableGlyph}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.GlyphXML.withBaseline
 
@@ -143,6 +143,7 @@ object Paragraph {
 
     val column = NaturalSize.Col(bg = sheet.textBackgroundBrush).atLeft$(galley.toSeq)
 
+
     hangGlyph match {
       case None =>
         if (true || leftMargin > 0f)
@@ -188,31 +189,27 @@ object Paragraph {
       val line = mutable.IndexedBuffer[Glyph]()
       var lineWidth = 0f
 
+      // Skip any leading interwordspaces left over from a previous line.
+      while (words.hasElement && words.element.isInstanceOf[FixedSize.Space]) words.nextElement()
+
+      // start the line
       line += align.leftFill()
-      while (words.hasElement && (lineWidth + words.element.w + interWordWidth < maxWidthfloor)) {
-        words.element match {
+      // add words and interword spaces while there is room
+      while (words.hasElement && (lineWidth + words.element.w < maxWidthfloor)) {
+      words.element match {
           case BreakableGlyph(_, glyphs) =>
             for { glyph <- glyphs } line += glyph
-            line += interWord()
-            lineWidth += words.element.w + interWordWidth
-            words.nextElement()
-
-          // REMOVE THE IMMEDIATELY PRECEDING INTERWORD SPACE
-          case NOBREAK =>
-            val w = line.last.w
-            line.update(line.length - 1, NOBREAK)
-            lineWidth -= w
+            lineWidth += words.element.w
             words.nextElement()
 
           case other =>
             line += other
-            line += interWord()
-            lineWidth += words.element.w + interWordWidth
+            lineWidth += words.element.w
             words.nextElement()
         }
       }
 
-      // squeeze an extra chunk on by splitting a splittable?
+      // squeeze an extra chunk on by splitting a breakable?
       if (words.hasElement) words.element match {
         case breakable: BreakableGlyph =>
           val breakPoint: Int = breakable.maximal(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w)
@@ -223,15 +220,19 @@ object Paragraph {
               line += glyphs(i)
             }
             line += breakable.hyphen()
-            line += interWord()
+            //line += interWord()// (from the earlier implementation
             lineWidth += breakable.hyphen.w
             words.buffer = Some(new BreakableGlyph(breakable.hyphen, glyphs.drop(breakPoint)))
           }
         case _ =>
       }
 
-      // line is full, erase the interword or leftfill
-      line.update(line.length - 1, align.rightFill())
+
+      // line is full, erase the interword space
+      if (line.last.isInstanceOf[FixedSize.Space]) {
+        line.update(line.length - 1, align.rightFill())
+      }
+
       // if this is the very last line, words will be empty
       if (!words.hasElement) {
         line += align.lastFill()
@@ -284,14 +285,8 @@ object Translation {
     }
 
     /** Joins its predecessor to its successor */
-    case object JoinTarget extends Target with PrettyPrint.PrettyPrintable {
-      /** The name of the class (or object) */
-      def prefix: String = "Join"
-
-      /** The number of fields/elements of the object */
-      def arity: Int = 0
-
-      val asGlyph: Glyph = NOBREAK
+    case class InterwordTarget(width: Scalar) extends Target {
+      val asGlyph: Glyph = new FixedSize.Space(width*2f/3f, 1f, 1f, 0f)
     }
 
     /** The text of a word or a line */
@@ -545,25 +540,26 @@ class Translation(val primitives: Primitives=new Primitives) {
   def translateText(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
 
     @inline def wordGlyph(text: String): Target = TextTarget(text, paragraph, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
+    val emWidth = sheet.emWidth
 
     if (paragraph) {
       // Generate the target chunks of texts;  with `JoinTarget` before (after) unless the text as a whole starts with a space, tab, or newline
       val chunks = mutable.ArrayBuffer[Target]()
       def out(t: Target): Unit =
           t match {
-            case JoinTarget =>
-              if (chunks.nonEmpty && chunks.last != JoinTarget) chunks += t
+            case _: InterwordTarget =>
+              if (chunks.nonEmpty && !chunks.last.isInstanceOf[InterwordTarget]) chunks += t
             case _ =>
               chunks += t
           }
 
-      if (text.startsWith(" ") || text.startsWith("\n") || text.startsWith("\t")) {} else out(JoinTarget)
-
+      if (text.startsWith(" ") || text.startsWith("\n") || text.startsWith("\t")) out(InterwordTarget(emWidth))
       val it = text.split("[\t\n ]+").filterNot(_.isBlank).iterator // TODO: precompile the pattern
       while (it.hasNext) {
         out(wordGlyph(it.next()))
+        if (it.hasNext) out(InterwordTarget(emWidth))
       }
-      if (text.endsWith(" ") || text.endsWith("\n") || text.endsWith("\t")) {} else out(JoinTarget)
+      if (text.endsWith(" ") || text.endsWith("\n") || text.endsWith("\t")) out(InterwordTarget(emWidth))
       chunks.toSeq
     } else {
       val lines = text.split("[\n]").map(_.trim).filterNot(_.isEmpty).map(wordGlyph(_)).toSeq
@@ -769,7 +765,7 @@ object gxml extends Application {
     translator("B1")        = <ATTRIBUTES buttonForeground="red/2"  buttonBackground="yellow"/>
     translator("B2")        = <ATTRIBUTES buttonForeground="green/2"  buttonBackground="yellow"/>
     translator("B3")        = <ATTRIBUTES buttonForeground="lightgrey/2"  buttonBackground="black"/>
-    translator("tag:p")     = <ATTRIBUTES background="nothing" leftMargin="2em"/>
+    translator("tag:p")     = <ATTRIBUTES background="lightGrey" leftMargin="2em" align="justify"/>
   }
 
 
@@ -782,7 +778,7 @@ object gxml extends Application {
 
   import translator.XMLtoGlyph
 
-  val p1: Node =
+  val p1: Node = {
     <body  width="40em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="lightGrey">
 
       <glyph gid="B2"/>
@@ -797,7 +793,7 @@ object gxml extends Application {
 
       <p textBackground="yellow" leftMargin="0em" rightMargin="20em">
         The rain (<glyph gid="LINK"/>) in spain falls <i>mainly</i> in the plain.
-        Oh! Does it? <b>Oh</b><i> Yes</i>!, it does.
+        Oh! Does it? <b>Oh</b> <i>Yes</i>!, it does.
         Why do<bi>-you-</bi>want to control spacing so tightly? Here&yesterday;we go!
       </p>
 
@@ -821,8 +817,24 @@ object gxml extends Application {
         <glyph gid="LINK" fontScale="1.7" buttonBackground="lightgrey" buttonForeground="darkGrey" buttonFontFamily="Courier" background="green"/>
       </col>
     </body>
+  }
 
-  val GUI: Glyph = p1
+  val p2: Node =
+    <body  align="justify" width="35em" textFontFamily="Courier" textFontSize="30" labelFontFamily="Courier" labelFontSize="30" background="lightGrey">
+      <!--
+      <p>The rain in spain falls mainly in the plain; (by george she's got it)! The rain in spain falls mainly in the plain.</p>
+      xxxx
+      <p align="left">The rain in spain falls mainly in the plain; (by george she's got it)! The rain in spain falls mainly in the plain.</p>
+      xxxx
+      <p align="right">The rain in spain falls mainly in the plain; (by george she's got it)! The rain in spain falls mainly</p>
+      xxxx
+      <p align="center">The rain in spain falls mainly in the plain; (by george she's got it)! The rain in spain falls mainly</p>
+      -->
+      xxxx
+      <p align="right">The rain in <i>spain</i><b>falls</b><i>mainly</i>in the plain; (by george she's got it)! The rain in spain falls mainly</p>
+    </body>
+
+  val GUI: Glyph = p2
 
   def title: String = "gxml"
 }
