@@ -34,7 +34,7 @@ class PortmanteauText(implicit style: StyleSheet) extends Notebook {
   abbrev("\uD83D\uDE00\uD83D\uDE00") = ":))"
   abbrev("\uD83D\uDE2E") = ":O"
 
-  val defs = new GlyphXML {}
+  val defs = new GlyphXMLOld {}
 
 
   /**

@@ -1,11 +1,11 @@
 package org.sufrin.glyph
 
 
-import Glyphs.{BreakableGlyph}
+import Glyphs.BreakableGlyph
 import GlyphTypes.Scalar
 import ReactiveGlyphs.{ColourButton, Reaction}
 
-import org.sufrin.glyph.GlyphXML.AttributeMap
+import org.sufrin.glyph.GlyphXMLOld.AttributeMap
 import org.sufrin.logging.SourceLoggable
 
 import scala.::
@@ -13,7 +13,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.xml._
 
-object GlyphXML extends SourceLoggable {
+object GlyphXMLOld extends SourceLoggable {
   val NOBREAK: Glyph = FixedSize.Space(0,0,0)
   type AttributeMap = Map[String,String]
 
@@ -43,7 +43,7 @@ object GlyphXML extends SourceLoggable {
       case None     => alt
     }
 
-    def Reaction(key: String, alt: Reaction)(context: GlyphXML): Reaction = attributes.get(key) match {
+    def Reaction(key: String, alt: Reaction)(context: GlyphXMLOld): Reaction = attributes.get(key) match {
       case Some (reactionName) =>
         context.reactionMap.getOrElse(reactionName, { _ => })
       case None =>
@@ -445,16 +445,16 @@ object GlyphXML extends SourceLoggable {
 }
 
 trait ElementGenerator {
-  def translate(xml: GlyphXML)(sources: List[String])(within: List[String])(child: Seq[Node])(localAttributes: AttributeMap)(context: Sheet): Seq[Glyph]
+  def translate(xml: GlyphXMLOld)(sources: List[String])(within: List[String])(child: Seq[Node])(localAttributes: AttributeMap)(context: Sheet): Seq[Glyph]
 }
 
 /**
  * The semantic specification of XML that denotes a glyph.
  */
-class GlyphXML {
-  import GlyphXML._
+class GlyphXMLOld {
+  import GlyphXMLOld._
 
-  val thisGlyphXML: GlyphXML = this
+  val thisGlyphXML: GlyphXMLOld = this
 
   private trait GlyphGen {
     def generate: Glyph

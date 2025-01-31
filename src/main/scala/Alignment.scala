@@ -29,7 +29,7 @@ trait Alignment {
 }
 
 case object Left extends Alignment {
-  val (left, right, last): Fills = (0f, 30000f, 0f)
+  val (left, right, last): Fills = (0f, 30000f, 30000f)
 }
 
 case object Right extends Alignment {
@@ -37,7 +37,7 @@ case object Right extends Alignment {
 }
 
 case object Center extends Alignment {
-  val (left, right, last): Fills = (30000f, 30000f, 0f)
+  val (left, right, last): Fills = (30000f, 30000f, 30000f)
 }
 
 case object Justify extends Alignment {

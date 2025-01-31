@@ -6,7 +6,7 @@ import org.sufrin.SourceLocation.SourceLocation
 import org.sufrin.glyph.Application
 import org.sufrin.glyph.DynamicGlyphs.ActiveString
 import org.sufrin.glyph.GlyphTypes.Scalar
-import org.sufrin.glyph.GlyphXML.{glyphsToParagraph, withBaseline, Abstraction, AttributeMap}
+import org.sufrin.glyph.GlyphXMLOld.{glyphsToParagraph, withBaseline, Abstraction, AttributeMap}
 import org.sufrin.glyph.Location.Location
 import org.sufrin.glyph.ReactiveGlyphs.Enterable
 import org.sufrin.glyph.windowdialogues.Dialogue
@@ -24,8 +24,8 @@ class ListItem(format: String, var listItem: Int=0) extends ElementGenerator {
 
   import NumberUtils._
 
-  def translate(xml: GlyphXML)(sources: List[String])(within: List[String])(child: Seq[Node])(localAttributes: AttributeMap)(sheet: Sheet): Seq[Glyph] = {
-    import GlyphXML.TypedAttributeMap
+  def translate(xml: GlyphXMLOld)(sources: List[String])(within: List[String])(child: Seq[Node])(localAttributes: AttributeMap)(sheet: Sheet): Seq[Glyph] = {
+    import GlyphXMLOld.TypedAttributeMap
     listItem += 1
     listItem = localAttributes.Int("count", listItem)
     val label = format.replace("%i", roman(listItem))
@@ -36,7 +36,7 @@ class ListItem(format: String, var listItem: Int=0) extends ElementGenerator {
     current = Text(label, sheet.labelFont, sheet.labelForegroundBrush, sheet.labelBackgroundBrush)
     val skip = sheet.parSkip
     val lead = current.asGlyph()
-    val thePara = GlyphXML.glyphsToParagraph(child.flatMap { node => xml.translate(sources)("p"::within)(node)(localAttributes)(sheet) },
+    val thePara = GlyphXMLOld.glyphsToParagraph(child.flatMap { node => xml.translate(sources)("p"::within)(node)(localAttributes)(sheet) },
                                              Some(lead))(sheet)
     if (skip == 0.0f)
        List(thePara)
@@ -89,7 +89,7 @@ trait SheetTestInterface {
   val Page = book.DefinePage
 
   // XML details
-  val xml = new GlyphXML{}
+  val xml = new GlyphXMLOld{}
 
   /**
    * Applied when an (outermost) xml `Elem`ent is destined to denote a `Glyph`. This

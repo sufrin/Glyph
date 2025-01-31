@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import GlyphXML.AttributeMap
+import GlyphXMLOld.AttributeMap
 import ReactiveGlyphs.Reaction
 import Styles.{ButtonStyle, GlyphStyle}
 import Styles.Decoration.Decoration

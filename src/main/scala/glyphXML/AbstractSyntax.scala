@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package gxml
+package glyphXML
 
 object AbstractSyntax {
 

@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package gxml
+package glyphXML
 
 import scala.annotation.nowarn
 import scala.xml.Elem

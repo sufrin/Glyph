@@ -93,6 +93,7 @@ case class Sheet
 
   lazy val emWidth: Scalar = textFont.measureTextWidth("m") // textFont.getMetrics.getMaxCharWidth//
   lazy val exHeight: Scalar = textFont.getMetrics.getXHeight //textFont.measureText("X").getHeight
+  lazy val interWordWidth: Scalar = emWidth*0.4f
   lazy val baseLine: Scalar = {
     val m = textFont.getMetrics
     m.getHeight+m.getDescent

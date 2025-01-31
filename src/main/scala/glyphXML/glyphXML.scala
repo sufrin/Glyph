@@ -1,12 +1,12 @@
 package org.sufrin.glyph
-package gxml
+package glyphXML
 
 
 import io.github.humbleui.skija.Font
-import org.sufrin.glyph.gxml.Visitor.AttributeMap
-import org.sufrin.glyph.Glyphs.{BreakableGlyph}
+import org.sufrin.glyph.glyphXML.Visitor.AttributeMap
+import org.sufrin.glyph.Glyphs.BreakableGlyph
 import org.sufrin.glyph.GlyphTypes.Scalar
-import org.sufrin.glyph.GlyphXML.withBaseline
+import org.sufrin.glyph.GlyphXMLOld.withBaseline
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -116,8 +116,6 @@ class Primitives {
 object Paragraph {
 
   def fromGlyphs(sheet: Sheet, glyphs: Seq[Glyph], parHang: Option[Glyph]): Glyph = {
-    val emWidth   = sheet.emWidth
-    val interWord = FixedSize.Space(w=emWidth / 1.5f, h=0f, stretch = 2f)
     val glyphs$   =
       (if (sheet.parIndent>0) List(FixedSize.Space(sheet.parIndent, h=0f, stretch=0f)) else Nil) ++ glyphs
 
@@ -133,11 +131,11 @@ object Paragraph {
     // If the bounding box is unspecified, then use the column width
     val galley =
       formatParagraph(
-        overallWidth = sheet.parWidth,
-        align        = sheet.parAlign,
-        leftMargin   = sheet.leftMargin,
-        rightMargin  = sheet.rightMargin,
-        interWord,
+        overallWidth   = sheet.parWidth,
+        align          = sheet.parAlign,
+        leftMargin     = sheet.leftMargin,
+        rightMargin    = sheet.rightMargin,
+        interWordWidth = sheet.emWidth,
         glyphs$
       )
 
@@ -168,11 +166,11 @@ object Paragraph {
    * Build a sequence of galleys representing the lines of a paragraph
    * formed from `glyphs`.
    */
-  def formatParagraph(overallWidth:  Scalar,
-                      align:         Alignment,
-                      leftMargin:    Scalar,
-                      rightMargin:   Scalar,
-                      interWord:     Glyph,
+  def formatParagraph(overallWidth:   Scalar,
+                      align:          Alignment,
+                      leftMargin:     Scalar,
+                      rightMargin:    Scalar,
+                      interWordWidth: Scalar,
                       glyphs:        Seq[Glyph]) = {
     // As each line of the paragraph is assembled it is added to the galley
     val galley = ArrayBuffer[Glyph]()
@@ -181,7 +179,6 @@ object Paragraph {
     // avoid rounding
     val maxWidthfloor  = maxWidth.floor
     //println(s"[ov=$overallWidth,lm=$leftMargin,maxw=$maxWidthfloor]")
-    val interWordWidth = interWord.w
     val words = new StreamIterator[Glyph](glyphs.iterator)
 
     @inline def setLine(): (Scalar, Seq[Glyph]) = {
@@ -212,7 +209,7 @@ object Paragraph {
       // squeeze an extra chunk on by splitting a breakable?
       if (words.hasElement) words.element match {
         case breakable: BreakableGlyph =>
-          val breakPoint: Int = breakable.maximal(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w)
+          val breakPoint: Int = breakable.maximal(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w) //??
           if (breakPoint!=0) {
             val glyphs = breakable.glyphs
             for { i <- 0 until breakPoint } {
@@ -228,15 +225,14 @@ object Paragraph {
       }
 
 
-      // line is full, erase the interword space
-      if (line.last.isInstanceOf[FixedSize.Space]) {
-        line.update(line.length - 1, align.rightFill())
-      }
+      // line is full
+      val endLine = if (words.hasElement) align.rightFill() else align.lastFill()
+      // terminate the made-up line with a line-ending stretchy space
+      if (line.last.isInstanceOf[FixedSize.Space])
+        line.update(line.length - 1, endLine)
+      else
+        line+=endLine
 
-      // if this is the very last line, words will be empty
-      if (!words.hasElement) {
-        line += align.lastFill()
-      }
       (lineWidth, line.toSeq)
     }
 
@@ -252,7 +248,7 @@ object Paragraph {
             val breakPoint: Int = breakableGlyph.maximal(maxWidthfloor)
             galley += NaturalSize.Row.atTop$(glyphs.take(breakPoint)).framed(fg = DefaultBrushes.red(width=2))
           case other =>
-            galley += other.scaled(maxWidthfloor/other.w).framed(fg = DefaultBrushes.nothing, bg=DefaultBrushes.lightGrey)
+            galley += NaturalSize.Row(Glyphs.FilledRect(maxWidthfloor, other.h, fg = DefaultBrushes.red(width=2)))
         }
         words.nextElement()
       } else {
@@ -286,7 +282,7 @@ object Translation {
 
     /** Joins its predecessor to its successor */
     case class InterwordTarget(width: Scalar) extends Target {
-      val asGlyph: Glyph = new FixedSize.Space(width*2f/3f, 1f, 1f, 0f)
+      val asGlyph: Glyph = new FixedSize.Space(width, 1f, 1f, 0f)
     }
 
     /** The text of a word or a line */
@@ -526,6 +522,7 @@ class Translation(val primitives: Primitives=new Primitives) {
   def update(id: String, generator: Translation) = translationMap(id) = generator
   /** Declare a new text entity */
   def update(id: String, expansion: String) = entityMap(id) = expansion
+  locally { entityMap ++= List("amp" -> "&", "ls"-> "<", "gt" -> ">", "nbsp" -> "\u00A0" ) }
   /** Declare a new expandable entity */
   def update(id: String, element: Elem) : Unit =
     if (element.label.toUpperCase=="ATTRIBUTES")
@@ -540,26 +537,26 @@ class Translation(val primitives: Primitives=new Primitives) {
   def translateText(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
 
     @inline def wordGlyph(text: String): Target = TextTarget(text, paragraph, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
-    val emWidth = sheet.emWidth
+    val interWordWidth = sheet.interWordWidth
 
     if (paragraph) {
       // Generate the target chunks of texts;  with `JoinTarget` before (after) unless the text as a whole starts with a space, tab, or newline
       val chunks = mutable.ArrayBuffer[Target]()
       def out(t: Target): Unit =
           t match {
-            case _: InterwordTarget =>
-              if (chunks.nonEmpty && !chunks.last.isInstanceOf[InterwordTarget]) chunks += t
+            //case _: InterwordTarget =>
+            //  if (chunks.nonEmpty && !chunks.last.isInstanceOf[InterwordTarget]) chunks += t
             case _ =>
               chunks += t
           }
 
-      if (text.startsWith(" ") || text.startsWith("\n") || text.startsWith("\t")) out(InterwordTarget(emWidth))
+      if (text.startsWith(" ") || text.startsWith("\n") || text.startsWith("\t")) out(InterwordTarget(interWordWidth))
       val it = text.split("[\t\n ]+").filterNot(_.isBlank).iterator // TODO: precompile the pattern
       while (it.hasNext) {
         out(wordGlyph(it.next()))
-        if (it.hasNext) out(InterwordTarget(emWidth))
+        if (it.hasNext) out(InterwordTarget(interWordWidth))
       }
-      if (text.endsWith(" ") || text.endsWith("\n") || text.endsWith("\t")) out(InterwordTarget(emWidth))
+      if (text.endsWith(" ") || text.endsWith("\n") || text.endsWith("\t")) out(InterwordTarget(interWordWidth))
       chunks.toSeq
     } else {
       val lines = text.split("[\n]").map(_.trim).filterNot(_.isEmpty).map(wordGlyph(_)).toSeq
@@ -649,9 +646,20 @@ class Translation(val primitives: Primitives=new Primitives) {
             List(GlyphTarget(paragraph, sheet$, FixedSize.Space(width, height, stretch, fg=DefaultBrushes.nothing, bg=background)))
 
           case "glyph" =>
-            // println (s"<glyph ${attributes$.asString}/>")
+            println (s"<glyph ${attributes$.asString}/>")
             val id: String = localAttributes.String("gid", alt="")
-            List(GlyphTarget(paragraph, sheet$, generateGlyph(tags$, paragraph, attributes$, sheet$, id)))
+            if (generatorMap.get(id).isDefined)
+               List(GlyphTarget(paragraph, sheet$, generateGlyph(tags$, paragraph, attributes$, sheet$, id)))
+            else {
+               elementMap.get(id) match {
+                 case None =>
+                   org.sufrin.logging.Default.warn (s"<glyph ${attributes.asString}/> UNDEFINED (no generator or element)")
+                   List(GlyphTarget(paragraph, sheet$, sheeted.Label (s"UNDEFINED $id")(sheet$.copy(labelForegroundBrush = DefaultBrushes.red))))
+                 case Some(element) =>
+                   translate(tags, paragraph, attributes, sheet: Sheet, element)
+               }
+            }
+
 
 
           case _ =>
@@ -679,16 +687,20 @@ class Translation(val primitives: Primitives=new Primitives) {
 
       case xml.Comment(text) => Seq.empty
 
+      case _ =>
+        // private representation as a scala.xml.Atom
+        translateText(tags, paragraph, attributes, sheet, s" $source ")
+
     }
 
   }
 
-  /** Generate a glyph from the given glyph `ref`erence */
+  /** Generate a glyph from the given glyph `ref`erence  */
   private def generateGlyph(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, ref: String): Glyph =
     generatorMap.get(ref) match {
       case None =>
-        org.sufrin.logging.Default.warn(s"<glyph ${attributes.asString}/> UNDEFINED (no generator)")
-        sheeted.Label("UNDEFINED")(sheet.copy(labelFontSize = 10, labelForegroundBrush = DefaultBrushes.red))
+            org.sufrin.logging.Default.warn (s"<glyph ${attributes.asString}/> UNDEFINED (no generator)")
+            sheeted.Label (s"UNDEFINED $ref") (sheet.copy (labelForegroundBrush = DefaultBrushes.red) )
       case Some(glyph) =>
         glyph(sheet)
     }
@@ -714,6 +726,7 @@ class Translation(val primitives: Primitives=new Primitives) {
   }
 
   implicit def XMLtoGlyph(source: Node)(implicit sheet: Sheet): Glyph = this(source)(sheet)
+  implicit def XMLtoGlyph(source: Elem)(implicit sheet: Sheet): Glyph = this(source)(sheet)
 
 }
 
@@ -821,21 +834,30 @@ object gxml extends Application {
 
   val p2: Node =
     <body  align="justify" width="35em" textFontFamily="Courier" textFontSize="30" labelFontFamily="Courier" labelFontSize="30" background="lightGrey">
-      <!--
       <p>The rain in spain falls mainly in the plain; (by george she's got it)! The rain in spain falls mainly in the plain.</p>
       xxxx
       <p align="left">The rain in spain falls mainly in the plain; (by george she's got it)! The rain in spain falls mainly in the plain.</p>
       xxxx
-      <p align="right">The rain in spain falls mainly in the plain; (by george she's got it)! The rain in spain falls mainly</p>
+      <p align="right">The rain in spain falls &ls;mainly&gt; in the plain; (by george she's got it)! The rain in spain falls mainly</p>
       xxxx
       <p align="center">The rain in spain falls mainly in the plain; (by george she's got it)! The rain in spain falls mainly</p>
-      -->
       xxxx
-      <p align="right">The rain in <i>spain</i><b>falls</b><i>mainly</i>in the plain; (by george she's got it)! The rain in spain falls mainly</p>
+      <p align="right">The rain in <i>spain</i> <b>falls</b> <i>mainly</i> in the plain; (by george she's got it)! The rain in spain falls mainly</p>
+      xxxx
+      <p>
+        This is some chatter to force the
+        first part of a <b>paragraph</b> to the right edge.
+        You are about to see an indent within the paragraph.
+      </p>
+      xxxx
+      <p width="20em">
+        This is a short paragraph but unfortunately here-is-an-overlong-unbreakable it has an overlong word
+        in it that gets replaced by a red blob.
+      </p>
     </body>
 
   val GUI: Glyph = p2
 
-  def title: String = "gxml"
+  def title: String = "glyphXML"
 }
 

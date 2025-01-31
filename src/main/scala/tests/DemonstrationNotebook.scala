@@ -158,11 +158,11 @@ trait DemonstrationPages extends Brushes {
     locally { HintManager(enableSaveCheckBox, 5, "Click this to enable the image-save bar")(HelpStyle) }
 
     import GlyphML.Context
-    import GlyphXML._
+    import GlyphXMLOld._
 
     import org.sufrin.SourceLocation.{sourceLocation => source}
 
-    val defs = new GlyphXML{}
+    val defs = new GlyphXMLOld{}
     defs ("#cdata") = (ListMap("textForeground"->"red", "textBackground"->"lightGrey", "fontFamily"->"Courier" ))
 
     /**
