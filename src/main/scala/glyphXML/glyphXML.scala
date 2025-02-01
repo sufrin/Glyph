@@ -285,7 +285,7 @@ object Translation {
       val asGlyph: Glyph = new FixedSize.Space(width, 1f, 1f, 0f)
     }
 
-    /** The text of a word or a line */
+    /** The text of a word or a line that will not be broken at a hyphen */
     case class TextTarget(text: String, atBase: Boolean, font: Font, fg: Brush, bg: Brush) extends Target with PrettyPrint.PrettyPrintable {
       val arity = 5
       val prefix = "Text"
@@ -302,6 +302,27 @@ object Translation {
         val source = org.sufrin.glyph.Text(text, font, fg, bg)
         if (atBase) source.atBaseline() else source.asGlyph()
       }
+    }
+
+    /** The text of a word or a line that could be broken at a hyphen */
+    case class HyphenatableTarget(text: String, discretionaryWordBreak: String, font: Font, fg: Brush, bg: Brush) extends Target with PrettyPrint.PrettyPrintable {
+      val arity = 5
+      val prefix = "Text"
+      override def field(i: Int): (String, Any) = i match {
+        case 1 => ("-", discretionaryWordBreak)
+        case 0 => ("", s""""$text"""")
+        case 2 => ("font", FontFamily.fontString(font))
+        case 3 => ("fg", fg)
+        case 4 => ("bg", bg)
+      }
+      import org.sufrin.glyph.{Text=>makeText}
+      val asGlyph = if (text.contains(discretionaryWordBreak)){
+        val glyphs = text.toString.split(discretionaryWordBreak).toSeq.map { syllable =>makeText(syllable, font, fg, bg).atBaseline() }
+        val hyphen =makeText("-", font, fg, bg).atBaseline()
+        new BreakableGlyph(hyphen, glyphs)
+      }
+      else makeText(text, font, fg, bg).atBaseline()
+
     }
 
     /** The structure of a paragraph to be made from chunks */
@@ -536,7 +557,9 @@ class Translation(val primitives: Primitives=new Primitives) {
 
   def translateText(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
 
-    @inline def wordGlyph(text: String): Target = TextTarget(text, paragraph, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
+    @inline def solidText(text: String): Target = TextTarget(text, paragraph, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
+    @inline def hyphenatableText(text: String): Target = HyphenatableTarget(text, sheet.discretionaryWordBreak, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
+
     val interWordWidth = sheet.interWordWidth
 
     if (paragraph) {
@@ -553,13 +576,13 @@ class Translation(val primitives: Primitives=new Primitives) {
       if (text.startsWith(" ") || text.startsWith("\n") || text.startsWith("\t")) out(InterwordTarget(interWordWidth))
       val it = text.split("[\t\n ]+").filterNot(_.isBlank).iterator // TODO: precompile the pattern
       while (it.hasNext) {
-        out(wordGlyph(it.next()))
+        out(hyphenatableText(it.next()))
         if (it.hasNext) out(InterwordTarget(interWordWidth))
       }
       if (text.endsWith(" ") || text.endsWith("\n") || text.endsWith("\t")) out(InterwordTarget(interWordWidth))
       chunks.toSeq
     } else {
-      val lines = text.split("[\n]").map(_.trim).filterNot(_.isEmpty).map(wordGlyph(_)).toSeq
+      val lines = text.split("[\n]").map(_.trim).filterNot(_.isEmpty).map(solidText(_)).toSeq
       // List(WordGlyph(NaturalSize.Col(bg=sheet.textBackgroundBrush).atLeft$(lines), sheet.textFontStyle.toString))
       List(ColTarget(sheet.backgroundBrush, lines ))
     }
@@ -708,8 +731,8 @@ class Translation(val primitives: Primitives=new Primitives) {
   /** Perhaps better to introduce a PCData target .... */
   def translatePCData(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
     import sheet.{textFont, textBackgroundBrush => bg, textForegroundBrush => fg}
-    import org.sufrin.glyph.{Text => TextChunk}
-    val glyphs = text.split('\n').toSeq.map(TextChunk(_, textFont, fg, bg).asGlyph(fg, bg))
+    import org.sufrin.glyph.{Text => makeText}
+    val glyphs = text.split('\n').toSeq.map(makeText(_, textFont, fg, bg).asGlyph(fg, bg))
     List(GlyphTarget(paragraph, sheet, NaturalSize.Col(bg = bg).atLeft$(glyphs)))
   }
 

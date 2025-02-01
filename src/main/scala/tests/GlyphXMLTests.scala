@@ -84,7 +84,7 @@ object TestGXML extends Application {
       </p>
       <p leftMargin="12em" rightMargin="8em">
         This is another indented and potentially much-_hyphen_ated para_graph end_ing in the hyph_enated long word
-        ''<nb/>&FLOCCI;<nb/>'' --<nb/><b>and this is bold</b><nb/>.
+        ''&FLOCCI;'' <b>and this is bold</b>.
       </p>
       <p leftMargin="8em" rightMargin="8em">
         This is a paragraph both indented and narr_owed by 8em.
