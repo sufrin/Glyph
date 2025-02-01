@@ -4,6 +4,8 @@ import GlyphTypes.{Font, FontStyle, Scalar}
 import Styles.Decoration.{Framed, Unframed}
 import Styles.{ButtonStyle, CheckboxStyle, Decoration, GlyphStyle, MenuStyle, ToggleStyle}
 
+case class NotebookSheet(buttonStyle: ButtonStyle, pageStyle: Sheet)
+
 case class Sheet
 ( fontScale: Scalar = 1.0f,
   textFontFamily: FontFamily  = FontFamily(),
@@ -98,6 +100,10 @@ case class Sheet
     val m = textFont.getMetrics
     m.getHeight+m.getDescent
   }
+  lazy val em: Glyph = new FixedSize.Space(emWidth, 1f, 0, 0)
+  lazy val ex: Glyph = new FixedSize.Space(1f, exHeight, 0, 0)
+
+  lazy val notebookSheet = NotebookSheet(buttonStyle = buttonStyle, pageStyle = this)
 
   @inline private def styled(fontStyle: FontStyle): Sheet = copy(textFontStyle = fontStyle)
   def italicStyle: Sheet = styled(FontStyle.ITALIC)

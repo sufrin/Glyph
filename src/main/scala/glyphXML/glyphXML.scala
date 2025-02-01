@@ -337,9 +337,13 @@ object Translation {
       val asGlyph: Glyph = Paragraph.fromGlyphs(sheet, chunks.map(_.asGlyph), parHang)
     }
 
-    case class ColTarget(background: Brush, chunks: Seq[Target]) extends Target {
+    case class ColTarget(background: Brush, chunks: Seq[Target], alignment: Alignment = Left) extends Target {
       val theGlyphs = chunks.map(_.asGlyph)
-      val theGlyph =  NaturalSize.Col(bg=background).atLeft$(theGlyphs)
+      val theGlyph =  alignment match {
+        case Justify | Right  => NaturalSize.Col(bg=background).atRight$(theGlyphs)
+        case Center => NaturalSize.Col(bg=background).centered$(theGlyphs)
+        case _      => NaturalSize.Col(bg=background).atLeft$(theGlyphs)
+      }
       val asGlyph: Glyph = theGlyph
     }
 
@@ -588,9 +592,9 @@ class Translation(val primitives: Primitives=new Primitives) {
     }
   }
 
-  def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
+  def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
     val sheet$ = attributes.declareAttributes(sheet)
-    child.flatMap { source => translate(tags, paragraph, attributes, sheet$, source) }
+    children.flatMap { source => translate(tags, paragraph, attributes, sheet$, source) }
   }
 
   def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, source: Node): Seq[Target] = {
@@ -599,7 +603,7 @@ class Translation(val primitives: Primitives=new Primitives) {
     source match {
       case xml.EntityRef(name) => translateText(tags, paragraph, attributes, sheet$, entityMap.getOrElse(name, s"&$name;"))
 
-      case xml.Elem(str, tag, metaData, binding, child@_*) =>
+      case xml.Elem(str, tag, metaData, binding, children@_*) =>
 
         val localAttributes = Translation.normalizeKeys(metaData.asAttrMap)
 
@@ -644,17 +648,21 @@ class Translation(val primitives: Primitives=new Primitives) {
                        if (hangRef.isEmpty) None
                        else Some(generateGlyph(tags$, paragraph, attributes$, sheet$, hangRef))
                        else Some(sheeted.Label(hangString)(sheet$))
-            val chunks = child.flatMap { source => translate(tags$, true, attributes$$, sheet$, source) }
+            val chunks = children.flatMap { source => translate(tags$, true, attributes$$, sheet$, source) }
             List(ParaTarget(sheet$, chunks, hang))
 
           case "col" =>
-            val glyphs = child.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }.map(_.asGlyph)
-            val glyph = NaturalSize.Col(bg=sheet$.backgroundBrush).atLeft$(glyphs)
-            List(GlyphTarget(paragraph, sheet$, glyph))
+            val glyphs: Seq[Target] = children.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }
+            val alignment = attributes$.Align("align", Left)
+            List(ColTarget(sheet$.backgroundBrush, glyphs, alignment))
+
 
           case "row" =>
-            val width = attributes$.Units("width", 0f)(attributes$, sheet$)
-            val glyphs = child.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }.map(_.asGlyph)
+            val inheritWidth = attributes$.Bool("inheritwidth", false)
+            val bottom  = attributes$.Bool("bottom", false)
+            val defaultWidth = if (inheritWidth) sheet$.parWidth else 0f
+            val width = attributes$.Units("width", defaultWidth)(attributes$, sheet$)
+            val glyphs = children.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }.map(_.asGlyph)
             val glyph = if (width==0f)
                  NaturalSize.Row(bg=sheet$.backgroundBrush).atTop$(glyphs)
             else
@@ -664,12 +672,12 @@ class Translation(val primitives: Primitives=new Primitives) {
           case "fill" =>
             val width  = attributes$.Units("width", 0f)(attributes$, sheet$)
             val height = attributes$.Units("height", 0f)(attributes$, sheet$)
-            val stretch = attributes$.Float("stretch", 0f)
+            val stretch = attributes$.Float("stretch", 1f)
             val background = attributes$.Brush("background", attributes$.Brush("bg", DefaultBrushes.nothing))
             List(GlyphTarget(paragraph, sheet$, FixedSize.Space(width, height, stretch, fg=DefaultBrushes.nothing, bg=background)))
 
           case "glyph" =>
-            println (s"<glyph ${attributes$.asString}/>")
+            //println (s"<glyph ${attributes$.asString}/>")
             val id: String = localAttributes.String("gid", alt="")
             if (generatorMap.get(id).isDefined)
                List(GlyphTarget(paragraph, sheet$, generateGlyph(tags$, paragraph, attributes$, sheet$, id)))
@@ -679,9 +687,12 @@ class Translation(val primitives: Primitives=new Primitives) {
                    org.sufrin.logging.Default.warn (s"<glyph ${attributes.asString}/> UNDEFINED (no generator or element)")
                    List(GlyphTarget(paragraph, sheet$, sheeted.Label (s"UNDEFINED $id")(sheet$.copy(labelForegroundBrush = DefaultBrushes.red))))
                  case Some(element) =>
-                   translate(tags, paragraph, attributes, sheet: Sheet, element)
+                   translate(tags, paragraph, attributes, sheet, element)
                }
             }
+
+          case "span" =>
+            translate(tags$, paragraph, attributes$, sheet$, children)
 
 
 
@@ -689,12 +700,16 @@ class Translation(val primitives: Primitives=new Primitives) {
             translationMap.get(tag) match {
               case Some(translation) =>
                 println(s"<$tag special translation ${Visitor.toString(attributes$)}")
-                translation.translate(tags$, paragraph, attributes$, sheet$, child)
+                translation.translate(tags$, paragraph, attributes$, sheet$, children)
 
               case None =>
-                //println(s"<$tag default translation  ${Visitor.toString(attributes$)}")
-                //child.flatMap { source => translate(tags$, false, attributes$, sheet$, source) }
-                translatePCData(tags$, false, Map.empty, Sheet(), source.toString())
+                abstractionMap.get(tag) match {
+                  case None =>
+                    translatePCData(tags$, false, Map.empty, Sheet(), source.toString())
+                  case Some(abstraction) =>
+                    val expanded: Seq[Node] = abstraction.expansion(source)
+                    translate(tags$, paragraph, attributes$, sheet$, expanded)
+                }
             }
 
         }
@@ -745,7 +760,7 @@ class Translation(val primitives: Primitives=new Primitives) {
     import PrettyPrint.AnyPretty
     for { t <- (translator.translate(Nil, false, Map.empty, sheet, source)) } t.prettyPrint()
     NaturalSize.Col()
-      .centered$(translator.translate(Nil, false, Map.empty, sheet, source).map(_.asGlyph)).framed()
+      .centered$(translator.translate(Nil, false, Map.empty, sheet, source).map(_.asGlyph))
   }
 
   implicit def XMLtoGlyph(source: Node)(implicit sheet: Sheet): Glyph = this(source)(sheet)
@@ -765,16 +780,16 @@ object gxml extends Application {
   locally {
     translator("body") = new Translation(translator.primitives) {
       override def toString: String = "body translation"
-      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
-        val child$ = child.filterNot(Translation.isBlank(_))
-        List(ColTarget(sheet.backgroundBrush, chunks=super.translate(tags, false, attributes, sheet, child$)))
+      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
+        val children$ = children.filterNot(Translation.isBlank(_))
+        List(ColTarget(sheet.backgroundBrush, chunks=super.translate(tags, false, attributes, sheet, children$)))
       }
     }
 
     def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(translator.primitives) {
       override def toString: String = s"StyleTranslation($tag, $textStyle)"
-      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
-        super.translate(tag::tags, paragraph, attributes.updated("textStyle", textStyle), sheet, child)
+      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
+        super.translate(tag::tags, paragraph, attributes.updated("textStyle", textStyle), sheet, children)
       }
     }
 

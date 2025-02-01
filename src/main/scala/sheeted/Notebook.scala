@@ -3,26 +3,22 @@ package sheeted
 
 import NaturalSize.nothing
 
-case class BookStyle(buttonStyle:  Sheet, pageStyle: Sheet)
-
 /**
  * Manage the declaration of notebook pages and the construction of
  * notebook GUIs.
  */
-trait Book {
+trait Notebook {
 
   import NaturalSize.{Col, Row}
-  import Styles._
+  import sheeted._
+
 
   import scala.collection.mutable.ArrayBuffer
 
   /**
    * Page descriptor
    */
-  class Page(val title: String, val gloss: String, val glyph: Glyph)(implicit sheet: BookStyle) {
-    val detail: GlyphStyle = sheet.pageStyle.labelStyle
-    implicit val contentStyle: Sheet = sheet.pageStyle
-    import detail.{em, ex}
+  class Page(val title: String, val gloss: String, val glyph: Glyph)(implicit sheet: Sheet) {
 
     override val toString: String = s"Page($title, $gloss){$glyph}"
 
@@ -30,13 +26,13 @@ trait Book {
       if (gloss.isEmpty)
         glyph
       else
-        Col.centered(Label(gloss), ex, glyph)
+        Col.centered(Label(gloss), glyph)
   }
 
   val pages: ArrayBuffer[Page] = new ArrayBuffer[Page]()
 
   /** Declare a page */
-  def Page(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit sheet: BookStyle): Page = {
+  def Page(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit sheet: Sheet): Page = {
     val page = new Page(title, gloss, glyph)
     if (publish) {
       pages += (page)
@@ -45,7 +41,7 @@ trait Book {
   }
 
   object DefinePage {
-    def apply(title: String, gloss: String="", publish: Boolean = true)(glyph: Glyph)(implicit sheet: BookStyle): Page = {
+    def apply(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit sheet: Sheet): Page = {
       val page = new Page(title, gloss, glyph)(sheet)
       if (publish) {
         pages += (page)
@@ -54,14 +50,14 @@ trait Book {
     }
   }
 
-//  def popupButtons(implicit sheet: BookStyle): List[Glyph]  = {
-//    def button(page: Page): Glyph = {
-//      lazy val here: Glyph = TextButton(page.title) {
-//        _ => windowdialogues.Dialogue.OK(page.root())(sheet.pageStyle).SouthEast(here).start() }(sheet.buttonStyle)
-//      here
-//    }
-//    pages.toList.map(button(_))
-//  }
+  def popupButtons(implicit sheet: Sheet): List[Glyph]  = {
+    def button(page: Page): Glyph = {
+      lazy val here: Glyph = sheeted.TextButton(page.title) {
+        _ => sheeted.windowdialogues.Dialogue.OK(page.root())(sheet).SouthEast(here).start() }(sheet)
+      here
+    }
+    pages.toList.map(button(_))
+  }
 
   import DynamicGlyphs.OneOf
 
@@ -76,10 +72,9 @@ trait Book {
    * notebook. When `uniform` is true, `buttons` will all have the same diagonal, else
    * they will be at their natural size (modulo styled framing)
    */
-  def tabbedNotebook(uniform: Boolean, align: Alignment)(implicit sheet: BookStyle): TabbedNotebook = {
-    implicit val style: Sheet = sheet.buttonStyle
+  def tabbedNotebook(uniform: Boolean, align: Alignment)(implicit sheet: Sheet): TabbedNotebook = {
     val glyphs: Seq[Glyph] = pages.toList.map(_.root())
-    val oneOf = DynamicGlyphs.OneOf.seq(bg=sheet.pageStyle.backgroundBrush, align=align)(glyphs)
+    val oneOf = DynamicGlyphs.OneOf.seq(align=align, bg=DefaultBrushes.white)(glyphs)
     val keyed = (0 until glyphs.length) zip pages
 
     lazy val buttons = keyed map  {
@@ -120,7 +115,7 @@ trait Book {
    * makes it possible to implement non-standard juxtapositions of buttons and the notebook page
    * (for example, by having two rows/columns of buttons).
    * {{{
-   *   raw(sheet: Sheet, uniform: Boolean = true, align: Alignment=Center): TabbedNotebook
+   *   raw(sheet: StyleSheet, uniform: Boolean = true, align: Alignment=Center): TabbedNotebook
    * }}}
    */
   object Layout {
@@ -133,57 +128,57 @@ trait Book {
     }
 
     /** A menu bar on which there is a popup button for each page */
-    //def menuBar(implicit sheet: BookStyle): Glyph = Col.centered(Row.centered(Row.centered$(popupButtons)))
+    def menuBar(implicit sheet: Sheet): Glyph = Col.centered(Row.centered(Row.centered$(popupButtons)))
 
     /**
      * A `TabbedNotebook` with a button corresponding to each page, and a `OneOf` holding the pages.
      * Each button selects the corresponding page on the `OneOf` when clicked.
      */
-    def raw(sheet: BookStyle, uniform: Boolean = true, align: Alignment=Center): TabbedNotebook =
+    def raw(sheet: Sheet, uniform: Boolean = true, align: Alignment=Center): TabbedNotebook =
       tabbedNotebook(uniform, align)(sheet)
 
-    def rightButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: BookStyle):  Glyph   = {
+    def rightButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: Sheet):  Glyph   = {
       val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val rhs = Col().atRight$(buttons)
       val lhs = oneOf
       val divider = blackLine(4, rhs.h max lhs.h)
-      Row(bg=sheet.buttonStyle.backgroundBrush).centered(lhs, divider, rhs)
+      Row.centered(lhs, divider, rhs)
     }
 
-    def leftButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: BookStyle): Glyph = {
+    def leftButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: Sheet): Glyph = {
       val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Col().atRight$(buttons)
       val rhs = oneOf
       val divider = blackLine(2, rhs.h max lhs.h)
-      Row(bg=sheet.buttonStyle.backgroundBrush).centered(lhs, divider, rhs)
+      Row.centered(lhs, divider, rhs)
     }
 
-    def rotatedButtons(quads: Int, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: BookStyle) = {
+    def rotatedButtons(quads: Int, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: Sheet) = {
       val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Row().atBottom$(buttons.map { b => b.rotated(quads, bg=nothing) })
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
-      Col(bg=sheet.buttonStyle.backgroundBrush).centered(lhs, divider, rhs)
+      Col.centered(lhs, divider, rhs)
     }
 
-    def skewedButtons(skewX: Scalar, skewY: Scalar, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: BookStyle) = {
+    def skewedButtons(skewX: Scalar, skewY: Scalar, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: Sheet) = {
       val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Row().atBottom$(buttons.map { b => (b.rotated(3, bg=nothing)) })
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
-      Col(bg=sheet.buttonStyle.backgroundBrush).centered(lhs.skewed(-skewX, skewY), divider, rhs)
+      Col.centered(lhs.skewed(-skewX, skewY), divider, rhs)
     }
 
-    def topButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: BookStyle) = {
+    def topButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: Sheet) = {
       val TabbedNotebook(buttons, oneOf) = tabbedNotebook(uniform, align)
       val lhs = Row(bg=nothing).atBottom$(buttons)
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
-      Col(bg=sheet.buttonStyle.backgroundBrush).centered(lhs, divider, rhs)
+      Col.centered(lhs, divider, rhs)
     }
   }
 }
 
-object Book {
-  def apply(): Book = new Book {}
+object Notebook {
+  def apply(): Notebook = new Notebook {}
 }

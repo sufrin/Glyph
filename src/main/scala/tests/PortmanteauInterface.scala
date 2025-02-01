@@ -1,15 +1,13 @@
 package org.sufrin.glyph
 package tests
 import GlyphTypes.Window
-import styled.text.{Label, Paragraphs}
+import sheeted.{Label, CheckBox, Notebook}
 import NaturalSize.{Col, Row}
-import Styles.Default.Spaces.ex
-import Styles.NotebookStyle
 
-class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
-  implicit val PageStyle: NotebookStyle = style.notebookStyle.copy(buttonStyle=style, pageStyle=style)
+class PortmanteauInterface(implicit val style: Sheet, implicit val translator: glyphXML.Translation) extends Notebook {
+
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
-    import overlaydialogues.Dialogue.OKNO
+    import sheeted.overlaydialogues.Dialogue.OKNO
     // TODO: windowdialogues need set software scale more carefully than now if autoScale
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
       Label("Do you want to Exit?") scaled 1.5f
@@ -18,31 +16,39 @@ class PortmanteauInterface(implicit val style: StyleSheet) extends Notebook {
       title = "Exit Dialogue", ok = " Exit now ", no = " Continue ").InFront(glyph).andThen(close => if (close) window.close())
   }
 
+
+  locally {
+    translator("anchor") = { _ => Glyphs.INVISIBLE() }
+  }
+
   Page("Welcome", "") {
     val anchor = Glyphs.INVISIBLE()
-    Col.centered(
-      anchor,
-      Paragraphs(30, Justify)(
-        """
-          | Welcome to the Portmanteau Notebook: its source code is more
-          |modular than that of DemonstrationNotebook -- which evolved as
-          |a monolith.
-          |
-          |""".stripMargin) enlarged 50, ex,
-      styled.text.Label("Scaleable: ") beside styled.CheckBox(initially=false) {
-        state =>
-          anchor.guiRoot.autoScale=state
-      }
-    )
+    val checkBox = CheckBox(initially=false) { state => anchor.guiRoot.autoScale=state }(style.copy(buttonFrame = Styles.Decoration.Framed(fg=DefaultBrushes.blue, bg=DefaultBrushes.nothing)))
+    import translator._
+    translator("anchor")   = { _ => anchor }
+    translator("checkbox") = { _ => checkBox }
+    <body width="30em" background="nothing">
+      <p align="justify">
+        Welcome to the Portmanteau Notebook: its source code is more
+        modular than that of DemonstrationNotebook -- which evolved as
+        a monolith.
+      </p>
+      <glyph gid="anchor"/>
+      <row inheritwidth="true">
+         <fill/><span>Enable window resizing: </span><glyph gid="checkbox"/><fill/>
+      </row>
+    </body>
   }
 
   Page("New Instance", "")(new PortmanteauInstantiation().GUI)
 
+  /*
   Page("Transforms*", "")(new PortmanteauTransforms().Layout.leftButtons())
 
   Page("Text", "") (new PortmanteauText().GUI)
 
   Page("GlyphML", "") (new PortmanteauGlyphML().GUI)
+  */
 
   import utils.Output.withWriteBar
 
