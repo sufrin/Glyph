@@ -92,10 +92,27 @@ object FixedSize extends DefaultPaints {
     }
   }
 
+  val nothing = Brush() color 0
+
+  object Row {
+    /** Construct `RowGenerator`s for a row of the given width, with the given foreground and background. */
+    def apply(width: Scalar, fg: Brush=nothing, bg: Brush = nothing, alignment: VAlignment = Top): RowGenerators = {
+      val (_alignment, _width, _fg, _bg) = (alignment, width, fg, bg)
+      new RowGenerators {
+        val fg: Brush = _fg
+        val bg: Brush = _bg
+        val width: Scalar = _width
+        val alignment: VAlignment = _alignment
+      }
+    }
+  }
+
   trait RowGenerators { theseGenerators =>
     val fg: Brush
     val bg: Brush
     val width: Scalar
+    val alignment: VAlignment
+
     /** The glyphs are drawn so their centre lines are at the centre line of the row. */
     def centered(theGlyphs: Glyph*): Composite = aligned(width, 0.5f, theGlyphs)
 
@@ -113,16 +130,28 @@ object FixedSize extends DefaultPaints {
     /** The glyphs are drawn so their bottom is at the bottom of the row. */
     def atBottom$(theGlyphs: Seq[Glyph]): Composite = aligned(width, 1.0f, theGlyphs)
 
-    def apply(theGlyphs: Glyph*): Composite = aligned(width, 0.0f, theGlyphs)
+    def of(theGlyphs: Seq[Glyph]): Composite = alignment match {
+      case Top => aligned(width, 0.0f, theGlyphs)
+      case Mid => aligned(width, 0.5f, theGlyphs)
+      case Bottom => aligned(width, 1.0f, theGlyphs)
+    }
 
-    /** Construct `RowGenerator`s for a row of the given width, with the given foreground and background. */
-    def apply(width: Scalar, fg: Brush=nothing, bg: Brush = nothing): RowGenerators = {
-      val (_width, _fg, _bg) = (width, fg, bg)
-      new RowGenerators {
-        val fg: Brush = _fg
-        val bg: Brush = _bg
-        val width: Scalar = _width
-      }
+    def of(first: Glyph, theGlyphs: Glyph*): Composite = alignment match {
+      case Top => aligned(width, 0.0f, first :: theGlyphs.toList)
+      case Mid => aligned(width, 0.5f, first :: theGlyphs.toList)
+      case Bottom => aligned(width, 1.0f, first :: theGlyphs.toList)
+    }
+
+    def apply(theGlyphs: Seq[Glyph]): Composite = alignment match {
+      case Top => aligned(width, 0.0f, theGlyphs)
+      case Mid => aligned(width, 0.5f, theGlyphs)
+      case Bottom => aligned(width, 1.0f, theGlyphs)
+    }
+
+    def apply(first: Glyph, theGlyphs: Glyph*): Composite = alignment match {
+      case Top => aligned(width, 0.0f, first :: theGlyphs.toList)
+      case Mid => aligned(width, 0.5f, first :: theGlyphs.toList)
+      case Bottom => aligned(width, 1.0f, first :: theGlyphs.toList)
     }
 
     def aligned(theWidth: Scalar, proportion: Float, theGlyphs: Seq[Glyph]): Composite = {
@@ -160,6 +189,7 @@ object FixedSize extends DefaultPaints {
     val fg: Brush
     val bg: Brush
     val height: Scalar
+    val alignment: Alignment
 
      /** Glyphs drawn with their centres at the centre line of the column. */
     def centered(theGlyphs: Glyph*): Composite = aligned(height, 0.5f, theGlyphs)
@@ -179,16 +209,28 @@ object FixedSize extends DefaultPaints {
     /** Glyphs drawn with right edges at the right edge of the column. */
     def atRight$(theGlyphs: Seq[Glyph]): Composite = aligned(height, 1.0f, theGlyphs)
 
-    /** Same as `atLeft`. */
-    def apply(theGlyphs: Glyph*): Composite = aligned(height, 0.0f, theGlyphs)
+
+    def apply(glyph: Glyph, theGlyphs: Glyph*): Composite = alignment match {
+      case Left => aligned(height, 0.0f, glyph::theGlyphs.toList)
+      case Center => aligned(height, 0.5f, glyph::theGlyphs.toList)
+      case Right => aligned(height, 1.0f, glyph::theGlyphs.toList)
+    }
+
+    def apply(theGlyphs: Seq[Glyph]): Composite = alignment match {
+      case Left => aligned(height, 0.0f, theGlyphs)
+      case Center => aligned(height, 0.5f, theGlyphs)
+      case Right => aligned(height, 1.0f, theGlyphs)
+    }
+
 
     /** Construct `ColumnGenerator`s for a column of the given height, with the given foreground and background. */
-    def apply(height: Scalar, fg: Brush = nothing, bg: Brush = nothing): ColumnGenerators = {
-      val (_height, _fg, _bg) = (height, fg, bg)
+    def apply(height: Scalar, fg: Brush = nothing, bg: Brush = nothing, alignment: Alignment=Left): ColumnGenerators = {
+      val (_alignment, _height, _fg, _bg) = (alignment, height, fg, bg)
       new ColumnGenerators {
         val fg: Brush = _fg
         val bg: Brush = _bg
         val height: Scalar = _height
+        val alignment: Alignment = _alignment
       }
     }
 
@@ -230,18 +272,13 @@ object FixedSize extends DefaultPaints {
     }
   }
 
-  val nothing = Brush() color 0
 
-  object Row extends RowGenerators {
-    val bg: Brush = nothing
-    val fg: Brush = nothing
-    val width: Scalar = 0f
-  }
 
   object Col extends ColumnGenerators {
     val fg: Brush = nothing
     val bg: Brush = nothing
     val height:Scalar = 0f
+    val alignment: Alignment = Left
   }
 
 

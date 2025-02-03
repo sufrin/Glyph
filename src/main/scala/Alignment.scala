@@ -44,3 +44,8 @@ case object Justify extends Alignment {
   val (left, right, last): Fills = (0f, 0f, 30000f)
 }
 
+trait VAlignment
+case object Top extends VAlignment
+case object Mid extends VAlignment
+case object Bottom extends VAlignment
+

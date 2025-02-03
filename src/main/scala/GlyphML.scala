@@ -398,12 +398,12 @@ object GlyphML {
    */
   case class MenuBar (local: Context)(elements: Element*) extends Element {
     def toGlyph(local: Context): Glyph =
-      FixedSize.Row(local.boundingBox.x, local.fg, local.bg).atBottom$(elements.map(_.toGlyph(local)))
+      FixedSize.Row(local.boundingBox.x, local.fg, local.bg, alignment=Bottom) of (elements.map(_.toGlyph(local)))
   }
 
   case class FixedWidthRow(width: Scalar)(elements: Element*) extends Element {
     def toGlyph(local: Context): Glyph =
-        FixedSize.Row(width, local.fg, local.bg).atBottom$(elements.map(_.toGlyph(local)))
+        FixedSize.Row(width, local.fg, local.bg, alignment=Bottom) of (elements.map(_.toGlyph(local)))
   }
 
   /**

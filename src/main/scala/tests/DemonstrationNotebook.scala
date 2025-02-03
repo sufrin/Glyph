@@ -1327,8 +1327,8 @@ trait DemonstrationPages extends Brushes {
       val emWidth = em.w
 
       Col.centered(
-        FixedSize.Row(width)(row(0.5f), FixedSize.Space(emWidth, 100f), row(.3f)), ex,
-        FixedSize.Row(width)(row(0.25f), FixedSize.Space(emWidth, 100f), row(.125f)), ex,
+        FixedSize.Row(width) of (row(0.5f), FixedSize.Space(emWidth, 100f), row(.3f)), ex,
+        FixedSize.Row(width) of (row(0.25f), FixedSize.Space(emWidth, 100f), row(.125f)), ex,
         Label("Effects of enlargement by 25f before framing\n"),
         FixedSize.Row(width)(row(.3f, 25f), tab, row(0.125f, 25f)),
       )
@@ -1342,7 +1342,7 @@ trait DemonstrationPages extends Brushes {
       def cross = Polygon(star.w, star.h, blue(width=4))((0, 0), (star.w, star.h), (0, star.h), (star.w, 0), (0,0) ) scaled 0.5f
 
       Col.centered(
-          Row(nothing, nothing).centered(
+          Row().centered(
             star, em,
             star.mounted(red(width = 38, cap = SQUARE), green), em,
             star.mounted(red(width = 8, cap = ROUND), green), em,
@@ -1386,7 +1386,7 @@ trait DemonstrationPages extends Brushes {
       def cross = Polygon(star.w, star.h, blue(width = 4))((0, 0), (star.w, star.h), (0, star.h), (star.w, 0), (0,0)) scaled 0.5f
 
       Col.centered(
-        Row(nothing, nothing).centered(
+        Row().centered(
           star, em,
           star.edged(red(width = 8, cap = SQUARE), green), em,
           star.edged(red(width = 8, cap = ROUND), green), em,

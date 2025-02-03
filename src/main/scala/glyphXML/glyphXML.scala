@@ -6,7 +6,7 @@ import io.github.humbleui.skija.Font
 import org.sufrin.glyph.glyphXML.Visitor.AttributeMap
 import org.sufrin.glyph.Glyphs.BreakableGlyph
 import org.sufrin.glyph.GlyphTypes.Scalar
-import org.sufrin.glyph.GlyphXMLOld.withBaseline
+import org.sufrin.glyph.glyphXML.Translation.isBlank
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -286,7 +286,7 @@ object Translation {
     }
 
     /** The text of a word or a line that will not be broken at a hyphen */
-    case class TextTarget(text: String, atBase: Boolean, font: Font, fg: Brush, bg: Brush) extends Target with PrettyPrint.PrettyPrintable {
+    case class SolidTextTarget(text: String, atBase: Boolean, font: Font, fg: Brush, bg: Brush) extends Target with PrettyPrint.PrettyPrintable {
       val arity = 5
       val prefix = "Text"
 
@@ -305,7 +305,7 @@ object Translation {
     }
 
     /** The text of a word or a line that could be broken at a hyphen */
-    case class HyphenatableTarget(text: String, discretionaryWordBreak: String, font: Font, fg: Brush, bg: Brush) extends Target with PrettyPrint.PrettyPrintable {
+    case class HyphenatableTextTarget(text: String, discretionaryWordBreak: String, font: Font, fg: Brush, bg: Brush) extends Target with PrettyPrint.PrettyPrintable {
       val arity = 5
       val prefix = "Text"
       override def field(i: Int): (String, Any) = i match {
@@ -325,16 +325,16 @@ object Translation {
 
     }
 
-    /** The structure of a paragraph to be made from chunks */
-    case class ParaTarget(sheet: Sheet, chunks: Seq[Target], parHang: Option[Glyph]) extends Target with PrettyPrint.PrettyPrintable
+    /** The structure of a paragraph to be made from `targets` */
+    case class ParaTarget(sheet: Sheet, targets: Seq[Target], parHang: Option[Glyph]) extends Target with PrettyPrint.PrettyPrintable
     { val arity=3
       val prefix="Para"
       override def field(i: Int): (String, Any) = i match {
-        case 2 => ("chunks", chunks)
+        case 2 => ("chunks", targets)
         case 1 => ("", s"w: ${sheet.parWidth}")
         case 0 => ("hang", parHang)
       }
-      val asGlyph: Glyph = Paragraph.fromGlyphs(sheet, chunks.map(_.asGlyph), parHang)
+      val asGlyph: Glyph = Paragraph.fromGlyphs(sheet, targets.map(_.asGlyph), parHang).enlargedBy(0f, sheet.parSkip)
     }
 
     case class ColTarget(background: Brush, chunks: Seq[Target], alignment: Alignment = Left) extends Target {
@@ -357,6 +357,44 @@ object Translation {
 
       val glyph$ = if (paragraph) withBaseline(glyph, (sheet.baseLine+glyph.h)/2) else glyph //**
       val asGlyph: Glyph = glyph$
+    }
+
+    case class DecorateTarget(paragraph: Boolean, attributes: TypedAttributeMap, target: Target) extends Target {
+      def decorated(glyph: Glyph): Glyph = {
+        val g0 = glyph
+        def rotate(glyph: Glyph): Glyph = {
+          val rotated = attributes.Int("rotated", 0)
+          if (rotated==0) glyph else
+          if (!paragraph) glyph.rotated(rotated) else
+          rotated % 4 match {
+            case 0     => glyph
+            case 1 | 3 => withBaseline(glyph.rotated(rotated), glyph.w)
+            case 2     => withBaseline(glyph.rotated(rotated), glyph.h)
+          }
+        }
+
+        def turn(glyph: Glyph): Glyph =
+          attributes.Int("turned", 0) match {
+            case 0 => glyph
+            case d =>
+              val glyph$ = glyph.turned(d.toFloat, false)
+              glyph$//atBaseline(glyph$, glyph$.h)
+          }
+
+
+        def frame(glyph: Glyph): Glyph = {
+          val brush = attributes.Brush("frame", DefaultBrushes.invisible)
+          val framing = attributes.Bool("framed", brush.getAlpha != 0)
+          if (framing)
+            glyph.framed(fg = brush, bg = attributes.Brush("bg", glyph.bg))
+          else
+            glyph
+        }
+
+        frame(rotate(glyph))
+      }
+
+      val asGlyph: Glyph = decorated(target.asGlyph)
     }
 
     /**
@@ -467,8 +505,21 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
       case ("center") => Center
       case ("justify") => Justify
       case (other) =>
-        warn(s"$key=\"$other\" [not an alignment name: using \"center\"]")
+        warn(s"$key=\"$other\" [not a horizontal alignment name: using \"center\"]")
         Center
+    }
+  }
+
+  def VAlign(key: String, default: VAlignment): VAlignment = attributes.get(key) match {
+    case None => default
+    case Some(alignment) => alignment.toLowerCase match {
+      case ("top") => Top
+      case ("bottom") => Bottom
+      case ("mid") => Mid
+      case ("center") => Mid
+      case (other) =>
+        warn(s"$key=\"$other\" [not a vertical alignment name: using \"mid\"]")
+        Mid
     }
   }
 
@@ -507,7 +558,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
           labelFontFamily = FontFamily(String("fontFamily", String("labelFontFamily", sheet.labelFontFamily.name))),
           labelFontSize   = Float("fontSize", Float("labelFontSize", sheet.labelFontSize)),
 
-          buttonFontStyle   = FontFamily.styleNamed(String("buttonStyle", "")),
+          buttonFontStyle  = FontFamily.styleNamed(String("buttonStyle", "")),
           buttonFontFamily = FontFamily(String("fontFamily", String("buttonFontFamily", sheet.buttonFontFamily.name))),
           buttonFontSize   = Float("fontSize", Float("buttonFontSize",                  sheet.buttonFontSize)),
         )
@@ -522,6 +573,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
       rightMargin           = Units("rightMargin",    sheet.rightMargin)  (attributes, fontDetail),
       parAlign              = Align("align",          sheet.parAlign),
       backgroundBrush       = Brush("background",     sheet.backgroundBrush),
+      foregroundBrush       = Brush("foreground",     sheet.backgroundBrush),
       textBackgroundBrush   = Brush("textBackground", sheet.textBackgroundBrush),
       textForegroundBrush   = Brush("textForeground", sheet.textForegroundBrush),
       buttonBackgroundBrush = Brush("buttonBackground", sheet.buttonBackgroundBrush),
@@ -561,8 +613,8 @@ class Translation(val primitives: Primitives=new Primitives) {
 
   def translateText(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
 
-    @inline def solidText(text: String): Target = TextTarget(text, paragraph, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
-    @inline def hyphenatableText(text: String): Target = HyphenatableTarget(text, sheet.discretionaryWordBreak, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
+    @inline def solidText(text: String): Target = SolidTextTarget(text, paragraph, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
+    @inline def hyphenatableText(text: String): Target = HyphenatableTextTarget(text, sheet.discretionaryWordBreak, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
 
     val interWordWidth = sheet.interWordWidth
 
@@ -639,53 +691,59 @@ class Translation(val primitives: Primitives=new Primitives) {
         val attributes$ : AttributeMap = specifiedAttributes ++ localAttributes
         val sheet$ = attributes$.declareAttributes(sheet)
         val tags$ = tag::tags
+
+        def Decorated(t: Target): Seq[Target] = List(DecorateTarget(paragraph, attributes$, t))
+
         tag match {
           case "p" =>
             //println(s"<p ${attributes$.asString}")
             val hangString = attributes$.String("hang", "")
-            val hangRef    = attributes$.String("hangref", "")
-            val hang: Option[Glyph] = if (hangString.isEmpty)
-                       if (hangRef.isEmpty) None
-                       else Some(generateGlyph(tags$, paragraph, attributes$, sheet$, hangRef))
-                       else Some(sheeted.Label(hangString)(sheet$))
+            val hangRef    = attributes$.String("hangid", "")
+            val hang: Option[Glyph] =
+              if (hangString.isEmpty)
+                 if (hangRef.isEmpty)
+                   None
+                 else
+                   Some(generateGlyph(tags$, paragraph, attributes$, sheet$, hangRef))
+              else Some(sheeted.Label(hangString)(sheet$))
             val chunks = children.flatMap { source => translate(tags$, true, attributes$$, sheet$, source) }
-            List(ParaTarget(sheet$, chunks, hang))
+            Decorated(ParaTarget(sheet$, chunks, hang))
 
           case "col" =>
-            val glyphs: Seq[Target] = children.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }
+            val glyphs: Seq[Target] = children.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, paragraph, attributes$$, sheet$, source) }
             val alignment = attributes$.Align("align", Left)
-            List(ColTarget(sheet$.backgroundBrush, glyphs, alignment))
+            Decorated(ColTarget(sheet$.backgroundBrush, glyphs, alignment))
 
 
           case "row" =>
             val inheritWidth = attributes$.Bool("inheritwidth", false)
-            val bottom  = attributes$.Bool("bottom", false)
             val defaultWidth = if (inheritWidth) sheet$.parWidth else 0f
             val width = attributes$.Units("width", defaultWidth)(attributes$, sheet$)
             val glyphs = children.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }.map(_.asGlyph)
+            val valign: VAlignment = attributes$.VAlign("valign", Top)
             val glyph = if (width==0f)
-                 NaturalSize.Row(bg=sheet$.backgroundBrush).atTop$(glyphs)
+                 NaturalSize.Row(valign=valign, bg=sheet$.backgroundBrush)(glyphs)
             else
-                 FixedSize.Row(width=width, bg=sheet$.backgroundBrush).atTop$(glyphs)
-            List(GlyphTarget(paragraph, sheet$, glyph))
+                 FixedSize.Row(alignment=valign, width=width, bg=sheet$.backgroundBrush) of (glyphs)
+            Decorated(GlyphTarget(paragraph, sheet$, glyph))
 
           case "fill" =>
-            val width  = attributes$.Units("width", 0f)(attributes$, sheet$)
-            val height = attributes$.Units("height", 0f)(attributes$, sheet$)
+            val width  = attributes$.Units("width", sheet$.emWidth)(attributes$, sheet$)
+            val height = attributes$.Units("height", sheet$.exHeight)(attributes$, sheet$)
             val stretch = attributes$.Float("stretch", 1f)
             val background = attributes$.Brush("background", attributes$.Brush("bg", DefaultBrushes.nothing))
-            List(GlyphTarget(paragraph, sheet$, FixedSize.Space(width, height, stretch, fg=DefaultBrushes.nothing, bg=background)))
+            Decorated(GlyphTarget(paragraph, sheet$, FixedSize.Space(width, height, stretch, fg=DefaultBrushes.nothing, bg=background)))
 
           case "glyph" =>
             //println (s"<glyph ${attributes$.asString}/>")
             val id: String = localAttributes.String("gid", alt="")
             if (generatorMap.get(id).isDefined)
-               List(GlyphTarget(paragraph, sheet$, generateGlyph(tags$, paragraph, attributes$, sheet$, id)))
+               Decorated(GlyphTarget(paragraph, sheet$, generateGlyph(tags$, paragraph, attributes$, sheet$, id)))
             else {
                elementMap.get(id) match {
                  case None =>
                    org.sufrin.logging.Default.warn (s"<glyph ${attributes.asString}/> UNDEFINED (no generator or element)")
-                   List(GlyphTarget(paragraph, sheet$, sheeted.Label (s"UNDEFINED $id")(sheet$.copy(labelForegroundBrush = DefaultBrushes.red))))
+                   Decorated(GlyphTarget(paragraph, sheet$, sheeted.Label (s"UNDEFINED $id")(sheet$.copy(labelForegroundBrush = DefaultBrushes.red))))
                  case Some(element) =>
                    translate(tags, paragraph, attributes, sheet, element)
                }
@@ -694,6 +752,37 @@ class Translation(val primitives: Primitives=new Primitives) {
           case "span" =>
             translate(tags$, paragraph, attributes$, sheet$, children)
 
+          case "table" =>
+            import sheet$.{padX, padY, backgroundBrush => bg, foregroundBrush => fg}
+            val width     = localAttributes.Int("columns", localAttributes.Int("cols", 0))
+            val height    = localAttributes.Int("rows", 0)
+            val uniform   = localAttributes.Bool("uniform", false)
+            val glyphs    = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$, sheet$, source) }.map(_.asGlyph)
+            val context   = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY)
+            val buildFrom = if (uniform) context.grid(height=height, width=width)(_) else context.table(height=height, width=width)(_)
+            Decorated(GlyphTarget(paragraph = paragraph,
+                                  sheet = sheet$,
+                                  glyph = buildFrom(glyphs)))
+
+          case "rows" =>
+            import sheet$.{padX, padY, backgroundBrush => bg, foregroundBrush => fg}
+            val width  = localAttributes.Int("columns", localAttributes.Int("cols", 0))
+            val height = localAttributes.Int("rows", 0)
+            val glyphs = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$, sheet$, source) }.map(_.asGlyph)
+            println(s"$padX, $padY")
+            Decorated(GlyphTarget(paragraph = paragraph,
+              sheet = sheet$,
+              glyph = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).rows(width=width)(glyphs)))
+
+          case "cols" =>
+            import sheet$.{padX, padY, backgroundBrush => bg, foregroundBrush => fg}
+            val width  = localAttributes.Int("columns", localAttributes.Int("cols", 0))
+            val height = localAttributes.Int("rows", 0)
+            val glyphs = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$, sheet$, source) }.map(_.asGlyph)
+            println(s"$padX, $padY")
+            Decorated(GlyphTarget(paragraph = paragraph,
+              sheet = sheet$,
+              glyph = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).cols(height=height)(glyphs)))
 
 
           case _ =>
@@ -803,20 +892,25 @@ object gxml extends Application {
 
   // Specify application-specific material
   locally {
-    translator("today")     = " Expansion of today "
-    translator("yesterday") = " Expansion of yesterday "
-    translator("B1")        =  { sheet => sheeted.TextButton("B1"){ _ => println(s"B1") }(sheet)}
-    translator("B2")        =  { sheet => sheeted.TextButton("B2"){ _ => println(s"B2") }(sheet) }
-    translator("B3")        =  { sheet => sheeted.TextButton("B3"){ _ => println(s"B3") }(sheet) }
-    translator("LINK")      =  { sheet => sheeted.TextButton("LINK"){ _ => println(s"LINK") }(sheet.copy(buttonFrame = Styles.Decoration.Unframed)) }
-    translator("L1")        =  { sheet => sheeted.Label("L1")(sheet) }
-    translator("L2")        =  { sheet => sheeted.Label("L2")(sheet) }
-    translator("L3")        =  { sheet => sheeted.Label("L3")(sheet) }
-    translator("LS")        =  { sheet => NaturalSize.Col()(sheeted.Label("LS1")(sheet), sheeted.Label("LS2")(sheet), sheeted.Label("LS3")(sheet)) }
-    translator("B1")        = <ATTRIBUTES buttonForeground="red/2"  buttonBackground="yellow"/>
-    translator("B2")        = <ATTRIBUTES buttonForeground="green/2"  buttonBackground="yellow"/>
+    import sheeted._
+    translator("today")     = " Exp_an_sion of to_day "
+    translator("yesterday") = " Exp_an_sion of yes_ter_day "
+    translator("B1")        =  TextButton("B1"){ _ => println(s"B1") }(_)
+    translator("B2")        =  TextButton("B2"){ _ => println(s"B2") }(_)
+    translator("B3")        =  TextButton("B3"){ _ => println(s"B3") }(_)
+    translator("LINK")      =  sheet => TextButton("LINK"){ _ => println(s"LINK") }(sheet.copy(buttonFrame = Styles.Decoration.Unframed))
+    translator("L1")        =  Label("L1")(_)
+    translator("L2")        =  Label("L2")(_)
+    translator("L3")        =  Label("L3")(_)
+    translator("LS")        =  sheet => NaturalSize.Col()(Label("LS1")(sheet), Label("LS2")(sheet), Label("LS3")(sheet)).framed()
+    translator("LSC")       =  <col><glyph gid="L1"/><glyph gid="L2"/><glyph gid="L3"/></col>
+    translator("B1")        = <ATTRIBUTES buttonForeground="red/2"        buttonBackground="yellow"/>
+    translator("B2")        = <ATTRIBUTES buttonForeground="green/2"      buttonBackground="yellow"/>
     translator("B3")        = <ATTRIBUTES buttonForeground="lightgrey/2"  buttonBackground="black"/>
-    translator("tag:p")     = <ATTRIBUTES background="lightGrey" leftMargin="2em" align="justify"/>
+    translator("tag:p")     = <ATTRIBUTES background="" align="justify" parSkip="1ex"/>
+    translator("tag:table") = <ATTRIBUTES foreground="blue/1" />
+    translator("tag:rows") = <ATTRIBUTES foreground="blue/1" />
+    translator("tag:cols") = <ATTRIBUTES foreground="blue/1" />
   }
 
 
@@ -830,19 +924,21 @@ object gxml extends Application {
   import translator.XMLtoGlyph
 
   val p1: Node = {
-    <body  width="40em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="lightGrey">
+    <body  width="55em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="nothing">
 
-      <glyph gid="B2"/>
+      <p>
+        <i>This is a little tester for various <b>glyphXML</b> features, princ_ipally the mixing of predefined glyphs with paragraph text.</i>
+      </p>
 
 
-      <p align="justify" leftMargin="20em" hangref="B3">
+      <p align="justify" leftMargin="4em" hangid="B3">
          The rain in spain falls <b>mainly</b> in the <glyph gid="B2"/>plain. <glyph gid="B1"/>
          Oh! Does it? <b>Oh</b>, Yes!, it does. &yesterday;  eh? &today;
       </p>
 
-      <glyph gid="B1" fg="green" bg="black"/>
+      <glyph gid="B1" fg="green" bg="black" rotated="2"/>
 
-      <p textBackground="yellow" leftMargin="0em" rightMargin="20em">
+      <p textBackground="" leftMargin="0em" rightMargin="20em" frame="green/13" rotated="2">
         The rain (<glyph gid="LINK"/>) in spain falls <i>mainly</i> in the plain.
         Oh! Does it? <b>Oh</b> <i>Yes</i>!, it does.
         Why do<bi>-you-</bi>want to control spacing so tightly? Here&yesterday;we go!
@@ -855,43 +951,79 @@ object gxml extends Application {
       </p>
       <p>
         Here is another longish column in the midst  <glyph gid="LS"/> of a paragraph. What does it look like?
+        And what does this synthetic <glyph background="nothing" gid="LSC"/> column look like on the line.
       </p>
-      <row width="20em"><glyph gid="L1"/><fill stretch="1"/> <glyph gid="L2"/> <fill stretch="3"/><glyph gid="L3"/></row>
-      <row textFontFamily="Menlo" textFontSize="10">
-         <p align="justify" width="14em" >This is the left hand column of the two columns that are on this row</p>
-         <fill width="35em" stretch="1"/>
-        <p align="justify"  width="14em">This is the right hand column of two</p>
+
+      xxx
+      <row valign="top" textFontFamily="Menlo" textFontSize="12" inheritwidth="true">
+         <p align="justify" width="17em" >This is the left hand col_umn of the two col_umns that are on this row</p>
+         <fill width="1em" stretch="1"/>
+        <p align="justify"  width="17em">This is the right hand col_umn of two</p>
       </row>
-      <col>
-        <glyph gid="L1"/>
-        <glyph gid="LINK"/>
-        <glyph gid="LINK" fontScale="1.7" buttonBackground="lightgrey" buttonForeground="darkGrey" buttonFontFamily="Courier" background="green"/>
-      </col>
+      xxx
+      <row valign="mid" textFontFamily="Menlo" textFontSize="12" inheritwidth="true">
+        <p align="justify" width="17em" >This is the left hand col_umn of the two col_umns that are on this row</p>
+        <fill width="1em" stretch="1"/>
+        <p align="justify"  width="17em">This is the right hand col_umn of two</p>
+      </row>xxx
+      <row valign="bottom" textFontFamily="Menlo" textFontSize="12" inheritwidth="true">
+        <p align="justify" width="17em" >This is the left hand col_umn of the two col_umns that are on this row</p>
+        <fill width="1em" stretch="1"/>
+        <p align="justify"  width="17em">This is the right hand col_umn of two</p>
+      </row>xxx
+      <row inheritwidth="true">
+        <fill/>
+        <col align="center">
+          <glyph gid="L1"/>
+          <glyph gid="LINK"/>
+          <glyph gid="LINK" fontScale="1.7" buttonBackground="lightgrey" buttonForeground="darkGrey" buttonFontFamily="Courier" background="green"/>
+        </col>
+        <fill/>
+      </row>
+      xxx
+      <row inheritwidth="true"><glyph gid="L1"/><fill stretch="1"/> <glyph gid="L2"/> <fill stretch="3"/><glyph gid="L3"/></row>
     </body>
   }
 
   val p2: Node =
-    <body  align="justify" width="35em" textFontFamily="Courier" textFontSize="30" labelFontFamily="Courier" labelFontSize="30" background="lightGrey">
-      <p>The rain in spain falls mainly in the plain; (by george she's got it)! The rain in spain falls mainly in the plain.</p>
-      xxxx
-      <p align="left">The rain in spain falls mainly in the plain; (by george she's got it)! The rain in spain falls mainly in the plain.</p>
-      xxxx
-      <p align="right">The rain in spain falls &ls;mainly&gt; in the plain; (by george she's got it)! The rain in spain falls mainly</p>
-      xxxx
-      <p align="center">The rain in spain falls mainly in the plain; (by george she's got it)! The rain in spain falls mainly</p>
-      xxxx
-      <p align="right">The rain in <i>spain</i> <b>falls</b> <i>mainly</i> in the plain; (by george she's got it)! The rain in spain falls mainly</p>
-      xxxx
-      <p>
-        This is some chatter to force the
-        first part of a <b>paragraph</b> to the right edge.
-        You are about to see an indent within the paragraph.
-      </p>
-      xxxx
-      <p width="20em">
-        This is a short paragraph but unfortunately here-is-an-overlong-unbreakable it has an overlong word
-        in it that gets replaced by a red blob.
-      </p>
+    <body  align="justify" width="25em" textFontFamily="Courier" textFontSize="20" labelFontFamily="Courier" labelFontSize="30">
+      <table cols="2" uniform="true" foreground="">
+      <table cols="2" padX="20px" padY="20px" background="yellow" foreground="blue/0">
+       <p>There are five things here. A</p>
+       <p>There are five things here. B</p>
+       <p>There are five things here. C</p>
+       <p>There are five things here. (table(cols=2))</p>
+       <p>There are five things here. E</p>
+     </table>
+      <table cols="2" uniform="true" padX="20px" padY="20px" background="yellow" foreground="blue/0">
+        <p>There are five things here. A</p>
+        <p>There are five things here. B</p>
+        <p>There are five things here. C</p>
+        <p>There are five things here. (table(cols=2), uniform)</p>
+        <p>There are five things here. E</p>
+      </table>
+      <table rows="2" padX="20px" padY="20px" foreground="blue/0">
+        <p>There are five things here. A</p>
+        <p>There are five things here. B</p>
+        <p>There are five things here. C</p>
+        <p>There are five things here. (table(rows=2))</p>
+        <p>There are five things here. E</p>
+      </table>
+      <rows cols="2" padX="20px" padY="20px" foreground="blue/0">
+        <p>There are five things here. A</p>
+        <p fontScale="0.7">There are five things here. B</p>
+        <p>There are five things here. C</p>
+        <p>There are five things here. D (rows(cols=2))</p>
+        <p fontScale="1.4">There are five things here. E</p>
+      </rows>
+      <rows cols="2" padX="20px" padY="20px" foreground="blue/0">
+        <p>There are five things here. A</p>
+        <p fontScale="0.7">There are five things here. B</p>
+        <p>There are five things here. C</p>
+        <p>There are five things here. D (rows(cols=2))</p>
+        <p fontScale="1.4">There are five things here. E</p>
+      </rows>
+      </table>
     </body>
 
   val GUI: Glyph = p2
