@@ -30,7 +30,7 @@ case class Sheet
   textBackgroundBrush: Brush = Brush("transparent")(color=0X00FFFFFF),     // transparent
   textForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF),     // blue
   backgroundBrush: Brush = Brush("background")(color=0XFFBBBBBB),
-  foregroundBrush: Brush = Brush("background")(color=0XFFBBBBBB),
+  foregroundBrush: Brush = Brush("foreground")(color=0XFFBBBBBB),
   // Paragraph layout properties
   parAlign:    Alignment = Left,
   parSkip:     Scalar    = 5f,

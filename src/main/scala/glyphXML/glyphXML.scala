@@ -80,7 +80,7 @@ class Abstraction(body: Node) {
     }
 
     val result = substitute(body)
-    //println(s"$invocation\n => $result")
+    println(s"$invocation\n => $result")
     result
   }
 }
@@ -573,7 +573,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
       rightMargin           = Units("rightMargin",    sheet.rightMargin)  (attributes, fontDetail),
       parAlign              = Align("align",          sheet.parAlign),
       backgroundBrush       = Brush("background",     sheet.backgroundBrush),
-      foregroundBrush       = Brush("foreground",     sheet.backgroundBrush),
+      foregroundBrush       = Brush("foreground",     sheet.foregroundBrush),
       textBackgroundBrush   = Brush("textBackground", sheet.textBackgroundBrush),
       textForegroundBrush   = Brush("textForeground", sheet.textForegroundBrush),
       buttonBackgroundBrush = Brush("buttonBackground", sheet.buttonBackgroundBrush),
@@ -754,20 +754,21 @@ class Translation(val primitives: Primitives=new Primitives) {
 
           case "table" =>
             import sheet$.{padX, padY, backgroundBrush => bg, foregroundBrush => fg}
-            val width     = localAttributes.Int("columns", localAttributes.Int("cols", 0))
-            val height    = localAttributes.Int("rows", 0)
-            val uniform   = localAttributes.Bool("uniform", false)
+            val width     = attributes$.Int("columns", attributes$.Int("cols", 0))
+            val height    = attributes$.Int("rows", 0)
+            val uniform   = attributes$.Bool("uniform", false)
             val glyphs    = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$, sheet$, source) }.map(_.asGlyph)
-            val context   = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY)
-            val buildFrom = if (uniform) context.grid(height=height, width=width)(_) else context.table(height=height, width=width)(_)
+            println(s"$padX, $padY $fg, $bg")
+            val Grid      = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY)
+            val buildFrom = if (uniform) Grid.grid(height=height, width=width)(_) else Grid.table(height=height, width=width)(_)
             Decorated(GlyphTarget(paragraph = paragraph,
                                   sheet = sheet$,
                                   glyph = buildFrom(glyphs)))
 
           case "rows" =>
             import sheet$.{padX, padY, backgroundBrush => bg, foregroundBrush => fg}
-            val width  = localAttributes.Int("columns", localAttributes.Int("cols", 0))
-            val height = localAttributes.Int("rows", 0)
+            val width  = attributes$.Int("columns", attributes$.Int("cols", 0))
+            val height = attributes$.Int("rows", 0)
             val glyphs = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$, sheet$, source) }.map(_.asGlyph)
             println(s"$padX, $padY")
             Decorated(GlyphTarget(paragraph = paragraph,
@@ -776,8 +777,8 @@ class Translation(val primitives: Primitives=new Primitives) {
 
           case "cols" =>
             import sheet$.{padX, padY, backgroundBrush => bg, foregroundBrush => fg}
-            val width  = localAttributes.Int("columns", localAttributes.Int("cols", 0))
-            val height = localAttributes.Int("rows", 0)
+            val width  = attributes$.Int("columns", attributes$.Int("cols", 0))
+            val height = attributes$.Int("rows", 0)
             val glyphs = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$, sheet$, source) }.map(_.asGlyph)
             println(s"$padX, $padY")
             Decorated(GlyphTarget(paragraph = paragraph,
@@ -869,23 +870,32 @@ object gxml extends Application {
   locally {
     translator("body") = new Translation(translator.primitives) {
       override def toString: String = "body translation"
+
       override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
         val children$ = children.filterNot(Translation.isBlank(_))
-        List(ColTarget(sheet.backgroundBrush, chunks=super.translate(tags, false, attributes, sheet, children$)))
+        List(ColTarget(sheet.backgroundBrush, chunks = super.translate(tags, false, attributes, sheet, children$)))
       }
     }
 
     def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(translator.primitives) {
       override def toString: String = s"StyleTranslation($tag, $textStyle)"
+
       override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
-        super.translate(tag::tags, paragraph, attributes.updated("textStyle", textStyle), sheet, children)
+        super.translate(tag :: tags, paragraph, attributes.updated("textStyle", textStyle), sheet, children)
       }
     }
 
-    translator("i")  = textStyleTranslation("i",  "Italic")
-    translator("b")  = textStyleTranslation("b",  "Bold")
+    translator("i") = textStyleTranslation("i", "Italic")
+    translator("b") = textStyleTranslation("b", "Bold")
     translator("bi") = textStyleTranslation("bi", "BoldItalic")
-    translator("n")  = textStyleTranslation("n",  "Normal")
+    translator("n") = textStyleTranslation("n", "Normal")
+    translator("tt") = new Translation(translator.primitives) {
+      override def toString: String = "tt"
+
+      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
+        super.translate(tags, paragraph, attributes.updated("textFontFamily", "Courier"), sheet, children)
+      }
+    }
   }
 
 
@@ -908,9 +918,9 @@ object gxml extends Application {
     translator("B2")        = <ATTRIBUTES buttonForeground="green/2"      buttonBackground="yellow"/>
     translator("B3")        = <ATTRIBUTES buttonForeground="lightgrey/2"  buttonBackground="black"/>
     translator("tag:p")     = <ATTRIBUTES background="" align="justify" parSkip="1ex"/>
-    translator("tag:table") = <ATTRIBUTES foreground="blue/1" />
-    translator("tag:rows") = <ATTRIBUTES foreground="blue/1" />
-    translator("tag:cols") = <ATTRIBUTES foreground="blue/1" />
+    translator("tag:table") = <ATTRIBUTES foreground="red/0" />
+    translator("tag:rows")  = <ATTRIBUTES foreground="red/0" />
+    translator("tag:cols")  = <ATTRIBUTES foreground="red/0" />
   }
 
 
@@ -986,43 +996,44 @@ object gxml extends Application {
   }
 
   val p2: Node =
-    <body  align="justify" width="25em" textFontFamily="Courier" textFontSize="20" labelFontFamily="Courier" labelFontSize="30">
-      <table cols="2" uniform="true" foreground="">
-      <table cols="2" padX="20px" padY="20px" background="yellow" foreground="blue/0">
-       <p>There are five things here. A</p>
+    <body  align="justify" width="25em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="30">
+      <table rows="3" uniform="false" foreground="blue/0" padY="40px" padX="40px">
+      <table cols="2" padX="20px" padY="20px" background="yellow" >
+       <p>There are <tt fontScale="1.5">REALLY</tt> five things here. <tt>A</tt></p>
        <p>There are five things here. B</p>
        <p>There are five things here. C</p>
-       <p>There are five things here. (table(cols=2))</p>
-       <p>There are five things here. E</p>
+       <p fontScale="1.2">There are five things here. (table(cols=2))</p>
+       <p width="30em">There are five things here. E</p>
      </table>
-      <table cols="2" uniform="true" padX="20px" padY="20px" background="yellow" foreground="blue/0">
+      <table  cols="2" uniform="true" padX="20px" padY="20px" background="yellow" >
         <p>There are five things here. A</p>
         <p>There are five things here. B</p>
         <p>There are five things here. C</p>
-        <p>There are five things here. (table(cols=2), uniform)</p>
-        <p>There are five things here. E</p>
+        <p>There are five things here. D (uniform(cols=2))</p>
+        <p width="30em">There are five things here. E</p>
+        <!--p width="30em">There are actually six things here. F</p-->
       </table>
-      <table rows="2" padX="20px" padY="20px" foreground="blue/0">
+      <table rows="2" padX="20px" padY="20px" >
         <p>There are five things here. A</p>
         <p>There are five things here. B</p>
         <p>There are five things here. C</p>
         <p>There are five things here. (table(rows=2))</p>
-        <p>There are five things here. E</p>
+        <p width="30em">There are five things here. E</p>
       </table>
-      <rows cols="2" padX="20px" padY="20px" foreground="blue/0">
+      <rows cols="2" padX="20px" padY="20px" >
         <p>There are five things here. A</p>
-        <p fontScale="0.7">There are five things here. B</p>
+        <p width="30em" fontScale="0.7">There are five things here. B</p>
         <p>There are five things here. C</p>
         <p>There are five things here. D (rows(cols=2))</p>
-        <p fontScale="1.4">There are five things here. E</p>
+        <p width="30em" fontScale="1.4">There are five things here. E</p>
       </rows>
-      <rows cols="2" padX="20px" padY="20px" foreground="blue/0">
-        <p>There are five things here. A</p>
-        <p fontScale="0.7">There are five things here. B</p>
+      <cols rows="2" padX="20px" padY="20px" >
+        <p width="10em">There are five things here. A</p>
+        <p width="10em" fontScale="0.7">There are five things here. B</p>
         <p>There are five things here. C</p>
-        <p>There are five things here. D (rows(cols=2))</p>
-        <p fontScale="1.4">There are five things here. E</p>
-      </rows>
+        <p>There are five things here. D (cols(rows=2))</p>
+        <p width="30em" fontScale="1.4">There are five things here. E</p>
+      </cols>
       </table>
     </body>
 
