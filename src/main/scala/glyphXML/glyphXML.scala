@@ -17,33 +17,35 @@ import scala.xml._
 
 
 class Abstraction(body: Node) {
+
   def expansion(invocation: Node): Seq[Node] = {
+
     val children = invocation.child.filterNot{
       case Text(t) => t.isBlank
       case _ => false
     }
 
-    val actuals: IterableOnce[(String,Node)] =
+    val actuals: IterableOnce[(String,Seq[Node])] =
       if (children.isEmpty)
         List("BODY"-> <!-- --> ) // the BODY is empty
       else
-        children.take(1).map{ ("BODY"-> _) } ++ (0 until children.length).map(i=>(s"BODY$i"->children(i)))
+        (0 until children.length).map(i=>s"BODY$i"->List(children(i)))
 
-    val bindings = new mutable.HashMap[String,Node]()
+    val bindings = new mutable.HashMap[String,Seq[Node]]()
     bindings.addAll(actuals)
+    bindings.addAll(List("BODY"->children))
     // TODO:  ListMap appears to have no effective constructor from lists of pairs -- at least none that IntelliJ Scala accepts
 
-    def substitute(node: Node): Node = {
+    def substitute(node: Node): Seq[Node] = {
       node match {
         case EntityRef(id) =>
           if (!bindings.contains(id) && id.startsWith("BODY")) org.sufrin.logging.Default.warn(s"Abstraction reference $invocation has no $id in $body")
           bindings.get(id) match {
-            case None             => node
-            case Some(node: Elem) => substitute(node)
-            case Some(other)      => other
+            case None             => List(node)
+            case Some(nodes)      => nodes.flatMap(substitute(_))
           }
         case elem: Elem =>
-          elem.copy(child = elem.child.map(substitute(_)), attributes = substAttrs(elem.attributes, invocation.attributes.asAttrMap))
+          elem.copy(child = elem.child.flatMap(substitute(_)), attributes = substAttrs(elem.attributes, invocation.attributes.asAttrMap))
         case _ =>
           node
       }
@@ -268,6 +270,8 @@ object Paragraph {
 }
 
 object Translation {
+
+  type AttributeMap=Visitor.AttributeMap
 
   def normalizeKeys(map: AttributeMap): AttributeMap = map
 
@@ -885,6 +889,7 @@ object gxml extends Application {
         super.translate(tags, paragraph, attributes.updated("textFontFamily", "Courier"), sheet, children)
       }
     }
+    translator("caption") = new Abstraction(<span><p align="center"><b>&BODY;</b></p></span>)
   }
 
 
@@ -924,10 +929,9 @@ object gxml extends Application {
 
   val p1: Glyph = {
     <body  width="55em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="nothing">
-
-      <p>
-        <i>This is a little tester for various <b>glyphXML</b> features, princ_ipally the mixing of pre_defined glyphs with para_graph text.</i>
-      </p>
+      <caption>
+        This is a little tester for various <i>Remarkable</i> glyphXML features, princ_ipally the mixing of pre_defined glyphs with para_graph text.
+      </caption>
 
 
       <p align="justify" leftMargin="4em" hangid="B3">
