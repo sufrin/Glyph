@@ -4,9 +4,12 @@ package glyphXML
 
 import io.github.humbleui.skija.Font
 import org.sufrin.glyph.glyphXML.Visitor.AttributeMap
-import org.sufrin.glyph.Glyphs.BreakableGlyph
+import org.sufrin.glyph.Glyphs.{BreakableGlyph, INVISIBLE}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.glyphXML.Translation.isBlank
+import org.sufrin.glyph.sheeted.MenuButton
+import org.sufrin.glyph.sheeted.windowdialogues.Dialogue
+import org.sufrin.glyph.Styles.Decoration.Blurred
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -524,19 +527,10 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
   }
 
 
-  val brushCache = collection.mutable.HashMap[String, Brush]()
 
   def Brush(key: String, alt: Brush): Brush = attributes.get(key) match {
     case None       => alt
-    case Some(name) =>
-      brushCache.get(name) match {
-        case Some(brush) =>
-          brush
-        case None =>
-          val brush = DefaultBrushes.namedColour(name)
-          brushCache(name)=brush
-          brush
-      }
+    case Some(name) => DefaultBrushes(name)
   }
 
   /**
@@ -722,9 +716,9 @@ class Translation(val primitives: Primitives=new Primitives) {
             val glyphs = children.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }.map(_.asGlyph)
             val valign: VAlignment = attributes$.VAlign("valign", Top)
             val glyph = if (width==0f)
-                 NaturalSize.Row(valign=valign, bg=sheet$.backgroundBrush)(glyphs)
+                 NaturalSize.Row(align=valign, bg=sheet$.backgroundBrush)(glyphs)
             else
-                 FixedSize.Row(alignment=valign, width=width, bg=sheet$.backgroundBrush) of (glyphs)
+                 FixedSize.Row(align=valign, width=width, bg=sheet$.backgroundBrush)(glyphs)
             Decorated(GlyphTarget(paragraph, sheet$, glyph))
 
           case "fill" =>
@@ -869,8 +863,6 @@ object gxml extends Application {
   // Extend the basic XML semantics
   locally {
     translator("body") = new Translation(translator.primitives) {
-      override def toString: String = "body translation"
-
       override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
         val children$ = children.filterNot(Translation.isBlank(_))
         List(ColTarget(sheet.backgroundBrush, chunks = super.translate(tags, false, attributes, sheet, children$)))
@@ -878,8 +870,6 @@ object gxml extends Application {
     }
 
     def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(translator.primitives) {
-      override def toString: String = s"StyleTranslation($tag, $textStyle)"
-
       override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
         super.translate(tag :: tags, paragraph, attributes.updated("textStyle", textStyle), sheet, children)
       }
@@ -891,7 +881,6 @@ object gxml extends Application {
     translator("n") = textStyleTranslation("n", "Normal")
     translator("tt") = new Translation(translator.primitives) {
       override def toString: String = "tt"
-
       override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
         super.translate(tags, paragraph, attributes.updated("textFontFamily", "Courier"), sheet, children)
       }
@@ -933,11 +922,11 @@ object gxml extends Application {
 
   import translator.XMLtoGlyph
 
-  val p1: Node = {
+  val p1: Glyph = {
     <body  width="55em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="nothing">
 
       <p>
-        <i>This is a little tester for various <b>glyphXML</b> features, princ_ipally the mixing of predefined glyphs with paragraph text.</i>
+        <i>This is a little tester for various <b>glyphXML</b> features, princ_ipally the mixing of pre_defined glyphs with para_graph text.</i>
       </p>
 
 
@@ -995,7 +984,7 @@ object gxml extends Application {
     </body>
   }
 
-  val p2: Node =
+  val p2: Glyph =
     <body  align="justify" width="25em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="30">
       <table rows="3" uniform="false" foreground="blue/0" padY="40px" padX="40px">
       <table cols="2" padX="20px" padY="20px" background="yellow" >
@@ -1037,7 +1026,17 @@ object gxml extends Application {
       </table>
     </body>
 
-  val GUI: Glyph = p2
+  val GUI: Glyph = {
+    implicit val sheet: Sheet = Sheet(textForegroundBrush=DefaultBrushes.black, buttonFrame=Styles.Decoration.Shaded())
+    val anchor = INVISIBLE()
+    translator("P1") = _ => sheeted.TextButton("a mix of tags"){ _ => Dialogue.OK(p1 scaled 0.8f).SouthEast(anchor).start() }
+    translator("P2") = _ => sheeted.TextButton("tabular layouts"){ _ => Dialogue.OK(p2 scaled 0.8f).SouthEast(anchor).start() }
+    val blurb =
+      <p width="50em">
+        This is an <i>ad-hoc</i> test of several features of <b>glyphXML</b>. Here is <glyph gid="P1"/>, and here are  <glyph gid="P2"/>
+      </p>
+    NaturalSize.Col(align=Center)(anchor, blurb)
+  }
 
   def title: String = "glyphXML"
 }

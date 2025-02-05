@@ -96,13 +96,13 @@ object FixedSize extends DefaultPaints {
 
   object Row {
     /** Construct `RowGenerator`s for a row of the given width, with the given foreground and background. */
-    def apply(width: Scalar, fg: Brush=nothing, bg: Brush = nothing, alignment: VAlignment = Top): RowGenerators = {
-      val (_alignment, _width, _fg, _bg) = (alignment, width, fg, bg)
+    def apply(width: Scalar, fg: Brush=nothing, bg: Brush = nothing, align: VAlignment = Top): RowGenerators = {
+      val (_align, _width, _fg, _bg) = (align, width, fg, bg)
       new RowGenerators {
         val fg: Brush = _fg
         val bg: Brush = _bg
         val width: Scalar = _width
-        val alignment: VAlignment = _alignment
+        val align: VAlignment = _align
       }
     }
   }
@@ -111,7 +111,7 @@ object FixedSize extends DefaultPaints {
     val fg: Brush
     val bg: Brush
     val width: Scalar
-    val alignment: VAlignment
+    val align: VAlignment
 
     /** The glyphs are drawn so their centre lines are at the centre line of the row. */
     def centered(theGlyphs: Glyph*): Composite = aligned(width, 0.5f, theGlyphs)
@@ -130,29 +130,12 @@ object FixedSize extends DefaultPaints {
     /** The glyphs are drawn so their bottom is at the bottom of the row. */
     def atBottom$(theGlyphs: Seq[Glyph]): Composite = aligned(width, 1.0f, theGlyphs)
 
-    def of(theGlyphs: Seq[Glyph]): Composite = alignment match {
-      case Top => aligned(width, 0.0f, theGlyphs)
-      case Mid => aligned(width, 0.5f, theGlyphs)
-      case Bottom => aligned(width, 1.0f, theGlyphs)
-    }
+    //def of(theGlyphs: Seq[Glyph]): Composite = aligned(width, align.proportion, theGlyphs)
 
-    def of(first: Glyph, theGlyphs: Glyph*): Composite = alignment match {
-      case Top => aligned(width, 0.0f, first :: theGlyphs.toList)
-      case Mid => aligned(width, 0.5f, first :: theGlyphs.toList)
-      case Bottom => aligned(width, 1.0f, first :: theGlyphs.toList)
-    }
+    //def of(first: Glyph, theGlyphs: Glyph*): Composite = aligned(width, align.proportion, first :: theGlyphs.toList)
 
-    def apply(theGlyphs: Seq[Glyph]): Composite = alignment match {
-      case Top => aligned(width, 0.0f, theGlyphs)
-      case Mid => aligned(width, 0.5f, theGlyphs)
-      case Bottom => aligned(width, 1.0f, theGlyphs)
-    }
-
-    def apply(first: Glyph, theGlyphs: Glyph*): Composite = alignment match {
-      case Top => aligned(width, 0.0f, first :: theGlyphs.toList)
-      case Mid => aligned(width, 0.5f, first :: theGlyphs.toList)
-      case Bottom => aligned(width, 1.0f, first :: theGlyphs.toList)
-    }
+    def apply(theGlyphs: Seq[Glyph]): Composite = aligned(width, align.proportion, theGlyphs)
+    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(width, align.proportion, first::theGlyphs.toList)
 
     def aligned(theWidth: Scalar, proportion: Float, theGlyphs: Seq[Glyph]): Composite = {
       require(theGlyphs.nonEmpty)

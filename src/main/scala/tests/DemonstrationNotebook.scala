@@ -1327,8 +1327,8 @@ trait DemonstrationPages extends Brushes {
       val emWidth = em.w
 
       Col.centered(
-        FixedSize.Row(width) of (row(0.5f), FixedSize.Space(emWidth, 100f), row(.3f)), ex,
-        FixedSize.Row(width) of (row(0.25f), FixedSize.Space(emWidth, 100f), row(.125f)), ex,
+        FixedSize.Row(width)(row(0.5f), FixedSize.Space(emWidth, 100f), row(.3f)), ex,
+        FixedSize.Row(width)(row(0.25f), FixedSize.Space(emWidth, 100f), row(.125f)), ex,
         Label("Effects of enlargement by 25f before framing\n"),
         FixedSize.Row(width)(row(.3f, 25f), tab, row(0.125f, 25f)),
       )

@@ -48,20 +48,11 @@ object NaturalSize {
 
 
 
-    def apply(first: Glyph, theGlyphs: Glyph*): Composite = valign match {
-      case Top => aligned(0.0f, first :: theGlyphs.toList)
-      case Mid => aligned(0.5f, first :: theGlyphs.toList)
-      case Bottom => aligned(1.0f, first :: theGlyphs.toList)
-    }
+    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(valign.proportion, first :: theGlyphs.toList)
+    def apply(theGlyphs: Seq[Glyph]): Composite = aligned(valign.proportion, theGlyphs)
 
-    def apply(theGlyphs: Seq[Glyph]): Composite = valign match {
-     case Top => aligned(0.0f, theGlyphs)
-     case Mid => aligned(0.5f, theGlyphs)
-     case Bottom => aligned(1.0f, theGlyphs)
-   }
-
-    def apply(valign: VAlignment=Top, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f): RowGenerators = {
-      val (_valign, _fg, _bg, _un, _fr, _sk) = (valign, fg, bg, uniform, frame, skip)
+    def apply(align: VAlignment=Top, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f): RowGenerators = {
+      val (_valign, _fg, _bg, _un, _fr, _sk) = (align, fg, bg, uniform, frame, skip)
       new RowGenerators {
         val valign = _valign
         val fg: Brush = _fg
@@ -138,8 +129,7 @@ object NaturalSize {
     val uniform: Boolean
     val frame: Brush
     val skip: Scalar
-
-
+    val halign: Alignment
 
     /** Glyphs drawn with their centres at the centre line of the column. */
     def centered(theGlyphs: Glyph*): Composite = aligned(0.5f, theGlyphs)
@@ -159,11 +149,11 @@ object NaturalSize {
     /** Glyphs drawn with right edges at the right edge of the column. */
     def atRight$(theGlyphs: Seq[Glyph]): Composite = aligned(1.0f, theGlyphs)
 
+    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(halign.proportion, first :: theGlyphs.toList)
+    def apply(theGlyphs: Seq[Glyph]): Composite = aligned(halign.proportion, theGlyphs)
 
-    /** Same as `atLeft`. */
-    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(0.0f, first :: theGlyphs.toList)
 
-    def apply(fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush=nothing, skip: Scalar=0f): ColumnGenerators = {
+    def apply(fg: Brush = nothing, bg: Brush = nothing, align: Alignment = Left, uniform: Boolean=false, frame: Brush=nothing, skip: Scalar=0f): ColumnGenerators = {
       val (_fg, _bg, _un, _fr, _sk) = (fg, bg, uniform, frame, skip)
       new ColumnGenerators {
         val fg: Brush = _fg
@@ -171,18 +161,10 @@ object NaturalSize {
         val uniform: Boolean = _un
         val frame: Brush = _fr
         val skip: Scalar = _sk
+        val halign = align
       }
     }
 
-    /*
-    def apply(height: Scalar)(fg: Brush = nothing, bg: Brush = nothing): FixedSize.ColumnGenerators = {
-      val (_height, _fg, _bg) = (height, fg, bg)
-      new FixedSize.ColumnGenerators {
-        val fg: Brush = _fg
-        val bg: Brush = _bg
-        val height: Scalar = _height
-      }
-    }*/
 
     /**
      * A column-alignment of the glyphs, with each glyph placed laterally at
@@ -249,6 +231,7 @@ object NaturalSize {
     val uniform: Boolean = false
     val frame: Brush = nothing
     val skip: Scalar = 0f
+    val halign: Alignment = Left
   }
 
   import GlyphTypes.Scalar

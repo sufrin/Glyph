@@ -83,6 +83,8 @@ object DefaultBrushes extends Brushes {
     }
   }
 
+  def apply(name: String): Brush = namedColour(name)
+
   // The following are used to set the default attributes of unstyled glyphs
   //
   var upFrame: Brush = Brush("Brushes.upFrame")       color 0xFF7A7A7A strokeWidth 2f strokeCap ROUND

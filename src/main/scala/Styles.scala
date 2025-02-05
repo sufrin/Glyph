@@ -85,7 +85,7 @@ object Styles {
      * @param radiusFactor (if `==0`) a rectangular frame; otherwise the `radiusFactor` of the corner curves
      * @see GlyphTransforms.Framed
      */
-    case class Framed(fg: Brush, bg: Brush, enlarge: Scalar = 0.25f, radiusFactor: Scalar = 0f) extends Decoration {
+    case class Framed(fg: Brush=DefaultBrushes.black, bg: Brush=DefaultBrushes.nothing, enlarge: Scalar = 0.15f, radiusFactor: Scalar = 0f) extends Decoration {
       def decorate(glyph: Glyph): Glyph =
         glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).framed(fg, bg, radiusFactor)
     }
@@ -102,11 +102,11 @@ object Styles {
      * @see Glyph.shaded
      * @see Glyphs.Shaded
      */
-    case class Shaded(fg: Brush, bg: Brush, enlarge: Scalar = 0.25f, delta: Scalar = 8f, down: Boolean = false) extends Decoration {
+    case class Shaded(fg: Brush=DefaultBrushes.black, bg: Brush=DefaultBrushes.nothing, enlarge: Scalar = 0.15f, delta: Scalar = 8f, down: Boolean = false) extends Decoration {
       def decorate(glyph: Glyph): Glyph = glyph.shaded(fg, bg, enlarge, delta, down)
     }
 
-    case class Blurred(fg: Brush, bg: Brush = DefaultBrushes.nothing, blur: Scalar, spread: Scalar, delta: Scalar = 0f) extends Decoration {
+    case class Blurred(fg: Brush=DefaultBrushes.black, bg: Brush = DefaultBrushes.nothing, blur: Scalar, spread: Scalar, delta: Scalar = 0f) extends Decoration {
       def decorate(glyph: Glyph): Glyph = Glyphs.BlurredFrame(blur, spread, fg, bg, dx = delta, dy = delta)(glyph)
     }
 
