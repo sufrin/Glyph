@@ -444,9 +444,6 @@ object NaturalSize {
         val bg: Brush = _bg
         val padx: Scalar = _padx
         val pady: Scalar = _pady
-        locally {
-          println(s"Gen($fg, $bg)")
-        }
       }
     }
   }

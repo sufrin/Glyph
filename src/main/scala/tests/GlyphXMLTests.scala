@@ -7,17 +7,14 @@ import tests.DemonstrationNotebook.pageStyle
 import org.sufrin.SourceLocation.SourceLocation
 import org.sufrin.glyph.glyphXML.Translation
 import org.sufrin.glyph.glyphXML.Translation.Target.{ColTarget, Target}
-import org.sufrin.glyph.glyphXML.gxml.translator
 import org.sufrin.glyph.glyphXML.Visitor.AttributeMap
-import org.sufrin.glyph.glyphXML.gxml.translator.XMLtoGlyph
 
-import scala.collection.immutable.ListMap
 import scala.xml._
 
 object TestGXML extends Application {
-  val translator = new Translation()
-  locally {
-    translator("body") = new Translation(translator.primitives) {
+
+  val translator = new Translation {
+    meaning("body") = new Translation(primitives) {
       override def toString: String = "body translation"
       override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
         val child$ = child.filterNot(Translation.isBlank(_))
@@ -25,17 +22,17 @@ object TestGXML extends Application {
       }
     }
 
-    def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(translator.primitives) {
+    def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(primitives) {
       override def toString: String = s"StyleTranslation($tag, $textStyle)"
       override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
         super.translate(tag::tags, paragraph, attributes.updated("textStyle", textStyle), sheet, child)
       }
     }
 
-    translator("i")  = textStyleTranslation("i",  "Italic")
-    translator("b")  = textStyleTranslation("b",  "Bold")
-    translator("bi") = textStyleTranslation("bi", "BoldItalic")
-    translator("n")  = textStyleTranslation("n",  "Normal")
+    meaning("i")  = textStyleTranslation("i",  "Italic")
+    meaning("b")  = textStyleTranslation("b",  "Bold")
+    meaning("bi") = textStyleTranslation("bi", "BoldItalic")
+    meaning("n")  = textStyleTranslation("n",  "Normal")
   }
 
   import translator.XMLtoGlyph

@@ -146,7 +146,7 @@ object FixedSize extends DefaultPaints {
       var x, y = 0f
       for {glyph <- theGlyphs} {
         val extra = (height - glyph.h) * proportion
-        glyph @@ Vec(x, extra + y)
+        glyph @@ Vec(x, extra + y) //**
         x += glyph.w
       }
       new Composite(theGlyphs) {

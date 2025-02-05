@@ -3,13 +3,11 @@ package glyphXML
 
 
 import io.github.humbleui.skija.Font
-import org.sufrin.glyph.glyphXML.Visitor.AttributeMap
+import org.sufrin.glyph.glyphXML.Translation.AttributeMap
 import org.sufrin.glyph.Glyphs.{BreakableGlyph, INVISIBLE}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.glyphXML.Translation.isBlank
-import org.sufrin.glyph.sheeted.MenuButton
 import org.sufrin.glyph.sheeted.windowdialogues.Dialogue
-import org.sufrin.glyph.Styles.Decoration.Blurred
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -367,16 +365,19 @@ object Translation {
     }
 
     case class DecorateTarget(paragraph: Boolean, attributes: TypedAttributeMap, target: Target) extends Target {
+      def raiseBy(glyph: Glyph, by: Scalar): Glyph = withBaseline(glyph, by)
+
       def decorated(glyph: Glyph): Glyph = {
         val g0 = glyph
         def rotate(glyph: Glyph): Glyph = {
           val rotated = attributes.Int("rotated", 0)
           if (rotated==0) glyph else
-          if (!paragraph) glyph.rotated(rotated) else
+          if (!paragraph)
+            glyph.rotated(rotated) else
           rotated % 4 match {
             case 0     => glyph
-            case 1 | 3 => withBaseline(glyph.rotated(rotated), glyph.w)
-            case 2     => withBaseline(glyph.rotated(rotated), glyph.h)
+            case 1 | 3 => raiseBy(glyph.rotated(rotated), glyph.w)
+            case 2     => raiseBy(glyph.rotated(rotated), 2*glyph.h)
           }
         }
 
@@ -388,7 +389,6 @@ object Translation {
               glyph$//atBaseline(glyph$, glyph$.h)
           }
 
-
         def frame(glyph: Glyph): Glyph = {
           val brush = attributes.Brush("frame", DefaultBrushes.invisible)
           val framing = attributes.Bool("framed", brush.getAlpha != 0)
@@ -398,10 +398,16 @@ object Translation {
             glyph
         }
 
-        frame(rotate(glyph))
+        turn(frame(rotate(glyph)))
       }
 
-      val asGlyph: Glyph = decorated(target.asGlyph)
+      val asGlyph: Glyph = if (paragraph) {
+        import org.sufrin.logging.Default.warn
+        warn(s"Decoration is not available in paragraph mode for $target")
+        target.asGlyph
+      } else
+        decorated(target.asGlyph)
+
     }
 
     /**
@@ -587,6 +593,7 @@ class Translation(val primitives: Primitives=new Primitives) {
   import Translation.Target._
   import primitives._
   implicit class TypedMap(attributes: AttributeMap) extends TypedAttributeMap(attributes)
+  val meaning: Translation = this
 
   import primitives.{generatorMap, translationMap, entityMap, genericAttributesMap}
   /** Declare a named glyph generator */
@@ -857,191 +864,4 @@ class Translation(val primitives: Primitives=new Primitives) {
 }
 
 
-object gxml extends Application {
-  import xml._
-  import Translation.Target._
-
-
-
-  val translator: Translation = new Translation()
-  // Extend the basic XML semantics
-  locally {
-    translator("body") = new Translation(translator.primitives) {
-      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
-        val children$ = children.filterNot(Translation.isBlank(_))
-        List(ColTarget(sheet.backgroundBrush, chunks = super.translate(tags, false, attributes, sheet, children$)))
-      }
-    }
-
-    def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(translator.primitives) {
-      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
-        super.translate(tag :: tags, paragraph, attributes.updated("textStyle", textStyle), sheet, children)
-      }
-    }
-
-    translator("i") = textStyleTranslation("i", "Italic")
-    translator("b") = textStyleTranslation("b", "Bold")
-    translator("bi") = textStyleTranslation("bi", "BoldItalic")
-    translator("n") = textStyleTranslation("n", "Normal")
-    translator("tt") = new Translation(translator.primitives) {
-      override def toString: String = "tt"
-      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
-        super.translate(tags, paragraph, attributes.updated("textFontFamily", "Courier"), sheet, children)
-      }
-    }
-    translator("caption") = new Abstraction(<span><p align="center"><b>&BODY;</b></p></span>)
-  }
-
-
-
-  // Specify application-specific material
-  locally {
-    import sheeted._
-    translator("today")     = " Exp_an_sion of to_day "
-    translator("yesterday") = " Exp_an_sion of yes_ter_day "
-    translator("B1")        =  TextButton("B1"){ _ => println(s"B1") }(_)
-    translator("B2")        =  TextButton("B2"){ _ => println(s"B2") }(_)
-    translator("B3")        =  TextButton("B3"){ _ => println(s"B3") }(_)
-    translator("LINK")      =  sheet => TextButton("LINK"){ _ => println(s"LINK") }(sheet.copy(buttonFrame = Styles.Decoration.Unframed))
-    translator("L1")        =  Label("L1")(_)
-    translator("L2")        =  Label("L2")(_)
-    translator("L3")        =  Label("L3")(_)
-    translator("LS")        =  sheet => NaturalSize.Col()(Label("LS1")(sheet), Label("LS2")(sheet), Label("LS3")(sheet)).framed()
-    translator("LSC")       =  <col><glyph gid="L1"/><glyph gid="L2"/><glyph gid="L3"/></col>
-    translator("B1")        = <ATTRIBUTES buttonForeground="red/2"        buttonBackground="yellow"/>
-    translator("B2")        = <ATTRIBUTES buttonForeground="green/2"      buttonBackground="yellow"/>
-    translator("B3")        = <ATTRIBUTES buttonForeground="lightgrey/2"  buttonBackground="black"/>
-    translator("tag:p")     = <ATTRIBUTES background="" align="justify" parSkip="1ex"/>
-    translator("tag:table") = <ATTRIBUTES foreground="red/0" />
-    translator("tag:rows")  = <ATTRIBUTES foreground="red/0" />
-    translator("tag:cols")  = <ATTRIBUTES foreground="red/0" />
-  }
-
-
-  // set up the interface
-  implicit val sheet: Sheet =
-    Sheet().copy(
-      buttonForegroundBrush = DefaultBrushes.red,
-      buttonFrame = Styles.Decoration.Blurred(fg=DefaultBrushes.red(width=10), bg=DefaultBrushes.nothing, blur=5f, spread=5f)
-    )
-
-  import translator.XMLtoGlyph
-
-  val p1: Glyph = {
-    <body  width="55em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="nothing">
-      <caption>
-        This is a little tester for various <i>Remarkable</i> glyphXML features, princ_ipally the mixing of pre_defined glyphs with para_graph text.
-      </caption>
-
-
-      <p align="justify" leftMargin="4em" hangid="B3">
-         The rain in spain falls <b>mainly</b> in the <glyph gid="B2"/>plain. <glyph gid="B1"/>
-         Oh! Does it? <b>Oh</b>, Yes!, it does. &yesterday;  eh? &today;
-      </p>
-
-      <glyph gid="B1" fg="green" bg="black" rotated="2"/>
-
-      <p textBackground="" leftMargin="0em" rightMargin="20em" frame="green/13" rotated="2">
-        The rain (<glyph gid="LINK"/>) in spain falls <i>mainly</i> in the plain.
-        Oh! Does it? <b>Oh</b> <i>Yes</i>!, it does.
-        Why do<bi>-you-</bi>want to control spacing so tightly? Here&yesterday;we go!
-      </p>
-
-      <p>
-        Here is a longish column in the midst
-        <col><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
-        of a paragraph. What does it look like?
-      </p>
-      <p>
-        Here is another longish column in the midst  <glyph gid="LS"/> of a paragraph. What does it look like?
-        And what does this synthetic <glyph background="nothing" gid="LSC"/> column look like on the line.
-      </p>
-
-      xxx
-      <row valign="top" textFontFamily="Menlo" textFontSize="12" inheritwidth="true">
-         <p align="justify" width="17em" >This is the left hand col_umn of the two col_umns that are on this row</p>
-         <fill width="1em" stretch="1"/>
-        <p align="justify"  width="17em">This is the right hand col_umn of two</p>
-      </row>
-      xxx
-      <row valign="mid" textFontFamily="Menlo" textFontSize="12" inheritwidth="true">
-        <p align="justify" width="17em" >This is the left hand col_umn of the two col_umns that are on this row</p>
-        <fill width="1em" stretch="1"/>
-        <p align="justify"  width="17em">This is the right hand col_umn of two</p>
-      </row>xxx
-      <row valign="bottom" textFontFamily="Menlo" textFontSize="12" inheritwidth="true">
-        <p align="justify" width="17em" >This is the left hand col_umn of the two col_umns that are on this row</p>
-        <fill width="1em" stretch="1"/>
-        <p align="justify"  width="17em">This is the right hand col_umn of two</p>
-      </row>xxx
-      <row inheritwidth="true">
-        <fill/>
-        <col align="center">
-          <glyph gid="L1"/>
-          <glyph gid="LINK"/>
-          <glyph gid="LINK" fontScale="1.7" buttonBackground="lightgrey" buttonForeground="darkGrey" buttonFontFamily="Courier" background="green"/>
-        </col>
-        <fill/>
-      </row>
-      xxx
-      <row inheritwidth="true"><glyph gid="L1"/><fill stretch="1"/> <glyph gid="L2"/> <fill stretch="3"/><glyph gid="L3"/></row>
-    </body>
-  }
-
-  val p2: Glyph =
-    <body  align="justify" width="25em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="30">
-      <table rows="3" uniform="false" foreground="blue/0" padY="40px" padX="40px">
-      <table cols="2" padX="20px" padY="20px" background="yellow" >
-       <p>There are <tt fontScale="1.5">REALLY</tt> five things here. <tt>A</tt></p>
-       <p>There are five things here. B</p>
-       <p>There are five things here. C</p>
-       <p fontScale="1.2">There are five things here. (table(cols=2))</p>
-       <p width="30em">There are five things here. E</p>
-     </table>
-      <table  cols="2" uniform="true" padX="20px" padY="20px" background="yellow" >
-        <p>There are five things here. A</p>
-        <p>There are five things here. B</p>
-        <p>There are five things here. C</p>
-        <p>There are five things here. D (uniform(cols=2))</p>
-        <p width="30em">There are five things here. E</p>
-        <!--p width="30em">There are actually six things here. F</p-->
-      </table>
-      <table rows="2" padX="20px" padY="20px" >
-        <p>There are five things here. A</p>
-        <p>There are five things here. B</p>
-        <p>There are five things here. C</p>
-        <p>There are five things here. (table(rows=2))</p>
-        <p width="30em">There are five things here. E</p>
-      </table>
-      <rows cols="2" padX="20px" padY="20px" >
-        <p>There are five things here. A</p>
-        <p width="30em" fontScale="0.7">There are five things here. B</p>
-        <p>There are five things here. C</p>
-        <p>There are five things here. D (rows(cols=2))</p>
-        <p width="30em" fontScale="1.4">There are five things here. E</p>
-      </rows>
-      <cols rows="2" padX="20px" padY="20px" >
-        <p width="10em">There are five things here. A</p>
-        <p width="10em" fontScale="0.7">There are five things here. B</p>
-        <p>There are five things here. C</p>
-        <p>There are five things here. D (cols(rows=2))</p>
-        <p width="30em" fontScale="1.4">There are five things here. E</p>
-      </cols>
-      </table>
-    </body>
-
-  val GUI: Glyph = {
-    implicit val sheet: Sheet = Sheet(textForegroundBrush=DefaultBrushes.black, buttonFrame=Styles.Decoration.Shaded())
-    val anchor = INVISIBLE()
-    translator("P1") = _ => sheeted.TextButton("a mix of tags"){ _ => Dialogue.OK(p1 scaled 0.8f).SouthEast(anchor).start() }
-    translator("P2") = _ => sheeted.TextButton("tabular layouts"){ _ => Dialogue.OK(p2 scaled 0.8f).SouthEast(anchor).start() }
-    val blurb =
-      <p width="50em">
-        This is an <i>ad-hoc</i> test of several features of <b>glyphXML</b>. Here is <glyph gid="P1"/>, and here are  <glyph gid="P2"/>
-      </p>
-    NaturalSize.Col(align=Center)(anchor, blurb)
-  }
-
-  def title: String = "glyphXML"
-}
 
