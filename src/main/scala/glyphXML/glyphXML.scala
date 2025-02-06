@@ -9,7 +9,7 @@ import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.glyphXML.Translation.isBlank
 import org.sufrin.glyph.sheeted.windowdialogues.Dialogue
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.xml._
 
@@ -83,7 +83,7 @@ class Abstraction(body: Node) {
     }
 
     val result = substitute(body)
-    println(s"$invocation\n => $result")
+    //println(s"$invocation\n => $result")
     result
   }
 }
@@ -96,7 +96,32 @@ class Primitives {
   val elementMap:           mutable.Map[String, Elem]         = mutable.LinkedHashMap[String, Elem]()
   val generatorMap:         mutable.Map[String, Sheet=>Glyph] = mutable.LinkedHashMap[String, Sheet=>Glyph]()
 
+  private def restore[K,V](saved: (mutable.Map[K,V], Seq[(K,V)])): Unit = {
+    val (original, copy) = saved
+    original.clear()
+    original.addAll(copy)
+  }
 
+  private def save[K,V](map: mutable.Map[K,V]): (mutable.Map[K,V], Seq[(K,V)]) = (map, map.toSeq)
+
+  def scoped[V](body: =>V) = {
+    val (m1, m2, m3, m4, m5, m6) = (
+      save(translationMap),
+      save(abstractionMap),
+      save(genericAttributesMap),
+      save(entityMap),
+      save(elementMap),
+      save(generatorMap)
+    )
+    val result = body
+    restore(m1)
+    restore(m2)
+    restore(m3)
+    restore(m4)
+    restore(m5)
+    restore(m6)
+    result
+  }
 
   /** Declare a named glyph generator */
   def update(id: String, glyph: Sheet=>Glyph): Unit = generatorMap(id)=glyph
@@ -107,11 +132,20 @@ class Primitives {
   /** Declare a new text entity */
   def update(id: String, expansion: String) = entityMap(id) = expansion
   /** Declare a new expandable entity */
-  def update(id: String, element: Elem) : Unit =
-    if (element.label.toUpperCase=="ATTRIBUTES")
-      genericAttributesMap(id) = Translation.normalizeKeys(element.attributes.asAttrMap)
-    else
-      elementMap(id) = element
+  def update(id: String, node: Node) : Unit = {
+    node  match {
+      case element: Elem =>
+        if (element.label.toUpperCase == "ATTRIBUTES")
+          genericAttributesMap(id) = Translation.normalizeKeys(element.attributes.asAttrMap)
+        else
+          elementMap(id) = element
+
+      case other =>
+        import org.sufrin.logging.Default.error
+        error(s"Meaningless XML assignment ...($id) = $node")
+    }
+  }
+
   /** Declare a new macro */
   def update(id: String, abbr: Abstraction) : Unit = abstractionMap(id) = abbr
 }
@@ -364,8 +398,8 @@ object Translation {
       val asGlyph: Glyph = glyph$
     }
 
-    case class DecorateTarget(paragraph: Boolean, attributes: TypedAttributeMap, target: Target) extends Target {
-      def raiseBy(glyph: Glyph, by: Scalar): Glyph = withBaseline(glyph, by)
+    case class DecorateTarget(tags: Seq[String], paragraph: Boolean, attributes: TypedAttributeMap, target: Target) extends Target {
+      def raiseBy(glyph: Glyph, by: Scalar): Glyph = glyph // withBaseline(glyph, by)
 
       def decorated(glyph: Glyph): Glyph = {
         val g0 = glyph
@@ -401,9 +435,9 @@ object Translation {
         turn(frame(rotate(glyph)))
       }
 
-      val asGlyph: Glyph = if (paragraph) {
+      val asGlyph: Glyph = if (paragraph && List("frame", "turned", "rotated").exists(attributes.attributes.isDefinedAt(_))) {
         import org.sufrin.logging.Default.warn
-        warn(s"Decoration is not available in paragraph mode for $target")
+        warn(s"${tags.reverse.mkString("<", "<", "")} ${attributes.asString} decoration is not available in paragraph mode")
         target.asGlyph
       } else
         decorated(target.asGlyph)
@@ -595,24 +629,23 @@ class Translation(val primitives: Primitives=new Primitives) {
   implicit class TypedMap(attributes: AttributeMap) extends TypedAttributeMap(attributes)
   val meaning: Translation = this
 
-  import primitives.{generatorMap, translationMap, entityMap, genericAttributesMap}
+  import primitives.entityMap
   /** Declare a named glyph generator */
-  def update(id: String, glyph: Sheet=>Glyph): Unit = generatorMap(id)=glyph
+  def update(id: String, glyph: Sheet=>Glyph): Unit = primitives(id)=glyph
   /** Declare a named attribute map: used for inheritance of attributes */
-  def update(id: String, map: AttributeMap): Unit = genericAttributesMap(id)=map
+  def update(id: String, map: AttributeMap): Unit = primitives(id)=map
   /** Declare a new kind of tag */
-  def update(id: String, generator: Translation) = translationMap(id) = generator
+  def update(id: String, generator: Translation) = primitives(id) = generator
   /** Declare a new text entity */
-  def update(id: String, expansion: String) = entityMap(id) = expansion
+  def update(id: String, expansion: String) = primitives(id) = expansion
   locally { entityMap ++= List("amp" -> "&", "ls"-> "<", "gt" -> ">", "nbsp" -> "\u00A0" ) }
-  /** Declare a new expandable entity */
-  def update(id: String, element: Elem) : Unit =
-    if (element.label.toUpperCase=="ATTRIBUTES")
-      genericAttributesMap(id) = Translation.normalizeKeys(element.attributes.asAttrMap)
-    else
-      elementMap(id) = element
+
+  /** Declare a new expandable entity; or a named collection of attributes */
+  def update(id: String, element: Node) : Unit = primitives(id) = element
+
+
   /** Declare a new macro */
-  def update(id: String, abbr: Abstraction) : Unit = abstractionMap(id) = abbr
+  def update(id: String, abbr: Abstraction) : Unit = primitives(id) = abbr
 
   def extendContextFor(tag: String)(inherited: AttributeMap, local: Map[String,String]): AttributeMap = inherited ++ local
 
@@ -656,6 +689,7 @@ class Translation(val primitives: Primitives=new Primitives) {
 
   def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, source: Node): Seq[Target] = {
     val sheet$ = attributes.declareAttributes(sheet)
+    def tagString:String = tags.reverse.mkString("<", "<", "")
 
     source match {
       case xml.EntityRef(name) => translateText(tags, paragraph, attributes, sheet$, entityMap.getOrElse(name, s"&$name;"))
@@ -671,7 +705,7 @@ class Translation(val primitives: Primitives=new Primitives) {
               genericAttributesMap.get(attr) match {
                 case None =>
                   import org.sufrin.logging.Default.warn
-                  warn(s"No attribute defaults for $attrId=\"$attr\" in ${tags.reverse.mkString("<", "<", "...>")} ")
+                  warn(s"$tagString No attribute defaults for $attrId=\"$attr\" in ${tags.reverse.mkString("<", "<", "")} ")
                   Map.empty
 
                 case Some(attrs) =>
@@ -697,7 +731,7 @@ class Translation(val primitives: Primitives=new Primitives) {
         val sheet$ = attributes$.declareAttributes(sheet)
         val tags$ = tag::tags
 
-        def Decorated(t: Target): Seq[Target] = List(DecorateTarget(paragraph, attributes$, t))
+        def Decorated(t: Target): Seq[Target] = List(DecorateTarget(tags$, paragraph, attributes$, t))
 
         tag match {
           case "p" =>
@@ -747,15 +781,12 @@ class Translation(val primitives: Primitives=new Primitives) {
             else {
                elementMap.get(id) match {
                  case None =>
-                   org.sufrin.logging.Default.warn (s"<glyph ${attributes.asString}/> UNDEFINED (no generator or element)")
+                   org.sufrin.logging.Default.warn (s"$tagString <glyph ${attributes.asString}/> UNDEFINED (no generator or element)")
                    Decorated(GlyphTarget(paragraph, sheet$, sheeted.Label (s"UNDEFINED $id")(sheet$.copy(labelForegroundBrush = DefaultBrushes.red))))
                  case Some(element) =>
                    translate(tags, paragraph, attributes, sheet, element)
                }
             }
-
-          case "span" =>
-            translate(tags$, paragraph, attributes$, sheet$, children)
 
           case "table" =>
             import sheet$.{padX, padY, backgroundBrush => bg, foregroundBrush => fg}
@@ -763,7 +794,7 @@ class Translation(val primitives: Primitives=new Primitives) {
             val height    = attributes$.Int("rows", 0)
             val uniform   = attributes$.Bool("uniform", false)
             val glyphs    = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$, sheet$, source) }.map(_.asGlyph)
-            println(s"$padX, $padY $fg, $bg")
+            //println(s"$padX, $padY $fg, $bg")
             val Grid      = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY)
             val buildFrom = if (uniform) Grid.grid(height=height, width=width)(_) else Grid.table(height=height, width=width)(_)
             Decorated(GlyphTarget(paragraph = paragraph,
@@ -775,7 +806,7 @@ class Translation(val primitives: Primitives=new Primitives) {
             val width  = attributes$.Int("columns", attributes$.Int("cols", 0))
             val height = attributes$.Int("rows", 0)
             val glyphs = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$, sheet$, source) }.map(_.asGlyph)
-            println(s"$padX, $padY")
+            //println(s"$padX, $padY")
             Decorated(GlyphTarget(paragraph = paragraph,
               sheet = sheet$,
               glyph = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).rows(width=width)(glyphs)))
@@ -785,16 +816,63 @@ class Translation(val primitives: Primitives=new Primitives) {
             val width  = attributes$.Int("columns", attributes$.Int("cols", 0))
             val height = attributes$.Int("rows", 0)
             val glyphs = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$, sheet$, source) }.map(_.asGlyph)
-            println(s"$padX, $padY")
+            //println(s"$padX, $padY")
             Decorated(GlyphTarget(paragraph = paragraph,
               sheet = sheet$,
               glyph = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).cols(height=height)(glyphs)))
+
+          case "span" =>
+            children.flatMap { child => translate(tags$, paragraph, attributes$, sheet$, child) }
+
+          case "SCOPE" =>
+            primitives.scoped(children.flatMap { child => translate(tags$, paragraph, attributes$, sheet$, child) })
+
+          case "ATTRIBUTES" =>
+            // Set the attributes defined for the given id.
+            // The scope of this is the body of the closest enclosing nonempty <ATTRIBUTES></ATTRIBUTES>; but is global if the body is empty.
+            val id = localAttributes.String("key", "")
+            val attrs = attributes$$.removedAll(List("key"))
+            genericAttributesMap(id)=attrs
+            val attributes$$$=attributes.removedAll(List("key", "class"))
+            val result = children.flatMap { child => translate(tags$, paragraph, attributes$$$, sheet$, child) }
+            result
+
+          case "ENTITY" =>
+            // Set the attributes defined for the given id.
+            // The scope of this is the body of the closest enclosing nonempty <ATTRIBUTES></ATTRIBUTES>; but is global if the body is empty.
+            val id = localAttributes.String("key", "")
+            val expansion = localAttributes.String("expansion", "")
+            entityMap(id)=expansion
+            val attributes$$$=attributes$.removedAll(List("id", "expansion"))
+            val result = children.flatMap { child => translate(tags$, paragraph, attributes$$$, sheet$, child) }
+            result
+
+          case "ELEMENT" =>
+            // Set the attributes defined for the given id.
+            // The scope of this is the body of the closest enclosing nonempty <ATTRIBUTES></ATTRIBUTES>; but is global if the body is empty.
+            val id = localAttributes.String("key", "")
+            val children$ = children.filterNot(isBlank)
+            val definition = children$.take(1)
+            val body = children$.drop(1)
+            if (definition.isEmpty)
+              Seq.empty
+            else {
+              elementMap(id) = definition.head.asInstanceOf[Elem]
+              val attributes$$$ = attributes$.removedAll(List("key"))
+              val result = body.flatMap { child => translate(tags$, paragraph, attributes$$$, sheet$, child) }
+              result
+            }
+
+          case "attributes" =>
+            import org.sufrin.logging.Default.info
+            info(s"${tagString}<attributes ${attributes$.asString} ${if (paragraph) "(P)" else ""}")
+            Seq.empty
 
 
           case _ =>
             translationMap.get(tag) match {
               case Some(translation) =>
-                println(s"<$tag special translation ${Visitor.toString(attributes$)}")
+                //println(s"<$tag special translation ${Visitor.toString(attributes$)}")
                 translation.translate(tags$, paragraph, attributes$, sheet$, children)
 
               case None =>
@@ -852,8 +930,8 @@ class Translation(val primitives: Primitives=new Primitives) {
   /** Make this translation accessible */
   def apply(source: Node)(implicit sheet: Sheet): Glyph = {
     val translator = this
-    import PrettyPrint.AnyPretty
-    for { t <- (translator.translate(Nil, false, Map.empty, sheet, source)) } t.prettyPrint()
+    //import PrettyPrint.AnyPretty
+    //for { t <- (translator.translate(Nil, false, Map.empty, sheet, source)) } t.prettyPrint()
     NaturalSize.Col()
       .centered$(translator.translate(Nil, false, Map.empty, sheet, source).map(_.asGlyph))
   }
