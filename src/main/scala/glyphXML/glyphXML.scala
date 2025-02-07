@@ -16,7 +16,7 @@ import scala.xml._
 
 class Abstraction(body: Node) {
 
-  def expansion(invocation: Node): Seq[Node] = {
+  def expansion(invocationAttributes: AttributeMap, invocation: Node): Seq[Node] = {
 
     val children = invocation.child.filterNot{
       case Text(t) => t.isBlank
@@ -43,23 +43,23 @@ class Abstraction(body: Node) {
             case Some(nodes)      => nodes.flatMap(substitute(_))
           }
         case elem: Elem =>
-          elem.copy(child = elem.child.flatMap(substitute(_)), attributes = substAttrs(elem.attributes, invocation.attributes.asAttrMap))
+          elem.copy(child = elem.child.flatMap(substitute(_)), attributes = substAttrs(elem.attributes, invocationAttributes/*invocation.attributes.asAttrMap*/))
         case _ =>
           node
       }
     }
 
-    def substAttrs(attrs: MetaData, attrSubst: Map[String, String]): MetaData = {
+    def substAttrs(attrs: MetaData, actualAttributes: Map[String, String]): MetaData = {
       def deref(value: String): String = {
         val result = {
           value match {
             case s"$$$ref($value)" =>
-              attrSubst.get(ref) match {
+              actualAttributes.get(ref) match {
                 case Some(value) => value
                 case None        => value
               }
             case s"$$$ref" =>
-              attrSubst.get(ref) match {
+              actualAttributes.get(ref) match {
                 case Some(value) => value
                 case None =>
                   org.sufrin.logging.Default.warn(s"Abstraction reference $invocation has no parameter $ref")
@@ -68,7 +68,6 @@ class Abstraction(body: Node) {
             case _ => value
           }
         }
-        //println(s"$value ---> $result")
         result
       }
 
@@ -83,7 +82,13 @@ class Abstraction(body: Node) {
     }
 
     val result = substitute(body)
-    //println(s"$invocation\n => $result")
+    val logging = invocationAttributes.getOrElse("logging", "")
+    if (logging.nonEmpty) {
+      org.sufrin.logging.Default.info(s"Expanding $logging  ($body)")
+      org.sufrin.logging.Default.info(s"  $invocation")
+      org.sufrin.logging.Default.info(s"  $result")
+    }
+
     result
   }
 }
@@ -154,7 +159,7 @@ object Paragraph {
 
   def fromGlyphs(sheet: Sheet, glyphs: Seq[Glyph], parHang: Option[Glyph]): Glyph = {
     val glyphs$   =
-      (if (sheet.parIndent>0) List(FixedSize.Space(sheet.parIndent, h=0f, stretch=0f)) else Nil) ++ glyphs
+      (if (sheet.parIndent>0) List(Glyphs.Rect(sheet.parIndent, 1f, fg=DefaultBrushes.nothing)) else Nil) ++ glyphs
 
     val (hangGlyph, hangWidth) = parHang match {
       case None    => (None, 0f)
@@ -168,7 +173,7 @@ object Paragraph {
     // If the bounding box is unspecified, then use the column width
     val galley =
       formatParagraph(
-        overallWidth   = sheet.parWidth,
+        overallWidth   = sheet.parWidth - hangWidth,
         align          = sheet.parAlign,
         leftMargin     = sheet.leftMargin,
         rightMargin    = sheet.rightMargin,
@@ -208,7 +213,7 @@ object Paragraph {
                       leftMargin:     Scalar,
                       rightMargin:    Scalar,
                       interWordWidth: Scalar,
-                      glyphs:        Seq[Glyph]) = {
+                      glyphs:         Seq[Glyph]) = {
     // As each line of the paragraph is assembled it is added to the galley
     val galley = ArrayBuffer[Glyph]()
     // maximum width of this paragraph: invariant
@@ -435,13 +440,19 @@ object Translation {
         turn(frame(rotate(glyph)))
       }
 
-      val asGlyph: Glyph = if (paragraph && List("frame", "turned", "rotated").exists(attributes.attributes.isDefinedAt(_))) {
-        import org.sufrin.logging.Default.warn
-        warn(s"${tags.reverse.mkString("<", "<", "")} ${attributes.asString} decoration is not available in paragraph mode")
-        target.asGlyph
-      } else
-        decorated(target.asGlyph)
-
+      val asGlyph: Glyph = //if (true) decorated(target.asGlyph) else
+        target match {
+          case _ =>
+            if (paragraph && List("frame", "turned", "rotated").exists(attributes.attributes.isDefinedAt(_))) {
+              import org.sufrin.logging.Default.warn
+              warn(s"${tags.reverse.mkString("<", "<", "")} ${attributes.asString} decoration is not available in paragraph mode")
+              target match {
+                case _: GlyphTarget => decorated(target.asGlyph)
+                case _ => target.asGlyph
+              }
+            } else
+              decorated(target.asGlyph)
+        }
     }
 
     /**
@@ -607,6 +618,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
       padY                  = Units("padY",           sheet.padY)         (attributes, fontDetail),
       parWidth              = Units("width",          sheet.parWidth)     (attributes, fontDetail),
       parSkip               = Units("parSkip",        sheet.parSkip)      (attributes, fontDetail),
+      parIndent             = Units("parIndent",      sheet.parIndent)    (attributes, fontDetail),
       leftMargin            = Units("leftMargin",     sheet.leftMargin)   (attributes, fontDetail),
       rightMargin           = Units("rightMargin",    sheet.rightMargin)  (attributes, fontDetail),
       parAlign              = Align("align",          sheet.parAlign),
@@ -638,7 +650,7 @@ class Translation(val primitives: Primitives=new Primitives) {
   def update(id: String, generator: Translation) = primitives(id) = generator
   /** Declare a new text entity */
   def update(id: String, expansion: String) = primitives(id) = expansion
-  locally { entityMap ++= List("amp" -> "&", "ls"-> "<", "gt" -> ">", "nbsp" -> "\u00A0" ) }
+  locally { entityMap ++= List("quot" -> "\"", "apos" -> "'", "amp" -> "&", "ls"-> "<", "gt" -> ">", "nbsp" -> "\u00A0" ) }
 
   /** Declare a new expandable entity; or a named collection of attributes */
   def update(id: String, element: Node) : Unit = primitives(id) = element
@@ -735,7 +747,7 @@ class Translation(val primitives: Primitives=new Primitives) {
 
         tag match {
           case "p" =>
-            //println(s"<p ${attributes$.asString}")
+            //println(s"<p ${attributes$.asString} parIndent=${sheet$.parIndent}")
             val hangString = attributes$.String("hang", "")
             val hangRef    = attributes$.String("hangid", "")
             val hang: Option[Glyph] =
@@ -747,6 +759,10 @@ class Translation(val primitives: Primitives=new Primitives) {
               else Some(sheeted.Label(hangString)(sheet$))
             val chunks = children.flatMap { source => translate(tags$, true, attributes$$, sheet$, source) }
             Decorated(ParaTarget(sheet$, chunks, hang))
+
+          case "div" | "body" =>
+            val children$ = children.filterNot(Translation.isBlank(_))
+            Decorated(ColTarget(sheet.backgroundBrush, chunks = translate(tags$, false, attributes$, sheet$, children$)))
 
           case "col" =>
             val glyphs: Seq[Target] = children.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, paragraph, attributes$$, sheet$, source) }
@@ -880,7 +896,8 @@ class Translation(val primitives: Primitives=new Primitives) {
                   case None =>
                     translatePCData(tags$, false, Map.empty, Sheet(), source.toString())
                   case Some(abstraction) =>
-                    val expanded: Seq[Node] = abstraction.expansion(source)
+                    //println(s"Abstraction ${attributes$.asString}")
+                    val expanded: Seq[Node] = abstraction.expansion(attributes$, source)
                     translate(tags$, paragraph, attributes$, sheet$, expanded)
                 }
             }
@@ -916,11 +933,32 @@ class Translation(val primitives: Primitives=new Primitives) {
         glyph(sheet)
     }
 
+  private def leadingSpaces(s: String): Int = {
+    var n = 0
+    while (n<s.length && s(n)==' ') n+=1
+    n
+  }
+
+  private val indentationOrdering: Ordering[String] = new Ordering[String] {
+    def compare(x: String, y: String): Int = leadingSpaces(x)-leadingSpaces(y)
+  }
+
+  def stripCommonIndentation(lines: Seq[String]): Seq[String] = {
+    val lines$ = lines.dropWhile(_.isBlank)
+    val prefix = leadingSpaces(lines$.min(indentationOrdering))
+    if (lines$.last.isBlank)
+      lines$.init.map(_.substring(prefix))
+    else
+      lines$.map(_.substring(prefix))
+  }
+
   /** Perhaps better to introduce a PCData target .... */
   def translatePCData(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
     import sheet.{textFont, textBackgroundBrush => bg, textForegroundBrush => fg}
     import org.sufrin.glyph.{Text => makeText}
-    val glyphs = text.split('\n').toSeq.map(makeText(_, textFont, fg, bg).asGlyph(fg, bg))
+    val rawLines = text.split('\n').toSeq
+    val lines    = if (attributes.Bool("normalizePCData", true)) stripCommonIndentation(rawLines) else rawLines
+    val glyphs   = lines.map(makeText(_, textFont, fg, bg).asGlyph(fg, bg))
     List(GlyphTarget(paragraph, sheet, NaturalSize.Col(bg = bg).atLeft$(glyphs)))
   }
 

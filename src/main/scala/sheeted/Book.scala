@@ -19,13 +19,11 @@ trait Book {
   /**
    * Page descriptor
    */
-  class Page(val title: String, val gloss: String, val glyph: Glyph)(implicit sheet: BookStyle) {
-    val detail: GlyphStyle = sheet.pageStyle.labelStyle
-    implicit val contentStyle: Sheet = sheet.pageStyle
+  class Page(val title: String, val gloss: String)(val glyph: Glyph)(implicit sheet: Sheet) {
+    val detail: GlyphStyle = sheet.labelStyle
     import detail.{em, ex}
 
     override val toString: String = s"Page($title, $gloss){$glyph}"
-
     def root(): Glyph =
       if (gloss.isEmpty)
         glyph
@@ -36,17 +34,27 @@ trait Book {
   val pages: ArrayBuffer[Page] = new ArrayBuffer[Page]()
 
   /** Declare a page */
-  def Page(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit sheet: BookStyle): Page = {
-    val page = new Page(title, gloss, glyph)
-    if (publish) {
-      pages += (page)
+//  def Page(title: String, gloss: String, publish: Boolean = true)(glyph: Glyph)(implicit sheet: BookStyle): Page = {
+//    val page = new Page(title, gloss)(glyph)(sheet.pageStyle)
+//    if (publish) {
+//      pages += (page)
+//    }
+//    page
+//  }
+
+  object Page {
+    def apply(title: String, gloss: String="", publish: Boolean = true)(glyph: Glyph)(implicit sheet: BookStyle): Page = {
+      val page = new Page(title, gloss)(glyph)(sheet.pageStyle)
+      if (publish) {
+        pages += (page)
+      }
+      page
     }
-    page
   }
 
   object DefinePage {
     def apply(title: String, gloss: String="", publish: Boolean = true)(glyph: Glyph)(implicit sheet: BookStyle): Page = {
-      val page = new Page(title, gloss, glyph)(sheet)
+      val page = new Page(title, gloss)(glyph)(sheet.pageStyle)
       if (publish) {
         pages += (page)
       }

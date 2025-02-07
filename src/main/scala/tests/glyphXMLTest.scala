@@ -17,19 +17,6 @@ object glyphXMLTest extends Application {
 
 
     val translator: Translation = new Translation {
-      meaning("body") = new Translation(primitives) {
-        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
-          val children$ = children.filterNot(Translation.isBlank(_))
-          List(ColTarget(sheet.backgroundBrush, chunks = super.translate(tags, false, attributes, sheet, children$)))
-        }
-      }
-
-      meaning("div") = new Translation(primitives) {
-        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
-          val children$ = children.filterNot(Translation.isBlank(_))
-          List(ColTarget(sheet.backgroundBrush, chunks = super.translate(tags, false, attributes, sheet, children$)))
-        }
-      }
 
       def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(primitives) {
         override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
@@ -47,7 +34,8 @@ object glyphXMLTest extends Application {
           super.translate(tags, paragraph, attributes.updated("textFontFamily", "Courier"), sheet, children)
         }
       }
-      meaning("caption") = new Abstraction(<p align="center"><b>&BODY;</b></p>)
+      meaning("caption") =
+        new Abstraction(<p align="center"><b>&BODY;</b></p>)
     }
 
 
@@ -55,68 +43,75 @@ object glyphXMLTest extends Application {
     // Specify application-specific material
     locally {
       import sheeted._
-      translator("today")     = " Exp_an_sion of to_day "
-      translator("yesterday") = " Exp_an_sion of yes_ter_day "
-      translator("B1")        =  TextButton("B1"){ _ => println(s"B1") }(_)
-      translator("B2")        =  TextButton("B2"){ _ => println(s"B2") }(_)
-      translator("B3")        =  TextButton("B3"){ _ => println(s"B3") }(_)
+      translator("B1")        =  TextButton("Button1"){ _ => println(s"B1") }(_).turned(10)
+      translator("B2")        =  TextButton("Button2"){ _ => println(s"B2") }(_)
+      translator("B3")        =  TextButton("Button3"){ _ => println(s"B3") }(_)
       translator("LINK")      =  sheet => TextButton("LINK"){ _ => println(s"LINK") }(sheet.copy(buttonFrame = Styles.Decoration.Unframed))
-      translator("L1")        =  Label("L1")(_)
-      translator("L2")        =  Label("L2")(_)
-      translator("L3")        =  Label("L3")(_)
-      translator("LS")        =  sheet => NaturalSize.Col()(Label("LS1")(sheet), Label("LS2")(sheet), Label("LS3")(sheet)).framed()
-      translator("LSC")       =  <col><glyph gid="L1"/><glyph gid="L2"/><glyph gid="L3"/></col>
+      translator("L1")        =  Label("Label1")(_)
+      translator("L2")        =  Label("Label2")(_)
+      translator("L3")        =  Label("Label3")(_)
+      translator("LS")        =  sheet => NaturalSize.Col()(Label("LS1")(sheet), Label("LS2")(sheet), Label("LS3")(sheet)).framed().turned(10f)
+      translator("LSC")       =  <col frame="black"><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
       translator("B1")        = <ATTRIBUTES buttonForeground="red/2"        buttonBackground="yellow"/>
       translator("B2")        = <ATTRIBUTES buttonForeground="green/2"      buttonBackground="yellow"/>
       translator("B3")        = <ATTRIBUTES buttonForeground="lightgrey/2"  buttonBackground="black"/>
-      translator("tag:body")  = <ATTRIBUTES background="grey3"/>
-      translator("tag:p")     = <ATTRIBUTES textBackground="" align="justify" parSkip="1ex"/>
+      translator("tag:body")  = <ATTRIBUTES background="white"/>
+      translator("tag:p")     = <ATTRIBUTES textBackground="white" align="justify" parSkip="1ex"/>
     }
 
 
     // set up the interface
-    implicit val sheet: Sheet = Sheet().copy(
+    val sheet: Sheet = Sheet().copy(
+        backgroundBrush       = DefaultBrushes.nothing,
         buttonForegroundBrush = DefaultBrushes.red,
-        buttonFrame = Styles.Decoration.Blurred(fg=DefaultBrushes.red(width=10), bg=DefaultBrushes.nothing, blur=5f, spread=5f)
+        buttonFrame           = Styles.Decoration.Blurred(fg=DefaultBrushes.red(width=10), bg=DefaultBrushes.nothing, blur=5f, spread=5f)
       )
-    implicit val bookStyle: BookStyle = new BookStyle(buttonStyle = sheet, pageStyle = sheet)
-    val explainStyle: Sheet = sheet.copy(backgroundBrush = DefaultBrushes.lightGrey, fontScale=0.7f, textFontFamily=FontFamily("Courier"))
-
-
+    implicit val pageSheet: Sheet = Sheet().copy(
+        backgroundBrush       = DefaultBrushes.nothing,
+        buttonForegroundBrush = sheet.textForegroundBrush,
+        buttonFontSize        = sheet.textFontSize*0.9f,
+        buttonFrame           = Styles.Decoration.Framed(fg=DefaultBrushes.red(width=2), bg=DefaultBrushes.nothing)
+    )
+    implicit val bookStyle: BookStyle = new BookStyle(buttonStyle = sheet, pageStyle = pageSheet)
 
   val book = sheeted.Book()
-    val Page = book.DefinePage
+  val Page = book.Page
 
-    import translator.XMLtoGlyph
+  import translator.XMLtoGlyph
 
     val p1 = Page("Paragraphs") {
-      <body  width="55em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="nothing">
-        <caption>
-          This is a little tester for various <i>Remarkable</i> glyphXML features, princ_ipally the mixing of pre_defined glyphs with para_graph text.
+      <body  width="45em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="nothing">
+        <ENTITY key="filler" expansion="(this is some filler to make the paragraph longer)"/>
+        <ATTRIBUTES key="tag:caption" textFontSize="25"/>
+        <caption logging="caption">
+          This is a little tester for various glyphXML features, princ_ipally the mixing of pre_defined glyphs with para_graph text.
         </caption>
 
 
-        <p align="justify" leftMargin="4em" hangid="B3">
-          The rain in spain falls <b>mainly</b> in the <glyph gid="B2" frame="green/3" rotated="2"/>plain. <glyph gid="B1"/>
-          Oh! Does it? <b>Oh</b>, Yes!, it does. &yesterday;  eh? &today;
+        <p align="justify" hang="L1. ">
+          The rain in spain falls <b>mainly</b> in the  <glyph gid="B2"/> plain. &filler; <glyph gid="B1"/>
+        </p>
+        <p align="justify" hang="L2. ">
+          The rain in spain falls <b>mainly</b> in the  <glyph gid="B2"/> plain. &filler; <glyph gid="B1"/>
         </p>
 
-        <glyph gid="B1" fg="green" bg="black" rotated="2"/>
+        <glyph gid="B1" fg="green"/><glyph gid="B2" fg="green"/>
 
-        <p textBackground="" leftMargin="0em" rightMargin="20em" frame="green/13"  turned="20">
+        <p leftMargin="5em" rightMargin="5em" frame="green/1"  rotated="2">
           The rain (<glyph gid="LINK"/>) in spain falls <i>mainly</i> in the plain.
-          Oh! Does it? <b>Oh</b> <i>Yes</i>!, it does.
-          Why do<bi>-you-</bi>want to control spacing so tightly? Here&yesterday;we go!
         </p>
 
         <p>
-          Here is a longish column in the midst
-          <col><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
-          of a paragraph. What does it look like?
+          Here is a longish &ls;col&gt;umn in the midst
+          <col frame="black"><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
+          of a paragraph. Note that its topmost glyph aligns with the baseline.
         </p>
         <p>
-          Here is another longish column in the midst  <glyph gid="LS"/> of a paragraph. What does it look like?
-          And what does this synthetic <glyph background="nothing" gid="LSC"/> column look like on the line.
+          Here is a longish &ls;glyph&gt; in the midst  <glyph gid="LS"/> of a paragraph. Note that its topmost glyph
+          also aligns with the baseline.
+          And note that  <glyph gid="LSC"/> which was invoked by
+          <![CDATA[<glyph gid="LSC"/>]]>
+          has the same relation to the baseline.
         </p>
         <fill/>
         <row valign="mid" textFontFamily="Menlo" textFontSize="16" inheritwidth="true">
@@ -275,19 +270,19 @@ object glyphXMLTest extends Application {
   }
 
   val p6=Page("Spaces") {
-      <body width="50em" align="justify" background="white">
+      <body width="50em" align="justify" background="white" frame="white/14">
         <SCOPE>
-          <p>To avoid a spurious spaces being placed adjacent to an element or an entity expansion,
+          <ENTITY key="entity" expansion="«the expansion of &quot;&amp;entity;&quot;»"/>
+          <p >To avoid a spurious spaces being placed adjacent to an element or an entity expansion,
             in a rendered paragraph just adjoin the element (or entity) reference to the nearest character on the app_ropriate side
             in the paragraph body.
             Below are some examples that use the following entity declaration:
           </p>
           <div leftMargin="6ex" rightMargin="5ex" parSkip="2ex">
-          <span fontScale="0.8" textFontFamily="Courier">
-          <ENTITY key="entity" expansion="«the expansion of &amp;entity;»"/>
-          <![CDATA[<ENTITY
-  key="entity"
-  expansion="«the expansion of &amp;entity;»"/>]]></span>
+          <span fontScale="0.75" textFontFamily="Courier">
+          <![CDATA[
+          <ENTITY key       = "entity"
+                  expansion = "«the expansion of &quot;&amp;entity;&quot;»"/>]]></span>
 
           <p>Here is &entity; and as you can see it has spaces adjacent to each side.</p>
           <p>Here is &entity;and as you can see it is directly adjacent to the text on its right.</p>
