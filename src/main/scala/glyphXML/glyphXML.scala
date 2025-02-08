@@ -965,5 +965,35 @@ class Translation(val primitives: Primitives=new Primitives) {
 
 }
 
+/**
+ * A simple translation that can be imported into a context where glyphXML text (etc) will appear.
+ * Meanings can be extended in the usual by assigning to `translation`.
+ */
+object Language {
+  implicit val translation: Translation = new Translation {
+      import Translation.Target._
+
+      def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(primitives) {
+        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
+          super.translate(tag :: tags, paragraph, attributes.updated("textStyle", textStyle), sheet, children)
+        }
+      }
+
+      meaning("i") = textStyleTranslation("i", "Italic")
+      meaning("b") = textStyleTranslation("b", "Bold")
+      meaning("bi") = textStyleTranslation("bi", "BoldItalic")
+      meaning("n") = textStyleTranslation("n", "Normal")
+      meaning("tt") = new Translation(primitives) {
+        override def toString: String = "tt"
+        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
+          super.translate(tags, paragraph, attributes.updated("textFontFamily", "Courier"), sheet, children)
+        }
+      }
+      meaning("caption") = new Abstraction(<p align="center"><b>&BODY;</b></p>)
+  }
+
+  implicit def XMLtoGlyph(source: Node)(implicit sheet: Sheet): Glyph = translation.XMLtoGlyph(source: Node)
+}
+
 
 

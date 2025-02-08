@@ -20,37 +20,13 @@ object PortmanteauNotebook extends Application  {
 
   implicit val interfaceStyle: Sheet = LocalSheet.copy(
     buttonFrame=Styles.Decoration.Blurred(fg=DefaultBrushes.blue, blur=5, spread=5, delta=5),
-    buttonFontSize = 28,
-    labelFontSize = 28,
-    textFontSize = 28
+    buttonFontSize = 20,
+    labelFontSize = 20,
+    textFontSize = 20,
+    backgroundBrush = DefaultBrushes.white
   )
 
-  implicit val translator: Translation = new Translation()
-
-  // Extend the basic XML semantics
-  locally {
-    translator("body") = new Translation(translator.primitives) {
-      override def toString: String = "body translation"
-      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
-        val child$ = child.filterNot(Translation.isBlank(_))
-        List(ColTarget(sheet.backgroundBrush, chunks=super.translate(tags, false, attributes, sheet, child$)))
-      }
-    }
-
-    translator("label") = new Abstraction(<span textFontFamily="Courier"><n>&BODY;</n></span>)
-
-    def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(translator.primitives) {
-      override def toString: String = s"StyleTranslation($tag, $textStyle)"
-      override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, child: Seq[Node]): Seq[Target] = {
-        super.translate(tag::tags, paragraph, attributes.updated("textStyle", textStyle), sheet, child)
-      }
-    }
-
-    translator("i")  = textStyleTranslation("i",  "Italic")
-    translator("b")  = textStyleTranslation("b",  "Bold")
-    translator("bi") = textStyleTranslation("bi", "BoldItalic")
-    translator("n")  = textStyleTranslation("n",  "Normal")
-  }
+  import glyphXML.Language._
 
   val interface = new PortmanteauInterface()
 

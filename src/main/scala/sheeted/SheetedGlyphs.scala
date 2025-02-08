@@ -477,28 +477,6 @@ object StringLog {
     new StringLog(size, lines, keepLines)(detail)
 }
 
-/** Styled and unstyled TextFields are implemented by the same class. */
-object TextField {
-
-  import GlyphTypes.Font
-
-  import io.github.humbleui.jwm.EventKey
-
-  def apply(onEnter: String => Unit            = { case text: String => },
-            onError: (EventKey, Glyph) => Unit = { case (key, glyph) => },
-            onCursorLeave: String=>Unit        = { case text: String => },
-            size:    Int,
-            initialText: String = "",
-            abbreviations: TextAbbreviations = null
-           )
-           (implicit detail: Styles.GlyphStyle): TextField = {
-    val fg: Brush = detail.fg
-    val bg: Brush = detail.bg
-    val font: Font = detail.font
-    new TextField(fg, bg, font, onEnter, onError, onCursorLeave, size, initialText, abbreviations)
-  }
-}
-
 
 
 object RadioCheckBoxes {

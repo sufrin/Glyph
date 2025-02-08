@@ -76,7 +76,7 @@ object CellFit {
  *  The origin of the drawing surface is translated by this amount
  *  before each glyph is drawn.
  */
-abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
+trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
   import scala.annotation.tailrec
 

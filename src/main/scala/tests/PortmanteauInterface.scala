@@ -1,10 +1,13 @@
 package org.sufrin.glyph
 package tests
 import GlyphTypes.Window
-import sheeted.{Label, CheckBox, Notebook}
+import sheeted.{Book, BookStyle, CheckBox, Label}
 import NaturalSize.{Col, Row}
 
-class PortmanteauInterface(implicit val style: Sheet, implicit val translator: glyphXML.Translation) extends Notebook {
+class PortmanteauInterface(implicit val style: Sheet, implicit val translation: glyphXML.Translation)  {
+  val book = Book()
+  val Page = book.Page
+  implicit val bookStyle: BookStyle = BookStyle(style, style)
 
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
     import sheeted.overlaydialogues.Dialogue.OKNO
@@ -18,41 +21,44 @@ class PortmanteauInterface(implicit val style: Sheet, implicit val translator: g
 
 
   locally {
-    translator("anchor") = { _ => Glyphs.INVISIBLE() }
+    translation("anchor") = { _ => Glyphs.INVISIBLE() }
   }
 
   Page("Welcome", "") {
     val anchor = Glyphs.INVISIBLE()
     val checkBox = CheckBox(initially=false) { state => anchor.guiRoot.autoScale=state }(style.copy(buttonFrame = Styles.Decoration.Framed(fg=DefaultBrushes.blue, bg=DefaultBrushes.nothing)))
-    import translator._
-    translator("anchor")   = { _ => anchor }
-    translator("checkbox") = { _ => checkBox }
-    <body width="30em" background="nothing">
+    import translation._
+    translation("anchor")   = { _ => anchor }
+    translation("checkbox") = { _ => checkBox }
+    <body width="40em">
       <p align="justify">
         Welcome to the Portmanteau Notebook: its source code is more
         modular than that of DemonstrationNotebook -- which evolved as
         a monolith.
       </p>
       <glyph gid="anchor"/>
-      <row inheritwidth="true">
-         <fill/><span>Enable window resizing: </span><glyph gid="checkbox"/><fill/>
+      <fill/>
+      <row inheritwidth="true" background="nothing">
+         <fill/><span>Enable window resizing:</span><glyph gid="checkbox"/><fill/>
       </row>
     </body>
   }
 
   Page("New Instance", "")(new PortmanteauInstantiation().GUI)
 
+  Page("Text", "") (new PortmanteauText().GUI)
+
+
   /*
   Page("Transforms*", "")(new PortmanteauTransforms().Layout.leftButtons())
 
-  Page("Text", "") (new PortmanteauText().GUI)
 
   Page("GlyphML", "") (new PortmanteauGlyphML().GUI)
   */
 
   import utils.Output.withWriteBar
+  import book.Layout
 
-  lazy val asMenu      = withWriteBar()(Layout.menuBar)
   lazy val asRNotebook = withWriteBar()(Layout.rightButtons())
   lazy val asLNotebook = withWriteBar()(Layout.leftButtons())
   lazy val asVNotebook = withWriteBar()(Layout.rotatedButtons(3))

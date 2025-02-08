@@ -16,7 +16,6 @@ class  PortmanteauInstantiation(implicit sheet: Sheet, implicit val translator: 
         else if (extraArgs contains "-snotebook")  asSNotebook
         else if (extraArgs contains "-vnotebook")  asVNotebook
         else if (extraArgs contains "-tnotebook")  asTNotebook
-        else if (extraArgs contains "-menu")       asMenu
         else asRNotebook
 
       def title = s"""Portmanteau -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
@@ -32,7 +31,7 @@ class  PortmanteauInstantiation(implicit sheet: Sheet, implicit val translator: 
     var style: String = "-notebook"
     var scale: String = "-scale=0.7"
     var screen: String = "-screen=p"
-    val styles  = "-notebook/-lnotebook/-snotebook/-vnotebook/-tnotebook/-menu".split("/").toList
+    val styles  = "-notebook/-lnotebook/-snotebook/-vnotebook/-tnotebook".split("/").toList
     val scales  = "-scale=1.2/-scale=1.0/-scale=0.9/-scale=0.8/-scale=0.75/-scale=0.7/-scale=0.6".split("/").toList.reverse
     val screens = "-screen=p/-screen=0/-screen=1/-screen=2".split("/").toList
 

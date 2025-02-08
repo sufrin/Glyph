@@ -140,9 +140,6 @@ trait Book {
       Glyphs.Polygon(width, height, fg=dividerBlack)((0,0), (width,0), (width, height), (0, height), (0,0))
     }
 
-    /** A menu bar on which there is a popup button for each page */
-    //def menuBar(implicit sheet: BookStyle): Glyph = Col.centered(Row.centered(Row.centered$(popupButtons)))
-
     /**
      * A `TabbedNotebook` with a button corresponding to each page, and a `OneOf` holding the pages.
      * Each button selects the corresponding page on the `OneOf` when clicked.
