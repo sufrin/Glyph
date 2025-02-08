@@ -421,7 +421,7 @@ abstract class Composite(components: Seq[Glyph]) extends Glyph {
 
   def draw(surface: Surface): Unit = {
     drawBackground(surface)
-    val delta: Vec = Vec(0, baseLine)
+    val delta: Vec = Vec.Zero//Vec(0, baseLine)
     for { glyph <- components} {
           surface.withOrigin(glyph.location+delta){
           glyph.draw(surface)

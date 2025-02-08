@@ -9,6 +9,7 @@ object Text extends DefaultPaints {
   def apply(string: String, font: Font, fg: Brush = defaultFG, bg: Brush = defaultBG) = new Text(string, font, fg, bg)
 }
 
+  
   class Text(val string: String, val font: Font, fg: Brush, bg: Brush) {
     theText: Text =>
 
@@ -61,7 +62,7 @@ object Text extends DefaultPaints {
 
       def draw(surface: Surface): Unit = {
         drawBackground(surface)
-        surface.drawTextLine(fg, implementation, 0, 0)
+        surface.drawTextLine(fg, implementation, 0, height)//0)
       }
 
       def copy(fg: Brush=fg, bg: Brush=bg): Glyph = atBaseline(fg, bg)
@@ -79,7 +80,7 @@ object Text extends DefaultPaints {
         override val kind="Text.asGlyph"
         override def toString: String = s"""Text("${string}").asGlyph(${fg}, $bg))"""
         val diagonal = theText.diagonal
-        override val baseLine = 0f
+        override val baseLine = height//0f
         val fg = _fg
         val bg = _bg
 
@@ -92,14 +93,14 @@ object Text extends DefaultPaints {
       }
     }
 
-    def asLabel(fg: Brush = Text.defaultFG, bg: Brush = Text.defaultBG): Glyph = {
+    def asLabel(fg: Brush = this.fg, bg: Brush = this.fg): Glyph = {
       val _fg = fg
       val _bg = bg
       new Glyph {
         override val kind="Text.asLabel"
         override def toString: String = s"Label(${string}, fg=$fg, bg=$bg)"
         val diagonal = theText.diagonal
-        override val baseLine = 0f
+        override val baseLine = height//0f
         val fg = _fg
         val bg = _bg
 

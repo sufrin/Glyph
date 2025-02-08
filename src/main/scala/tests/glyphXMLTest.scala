@@ -89,13 +89,13 @@ object glyphXMLTest extends Application {
 
 
         <p align="justify" hang="L1. ">
-          The rain in spain falls <b>mainly</b> in the  <glyph gid="B2"/> plain. &filler; <glyph gid="B1"/>
+          The rain in spain falls <b>mainly</b> in the  <glyph gid="B2" scaled="0.5" frame="red/6"/> plain. &filler; <glyph gid="B1"/>
         </p>
         <p align="justify" hang="L2. ">
           The rain in spain falls <b>mainly</b> in the  <glyph gid="B2"/> plain. &filler; <glyph gid="B1"/>
         </p>
 
-        <glyph gid="B1" fg="green"/><glyph gid="B2" fg="green"/>
+        <glyph gid="B1" fg="green"/><glyph gid="B2" fg="green" scaled="2"/>
 
         <p leftMargin="5em" rightMargin="5em" frame="green/1"  rotated="2">
           The rain (<glyph gid="LINK"/>) in spain falls <i>mainly</i> in the plain.
@@ -104,10 +104,10 @@ object glyphXMLTest extends Application {
         <p>
           Here is a longish &ls;col&gt;umn in the midst
           <col frame="black"><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
-          of a paragraph. Note that its topmost glyph aligns with the baseline.
+          of a paragraph. Note that its lowest point aligns with the baseline.
         </p>
         <p>
-          Here is a longish &ls;glyph&gt; in the midst  <glyph gid="LS"/> of a paragraph. Note that its topmost glyph
+          Here is a longish &ls;glyph&gt; in the midst  <glyph gid="LS"/> of a paragraph. Note that its lowest point
           also aligns with the baseline.
           And note that  <glyph gid="LSC"/> which was invoked by
           <![CDATA[<glyph gid="LSC"/>]]>

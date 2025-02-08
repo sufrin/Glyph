@@ -142,10 +142,11 @@ object FixedSize extends DefaultPaints {
       require(theWidth>0f)
       HInflate(theWidth, theGlyphs)
       val height = theGlyphs.map(_.h).max
-      val width = theWidth // theGlyphs.map(_.w).sum
+      val width = theWidth // theGlyphs.map(_.w).sum //**
+      val maxbaseline = theGlyphs.map(_.baseLine).max
       var x, y = 0f
       for {glyph <- theGlyphs} {
-        val extra = (height - glyph.h) * proportion
+        val extra =(height - glyph.h) * proportion
         glyph @@ Vec(x, extra + y) //**
         x += glyph.w
       }

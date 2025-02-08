@@ -299,7 +299,7 @@ object Paragraph {
         if (glyphs.length == 1 && width == 0) {
           setting = false
         } else
-          galley += FixedSize.Row(maxWidth).atTop$(glyphs)
+          galley += FixedSize.Row(maxWidth).atBottom$(glyphs)
       }
     }
     galley
@@ -399,7 +399,7 @@ object Translation {
         case 0 => ("para",  paragraph)
       }
 
-      val glyph$ = if (paragraph) withBaseline(glyph, (sheet.baseLine+glyph.h)/2) else glyph //**
+      val glyph$ = glyph // if (paragraph) withBaseline(glyph, glyph.h/2) else glyph //**
       val asGlyph: Glyph = glyph$
     }
 
@@ -437,40 +437,24 @@ object Translation {
             glyph
         }
 
-        turn(frame(rotate(glyph)))
+        def scale(glyph: Glyph): Glyph = {
+          val scale: Scalar = attributes.Float("scaled", 1f)
+          if (scale!=1f) glyph.scaled(scale) else glyph
+        }
+
+        scale(turn(frame(rotate(glyph))))
       }
 
-      val asGlyph: Glyph = //if (true) decorated(target.asGlyph) else
-        target match {
-          case _ =>
-            if (paragraph && List("frame", "turned", "rotated").exists(attributes.attributes.isDefinedAt(_))) {
-              import org.sufrin.logging.Default.warn
-              warn(s"${tags.reverse.mkString("<", "<", "")} ${attributes.asString} decoration is not available in paragraph mode")
-              target match {
-                case _: GlyphTarget => decorated(target.asGlyph)
-                case _ => target.asGlyph
-              }
-            } else
-              decorated(target.asGlyph)
-        }
+      val asGlyph: Glyph = decorated(target.asGlyph)
+
     }
 
     /**
-     * Construct a new glyph from `glyph` and treat it (as far as possible) as if it were text with the given baseline.
-     * The result is a glyph whose dimensions are those of `glyph`, but which is drawn as `glyph` displaced by `-baseLine`.
-     * The result does not compose properly with glyph transforms; which should be avoided.
-     * TODO: the problem should/could be solved by treating glyphs with baselines properly while assembling rows.
-     *       the issue arises from a poor design decision made early, namely that glyphs should align "naturally" in rows,
-     *       whether made of text or otherwise. This led to a separation between Text.asGlyph, and Text.atBaseline. As I write
-     *       I have an inkling that this can be recovered by simply introducing an atBaseline form of row composition.
+     *
      */
     def withBaseline(glyph: Glyph, baseLine$: Scalar): Glyph = new Glyph { thisGlyph =>
 
       locally { glyph.parent=thisGlyph }
-
-      def draw(surface: Surface): Unit = surface.withOrigin(0, -baseLine$) {
-        glyph.draw(surface)
-      }
 
       override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(p)
 
@@ -487,6 +471,8 @@ object Translation {
 
       val fg: Brush = glyph.fg
       val bg: Brush = glyph.bg
+
+      def draw(surface: Surface): Unit = glyph.draw(surface)
     }
 
   }
