@@ -11,7 +11,7 @@ import sheeted._
 
 
 class PortmanteauText(implicit style: Sheet) extends Notebook {
-  implicit val pageStyle: BookStyle = BookStyle(style, style)
+  implicit val pageStyle: BookSheet = BookSheet(style, style)
   val anchor = Glyphs.INVISIBLE()
   val abbrev = new TextAbbreviations(onLineTrigger = true)
   abbrev("(c)") = "\u00A9"

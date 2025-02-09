@@ -6,7 +6,7 @@ import Glyphs.INVISIBLE
 import glyphXML.{Abstraction, Translation}
 import sheeted.windowdialogues.Dialogue
 
-import org.sufrin.glyph.sheeted.{Book, BookStyle, TextButton}
+import org.sufrin.glyph.sheeted.{Book, BookSheet, TextButton}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.Location.Location
 import org.sufrin.glyph.windowdialogues.Dialogue
@@ -72,7 +72,7 @@ object glyphXMLTest extends Application {
         buttonFontSize        = sheet.textFontSize*0.9f,
         buttonFrame           = Styles.Decoration.Framed(fg=DefaultBrushes.red(width=2), bg=DefaultBrushes.nothing)
     )
-    implicit val bookStyle: BookStyle = new BookStyle(buttonStyle = sheet, pageStyle = pageSheet)
+    implicit val bookStyle: BookSheet = new BookSheet(buttonSheet = sheet, pageSheet = pageSheet)
 
   val book = sheeted.Book()
   val Page = book.Page

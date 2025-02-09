@@ -71,7 +71,7 @@ trait SheetTestInterface {
 
   val buttonStyle = rootStyle.withButtonFrame(Blurred(fg=rootStyle.buttonForegroundBrush, blur=6, spread=6))
   implicit val pageStyle: Sheet = rootStyle.withButtonFrame(Framed(fg=rootStyle.buttonForegroundBrush(width=2, cap=PaintStrokeCap.SQUARE), bg=rootStyle.buttonBackgroundBrush))
-  implicit val bookStyle: BookStyle = BookStyle(buttonStyle, pageStyle)
+  implicit val bookStyle: BookSheet = BookSheet(buttonStyle, pageStyle)
   val explainStyle: Sheet = rootStyle.copy(backgroundBrush = DefaultBrushes.lightGrey, fontScale=0.7f, textFontFamily=FontFamily("Courier"))
 
   def OK(blurb: Glyph, position: Location=null, title: String="")(implicit sheet: Sheet): Dialogue[Unit] = {

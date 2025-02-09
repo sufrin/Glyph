@@ -1,10 +1,15 @@
 package org.sufrin.glyph
 package tests
 
-import sheeted.{RadioCheckBoxes, TextButton}
+import sheeted.{BookSheet, RadioCheckBoxes, TextButton}
 import NaturalSize._
 
-class  PortmanteauInstantiation(implicit sheet: Sheet, implicit val translator: glyphXML.Translation) {
+import org.sufrin.glyph.Styles.ButtonStyle
+
+class  PortmanteauInstantiation(implicit sheet: BookSheet, implicit val translator: glyphXML.Translation) {
+  implicit val  buttons: Sheet = sheet.pageSheet
+  import buttons.{em,ex}
+
   import GlyphTypes.Window
   val GUI: Glyph = {
 
@@ -50,11 +55,9 @@ class  PortmanteauInstantiation(implicit sheet: Sheet, implicit val translator: 
       case Some(i) => screen = screens(i)
     }
 
-    val em = sheet.em
-    val ex = sheet.ex
     import translator._
     Col.centered(
-      <p width="30em" align="justify">
+      <p width="50em" align="justify">
         The button below starts a completely new instance of the GUI.
         The checkboxes determine what tab layout and scale the new instance will have; as well
         as what screen (if there are many) it will be shown on at first.

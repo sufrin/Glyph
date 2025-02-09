@@ -6,6 +6,7 @@ import GlyphTypes._
 import org.sufrin.glyph.glyphXML.{Abstraction, Translation}
 import org.sufrin.glyph.glyphXML.Translation.Target.{ColTarget, Target}
 import org.sufrin.glyph.glyphXML.Visitor.AttributeMap
+import org.sufrin.glyph.sheeted.BookSheet
 
 import scala.xml.Node
 
@@ -18,17 +19,20 @@ object PortmanteauNotebook extends Application  {
    */
   val LocalSheet: Sheet = Sheet()
 
-  implicit val interfaceStyle: Sheet = LocalSheet.copy(
+  val interfaceStyle: Sheet = LocalSheet.copy(
     buttonFrame=Styles.Decoration.Blurred(fg=DefaultBrushes.blue, blur=5, spread=5, delta=5),
     buttonFontSize = 20,
     labelFontSize = 20,
     textFontSize = 20,
     backgroundBrush = DefaultBrushes.white
   )
+  implicit val bookStyle: BookSheet =
+    BookSheet(buttonSheet=interfaceStyle,
+              pageSheet=interfaceStyle.copy(buttonFrame=Decoration.Unframed, fontScale=0.9f))
 
   import glyphXML.Language._
 
-  val interface = new PortmanteauInterface()
+  val interface = new PortmanteauInterface
 
   lazy val GUI: Glyph = interface.asRNotebook
 

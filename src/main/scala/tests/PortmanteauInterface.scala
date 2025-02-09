@@ -1,22 +1,23 @@
 package org.sufrin.glyph
 package tests
 import GlyphTypes.Window
-import sheeted.{Book, BookStyle, CheckBox, Label}
+import sheeted.{Book, BookSheet, CheckBox, Label}
 import NaturalSize.{Col, Row}
 
-class PortmanteauInterface(implicit val style: Sheet, implicit val translation: glyphXML.Translation)  {
+class PortmanteauInterface(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   val book = Book()
   val Page = book.Page
-  implicit val bookStyle: BookStyle = BookStyle(style, style)
+  implicit val content: Sheet = style.pageSheet
+  val button: Sheet = style.buttonSheet
 
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
     import sheeted.overlaydialogues.Dialogue.OKNO
     // TODO: windowdialogues need set software scale more carefully than now if autoScale
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
-      Label("Do you want to Exit?") scaled 1.5f
+      Label("Do you want to Exit?")(content) scaled 1.5f
     ).enlarged(50)
     OKNO(prompt,
-      title = "Exit Dialogue", ok = " Exit now ", no = " Continue ").InFront(glyph).andThen(close => if (close) window.close())
+      title = "Exit Dialogue", ok = " Exit now ", no = " Continue ")(button).InFront(glyph).andThen(close => if (close) window.close())
   }
 
 
@@ -26,7 +27,7 @@ class PortmanteauInterface(implicit val style: Sheet, implicit val translation: 
 
   Page("Welcome", "") {
     val anchor = Glyphs.INVISIBLE()
-    val checkBox = CheckBox(initially=false) { state => anchor.guiRoot.autoScale=state }(style.copy(buttonFrame = Styles.Decoration.Framed(fg=DefaultBrushes.blue, bg=DefaultBrushes.nothing)))
+    val checkBox = CheckBox(initially=false) { state => anchor.guiRoot.autoScale=state }(content.copy(buttonFrame = Styles.Decoration.Framed(fg=DefaultBrushes.blue, bg=DefaultBrushes.nothing)))
     import translation._
     translation("anchor")   = { _ => anchor }
     translation("checkbox") = { _ => checkBox }
