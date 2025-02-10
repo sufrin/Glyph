@@ -50,7 +50,7 @@ trait StyledButton {
 }
 
 trait DetailedButton {
-  def apply(reaction: Reaction)(implicit detail: Styles.ButtonStyle): Glyph
+  def apply(reaction: Reaction)(implicit detail: Sheet): Glyph
 }
 
 
@@ -101,7 +101,7 @@ trait ToggleButton { thisToggle =>
  *
  * The details of its frame, if any, are specified by the (implicit) `ButtonStyle`.
  */
-case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = true) extends StyledButton {
+case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = true) extends sheeted.StyledButton {
   def apply(action: Reaction)(implicit sheet: Sheet): Glyph = {
     val detail = sheet.buttonStyle
     @inline def enlarged(glyph: Glyph): Glyph = glyph.enlarged(detail.border, nothing, nothing)
@@ -115,7 +115,7 @@ case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = tr
 }
 
 /**  As GlyphButton but destined for a menu; hence deferred decoration */
-case class MenuGlyphButton(up: Glyph, down: Glyph = null, hover: Glyph = null, exact: Boolean = true) extends StyledButton {
+case class MenuGlyphButton(up: Glyph, down: Glyph = null, hover: Glyph = null, exact: Boolean = true) extends sheeted.StyledButton {
   def apply(action: Reaction)(implicit sheet: Sheet): Glyph = {
     val detail = sheet.buttonStyle
     @inline def reify(glyph: Glyph): Glyph = (if (glyph eq null) up() else glyph).enlarged(detail.border, nothing, nothing)
@@ -137,7 +137,7 @@ object Decorate {
 }
 
 object DecorateWithDetail {
-  def apply(glyph: Glyph)(implicit style: Styles.ButtonStyle): Glyph = style.frame.decorate(glyph)
+  def apply(glyph: Glyph)(implicit sheet: Sheet): Glyph = sheet.buttonStyle.frame.decorate(glyph)
 }
 
 /**
@@ -148,7 +148,7 @@ object DecorateWithDetail {
  *
  * The button's "sensitive" region does not include its decoration.
  */
-case class LightweightTextButton(text: String) extends StyledButton {
+case class LightweightTextButton(text: String) extends sheeted.StyledButton {
   def apply(action: Reaction)(implicit sheet: Sheet): Glyph = {
     val detail = sheet.buttonStyle
     val up     = detail.up.toGlyph(text, fg=detail.up.fg, bg=detail.up.bg)
@@ -167,7 +167,7 @@ case class LightweightTextButton(text: String) extends StyledButton {
  *
  * The button's "sensitive" region includes its decoration.
  */
-case class TextButton(text: String) extends StyledButton {
+case class TextButton(text: String) extends sheeted.StyledButton {
   def apply(action: Reaction)(implicit sheet: Sheet): Glyph = {
     val detail = sheet.buttonStyle
     val up     = Decorate(detail.up.toGlyph(text))
@@ -178,11 +178,11 @@ case class TextButton(text: String) extends StyledButton {
   }
 }
 
-case class DetailedTextButton(text: String) extends DetailedButton {
-  def apply(action: Reaction)(implicit detail: Styles.ButtonStyle): Glyph = {
-    val up     = DecorateWithDetail(detail.up.toGlyph(text))
-    val down   = DecorateWithDetail(detail.down.toGlyph(text))
-    val hover  = DecorateWithDetail(detail.hover.toGlyph(text))
+case class DetailedTextButton(text: String) extends sheeted.DetailedButton {
+  def apply(action: Reaction)(implicit detail: Sheet): Glyph = {
+    val up     = DecorateWithDetail(detail.buttonStyle.up.toGlyph(text))
+    val down   = DecorateWithDetail(detail.buttonStyle.down.toGlyph(text))
+    val hover  = DecorateWithDetail(detail.buttonStyle.hover.toGlyph(text))
     val button = ReactiveGlyphs.RawButton(up, down, hover)(action)
     button
   }
@@ -192,7 +192,7 @@ case class DetailedTextButton(text: String) extends DetailedButton {
  * As `LightweightTextButton`, but allows the menu to defer decoration until all its buttons have
  * been constructed.
  */
-case class LightweightMenuButton(text: String) extends StyledButton {
+case class LightweightMenuButton(text: String) extends sheeted.StyledButton {
   def apply(action: Reaction)(implicit sheet: Sheet): Glyph = {
     val detail = sheet.buttonStyle
     val up     = detail.up.toGlyph(text, fg=detail.up.fg, bg=detail.up.bg)
@@ -207,7 +207,7 @@ case class LightweightMenuButton(text: String) extends StyledButton {
  * As `TextButton`, but allows the menu to defer decoration until all its buttons have
  * been constructed.
  */
-case class MenuButton(text: String) extends StyledButton {
+case class MenuButton(text: String) extends sheeted.StyledButton {
   def apply(action: Reaction)(implicit sheet: Sheet): Glyph = {
     val detail = sheet.buttonStyle
     val up = (detail.up.toGlyph(text))

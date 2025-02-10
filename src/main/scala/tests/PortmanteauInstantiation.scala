@@ -7,14 +7,14 @@ import NaturalSize._
 import org.sufrin.glyph.Styles.ButtonStyle
 
 class  PortmanteauInstantiation(implicit sheet: BookSheet, implicit val translator: glyphXML.Translation) {
-  implicit val  buttons: Sheet = sheet.pageSheet
+  implicit val  buttons: Sheet = sheet.buttonSheet
   import buttons.{em,ex}
 
   import GlyphTypes.Window
   val GUI: Glyph = {
 
     lazy val Duplicated = new PortmanteauInterface with Application {
-      lazy val GUI: Glyph =
+      def GUI: Glyph =
         if      (extraArgs contains "-notebook")   asRNotebook
         else if (extraArgs contains "-rnotebook")  asRNotebook
         else if (extraArgs contains "-lnotebook")  asLNotebook

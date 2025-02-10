@@ -24,7 +24,7 @@ object Dialogue {
    *  A generic overlaydialogues "choice" popup, located at the given `position`. It can be popped down without using
    *  any of the buttons on its bottom row, by hitting the kill button placed on its top row.
    */
-  def CLOSEABLE[T](guiRoot: Glyph, bottomRow: Seq[Glyph]): Dialogue[T] =
+  def CLOSEABLE[T](guiRoot: Glyph, bottomRow: Seq[Glyph])(implicit style: Sheet): Dialogue[T] =
     new Dialogue[T](Col.centered(guiRoot, Row.atTop$(bottomRow)), closeGlyph = Some(defaultCloseGlyph))
 
   import ReactiveGlyphs.GenericButton
@@ -213,7 +213,7 @@ object Dialogue {
    *        }
    * }}}
    */
-  def CHOICE[T](blurb: Glyph)(choices: (T, Glyph)*): Dialogue[T] = {
+  def CHOICE[T](blurb: Glyph)(choices: (T, Glyph)*)(implicit style: Sheet): Dialogue[T] = {
     lazy val buttons = choices.map {
       case (t, g) => ReactiveGlyphs.RawButton(g(), g(), g()) { _ => popup.close(t) }.framed().enlarged(20)
     }
@@ -239,7 +239,7 @@ object Dialogue {
  * @tparam T the type of value passed to the continuation (if any) by invoking `close`
  *
  */
-class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyph: Option[Glyph] = None, var isModal: Boolean = true, var isMenu: Boolean = false)
+class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyph: Option[Glyph] = None, var isModal: Boolean = true, var isMenu: Boolean = false)(implicit style: Sheet)
 {
   thisPopup =>
 

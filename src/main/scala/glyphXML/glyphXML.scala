@@ -960,7 +960,7 @@ class Translation(val primitives: Primitives=new Primitives) {
       .centered$(translator.translate(Nil, false, Map.empty, sheet, source).map(_.asGlyph))
   }
 
-  implicit def XMLtoGlyph(source: Node)(implicit sheet: Sheet): Glyph = this(source)(sheet)
+  implicit def XMLNodetoGlyph(source: Node)(implicit sheet: Sheet): Glyph = this(source)(sheet)
   implicit def XMLtoGlyph(source: Elem)(implicit sheet: Sheet): Glyph = this(source)(sheet)
 
 }
@@ -992,7 +992,7 @@ object Language {
       meaning("caption") = new Abstraction(<p align="center"><b>&BODY;</b></p>)
   }
 
-  implicit def XMLtoGlyph(source: Node)(implicit sheet: Sheet): Glyph = translation.XMLtoGlyph(source: Node)
+  implicit def XMLtoGlyph(source: Node)(implicit sheet: Sheet): Glyph = translation.XMLNodetoGlyph(source: Node)
 }
 
 
