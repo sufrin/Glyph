@@ -57,13 +57,24 @@ class  PortmanteauInstantiation(implicit sheet: BookSheet, implicit val translat
 
     import translator._
     Col.centered(
-      <p width="50em" align="justify">
-        The button below starts a completely new instance of the GUI.
-        The checkboxes determine what tab layout and scale the new instance will have; as well
-        as what screen (if there are many) it will be shown on at first.
-        There is no artificial limit to the number of instances that can be running at once within a single JVM,
-        (though space constraints within the JVM will impose a natural limit).
-      </p>,
+      <div width="55em" align="justify">
+        <p>
+          The button below starts a completely new instance of the GUI.
+          The checkboxes determine what tab layout and scale the new instance will have; as well
+          as what screen (if there are many) it will be shown on at first.
+        </p>
+        <fill/>
+        <row inheritwidth="true">
+        <fill/><div width="49em" textForeground="red" frame="black">
+          <p hang="-notebook "  parIndent="2em">on the right</p>
+          <p hang="-lnotebook" parIndent="2em">on the left</p>
+          <p hang="-snotebook" parIndent="2em">slanted along the top</p>
+          <p hang="-vnotebook" parIndent="2em">vertically along the top</p>
+          <p hang="-tnotebook" parIndent="2em">horizontally along the top</p>
+        </div>
+          <fill/>
+        </row>
+      </div>,
       ex scaled 2,
       Row(
         TextButton(" New instance ") { _ => println(s"$scale $style"); Duplicated.main(Array(scale, style, screen)) },
@@ -72,7 +83,9 @@ class  PortmanteauInstantiation(implicit sheet: BookSheet, implicit val translat
         styleSelect.arrangedVertically(), em scaled 4,
         scaleSelect.arrangedVertically(), em scaled 4,
         screenSelect.arrangedVertically(),
-      ), ex
+      ), ex,
+      <p width="55em" align="justify">There is no artificial limit to the number of instances that can be running at once within a single JVM,
+        (though space constraints within the JVM will impose a natural limit).</p>
     )
   }
 }

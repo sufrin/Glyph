@@ -48,19 +48,21 @@ class PortmanteauInterface(implicit val style: BookSheet, implicit val translati
       <p>
         This application demonstrates aspects of the Glyphs library
         by offering the choice of several demonstration GUIs. These are shown on
-        the pages of a tabbed notebook, with tabs placed
-        to the right. Several of the pages have pages nested  within them:
+        the pages of a tabbed notebook with the location and style of
+        tabs determined by the command line.
+        Several of the pages have pages nested  within them:
         their names have * by them.
       </p>
       <p>
-        Command-line arguments affect the notebook style (normally -notebook)
-        and scale (normally 1.00). These can also be set when creating a
-        new instance from the <tt>New Instance</tt> page.
+        The notebook style is initially -notebook, and
+        its scale is initially 1.00. These can  be changed when creating a
+        new instance from the <tt>New Instance</tt> page; and the scale is also changed
+        when the win dow is resized by dragging an edge/corner.
       </p>
       <glyph gid="anchor"/>
       <fill/>
       <row inheritwidth="true" background="nothing">
-         <fill/><span>Enable window resizing by dragging:</span><glyph gid="checkbox"/><fill/>
+         <fill/><span>Enable window resizing by dragging an edge/corner</span><glyph gid="checkbox"/><fill/>
       </row>
     </body>
   }
