@@ -4,6 +4,7 @@ package tests
 import Glyphs._
 import NaturalSize.{Col, Row}
 import ReactiveGlyphs.TextButton
+import DefaultBrushes._
 
 /**
  * Interface using non-styled glyphs
@@ -11,13 +12,13 @@ import ReactiveGlyphs.TextButton
 
 trait Example2Interface {
   val blueish: Brush = blue(cap=ROUND, width=8)
-  val labelColor: Brush = green()
+  val variableColor: Brush = green()
   // val courier = Font(FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL), 30f)
 
   val GUI: Glyph = Col(bg=lightGrey).centered(
-    Label("A simple label", fg=white) enlarged(20, bg=labelColor),
-    Row(TextButton("make it blue") { _ => labelColor color blue.color }.framed(fg=blueish, bg=blueish),
-        TextButton("make it red")  { _ => labelColor color red.color }.framed(fg=blueish, bg=blueish))
+    Label("A simple label", fg=white) enlarged(20, bg=variableColor),
+    Row(TextButton("make it blue") { _ => variableColor color blue.color }.framed(fg=blueish, bg=blueish),
+        TextButton("make it red")  { _ => variableColor color red.color }.framed(fg=blueish, bg=blueish))
   ).enlarged(40f).enlarged(20f, bg=yellow)
 
 }

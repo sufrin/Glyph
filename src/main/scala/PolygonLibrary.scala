@@ -1,14 +1,14 @@
 package org.sufrin.glyph
 
 
-object PolygonLibrary extends Brushes {
+object PolygonLibrary {
   import GlyphTypes.Scalar
   import Glyphs._
   import NaturalSize.{Col, Row}
 
   import scala.collection.mutable.ArrayBuffer
+  import DefaultBrushes._
 
-  val brown: Brush = Brush("brown")(color=0xFF964b00)
 
   def closeButtonGlyph: Glyph = {
     import Glyphs.Polygon

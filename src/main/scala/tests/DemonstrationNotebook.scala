@@ -3,7 +3,7 @@ package tests
 
 import CellFit.ShiftEast
 import FixedSize.Space.tab
-import PolygonLibrary.brown
+import DefaultBrushes.brown
 import ReactiveGlyphs.RawButton
 import Styles.NotebookStyle
 
@@ -158,11 +158,11 @@ trait DemonstrationPages extends Brushes {
     locally { HintManager(enableSaveCheckBox, 5, "Click this to enable the image-save bar")(HelpStyle) }
 
     import GlyphML.Context
-    import GlyphXML._
+    import GlyphXMLOld._
 
     import org.sufrin.SourceLocation.{sourceLocation => source}
 
-    val defs = new GlyphXML{}
+    val defs = new GlyphXMLOld{}
     defs ("#cdata") = (ListMap("textForeground"->"red", "textBackground"->"lightGrey", "fontFamily"->"Courier" ))
 
     /**
@@ -1342,7 +1342,7 @@ trait DemonstrationPages extends Brushes {
       def cross = Polygon(star.w, star.h, blue(width=4))((0, 0), (star.w, star.h), (0, star.h), (star.w, 0), (0,0) ) scaled 0.5f
 
       Col.centered(
-          Row(nothing, nothing).centered(
+          Row().centered(
             star, em,
             star.mounted(red(width = 38, cap = SQUARE), green), em,
             star.mounted(red(width = 8, cap = ROUND), green), em,
@@ -1386,7 +1386,7 @@ trait DemonstrationPages extends Brushes {
       def cross = Polygon(star.w, star.h, blue(width = 4))((0, 0), (star.w, star.h), (0, star.h), (star.w, 0), (0,0)) scaled 0.5f
 
       Col.centered(
-        Row(nothing, nothing).centered(
+        Row().centered(
           star, em,
           star.edged(red(width = 8, cap = SQUARE), green), em,
           star.edged(red(width = 8, cap = ROUND), green), em,

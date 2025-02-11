@@ -76,7 +76,7 @@ object CellFit {
  *  The origin of the drawing surface is translated by this amount
  *  before each glyph is drawn.
  */
-abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
+trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
   import scala.annotation.tailrec
 
@@ -211,9 +211,6 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    */
   def baseLine: Scalar = 0f
 
-  ////////////// TODO: Layout everything up to the root
-  def reLayout(): Unit = {}
-
   ////////////// TODO: invoke an efficient redrawing
   /**
    *  Request a redraw of the (entire) associated window
@@ -226,6 +223,7 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    */
   def reDraw(): Unit = guiRoot.reDraw()
 
+  /** Is this an enabled reactive glyph */
   def enabled(state: Boolean): Boolean = {
     false
   }
@@ -402,13 +400,7 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    /** False unless `atSize` will generate a distinct glyph */
    def resizeable: Boolean = false
 
-  /**
-   *  A glyph derived from this glyph, and intended to be used for visual checks of geometry.
-   *
-   * @see DebugGeometry
-   */
-  def $$$$(enable: Variable[Boolean]=DebugGeometry.enableFrame, fg: Brush = DebugGeometry.frameColor): Glyph =
-           new DebugGeometry(this, enable, fg, true)
+
 }
 
 /**
@@ -429,7 +421,7 @@ abstract class Composite(components: Seq[Glyph]) extends Glyph {
 
   def draw(surface: Surface): Unit = {
     drawBackground(surface)
-    val delta: Vec = Vec(0, baseLine)
+    val delta: Vec = Vec.Zero//Vec(0, baseLine)
     for { glyph <- components} {
           surface.withOrigin(glyph.location+delta){
           glyph.draw(surface)

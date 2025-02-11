@@ -4,7 +4,7 @@ import GlyphTypes.Scalar
 
 /** A collection of `Glyph` constructors */
 
-object Glyphs extends Brushes {
+object Glyphs  {
 
   class Image(glyph: Glyph) extends Glyph {
     val theImage = External.glyph2Image(glyph)
@@ -33,7 +33,7 @@ object Glyphs extends Brushes {
 
     import io.github.humbleui.skija.Path
 
-    def NOTHING: Brush = invisible
+    def NOTHING: Brush = DefaultBrushes.invisible
 
     case class ShadingPaths(topLeft: Path, bottomRight: Path)
 
@@ -74,7 +74,7 @@ object Glyphs extends Brushes {
      * Shown (when `down.value` is true)  as glyph, with shading of width zdelta` around the bottom-left corner of glyph.
      * Shown (when `down.value` is false) as glyph, in the bottom-left corner of the whole.
      */
-    def Dynamic(fg: Brush=Brushes.buttonForeground, bg: Brush=Brushes.buttonBackground, delta: Scalar, down: Variable[Boolean] = Variable(false))(glyph: Glyph) =
+    def Dynamic(fg: Brush=DefaultBrushes.buttonForeground, bg: Brush=DefaultBrushes.buttonBackground, delta: Scalar, down: Variable[Boolean] = Variable(false))(glyph: Glyph) =
       new Dynamic(glyph, fg, bg, delta, down)
 
     /**
@@ -83,7 +83,7 @@ object Glyphs extends Brushes {
      * Shown (when `down` is true)  as glyph, with shading of width zdelta` around the bottom-left corner of glyph.
      * Shown (when `down` is false) as glyph, in the bottom-left corner of the whole.
      */
-    def Static(fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, delta: Scalar, down: Boolean=false)(glyph: Glyph) =
+    def Static(fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, delta: Scalar, down: Boolean=false)(glyph: Glyph) =
         GlyphTransforms.Shaded(glyph, fg, bg, 0f, delta, down)
 
     class  Dynamic(glyph: Glyph, val fg: Brush, val bg: Brush, delta: Scalar, val down: Variable[Boolean]) extends Glyph {
@@ -198,7 +198,7 @@ object Glyphs extends Brushes {
 
     def atRight(theGlyphs: Glyph*): Composite = aligned(1f, 0.5f, theGlyphs, "atRight")
 
-    def apply(fg: Brush = nothing, bg: Brush = nothing): ConcentricGenerators = {
+    def apply(fg: Brush = DefaultBrushes.nothing, bg: Brush = DefaultBrushes.nothing): ConcentricGenerators = {
       val (_fg, _bg) = (fg, bg)
       new ConcentricGenerators {
         val fg: Brush = _fg
@@ -234,11 +234,6 @@ object Glyphs extends Brushes {
         val fg = theGlyphs.head.fg
         val bg = theGlyphs.head.bg
 
-        /** A geometry-debugging glyph surrounding this glyph */
-        override
-        def $$$$(enable: Variable[Boolean] = DebugGeometry.enableFrame, framePaint: Brush = DebugGeometry.frameColor): Glyph =
-          new DebugGeometry(this, enable, fg=framePaint, false)
-
         locally {
           setParents()
         }
@@ -249,15 +244,15 @@ object Glyphs extends Brushes {
   }
 
   object Concentric extends ConcentricGenerators {
-    val bg: Brush = nothing
-    val fg: Brush = nothing
+    val bg: Brush = DefaultBrushes.nothing
+    val fg: Brush = DefaultBrushes.nothing
   }
 
   /** An empty glyph with the given dimensions */
   class Skip(width: Scalar, height: Scalar) extends Glyph {
     val diagonal = Vec(width, height)
-    val fg = invisible
-    val bg = invisible
+    val fg = DefaultBrushes.invisible
+    val bg = DefaultBrushes.invisible
     override def draw(surface: Surface): Unit = ()
 
     override val toString: String = s"Skip($width, $height)"
@@ -286,14 +281,14 @@ object Glyphs extends Brushes {
     def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new INVISIBLE(fg, bg)
   }
 
-  def INVISIBLE(fg: Brush = invisible, bg: Brush = invisible): Glyph = new INVISIBLE(fg, bg)
+  def INVISIBLE(fg: Brush = DefaultBrushes.invisible, bg: Brush = DefaultBrushes.invisible): Glyph = new INVISIBLE(fg, bg)
 
   /**
    * A point, made with the given paint. If the paint is thick then it's more of a blob than a point.
    */
   class Point(val fg: Brush) extends Glyph {
     val diagonal = Vec(paint.getStrokeWidth, paint.getStrokeWidth)
-    val bg = nothing
+    val bg = DefaultBrushes.nothing
 
     def draw(surface: Surface): Unit =
       surface.drawPoints$(paint, diagonal.x/2, diagonal.y/2)
@@ -341,8 +336,8 @@ object Glyphs extends Brushes {
   }
 
   object BlurredFrame  {
-    val defaultFG: Brush = Brush().color(0xFF000000)
-    val defaultBG: Brush = Brush().color(0)
+    val defaultFG: Brush = DefaultBrushes.nothing
+    val defaultBG: Brush =DefaultBrushes.nothing
 
     def empty(diagonal: Vec, blur: Scalar, spread: Scalar, fg: Brush=defaultFG, bg: Brush=defaultBG, dx: Scalar=0f, dy: Scalar=0f, fudge: Scalar = 1.75f): Glyph =
         new BlurredFrame(None, diagonal, blur, spread, fg, bg, dx, dy).enlarged(fudge*(blur+spread))
@@ -374,6 +369,7 @@ object Glyphs extends Brushes {
     override def toString: String = s"BlurredFrame($diagonal, $blur, $spread dx=$dx, dy=$dy fg=$fg, bg=$bg)"
 
     def draw(surface: Surface): Unit = {
+      //println(s"$this.draw($inside)")
       surface.withOrigin(-dx, -dy) {
         surface.drawShadow(fg.color, diagonal, dx, dy, blur, spread, true)
         surface.withClip(diagonal) { drawBackground(surface) }
@@ -598,7 +594,7 @@ object Glyphs extends Brushes {
 
     import io.github.humbleui.skija.Font
 
-    def apply(text: String, font: Font = Brushes.buttonFont, fg: Brush = defaultFG, bg: Brush = defaultBG): Glyph =
+    def apply(text: String, font: Font = DefaultBrushes.buttonFont, fg: Brush = defaultFG, bg: Brush = defaultBG): Glyph =
         Text(text, font).asLabel(fg, bg)
   }
 
@@ -609,9 +605,9 @@ object Glyphs extends Brushes {
     def apply(width: Scalar, height: Scalar): Glyph = new Glyph {
       def draw(surface: Surface): Unit = ()
       def diagonal: Vec = Vec(width, height)
-      def copy(fg: Brush=nothing, bg: Brush=nothing): Glyph = Empty(width, height)
-      val fg: Brush = nothing
-      val bg: Brush = nothing
+      def copy(fg: Brush=DefaultBrushes.nothing, bg: Brush=DefaultBrushes.nothing): Glyph = Empty(width, height)
+      val fg: Brush = DefaultBrushes.nothing
+      val bg: Brush = DefaultBrushes.nothing
     }
   }
 

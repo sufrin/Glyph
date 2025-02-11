@@ -16,44 +16,50 @@ case class Sheet
   buttonFontStyle: FontStyle = FontStyle.NORMAL,
   buttonFontSize: Scalar  = 22f,
   buttonBorderBrush: Brush = Brush("buttonBorder")(color=0XFF777777, width=5f),
-  buttonBackgroundBrush: Brush = Brush("buttonBackground")(color=0X00FFFFFF), // transparent
-  buttonForegroundBrush: Brush = Brush("buttonForeground")(color=0xFF0000FF), // blue
-  buttonHoverBrush: Brush = Brush("buttonHover")(color=0xFF00FF00),           // green
+  buttonBackgroundBrush: Brush = Brush("transparent")(color=0X00FFFFFF), // transparent
+  buttonForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF), // blue
+  buttonHoverBrush: Brush = Brush("green")(color=0xFF00FF00),           // green
   buttonDownBrush: Brush = Brush("buttonDown")(color=0xFFFF0000),             // red
-  toggleBackgroundBrush: Brush = Brush("buttonBackground")(color=0X00FFFFFF), // transparent
-  toggleOnBrush: Brush = Brush("toggleOn")(color=0xFFFF0000),                 // red
-  toggleOffBrush: Brush = Brush("toggleOn")(color=0xFF0000FF),                // blue
+  toggleBackgroundBrush: Brush = Brush("red")(color=0X00FFFFFF), // transparent
+  toggleOnBrush: Brush = Brush("red")(color=0xFFFF0000),                 // red
+  toggleOffBrush: Brush = Brush("blue")(color=0xFF0000FF),                // blue
   labelBackgroundBrush: Brush = Brush("buttonBackground")(color=0X00FFFFFF),  // transparent
-  labelForegroundBrush: Brush = Brush("buttonForeground")(color=0xFF0000FF),  // blue
-  textBackgroundBrush: Brush = Brush("textBackground")(color=0X00FFFFFF),     // transparent
-  textForegroundBrush: Brush = Brush("textForeground")(color=0xFF0000FF),     // blue
+  labelForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF),  // blue
+  textBackgroundBrush: Brush = Brush("transparent")(color=0X00FFFFFF),     // transparent
+  textForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF),     // blue
+  backgroundBrush: Brush = Brush("background")(color=0XFFBBBBBB),
+  foregroundBrush: Brush = Brush("foreground")(color=0XFFBBBBBB),
   // Paragraph layout properties
-  parHang:     Boolean   = false,
   parAlign:    Alignment = Left,
   parSkip:     Scalar    = 5f,
   parWidth:    Scalar    = 200f,
   leftMargin:  Scalar=0f,
   rightMargin: Scalar=0f,
-  parIndent:   ()=>Seq[Glyph] = { ()=>Nil },
+  parIndent:   Scalar=0f,
   padX: Scalar = 0f,
   padY: Scalar = 0f,
+  buttonFrame: Styles.Decoration.Decoration = Styles.Decoration.Unframed,
   // Container constraints
-  containerDimension: Vec = Vec.Zero
+  containerDimension: Vec = Vec.Zero,
+  //
+  discretionaryWordBreak: String = "_"
 ) {
-  val core: Sheet = this
 
   val toggleOn = new GlyphColours {
     val fg: Brush = toggleOnBrush;
     val bg: Brush = toggleBackgroundBrush
   }
+
   val toggleOff = new GlyphColours {
     val fg: Brush = toggleOffBrush;
     val bg: Brush = toggleBackgroundBrush
   }
+
   def labelFont: Font = labelFontFamily.makeFont(labelFontStyle, labelFontSize*fontScale)
   def textFont: Font = textFontFamily.makeFont(textFontStyle, textFontSize*fontScale)
   def buttonFont: Font = buttonFontFamily.makeFont(buttonFontStyle, buttonFontSize*fontScale)
   def buttonBorderWidth: Scalar = buttonBorderBrush.strokeWidth
+
   def parNarrow(left: Scalar, right: Scalar): Sheet = {
     val lm = leftMargin
     val rm = rightMargin
@@ -65,18 +71,17 @@ case class Sheet
   lazy val labelStyle: GlyphStyle = GlyphStyle(labelFont, labelForegroundBrush, labelBackgroundBrush)
 
   lazy val buttonStyle: ButtonStyle = ButtonStyle(
-    up = GlyphStyle(font = buttonFont, fg = buttonForegroundBrush, bg = buttonBackgroundBrush),
-    down = GlyphStyle(font = buttonFont, fg = buttonDownBrush, bg = buttonBackgroundBrush),
-    hover = GlyphStyle(font = buttonFont, fg = buttonHoverBrush, bg = buttonBackgroundBrush),
-    frame = Framed(fg = buttonBorderBrush, bg = buttonBackgroundBrush, radiusFactor = 0.5f),
+    up     = GlyphStyle(font = buttonFont, fg = buttonForegroundBrush, bg = buttonBackgroundBrush),
+    down   = GlyphStyle(font = buttonFont, fg = buttonDownBrush, bg = buttonBackgroundBrush),
+    hover  = GlyphStyle(font = buttonFont, fg = buttonHoverBrush, bg = buttonBackgroundBrush),
+    frame  = buttonFrame,
     border = 6f,
     toggle = ToggleStyle(on = toggleOn, off = toggleOff),
     checkbox = CheckboxStyle(tick = "✔", cross = "✖", on = toggleOn, off = toggleOff)
   )
 
-  lazy val unFramed: Sheet = new Sheet() {
-    override lazy val buttonStyle: ButtonStyle = buttonStyle.copy(frame = Decoration.Unframed)
-  }
+  /** A stylesheet derived from this one, but with button framing specified by `border`, and decor`. */
+  def withButtonFrame(frame: Styles.Decoration.Decoration = Decoration.Unframed): Sheet = copy(buttonFrame=frame)
 
   lazy val menuStyle: MenuStyle = MenuStyle(
     button = buttonStyle,
@@ -89,10 +94,13 @@ case class Sheet
 
   lazy val emWidth: Scalar = textFont.measureTextWidth("m") // textFont.getMetrics.getMaxCharWidth//
   lazy val exHeight: Scalar = textFont.getMetrics.getXHeight //textFont.measureText("X").getHeight
+  lazy val interWordWidth: Scalar = emWidth*0.4f
   lazy val baseLine: Scalar = {
     val m = textFont.getMetrics
     m.getHeight+m.getDescent
   }
+  lazy val em: Glyph = new FixedSize.Space(emWidth, 1f, 0, 0)
+  lazy val ex: Glyph = new FixedSize.Space(1f, exHeight, 0, 0)
 
   @inline private def styled(fontStyle: FontStyle): Sheet = copy(textFontStyle = fontStyle)
   def italicStyle: Sheet = styled(FontStyle.ITALIC)

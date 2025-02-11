@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import GlyphXML.AttributeMap
+import GlyphXMLOld.AttributeMap
 import ReactiveGlyphs.Reaction
 import Styles.{ButtonStyle, GlyphStyle}
 import Styles.Decoration.Decoration
@@ -183,7 +183,7 @@ object GlyphML {
   }
 
   val Default: Context =
-        Context(Styles.Default, Vec.Zero, 1200f, 10, 10, fg=Glyphs.black, bg=Glyphs.nothing, padX=0, padY=0)
+        Context(Styles.Default, Vec.Zero, 1200f, 10, 10, fg=DefaultBrushes.black, bg=DefaultBrushes.nothing, padX=0, padY=0)
 
   type ContextTransform = Context => Context
   type GlyphTransform   = Glyph   => Glyph
@@ -398,12 +398,12 @@ object GlyphML {
    */
   case class MenuBar (local: Context)(elements: Element*) extends Element {
     def toGlyph(local: Context): Glyph =
-      FixedSize.Row(local.boundingBox.x, local.fg, local.bg).atBottom$(elements.map(_.toGlyph(local)))
+      FixedSize.Row(local.boundingBox.x, local.fg, local.bg, align=Bottom)(elements.map(_.toGlyph(local)))
   }
 
   case class FixedWidthRow(width: Scalar)(elements: Element*) extends Element {
     def toGlyph(local: Context): Glyph =
-        FixedSize.Row(width, local.fg, local.bg).atBottom$(elements.map(_.toGlyph(local)))
+        FixedSize.Row(width, local.fg, local.bg, align=Bottom)(elements.map(_.toGlyph(local)))
   }
 
   /**

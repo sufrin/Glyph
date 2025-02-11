@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import Glyphs.nothing
+import DefaultBrushes.nothing
 
 object BooleanGlyphs {
 
@@ -12,7 +12,7 @@ object BooleanGlyphs {
 
     /** A settable `OneOf`  showing `whenTrue` if on, and `whenFalse` if off */
     class OnOff(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean, fg: Brush, bg: Brush) extends Settable[Boolean]
-    { val oneOf = DynamicGlyphs.OneOf.withNoBackground(bg=NOTHING)(whenFalse, whenTrue)
+    { val oneOf = DynamicGlyphs.OneOf(bg=NOTHING, enableBG = false)(whenFalse, whenTrue)
 
       /** Set the state */
       def set(state: Boolean): Unit = { oneOf.select(if (state) 1 else 0) }
@@ -42,6 +42,6 @@ object BooleanGlyphs {
       }
     }
 
-    def apply(tickBox: OnOff, initially: Boolean, fg: Brush=Brushes.buttonForeground, bg: Brush=Brushes.buttonBackground, reaction: Boolean => Unit): OnOffButton =
+    def apply(tickBox: OnOff, initially: Boolean, fg: Brush=DefaultBrushes.buttonForeground, bg: Brush=DefaultBrushes.buttonBackground, reaction: Boolean => Unit): OnOffButton =
       new OnOffButton(tickBox: OnOff, initially: Boolean, fg, bg, reaction: Boolean => Unit)
 }

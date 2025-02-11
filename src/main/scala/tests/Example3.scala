@@ -2,6 +2,10 @@ package org.sufrin.glyph
 package tests
 import Glyphs._
 import NaturalSize._
+import DefaultBrushes._
+
+import org.sufrin.glyph.Styles.Decoration.Framed
+
 
 /**
  * Style to be used throughout the interface
@@ -12,27 +16,21 @@ import NaturalSize._
  */
 
 trait Example3Interface {
-  implicit object LocalStyle extends Styles.DefaultSheet {
-    import Styles.Decoration.Framed
+  val variableColor: Brush = green()
 
-    implicit val localButtons: Styles.ButtonStyle =
-      buttonStyle.copy(frame = Framed(fg = blue(width = 8, cap=ROUND), bg=white, radiusFactor = 0.5f))
+  implicit val LocalStyle: Sheet =
+    Sheet(buttonFrame=Framed(fg = blue(width = 8, cap=ROUND), bg=white, radiusFactor = 0.3f),
+          labelBackgroundBrush = variableColor
+    )
 
-    implicit val localLabels: Styles.GlyphStyle =
-      labelStyle.copy(font=GlyphTypes.Font(face, 40))
-  }
-  import styled.TextButton
-  import styled.text.Label
+  import sheeted.TextButton
+  import sheeted.Label
 
-  import LocalStyle.Spaces._
-
-
-  val labelColor: Brush = green()
 
   val GUI: Glyph = Col(bg=lightGrey).centered(
-    Label("A simple label") enlarged(20, bg=labelColor), ex,
-    Row(TextButton("make it yellow") { _ => labelColor color yellow.color },
-        TextButton("make it red")    { _ => labelColor color red.color })
+    Label("A simple label") enlarged(20),
+    Row(TextButton("make it yellow") { _ => variableColor color yellow.color },
+        TextButton("make it red")    { _ => variableColor color red.color })
   ).enlarged(40f).enlarged(20f, bg=yellow)
 
 }

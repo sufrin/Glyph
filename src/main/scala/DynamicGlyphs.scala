@@ -5,7 +5,7 @@ import io.github.humbleui.jwm.App
 /**
  * Glyph combinators that transform glyphs into glyphs with dynamically-determinable scales and origins.
  */
-object DynamicGlyphs extends Brushes {
+object DynamicGlyphs {
 
   import GlyphTypes.{Font, Scale}
 
@@ -77,7 +77,7 @@ object DynamicGlyphs extends Brushes {
    *       one to which all events are forwarded from the top level. This amounts to an
    *       internal virtual window. Probably straightforward to deliver eventuallly.
    */
-  class ViewPort(glyph: Glyph, val fg: Brush=black, val bg: Brush = black) extends ReactiveGlyph with Brushes {
+  class ViewPort(glyph: Glyph, val fg: Brush, val bg: Brush) extends ReactiveGlyph {
     import GlyphTypes.Scalar
 
     import io.github.humbleui.jwm.{EventKey, EventMouseScroll}
@@ -172,8 +172,8 @@ object DynamicGlyphs extends Brushes {
 
     val offset = Vec(fg.strokeWidth/2, fg.strokeWidth/2)
 
-    val selectedColor   = fg(cap=ROUND)
-    val unselectedColor = fg(width=fg.strokeWidth, cap=ROUND, color=0XFF666666)
+    val selectedColor   = fg(cap=DefaultBrushes.ROUND)
+    val unselectedColor = fg(width=fg.strokeWidth, cap=DefaultBrushes.ROUND, color=0XFF666666)
 
     def draw(surface: Surface): Unit = {
       drawBackground(surface)
@@ -189,12 +189,12 @@ object DynamicGlyphs extends Brushes {
 
     val diagonal: Vec = glyph.diagonal + (offset scaled 2f)
 
-    def copy(fg: Brush=fg, bg:Brush=bg): ViewPort = new ViewPort(glyph.copy(fg, bg))
+    def copy(fg: Brush=fg, bg:Brush=bg): ViewPort = new ViewPort(glyph.copy(fg, bg), fg, bg)
 
   }
 
   object ViewPort {
-    def apply(glyph: Glyph, fg: Brush=black, bg: Brush = white): ViewPort = new ViewPort(glyph, fg, bg)
+    def apply(glyph: Glyph, fg: Brush=DefaultBrushes.black, bg: Brush = DefaultBrushes.white): ViewPort = new ViewPort(glyph, fg, bg)
   }
 
   /**
@@ -271,26 +271,23 @@ object DynamicGlyphs extends Brushes {
     def copy(fg: Brush=fg, bg:Brush=bg): Glyph = new OneOf(glyphs, align, fg, bg)
   }
 
-  object OneOf extends Brushes {
-    val defaultBG: Brush = invisible
-    val defaultFG: Brush = invisible
+  object OneOf {
+    val defaultBG: Brush = Brush("invisible")(color=0x0)
+    val defaultFG: Brush = defaultBG
 
     def largestBG(glyphs: Seq[Glyph]): Brush = {
       val g = glyphs.foldLeft(glyphs.head){ (l, r) => if (l.h*l.w > r.h*r.w) l else r }
       g.bg
     }
 
-    def apply(fg: Brush=defaultFG, bg: Brush=null, align: Alignment=Center)(glyphs: Glyph*): OneOf =
+    def apply(fg: Brush=defaultFG, bg: Brush=null, align: Alignment=Center, enableBG: Boolean = true)(glyphs: Glyph*): OneOf =
+        new OneOf(glyphs, align, fg=fg, BG=bg, enableBG)
+
+
+    def seq(fg: Brush=defaultFG, bg: Brush=defaultFG, align: Alignment=Center)(glyphs: Seq[Glyph]): OneOf =
         new OneOf(glyphs, align, fg=fg, BG=bg)
 
-    def withNoBackground(fg: Brush = defaultFG, bg: Brush = null, align: Alignment=Center)(glyphs: Glyph*): OneOf =
-      new OneOf(glyphs, align, fg = fg, BG = bg, enableBG = false)
 
-    def seq(fg: Brush=defaultFG, align: Alignment=Center)(glyphs: Seq[Glyph]): OneOf =
-        new OneOf(glyphs, align, fg=fg)
-
-    def $(fg: Brush = defaultFG, align: Alignment=Center)(glyphs: Seq[Glyph]): OneOf =
-      new OneOf(glyphs, align, fg = fg)
   }
 
   /**
@@ -383,7 +380,7 @@ object DynamicGlyphs extends Brushes {
   }
 
   object SplitScreen {
-    def apply(left: Glyph, right: Glyph, dynamic: Boolean, fg: Brush=black, bg: Brush = nothing): SplitScreen =
+    def apply(left: Glyph, right: Glyph, dynamic: Boolean, fg: Brush=DefaultBrushes.black, bg: Brush = DefaultBrushes.nothing): SplitScreen =
       new SplitScreen(left, right, dynamic, fg, bg)
   }
 

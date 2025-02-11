@@ -3,36 +3,36 @@ package tests
 
 import GlyphTypes._
 
+import org.sufrin.glyph.glyphXML.{Abstraction, Translation}
+import org.sufrin.glyph.glyphXML.Translation.Target.{ColTarget, Target}
+import org.sufrin.glyph.glyphXML.Visitor.AttributeMap
+import org.sufrin.glyph.sheeted.BookSheet
+
+import scala.xml.Node
+
 
 object PortmanteauNotebook extends Application  {
   import Styles._
 
   /**
-   * Default sheet except for font sizes
+   * Default sheet
    */
-  object LocalStyle extends Styles.DefaultSheet {
-    override def buttonFontSize: Scalar = 32
-    override def labelFontSize: Scalar = 24
-    override def labelStyle: GlyphStyle = GlyphStyle(labelFont, buttonStyle.up.fg, buttonStyle.up.bg)
-  }
+  val LocalSheet: Sheet = Sheet()
 
-  /**
-   * Style derived from the `Local` stylesheet: with
-   * blurred white-on-blue buttons.
-   *
-   * TODO: rethink the way in which concrete style sheet objects are
-   *       built from scratch, so that differential/incremental
-   *       specifications feels more straightforward.
-   */
-  implicit val blurred: StyleSheet = new LocalStyle.Derived {
-    import Styles._
-    import DefaultBrushes._
-    override def buttonStyle: Styles.ButtonStyle  =
-      delegate.buttonStyle.copy(frame = Decoration.Blurred(blue, nothing, 15f, 5f),
-                                up = GlyphStyle(font = buttonFont, fg = white, bg = nothing))
-  }
+  val interfaceStyle: Sheet = LocalSheet.copy(
+    buttonFrame=Styles.Decoration.Blurred(fg=DefaultBrushes.blue, blur=5, spread=5, delta=5),
+    buttonFontSize = 20,
+    labelFontSize = 20,
+    textFontSize = 20,
+    backgroundBrush = DefaultBrushes.white
+  )
+  implicit val bookStyle: BookSheet =
+    BookSheet(buttonSheet=interfaceStyle,
+              pageSheet=interfaceStyle.copy(buttonFrame=Decoration.Unframed, fontScale=0.9f))
 
-  val interface = new PortmanteauInterface()
+  import glyphXML.Language._
+
+  val interface = new PortmanteauInterface
 
   lazy val GUI: Glyph = interface.asRNotebook
 

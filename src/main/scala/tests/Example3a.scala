@@ -4,39 +4,32 @@ package tests
 
 import Glyphs._
 import NaturalSize._
+import DefaultBrushes._
 
-/**
- * Style to be used throughout the interface
- */
+import org.sufrin.glyph.Styles.Decoration
+
 
 /**
  * Interface using styled glyphs
  */
 
 trait Example3aInterface {
-  implicit object LocalStyle extends Styles.DefaultSheet {
-    object Super extends Styles.DefaultSheet
-    import Styles.Decoration.Blurred
+  val variableColor: Brush = green()
 
-    override implicit lazy val buttonStyle: Styles.ButtonStyle =
-      Super.buttonStyle.copy(frame = Blurred(blur=10f, spread=10f, fg = yellow(width = 8, cap=SQUARE)))
+  implicit val LocalStyle: Sheet =
+    Sheet(buttonFrame=Decoration.Blurred(blur=10f, spread=10f, fg = yellow(width = 8, cap=SQUARE)),
+          labelBackgroundBrush = variableColor
+    )
 
-    override implicit lazy val labelStyle: Styles.GlyphStyle =
-      Super.labelStyle.copy(font=GlyphTypes.Font(face, 40))
-  }
-
-  import styled.TextButton
-  import styled.text.Label
-
-  import LocalStyle.Spaces._
-
+  import sheeted.TextButton
+  import sheeted.Label
 
   val labelColor: Brush = green()
 
   val GUI: Glyph = Col(bg=lightGrey).centered(
-    Label("A simple label") enlarged(20, bg=labelColor), ex,
-    Row(TextButton("make it yellow") { _ => labelColor color yellow.color },
-        TextButton("make it red")    { _ => labelColor color red.color })
+    Label("A simple label") enlarged(20),
+    Row(TextButton("make it yellow") { _ => variableColor color yellow.color },
+        TextButton("make it red")    { _ => variableColor color red.color })
   ).enlarged(40f).enlarged(20f, bg=yellow)
 
 }

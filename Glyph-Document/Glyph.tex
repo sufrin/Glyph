@@ -608,7 +608,8 @@ corners painted with it may be rounded, squared, mitered,
 \textit{etc}; as well as having many other definable
 characteristics, including a human-readable name.
 
-For example, here are definitions of the \SCALA{blue} and \SCALA{red} brushes.\footnote{Colour
+For example, here are definitions of the \SCALA{blue} and \SCALA{red} brushes
+used while preparing this paper.\footnote{Colour
 is specified here by a 32-bit/4-byte integer -- usually written as a hexadecimal
 constant. The first byte specifies its
 \textit{alpha} -- which is analogous to opacity or covering power; the second, third, and fourth bytes
@@ -681,9 +682,9 @@ Glyph transformers are used to derive glyphs from simpler glyphs. For example:
 \glyph[scale=0.6]{eg1g}
 
 It's important to understand that, as a matter of policy, transforming a glyph, $g$
-is an ``algebraic'' operation that results in a tree in which $g$ is
-embedded: it no more makes  a new copy of it than
-(for example) the successor $succ~n$ of a number $n$ makes a new copy of
+is an ``algebraic'' operation that denotes a tree in which $g$ is
+embedded: it no more makes  a ``new'' copy of $g$ than
+(for example) the successor $succ~n$ of a number $n$ makes a ``new'' copy of
 $n$.\footnote{In light of the first prototype library implementing
 glyphs mutably there is an argument against this policy because it
 could lead to inadvertent sharing, with effects such as those
@@ -972,7 +973,7 @@ brush that blurs all the filled glyphs that it paints. When \Scala{brush: Brush}
 
 yields a blurred brush of the same colour as \Scala{brush}. When
 used on \textit{filled} glyphs, it blurs their outline, and
-can shift the blurred outline relative to their origin (by $(dx, dy)$.
+can shift the blurred outline relative to their origin (by $(dx, dy)$).
 
 Below we show the effects of painting a filled star with
 \Scala{blue.blurred(24f)} and with \Scala{blue.blurred(48f, 20f, 20f)}.

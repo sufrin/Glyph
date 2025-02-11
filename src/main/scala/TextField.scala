@@ -183,12 +183,12 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
     surface.withClip(diagonal) {
       // NB: The text is going to be aligned on the baseline
       // in case we start supporting mixed fonts in `TextField`s
-      surface.withOrigin(location.x, atBaseLine) {
+      surface.withOrigin(location.x, 0) {
         TextModel.rePan()
         val right = TextModel.rightText.atBaseline(fg)
         var left = TextModel.leftText(panBy).atBaseline(fg)
         left.draw(surface)
-        surface.withOrigin(left.w, baseLine) {
+        surface.withOrigin(left.w, 0) {
           right.draw(surface)
         }
 
@@ -203,7 +203,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
           surface.drawPolygon$(cursorBrush(color=0XFFFF0000), TextModel.margin, 0, TextModel.margin, diagonal.y)
         }
         // Draw the cursor as an I-Beam
-        surface.withOrigin(location.x, -atBaseLine) {
+        surface.withOrigin(location.x, 0) {
           surface.drawPolygon$(cursorBrush, cursorLeft, cursorSerifShrink, cursorLeft, diagonal.y - cursorSerifShrink) // ertical
           surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, cursorSerifShrink, cursorLeft + cursorSerifWidth, cursorSerifShrink)
           surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorSerifShrink, cursorLeft + cursorSerifWidth, diagonal.y - cursorSerifShrink)
@@ -491,7 +491,7 @@ object TextField extends org.sufrin.logging.Loggable {
     Dialogue.OK(Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
   }
 
-  def apply(fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, font: Font=Brushes.buttonFont,
+  def apply(fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, font: Font=DefaultBrushes.buttonFont,
             onEnter: String=>Unit              = { case text: String => },
             onError: (EventKey, Glyph) => Unit = popupError(_,_),
             onCursorLeave: String=>Unit        = { case text: String => },

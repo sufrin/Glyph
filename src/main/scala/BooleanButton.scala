@@ -15,7 +15,7 @@ import GlyphTypes.Font
  * @see EarlyMenuTest for a very simple example.
  */
 trait BooleanButton  {
-  def buttonFont: Font = Brushes.buttonFont
+  def buttonFont: Font = DefaultBrushes.buttonFont
   def fg: Brush = DefaultBrushes.black
   def bg: Brush = DefaultBrushes.white
   def toGlyph(string: String): Glyph = Text(string, buttonFont).asGlyph(fg, bg)
@@ -46,7 +46,7 @@ trait BooleanButton  {
   }
 
   /** A captioned on-off button associated with a `Variable[Boolean]` */
-  def onOff(caption: String, variableState: Variable[Boolean], fg: Brush=Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground)(reaction: Boolean => Unit): Glyph = {
+  def onOff(caption: String, variableState: Variable[Boolean], fg: Brush=DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground)(reaction: Boolean => Unit): Glyph = {
       import Glyphs._
       NaturalSize.Row(Label(caption),
           onOff(whenTrue = tick, whenFalse = cross, initially=variableState.value, fg, bg){

@@ -3,6 +3,8 @@ package tests
 import Glyphs._
 import GlyphTypes._
 
+import org.sufrin.glyph.DefaultBrushes.{blueLine, lightGrey, redFrame}
+
 
 /**
  *  Glyph examples for use in documentation
@@ -13,6 +15,7 @@ object DocumentationDiagrams {
   import GlyphTransforms.{Edged => Framed}
   import NaturalSize.Col
   import PolygonLibrary._
+  import DefaultBrushes.{ROUND,SQUARE,BUTT}
 
   val yellow   = Brush("yellow") color (0xFFffff00) strokeWidth (1.0f) strokeCap(ROUND)
   val green    = Brush("green") color (0xFF00ff00) strokeWidth (5.0f) strokeCap(ROUND)
@@ -272,8 +275,10 @@ object DocumentationDiagrams {
     write("row-b.png", true)(Row.atBottom(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
     import FixedSize.Space.tab
     write("row-fixed.png", true)(FixedSize.Row(350f, bg=lightGrey)(tab, FilledRect(50f, 25f, fg=red), FilledRect(100f, 25, fg=blue), FilledRect(50f, 25f, fg=red)).framed(black))
-    write("row-fixed-j.png", true)(FixedSize.Row(350f, bg=lightGrey)(FilledRect(50f, 25f, fg=red), tab, FilledRect(100f, 25, fg=blue),
-                                   tab, FilledRect(50f, 25f, fg=red)).framed(black))
+    write("row-fixed-j.png", true)(FixedSize.Row(350f, bg=lightGrey)(
+      FilledRect(50f, 25f, fg=red), tab,
+      FilledRect(100f, 25, fg=blue), tab,
+      FilledRect(50f, 25f, fg=red)).framed(black))
 
 
     write("col-c.png", true)(Col.centered(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))

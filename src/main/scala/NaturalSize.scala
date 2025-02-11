@@ -26,6 +26,7 @@ object NaturalSize {
     val uniform: Boolean
     val frame: Brush
     val skip: Scalar
+    val valign: VAlignment
 
     /** The glyphs are drawn so their centre lines are at the centre line of the row. */
     def centered(theGlyphs: Glyph*): Composite = aligned(0.5f, theGlyphs)
@@ -46,12 +47,14 @@ object NaturalSize {
     def atBottom$(theGlyphs: Seq[Glyph]): Composite = aligned(1.0f, theGlyphs)
 
 
-    /** Same as `atTop` */
-    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(0.0f, first :: theGlyphs.toList)
 
-    def apply(fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f): RowGenerators = {
-      val (_fg, _bg, _un, _fr, _sk) = (fg, bg, uniform, frame, skip)
+    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(valign.proportion, first :: theGlyphs.toList)
+    def apply(theGlyphs: Seq[Glyph]): Composite = aligned(valign.proportion, theGlyphs)
+
+    def apply(align: VAlignment=Top, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f): RowGenerators = {
+      val (_valign, _fg, _bg, _un, _fr, _sk) = (align, fg, bg, uniform, frame, skip)
       new RowGenerators {
+        val valign = _valign
         val fg: Brush = _fg
         val bg: Brush = _bg
         val uniform: Boolean = _un
@@ -101,11 +104,6 @@ object NaturalSize {
         val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
         val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
 
-        /** A geometry-debugging glyph surrounding this glyph */
-        override
-        def $$$$(enable: Variable[Boolean] = DebugGeometry.enableFrame, framePaint: Brush = DebugGeometry.frameColor): Glyph =
-          new DebugGeometry(this, enable, fg = framePaint, false)
-
         locally {
           setParents()
         }
@@ -131,8 +129,7 @@ object NaturalSize {
     val uniform: Boolean
     val frame: Brush
     val skip: Scalar
-
-
+    val halign: Alignment
 
     /** Glyphs drawn with their centres at the centre line of the column. */
     def centered(theGlyphs: Glyph*): Composite = aligned(0.5f, theGlyphs)
@@ -152,11 +149,11 @@ object NaturalSize {
     /** Glyphs drawn with right edges at the right edge of the column. */
     def atRight$(theGlyphs: Seq[Glyph]): Composite = aligned(1.0f, theGlyphs)
 
+    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(halign.proportion, first :: theGlyphs.toList)
+    def apply(theGlyphs: Seq[Glyph]): Composite = aligned(halign.proportion, theGlyphs)
 
-    /** Same as `atLeft`. */
-    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(0.0f, first :: theGlyphs.toList)
 
-    def apply(fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush=nothing, skip: Scalar=0f): ColumnGenerators = {
+    def apply(fg: Brush = nothing, bg: Brush = nothing, align: Alignment = Left, uniform: Boolean=false, frame: Brush=nothing, skip: Scalar=0f): ColumnGenerators = {
       val (_fg, _bg, _un, _fr, _sk) = (fg, bg, uniform, frame, skip)
       new ColumnGenerators {
         val fg: Brush = _fg
@@ -164,18 +161,10 @@ object NaturalSize {
         val uniform: Boolean = _un
         val frame: Brush = _fr
         val skip: Scalar = _sk
+        val halign = align
       }
     }
 
-    /*
-    def apply(height: Scalar)(fg: Brush = nothing, bg: Brush = nothing): FixedSize.ColumnGenerators = {
-      val (_height, _fg, _bg) = (height, fg, bg)
-      new FixedSize.ColumnGenerators {
-        val fg: Brush = _fg
-        val bg: Brush = _bg
-        val height: Scalar = _height
-      }
-    }*/
 
     /**
      * A column-alignment of the glyphs, with each glyph placed laterally at
@@ -233,6 +222,7 @@ object NaturalSize {
     val uniform: Boolean = false
     val frame: Brush = nothing
     val skip: Scalar = 0f
+    val valign: VAlignment = Top
   }
 
   object Col extends ColumnGenerators {
@@ -241,6 +231,7 @@ object NaturalSize {
     val uniform: Boolean = false
     val frame: Brush = nothing
     val skip: Scalar = 0f
+    val halign: Alignment = Left
   }
 
   import GlyphTypes.Scalar
@@ -267,7 +258,7 @@ object NaturalSize {
        * Glyphs are arranged as a grid of uniformly-sized cells, dimensioned to (just) fit
        * them all.
        */
-    def grid(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Composite = {
+    def grid(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Glyph = {
       (width>0, height>0) match {
         case (true, false) => uniformlyByRows(width)(glyphs)
         case (false, true) => uniformlyByCols(height)(glyphs)
@@ -281,32 +272,32 @@ object NaturalSize {
        * Glyphs are arranged as a grid of uniformly-sized cells, dimensioned to (just) fit
        * them all.
        */
-    def Grid(width: Int=0, height: Int=0)(glyphs: Glyph*): Composite = grid(width, height)(glyphs)
+    def Grid(width: Int=0, height: Int=0)(glyphs: Glyph*): Glyph = grid(width, height)(glyphs)
 
       /**
        * Glyphs are arranged as a grid of constant-height rows, dimensioned to (just) fit
        * all cells on each row.
        */
-    def Rows(width: Int=0)(glyphs: Seq[Glyph]): Composite  = rows(width)(glyphs)
+    def Rows(width: Int=0)(glyphs: Seq[Glyph]): Glyph  = rows(width)(glyphs)
 
       /**
        * Glyphs are arranged as a grid of constant-width columns, dimensioned to (just) fit
        * all cells on each column.
        */
-    def Cols(height: Int=0)(glyphs: Seq[Glyph]): Composite = cols(height)(glyphs)
+    def Cols(height: Int=0)(glyphs: Seq[Glyph]): Glyph = cols(height)(glyphs)
 
 
     /**
      *  Each col will be as wide as its widest element;
      *  each row will be as high as its highest element.
      */
-    def Table(width: Int=0, height: Int=0)(glyphs: Glyph*): Composite = table(width, height)(glyphs)
+    def Table(width: Int=0, height: Int=0)(glyphs: Glyph*): Glyph = table(width, height)(glyphs)
 
     /**
      *  Each col will be as wide as its widest element;
      *  each row will be as high as its highest element.
      */
-    def table(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Composite = {
+    def table(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Glyph = {
       val (rowLength, transpose)   =
           if (width>0) (width, false)
           else
@@ -314,28 +305,30 @@ object NaturalSize {
           else
             (Math.sqrt(glyphs.length).ceil.toInt, false)
 
-      val pad: Glyph   = FixedSize.Space(0f, 0f, 0f)
+      val pad: Glyph   = Glyphs.INVISIBLE()
       val (rs, cs)     = GridUtils.asRows[Glyph](pad)(rowLength, glyphs)
       val (rows, cols) = if (transpose) (cs, rs) else (rs, cs)
       val colWidths    = cols.map(col=>padx+Measure.maxWidth(col))
       val rowHeights   = rows.map(row=>pady+Measure.maxHeight(row))
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       var y = 0f
+      var dy = 0f
       var maxw = 0f
       for { row <- 0 until rows.length } {
           var x=0f
           for { col <- 0 until rows(row).length} {
               val cell   = rows(row)(col)
               val padded = cell.fitToCell(colWidths(col), rowHeights(row), fg=theseGenerators.fg, bg=theseGenerators.bg)
-              val framed = if (fg.color != 0 && (cell ne pad)) padded.edged(fg) else padded
+              val framed = if (fg.getAlpha!=0) padded.edged(fg) else padded
               locatedGlyphs.append(framed@@(x, y))
-              x += colWidths(col)
+              x += framed.w//colWidths(col)
+              dy = framed.h
           }
           maxw = maxw max x
-          y += rowHeights(row)
+          y += dy//rowHeights(row)
       }
       val theGlyphs = locatedGlyphs.toSeq
-      new Composite(theGlyphs) {
+      val core = new Composite(theGlyphs) {
         override val kind: String = "TabulateRows"
         val glyphs   = theGlyphs
         val diagonal = Vec(maxw, y)
@@ -344,54 +337,57 @@ object NaturalSize {
         locally {
           setParents()
         }
-        def copy(fg: Brush = fg, bg: Brush = bg): Composite = table(height)(theGlyphs.map(_.copy(fg, bg)))
+        def copy(fg: Brush = fg, bg: Brush = bg): Glyph = table(height)(theGlyphs.map(_.copy(fg, bg)))
       }
+      if (fg.getAlpha!=0) core.edged(fg) else core
     }
 
       /** @see Rows */
-    def rows(width: Int)(glyphs: Seq[Glyph]): Composite = table(width=width, height=0)(glyphs)
+    def rows(width: Int)(glyphs: Seq[Glyph]): Glyph = table(width=width, height=0)(glyphs)
 
       /** @see Cols */
-    def cols(height: Int)(glyphs: Seq[Glyph]): Composite = table(width=0, height=height)(glyphs)
+    def cols(height: Int)(glyphs: Seq[Glyph]): Glyph = table(width=0, height=height)(glyphs)
 
-    def uniformlyByRows(width: Int)(glyphs: Seq[Glyph]): Composite = {
+    def uniformlyByRows(width: Int)(glyphs: Seq[Glyph]): Glyph = {
       val maxh = pady + Measure.maxHeight(glyphs)
       val maxw = padx + Measure.maxWidth(glyphs)
+      val edgeX, edgeY = fg.strokeWidth*2
       var x, y = 0f
       var i    = 0
       val it = glyphs.iterator
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       while (it.hasNext) {
-        val w = it.next().fitToCell(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
-        val f = if (fg.color != 0) w.edged(fg) else w
-        locatedGlyphs.append(f@@(x, y))
+        val padded = it.next().fitToCell(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
+        val edged  = if (fg.color != 0) padded.edged(fg) else padded
+        locatedGlyphs.append(edged@@(x, y))
         i += 1
         if (i==width) {
           x = 0f
-          y += maxh
+          y += maxh + edgeY
           i = 0
         }
         else {
-          x += maxw
+          x += maxw + edgeX
         }
       }
       val theGlyphs = locatedGlyphs.toSeq
-      new Composite(theGlyphs) {
+      val core: Glyph = new Composite(theGlyphs) {
         override val kind: String = "Grid.asRows"
         val glyphs   = theGlyphs
-        val diagonal = Vec(width*maxw, y+(if (i==0) 0 else maxh))
+        val diagonal = Vec(width*(maxw+edgeX), y+(if (i==0) 0 else maxh+edgeY))
         val fg = theseGenerators.fg
         val bg = theseGenerators.bg
         locally {
           setParents()
         }
-        def copy(fg: Brush = fg, bg: Brush = bg): Composite = uniformlyByRows(width)(theGlyphs.map(_.copy()))
+        def copy(fg: Brush = fg, bg: Brush = bg): Glyph = uniformlyByRows(width)(theGlyphs.map(_.copy()))
       }
+      if (fg.getAlpha!=0) core.edged(fg) else core
     }
 
 
 
-      def uniformlyByCols(height: Int)(glyphs: Seq[Glyph]): Composite = {
+      def uniformlyByCols(height: Int)(glyphs: Seq[Glyph]): Glyph = {
       val maxh = pady + Measure.maxHeight(glyphs)
       val maxw = padx + Measure.maxWidth(glyphs)
       var x, y = 0f
@@ -400,7 +396,7 @@ object NaturalSize {
       val locatedGlyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
       while (it.hasNext) {
         val w = it.next().fitToCell(maxw, maxh, fg=theseGenerators.fg, bg=theseGenerators.bg)
-        val f = if (fg.color != 0) w.edged(fg) else w
+        val f = if (fg.getAlpha != 0) w.edged(fg) else w
         locatedGlyphs.append(f@@(x, y))
         i += 1
         if (i==height) {
@@ -413,7 +409,7 @@ object NaturalSize {
         }
       }
       val theGlyphs = locatedGlyphs.toSeq
-      new Composite(theGlyphs) {
+      val core: Glyph = new Composite(theGlyphs) {
         override val kind: String = "Grid.asCols"
         val glyphs   = theGlyphs
         val diagonal = Vec(x+(if (i==0) 0 else maxw), height*maxh)
@@ -422,14 +418,15 @@ object NaturalSize {
         locally {
           setParents()
         }
-        def copy(fg: Brush = fg, bg: Brush = bg): Composite = uniformlyByCols(height)(theGlyphs.map(_.copy()))
+        def copy(fg: Brush = fg, bg: Brush = bg): Glyph = uniformlyByCols(height)(theGlyphs.map(_.copy()))
       }
+      if ( (fg.getAlpha != 0)) core.edged(fg) else core
     }
 
-    def Width(width: Int)(theGlyphs: Glyph*): Composite =
+    def Width(width: Int)(theGlyphs: Glyph*): Glyph =
         uniformlyByRows(width)(theGlyphs)
 
-    def Height(height: Int)(theGlyphs: Glyph*): Composite =
+    def Height(height: Int)(theGlyphs: Glyph*): Glyph =
         uniformlyByCols(height)(theGlyphs)
 
   }

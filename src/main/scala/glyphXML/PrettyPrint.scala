@@ -1,74 +1,8 @@
 package org.sufrin.glyph
-package tests
+package glyphXML
 
 import scala.annotation.nowarn
 import scala.xml.Elem
-
-object gxml {
-  import xml._
-
-  val h: Node  =
-      <foo xmlns:h="http://www.w3.org/TR/html4/" kind="mine" space="40">
-        is
-        <bar unkind="what" kind="yours">fig leaves are silly
-               <no>jose is an <i>interesing</i> <!-- and this is a comment --> slogan</no>
-        </bar>
-        today
-      </foo>
-  val ha: MetaData = h.attributes
-  val ha2 = (ha.asAttrMap) ++ (ha.asAttrMap)
-
-  trait Visitor {
-    def visitText(context: Map[String, String], text: String): Unit
-    def visitEmpty(tag: String)(context: Map[String, String]): Unit = {}
-
-    def extendContextFor(tag: String)(inherited: Map[String,String], attrs: Map[String, String]): Map[String, String] =
-      inherited ++ attrs.map{ case (k, d) => (k, s"$tag:$d")}
-
-
-    def visit(context: Map[String, String])(source: Node): Unit = {
-      source match {
-
-        case xml.Elem(str, tag, attrs, binding, child@_*) if child.isEmpty =>
-          val context$ = extendContextFor(tag)(context, attrs.asAttrMap)
-          visitEmpty(tag)(context$)
-        case xml.Elem(str, tag, attrs, binding, child@_*) if tag != "no" =>
-          val context$ = extendContextFor(tag)(context, attrs.asAttrMap)
-          for { node <- child } visit(context$)(node)
-        case <no>{child@_*}</no> =>
-          for { node <- child } visit(context)(node)
-        case <no>{child@_*}</no> =>
-          for { node <- child } visit(context)(node)
-        case xml.Text(buffer) =>
-          visitText(context, buffer.toString)
-        case _ =>
-      }
-    }
-  }
-
-  def flatten(node: Node): Unit = {
-    val v = new Visitor {
-      override def visitText(context: Map[String, String], text: String): Unit =
-        println(s"$context: \"${text.replaceAll("[\\n][ ]*", "⎆")}\"")
-      override def visitEmpty(tag: String)(context: Map[String, String]): Unit =
-        println(s"$context: <$tag/>")
-    }
-    v.visit(Map.empty)(node)
-  }
-
-  def main(args: Array[String]): Unit = {
-    println(h.attribute("kind"))
-    println(h.attributes)
-    println(ha2)
-    println(h.toSeq)
-    println(h.iterator.toSeq)
-    println(h(0).attribute("foo"))
-    flatten(h)
-    import PrettyPrint.XMLPretty
-    h.prettyPrint()
-  }
-
-}
 
 object PrettyPrint {
 
@@ -82,24 +16,25 @@ object PrettyPrint {
 
   def XMLElem(xobj: xml.Node): PrettyPrintable =
     new PrettyPrintable {
-        /** The name of the class (or object) */
-        def prefix: String = xobj match {
-          case xml.Elem(str, str1, data, binding, child @ _*) => s"<$str1$data>"
-          case xml.Text(buffer) => s"\"${buffer.replaceAll("[\\n][ ]*", "⎆")}\""
-          case xml.Comment(text) => s"<!--$text-->"
-        }
-
-        /** The number of fields/elements of the object */
-        def arity: Int = xobj match {
-          case xml.Elem(str, str1, data, binding, child @ _*) => child.length
-          case _ => 0
-        }
-
-        override def field(i: Int): (String, Any) = xobj match {
-          case Elem(str, str1, data, binding, child @ _*) => (i.toString, XMLElem(child(i)))
-          case _ => ("", "")
-        }
+      /** The name of the class (or object) */
+      def prefix: String = xobj match {
+        case xml.Elem(str, str1, data, binding, child @ _*) => s"<$str1$data>"
+        case xml.Text(buffer) => s"\"${buffer.replaceAll("[\\n][ ]*", "⎆")}\""
+        case xml.Comment(text) => s"<!--$text-->"
+        case xml.EntityRef(text) => s"&$text;"
       }
+
+      /** The number of fields/elements of the object */
+      def arity: Int = xobj match {
+        case xml.Elem(str, str1, data, binding, child @ _*) => child.length
+        case _ => 0
+      }
+
+      override def field(i: Int): (String, Any) = xobj match {
+        case Elem(str, str1, data, binding, child @ _*) => (i.toString, XMLElem(child(i)))
+        case _ => ("", "")
+      }
+    }
 
 
   /**
@@ -215,9 +150,13 @@ object PrettyPrint {
 
       case seq: Iterable[Any]   =>
       { val s = seq.toSeq
-        for { i <-0 until s.length-1 }
-          prettyPrint(s(i), false, "  " :: indentStack)
-        prettyPrint(s(s.length-1), true, "  " :: indentStack)
+        if (s.nonEmpty) {
+          for {i <- 0 until s.length - 1}
+            prettyPrint(s(i), false, "  " :: indentStack)
+          prettyPrint(s(s.length - 1), true, "  " :: indentStack)
+        } else {
+
+        }
       }
 
       case obj: Product if isPrimTuple(obj)  => // already printed
@@ -229,7 +168,7 @@ object PrettyPrint {
         { val length = obj.productArity
           for { i <-0 until length-1 }
             prettyPrint(obj.productElement(i), false, indentToken :: indentStack, Some(obj.productElementName(i)))
-          prettyPrint(obj.productElement(length-1), true, indentToken :: indentStack, Some(obj.productElementName(length-1)))
+          if (length>0) prettyPrint(obj.productElement(length-1), true, indentToken :: indentStack, Some(obj.productElementName(length-1)))
         }
 
       case _ =>

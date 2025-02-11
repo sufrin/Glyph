@@ -22,6 +22,8 @@ object FixedSize extends DefaultPaints {
     override val xStretch: Scalar = xS
     override val yStretch: Scalar = yS
 
+    override def toString: String = s"FixedSpace(${_w}±$xS, ${_h}±$yS)"
+
     def draw(surface: Surface): Unit = {
       if (bg.color!=0) {
         //surface.fillRect(bg, diagonal)
@@ -90,10 +92,27 @@ object FixedSize extends DefaultPaints {
     }
   }
 
+  val nothing = Brush() color 0
+
+  object Row {
+    /** Construct `RowGenerator`s for a row of the given width, with the given foreground and background. */
+    def apply(width: Scalar, fg: Brush=nothing, bg: Brush = nothing, align: VAlignment = Top): RowGenerators = {
+      val (_align, _width, _fg, _bg) = (align, width, fg, bg)
+      new RowGenerators {
+        val fg: Brush = _fg
+        val bg: Brush = _bg
+        val width: Scalar = _width
+        val align: VAlignment = _align
+      }
+    }
+  }
+
   trait RowGenerators { theseGenerators =>
     val fg: Brush
     val bg: Brush
     val width: Scalar
+    val align: VAlignment
+
     /** The glyphs are drawn so their centre lines are at the centre line of the row. */
     def centered(theGlyphs: Glyph*): Composite = aligned(width, 0.5f, theGlyphs)
 
@@ -111,28 +130,24 @@ object FixedSize extends DefaultPaints {
     /** The glyphs are drawn so their bottom is at the bottom of the row. */
     def atBottom$(theGlyphs: Seq[Glyph]): Composite = aligned(width, 1.0f, theGlyphs)
 
-    def apply(theGlyphs: Glyph*): Composite = aligned(width, 0.0f, theGlyphs)
+    //def of(theGlyphs: Seq[Glyph]): Composite = aligned(width, align.proportion, theGlyphs)
 
-    /** Construct `RowGenerator`s for a row of the given width, with the given foreground and background. */
-    def apply(width: Scalar, fg: Brush=nothing, bg: Brush = nothing): RowGenerators = {
-      val (_width, _fg, _bg) = (width, fg, bg)
-      new RowGenerators {
-        val fg: Brush = _fg
-        val bg: Brush = _bg
-        val width: Scalar = _width
-      }
-    }
+    //def of(first: Glyph, theGlyphs: Glyph*): Composite = aligned(width, align.proportion, first :: theGlyphs.toList)
+
+    def apply(theGlyphs: Seq[Glyph]): Composite = aligned(width, align.proportion, theGlyphs)
+    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(width, align.proportion, first::theGlyphs.toList)
 
     def aligned(theWidth: Scalar, proportion: Float, theGlyphs: Seq[Glyph]): Composite = {
       require(theGlyphs.nonEmpty)
       require(theWidth>0f)
       HInflate(theWidth, theGlyphs)
       val height = theGlyphs.map(_.h).max
-      val width = theWidth // theGlyphs.map(_.w).sum
+      val width = theWidth // theGlyphs.map(_.w).sum //**
+      val maxbaseline = theGlyphs.map(_.baseLine).max
       var x, y = 0f
       for {glyph <- theGlyphs} {
-        val extra = (height - glyph.h) * proportion
-        glyph @@ Vec(x, extra + y)
+        val extra =(height - glyph.h) * proportion
+        glyph @@ Vec(x, extra + y) //**
         x += glyph.w
       }
       new Composite(theGlyphs) {
@@ -144,11 +159,6 @@ object FixedSize extends DefaultPaints {
 
         val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
         val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
-
-        /** A geometry-debugging glyph surrounding this glyph */
-        override
-        def $$$$(enable: Variable[Boolean] = DebugGeometry.enableFrame, framePaint: Brush = DebugGeometry.frameColor): Glyph =
-          new DebugGeometry(this, enable, fg = framePaint, false)
 
         locally {
           setParents()
@@ -163,6 +173,7 @@ object FixedSize extends DefaultPaints {
     val fg: Brush
     val bg: Brush
     val height: Scalar
+    val alignment: Alignment
 
      /** Glyphs drawn with their centres at the centre line of the column. */
     def centered(theGlyphs: Glyph*): Composite = aligned(height, 0.5f, theGlyphs)
@@ -182,16 +193,28 @@ object FixedSize extends DefaultPaints {
     /** Glyphs drawn with right edges at the right edge of the column. */
     def atRight$(theGlyphs: Seq[Glyph]): Composite = aligned(height, 1.0f, theGlyphs)
 
-    /** Same as `atLeft`. */
-    def apply(theGlyphs: Glyph*): Composite = aligned(height, 0.0f, theGlyphs)
+
+    def apply(glyph: Glyph, theGlyphs: Glyph*): Composite = alignment match {
+      case Left => aligned(height, 0.0f, glyph::theGlyphs.toList)
+      case Center => aligned(height, 0.5f, glyph::theGlyphs.toList)
+      case Right => aligned(height, 1.0f, glyph::theGlyphs.toList)
+    }
+
+    def apply(theGlyphs: Seq[Glyph]): Composite = alignment match {
+      case Left => aligned(height, 0.0f, theGlyphs)
+      case Center => aligned(height, 0.5f, theGlyphs)
+      case Right => aligned(height, 1.0f, theGlyphs)
+    }
+
 
     /** Construct `ColumnGenerator`s for a column of the given height, with the given foreground and background. */
-    def apply(height: Scalar, fg: Brush = nothing, bg: Brush = nothing): ColumnGenerators = {
-      val (_height, _fg, _bg) = (height, fg, bg)
+    def apply(height: Scalar, fg: Brush = nothing, bg: Brush = nothing, alignment: Alignment=Left): ColumnGenerators = {
+      val (_alignment, _height, _fg, _bg) = (alignment, height, fg, bg)
       new ColumnGenerators {
         val fg: Brush = _fg
         val bg: Brush = _bg
         val height: Scalar = _height
+        val alignment: Alignment = _alignment
       }
     }
 
@@ -233,18 +256,13 @@ object FixedSize extends DefaultPaints {
     }
   }
 
-  val nothing = Brush() color 0
 
-  object Row extends RowGenerators {
-    val bg: Brush = nothing
-    val fg: Brush = nothing
-    val width: Scalar = 0f
-  }
 
   object Col extends ColumnGenerators {
     val fg: Brush = nothing
     val bg: Brush = nothing
     val height:Scalar = 0f
+    val alignment: Alignment = Left
   }
 
 

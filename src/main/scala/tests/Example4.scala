@@ -2,29 +2,31 @@ package org.sufrin.glyph
 package tests
 
 import NaturalSize.{Col, Row}
-import styled.text._
-
+import sheeted.overlaydialogues.Dialogue.OK
+import sheeted._
 
 trait Example4Interface {
-  implicit object Style extends Styles.DefaultSheet
-
+  implicit val Style: Sheet = Sheet()
+  import glyphXML.Language._
 
   lazy val fields = List(a, b, c)
 
   import overlaydialogues.Dialogue.OK
-  val help = Paragraphs(50, Justify)(
-    """This app solves c = a + b if at least two of a,b,c
-      |are well-formed (possibly floating point) numbers.
-      |
-      | Typing ↩ in
-      |any of the text fields, causes the
-      |calculation to be done again.
-      |
-      |""".stripMargin
-  )
+  val help: Glyph =
+    <div width="40em" textFontSize="18" align="justify">
+    <p>
+    This app solves the equation <i>c = a + b</i> if at least two of <i>a, b, c</i>
+    are well-formed numbers: possibly floating-point.
+    </p>
+    <p>
+      Typing <tt>↩</tt> (<i>ie. the enter key</i> in any of the text fields, causes the
+      equation to be re-solved.
+    </p>
+    </div>
+
   val a, b, c = field()
   val GUI: Glyph = Col.centered(
-    help enlarged 25,
+    help,
     Row.centered(
       c.framed(),
       Label(" = "),
@@ -39,14 +41,7 @@ trait Example4Interface {
     onEnter = {
       case s: String if s.toDoubleOption.isDefined => calculemus()
       case s: String =>
-        OK(
-          Label(
-            s"""\"$s\" doesn't look much like a number.
-           |Correct it or re-enter it please.
-           |You can clear any field by typing ctrl-U.""".stripMargin,
-            Left
-          ).enlarged(20)
-        ).InFront(help).start()
+        OK( <p align="center" width="15em">The text {s"'$s'"} doesn't look much like a number. Enter it again plase.</p> ).InFront(help).start()
     }
   )
 

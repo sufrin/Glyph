@@ -79,7 +79,7 @@ trait Notebook {
     def tabbedNotebook(uniform: Boolean, align: Alignment)(implicit sheet: NotebookStyle): TabbedNotebook = {
       implicit val style: StyleSheet = sheet.buttonStyle
       val glyphs: Seq[Glyph] = pages.toList.map(_.root())
-      val oneOf = DynamicGlyphs.OneOf.seq(align=align)(glyphs)
+      val oneOf = DynamicGlyphs.OneOf.seq(align=align, bg=DefaultBrushes.white)(glyphs)
       val keyed = (0 until glyphs.length) zip pages
 
       lazy val buttons = keyed map  {
