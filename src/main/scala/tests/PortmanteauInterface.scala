@@ -42,8 +42,8 @@ class PortmanteauInterface(implicit val style: BookSheet, implicit val translati
     val anchor = Glyphs.INVISIBLE()
     val checkBox = CheckBox(initially=false) { state => anchor.guiRoot.autoScale=state }(content.copy(buttonFrame = Styles.Decoration.Framed(fg=DefaultBrushes.blue, bg=DefaultBrushes.nothing)))
     import translation._
-    translation("anchor")   = { _ => anchor }
     translation("checkbox") = { _ => checkBox }
+    Col.centered(
     <body align="justify" width="50em">
       <p>
         This application demonstrates aspects of the Glyphs library
@@ -57,14 +57,10 @@ class PortmanteauInterface(implicit val style: BookSheet, implicit val translati
         The notebook style is initially -notebook, and
         its scale is initially 1.00. These can  be changed when creating a
         new instance from the <tt>New Instance</tt> page; and the scale is also changed
-        when the win dow is resized by dragging an edge/corner.
+        when the window is resized by dragging an edge/corner when <glyph gid="checkbox"/> is checked.
       </p>
-      <glyph gid="anchor"/>
-      <fill/>
-      <row inheritwidth="true" background="nothing">
-         <fill/><span>Enable window resizing by dragging an edge/corner</span><glyph gid="checkbox"/><fill/>
-      </row>
-    </body>
+    </body>, anchor
+    )
   }
 
   Page("New Instance", "")(new PortmanteauInstantiation().GUI)
