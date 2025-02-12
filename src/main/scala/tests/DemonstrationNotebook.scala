@@ -18,7 +18,7 @@ import scala.xml.Elem
 /**
  * An expansive test comprising examples of UI components
  */
-trait DemonstrationPages extends Brushes {
+trait DemonstrationPages extends Brushes {/*
 
   import Glyphs._
   import GlyphTypes._
@@ -2345,7 +2345,7 @@ trait DemonstrationPages extends Brushes {
           |appearance to be saved in a .png file.
           |
           |It can be enabled/disabled with the checkbox on the Help page,
-          |or with a button that appears on the Etc*/CheckBox page.
+          |or with a button that appears on the Etc* page
           |""".stripMargin) (HintStyle) scaled 1.5f enlarged 15 framed (fg=redFrame, bg=white)
 
     // Show the hint if the client doesn't already know what the fuss is about
@@ -2364,8 +2364,10 @@ trait DemonstrationPages extends Brushes {
   lazy val asVNotebook = saveable(noteBook.Layout.rotatedButtons(3))
   lazy val asSNotebook = saveable(noteBook.Layout.skewedButtons(0.2f, 0f, uniform = true))
   lazy val asTNotebook = saveable(noteBook.Layout.topButtons())
+*/
 }
 
+/*
 object DemonstrationNotebook extends DemonstrationPages with Application {
   import GlyphTypes.Window
   lazy val GUI =
@@ -2383,6 +2385,8 @@ object DemonstrationNotebook extends DemonstrationPages with Application {
   override
   def onClose(window: Window): Unit = confirmCloseOn(GUI)(window)
 }
+*/
+
 
 
 

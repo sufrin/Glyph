@@ -811,7 +811,7 @@ class Translation(val primitives: Primitives=new Primitives) {
             //println(s"$padX, $padY")
             Decorated(GlyphTarget(paragraph = paragraph,
               sheet = sheet$,
-              glyph = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).rows(width=width)(glyphs)))
+              glyph = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY, width=width).rows(glyphs)))
 
           case "cols" =>
             import sheet$.{padX, padY, backgroundBrush => bg, foregroundBrush => fg}
@@ -821,7 +821,7 @@ class Translation(val primitives: Primitives=new Primitives) {
             //println(s"$padX, $padY")
             Decorated(GlyphTarget(paragraph = paragraph,
               sheet = sheet$,
-              glyph = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY).cols(height=height)(glyphs)))
+              glyph = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY, height=height).cols(glyphs)))
 
           case "span" =>
             children.flatMap { child => translate(tags$, paragraph, attributes$, sheet$, child) }

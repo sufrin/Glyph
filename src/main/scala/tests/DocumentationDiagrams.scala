@@ -331,13 +331,13 @@ object DocumentationDiagrams {
       Col.centered(
         Col.atLeft(
           Label(".grid(width=3)(data) -- row data as uniform size cells"),
-          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex,
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10, width=3)(data), ex,
           Label(".grid(height=3)(data) -- col data as uniform size cells"),
-          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(height = 3)(data), ex, ex, ex,
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10, height = 3)(data), ex, ex, ex,
           Label(".rows(width=3)(data) -- row data in uniform width columns"),
-          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).rows(width = 3)(data), ex,
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10, width = 3).rows(data), ex,
           Label(".cols(height=3)(data) -- col data in uniform height rows"),
-          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).cols(height = 3)(data), ex, ex, ex,
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10, height = 3)(data), ex, ex, ex,
           Label(".table(width=3)(data) -- row data as minimal width/height cols/rows"),
           NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(width=3)(data), ex,
           Label(".table(height=3)(data) -- col data as minimal width/height cols/rows"),
@@ -356,7 +356,7 @@ object DocumentationDiagrams {
       Col.centered(
         // NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(height = 1)(data), ex,
         NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(width = 1)(data).enlarged(10f), ex, ex,
-        NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).rows(width = 1)(data).enlarged(10f), ex,
+        NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10, width=1).rows(data).enlarged(10f), ex,
        // NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(width = 0,  height=0)(Label("XYZZY") :: data.toList)
       )
 

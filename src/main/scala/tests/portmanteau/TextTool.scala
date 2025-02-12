@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package tests
+package tests.portmanteau
 
 
 import org.sufrin.utility.TextAbbreviations
@@ -10,7 +10,7 @@ import scala.xml.Elem
 import sheeted._
 
 
-class PortmanteauText(implicit style: Sheet) extends Notebook {
+class TextTool(implicit style: Sheet) extends Notebook {
   implicit val pageStyle: BookSheet = BookSheet(style, style)
   val anchor = Glyphs.INVISIBLE()
   val abbrev = new TextAbbreviations(onLineTrigger = true)

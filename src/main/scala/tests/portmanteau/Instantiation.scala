@@ -1,19 +1,19 @@
 package org.sufrin.glyph
-package tests
+package tests.portmanteau
 
 import sheeted.{BookSheet, RadioCheckBoxes, TextButton}
 import NaturalSize._
 
 import org.sufrin.glyph.Styles.ButtonStyle
 
-class  PortmanteauInstantiation(implicit sheet: BookSheet, implicit val translator: glyphXML.Translation) {
+class  Instantiation(implicit sheet: BookSheet, implicit val translator: glyphXML.Translation) {
   implicit val  buttons: Sheet = sheet.buttonSheet
   import buttons.{em,ex}
 
   import GlyphTypes.Window
   val GUI: Glyph = {
 
-    lazy val Duplicated = new PortmanteauInterface with Application {
+    lazy val Duplicated = new Interface with Application {
       def GUI: Glyph =
         if      (extraArgs contains "-notebook")   asRNotebook
         else if (extraArgs contains "-rnotebook")  asRNotebook
@@ -65,13 +65,14 @@ class  PortmanteauInstantiation(implicit sheet: BookSheet, implicit val translat
         </p>
         <fill/>
         <row inheritwidth="true">
-        <fill/><div width="49em" textForeground="red" frame="black">
-          <p hang="-notebook "  parIndent="2em">on the right</p>
-          <p hang="-lnotebook" parIndent="2em">on the left</p>
-          <p hang="-snotebook" parIndent="2em">slanted along the top</p>
-          <p hang="-vnotebook" parIndent="2em">vertically along the top</p>
-          <p hang="-tnotebook" parIndent="2em">horizontally along the top</p>
-        </div>
+        <fill/>
+          <div width="49em" textForeground="red" frame="black">
+            <p hang="-notebook "  parIndent="2em">on the right</p>
+            <p hang="-lnotebook" parIndent="2em">on the left</p>
+            <p hang="-snotebook" parIndent="2em">slanted along the top</p>
+            <p hang="-vnotebook" parIndent="2em">vertically along the top</p>
+            <p hang="-tnotebook" parIndent="2em">horizontally along the top</p>
+          </div>
           <fill/>
         </row>
       </div>,

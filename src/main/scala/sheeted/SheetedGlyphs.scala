@@ -400,6 +400,9 @@ case class CheckBox(initially: Boolean) extends ToggleButton {
   }
 }
 
+case class ActiveString(initial: String)(implicit style: Sheet) extends DynamicGlyphs.ActiveString(style.labelStyle.font, style.labelStyle.fg, style.labelStyle.bg, initial)
+
+
 /** Checkbox destined for a menu; hence deferred decoration */
 case class MenuCheckBox(initially: Boolean) extends ToggleButton {
   def apply(reaction: Boolean => Unit)(implicit sheet: Sheet): OnOffButton = {
@@ -417,7 +420,7 @@ case class MenuCheckBox(initially: Boolean) extends ToggleButton {
  * The log may be longer than the size of the window in which the most
  * recent reports are shown.
  */
-class EventLog[Event](size: Int, lines: Int, keepLines: Int=0)(implicit detail: GlyphStyle) extends Glyph {
+class EventLog[Event](size: Int, lines: Int, keepLines: Int=0)(implicit style: Sheet) extends Glyph {
   import scala.collection.mutable
   override def toString: String = s"EventLog($size, $lines, $keepLines)"
 
@@ -444,7 +447,7 @@ class EventLog[Event](size: Int, lines: Int, keepLines: Int=0)(implicit detail: 
     var y = 0f
     for {event <- queue} {
       surface.withOrigin(2, y) {
-        val glyph = Text(toString(event), font = detail.font).asGlyph(detail.fg)
+        val glyph = Label(toString(event))//Text(toString(event), font = style.font).asGlyph(style.fg)
         glyph.draw(surface)
         y += glyph.h
       }
@@ -454,18 +457,18 @@ class EventLog[Event](size: Int, lines: Int, keepLines: Int=0)(implicit detail: 
    * The diagonal size of the glyph
    */
   def diagonal: Vec = {
-    val em = Text("M", detail.font).asGlyph()
+    val em = Label("M") // Text("M", style.font).asGlyph()
     Vec(size * em.w, maxQueue * em.h)
   }
 
   /** A copy of this glyph; perhaps with different foreground/background */
   def copy(fg: Brush, bg: Brush): Glyph = new EventLog(size, lines, keepLines)
 
-  val fg: Brush = detail.fg
-  val bg: Brush = detail.bg
+  val bg: Brush = style.labelBackgroundBrush
+  val fg: Brush = style.labelForegroundBrush
 }
 
-class StringLog (size: Int, lines: Int, keepLines: Int)(detail: GlyphStyle) extends EventLog[String](size, lines, keepLines)(detail) {
+class StringLog (size: Int, lines: Int, keepLines: Int)(implicit style: Sheet) extends EventLog[String](size, lines, keepLines) {
   def println(s: String): Unit = log(s)
 }
 
@@ -473,8 +476,8 @@ object StringLog {
 
   import Styles.GlyphStyle
 
-  def apply(size: Int, lines: Int, keepLines: Int=0)(detail: GlyphStyle): StringLog =
-    new StringLog(size, lines, keepLines)(detail)
+  def apply(size: Int, lines: Int, keepLines: Int=0)(implicit style: Sheet): StringLog =
+    new StringLog(size, lines, keepLines)
 }
 
 

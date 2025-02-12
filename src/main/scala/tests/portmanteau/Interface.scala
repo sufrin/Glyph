@@ -1,14 +1,13 @@
 package org.sufrin.glyph
-package tests
+package tests.portmanteau
 import GlyphTypes.Window
 import sheeted.{Book, BookSheet, CheckBox, Label}
 import NaturalSize.{Col, Row}
 import BooleanGlyphs.OnOffButton
 
-import org.sufrin.glyph.tests.portmanteau.{ButtonStyles, OverlayUses, Transforms}
 import org.sufrin.glyph.Styles.Decoration
 
-class PortmanteauInterface(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
+class Interface(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   val book = Book()
   val Page = book.Page
   implicit val content: Sheet = style.pageSheet
@@ -63,17 +62,26 @@ class PortmanteauInterface(implicit val style: BookSheet, implicit val translati
     )
   }
 
-  Page("New Instance", "")(new PortmanteauInstantiation().GUI)
+  Page("New Instance", "")(new Instantiation().GUI)
 
-  Page("Text", "") (new PortmanteauText().GUI)
+  Page("Text", "") (new TextTool().GUI)
 
-  Page("Window Menu Support*", "") (new portmanteau.WindowMenus().GUI)
+  Page("Window Menu Support*", "") (new WindowMenus().GUI)
 
-  Page("Glyph Transforms*", "") (new portmanteau.Transforms().GUI)
+  Page("Glyph Transforms*", "") (new Transforms().GUI)
 
   Page("Button Styles*", "") (new ButtonStyles().GUI)
 
+  Page("Framing", "") (new Framing().GUI)
+
   Page("Using Overlays*", "") (new OverlayUses().GUI)
+
+  Page("Events/Windows", "") (new EventsAndWindows().GUI)
+
+  Page("Etc*", "") (new Etcetera().GUI)
+
+
+
 
 
   import utils.Output.withWriteBar

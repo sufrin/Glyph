@@ -252,6 +252,8 @@ object NaturalSize {
     val bg:   Brush
     val padx: Scalar
     val pady: Scalar
+    val width: Int
+    val height: Int
 
 
       /**
@@ -272,26 +274,16 @@ object NaturalSize {
        * Glyphs are arranged as a grid of uniformly-sized cells, dimensioned to (just) fit
        * them all.
        */
-    def Grid(width: Int=0, height: Int=0)(glyphs: Glyph*): Glyph = grid(width, height)(glyphs)
+    def apply(glyphs: Seq[Glyph]): Glyph           = grid(width, height)(glyphs)
+    def apply(glyph: Glyph, glyphs: Glyph*): Glyph = grid(width, height)(glyph::glyphs.toList)
+
 
       /**
-       * Glyphs are arranged as a grid of constant-height rows, dimensioned to (just) fit
-       * all cells on each row.
-       */
-    def Rows(width: Int=0)(glyphs: Seq[Glyph]): Glyph  = rows(width)(glyphs)
-
-      /**
-       * Glyphs are arranged as a grid of constant-width columns, dimensioned to (just) fit
-       * all cells on each column.
-       */
-    def Cols(height: Int=0)(glyphs: Seq[Glyph]): Glyph = cols(height)(glyphs)
-
-
-    /**
      *  Each col will be as wide as its widest element;
      *  each row will be as high as its highest element.
      */
-    def Table(width: Int=0, height: Int=0)(glyphs: Glyph*): Glyph = table(width, height)(glyphs)
+    def Table(glyph: Glyph, glyphs: Glyph*): Glyph = table(width, height)(glyph::glyphs.toList)
+    def Table(glyphs: Seq[Glyph]): Glyph = table(width, height)(glyphs)
 
     /**
      *  Each col will be as wide as its widest element;
@@ -342,13 +334,26 @@ object NaturalSize {
       if (fg.getAlpha!=0) core.edged(fg) else core
     }
 
-      /** @see Rows */
-    def rows(width: Int)(glyphs: Seq[Glyph]): Glyph = table(width=width, height=0)(glyphs)
+      /**
+       * Glyphs are arranged as a grid of constant-height rows, dimensioned to (just) fit
+       * all cells in each row.
+       */
+    def rows(glyphs: Seq[Glyph]): Glyph = table(width=width, height=0)(glyphs)
+    def rows(glyph: Glyph, glyphs: Glyph*): Glyph = table(width=width, height=0)(glyph::glyphs.toList)
+    def Rows(glyphs: Seq[Glyph]): Glyph = table(width=width, height=0)(glyphs)
+    def Rows(glyph: Glyph, glyphs: Glyph*): Glyph = table(width=width, height=0)(glyph::glyphs.toList)
 
-      /** @see Cols */
-    def cols(height: Int)(glyphs: Seq[Glyph]): Glyph = table(width=0, height=height)(glyphs)
 
-    def uniformlyByRows(width: Int)(glyphs: Seq[Glyph]): Glyph = {
+      /**
+       * Glyphs are arranged as a grid of constant-width columns, dimensioned to (just) fit
+       * all cells in each column.
+       */
+    def cols(glyphs: Seq[Glyph]): Glyph = table(width=0, height=height)(glyphs)
+    def cols(glyph: Glyph, glyphs: Glyph*): Glyph = table(width=0, height=height)(glyph::glyphs.toList)
+    def Cols(glyphs: Seq[Glyph]): Glyph = table(width=0, height=height)(glyphs)
+    def Cols(glyph: Glyph, glyphs: Glyph*): Glyph = table(width=0, height=height)(glyph::glyphs.toList)
+
+    private def uniformlyByRows(width: Int)(glyphs: Seq[Glyph]): Glyph = {
       val maxh = pady + Measure.maxHeight(glyphs)
       val maxw = padx + Measure.maxWidth(glyphs)
       val edgeX, edgeY = fg.strokeWidth*2
@@ -387,7 +392,7 @@ object NaturalSize {
 
 
 
-      def uniformlyByCols(height: Int)(glyphs: Seq[Glyph]): Glyph = {
+    private def uniformlyByCols(height: Int)(glyphs: Seq[Glyph]): Glyph = {
       val maxh = pady + Measure.maxHeight(glyphs)
       val maxw = padx + Measure.maxWidth(glyphs)
       var x, y = 0f
@@ -436,14 +441,18 @@ object NaturalSize {
     val bg: Brush = nothing
     val padx: Scalar = 0
     val pady: Scalar = 0
+    val width: Int = 0
+    val height: Int = 0
 
-    def apply(fg: Brush=fg, bg: Brush=bg, padx: Scalar = 0, pady: Scalar = 0): GridGenerators = {
-      val (_fg, _bg, _padx, _pady) = (fg, bg, padx, pady)
+    def apply(fg: Brush=fg, bg: Brush=bg, padx: Scalar = 0, pady: Scalar = 0, width: Int=0, height: Int=0): GridGenerators = {
+      val (_fg, _bg, _padx, _pady, _w, _h) = (fg, bg, padx, pady, width, height)
       new GridGenerators {
         val fg: Brush = _fg
         val bg: Brush = _bg
         val padx: Scalar = _padx
         val pady: Scalar = _pady
+        val width: Int = _w
+        val height: Int =_h
       }
     }
   }

@@ -1005,7 +1005,7 @@ trait LargeTestGUI  {
     Col.centered(
       title,
       separator,
-      NaturalSize.Grid(padx=50, pady=20, fg=reddish).Table(width=2)(
+      NaturalSize.Grid(padx=50, pady=20, fg=reddish, width=2)(
       textColumn(smallFont, black)("Turned 0.1,45,67.5,85.5"), textColumn(smallFont, black)("Rotated 0,1,2,3"),
       Row() (t1().turned(0.1f, tT).framed(), t1().turned(45f, tT).framed(),
              t1().turned(67.5f, tT).framed(), t1().turned(85.5f, tT).framed()),
@@ -1014,8 +1014,8 @@ trait LargeTestGUI  {
             t2().turned(67.5f, tT).framed(), t2().turned(85.5f, tT).framed()),
       Row()(t2().rotated(0).framed(), t2().rotated(1).framed(), t2.rotated(2).framed(), t2().rotated(3).framed())),
       separator scaled 0.5f,
-      NaturalSize.Grid(padx=50, fg=reddish).Table(width=2) (
-          NaturalSize.Grid(padx=20, pady=20).Table(height=4)(
+      NaturalSize.Grid(padx=50, fg=reddish, width=2) (
+          NaturalSize.Grid(padx=20, pady=20, height=4)(
             grid,
             grid.rotated(1),
             grid.rotated(2),
@@ -1025,7 +1025,7 @@ trait LargeTestGUI  {
             table.rotated(2),
             table.rotated(3)
           ),
-          NaturalSize.Grid(pady=15).Table(width=1)(
+          NaturalSize.Grid(pady=15, width=1)(
             Row().centered(rho().mirrored(true, false), rho().skewed(-0.2f, 0f), rho().skewed(0.5f, 0f)),
             Row()(column().rotated(3), column().rotated(1)),
             Row(frame=reddish, uniform=true)(b1, b2, b3, b4).framed(reddish).skewed(0.2f, 0),

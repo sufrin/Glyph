@@ -56,11 +56,17 @@ class HintManager(val target: Enterable, val hint: Glyph, val seconds: Double) {
  */
 object HintManager {
   def apply(target: Enterable, seconds: Double, hint: Glyph): HintManager = new HintManager(target, hint, seconds)
-  def apply(target: Enterable, seconds: Double, hint: String)(implicit style: StyleSheet): HintManager = {
+//  def apply(target: Enterable, seconds: Double, hint: String)(implicit style: StyleSheet): HintManager = {
+//    new HintManager(
+//           target,
+//           Glyphs.Label(hint, style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),
+//           seconds)
+//  }
+  def apply(target: Enterable, seconds: Double, hint: String)(implicit style: Sheet): HintManager = {
     new HintManager(
-           target,
-           Glyphs.Label(hint, style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),
-           seconds)
+      target,
+      Glyphs.Label(hint, style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),
+      seconds)
   }
 }
 

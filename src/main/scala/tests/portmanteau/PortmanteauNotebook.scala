@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package tests
+package tests.portmanteau
 
 import GlyphTypes._
 
@@ -32,7 +32,7 @@ object PortmanteauNotebook extends Application  {
 
   import glyphXML.Language._
 
-  val interface = new PortmanteauInterface
+  val interface = new Interface
 
   lazy val GUI: Glyph = interface.asRNotebook
 
