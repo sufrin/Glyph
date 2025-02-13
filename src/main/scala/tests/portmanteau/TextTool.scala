@@ -9,6 +9,8 @@ import org.sufrin.glyph.styled.{text, CheckBox}
 import scala.xml.Elem
 import sheeted._
 
+import com.sun.source.util.SourcePositions
+
 
 class TextTool(implicit style: Sheet) extends Notebook {
   implicit val pageStyle: BookSheet = BookSheet(style, style)
@@ -34,6 +36,9 @@ class TextTool(implicit style: Sheet) extends Notebook {
 
   import sheeted._
   import glyphXML.Language._
+  import org.sufrin.SourceLocation.{sourcePath=>source}
+  def SOURCE(implicit source: SourceLocation): String = source.toString()
+
   val defs = translation.meaning
 
   defs("CONTROLS") =
@@ -49,20 +54,19 @@ class TextTool(implicit style: Sheet) extends Notebook {
 
   val GUI: Glyph = NaturalSize.Col.centered(
     anchor,
-    <body width="60em" align="justify" fg="blue" parSkip="0.75em">
+    <body width="60em" align="justify" fg="blue" parSkip="0.75em" itemWidth="60em" source={SOURCE}>
       <p>
         This is an example of a TextField that has been set up by mapping a few abbreviations to emojis,
         namely:
       </p>
       <fill/>
-      <p align="center" bg="nothing" fontFamily="Courier">
+      <p align="center" bg="nothing" fontFamily="Courier" source={SOURCE}>
         <![CDATA[(c) (r) :) :O <3 :-| :|]]>
       </p>
       <fill/>
       <p align="center">
         <glyph gid="TEXTFIELD"/>
         <glyph gid="CONTROLS"/>
-
       </p>
       <fill/>
       <p>
@@ -77,6 +81,18 @@ class TextTool(implicit style: Sheet) extends Notebook {
         Some of the emojis are also mapped back to their original abbreviations: something you can check
         by using the "any-shift-key-twice" method.
       </p>
-      </body>,
+      <fill/>
+      <itemize itemIndent="5em" logging="false">
+          <item>The cursor is always kept in view</item>
+        <item>Visual cues are given for out-of-field text</item>
+        <item>The usual cut, copy, paste, and navigate keys are provided:</item>
+        <itemize itemIndent="10em" hang="+">
+              <item>Ctrl/Cmd C - copy all</item>
+              <item>Ctrl/Cmd X - cut all to clipboard</item>
+              <item>Ctrl/Cmd V - insert from clipboard</item>
+              <item>Home, End, Left, Right, and Backspace - their usual effect</item>
+        </itemize>
+      </itemize>
+      </body>
   )
 }

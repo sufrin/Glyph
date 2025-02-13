@@ -6,6 +6,7 @@ import NaturalSize.{Col, Row}
 import BooleanGlyphs.OnOffButton
 
 import org.sufrin.glyph.Styles.Decoration
+import org.sufrin.glyph.glyphXML.Abstraction
 
 class Interface(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   val book = Book()
@@ -35,6 +36,55 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
   locally {
     translation("anchor") = { _ => Glyphs.INVISIBLE() }
+    translation("caption") =
+      new Abstraction(<p align="center"><b>&BODY;</b></p>)
+
+    /**
+     *  A simple implementation of <itemize> blocks containing <item>s.
+     *  {{{
+     *    <itemize logging[=false]
+     *             leftMargin[=5em]
+     *             hang[=" * "]
+     *             itemIndent[=2em]
+     *             itemAlign[=justify]>
+     *
+     *            <item>...<item>
+     *            <item>...<item>
+     *              ...
+     *            <item>...<item>
+     *
+     *    </itemize>
+     *  }}
+     *
+     *  Each <item> can specify its own hang, itemAlign, and itemWidth attributes, but otherwise inherits them from
+     *  the closest lexically enclosing <itemize>
+     *
+     *  <itemize> environments may not (at present) be nested, but the appearance of
+     *  nesting can be given by changing hang text and increasing the itemIndent.
+     */
+
+    translation("item") =
+      new Abstraction(
+        <row inheritWidth="true">
+          <!--attributes AT="ITEM" id="tag:item"/-->
+          <fill width="$itemIndent"/>
+          <p hang="$hang" width="$itemWidth" align="$itemAlign">
+            &BODY;
+          </p>
+        </row>)
+
+    translation("itemize") =
+      new Abstraction(
+        <SCOPE>
+        <ATTRIBUTES key="tag:item" logging="$logging(false)" leftMargin="$leftMargin(5em)" hang="$hang( * )"  itemIndent="$itemIndent(2em)"  itemWidth="$itemWidth(50em)" itemAlign="$itemAlign(justify)"/>
+        <span itemIndent="$itemIndent(2em)">
+          <col align="left" >
+            <!--attributes AT="ITEMIZE" /-->
+            &BODY;
+          </col>
+        </span>
+        </SCOPE>
+      )
   }
 
   Page("Welcome", "") {
@@ -43,7 +93,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
     import translation._
     translation("checkbox") = { _ => checkBox }
     Col.centered(
-    <body align="justify" width="50em">
+    <body align="justify" width="65em">
       <p>
         This application demonstrates aspects of the Glyphs library
         by offering the choice of several demonstration GUIs. These are shown on
@@ -72,11 +122,11 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
   Page("Button Styles*", "") (new ButtonStyles().GUI)
 
-  Page("Framing", "") (new Framing().GUI)
+  Page("Glyph Framing*", "") (new Framing().GUI)
 
   Page("Using Overlays*", "") (new OverlayUses().GUI)
 
-  Page("Events/Windows", "") (new EventsAndWindows().GUI)
+  Page("Events/Windows*", "") (new EventsAndWindows().GUI)
 
   Page("Etc*", "") (new Etcetera().GUI)
 
@@ -90,7 +140,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
 
   val hint: Glyph =
-    <p width="55" align="justify" fontScale="0.7" frame="red/2">
+    <p width="55em" align="justify" fontScale="0.7" frame="red/2">
     clicking on this grey strip invites you to save the GUI's
     current appearance in a .png file.
     </p>

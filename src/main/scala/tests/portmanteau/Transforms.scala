@@ -15,7 +15,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
     val nested = Book()
     val Page = nested.Page
 
-    Page("Turn", "Turn transforms") {
+    Page("Tight v. Natural turns #1", "Turn transforms") {
 
       type Scalar=Float
 
@@ -45,17 +45,26 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
         sheeted.Label(f" ($w%2.2f, $h%2.2f)\n($rot%2.2f)").scaled(0.8f).above(rect.turnedBoxed(w, h)(rot)).framed(tightBox).enlarged(8f)
 
       Col.centered(
-        <div width="60em" align="justify">
+        <div width="65em" align="justify">
           <p>
-            The .turned transform with `tight=true` always yields a square bbox whose side is the larger of the two of the present glyph.
-            For near-rotationally-symmetric glyphs this bbox
-            fits more closely than the one yielded by`tight=false`.
+            The glyph <tt>g.turned(...)</tt> with <tt>tight=true</tt> has a <i>square</i> bounding box whose side is the larger of the two sides of
+            <tt>g</tt>'s bounding box.
+            For nearly rotat_ion_ally-sym_metric glyphs this
+            fits more closely than the natural bounding box corresponding to  <tt>tight=false</tt>.
           </p>
           <p>
             Hereunder R denotes a rectangle, C denotes a circular glyph, and T denotes a triangle.
-            Tight bounding boxes are shown in red, non-tight in green.
+            Tight bounding boxes are shown in red, natural (tight=false) in green.
           </p>
         </div>, ex, ex,
+        Row(
+          T("R", 0, rect),
+          T("R", 25, rect),
+          T("R", 45, rect),
+          T("R", 70, rect),
+          T("R", 90, rect),
+          T("R", 135, rect),
+        ),
         Row(
           L("R", 0, rect),
           L("R", 25, rect),
@@ -63,14 +72,6 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
           L("R", 70, rect),
           L("R", 90, rect),
           L("R", 135, rect),
-        ),
-        Row(
-          L("C", 0, circ),
-          L("C", 25, circ),
-          L("C", 45, circ),
-          L("C", 70, circ),
-          L("C", 90, circ),
-          L("C", 135, circ),
         ),
         Row(
           T("C", 0, circ),
@@ -81,12 +82,12 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
           T("C", 135, circ),
         ),
         Row(
-          T("R", 0, rect),
-          T("R", 25, rect),
-          T("R", 45, rect),
-          T("R", 70, rect),
-          T("R", 90, rect),
-          T("R", 135, rect),
+          L("C", 0, circ),
+          L("C", 25, circ),
+          L("C", 45, circ),
+          L("C", 70, circ),
+          L("C", 90, circ),
+          L("C", 135, circ),
         ),
         //ex scaled 1.5f,
         sheeted.Label("R/T turned d, for d in 0, -22.5, -45, -67.5, -90"), ex,
@@ -113,7 +114,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
               (r()).turned(-90f, tight = true).framed(tightBox),
               Point(fg = red(width = 4))
             ))
-          }, em, em, Label("non-tight\nbboxes with\ncorresponding colours\n").above
+          }, em, em, Label("natural bboxes (tight=false)").above
           { val c0 = black(width = 2.5f, cap=SQUARE)
             val c1 = c0(color = red.color)
             val c2 = c0(color = green.color)
@@ -135,33 +136,28 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
       )
     }
 
-    Page("Tight", "") {
+    Page("Tight v. Natural turns #2", "") {
       def circ = PolygonLibrary.closeButtonGlyph.scaled(4)
       val d = circ.w * (0.35f)
       val w = d*5f
       val h = w*.25f
 
       def rect = Rect(w, h, fg = blueLine)
-      def tr = PolygonLibrary.star7(C=50f, R=50f, fg = Brush()(width = 2.5f, color = 0XFFff00ff))
+      def star = PolygonLibrary.star7(C=50f, R=50f, fg = Brush()(width = 2.5f, color = 0XFFff00ff))
 
       val (r, g, b) = (red(width=1, cap=SQUARE), green(width=1, cap=SQUARE), black(width=1, cap=SQUARE))
-      Col.centered(Label("Tight  (red) versus non-tight (green) bounding boxes"), ex,
-        Row.centered$(
-          for { tight <- List(true, false) } yield
-            Col.centered$(
-              for { a <- List(0f, 20f, 50f, 90f, 140f, 180f, 230f, 275f) } yield
-                Row.atTop(Label(f"$a%2.1f"), em scaled 2,
-                  Row.atTop$(
-                    for { glyph <- List(rect, tr) } yield
-                      Row.atTop(
-                        Concentric(
-                          glyph(b).turned(a, tight).framed(if (tight) r else g).enlarged(10f),
-                          Point(if (tight) r(width=4) else g(width=4))
-                        ), em scaled 2)
-                  )
-                )
-            )
-        )
+      Col.centered(Label("Tight (red) v. natural (green) bounding boxes."), ex,
+        {
+          def sample(glyph: Glyph, a: Scalar, tight: Boolean): Glyph =  Concentric(
+            glyph(b).turned(a, tight).framed(if (tight) r else g).enlarged(10f),
+            Point(if (tight) r(width=4) else g(width=4))
+          )
+          def OneRow(a: Scalar): Seq[Glyph] =
+            Label(f" .turned($a%2.1f) ") :: List(true, false).flatMap {
+              tight => for { glyph <- List(rect, star) } yield sample(glyph, a, tight)
+            }
+          NaturalSize.Grid(fg=black(width=0), width=5)(List(0f, 50f, 90f, 140f, 180f, 275f).flatMap(OneRow(_)))
+        }
       )
     }
 

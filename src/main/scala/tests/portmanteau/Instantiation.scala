@@ -57,7 +57,7 @@ class  Instantiation(implicit sheet: BookSheet, implicit val translator: glyphXM
 
     import translator._
     Col.centered(
-      <div width="55em" align="justify">
+      <div width="65em" align="justify">
         <p>
           The button below starts a completely new instance of the GUI.
           The checkboxes determine what tab layout and scale the new instance will have; as well
@@ -85,7 +85,7 @@ class  Instantiation(implicit sheet: BookSheet, implicit val translator: glyphXM
         scaleSelect.arrangedVertically(), em scaled 4,
         screenSelect.arrangedVertically(),
       ), ex,
-      <p width="55em" align="justify">There is no artificial limit to the number of instances that can be running at once within a single JVM,
+      <p width="65em" align="justify">There is no artificial limit to the number of instances that can be running at once within a single JVM,
         (though space constraints within the JVM will impose a natural limit).</p>
     )
   }

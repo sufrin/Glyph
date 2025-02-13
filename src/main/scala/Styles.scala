@@ -90,6 +90,11 @@ object Styles {
         glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).framed(fg, bg, radiusFactor)
     }
 
+    case class Edged(fg: Brush=DefaultBrushes.black, bg: Brush=DefaultBrushes.nothing, enlarge: Scalar = 0.15f, radiusFactor: Scalar = 0f) extends Decoration {
+      def decorate(glyph: Glyph): Glyph =
+        glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).edged(fg, bg)
+    }
+
     /**
      * Decorate the frame with shading
      * else the top left corner. The enlargement is `enlarge` itself if `enlarge>1`, otherwise `enlarge * (thisGlyph.w min thisGlyph.h)`

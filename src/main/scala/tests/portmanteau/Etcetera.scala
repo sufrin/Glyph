@@ -8,9 +8,11 @@ import sheeted.Book
 import sheeted.BookSheet
 import sheeted.TextToggle
 import sheeted.CheckBox
-import NaturalSize.{Col, Row, Grid}
+import NaturalSize.{Col, Grid, Row}
 import GlyphTypes.Scalar
 import Glyphs._
+
+import org.sufrin.glyph.Styles.Decoration.Framed
 
 class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: Sheet = style.pageSheet
@@ -225,7 +227,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       ) enlarged 20f
     }
 
-    Page("TextField", "") {
+    if (false) Page("TextField", "") {
       val anchor = Label("")
 
       val theText = sheeted.TextField(
@@ -351,6 +353,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       import BooleanGlyphs._
       import DynamicGlyphs.OneOf
       import sheeted._
+      implicit val pageSheet=style.pageSheet.copy(buttonFrame = Framed(fg=blue(width=6, cap=ROUND), enlarge=.25f, radiusFactor = .3f))
 
 
       def Monitor(whenFalse: String, whenTrue: String, toggle: OnOffButton): OneOf = {
@@ -427,7 +430,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           t1,     t2 scaled 1.7f,    t3
         )).enlarged(40f).framed(black), ex, ex,
 
-        NaturalSize.Grid(fg=black(width=0)).Width(2)(
+        NaturalSize.Grid.Width(1)(
           Col.centered(
             Label("A TextToggle can have multi-line legends in either or both states."), ex,
             TextToggle(whenTrue = ("True"), whenFalse = ("Not True\n(or true)"), initially = true) { _ => }, ex,

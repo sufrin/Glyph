@@ -83,7 +83,7 @@ class Abstraction(body: Node) {
 
     val result = substitute(body)
     val logging = invocationAttributes.getOrElse("logging", "")
-    if (logging.nonEmpty) {
+    if (logging.nonEmpty && logging.toLowerCase != "false") {
       org.sufrin.logging.Default.info(s"Expanding $logging  ($body)")
       org.sufrin.logging.Default.info(s"  $invocation")
       org.sufrin.logging.Default.info(s"  $result")
@@ -485,9 +485,10 @@ object Translation {
 
 class TypedAttributeMap(unNormalized: AttributeMap) {
   import org.sufrin.SourceLocation.SourceLocation
-  import org.sufrin.logging.SourceDefault.{warn}
+  import org.sufrin.logging.Default.{warn}
 
   val attributes: AttributeMap = unNormalized // .map{ case (k,d) => (k.toLowerCase, d)}
+  val at=attributes.getOrElse("source", "")
 
   def asString: String = Visitor.toString(attributes)
   override def toString: String = Visitor.toString(attributes)
@@ -497,7 +498,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
   def Int(key: String, alt: Int)(implicit source: SourceLocation): Int = attributes.get(key) match {
     case Some (s) if s.matches("-?[0-9]+") => s.toInt
     case Some(s)  =>
-      warn(s"$key(=$s) should be an Int [using $alt]")(source)
+      warn(s"$key(=$s) should be an Int [using $alt] ($at)")
       alt
     case None     => alt
   }
@@ -506,7 +507,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
     case Some (s) =>
       try { s.toFloat }
       catch {
-        case exn: Throwable  => org.sufrin.logging.Default.warn(s"$key(=$s) should be a Float [using $alt]")
+        case exn: Throwable  => org.sufrin.logging.Default.warn(s"$key(=$s) should be a Float [using $alt] ($at)")
           alt
       }
     case None     => alt
@@ -521,7 +522,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
           case (s"${s}px") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
           case (s"${s}pt") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
           case (other) =>
-            warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt")
+            warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt ($at)")
             alt
         }
       case None =>
@@ -536,7 +537,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
         case "t" | "true"  | "on" => true
         case "f" | "false" | "off" => false
         case _ =>
-          warn(s"$key=\"$boolean\" should be t/f/true/on/false/off")
+          warn(s"$key=\"$boolean\" should be t/f/true/on/false/off ($at)")
           default
       }
   }
@@ -549,7 +550,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
       case ("center") => Center
       case ("justify") => Justify
       case (other) =>
-        warn(s"$key=\"$other\" [not a horizontal alignment name: using \"center\"]")
+        warn(s"$key=\"$other\" [not a horizontal alignment name: using \"center\"] ($at)")
         Center
     }
   }
@@ -562,7 +563,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
       case ("mid") => Mid
       case ("center") => Mid
       case (other) =>
-        warn(s"$key=\"$other\" [not a vertical alignment name: using \"mid\"]")
+        warn(s"$key=\"$other\" [not a vertical alignment name: using \"mid\" ($at)]")
         Mid
     }
   }
@@ -867,7 +868,8 @@ class Translation(val primitives: Primitives=new Primitives) {
 
           case "attributes" =>
             import org.sufrin.logging.Default.info
-            info(s"${tagString}<attributes ${attributes$.asString} ${if (paragraph) "(P)" else ""}")
+            val caption=attributes$.String("AT", "")
+            info(s"ATTRIBUTES($caption) ${tagString}<attributes ${attributes$.asString} ${if (paragraph) "(P)" else ""}")
             Seq.empty
 
 

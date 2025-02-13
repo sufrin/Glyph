@@ -21,7 +21,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
   import DefaultBrushes._
 
 
-  Page("Framed Text #1", "A paragraph framed with red(width = 10, cap = ROUND) at different curvatures") {
+  Page("Framed Text #1", "Texts framed with red(width = 10, cap = ROUND) at different curvatures") {
       val fg = red(width = 10, cap = ROUND).copy()
 
 
@@ -29,8 +29,8 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
 
       def med = Label("A medium length label")
 
-      def long: Glyph = <p align="justify" width="20em">A text paragraph 20em wide enlarged by 25px that may be over_lapped at cor_ners by a low curvature frame.</p>.enlarged(25)
-      def longer: Glyph = <p align="justify" width="20em">A text paragraph 20em wide enlarged by 35px that may be over_lapped at cor_ners by a low curvature frame.</p>.enlarged(35)
+      def long: Glyph = <p align="justify" width="20em">A text paragraph that may obscure a low curvature frame.</p>.enlarged(25)
+      def longer: Glyph = <p align="justify" width="20em">A text paragraph that may obscure a low curvature frame.</p>.enlarged(25)
 
       def row(rf: Scalar): Glyph = {
         Col.atLeft(
@@ -54,14 +54,14 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       )
     }
 
-  Page("Framed Text #2","A paragraph framed with red(width = 10, cap = ROUND) at different curvatures") {
+  Page("Framed Text #2","Texts framed with red(width = 10, cap = ROUND) at different curvatures") {
     val fg = red(width = 10, cap = ROUND).copy()
 
     def short = Label("short").rotated(1)
 
     def med = Label("A medium length label").rotated(1)
 
-    def long: Glyph = <p align="justify" width="14em">A tall text paragraph 14em wide enlarged by 40px. It may be over_lapped at cor_ners by a low-curv_a_ture nar_row frame</p>.enlarged(40)
+    def long: Glyph = <p align="justify" width="12em">A text para_graph that may ob_scure a low-_curv_a_ture frame</p>.enlarged(25)
 
     val width = 3.5f*(short.w+med.w+long.w)
 
@@ -86,14 +86,14 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
 
   }
 
-  Page("Edged Text", "A paragraph variously enlarged then edged with red(width = 10, cap = ROUND)") {
+  Page("Edged Text", "Texts variously enlarged then edged with red(width = 10, cap = ROUND)") {
     val fg = red(width = 10, cap = ROUND).copy()
 
     def short = Label("short")
 
     def med = Label("A medium length label")
 
-    def long: Glyph = <p align="justify" width="20em">A text paragraph 20em wide. Edging is not as attractive as fram_ing, but never over_laps.</p>
+    def long: Glyph = <p align="justify" width="20em">Edging is not as attractive as fram_ing, but never over_laps.</p>
 
     def row(px: Scalar): Seq[Glyph] =
       List(
@@ -105,7 +105,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
 
 
     Col.centered(
-      Grid(fg=black(width=0), padx=10, pady=10, width=4, height=5).rows(List(0f, 20f, 25f, 35f, 40f).flatMap(row(_))), ex,
+      Grid(fg=black(width=0), padx=10, pady=10, width=4, height=5).rows(List(0f, 20f, 30f, 40f).flatMap(row(_))), ex,
       Label("The effect of 20px enlargement and a wider frame brush  [red(width=30)]."), ex,
       long.enlarged(20).edged(fg=fg.copy(width=30), nothing)
     )
