@@ -7,7 +7,7 @@ import sheeted.windowdialogues.Dialogue
 import sheeted.Book
 import sheeted.BookSheet
 import sheeted.TextToggle
-import sheeted.CheckBox
+import sheeted.Paragraph
 import NaturalSize.{Col, Grid, Row}
 import GlyphTypes.Scalar
 import Glyphs._
@@ -52,15 +52,15 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       val animations: Seq[Animation] = for { i<-1 to 12 } yield new Animation()
 
       Col.centered(
-        /*
-        Paragraphs(50, Justify)(
+
+        Paragraph(50, Justify)(
           """A grid of rotating buttons. Individual buttons are started/stopped
             |by clicking on them; and can be started or stopped together with
             |the Start all / Stop all toggle button. The speed of the last
             |started/stopped button(s) can be adjusted with the Faster/Slower
             |buttons.
             |
-            |""".stripMargin), ex,*/
+            |""".stripMargin), ex,
         Row(
           TextToggle(whenFalse="Start all", whenTrue="Stop all", initially = false){
             case true  =>
@@ -135,32 +135,31 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       nested.Layout.topButtons()
     }
 
-  def Justify(width: Scalar)(text: String): Glyph = <p width={s"${width}em"} align="justify">{text}</p>
-  def Left(width: Scalar)(text: String): Glyph = <p width={s"${width}em"} align="left">{text}</p>
+
 
     Page("Split", "") {
       import DynamicGlyphs.SplitScreen
       import ReactiveGlyphs.Slider
-      val left = Justify(30)(
+      val left = Paragraph(30, Justify)(
         """
           |This is a justified piece of text that may be quite small.
           |You'll see it on a split screen. When the text on the other
           |screen is not the same width we'll see what happens.
           |""".stripMargin) above ReactiveGlyphs.TextButton("The Left Button") { _ => }.framed()
-      val right = Left(40)(
+      val right = Paragraph(40, Left)(
         """
           |This is a left-justified piece of text that may be quite small.
           |You'll see it on a split screen. It'll be a bit wider
           |than the other thing on the screen.
           |""".stripMargin) above ReactiveGlyphs.TextButton("The Right Button") { _ => }.framed()
       val dynamic = SplitScreen(left enlarged 30, right enlarged 30, dynamic=true, fg=darkGrey.strokeWidth(6f))
-      def blob    = Glyphs.FilledRect(10f, 10f, fg=black.blurred(2f))
+      def blob    = Glyphs.FilledRect(28f, 14f, fg=black.blurred(6f))
       val slider  = Slider.Horizontal(Glyphs.Rect(dynamic.w, 2f), blob, dynamic.proportion){
         case proportion: Scalar => dynamic.setBoundary(proportion)
       }
       val static = SplitScreen(left() enlarged 30, right() enlarged 30, dynamic=false, fg=darkGrey.strokeWidth(6f))
       Col.centered(
-        Justify(60)(
+        Paragraph(60, Justify)(
           """
             |This is a test of the SplitScreen glyph. The test shows a pair of glyphs side by
             |side, each of which contains some text and a reactive glyph. Here we have coupled
@@ -185,7 +184,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
             _ => dynamic.setBoundary(1.0f); slider.dragTo(0.999f)
           },
         ex, ex, ex,
-        Justify(60)(
+        Paragraph(60, Justify)(
           """
             |Below we test the SplitScreen with a static size large enough to accomodate both glyphs.
             |It was, incidentally, built from copies of the left and right glyphs that appear above;
@@ -270,17 +269,19 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       val oneOfBG = OneOf(bg=black(alpha=0.25f))(aaa(), bbb(), ccc())
       val oneOfPB = OneOf()(ddd(), eee())
 
+      val buttonSheet: Sheet = pageSheet.copy(buttonFrame=Styles.Decoration.Edged(fg=lightGrey.copy(width=16, cap=ROUND)))
+
       val next = TextButton("Next State") {
         _ => oneOf.next(); oneOfBG.next(); oneOfPB.next()
-      }
+      }(buttonSheet)
 
       val sel0 = TextButton(".select(0)") {
         _ => oneOf.select(0); oneOfBG.select(0); oneOfPB.select(0)
-      }
+      }(buttonSheet)
 
 
       Col(fg=nothing, bg=white).centered(
-        Left(60)(
+        Paragraph(60, Left)(
           """
             |The background of a OneOf can be specified. If left unspecified it
             |is taken to be the background
@@ -290,7 +291,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
             |states of the OneOfs.
             |
             |""".stripMargin), ex,
-        Row(fg=nothing, bg=white)(next), ex, ex,
+        Row(fg=nothing, bg=white)(next, em, em, sel0), ex, ex,
         Col.centered(Label(s"""oneOf=OneOf(bg=grey)(AAA,BBB,CCCCCC)"""), ex, oneOfBG scaled .7f).enlarged(40).framed(), ex, ex,
         Col.centered(Label(s"""oneOf=OneOf()(AAA,BBB,CCCCCC)"""), ex, oneOf scaled .7f).enlarged(40).framed(), ex, ex,
         Col.centered(Label(s"""oneOf=OneOf()(Ping, Poobah)"""), ex, oneOfPB scaled .7f).enlarged(40).framed(), ex, ex, ex,
@@ -332,7 +333,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       }
 
       Col.centered(
-        Justify(50)(
+        Paragraph(50, Justify)(
           """
             |Several linked sliders subjected to a variety of
             |scalings, rotations, and skewings.
@@ -405,7 +406,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         }
 
         Col.centered(
-          Justify(50)(
+          Paragraph(50, Justify)(
             """Four ColourButtons. In the top row, the foreground colour changes
               |as the mouse hovers or is pressed. In the bottom row, the background colour changes
               |as the mouse hovers or is pressed.
@@ -447,7 +448,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       ).above(colourGlyphExample).scaled(0.9f).enlarged(10f)
     }
 
-    /* Page("Fonts*", "Font families\n(available on this computer)\n\n\n") {
+    Page("Fonts*", "Font families\n(available on this computer)\n\n\n") {
       object FontFamilies {
         import GlyphTypes._
         lazy val names: Seq[String] =
@@ -455,8 +456,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       }
 
       val familiesPerGroup = 60
-      val noteBook = Notebook()
-      val Page = noteBook.DefinePage
+      val book = Book()
+      val Page = book.Page
       var names = FontFamilies.names.sorted.toList
 
       def makePages(): Unit = {
@@ -465,7 +466,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           names = names.drop(familiesPerGroup)
           Page(s"${group.head.takeWhile(c => c!=' ')} ⇝ ${group.last.takeWhile(c => c!=' ')}", "") {
             //import styled.text.Label
-            val labels = group.map { name => Label(name, Left) }
+            val labels = group.map { name => sheeted.Label(name, Left) }
             val llength = labels.length / 2
             Row(NaturalSize.Col.atLeft$(labels.take(llength)).enlarged(20).framed(), em, em,
               NaturalSize.Col.atLeft$(labels.drop(llength)).enlarged(20).framed())
@@ -474,8 +475,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       }
 
       makePages()
-      noteBook.Layout.rightButtons(uniform = true)
-    } */
-    val GUI: Glyph = book.Layout.rightButtons().enlarged(30)
+      book.Layout.rightButtons(uniform = true)
+    }
+
+  val GUI: Glyph = book.Layout.rightButtons().enlarged(30)
 
 }

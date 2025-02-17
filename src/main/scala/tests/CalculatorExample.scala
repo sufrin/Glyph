@@ -1,32 +1,19 @@
 package org.sufrin.glyph
 package tests
 
-import overlaydialogues.Dialogue
+import sheeted.overlaydialogues.Dialogue
 import DefaultBrushes._
-import Styles.NotebookStyle
 
-//trait Default extends StyleSheet {
-//  import GlyphTypes._
-//  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL)
-//  override lazy val buttonFontSize: Scalar = 25
-//}
-//
-//
-//object BlurredStyle extends Styles.BlurredSheet {}
-//
-//object MenuStyle extends Styles.BlurredSheet {
-//  import GlyphTypes._
-//  override lazy val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.ITALIC)
-//  override lazy val buttonFontSize: Scalar = 30
-//}
+import Styles.Decoration
+import sheeted.BookSheet
 
 
-class AdderGUI()(implicit sheet: StyleSheet)  {
+class AdderGUI()(implicit sheet: Sheet)  {
   import NaturalSize.{Col, Row}
-  import styled.TextButton
-  import styled.text.{ActiveParagraphs, ActiveString, Label, Paragraphs}
+  import sheeted.TextButton
+  import sheeted._
+  import sheet.{ex,em}
 
-  import sheet.Spaces._
 
   var `a⊕b`:   Double => Double => Double = _.+
   var `c⊕a`:   Double => Double => Double = _.-
@@ -34,7 +21,7 @@ class AdderGUI()(implicit sheet: StyleSheet)  {
   var opName: String = "+"
 
   val opGlyph: DynamicGlyphs.ActiveString = ActiveString(opName)
-  val helpGlyph: DynamicGlyphs.ActiveGlyph[String] = ActiveParagraphs(50, Justify)(helpText())
+  val helpGlyph: ActiveParagraph = ActiveParagraph(50, Justify)(helpText())
 
 
   def setOp(opName: String, `a⊕b`: Double => Double => Double, `c⊕a`: Double => Double => Double, `c⊕b`: Double => Double => Double): Unit = {
@@ -61,7 +48,7 @@ class AdderGUI()(implicit sheet: StyleSheet)  {
   def check(name: String, field: TextField): Unit = {
     if (!(field.text.toDoubleOption.isDefined || field.text.isBlank))
     {
-      Dialogue.CHOOSE(Paragraphs(30, Justify)(
+      Dialogue.CHOOSE(Paragraph(30, Justify)(
         s"""
           |${field.text} doesn't look much like a number.
           |""".stripMargin))("Clear", "Carry on entering a number").North(field).andThen {
@@ -116,12 +103,11 @@ class AdderGUI()(implicit sheet: StyleSheet)  {
 
 }
 
-class CalculatorGUI()(implicit sheet: StyleSheet) extends AdderGUI()(sheet) {
+class CalculatorGUI()(implicit sheet: Sheet) extends AdderGUI()(sheet) {
 
   import NaturalSize._
-  import styled.RadioCheckBoxes
-
-  import sheet.Spaces._
+  import sheeted.RadioCheckBoxes
+  import sheet.{em, ex}
 
   def flip[S,T,U](op: S=>T=>U):T=>S=>U = { t:T => s:S => op(s)(t) }
 
@@ -133,28 +119,24 @@ class CalculatorGUI()(implicit sheet: StyleSheet) extends AdderGUI()(sheet) {
     case Some(3) =>  setOp("/", _./, flip(_./), _.*)
     case None => operations.select(0)
     case _ =>
-  }
+  }(sheet.copy(fontScale = 0.75f, buttonFrame=Decoration.Unframed))
 
   override def root: Glyph = Col.centered(
     super.root, ex,
-    Row.centered(styled.text.Label("Choose an operator "),
-                 Grid(fg=Brush()(width=0)).grid(height=2)(operations.glyphRows)) enlarged 20
+    Row.centered(sheeted.Label("Chose an operator "),
+                 Grid().grid(height=2)(operations.glyphRows)) enlarged 20
   ) enlarged 20
 
 }
 
 trait TopLevelGUI {
-  val noteBook: Notebook = Notebook()
-  val Page: noteBook.DefinePage.type = noteBook.DefinePage
-  
-  implicit val blurred: StyleSheet = new Styles.Default.Derived {
-    import Styles._
-    override lazy val buttonStyle: Styles.ButtonStyle  =
-      delegate.buttonStyle.copy(frame = Decoration.Blurred(blue, nothing, 15f, 5f),
-                                up = GlyphStyle(font = buttonFont, fg = white, bg = nothing))      
-  }
+  import sheeted.Book
+  val book: Book = Book()
+  val Page = book.Page
 
-  implicit val style: NotebookStyle = blurred.notebookStyle
+  implicit val pageStyle: Sheet = Sheet(backgroundBrush=white, buttonFrame=Decoration.Blurred(blue, nothing, 15f, 5f))
+  implicit val bookStyle: BookSheet = BookSheet(buttonSheet = pageStyle, pageSheet=pageStyle.copy(buttonFrame = Decoration.Unframed))
+
 
   Page("Adder", "") {
     val GUI = new AdderGUI()
@@ -167,7 +149,7 @@ trait TopLevelGUI {
   }
 
   val root: Glyph = {
-    noteBook.Layout.rightButtons(true)
+    book.Layout.leftButtons(true)
   }
 }
 
