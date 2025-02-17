@@ -31,7 +31,7 @@ object Output
 
   def withWriteBar(folder: String="SAVEDGUI", hint: Glyph=null, enabled: => Boolean)(gui: Glyph)(implicit style: Sheet): Glyph = {
     import Glyphs._
-    implicit object Style extends Styles.DefaultSheet
+    implicit object Style extends Sheet
     val r = FilledRect(gui.w - 5, 6f, fg = DefaultBrushes.lightGrey)
     lazy val writeBar: RawButton = ReactiveGlyphs.RawButton(r(), r(), r()) {
       _ =>

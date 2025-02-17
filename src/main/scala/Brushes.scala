@@ -14,8 +14,9 @@ trait Brushes {
   val SQUARE     = PaintStrokeCap.SQUARE
   val ROUND      = PaintStrokeCap.ROUND
   val BUTT       = PaintStrokeCap.BUTT
-  val red        = Brush("red").color(0xFFee0000).strokeWidth(25.0f).cap(SQUARE)
+  val red        = Brush("red").color(0xFFee0000).strokeWidth(1.0f).cap(SQUARE)
   val redLine    = Brush("red").color(0xFFee0000).strokeWidth(1.0f)
+  val redWide    = Brush("red").color(0xFFee0000).strokeWidth(25.0f)
   val redFrame   = Brush("red").color(0xFFee0000).strokeWidth(2.0f)
   val blue       = Brush("blue").color(0xFF0000ff).strokeWidth(2.0f)
   val blueLine   = Brush("blue").color(0xFF0000ff).strokeWidth(2.0f)

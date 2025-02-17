@@ -1,4 +1,5 @@
 package org.sufrin.glyph
+import GlyphTypes.Scalar
 
 
 /**
@@ -15,6 +16,8 @@ class DebugGeometry(glyph: Glyph, enable: Variable[Boolean], val fg: Brush) exte
   val bg: Brush = Brush().color(0)
 
   override def toString: String = s"DebugGeometry($glyph)$baseLineText"
+
+  override def baseLine: Scalar = glyph.baseLine
 
   /** [**] forwarded to `glyph.parent_=` */
   override def parent_= (parent: Glyph): Unit = glyph.parent=parent

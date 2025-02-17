@@ -4,7 +4,7 @@ package tests.portmanteau
 
 import org.sufrin.utility.TextAbbreviations
 import org.sufrin.SourceLocation.SourceLocation
-import org.sufrin.glyph.styled.{text, CheckBox}
+import org.sufrin.glyph.sheeted._
 
 import scala.xml.Elem
 import sheeted._

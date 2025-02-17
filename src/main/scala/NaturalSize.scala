@@ -46,7 +46,10 @@ object NaturalSize {
     /** The glyphs are drawn so their bottom is at the bottom of the row. */
     def atBottom$(theGlyphs: Seq[Glyph]): Composite = aligned(1.0f, theGlyphs)
 
-
+    /** The glyphs are drawn so their baselines align */
+    def atBaseline(theGlyph: Glyph, theGlyphs: Glyph*): Composite = aligned(0f, theGlyph::theGlyphs.toList, atBaseline = true)
+    /** The glyphs are drawn so their baselines align */
+    def atBaseline$(theGlyphs: Seq[Glyph]): Composite = aligned(0f, theGlyphs, atBaseline = true)
 
     def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(valign.proportion, first :: theGlyphs.toList)
     def apply(theGlyphs: Seq[Glyph]): Composite = aligned(valign.proportion, theGlyphs)
@@ -69,7 +72,7 @@ object NaturalSize {
      *
      * {{{ 0.0 <= proportion <= 1.0 && theGlyphs.nonEmpty }}}
      */
-    def aligned(proportion: Float, theGlyphs: Seq[Glyph]): Composite = {
+    def aligned(proportion: Float, theGlyphs: Seq[Glyph], atBaseline: Boolean = false): Composite = {
       // require(theGlyphs.nonEmpty)
       val height = Measure.maxHeight(theGlyphs)
       val width = Measure.totalWidth(theGlyphs)
@@ -77,8 +80,13 @@ object NaturalSize {
       val theUniformGlyphs = if (uniform) theGlyphs.map(_.enlargedTo(maxWidth, height, bg=bg)) else theGlyphs
       var x = 0f
       var y = 0f
+      val base = if (atBaseline) theGlyphs.map(_.baseLine).max else 0f
+
       for {glyph <- theUniformGlyphs} {
-        val extra = glyph.vStretch(height, proportion, glyph.h)
+        val extra =
+          if (atBaseline) base-glyph.baseLine else glyph.vStretch(height, proportion, glyph.h)
+          if (atBaseline) println(s"$extra $glyph")
+
         glyph @@ Vec(x, extra + y)
         x += glyph.w
       }
@@ -87,7 +95,9 @@ object NaturalSize {
         val glyphs = theUniformGlyphs
         val diagonal = Vec(x, height)
         override
-        val baseLine = glyphs.map(_.baseLine).max
+        val baseLine = base
+
+
 
         lazy val locs: Seq[Scalar] =
           if (frame.getAlpha==0) Seq.empty else

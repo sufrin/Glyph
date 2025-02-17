@@ -320,10 +320,9 @@ object DocumentationDiagrams {
       )((0, 100), (200, 100)).enlarged(4).framed())
 
     val gridTables = {
-      import styled.text._
-      implicit object Style extends Styles.DefaultSheet{}
-      import Style.Spaces
-      import Spaces._
+      import sheeted._
+      implicit object Style extends Sheet{}
+      import Style.{ex,em}
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
@@ -345,10 +344,9 @@ object DocumentationDiagrams {
         ) scaled 0.8f enlarged (50))
     }
 
-    val gridOrder = {
-      implicit object Style extends Styles.DefaultSheet{}
-      import Style.Spaces
-      import Spaces._
+    val gridOrder: Glyph = {
+      implicit object Style extends Sheet
+      import Style.{ex,em}
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
@@ -363,11 +361,10 @@ object DocumentationDiagrams {
     }
 
     val gridCellFit =  {
-      import styled.text._
-      implicit object Style extends Styles.DefaultSheet{}
+      import sheeted._
+      implicit object Style extends Sheet{}
       import CellFit._
-
-      import Style.Spaces._
+      import Style.{ex,em}
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)

@@ -130,6 +130,11 @@ object FixedSize extends DefaultPaints {
     /** The glyphs are drawn so their bottom is at the bottom of the row. */
     def atBottom$(theGlyphs: Seq[Glyph]): Composite = aligned(width, 1.0f, theGlyphs)
 
+    /** The glyphs are drawn so their baselines align */
+    def atBaseline(theGlyph: Glyph, theGlyphs: Glyph*): Composite = aligned(width, 0f, theGlyph::theGlyphs.toList, atBaseline = true)
+    /** The glyphs are drawn so their baselines align */
+    def atBaseline$(theGlyphs: Seq[Glyph]): Composite = aligned(width, 0f, theGlyphs, atBaseline = true)
+
     //def of(theGlyphs: Seq[Glyph]): Composite = aligned(width, align.proportion, theGlyphs)
 
     //def of(first: Glyph, theGlyphs: Glyph*): Composite = aligned(width, align.proportion, first :: theGlyphs.toList)
@@ -137,13 +142,12 @@ object FixedSize extends DefaultPaints {
     def apply(theGlyphs: Seq[Glyph]): Composite = aligned(width, align.proportion, theGlyphs)
     def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(width, align.proportion, first::theGlyphs.toList)
 
-    def aligned(theWidth: Scalar, proportion: Float, theGlyphs: Seq[Glyph]): Composite = {
+    def aligned(theWidth: Scalar, proportion: Float, theGlyphs: Seq[Glyph], atBaseline: Boolean = false): Composite = {
       require(theGlyphs.nonEmpty)
       require(theWidth>0f)
       HInflate(theWidth, theGlyphs)
       val height = theGlyphs.map(_.h).max
       val width = theWidth // theGlyphs.map(_.w).sum //**
-      val maxbaseline = theGlyphs.map(_.baseLine).max
       var x, y = 0f
       for {glyph <- theGlyphs} {
         val extra =(height - glyph.h) * proportion
@@ -155,7 +159,11 @@ object FixedSize extends DefaultPaints {
         val glyphs = theGlyphs
         val diagonal = Vec(width, height)
         override
-        val baseLine = glyphs.map(_.baseLine).max
+        val baseLine = if (atBaseline) glyphs.map(_.baseLine).max else 0f
+
+        // correct for baselines
+        if (baseLine!=0f)
+          for { glyph<-glyphs } { glyph @@ Vec(glyph.location.x, baseLine-glyph.baseLine)}
 
         val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
         val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg

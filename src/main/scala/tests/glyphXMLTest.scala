@@ -89,10 +89,10 @@ object glyphXMLTest extends Application {
 
 
         <p align="justify" hang="L1. ">
-          The rain in spain falls <b>mainly</b> in the  <glyph gid="B2" scaled="0.5" frame="red/6"/> plain. &filler; <glyph gid="B1"/>
+          The rain in spain falls <b fontScale=".8">mainly</b> in the  <glyph gid="B2" scaled="0.5" frame="red/6"/> plain. &filler; <glyph gid="B1"/>
         </p>
         <p align="justify" hang="L2. ">
-          The rain in spain falls <b>mainly</b> in the  <glyph gid="B2"/> plain. &filler; <glyph gid="B1"/>
+          The rain in <span textFontSize="45">BIG</span> spain falls <b>mainly</b> in the  <glyph gid="B2"/> plain. &filler; <glyph gid="B1"/>
         </p>
 
         <glyph gid="B1" fg="green"/><glyph gid="B2" fg="green" scaled="2"/>
@@ -299,7 +299,7 @@ object glyphXMLTest extends Application {
 
 
 
-  val GUI: Glyph = book.Layout.leftButtons()
+  val GUI: Glyph = book.Layout.rightButtons()
 
     def title: String = "glyphXML Test"
 

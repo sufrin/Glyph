@@ -45,8 +45,11 @@ object Text extends DefaultPaints {
     def copy(fg: Brush=fg, bg: Brush=bg): Glyph = if ((fg eq this.fg) && (bg eq this.bg)) this else new Text(string, font, fg, bg)
     def draw(surface: Surface): Unit = {
       drawBackground(surface)
-      surface.drawTextLine(fg, implementation, 0, height)//0)
+      surface.drawTextLine(fg, implementation, 0, height)
+      surface.drawLines$(fg, 0f,height, width,height)
     }
+
+    override def baseLine: Scalar = height
 
 
 
