@@ -47,12 +47,16 @@ object NaturalSize {
     def atBottom$(theGlyphs: Seq[Glyph]): Composite = aligned(1.0f, theGlyphs)
 
     /** The glyphs are drawn so their baselines align */
-    def atBaseline(theGlyph: Glyph, theGlyphs: Glyph*): Composite = aligned(0f, theGlyph::theGlyphs.toList, atBaseline = true)
+    def atBaseline(theGlyph: Glyph, theGlyphs: Glyph*): Composite =
+      aligned(0f, theGlyph::theGlyphs.toList, atBaseline = true)
     /** The glyphs are drawn so their baselines align */
-    def atBaseline$(theGlyphs: Seq[Glyph]): Composite = aligned(0f, theGlyphs, atBaseline = true)
+    def atBaseline$(theGlyphs: Seq[Glyph]): Composite =
+      aligned(0f, theGlyphs, atBaseline = true)
 
-    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(valign.proportion, first :: theGlyphs.toList)
-    def apply(theGlyphs: Seq[Glyph]): Composite = aligned(valign.proportion, theGlyphs)
+    def apply(first: Glyph, theGlyphs: Glyph*): Composite =
+      aligned(valign.proportion, first :: theGlyphs.toList)
+    def apply(theGlyphs: Seq[Glyph]): Composite =
+      aligned(valign.proportion, theGlyphs)
 
     def apply(align: VAlignment=Top, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f): RowGenerators = {
       val (_valign, _fg, _bg, _un, _fr, _sk) = (align, fg, bg, uniform, frame, skip)
@@ -77,16 +81,17 @@ object NaturalSize {
       val height = Measure.maxHeight(theGlyphs)
       val width = Measure.totalWidth(theGlyphs)
       val maxWidth = skip+Measure.maxWidth(theGlyphs)
-      val theUniformGlyphs = if (uniform) theGlyphs.map(_.enlargedTo(maxWidth, height, bg=bg)) else theGlyphs
+      val theUniformGlyphs =
+        if (uniform) theGlyphs.map(_.enlargedTo(maxWidth, height, bg=bg)) else theGlyphs
       var x = 0f
       var y = 0f
       val base = if (atBaseline) theGlyphs.map(_.baseLine).max else 0f
 
       for {glyph <- theUniformGlyphs} {
         val extra =
-          if (atBaseline) base-glyph.baseLine else glyph.vStretch(height, proportion, glyph.h)
+          if (atBaseline) ((height-glyph.h)+(glyph.h-glyph.baseLine))-(height-base)
+          else glyph.vStretch(height, proportion, glyph.h)
           if (atBaseline) println(s"$extra $glyph")
-
         glyph @@ Vec(x, extra + y)
         x += glyph.w
       }
@@ -96,8 +101,6 @@ object NaturalSize {
         val diagonal = Vec(x, height)
         override
         val baseLine = base
-
-
 
         lazy val locs: Seq[Scalar] =
           if (frame.getAlpha==0) Seq.empty else

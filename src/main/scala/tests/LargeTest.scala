@@ -345,19 +345,24 @@ trait LargeTestGUI {
 
     val texts = List(huge, sp, large, sp, med, sp, small, sp, huge)
 
-    val asG = Row.atTop$(texts.map(_.copy()))
-    val atB = Row.atBaseline$(texts.map(_.copy()))
+    val asGG = NaturalSize.Row.atTop$(texts.map(_.copy(fg=red)))
+    val asG = NaturalSize.Row.centered$(texts.map(_.copy(fg=green)))
+    val atB = NaturalSize.Row.atBottom$(texts.map(_.copy(fg=blue)))
+    val atBL = NaturalSize.Row.atBaseline$(texts.map(_.copy()))
     DebugGeometry.frameColor color black.color
     DebugGeometry.enableFrame.set(true)
 
     Col.centered(
       textColumn()(
-        """(7) Showing the difference between making a Row.atTop of
-          |texts of different sizes, and a Row.atBaseline of the same texts,
-          |          |""".stripMargin
+        """(7) Showing the difference between
+          |.atTop(red), .centered(green),
+          |.atBottom(blue), .atBaseline(black)
+          """.stripMargin
       ),
-      medex, DebugGeometry(redFrame, asG) above DebugGeometry(redFrame, atB), medex,
-      Row.atBaseline(atB(), atB(), asG())
+      medex, asGG.edged(), medex,
+      medex, asG.edged(), medex,
+      atB.edged(), medex, atBL.edged(), medex,
+      Row.atBaseline(Text("Medium∑y", medFont), Row.atBaseline(Text("Huge",hugeFont), Text("GIANT", hugerFont )))
     )
   }
 

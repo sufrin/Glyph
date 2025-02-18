@@ -42,7 +42,9 @@ object Text extends DefaultPaints {
     val spacing   = descent + ascent + leading
     val diagonal  = Vec(width, height + descent)
     val drop      = height - spacing
-    def copy(fg: Brush=fg, bg: Brush=bg): Glyph = if ((fg eq this.fg) && (bg eq this.bg)) this else new Text(string, font, fg, bg)
+
+    def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new Text(string, font, fg, bg)
+
     def draw(surface: Surface): Unit = {
       drawBackground(surface)
       surface.drawTextLine(fg, implementation, 0, height)
@@ -50,8 +52,6 @@ object Text extends DefaultPaints {
     }
 
     override def baseLine: Scalar = height
-
-
 
     /**
      * A glyph with the diagonal of this text that
