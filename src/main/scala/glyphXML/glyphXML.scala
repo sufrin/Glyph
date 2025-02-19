@@ -299,7 +299,7 @@ object Paragraph {
         if (glyphs.length == 1 && width == 0) {
           setting = false
         } else
-          galley += FixedSize.Row(maxWidth).atBottom$(glyphs)
+          galley += FixedSize.Row(maxWidth, align=Baseline)(glyphs)
       }
     }
     galley
@@ -399,12 +399,12 @@ object Translation {
         case 0 => ("para",  paragraph)
       }
 
-      val glyph$ = glyph // if (paragraph) withBaseline(glyph, glyph.h/2) else glyph //**
+      val glyph$ = glyph
       val asGlyph: Glyph = glyph$
     }
 
-    case class DecorateTarget(tags: Seq[String], paragraph: Boolean, attributes: TypedAttributeMap, target: Target) extends Target {
-      def raiseBy(glyph: Glyph, by: Scalar): Glyph = glyph // withBaseline(glyph, by)
+    case class DecorateTarget(tags: Seq[String], paragraph: Boolean, attributes: TypedAttributeMap, target: Target, ambientFont: Font) extends Target {
+      @inline def raiseBy(glyph: Glyph, by: Scalar): Glyph = withBaseline(glyph, by)
 
       def decorated(glyph: Glyph): Glyph = {
         val g0 = glyph
@@ -414,9 +414,8 @@ object Translation {
           if (!paragraph)
             glyph.rotated(rotated) else
           rotated % 4 match {
-            case 0     => glyph
-            case 1 | 3 => raiseBy(glyph.rotated(rotated), glyph.w)
-            case 2     => raiseBy(glyph.rotated(rotated), 2*glyph.h)
+            case 0 => glyph
+            case _ => glyph.rotated(rotated)
           }
         }
 
@@ -425,7 +424,7 @@ object Translation {
             case 0 => glyph
             case d =>
               val glyph$ = glyph.turned(d.toFloat, false)
-              glyph$//atBaseline(glyph$, glyph$.h)
+              glyph$
           }
 
         def frame(glyph: Glyph): Glyph = {
@@ -445,7 +444,10 @@ object Translation {
         scale(turn(frame(rotate(glyph))))
       }
 
-      val asGlyph: Glyph = decorated(target.asGlyph)
+      import ambientFont.getMetrics
+      val ambientH = getMetrics.getHeight
+      val glyph$ = decorated(target.asGlyph)
+      val asGlyph: Glyph = raiseBy(glyph$, 0.5f*(glyph$.h+ambientH))
 
     }
 
@@ -521,8 +523,19 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
           case (s"${s}ex") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.exHeight
           case (s"${s}px") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
           case (s"${s}pt") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
+          case (s"${m}*${dim}") if m.matches("[0-9]+(\\.([0-9]+)?)?") =>
+            val factor = m.toFloat
+            dim.toLowerCase match {
+              case "width" => factor*sheet.parWidth
+              case "indent" => factor*sheet.parIndent
+              case "leftmargin" => factor*sheet.leftMargin
+              case "rightmargin" => factor*sheet.rightMargin
+              case other =>
+                warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt, or as a fractional multiple of width/indent/leftmargin/rightmargin/etc. ($at)" )
+                alt
+            }
           case (other) =>
-            warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt ($at)")
+            warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt, or as a fractional multiple of width/indent/leftmargin/rightmargin/etc. ($at)")
             alt
         }
       case None =>
@@ -730,7 +743,7 @@ class Translation(val primitives: Primitives=new Primitives) {
         val sheet$ = attributes$.declareAttributes(sheet)
         val tags$ = tag::tags
 
-        def Decorated(t: Target): Seq[Target] = List(DecorateTarget(tags$, paragraph, attributes$, t))
+        def Decorated(t: Target): Seq[Target] = List(DecorateTarget(tags$, paragraph, attributes$, t, sheet$.textFont))
 
         tag match {
           case "p" =>
@@ -774,7 +787,8 @@ class Translation(val primitives: Primitives=new Primitives) {
             val height = attributes$.Units("height", sheet$.exHeight)(attributes$, sheet$)
             val stretch = attributes$.Float("stretch", 1f)
             val background = attributes$.Brush("background", attributes$.Brush("bg", DefaultBrushes.nothing))
-            Decorated(GlyphTarget(paragraph, sheet$, FixedSize.Space(width, height, stretch, fg=DefaultBrushes.nothing, bg=background)))
+            //** DO NOT DECORATE: IT MESSES UP FIXEDSIZE STRETCHING **//
+            List((GlyphTarget(paragraph, sheet$, FixedSize.Space(width, height, stretch, fg=DefaultBrushes.nothing, bg=background))))
 
           case "glyph" =>
             //println (s"<glyph ${attributes$.asString}/>")

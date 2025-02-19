@@ -80,7 +80,8 @@ object glyphXMLTest extends Application {
   import translator.XMLtoGlyph
 
     val p1 = Page("Paragraphs") {
-      <body  width="45em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="nothing">
+
+      <body  width="60em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="nothing">
         <ENTITY key="filler" expansion="(this is some filler to make the paragraph longer)"/>
         <ATTRIBUTES key="tag:caption" textFontSize="25"/>
         <caption logging="caption">
@@ -88,39 +89,52 @@ object glyphXMLTest extends Application {
         </caption>
 
 
-        <p align="justify" hang="L1. ">
-          The rain in spain falls <b fontScale=".8">mainly</b> in the  <glyph gid="B2" scaled="0.5" frame="red/6"/> plain. &filler; <glyph gid="B1"/>
+        <p align="justify" hang="* ">
+          The <glyph gid="B2"/>  in spain falls <b fontScale=".8">mainly</b> in the  plain. &filler; <glyph gid="B1"/>
         </p>
-        <p align="justify" hang="L2. ">
-          The rain in <span textFontSize="45">BIG</span> spain falls <b>mainly</b> in the  <glyph gid="B2"/> plain. &filler; <glyph gid="B1"/>
+        <p align="justify" hang="* ">
+          The <glyph gid="B2"/>  in  spain falls <b>mainly</b> in the  plain. &filler; <glyph gid="B1"/>
         </p>
 
-        <glyph gid="B1" fg="green"/><glyph gid="B2" fg="green" scaled="2"/>
+        <!--glyph gid="B1" fg="green"/><glyph gid="B2" fg="green" scaled="2"/-->
 
         <p leftMargin="5em" rightMargin="5em" frame="green/1"  rotated="2">
-          The rain (<glyph gid="LINK"/>) in spain falls <i>mainly</i> in the plain.
+          The (<glyph gid="LINK"/>) in spain falls <i>mainly</i> in the plain.
         </p>
 
         <p>
-          Here is a longish &ls;col&gt;umn in the midst
-          <col frame="black"><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
-          of a paragraph. Note that its lowest point aligns with the baseline.
+          Here is a longish &ls;col&gt;umn turned by 45 degrees in the midst
+          <col frame="black/2" turned="45"><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
+          of a paragraph. Note its alignment relative to the baseline.
         </p>
         <p>
-          Here is a longish &ls;glyph&gt; in the midst  <glyph gid="LS"/> of a paragraph. Note that its lowest point
-          also aligns with the baseline.
+          Here is a longish &ls;glyph&gt; in the midst  <glyph gid="LS" turned="45"/> of a paragraph. Note its alignment relative to the baseline.
           And note that  <glyph gid="LSC"/> which was invoked by
           <![CDATA[<glyph gid="LSC"/>]]>
           has the same relation to the baseline.
         </p>
+
         <fill/>
-        <row valign="mid" textFontFamily="Menlo" textFontSize="16" inheritwidth="true">
-          <p align="justify" width="17em" >This is the left hand col_umn of the two col_umns that are on this row</p>
-          <fill width="1em" stretch="1"/>
-          <p align="justify"  width="17em">This is the right hand col_umn of two</p>
+
+        <div textFontFamily="Menlo" textFontSize="16" width="0.9999*width">
+        <row frame="red/1" width="1*width">
+          <p align="justify" width="17em" >This is the left hand col_umn of the two col_umns that are on this row.</p>
+          <fill stretch="1"/>
+          <p align="justify"  width="17em">This is the right hand col_umn of two.</p>
         </row>
+
         <fill/>
-        <row inheritwidth="true"><glyph gid="L1"/><fill stretch="1"/> <glyph gid="L2"/> <fill stretch="3"/><glyph gid="L3"/></row>
+
+        <row width="1*width" frame="red/1">
+          <glyph gid="L1"/>
+          <fill/>
+          <glyph gid="L2"/>
+          <fill/>
+          <glyph gid="L3"/>
+          <fill/>
+          <p width="0.25*width">Four glyphs inter_leav_ed with fills of identical str_etch_i_ness.</p>
+        </row>
+        </div>
       </body>
     }
 
