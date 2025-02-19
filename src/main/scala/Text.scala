@@ -48,7 +48,7 @@ object Text extends DefaultPaints {
     def draw(surface: Surface): Unit = {
       drawBackground(surface)
       surface.drawTextLine(fg, implementation, 0, height)
-      surface.drawLines$(fg, 0f,height, width,height)
+      //surface.drawLines$(fg, 0f,height+ascent, width,height+ascent)
     }
 
     override def baseLine: Scalar = height

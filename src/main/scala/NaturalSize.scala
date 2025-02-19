@@ -3,21 +3,15 @@ package org.sufrin.glyph
 import scala.collection.mutable.ArrayBuffer
 import GlyphTypes.Scalar
 
+/* The Row and Col APIs are designed so that most of the characteristics of the Row(Col) can
+ * be pre-set, thereby making it possible to apply them either to an unbounded number of
+ * actual glyphs, or to a sequence of glyphs computed elsewhere.
+ */
 
 object NaturalSize {
 
   val nothing: Brush = Brush("nothing") color 0
 
-  /**
-   * Provides various generators for a row of glyphs, with `baseLine` equivalent to the largest of the `baseLine`s.
-   * The `width` is the sum of the glyph widths, and the height is the maximum glyph height.
-   *
-   * `RowGenerators` with a specified foreground and background can be used in a `Row` expression; for example:
-   * {{{
-   *   Row(fg=..., bg=...).atTop(glyph1, glyph2, ...)
-   *   Row(fg=..., bg=...).centered(glyph1, glyph2, ...)
-   * }}}
-   */
   trait RowGenerators {
     theseGenerators =>
 
@@ -48,15 +42,17 @@ object NaturalSize {
 
     /** The glyphs are drawn so their baselines align */
     def atBaseline(theGlyph: Glyph, theGlyphs: Glyph*): Composite =
-      aligned(0f, theGlyph::theGlyphs.toList, atBaseline = true)
+      aligned(1f, theGlyph::theGlyphs.toList, atBaseline = true)
+
     /** The glyphs are drawn so their baselines align */
     def atBaseline$(theGlyphs: Seq[Glyph]): Composite =
-      aligned(0f, theGlyphs, atBaseline = true)
+      aligned(1f, theGlyphs, atBaseline = true)
 
     def apply(first: Glyph, theGlyphs: Glyph*): Composite =
-      aligned(valign.proportion, first :: theGlyphs.toList)
+      aligned(valign.proportion, first :: theGlyphs.toList, valign.atBaseline)
+
     def apply(theGlyphs: Seq[Glyph]): Composite =
-      aligned(valign.proportion, theGlyphs)
+      aligned(valign.proportion, theGlyphs, valign.atBaseline)
 
     def apply(align: VAlignment=Top, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f): RowGenerators = {
       val (_valign, _fg, _bg, _un, _fr, _sk) = (align, fg, bg, uniform, frame, skip)
@@ -89,9 +85,10 @@ object NaturalSize {
 
       for {glyph <- theUniformGlyphs} {
         val extra =
-          if (atBaseline) ((height-glyph.h)+(glyph.h-glyph.baseLine))-(height-base)
-          else glyph.vStretch(height, proportion, glyph.h)
-          if (atBaseline) println(s"$extra $glyph")
+          if (atBaseline && glyph.baseLine>0)
+            base-glyph.baseLine//((height-glyph.h)+(glyph.h-glyph.baseLine))-(height-base)
+          else
+            glyph.vStretch(height, proportion, glyph.h)
         glyph @@ Vec(x, extra + y)
         x += glyph.w
       }
@@ -127,14 +124,7 @@ object NaturalSize {
   }
 
 
-  /**
-   * Provides generators for a column of glyphs (drawn top to bottom).
-   * The `width` is the maximum glyph width, and the height is the sum of the glyph heights.
-   * `ColumnGenerators` with specified foreground and background can be used in a `Col` expression; for example:
-   * {{{
-   *   Col(fg=..., bg=...).atLeft(glyph1, glyph2, ...)
-   *   Col(fg=..., bg=...).centered(glyph1, glyph2, ...)
-   * }}} */
+
   trait ColumnGenerators {
     theseGenerators =>
     val fg: Brush
@@ -229,6 +219,28 @@ object NaturalSize {
     }
   }
 
+  /**
+   * {{{ Row(align: VAlignment=Top, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f)(glyphs) }}}
+   *
+   * Constructs the horizontal catenation of `glyphs`; its height is the largest of the glyphs' heights; its width is
+   * normally the sum of the glyphs' widths.
+   *
+   * The glyphs are vertically aligned as follows in the row, as specified by `align`:
+   * {{{
+   *   Top      tops of the bounding boxes aligned
+   *   Bottom   bottoms of the bounding boxes aligned
+   *   Mid      (vertical) centers of the bounding boxes aligned
+   *   Baseline baselines aligned when>0; otherwise as Bottom
+   * }}}
+   *
+   * If `uniform`, then the glyphs are all treated as if their height(width)
+   * was the same as the maximal height(width) of all the glyphs; and each glyph is treated as if its width were `glyph.w+skip`,
+   * thereby leaving a little horizontal space between them in the row.
+   *
+   * If `frame` is a nontrivial brush, then vertical lines with foreground `frame` are
+   * drawn between glyphs.
+   *
+   */
   object Row extends RowGenerators {
     val bg: Brush = nothing
     val fg: Brush = nothing
@@ -238,6 +250,28 @@ object NaturalSize {
     val valign: VAlignment = Top
   }
 
+  /**
+   *
+   * {{{ Col(align: Alignment=Left, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f)(glyphs) }}}
+   *
+   * Constructs the vertical catenation of `glyphs`; its height is the sum of the glyphs' heights; its height is
+   * normally the sum of the glyphs' heights.
+   *
+   * The glyphs are vertically aligned as follows in the row, as specified by `align`:
+   * {{{
+   *      Left      left edges of the bounding boxes aligned
+   *      Right     right edges of the bounding boxes aligned
+   *      Center    centerlines of the bounding boxes aligned
+   *    }}}
+   *
+   *  If `uniform`, then the glyphs are all treated as if their height
+   *  was the same as the maximal height of all the glyphs; and each glyph is treated as if its height were `glyph.h+skip`,
+   *  thereby leaving a little vertical space between them in the column.
+   *
+   * If `frame` is a nontrivial brush (ie with alpha>0), then horizontal lines with foreground `frame` are
+   * drawn between glyphs.
+   *
+   */
   object Col extends ColumnGenerators {
     val fg: Brush = nothing
     val bg: Brush = nothing

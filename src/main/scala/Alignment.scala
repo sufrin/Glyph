@@ -55,6 +55,8 @@ case object Justify extends Alignment {
 trait VAlignment {
   /**  Proportion of excess space to use when Row setting */
   val proportion: Float
+  /** Are baselines to be aligned (independent of proportion) */
+  val atBaseline: Boolean = false
 }
 case object Top extends VAlignment {
   override val proportion: Float = 0f
@@ -65,4 +67,9 @@ case object Mid extends VAlignment {
 case object Bottom extends VAlignment {
   override val proportion: Float = 1f
 }
+case object Baseline extends VAlignment {
+  override val proportion: Float = 1f
+  override val atBaseline: Boolean = true
+}
+
 

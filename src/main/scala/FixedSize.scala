@@ -4,7 +4,7 @@ import GlyphTypes.{Scalar}
 
 /**
  * `FixedSize` glyphs are Rows / Columns whose widths/heights are preset, and that contain
- * `Space` elements that are fitToCell to fill them.
+ * `Space` elements that are designed to fill them.
  *
  * When a row (col) is to be set in a given width (height), its natural size is
  * first established by summing the widths (heights) of its glyphs. If this is
@@ -13,6 +13,12 @@ import GlyphTypes.{Scalar}
  * dimension. The aggregate width (height) will now be no less than the given width (height),
  * providing that there is at least one `Space` among the glyphs. If there are none then the
  * aggregate width (height) is taken to be the natural width (height).
+ *
+ * @see FixedSize.Row
+ *
+ * The Row and Col APIs are designed so that most of the characteristics of the Row(Col) can
+ * be pre-set, thereby making it possible to apply them either to an unbounded number of
+ * actual glyphs, or to a sequence of glyphs computed elsewhere.
  *
  */
 object FixedSize extends DefaultPaints {
@@ -95,7 +101,40 @@ object FixedSize extends DefaultPaints {
   val nothing = Brush() color 0
 
   object Row {
-    /** Construct `RowGenerator`s for a row of the given width, with the given foreground and background. */
+    /** Construct `RowGenerator`s for a row of the given width, with the given foreground and background and alignment. */
+    /**
+     * {{{
+     * Row(width: Scalar,
+     *     align: VAlignment=Top,
+     *     fg: Brush = nothing,
+     *     bg: Brush = nothing)(glyphs)
+     * }}}
+     *
+     * Constructs the horizontal catenation of `glyphs`; its height is the largest of the glyphs' heights; its width is
+     * normally the larger of `width` and the sum of the glyphs' widths.
+     *
+     * The glyphs are vertically aligned as follows in the row, as specified by `align`:
+     * {{{
+     *   Top      tops of the bounding boxes aligned
+     *   Bottom   bottoms of the bounding boxes aligned
+     *   Mid      (vertical) centers of the bounding boxes aligned
+     *   Baseline baselines aligned when>0; otherwise as Bottom
+     * }}}
+     *
+     *
+     * If the the sum of the glyphs' widths is less than `width`, then the difference between them
+     * is divided among the `FixedWidth.Space` glyphs in proportion to their horizontal stretchability. Examples, where
+     * `space(n)`` has horizontal stretchability `n`, and `g1.w+g2.w+g3.w<500`
+     * {{{
+     *    Row(align=..., width=500)(g1, space(1), g2)
+     *        g1/g2 is at the left/right edge of the row
+     *    Row(align=..., width=500)(space(1), g1, g2, space(1))
+     *        g1, g2 are beside each other in the centre of the row
+     *    Row(align=..., width=500)(g1, g2, space(1), g3)
+     *        g1, g2 are beside each other at the left edge of the row,
+     *        and g3 is at the right edge of the row.
+     * }}}
+     */
     def apply(width: Scalar, fg: Brush=nothing, bg: Brush = nothing, align: VAlignment = Top): RowGenerators = {
       val (_align, _width, _fg, _bg) = (align, width, fg, bg)
       new RowGenerators {
@@ -132,15 +171,12 @@ object FixedSize extends DefaultPaints {
 
     /** The glyphs are drawn so their baselines align */
     def atBaseline(theGlyph: Glyph, theGlyphs: Glyph*): Composite = aligned(width, 0f, theGlyph::theGlyphs.toList, atBaseline = true)
+
     /** The glyphs are drawn so their baselines align */
     def atBaseline$(theGlyphs: Seq[Glyph]): Composite = aligned(width, 0f, theGlyphs, atBaseline = true)
 
-    //def of(theGlyphs: Seq[Glyph]): Composite = aligned(width, align.proportion, theGlyphs)
-
-    //def of(first: Glyph, theGlyphs: Glyph*): Composite = aligned(width, align.proportion, first :: theGlyphs.toList)
-
-    def apply(theGlyphs: Seq[Glyph]): Composite = aligned(width, align.proportion, theGlyphs)
-    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(width, align.proportion, first::theGlyphs.toList)
+    def apply(theGlyphs: Seq[Glyph]): Composite = aligned(width, align.proportion, theGlyphs, align.atBaseline)
+    def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(width, align.proportion, first::theGlyphs.toList, align.atBaseline)
 
     def aligned(theWidth: Scalar, proportion: Float, theGlyphs: Seq[Glyph], atBaseline: Boolean = false): Composite = {
       require(theGlyphs.nonEmpty)
@@ -149,21 +185,19 @@ object FixedSize extends DefaultPaints {
       val height = theGlyphs.map(_.h).max
       val width = theWidth // theGlyphs.map(_.w).sum //**
       var x, y = 0f
+      val base = if (atBaseline) theGlyphs.map(_.baseLine).max else 0f
+
       for {glyph <- theGlyphs} {
-        val extra =(height - glyph.h) * proportion
+        val extra = if (atBaseline && glyph.baseLine>0) base-glyph.baseLine else  (height - glyph.h) * proportion
         glyph @@ Vec(x, extra + y) //**
         x += glyph.w
       }
       new Composite(theGlyphs) {
-        override val kind: String = "Row"
+        override val kind: String = "FixedSize.Row"
         val glyphs = theGlyphs
         val diagonal = Vec(width, height)
         override
-        val baseLine = if (atBaseline) glyphs.map(_.baseLine).max else 0f
-
-        // correct for baselines
-        if (baseLine!=0f)
-          for { glyph<-glyphs } { glyph @@ Vec(glyph.location.x, baseLine-glyph.baseLine)}
+        val baseLine = base
 
         val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
         val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
@@ -264,8 +298,7 @@ object FixedSize extends DefaultPaints {
     }
   }
 
-
-
+  /** Analogous to `FixedSize.Row` */
   object Col extends ColumnGenerators {
     val fg: Brush = nothing
     val bg: Brush = nothing

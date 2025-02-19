@@ -339,30 +339,36 @@ trait LargeTestGUI {
     val large = Text("Large∑y", largeFont)
     val med = Text("Medium∑y", medFont)
     val small = Text("Small(y)", smallFont)
+    val giant = Text("Giant∑y", hugerFont)
     val sp = Text(" ", medFont)
+    def blob = Glyphs.FilledRect(sp.w,sp.h,fg=red)
+    def tab=FixedSize.Space(1.0f,1.0f)
 
     def space = sp.asGlyph()
 
-    val texts = List(huge, sp, large, sp, med, sp, small, sp, huge)
+    val texts = List(tab, huge, sp, large, blob, med, sp, small, sp, giant, tab)
 
-    val asGG = NaturalSize.Row.atTop$(texts.map(_.copy(fg=red)))
-    val asG = NaturalSize.Row.centered$(texts.map(_.copy(fg=green)))
-    val atB = NaturalSize.Row.atBottom$(texts.map(_.copy(fg=blue)))
-    val atBL = NaturalSize.Row.atBaseline$(texts.map(_.copy()))
-    DebugGeometry.frameColor color black.color
-    DebugGeometry.enableFrame.set(true)
+    val atTop       = NaturalSize.Row(align=Top)(texts.map(_.copy(fg=red)))
+    val atMid       = NaturalSize.Row(align=Mid)(texts.map(_.copy(fg=green)))
+    val atBottom    = NaturalSize.Row(align=Bottom)(texts.map(_.copy(fg=blue)))
+    val atBaseline  = NaturalSize.Row(align=Baseline)(texts.map(_.copy(fg=black)))
 
     Col.centered(
       textColumn()(
-        """(7) Showing the difference between
-          |.atTop(red), .centered(green),
-          |.atBottom(blue), .atBaseline(black)
+        """(7) Various NaturalSize.Row(align=...) alignments
+          |Top(red), Mid(green),
+          |Bottom(blue), Baseline(black)
           """.stripMargin
       ),
-      medex, asGG.edged(), medex,
-      medex, asG.edged(), medex,
-      atB.edged(), medex, atBL.edged(), medex,
-      Row.atBaseline(Text("Medium∑y", medFont), Row.atBaseline(Text("Huge",hugeFont), Text("GIANT", hugerFont )))
+      medex scaled 2, atTop.edged(),
+      medex, atMid.edged(),
+      medex, atBottom.edged(),
+      medex, atBaseline.edged(),
+      medex scaled 2,
+      textColumn()("A Row(align=Baseline) of two Row(align=Baseline\nshowing transitivity of baseline alignment"),
+      Row(Baseline)(atBaseline, Row(align=Baseline)(huge(),large(),med())).edged(),
+      medex, textColumn()("FixedSize.Row(align=Baseline"),
+      FixedSize.Row(width=atBaseline.w*1.3f, align=Baseline)(texts.map(_.copy())).edged()
     )
   }
 
