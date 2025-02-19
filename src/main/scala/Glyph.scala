@@ -399,8 +399,6 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
    /** False unless `atSize` will generate a distinct glyph */
    def resizeable: Boolean = false
-
-
 }
 
 /**

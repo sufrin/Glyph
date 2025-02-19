@@ -1,6 +1,7 @@
 package org.sufrin.glyph
 
 import io.github.humbleui.jwm.{EventMouseScroll, Window}
+import org.sufrin.glyph.GlyphTransforms.Edged
 
 /**
  *  A collection of `Reactive` glyph types.
@@ -374,6 +375,7 @@ object ReactiveGlyphs {
       }
   }
 
+  /** Simply-constructed simple buttons */
   object TextButton extends DefaultPaints {
 
     def apply(text: String, fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, background: Boolean = true)
@@ -386,22 +388,20 @@ object ReactiveGlyphs {
 
   object FramedButton extends DefaultPaints {
 
-    import GlyphTransforms.Framed
-
     /** A framed button whose up, down, and hover glyphs look the same */
     def apply(up: Glyph)(reaction: Reaction): RawButton =
       new RawButton(
-        Framed(DefaultBrushes.upFrame)(up),
-        Framed(DefaultBrushes.downFrame)(up()),
-        Framed(DefaultBrushes.hoverFrame)(up()), up.fg, up.bg, reaction)
+        Edged(DefaultBrushes.upFrame)(up),
+        Edged(DefaultBrushes.downFrame)(up()),
+        Edged(DefaultBrushes.hoverFrame)(up()), up.fg, up.bg, reaction)
 
-    /** A framed button whose up, down, and hover glyphs are all `textlayout` */
+    /** A framed button whose up, down, and hover glyphs are all `text` */
     def apply(text: String, fg: Brush=DefaultBrushes.buttonForeground, bg: Brush=DefaultBrushes.buttonBackground)(reaction: Reaction): RawButton = {
       val up = DefaultBrushes.buttonText(text).asGlyph(fg, bg).enlarged(DefaultBrushes.upFrame.strokeWidth*4)
       new RawButton(
-        Framed(DefaultBrushes.upFrame)(up),
-        Framed(DefaultBrushes.downFrame)(up()),
-        Framed(DefaultBrushes.hoverFrame)(up()), up.fg, up.bg, reaction)
+        Edged(DefaultBrushes.upFrame)(up),
+        Edged(DefaultBrushes.downFrame)(up()),
+        Edged(DefaultBrushes.hoverFrame)(up()), up.fg, up.bg, reaction)
     }
 
     /**
@@ -409,9 +409,9 @@ object ReactiveGlyphs {
      *   independent of the state of the keyboard modifiers or the mouse button that was pressed.
      */
     def apply(up: Glyph)(action: => Unit): RawButton = new RawButton(
-      Framed(DefaultBrushes.upFrame)(up),
-      Framed(DefaultBrushes.downFrame)(up()),
-      Framed(DefaultBrushes.hoverFrame)(up()), up.fg, up.bg, { _ => action })
+      Edged(DefaultBrushes.upFrame)(up),
+      Edged(DefaultBrushes.downFrame)(up()),
+      Edged(DefaultBrushes.hoverFrame)(up()), up.fg, up.bg, { _ => action })
 
   }
 

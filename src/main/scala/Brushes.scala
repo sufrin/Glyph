@@ -88,9 +88,9 @@ object DefaultBrushes extends Brushes {
 
   // The following are used to set the default attributes of unstyled glyphs
   //
-  var upFrame: Brush = Brush("Brushes.upFrame")       color 0xFF7A7A7A strokeWidth 2f strokeCap ROUND
-  var downFrame: Brush = Brush("Brushes.downFrame")   color 0xFF777777 strokeWidth 2f strokeCap ROUND
-  var hoverFrame: Brush = Brush("Brushes.hoverFrame") color 0xFF000000 strokeWidth 2f strokeCap ROUND
+  var upFrame: Brush = Brush("Brushes.upFrame")       color 0xFF000000 strokeWidth 2f strokeCap ROUND
+  var downFrame: Brush = Brush("Brushes.downFrame")   color 0xFFFF0000 strokeWidth 2f strokeCap ROUND
+  var hoverFrame: Brush = Brush("Brushes.hoverFrame") color 0xFF00FF00 strokeWidth 2f strokeCap ROUND
 
   var buttonFamily: FontFamily = FontFamily("Menlo")
   var buttonPointSize: Float = 22.0f

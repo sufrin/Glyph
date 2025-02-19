@@ -23,12 +23,22 @@ trait Application {
    */
   def onClose(window: Window): Unit = window.close()
 
+  val onUnfocussed: EventKey => Unit =  {
+    case event: EventKey =>
+      // TODO: we really should beep!
+      // implicit val basic: StyleSheet = Styles.Default
+      // overlaydialogues.Dialogue.OK(styled.text.Label(s"Unexpected $key")).OnRootOf(GUI).start()
+      val key = s"Key ${Modifiers.toBitmap(event).toLongString} ${event.getKey}"
+      logging.Default.warn(s"Key unexpected: ${key}")
+  }
+
   val defaultIconPath: Option[String] = None
   val extraArgs = new ArrayBuffer[String]()
   var useScreen: Char = 'p'
   var scaleFactor = 1.0f
 
   val installRootHandlers: Boolean = false
+
 
   def main(args: Array[String]): Unit = {
     import io.github.humbleui.jwm.Screen
@@ -100,14 +110,7 @@ trait Application {
       }.start()
       if (installRootHandlers) GUI.findRoot.onCloseRequest(onClose(_))
       // default handler for all unexpected keys
-      if (installRootHandlers) GUI.findRoot.handleUnfocussedKey {
-        case event: EventKey =>
-          // TODO: we really should beep!
-          // implicit val basic: StyleSheet = Styles.Default
-          // overlaydialogues.Dialogue.OK(styled.text.Label(s"Unexpected $key")).OnRootOf(GUI).start()
-          val key = s"Key ${Modifiers.toBitmap(event).toLongString} ${event.getKey}"
-          logging.Default.warn(s"Key unexpected: ${key}")
-      }
+      if (installRootHandlers) GUI.findRoot.handleUnfocussedKey (onUnfocussed)
     })
   }
 

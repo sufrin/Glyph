@@ -8,6 +8,7 @@ import Styles.GlyphStyle
 import windowdialogues.Dialogue.OK
 import PolygonLibrary._
 
+import io.github.humbleui.jwm.EventKey
 import io.github.humbleui.skija.BlendMode
 import org.sufrin.glyph.GlyphTransforms.Turned
 
@@ -1088,24 +1089,38 @@ trait LargeTestGUI {
       ).scaled(0.75f))
   }
 
+  object Resizing extends BooleanButton {
+    lazy val enableButton: Glyph =
+      onOff(initially=false, fg=green, bg=red) {
+        state =>
+          enableButton.guiRoot.autoScale = state
+      }.edged(fg=redFrame)
+  }
+
 
   private val helpGUI = Framed(whiteFrame)(
-    textColumn(smallFont, black)(
-      """This is test of some basic GUI kit components.
+    Col(align=Center)(
+    textColumn(smallFont, black, alignment=Left)(
+      """This is test of some basic Glyph kit components.
         |
-        |It has a few demonstration "scenes" that are accessed
-        |in rotation by clicking one of the "←" and "→" buttons
-        |at the left of the menu bar; or by clicking one
-        |of the numbered buttons.
+        |If its window doesn't fit on your screen, or if you'd like it to be bigger, first click the window
+        |resizing checkbox to enable dynamic resizing; then drag one of the window edges. While you are dragging,
+        |the window will be continuously resized (keeping the same aspect ratio) and its content rescaled accordingly.
+        |""".stripMargin
+    ), medex,
+    NaturalSize.Row(align=Mid, skip=10)(Label("Window resizing enabled "), Resizing.enableButton).framed(redWide.copy(cap=ROUND)),
+    textColumn(smallFont, black, alignment=Left)("""
         |
-        |The scenes arose arose organically during development
-        |so some may now appear redundant. We have nevertheless continued to
-        |maintain it.
+        |The test has a few  numbered scenes that can be accessed in rotation by typing one of the "←" and "→" keys,
+        |or clicking one of the buttons at the left end of the menu bar or one of the numbered buttons.
         |
-        |Elsewhere there are demonstrations of some of the derived GUI components,
-        |such as styled texts, menus, and popups.""".stripMargin
+        |The scenes arose arose organically during development so some now appear redundant. We have nevertheless continued to
+        |maintain the application because it is a good regression test for the most basic functions of the kit.
+        |
+        |Elsewhere there are demonstrations of some of the derived GUI components, such as styled texts, menus, and popups.""".stripMargin
     )
-  )
+  ))
+
   private val scene0 = {
     Col.centered(helpGUI)
   } // the preferred scene
@@ -1138,15 +1153,14 @@ trait LargeTestGUI {
   private val screenWidth = scenes.map(_.w).max
   val oneOf: OneOf = OneOf.seq(bg = white)(scenes)
   val menu: Glyph = FixedSize
-    .Row(screenWidth)
-    .atTop(
+    .Row(screenWidth, align=Mid)(
       FramedButton(" ← ") { _ => oneOf.prev() },
       FramedButton(" → ") { _ => oneOf.next() },
       FixedSize
         .Space(0f, 1f), // flexible space => right-justify the Help button
       FixedSize
         .Space(0f, 1f), // flexible space => right-justify the Help button
-      Row.atTop$(for {i <- 0 until oneOf.length} yield sceneButton(i)),
+      Row(align=Mid)(for {i <- 0 until oneOf.length} yield sceneButton(i)),
       FixedSize
         .Space(0f, 1f), // flexible space => right-justify the Help button
       FramedButton(" Help ") { _ =>
@@ -1169,12 +1183,12 @@ trait LargeTestGUI {
     }) enlarged 10f
 
   /** A centered column derived from the distinct lines in `text` */
-  private def textColumn(font: Font = buttonFont, fg: Brush = blue)(
+  private def textColumn(font: Font = buttonFont, fg: Brush = blue, alignment: Alignment=Center)(
     text: String
   ): Glyph = {
     val rows = text.split('\n')
     val texts: Seq[Glyph] = (for {row <- rows} yield Text(row, font, fg = fg)).toSeq
-    Col(bg=nothing).centered$(texts)
+    Col(align=alignment, bg=nothing)(texts)
   }
 
   private def medex = exg()
@@ -1208,6 +1222,21 @@ trait LargeTestGUI {
 
 object LargeTest extends Application {
   override val defaultIconPath: Option[String] = Some("./parrot.png")
-  val title = "LargeTest"
-  val GUI: Glyph = new LargeTestGUI {}.root
+
+  val title      = "LargeTest"
+  val theGUI     = new LargeTestGUI {}
+  val GUI: Glyph = theGUI.root
+
+  override val installRootHandlers: Boolean = true
+
+  override val onUnfocussed: EventKey => Unit = {
+    case event => if (event.isPressed) {
+      import io.github.humbleui.jwm.Key._ // this is inelegant, but there's no straightforward way to import all keys into GlyphTypes then re-export them
+      event.getKey match {
+        case LEFT  => theGUI.oneOf.prev()
+        case RIGHT => theGUI.oneOf.next()
+        case _ =>
+      }
+    }
+  }
 }
