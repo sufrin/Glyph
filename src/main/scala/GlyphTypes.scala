@@ -30,11 +30,27 @@ object GlyphTypes {
   }
 
   object PathEffect {
-    def makeDiscrete(sliceLength: Scalar, displacementLimit: Scalar, seed: Int): PathEffect =
+    /**
+     * Breaks a path into slices of length `sliceLength` and randomly displaces the endpoints away from the original path.
+     */
+    @inline def makeDiscrete(sliceLength: Scalar, displacementLimit: Scalar, seed: Int): PathEffect =
         io.github.humbleui.skija.PathEffect.makeDiscrete(sliceLength, displacementLimit, seed)
 
-    def makeDash(v: Scalar)(floats: Scalar*): PathEffect =
-        io.github.humbleui.skija.PathEffect.makeDash(floats.toArray, v)
+    /**
+     *
+     *  Dashed line effect
+     *  {{{
+     *    onOff: array of lengths.
+     *           Even indices specify length of "on" intervals
+     *
+     *    phase: starting index into onOff (default 0)
+     *  }}}
+     */
+    @inline def makeDash(onOff: Seq[Scalar], phase: Scalar=0): PathEffect =
+        io.github.humbleui.skija.PathEffect.makeDash(onOff.toArray, phase)
+
+    /** Turns sharp corners into rounded corners. */
+    @inline def makeRoundedCorners(radius: Scalar): PathEffect = io.github.humbleui.skija.PathEffect.makeCorner(radius)
   }
 
   object ImageFilter {

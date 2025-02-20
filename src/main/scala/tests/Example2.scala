@@ -19,7 +19,7 @@ trait Example2Interface {
     Label("A simple label", fg=white) enlarged(20, bg=variableColor),
     Row(TextButton("make it blue") { _ => variableColor color blue.color }.framed(fg=blueish, bg=blueish),
         TextButton("make it red")  { _ => variableColor color red.color }.framed(fg=blueish, bg=blueish))
-  ).enlarged(40f).enlarged(20f, bg=yellow)
+  ).enlarged(40f).enlarged(20f, bg=yellowHuge)
 
 }
 

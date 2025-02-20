@@ -25,7 +25,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
     Page("Animation", "") {
       import DynamicGlyphs.{Periodic, Transform, Transformable}
-      val shape = Glyphs.Concentric(bg=yellow)(
+      val shape = Glyphs.Concentric(bg=yellowHuge)(
         FilledOval(40, 40, fg=blue),
         FilledRect(30, 10, fg=red) beside FilledRect(10, 10, fg=green))
 
@@ -260,7 +260,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     Page("OneOf", "OneOf backgrounds") {
       import DynamicGlyphs.OneOf
 
-      val aaa = Label("AAA").copy(fg=blue,bg=yellow(width=2f)).framed(fg=yellow)
+      val aaa = Label("AAA").copy(fg=blue,bg=yellowHuge(width=2f)).framed(fg=yellowHuge)
       val bbb = Label("BBB").copy(fg=blue, bg=nothing).scaled(2f)
       val ccc = Label("CCCCCC").copy(fg=blue, bg=red(width=2f)).scaled(2f).enlarged(10f)
       val ddd = Label("Ping").copy(bg=nothing, fg=black).scaled(1.5f).enlarged(10f)
@@ -305,8 +305,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       import ReactiveGlyphs.Slider
 
       import Slider.{Horizontal, Vertical}
-      val trackh = Rect(500f, 55f, bg=yellow, fg=black)
-      val trackv = Rect(15f, 250f, bg=yellow, fg=black)
+      val trackh = Rect(500f, 55f, bg=yellowHuge, fg=black)
+      val trackv = Rect(15f, 250f, bg=yellowHuge, fg=black)
       val imageh = FilledRect(15f, 35f, fg=red)
       val imagev = FilledRect(35f, 5f, fg=red)
 

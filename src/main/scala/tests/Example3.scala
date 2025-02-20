@@ -29,9 +29,9 @@ trait Example3Interface {
 
   val GUI: Glyph = Col(bg=lightGrey).centered(
     Label("A simple label") enlarged(20),
-    Row(TextButton("make it yellow") { _ => variableColor color yellow.color },
+    Row(TextButton("make it yellow") { _ => variableColor color yellowHuge.color },
         TextButton("make it red")    { _ => variableColor color red.color })
-  ).enlarged(40f).enlarged(20f, bg=yellow)
+  ).enlarged(40f).enlarged(20f, bg=yellowHuge)
 
 }
 

@@ -116,12 +116,12 @@ trait GlyphTransforms {
     new GlyphTransforms.InCavity(w, h, dx, dy, thisGlyph, thisGlyph.fg, thisGlyph.bg)
 
   /**  `Row.centered(thisGlyph, g)` */
-  def beside(g: Glyph): Glyph = Row.centered(thisGlyph, g)
+  def beside(g: Glyph, align: VAlignment=Mid): Glyph = Row(align=align)(thisGlyph, g)
   def besideTop(g: Glyph): Glyph = Row.atTop(thisGlyph, g)
   def besideBottom(g: Glyph): Glyph = Row.atBottom(thisGlyph, g)
 
   /**  `Col.centered(thisGlyph, g)` */
-  def above(g: Glyph): Glyph = Col.centered(thisGlyph, g)
+  def above(g: Glyph, align: Alignment=Center): Glyph = Col(align=align)(thisGlyph, g)
   def aboveLeft(g: Glyph): Glyph = Col.atLeft(thisGlyph, g)
   def aboveRight(g: Glyph): Glyph = Col.atRight(thisGlyph, g)
 }

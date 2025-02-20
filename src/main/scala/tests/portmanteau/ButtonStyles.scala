@@ -15,7 +15,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   implicit val styleSheet: Sheet = style.pageSheet
   import translation._
   import styleSheet.{ex, em}
-  import DefaultBrushes.{red,blue,lightGrey,darkGrey,green,yellow}
+  import DefaultBrushes.{red,blue,lightGrey,darkGrey,green,yellowHuge}
   val book = Book()
   val Page = book.DefinePage
 
@@ -48,7 +48,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
                         buttonFrame          = Unframed)).framed(bg=lightGrey,
                                                                  fg=yellow(width=8))]]></div>, ex, ex,
         TextButton("Hand Styled")  { _ => }
-                (styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonFrame = Unframed)).framed(bg=lightGrey, fg=yellow(width=8)), ex,
+                (styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonFrame = Unframed)).framed(bg=lightGrey, fg=yellowHuge(width=8)), ex,
       <p width="55em" align="center"><tt>styleSheet</tt> is the implicit style <tt>Sheet</tt> for this <tt>Book.Page</tt></p>
     )
   }

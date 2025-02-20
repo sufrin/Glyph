@@ -417,30 +417,22 @@ object ReactiveGlyphs {
 
   object ShadedButton extends DefaultPaints {
 
-    import Glyphs.Shaded._
+    import Glyphs.Shaded
 
-    /** A button with a shaded presentation, and `textlayout` as its caption */
-    def ofString(text: String, fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, delta: GlyphTypes.Scalar=4f)(reaction: Reaction): RawButton = {
-      val up    = Static(fg, bg, delta, false)(DefaultBrushes.buttonText(text).asGlyph(fg, bg))
-      val down  = Static(fg, bg, delta, true)(DefaultBrushes.buttonText(text).asGlyph(fg, bg))
+    /** A button with a shaded presentation, and `text` as its caption */
+    def apply(text: String, fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, delta: GlyphTypes.Scalar=6f)(reaction: Reaction): RawButton = {
+      val up    = Shaded.Static(fg, bg, delta, false)(DefaultBrushes.buttonText(text).asGlyph(fg, bg))
+      val down  = Shaded.Static(fg, bg, delta, true)(DefaultBrushes.buttonText(text).asGlyph(fg, bg))
       val hover = up.copy()
       RawButton(up, down, hover) (reaction)
     }
 
     /** A button with a shaded presentation, and `glyph` as its caption */
-    def ofGlyph(glyph: Glyph, fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, delta: GlyphTypes.Scalar = 4f)(reaction: Reaction): RawButton = {
-      val up = Static(fg, bg, delta, false)(glyph)
-      val down = Static(fg, bg, delta, true)(glyph)
+    def apply(glyph: Glyph, fg: Brush, bg: Brush, delta: GlyphTypes.Scalar)(reaction: Reaction): RawButton = {
+      val up = Shaded.Static(fg, bg, delta, false)(glyph)
+      val down = Shaded.Static(fg, bg, delta, true)(glyph)
       val hover = up.copy()
       RawButton(up, down, hover)(reaction)
-    }
-
-    /** A textlayout-labelled shaded button whose reaction is independent of modifiers.  */
-    def apply(text: String, fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, delta: GlyphTypes.Scalar = 4f)(reaction: Reaction): RawButton = {
-      val up = Static(fg, bg, delta, false)(DefaultBrushes.buttonText(text).asGlyph(fg, bg).enlarged(delta))
-      val down = Static(fg, bg, delta, true)(DefaultBrushes.buttonText(text).asGlyph(fg, bg).enlarged(delta))
-      val hover = up.copy()
-      RawButton(up, down, hover) { reaction }
     }
 
   }

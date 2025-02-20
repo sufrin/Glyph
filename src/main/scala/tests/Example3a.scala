@@ -17,7 +17,7 @@ trait Example3aInterface {
   val variableColor: Brush = green()
 
   implicit val LocalStyle: Sheet =
-    Sheet(buttonFrame=Decoration.Blurred(blur=10f, spread=10f, fg = yellow(width = 8, cap=SQUARE)),
+    Sheet(buttonFrame=Decoration.Blurred(blur=10f, spread=10f, fg = yellowHuge(width = 8, cap=SQUARE)),
           labelBackgroundBrush = variableColor
     )
 
@@ -28,9 +28,9 @@ trait Example3aInterface {
 
   val GUI: Glyph = Col(bg=lightGrey).centered(
     Label("A simple label") enlarged(20),
-    Row(TextButton("make it yellow") { _ => variableColor color yellow.color },
+    Row(TextButton("make it yellow") { _ => variableColor color yellowHuge.color },
         TextButton("make it red")    { _ => variableColor color red.color })
-  ).enlarged(40f).enlarged(20f, bg=yellow)
+  ).enlarged(40f).enlarged(20f, bg=yellowHuge)
 
 }
 

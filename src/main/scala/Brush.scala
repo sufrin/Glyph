@@ -4,7 +4,7 @@ package org.sufrin.glyph
  * A `Brush` delivers `Paint` with a more convenient API
  */
 
-import GlyphTypes.Paint
+import GlyphTypes.{Paint, PathEffect}
 
 import io.github.humbleui.skija.BlendMode
 
@@ -276,6 +276,33 @@ class Brush(var name: String) extends Paint {
     result.filter(ImageFilter.makeDropShadow(dx, dy, blur, color)).col(color)
     result
   }
+
+  /**
+   * Paths drawn with the resulting brush are sliced into pieces and their endpoints are displaced at random.
+   * @param sliceLength
+   * @param displacementLimit
+   * @param seed
+   *
+   * @see PathEffect.makeDiscrete
+   */
+  def sliced(sliceLength: Scalar, displacementLimit: Scalar, seed: Int=42): Brush = {
+    val effect = GlyphTypes.PathEffect.makeDiscrete(sliceLength, displacementLimit, seed)
+    val result = this.copy(name=s"$this.chopped($sliceLength,$displacementLimit, $seed)", pathEffect=effect)
+    result
+  }
+
+  /** A new brush painted with dashes. */
+  def dashed(onOff: Scalar*): Brush = {
+    val result: Brush = this.copy(name=s"$this.dashed(${onOff.mkString(", ")})", pathEffect=GlyphTypes.PathEffect.makeDash(onOff))
+    result
+  }
+
+  /** A new brush that rounds sharp corners. */
+  def rounded(radius: Scalar): Brush = {
+    val result: Brush = copy(name=s"$this.rounded(${radius})", pathEffect=GlyphTypes.PathEffect.makeRoundedCorners(radius))
+    result
+  }
+
 
 }
 
