@@ -4,9 +4,9 @@ package tests
 import glyphXML.Translation.AttributeMap
 import Glyphs.INVISIBLE
 import glyphXML.{Abstraction, Translation}
-import sheeted.windowdialogues.Dialogue
+import styled.windowdialogues.Dialogue
 
-import org.sufrin.glyph.sheeted.{Book, BookSheet, TextButton}
+import org.sufrin.glyph.styled.{Book, BookSheet, TextButton}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.Location.Location
 import org.sufrin.glyph.windowdialogues.Dialogue
@@ -19,7 +19,7 @@ object glyphXMLTest extends Application {
     val translator: Translation = new Translation {
 
       def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(primitives) {
-        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
+        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, children: Seq[Node]): Seq[Target] = {
           super.translate(tag :: tags, paragraph, attributes.updated("textStyle", textStyle), sheet, children)
         }
       }
@@ -30,7 +30,7 @@ object glyphXMLTest extends Application {
       meaning("n") = textStyleTranslation("n", "Normal")
       meaning("tt") = new Translation(primitives) {
         override def toString: String = "tt"
-        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
+        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, children: Seq[Node]): Seq[Target] = {
           super.translate(tags, paragraph, attributes.updated("textFontFamily", "Courier"), sheet, children)
         }
       }
@@ -42,11 +42,11 @@ object glyphXMLTest extends Application {
 
     // Specify application-specific material
     locally {
-      import sheeted._
+      import styled._
       translator("B1")        =  TextButton("Button1"){ _ => println(s"B1") }(_).turned(10)
       translator("B2")        =  TextButton("Button2"){ _ => println(s"B2") }(_)
       translator("B3")        =  TextButton("Button3"){ _ => println(s"B3") }(_)
-      translator("LINK")      =  sheet => TextButton("LINK"){ _ => println(s"LINK") }(sheet.copy(buttonFrame = Styles.Decoration.Unframed))
+      translator("LINK")      =  sheet => TextButton("LINK"){ _ => println(s"LINK") }(sheet.copy(buttonFrame = styles.decoration.Unframed))
       translator("L1")        =  Label("Label1")(_)
       translator("L2")        =  Label("Label2")(_)
       translator("L3")        =  Label("Label3")(_)
@@ -61,20 +61,20 @@ object glyphXMLTest extends Application {
 
 
     // set up the interface
-    val sheet: Sheet = Sheet().copy(
+    val sheet: StyleSheet = StyleSheet().copy(
         backgroundBrush       = DefaultBrushes.nothing,
         buttonForegroundBrush = DefaultBrushes.red,
-        buttonFrame           = Styles.Decoration.Blurred(fg=DefaultBrushes.red(width=10), bg=DefaultBrushes.nothing, blur=5f, spread=5f)
+        buttonFrame           = styles.decoration.Blurred(fg=DefaultBrushes.red(width=10), bg=DefaultBrushes.nothing, blur=5f, spread=5f)
       )
-    implicit val pageSheet: Sheet = Sheet().copy(
+    implicit val pageSheet: StyleSheet = StyleSheet().copy(
         backgroundBrush       = DefaultBrushes.nothing,
         buttonForegroundBrush = sheet.textForegroundBrush,
         buttonFontSize        = sheet.textFontSize*0.9f,
-        buttonFrame           = Styles.Decoration.Framed(fg=DefaultBrushes.red(width=2), bg=DefaultBrushes.nothing)
+        buttonFrame           = styles.decoration.Framed(fg=DefaultBrushes.red(width=2), bg=DefaultBrushes.nothing)
     )
     implicit val bookStyle: BookSheet = new BookSheet(buttonSheet = sheet, pageSheet = pageSheet)
 
-  val book = sheeted.Book()
+  val book = styled.Book()
   val Page = book.Page
 
   import translator.XMLtoGlyph
@@ -203,10 +203,10 @@ object glyphXMLTest extends Application {
 
     val p3 = Page("Hyphenation"){
 
-      def OK(blurb: Glyph, position: Location=null, title: String="")(implicit sheet: Sheet): sheeted.windowdialogues.Dialogue[Unit] = {
+      def OK(blurb: Glyph, position: Location=null, title: String="")(implicit sheet: StyleSheet): styled.windowdialogues.Dialogue[Unit] = {
         // Mutual references ok<->popup
         lazy val ok: Glyph = TextButton("OK") { _ => popup.close() }(sheet)
-        lazy val popup: sheeted.windowdialogues.Dialogue[Unit] = new sheeted.windowdialogues.Dialogue[Unit](blurb, List(ok), position, title, bg=sheet.backgroundBrush)
+        lazy val popup: styled.windowdialogues.Dialogue[Unit] = new styled.windowdialogues.Dialogue[Unit](blurb, List(ok), position, title, bg=sheet.backgroundBrush)
         popup
       }
 

@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package sheeted
+package styled
 
 import GlyphTypes.{Font, Scalar}
 import DynamicGlyphs.ActiveGlyph
@@ -15,7 +15,7 @@ import scala.collection.mutable.ListBuffer
  * are separated by sequences of space or newline.
  */
 object Paragraph {
-  def apply(ems: Scalar, align: Alignment)(text: String)(implicit style: Sheet): Glyph = {
+  def apply(ems: Scalar, align: Alignment)(text: String)(implicit style: StyleSheet): Glyph = {
     val localSheet = style.copy(parWidth = ems*style.emWidth, parAlign = align)
     val glyphs = text.split("[\n ]+").filter(_.nonEmpty).toList.flatMap{
       w => List(Text(w, style.textFont, style.textForegroundBrush, style.textBackgroundBrush), new FixedSize.Space(style.interWordWidth, 1f, 1f, 0f))
@@ -30,7 +30,7 @@ object Paragraph {
  * An active paragraph of width `ems` ems, initially formatted from by `text` using `style` to determine font.
  * It is re-formatted whenever its `set(text)` method is invoked.
  */
-class ActiveParagraph(ems: Scalar, align: Alignment, text: String)(implicit style: Sheet)
+class ActiveParagraph(ems: Scalar, align: Alignment, text: String)(implicit style: StyleSheet)
   extends  ActiveGlyph[String](text, Paragraph(ems, align)(text: String)(style)) {
   def toGlyph(text: String): Glyph = Paragraph(ems: Scalar, align: Alignment)(text)(style)
   override def copy(fg: Brush, bg: Brush): ActiveGlyph[String] = new ActiveParagraph(ems, align, text)(style)
@@ -41,5 +41,5 @@ class ActiveParagraph(ems: Scalar, align: Alignment, text: String)(implicit styl
  * It is re-formatted whenever its `set(text)` method is invoked.
  */
 object ActiveParagraph {
-  def apply(ems: Scalar, align: Alignment)(text: String)(implicit style: Sheet): ActiveParagraph = new ActiveParagraph(ems, align, text)(style)
+  def apply(ems: Scalar, align: Alignment)(text: String)(implicit style: StyleSheet): ActiveParagraph = new ActiveParagraph(ems, align, text)(style)
 }

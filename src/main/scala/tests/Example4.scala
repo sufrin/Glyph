@@ -2,11 +2,11 @@ package org.sufrin.glyph
 package tests
 
 import NaturalSize.{Col, Row}
-import sheeted.overlaydialogues.Dialogue.OK
-import sheeted._
+import styled.overlaydialogues.Dialogue.OK
+import styled._
 
 trait Example4Interface {
-  implicit val Style: Sheet = Sheet()
+  implicit val Style: StyleSheet = StyleSheet()
   import glyphXML.Language._
 
   lazy val fields = List(a, b, c)

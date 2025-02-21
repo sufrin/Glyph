@@ -6,7 +6,7 @@ import Glyphs._
 import NaturalSize._
 import DefaultBrushes._
 
-import org.sufrin.glyph.Styles.Decoration
+import org.sufrin.glyph.styles.decoration
 
 
 /**
@@ -16,13 +16,13 @@ import org.sufrin.glyph.Styles.Decoration
 trait Example3aInterface {
   val variableColor: Brush = green()
 
-  implicit val LocalStyle: Sheet =
-    Sheet(buttonFrame=Decoration.Blurred(blur=10f, spread=10f, fg = yellowHuge(width = 8, cap=SQUARE)),
+  implicit val LocalStyle: StyleSheet =
+    StyleSheet(buttonFrame=decoration.Blurred(blur=10f, spread=10f, fg = yellowHuge(width = 8, cap=SQUARE)),
           labelBackgroundBrush = variableColor
     )
 
-  import sheeted.TextButton
-  import sheeted.Label
+  import styled.TextButton
+  import styled.Label
 
   val labelColor: Brush = green()
 

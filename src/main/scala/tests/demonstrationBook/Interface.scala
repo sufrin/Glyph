@@ -1,21 +1,21 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 import GlyphTypes.Window
-import sheeted.{Book, BookSheet, CheckBox, Label}
+import styled.{Book, BookSheet, CheckBox, Label}
 import NaturalSize.{Col, Row}
 import BooleanGlyphs.OnOffButton
 
-import org.sufrin.glyph.Styles.Decoration
+import org.sufrin.glyph.styles.decoration
 import org.sufrin.glyph.glyphXML.Abstraction
 
 class Interface(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   val book = Book()
   val Page = book.Page
-  implicit val content: Sheet = style.pageSheet
-  val button: Sheet = style.buttonSheet
+  implicit val content: StyleSheet = style.pageSheet
+  val button: StyleSheet = style.buttonSheet
 
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
-    import sheeted.overlaydialogues.Dialogue.OKNO
+    import styled.overlaydialogues.Dialogue.OKNO
     // TODO: windowdialogues need set software scale more carefully than now if autoScale
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
       Label("Do you want to Exit?")(content) scaled 1.5f
@@ -89,7 +89,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
   Page("Welcome", "") {
     val anchor = Glyphs.INVISIBLE()
-    val checkBox = CheckBox(initially=false) { state => anchor.guiRoot.autoScale=state }(content.copy(buttonFrame = Styles.Decoration.Framed(fg=DefaultBrushes.blue, bg=DefaultBrushes.nothing)))
+    val checkBox = CheckBox(initially=false) { state => anchor.guiRoot.autoScale=state }(content.copy(buttonFrame = styles.decoration.Framed(fg=DefaultBrushes.blue, bg=DefaultBrushes.nothing)))
     import translation._
     translation("checkbox") = { _ => checkBox }
     Col.centered(
@@ -120,7 +120,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
   Page("Glyph Transforms*", "") (new Transforms().GUI)
 
-  Page("Button Styles*", "") (new ButtonStyles().GUI)
+  Page("Button styles*", "") (new ButtonStyles().GUI)
 
   Page("Glyph Framing*", "") (new Framing().GUI)
 
@@ -129,8 +129,6 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
   Page("Events/Windows*", "") (new EventsAndWindows().GUI)
 
   Page("Etc*", "") (new Etcetera().GUI)
-
-
 
 
 
@@ -145,7 +143,8 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
     current appearance in a .png file.
     </p>
 
-  val writeBarStyle: Sheet = content.copy(fontScale=0.9f, buttonFrame = Decoration.Framed())
+  val writeBarStyle: StyleSheet = content.copy(fontScale=0.9f, buttonFrame = decoration.Framed())
+  lazy val asCheckBoxes = withWriteBar(hint=hint, enabled = true)(Layout.rightCheckBoxed())(writeBarStyle)
   lazy val asRNotebook = withWriteBar(hint=hint, enabled = true)(Layout.rightButtons())(writeBarStyle)
   lazy val asLNotebook = withWriteBar(hint=hint, enabled = true)(Layout.leftButtons())(writeBarStyle)
   lazy val asVNotebook = withWriteBar(hint=hint, enabled = true)(Layout.rotatedButtons(3))(writeBarStyle)

@@ -1,17 +1,17 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
-import sheeted.{Book, BookSheet}
+import styled.{Book, BookSheet}
 import NaturalSize._
 
 class Transforms(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
 
-    implicit val pageSheet: Sheet = style.pageSheet
+    implicit val pageSheet: StyleSheet = style.pageSheet
     import translation._
     import pageSheet.{ex, em}
     import Glyphs._
     import GlyphTypes._
     import DefaultBrushes.{blueLine, red, redLine, redFrame, green, nothing,black, SQUARE, BUTT, blue, brown, lightGrey}
-    import sheeted.Label
+    import styled.Label
     val nested = Book()
     val Page = nested.Page
 
@@ -36,13 +36,13 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
       val (tightBox, nontightBox) = (redLine(width=2), redLine(color=green.color, width=2))
 
       def L(text: String, rot: Scalar, g: Glyph): Glyph =
-        sheeted.Label(f" $text%1s $rot%2.2f ").above(g.turned(rot).framed(nontightBox).enlarged(8f)).framed(fg = nothing).enlarged(8f)
+        styled.Label(f" $text%1s $rot%2.2f ").above(g.turned(rot).framed(nontightBox).enlarged(8f)).framed(fg = nothing).enlarged(8f)
 
       def T(text: String, rot: Scalar, g: Glyph): Glyph =
-        sheeted.Label(f" $text%1s $rot%2.2f ").above(g.turned(rot, tight=true).framed(tightBox).enlarged(8f)).framed(fg = nothing).enlarged(8f)
+        styled.Label(f" $text%1s $rot%2.2f ").above(g.turned(rot, tight=true).framed(tightBox).enlarged(8f)).framed(fg = nothing).enlarged(8f)
 
       def B(text: String, rot: Scalar, w: Scalar, h: Scalar): Glyph =
-        sheeted.Label(f" ($w%2.2f, $h%2.2f)\n($rot%2.2f)").scaled(0.8f).above(rect.turnedBoxed(w, h)(rot)).framed(tightBox).enlarged(8f)
+        styled.Label(f" ($w%2.2f, $h%2.2f)\n($rot%2.2f)").scaled(0.8f).above(rect.turnedBoxed(w, h)(rot)).framed(tightBox).enlarged(8f)
 
       Col.centered(
         <div width="65em" align="justify">
@@ -90,7 +90,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
           L("C", 135, circ),
         ),
         //ex scaled 1.5f,
-        sheeted.Label("R/T turned d, for d in 0, -22.5, -45, -67.5, -90"), ex,
+        styled.Label("R/T turned d, for d in 0, -22.5, -45, -67.5, -90"), ex,
         Row.centered(
           {
             val (hh, ww) = (4.5f * h, h / 1.5f)

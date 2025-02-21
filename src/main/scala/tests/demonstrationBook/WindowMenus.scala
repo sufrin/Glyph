@@ -1,18 +1,18 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import sheeted.TextButton
-import sheeted.Label
-import sheeted.windowdialogues.Dialogue
+import styled.TextButton
+import styled.Label
+import styled.windowdialogues.Dialogue
 import Dialogue.{CHOOSE,OK}
 import NaturalSize.{Col, Row}
-import sheeted.Book
-import sheeted.BookSheet
+import styled.Book
+import styled.BookSheet
 import Glyphs.{INVISIBLE, Rect}
 
 
 class WindowMenus(implicit val style: BookSheet, implicit val translation: glyphXML.Translation) {
-  implicit val pageSheet: Sheet = style.buttonSheet
+  implicit val pageSheet: StyleSheet = style.buttonSheet
   import translation._
   import pageSheet.{ex, em}
   import DefaultBrushes.{ red,blue}
@@ -29,7 +29,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
     val c3 = CHOOSE(briefing(), Location.South(anchor), "Choice")("One", "Two", "Three")
 
     def showChoice(s: String): Unit =
-      sheeted.overlaydialogues.Dialogue.OK(Label(if (s eq null) "You made no choice" else s"You chose $s")).South(anchor).start()
+      styled.overlaydialogues.Dialogue.OK(Label(if (s eq null) "You made no choice" else s"You chose $s")).South(anchor).start()
 
     Col.centered(
       <div width="40em" align="justify">
@@ -57,11 +57,11 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
   Page("Menus",    "Locating Popups and Menus") {
     import Location._
 
-    val flag = sheeted.Label("×")
+    val flag = styled.Label("×")
     val X = windowdialogues.Menu.topBar(List(flag))
 
     def startLocatorAt(position: Location) = {
-      sheeted.windowdialogues.Menu.at(position)(flag).start()
+      styled.windowdialogues.Menu.at(position)(flag).start()
     }
 
 
@@ -177,14 +177,14 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
         ex scaled 10,
         TextButton("Dialogue a window at the south") {
           _ =>
-            sheeted.windowdialogues.Dialogue.OK(<p width="25em">This window should be  at the South edge of the target.</p>, South(theTarget)).start()
+            styled.windowdialogues.Dialogue.OK(<p width="25em">This window should be  at the South edge of the target.</p>, South(theTarget)).start()
         },
         TextButton("Dialogue a window at the north west") {
           _ =>
             val body = <p width="25em">This window should be  at the north-west edge of the target.</p>
             // Construct a dummy from the APPEARANCE of the intended Dialogue
-            val dummy: Glyph = sheeted.windowdialogues.Dialogue.OK(body, East(theTarget)).theRoot
-            sheeted.windowdialogues.Dialogue.OK(body, NorthWestFor(dummy)(theTarget)).start()
+            val dummy: Glyph = styled.windowdialogues.Dialogue.OK(body, East(theTarget)).theRoot
+            styled.windowdialogues.Dialogue.OK(body, NorthWestFor(dummy)(theTarget)).start()
         }
       ), em)
   }

@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package sheeted.windowdialogues
+package styled.windowdialogues
 
 import Location.Location
 import ReactiveGlyphs.{GenericButton, RawButton}

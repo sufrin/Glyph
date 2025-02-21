@@ -62,7 +62,7 @@ object HintManager {
 //           Glyphs.Label(hint, style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),
 //           seconds)
 //  }
-  def apply(target: Enterable, seconds: Double, hint: String)(implicit style: Sheet): HintManager = {
+  def apply(target: Enterable, seconds: Double, hint: String)(implicit style: StyleSheet): HintManager = {
     new HintManager(
       target,
       Glyphs.Label(hint, style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),

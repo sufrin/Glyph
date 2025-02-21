@@ -1,17 +1,17 @@
 package org.sufrin.glyph
 package tests
 
-import sheeted.overlaydialogues.Dialogue
+import styled.overlaydialogues.Dialogue
 import DefaultBrushes._
 
-import Styles.Decoration
-import sheeted.BookSheet
+import styles.decoration
+import styled.BookSheet
 
 
-class AdderGUI()(implicit sheet: Sheet)  {
+class AdderGUI()(implicit sheet: StyleSheet)  {
   import NaturalSize.{Col, Row}
-  import sheeted.TextButton
-  import sheeted._
+  import styled.TextButton
+  import styled._
   import sheet.{ex,em}
 
 
@@ -103,10 +103,10 @@ class AdderGUI()(implicit sheet: Sheet)  {
 
 }
 
-class CalculatorGUI()(implicit sheet: Sheet) extends AdderGUI()(sheet) {
+class CalculatorGUI()(implicit sheet: StyleSheet) extends AdderGUI()(sheet) {
 
   import NaturalSize._
-  import sheeted.RadioCheckBoxes
+  import styled.RadioCheckBoxes
   import sheet.{em, ex}
 
   def flip[S,T,U](op: S=>T=>U):T=>S=>U = { t:T => s:S => op(s)(t) }
@@ -119,23 +119,23 @@ class CalculatorGUI()(implicit sheet: Sheet) extends AdderGUI()(sheet) {
     case Some(3) =>  setOp("/", _./, flip(_./), _.*)
     case None => operations.select(0)
     case _ =>
-  }(sheet.copy(fontScale = 0.75f, buttonFrame=Decoration.Unframed))
+  }(sheet.copy(fontScale = 0.75f, buttonFrame=decoration.Unframed))
 
   override def root: Glyph = Col.centered(
     super.root, ex,
-    Row.centered(sheeted.Label("Chose an operator "),
+    Row.centered(styled.Label("Chose an operator "),
                  Grid().grid(height=2)(operations.glyphRows)) enlarged 20
   ) enlarged 20
 
 }
 
 trait TopLevelGUI {
-  import sheeted.Book
+  import styled.Book
   val book: Book = Book()
   val Page = book.Page
 
-  implicit val pageStyle: Sheet = Sheet(backgroundBrush=white, buttonFrame=Decoration.Blurred(blue, nothing, 15f, 5f))
-  implicit val bookStyle: BookSheet = BookSheet(buttonSheet = pageStyle, pageSheet=pageStyle.copy(buttonFrame = Decoration.Unframed))
+  implicit val pageStyle: StyleSheet = StyleSheet(backgroundBrush=white, buttonFrame=decoration.Blurred(blue, nothing, 15f, 5f))
+  implicit val bookStyle: BookSheet = BookSheet(buttonSheet = pageStyle, pageSheet=pageStyle.copy(buttonFrame = decoration.Unframed))
 
 
   Page("Adder", "") {

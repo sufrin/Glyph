@@ -487,8 +487,8 @@ object TextField extends org.sufrin.logging.Loggable {
     import Glyphs.Label
     import Modifiers._
     import windowdialogues.Dialogue
-    implicit object Style extends Sheet
-    sheeted.windowdialogues.Dialogue.OK(Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
+    implicit object Style extends StyleSheet
+    styled.windowdialogues.Dialogue.OK(Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
   }
 
   def apply(fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, font: Font=DefaultBrushes.buttonFont,

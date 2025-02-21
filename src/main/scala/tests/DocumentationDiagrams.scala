@@ -320,8 +320,8 @@ object DocumentationDiagrams {
       )((0, 100), (200, 100)).enlarged(4).framed())
 
     val gridTables = {
-      import sheeted._
-      implicit object Style extends Sheet{}
+      import styled._
+      implicit object Style extends StyleSheet{}
       import Style.{ex,em}
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
@@ -345,7 +345,7 @@ object DocumentationDiagrams {
     }
 
     val gridOrder: Glyph = {
-      implicit object Style extends Sheet
+      implicit object Style extends StyleSheet
       import Style.{ex,em}
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
@@ -361,8 +361,8 @@ object DocumentationDiagrams {
     }
 
     val gridCellFit =  {
-      import sheeted._
-      implicit object Style extends Sheet{}
+      import styled._
+      implicit object Style extends StyleSheet{}
       import CellFit._
       import Style.{ex,em}
       val data =

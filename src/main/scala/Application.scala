@@ -26,7 +26,7 @@ trait Application {
   val onUnfocussed: EventKey => Unit =  {
     case event: EventKey =>
       // TODO: we really should beep!
-      // implicit val basic: StyleSheet = Styles.Default
+      // implicit val basic: StyleSheet = styles.Default
       // overlaydialogues.Dialogue.OK(styled.text.Label(s"Unexpected $key")).OnRootOf(GUI).start()
       val key = s"Key ${Modifiers.toBitmap(event).toLongString} ${event.getKey}"
       logging.Default.warn(s"Key unexpected: ${key}")

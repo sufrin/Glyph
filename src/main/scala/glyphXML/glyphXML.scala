@@ -7,7 +7,7 @@ import org.sufrin.glyph.glyphXML.Translation.AttributeMap
 import org.sufrin.glyph.Glyphs.{BreakableGlyph, INVISIBLE}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.glyphXML.Translation.isBlank
-import org.sufrin.glyph.sheeted.windowdialogues.Dialogue
+import org.sufrin.glyph.styled.windowdialogues.Dialogue
 
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
@@ -99,7 +99,7 @@ class Primitives {
   val genericAttributesMap: mutable.Map[String, AttributeMap] = mutable.LinkedHashMap[String, AttributeMap]()
   val entityMap:            mutable.Map[String, String]       = mutable.LinkedHashMap[String, String]()
   val elementMap:           mutable.Map[String, Elem]         = mutable.LinkedHashMap[String, Elem]()
-  val generatorMap:         mutable.Map[String, Sheet=>Glyph] = mutable.LinkedHashMap[String, Sheet=>Glyph]()
+  val generatorMap:         mutable.Map[String, StyleSheet=>Glyph] = mutable.LinkedHashMap[String, StyleSheet=>Glyph]()
 
   private def restore[K,V](saved: (mutable.Map[K,V], Seq[(K,V)])): Unit = {
     val (original, copy) = saved
@@ -129,7 +129,7 @@ class Primitives {
   }
 
   /** Declare a named glyph generator */
-  def update(id: String, glyph: Sheet=>Glyph): Unit = generatorMap(id)=glyph
+  def update(id: String, glyph: StyleSheet=>Glyph): Unit = generatorMap(id)=glyph
   /** Declare a named attribute map: used for inheritance of attributes */
   def update(id: String, map: AttributeMap): Unit = genericAttributesMap(id)=map
   /** Declare a new kind of tag */
@@ -157,7 +157,7 @@ class Primitives {
 
 object Paragraph {
 
-  def fromGlyphs(sheet: Sheet, glyphs: Seq[Glyph], parHang: Option[Glyph]): Glyph = {
+  def fromGlyphs(sheet: StyleSheet, glyphs: Seq[Glyph], parHang: Option[Glyph]): Glyph = {
     val glyphs$   =
       (if (sheet.parIndent>0) List(Glyphs.Rect(sheet.parIndent, 1f, fg=DefaultBrushes.nothing)) else Nil) ++ glyphs
 
@@ -370,7 +370,7 @@ object Translation {
     }
 
     /** The structure of a paragraph to be made from `targets` */
-    case class ParaTarget(sheet: Sheet, targets: Seq[Target], parHang: Option[Glyph]) extends Target with PrettyPrint.PrettyPrintable
+    case class ParaTarget(sheet: StyleSheet, targets: Seq[Target], parHang: Option[Glyph]) extends Target with PrettyPrint.PrettyPrintable
     { val arity=3
       val prefix="Para"
       override def field(i: Int): (String, Any) = i match {
@@ -391,7 +391,7 @@ object Translation {
       val asGlyph: Glyph = theGlyph
     }
 
-    case class GlyphTarget(paragraph: Boolean, sheet: Sheet, glyph: Glyph) extends Target with PrettyPrint.PrettyPrintable {
+    case class GlyphTarget(paragraph: Boolean, sheet: StyleSheet, glyph: Glyph) extends Target with PrettyPrint.PrettyPrintable {
       val arity=2
       val prefix="GlyphTarget"
       override def field(i: Int): (String, Any) = i match {
@@ -489,7 +489,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
     case None     => alt
   }
 
-  def Units(key: String, alt: Float)(attributes: AttributeMap, sheet: Sheet)(implicit source: SourceLocation): Float = {
+  def Units(key: String, alt: Float)(attributes: AttributeMap, sheet: StyleSheet)(implicit source: SourceLocation): Float = {
     attributes.get(key) match {
       case Some(spec) =>
         spec.toLowerCase match {
@@ -567,8 +567,8 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
    * the universally-applicable attributes in
    * for the `Node`.
    */
-  def declareAttributes(sheet: Sheet): Sheet = {
-    val fontDetail: Sheet =
+  def declareAttributes(sheet: StyleSheet): StyleSheet = {
+    val fontDetail: StyleSheet =
       sheet
         .copy(
           fontScale       = Float("fontScale",              1.0f),
@@ -617,7 +617,7 @@ class Translation(val primitives: Primitives=new Primitives) {
 
   import primitives.entityMap
   /** Declare a named glyph generator */
-  def update(id: String, glyph: Sheet=>Glyph): Unit = primitives(id)=glyph
+  def update(id: String, glyph: StyleSheet=>Glyph): Unit = primitives(id)=glyph
   /** Declare a named attribute map: used for inheritance of attributes */
   def update(id: String, map: AttributeMap): Unit = primitives(id)=map
   /** Declare a new kind of tag */
@@ -635,7 +635,7 @@ class Translation(val primitives: Primitives=new Primitives) {
 
   def extendContextFor(tag: String)(inherited: AttributeMap, local: Map[String,String]): AttributeMap = inherited ++ local
 
-  def translateText(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
+  def translateText(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, text: String): Seq[Target] = {
 
     @inline def solidText(text: String): Target = SolidTextTarget(text, paragraph, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
     @inline def hyphenatableText(text: String): Target = HyphenatableTextTarget(text, sheet.discretionaryWordBreak, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
@@ -668,12 +668,12 @@ class Translation(val primitives: Primitives=new Primitives) {
     }
   }
 
-  def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
+  def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, children: Seq[Node]): Seq[Target] = {
     val sheet$ = attributes.declareAttributes(sheet)
     children.flatMap { source => translate(tags, paragraph, attributes, sheet$, source) }
   }
 
-  def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, source: Node): Seq[Target] = {
+  def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, source: Node): Seq[Target] = {
     val sheet$ = attributes.declareAttributes(sheet)
     def tagString:String = tags.reverse.mkString("<", "<", "")
 
@@ -730,7 +730,7 @@ class Translation(val primitives: Primitives=new Primitives) {
                    None
                  else
                    Some(generateGlyph(tags$, paragraph, attributes$, sheet$, hangRef))
-              else Some(sheeted.Label(hangString)(sheet$))
+              else Some(styled.Label(hangString)(sheet$))
             val chunks = children.flatMap { source => translate(tags$, true, attributes$$, sheet$, source) }
             Decorated(ParaTarget(sheet$, chunks, hang))
 
@@ -773,7 +773,7 @@ class Translation(val primitives: Primitives=new Primitives) {
                elementMap.get(id) match {
                  case None =>
                    org.sufrin.logging.Default.warn (s"$tagString <glyph ${attributes.asString}/> UNDEFINED (no generator or element)")
-                   Decorated(GlyphTarget(paragraph, sheet$, sheeted.Label (s"UNDEFINED $id")(sheet$.copy(labelForegroundBrush = DefaultBrushes.red))))
+                   Decorated(GlyphTarget(paragraph, sheet$, styled.Label (s"UNDEFINED $id")(sheet$.copy(labelForegroundBrush = DefaultBrushes.red))))
                  case Some(element) =>
                    translate(tags, paragraph, attributes, sheet, element)
                }
@@ -870,7 +870,7 @@ class Translation(val primitives: Primitives=new Primitives) {
               case None =>
                 abstractionMap.get(tag) match {
                   case None =>
-                    translatePCData(tags$, false, Map.empty, Sheet(), source.toString())
+                    translatePCData(tags$, false, Map.empty, StyleSheet(), source.toString())
                   case Some(abstraction) =>
                     //println(s"Abstraction ${attributes$.asString}")
                     val expanded: Seq[Node] = abstraction.expansion(attributes$, source)
@@ -900,11 +900,11 @@ class Translation(val primitives: Primitives=new Primitives) {
   }
 
   /** Generate a glyph from the given glyph `ref`erence  */
-  private def generateGlyph(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, ref: String): Glyph =
+  private def generateGlyph(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, ref: String): Glyph =
     generatorMap.get(ref) match {
       case None =>
             org.sufrin.logging.Default.warn (s"<glyph ${attributes.asString}/> UNDEFINED (no generator)")
-            sheeted.Label (s"UNDEFINED $ref") (sheet.copy (labelForegroundBrush = DefaultBrushes.red) )
+            styled.Label (s"UNDEFINED $ref") (sheet.copy (labelForegroundBrush = DefaultBrushes.red) )
       case Some(glyph) =>
         glyph(sheet)
     }
@@ -929,7 +929,7 @@ class Translation(val primitives: Primitives=new Primitives) {
   }
 
   /** Perhaps better to introduce a PCData target .... */
-  def translatePCData(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, text: String): Seq[Target] = {
+  def translatePCData(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, text: String): Seq[Target] = {
     import sheet.{textFont, textBackgroundBrush => bg, textForegroundBrush => fg}
     import org.sufrin.glyph.{Text => makeText}
     val rawLines = text.split('\n').toSeq
@@ -942,7 +942,7 @@ class Translation(val primitives: Primitives=new Primitives) {
   def translateProcInstr(tags: List[String], target: String, text: String): Seq[Target] = Seq.empty
 
   /** Make this translation accessible */
-  def apply(source: Node)(implicit sheet: Sheet): Glyph = {
+  def apply(source: Node)(implicit sheet: StyleSheet): Glyph = {
     val translator = this
     //import PrettyPrint.AnyPretty
     //for { t <- (translator.translate(Nil, false, Map.empty, sheet, source)) } t.prettyPrint()
@@ -950,8 +950,8 @@ class Translation(val primitives: Primitives=new Primitives) {
       .centered$(translator.translate(Nil, false, Map.empty, sheet, source).map(_.asGlyph))
   }
 
-  implicit def XMLNodetoGlyph(source: Node)(implicit sheet: Sheet): Glyph = this(source)(sheet)
-  implicit def XMLtoGlyph(source: Elem)(implicit sheet: Sheet): Glyph = this(source)(sheet)
+  implicit def XMLNodetoGlyph(source: Node)(implicit sheet: StyleSheet): Glyph = this(source)(sheet)
+  implicit def XMLtoGlyph(source: Elem)(implicit sheet: StyleSheet): Glyph = this(source)(sheet)
 
 }
 
@@ -964,7 +964,7 @@ object Language {
       import Translation.Target._
 
       def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(primitives) {
-        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
+        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, children: Seq[Node]): Seq[Target] = {
           super.translate(tag :: tags, paragraph, attributes.updated("textStyle", textStyle), sheet, children)
         }
       }
@@ -975,14 +975,14 @@ object Language {
       meaning("n") = textStyleTranslation("n", "Normal")
       meaning("tt") = new Translation(primitives) {
         override def toString: String = "tt"
-        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: Sheet, children: Seq[Node]): Seq[Target] = {
+        override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, children: Seq[Node]): Seq[Target] = {
           super.translate(tags, paragraph, attributes.updated("textFontFamily", "Courier"), sheet, children)
         }
       }
       meaning("caption") = new Abstraction(<p align="center"><b>&BODY;</b></p>)
   }
 
-  implicit def XMLtoGlyph(source: Node)(implicit sheet: Sheet): Glyph = translation.XMLNodetoGlyph(source: Node)
+  implicit def XMLtoGlyph(source: Node)(implicit sheet: StyleSheet): Glyph = translation.XMLNodetoGlyph(source: Node)
 }
 
 

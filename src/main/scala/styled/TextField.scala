@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package sheeted
+package styled
 
 import org.sufrin.utility.TextAbbreviations
 
@@ -38,7 +38,7 @@ object TextField {
             initialText: String = "",
             abbreviations: TextAbbreviations = null
            )
-           (implicit sheet: Sheet): TextField = {
+           (implicit sheet: StyleSheet): TextField = {
     val fg: Brush = sheet.textForegroundBrush
     val bg: Brush = sheet.textBackgroundBrush
     val font: Font = sheet.textFont

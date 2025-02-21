@@ -1,18 +1,18 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import sheeted.TextButton
-import sheeted.Label
-import sheeted.windowdialogues.Dialogue
+import styled.TextButton
+import styled.Label
+import styled.windowdialogues.Dialogue
 import Dialogue.{CHOOSE,OK}
 import NaturalSize.{Col, Row}
-import sheeted.Book
-import sheeted.BookSheet
+import styled.Book
+import styled.BookSheet
 import Glyphs.{INVISIBLE, Rect}
 
 
 class ButtonStyles (implicit val style: BookSheet, implicit val translation: glyphXML.Translation) {
-  implicit val styleSheet: Sheet = style.pageSheet
+  implicit val styleSheet: StyleSheet = style.pageSheet
   import translation._
   import styleSheet.{ex, em}
   import DefaultBrushes.{red,blue,lightGrey,darkGrey,green,yellowHuge}
@@ -20,8 +20,8 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   val Page = book.DefinePage
 
   Page("Framed", "") {
-    import Styles.Decoration.{Framed,Unframed}
-    import sheeted.TextButton
+    import styles.decoration.{Framed,Unframed}
+    import styled.TextButton
     Col.centered(
       <div width="55em">
         <p> These buttons are of the form:</p>
@@ -54,7 +54,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   }
 
   Page("Blurred"){
-    import Styles.Decoration.Blurred
+    import styles.decoration.Blurred
     def blurFrame(blur: Float, spread: Float) = Blurred(fg=red, blur=blur, spread=spread)
     Col.centered(
     <div width="55em">
@@ -75,7 +75,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   }
 
   Page("Shaded", "") {
-    import Styles.Decoration.Shaded
+    import styles.decoration.Shaded
     Col.centered(
       <div width="55em">
         <p> These buttons are of the form:</p>

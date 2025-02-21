@@ -1,19 +1,19 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import sheeted.TextButton
-import sheeted.Label
-import sheeted.windowdialogues.Dialogue
-import sheeted.Book
-import sheeted.BookSheet
-import sheeted.StringLog
-import sheeted.CheckBox
+import styled.TextButton
+import styled.Label
+import styled.windowdialogues.Dialogue
+import styled.Book
+import styled.BookSheet
+import styled.StringLog
+import styled.CheckBox
 import NaturalSize.{Col, Row, Grid}
 import GlyphTypes.Scalar
 import Glyphs.Polygon
 
 class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
-  implicit val pageSheet: Sheet = style.buttonSheet.copy(fontScale = 0.8f)
+  implicit val pageSheet: StyleSheet = style.buttonSheet.copy(fontScale = 0.8f)
   import translation._
   import pageSheet.{ex, em}
   val book = Book()

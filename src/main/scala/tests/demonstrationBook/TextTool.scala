@@ -4,15 +4,15 @@ package tests.demonstrationBook
 
 import org.sufrin.utility.TextAbbreviations
 import org.sufrin.SourceLocation.SourceLocation
-import org.sufrin.glyph.sheeted._
+import org.sufrin.glyph.styled._
 
 import scala.xml.Elem
-import sheeted._
+import styled._
 
 import com.sun.source.util.SourcePositions
 
 
-class TextTool(implicit style: Sheet) extends Notebook {
+class TextTool(implicit style: StyleSheet)  {
   implicit val pageStyle: BookSheet = BookSheet(style, style)
   val anchor = Glyphs.INVISIBLE()
   val abbrev = new TextAbbreviations(onLineTrigger = true)
@@ -34,7 +34,7 @@ class TextTool(implicit style: Sheet) extends Notebook {
   abbrev("\uD83D\uDE2E") = ":O"
 
 
-  import sheeted._
+  import styled._
   import glyphXML.Language._
   import org.sufrin.SourceLocation.{sourcePath=>source}
   def SOURCE(implicit source: SourceLocation): String = source.toString()
@@ -42,13 +42,13 @@ class TextTool(implicit style: Sheet) extends Notebook {
   val defs = translation.meaning
 
   defs("CONTROLS") =
-    _=>Label("Log events") beside sheeted.CheckBox(initially=false) {
+    _=>Label("Log events") beside styled.CheckBox(initially=false) {
       state => anchor.guiRoot.eventHandler.logEvents=state
-    } beside Label(" Live abbreviations") beside sheeted.CheckBox(initially=abbrev.onLineTrigger) {
+    } beside Label(" Live abbreviations") beside styled.CheckBox(initially=abbrev.onLineTrigger) {
       state => abbrev.onLineTrigger=state
     }
 
-  val textField: TextField = sheeted.TextField(size = 40, onEnter = { _ =>  }, onCursorLeave = { _ => anchor.guiRoot.giveupFocus() }, abbreviations = abbrev)
+  val textField: TextField = styled.TextField(size = 40, onEnter = { _ =>  }, onCursorLeave = { _ => anchor.guiRoot.giveupFocus() }, abbreviations = abbrev)
   defs("TEXTFIELD") = _=>textField.framed()
 
 

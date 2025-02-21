@@ -4,14 +4,14 @@ package tests
 import Glyphs._
 import GlyphTypes._
 import Location._
-import Styles.GlyphStyle
+import styles.GlyphStyle
 import windowdialogues.Dialogue.OK
 import PolygonLibrary._
 
 import io.github.humbleui.jwm.EventKey
 import io.github.humbleui.skija.BlendMode
 import org.sufrin.glyph.GlyphTransforms.Turned
-import org.sufrin.glyph.sheeted.TextToggle
+import org.sufrin.glyph.styled.TextToggle
 
 import scala.collection.mutable.ListBuffer
 
@@ -23,7 +23,7 @@ trait LargeTestGUI {
   import ReactiveGlyphs.{FramedButton, RawButton, ShadedButton}
   import DefaultBrushes._
 
-  implicit val sheet: Sheet = Sheet()
+  implicit val sheet: StyleSheet = StyleSheet()
 
   private lazy val atPopupAnchor = East(popupAnchor)
   val face: Typeface =
@@ -151,7 +151,7 @@ trait LargeTestGUI {
       medex,
       Col(align=Center)(
         ShadedButton("Press me [ShadedButton 1]") { _ =>
-          import sheeted.windowdialogues.Dialogue
+          import styled.windowdialogues.Dialogue
           Dialogue
             .OK(
               textColumn(smallFont)("You pressed shaded button 1"),
@@ -867,8 +867,8 @@ trait LargeTestGUI {
   }
 
   private val scene18 = {
-    import sheeted._
-    implicit val sheet: Sheet = Sheet()
+    import styled._
+    implicit val sheet: StyleSheet = StyleSheet()
     import sheet.{ex,em}
 
     val starSize=filledStar7(nothing).diagonal
@@ -907,8 +907,8 @@ trait LargeTestGUI {
 
   import PolygonLibrary._
     private val scene19 = {
-      import sheeted._
-      implicit val sheet: Sheet = Sheet()
+      import styled._
+      implicit val sheet: StyleSheet = StyleSheet()
       import sheet.{ex,em}
 
       val upColor     = yellowHuge(name = "yellow", width = 0)

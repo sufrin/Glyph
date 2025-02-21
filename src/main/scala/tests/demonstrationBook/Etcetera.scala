@@ -1,21 +1,21 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import sheeted.TextButton
-import sheeted.Label
-import sheeted.windowdialogues.Dialogue
-import sheeted.Book
-import sheeted.BookSheet
-import sheeted.TextToggle
-import sheeted.Paragraph
+import styled.TextButton
+import styled.Label
+import styled.windowdialogues.Dialogue
+import styled.Book
+import styled.BookSheet
+import styled.TextToggle
+import styled.Paragraph
 import NaturalSize.{Col, Grid, Row}
 import GlyphTypes.Scalar
 import Glyphs._
 
-import org.sufrin.glyph.Styles.Decoration.Framed
+import org.sufrin.glyph.styles.decoration.Framed
 
 class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
-  implicit val pageSheet: Sheet = style.pageSheet
+  implicit val pageSheet: StyleSheet = style.pageSheet
   import translation._
   import pageSheet.{ex, em}
   val book = Book()
@@ -229,10 +229,10 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     if (false) Page("TextField", "") {
       val anchor = Label("")
 
-      val theText = sheeted.TextField(
+      val theText = styled.TextField(
         size = 40,
         onEnter = { s =>
-          import sheeted.windowdialogues.Dialogue.OK
+          import styled.windowdialogues.Dialogue.OK
           OK(Label(s"You typed $s"))
             .South(anchor)
             .start()
@@ -269,7 +269,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       val oneOfBG = OneOf(bg=black(alpha=0.25f))(aaa(), bbb(), ccc())
       val oneOfPB = OneOf()(ddd(), eee())
 
-      val buttonSheet: Sheet = pageSheet.copy(buttonFrame=Styles.Decoration.Edged(fg=lightGrey.copy(width=16, cap=ROUND)))
+      val buttonSheet: StyleSheet = pageSheet.copy(buttonFrame=styles.decoration.Edged(fg=lightGrey.copy(width=16, cap=ROUND)))
 
       val next = TextButton("Next State") {
         _ => oneOf.next(); oneOfBG.next(); oneOfPB.next()
@@ -322,7 +322,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       lazy val svu: Slider = Vertical(trackv() scaled 1.5f, imagev scaled 1.5f)(reaction)
       lazy val svr: Slider = Vertical(trackv(), imagev)(reaction)
 
-      lazy val show = sheeted.ActiveString(initial=f"X.XXX: (XXX.XX, XXX.XX)")
+      lazy val show = styled.ActiveString(initial=f"X.XXX: (XXX.XX, XXX.XX)")
       lazy val slides: Seq[Slider] = List(sh, shu, shr, sv, svu, svr)
 
       implicit class WithHint(g: Slider) {
@@ -353,7 +353,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     Page("CheckBox", "Toggles, Checkboxes, ColourButtons") {
       import BooleanGlyphs._
       import DynamicGlyphs.OneOf
-      import sheeted._
+      import styled._
       implicit val pageSheet=style.pageSheet.copy(buttonFrame = Framed(fg=blue(width=6, cap=ROUND), enlarge=.25f, radiusFactor = .3f))
 
 
@@ -466,7 +466,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           names = names.drop(familiesPerGroup)
           Page(s"${group.head.takeWhile(c => c!=' ')} ⇝ ${group.last.takeWhile(c => c!=' ')}", "") {
             //import styled.text.Label
-            val labels = group.map { name => sheeted.Label(name, Left) }
+            val labels = group.map { name => styled.Label(name, Left) }
             val llength = labels.length / 2
             Row(NaturalSize.Col.atLeft$(labels.take(llength)).enlarged(20).framed(), em, em,
               NaturalSize.Col.atLeft$(labels.drop(llength)).enlarged(20).framed())

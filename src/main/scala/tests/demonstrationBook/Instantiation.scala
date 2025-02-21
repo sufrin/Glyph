@@ -1,13 +1,13 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import sheeted.{BookSheet, RadioCheckBoxes, TextButton}
+import styled.{BookSheet, RadioCheckBoxes, TextButton}
 import NaturalSize._
 
-import org.sufrin.glyph.Styles.ButtonStyle
+import org.sufrin.glyph.styles.ButtonStyle
 
 class  Instantiation(implicit sheet: BookSheet, implicit val translator: glyphXML.Translation) {
-  implicit val  buttons: Sheet = sheet.buttonSheet
+  implicit val  buttons: StyleSheet = sheet.buttonSheet
   import buttons.{em,ex}
 
   import GlyphTypes.Window
@@ -21,6 +21,7 @@ class  Instantiation(implicit sheet: BookSheet, implicit val translator: glyphXM
         else if (extraArgs contains "-snotebook")  asSNotebook
         else if (extraArgs contains "-vnotebook")  asVNotebook
         else if (extraArgs contains "-tnotebook")  asTNotebook
+        else if (extraArgs contains "-cnotebook")  asCheckBoxes
         else asRNotebook
 
       def title = s"""Portmanteau -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
@@ -36,7 +37,7 @@ class  Instantiation(implicit sheet: BookSheet, implicit val translator: glyphXM
     var style: String = "-notebook"
     var scale: String = "-scale=0.7"
     var screen: String = "-screen=p"
-    val styles  = "-notebook/-lnotebook/-snotebook/-vnotebook/-tnotebook".split("/").toList
+    val styles  = "-notebook/-cnotebook/-lnotebook/-snotebook/-vnotebook/-tnotebook".split("/").toList
     val scales  = "-scale=1.2/-scale=1.0/-scale=0.9/-scale=0.8/-scale=0.75/-scale=0.7/-scale=0.6".split("/").toList.reverse
     val screens = "-screen=p/-screen=0/-screen=1/-screen=2".split("/").toList
 
@@ -68,6 +69,7 @@ class  Instantiation(implicit sheet: BookSheet, implicit val translator: glyphXM
         <fill/>
           <div width="49em" textForeground="red" frame="black">
             <p hang="-notebook "  parIndent="2em">on the right</p>
+            <p hang="-cnotebook"  parIndent="2em">checkboxes on the right</p>
             <p hang="-lnotebook" parIndent="2em">on the left</p>
             <p hang="-snotebook" parIndent="2em">slanted along the top</p>
             <p hang="-vnotebook" parIndent="2em">vertically along the top</p>

@@ -6,21 +6,21 @@ import GlyphTypes._
 import org.sufrin.glyph.glyphXML.{Abstraction, Translation}
 import org.sufrin.glyph.glyphXML.Translation.Target.{ColTarget, Target}
 import org.sufrin.glyph.glyphXML.Visitor.AttributeMap
-import org.sufrin.glyph.sheeted.BookSheet
+import org.sufrin.glyph.styled.BookSheet
 
 import scala.xml.Node
 
 
 object Pages extends Application  {
-  import Styles._
+  import styles._
 
   /**
    * Default sheet
    */
-  val LocalSheet: Sheet = Sheet()
+  val LocalSheet: StyleSheet = StyleSheet()
 
-  val interfaceStyle: Sheet = LocalSheet.copy(
-    buttonFrame=Styles.Decoration.Blurred(fg=DefaultBrushes.blue, blur=5, spread=5, delta=5),
+  val interfaceStyle: StyleSheet = LocalSheet.copy(
+    buttonFrame=styles.decoration.Blurred(fg=DefaultBrushes.blue, blur=5, spread=5, delta=5),
     buttonFontSize = 20,
     labelFontSize = 20,
     textFontSize = 20,
@@ -28,7 +28,7 @@ object Pages extends Application  {
   )
   implicit val bookStyle: BookSheet =
     BookSheet(buttonSheet=interfaceStyle,
-              pageSheet=interfaceStyle.copy(buttonFrame=Decoration.Unframed, fontScale=0.9f))
+              pageSheet=interfaceStyle.copy(buttonFrame=decoration.Unframed, fontScale=0.9f))
 
   import glyphXML.Language._
 

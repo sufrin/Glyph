@@ -14,7 +14,7 @@ import io.github.humbleui.jwm.{App, EventMouseScroll}
 object Dialogue {
 
   import PolygonLibrary.{closeButtonGlyph => defaultCloseGlyph}
-  import Styles.{ButtonStyle, MenuStyle}
+  import styles.{ButtonStyle, MenuStyle}
 
 
   /**
@@ -53,11 +53,11 @@ object Dialogue {
    *   the second moves it south-east by its own dimension. The wheel moves it incrementally in the direction indicated.
    *
    */
-  def Menu(name: String, nested: Boolean=false)(button: Glyph, buttons: Glyph*)(implicit sheet: Sheet): Glyph = {
+  def Menu(name: String, nested: Boolean=false)(button: Glyph, buttons: Glyph*)(implicit sheet: StyleSheet): Glyph = {
      Menu$(name, nested)(button :: buttons.toList)
   }
 
-  def NestedMenu(name: String)(button: Glyph, buttons: Glyph*)(implicit sheet: Sheet): Glyph = {
+  def NestedMenu(name: String)(button: Glyph, buttons: Glyph*)(implicit sheet: StyleSheet): Glyph = {
     Menu$(name, nested = true)(button :: buttons.toList)
   }
 
@@ -65,7 +65,7 @@ object Dialogue {
    *
    *   @see Menu
    */
-  def Menu$(name: String, nested: Boolean)(buttons: Seq[Glyph])(implicit sheet: Sheet): Glyph = {
+  def Menu$(name: String, nested: Boolean)(buttons: Seq[Glyph])(implicit sheet: StyleSheet): Glyph = {
     lazy val popDowns: Seq[Glyph] = buttons.map { button => afterReact(button) { popup.close() }}
     lazy val width   = popDowns.map(_.w).max
     lazy val uniform = popDowns.map  {
@@ -114,9 +114,9 @@ object Dialogue {
 
     lazy val button: Glyph =
       if (nested)
-        sheeted.MenuButton(name) (reaction) (sheet.copy(buttonFrame=Styles.Decoration.Unframed))
+        styled.MenuButton(name) (reaction) (sheet.copy(buttonFrame=styles.decoration.Unframed))
       else
-        sheeted.TextButton(name) (reaction) (sheet)
+        styled.TextButton(name) (reaction) (sheet)
 
     button.asMenuButton
   }
@@ -133,9 +133,9 @@ object Dialogue {
    *    OK("You blew it!").North(anchor).start()
    * }}}
    */
-  def OK(blurb: Glyph, ok: String="OK")(implicit sheet: Sheet): Dialogue[Unit] = {
+  def OK(blurb: Glyph, ok: String="OK")(implicit sheet: StyleSheet): Dialogue[Unit] = {
     // Mutual references ok<->popup
-    lazy val okButton: Glyph = sheeted.TextButton(ok) {
+    lazy val okButton: Glyph = styled.TextButton(ok) {
       _ => popup.close(())
     }
     lazy val popup: Dialogue[Unit] = CLOSEABLE[Unit](blurb, List(okButton))
@@ -160,12 +160,12 @@ object Dialogue {
    * }}}
    *
    */
-  def OKNO(blurb: Glyph, ok: String = " OK ", no: String = " NO ", title: String = "")(implicit sheet: Sheet): Dialogue[Boolean] = {
+  def OKNO(blurb: Glyph, ok: String = " OK ", no: String = " NO ", title: String = "")(implicit sheet: StyleSheet): Dialogue[Boolean] = {
     // Laziness because there are mutual references ok<->popup, no<->popup
-    lazy val okButton: Glyph = sheeted.TextButton(ok) {
+    lazy val okButton: Glyph = styled.TextButton(ok) {
       _ => popup.close(true)
     }
-    lazy val noButton: Glyph = sheeted.TextButton(no) {
+    lazy val noButton: Glyph = styled.TextButton(no) {
       _ => popup.close(false)
     }
     lazy val popup: Dialogue[Boolean] = CLOSEABLE[Boolean](blurb, List(okButton, noButton))
@@ -190,9 +190,9 @@ object Dialogue {
    *    }
    * }}}
    */
-  def CHOOSE(blurb: Glyph)(choices: String*)(implicit sheet: Sheet): Dialogue[String] = {
+  def CHOOSE(blurb: Glyph)(choices: String*)(implicit sheet: StyleSheet): Dialogue[String] = {
     lazy val buttons = choices.map {
-      choice => sheeted.TextButton(choice) { _ => popup.close(choice) }
+      choice => styled.TextButton(choice) { _ => popup.close(choice) }
     }
     lazy val popup: Dialogue[String] = CLOSEABLE(blurb, buttons)
     popup

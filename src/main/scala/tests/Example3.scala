@@ -4,7 +4,7 @@ import Glyphs._
 import NaturalSize._
 import DefaultBrushes._
 
-import org.sufrin.glyph.Styles.Decoration.Framed
+import org.sufrin.glyph.styles.decoration.Framed
 
 
 /**
@@ -18,13 +18,13 @@ import org.sufrin.glyph.Styles.Decoration.Framed
 trait Example3Interface {
   val variableColor: Brush = green()
 
-  implicit val LocalStyle: Sheet =
-    Sheet(buttonFrame=Framed(fg = blue(width = 8, cap=ROUND), bg=white, radiusFactor = 0.3f),
+  implicit val LocalStyle: StyleSheet =
+    StyleSheet(buttonFrame=Framed(fg = blue(width = 8, cap=ROUND), bg=white, radiusFactor = 0.3f),
           labelBackgroundBrush = variableColor
     )
 
-  import sheeted.TextButton
-  import sheeted.Label
+  import styled.TextButton
+  import styled.Label
 
 
   val GUI: Glyph = Col(bg=lightGrey).centered(

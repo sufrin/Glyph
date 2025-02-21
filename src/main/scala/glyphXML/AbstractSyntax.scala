@@ -3,7 +3,7 @@ package glyphXML
 
 object AbstractSyntax {
 
-  case class Context(attributes: Visitor.AttributeMap, sheet: Sheet, text: Boolean)
+  case class Context(attributes: Visitor.AttributeMap, sheet: StyleSheet, text: Boolean)
 
   trait Tree {
   }

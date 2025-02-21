@@ -1,23 +1,23 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import sheeted.{MenuCheckBox, TextButton}
-import sheeted.Label
-import sheeted.overlaydialogues.Dialogue
-import sheeted.overlaydialogues.Dialogue.{CHOOSE, Menu, NestedMenu, OK, OKNO}
+import styled.{MenuCheckBox, TextButton}
+import styled.Label
+import styled.overlaydialogues.Dialogue
+import styled.overlaydialogues.Dialogue.{CHOOSE, Menu, NestedMenu, OK, OKNO}
 import NaturalSize.{Col, Row}
-import sheeted.Book
-import sheeted.BookSheet
-import sheeted.{MenuButton, CheckBox, MenuGlyphButton}
+import styled.Book
+import styled.BookSheet
+import styled.{MenuButton, CheckBox, MenuGlyphButton}
 import Glyphs._
 import DefaultBrushes.{blue, red, redLine}
 
-import org.sufrin.glyph.Styles.Decoration
+import org.sufrin.glyph.styles.decoration
 
 class OverlayUses(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   private val noteBook = Book()
   private val Page = noteBook.DefinePage
-  implicit val pageStyle: Sheet = style.buttonSheet
+  implicit val pageStyle: StyleSheet = style.buttonSheet
   import pageStyle.{ex, em}
   import translation._
 
@@ -156,7 +156,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
     }
 
     val smallStyle = style.pageSheet.copy(
-        buttonFrame=Decoration.Blurred(fg=DefaultBrushes.green, blur=5, spread=5),
+        buttonFrame=decoration.Blurred(fg=DefaultBrushes.green, blur=5, spread=5),
         buttonForegroundBrush = DefaultBrushes.black,
         buttonHoverBrush = DefaultBrushes.darkGrey,
         labelForegroundBrush = DefaultBrushes.green,
@@ -165,7 +165,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
     )
 
     lazy val menuD =  {
-      implicit val pageStyle: Sheet = smallStyle
+      implicit val pageStyle: StyleSheet = smallStyle
       Menu("D")(
         MenuButton("A1") { _ => println("A1") },
         Row(bg=pageStyle.backgroundBrush).centered(Label("Checked when E is enabled: "), MenuCheckBox(true){ state=>menuE.enabled(state) }),
@@ -191,7 +191,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
 
 
     lazy val menuE: Glyph = {
-      implicit val pageStyle: Sheet = smallStyle
+      implicit val pageStyle: StyleSheet = smallStyle
       Menu("E")(
         MenuButton("C1") { _ => println("C1") },
         NestedMenu("innerCC >")(

@@ -1,27 +1,20 @@
 package org.sufrin.glyph
+package styles
 
 /**
- * Styles make it straightforward to provide stylistic uniformity for
+ * styles make it straightforward to provide stylistic uniformity for
  * GUIs whose components take implicit context parameters.
  *
  * This "high level" notion is an alternative to the "low level"
  * provision of default foreground, background, and font parameters.
  *
- * TODO: this feature is in flux.
+ * The StyleSheet class incorporates many of these individual
+ * style components.
  *
- * TODO: change all `Style` traits to case classes, thereby making
- *       copying-with-changes less tedious to implement for new styles.
- *
- * TODO: this feature seems to be heading inexorably towards something
- *       along the lines of "cascading". We'd like it to be convenient
- *       to specify the "collection of styles" to be used in instantiating
- *       a styled component. Perhaps the implicit parameter to a styled
- *       component should simply refer to a (named) collecton of styles; and
- *       there should be a global mapping.
- *
- * @see Styled
+ * @see StyleSheet
+ * @see styled
  */
-object Styles {
+
 
   import GlyphTypes.{Font, Scalar}
 
@@ -68,9 +61,9 @@ object Styles {
   }
 
   /**
-   * Decorations applied to button-like glyphs
+   * Decorations to be applied to button-like glyphs
    */
-  object Decoration {
+  package decoration {
     /** The decoration applied to a glyph */
     trait Decoration {
       def decorate(glyph: Glyph): Glyph
@@ -115,6 +108,11 @@ object Styles {
       def decorate(glyph: Glyph): Glyph = Glyphs.BlurredFrame(blur, spread, fg, bg, dx = delta, dy = delta)(glyph)
     }
 
+    /** Decoration by a glyph transform */
+    case class Transformed(transform: Glyph=>Glyph) extends Decoration {
+      def decorate(glyph: Glyph): Glyph = transform(glyph)
+    }
+
     /**
      * Leave the glyph undecorated.
      */
@@ -129,10 +127,10 @@ object Styles {
    , hover: GlyphStyle
    , toggle: ToggleStyle
    , checkbox: CheckboxStyle
-   , frame: Decoration.Decoration
+   , frame: decoration.Decoration
    , border: Float
   ) {
-    lazy val nested: ButtonStyle = this.copy(frame = Decoration.Unframed)
+    lazy val nested: ButtonStyle = this.copy(frame = decoration.Unframed)
   }
 
   /**
@@ -147,13 +145,13 @@ object Styles {
   (  button: ButtonStyle
    , nestedButton: ButtonStyle
    , reactive: ButtonStyle
-   , inactive: Decoration.Decoration
+   , inactive: decoration.Decoration
    , bg: Brush
    , fg: Brush
   )
 
   case class GlyphButtonStyle
-  (frame: Decoration.Decoration,
+  (frame: decoration.Decoration,
    border: Scalar
   )
-}
+

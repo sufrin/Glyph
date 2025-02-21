@@ -29,14 +29,14 @@ object Output
    *  Useful for generating documentation images.
    */
 
-  def withWriteBar(folder: String="SAVEDGUI", hint: Glyph=null, enabled: => Boolean)(gui: Glyph)(implicit style: Sheet): Glyph = {
+  def withWriteBar(folder: String="SAVEDGUI", hint: Glyph=null, enabled: => Boolean)(gui: Glyph)(implicit style: StyleSheet): Glyph = {
     import Glyphs._
-    implicit object Style extends Sheet
+    implicit object Style extends StyleSheet
     val r = FilledRect(gui.w - 5, 6f, fg = DefaultBrushes.lightGrey)
     lazy val writeBar: RawButton = ReactiveGlyphs.RawButton(r(), r(), r()) {
       _ =>
         val fileName = stringOfDate() + ".png"
-        sheeted.windowdialogues.Dialogue.OKNO(sheeted.Label(s"Write image to ${folder}/${fileName}").enlarged(15)).InFront(writeBar).andThen {
+        styled.windowdialogues.Dialogue.OKNO(styled.Label(s"Write image to ${folder}/${fileName}").enlarged(15)).InFront(writeBar).andThen {
           case false =>
           case true =>
             output(folder, fileName)(gui.guiRoot) match {
