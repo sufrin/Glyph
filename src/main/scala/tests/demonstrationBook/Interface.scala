@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package tests.portmanteau
+package tests.demonstrationBook
 import GlyphTypes.Window
 import sheeted.{Book, BookSheet, CheckBox, Label}
 import NaturalSize.{Col, Row}

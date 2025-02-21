@@ -855,9 +855,9 @@ class Translation(val primitives: Primitives=new Primitives) {
             }
 
           case "attributes" =>
-            import org.sufrin.logging.Default.info
+            import org.sufrin.logging.Default.fine
             val caption=attributes$.String("AT", "")
-            info(s"ATTRIBUTES($caption) ${tagString}<attributes ${attributes$.asString} ${if (paragraph) "(P)" else ""}")
+            fine(s"ATTRIBUTES($caption) ${tagString}<attributes ${attributes$.asString} ${if (paragraph) "(P)" else ""}")
             Seq.empty
 
 

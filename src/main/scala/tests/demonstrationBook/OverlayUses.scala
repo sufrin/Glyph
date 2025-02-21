@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package tests.portmanteau
+package tests.demonstrationBook
 
 import sheeted.{MenuCheckBox, TextButton}
 import sheeted.Label

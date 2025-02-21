@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package tests.portmanteau
+package tests.demonstrationBook
 
 import GlyphTypes._
 
@@ -11,7 +11,7 @@ import org.sufrin.glyph.sheeted.BookSheet
 import scala.xml.Node
 
 
-object PortmanteauNotebook extends Application  {
+object Pages extends Application  {
   import Styles._
 
   /**
@@ -36,7 +36,7 @@ object PortmanteauNotebook extends Application  {
 
   lazy val GUI: Glyph = interface.asRNotebook
 
-  def title = s"""PortmanteauNotebook -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
+  def title = s"""Pages -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
 
   override
   val defaultIconPath: Option[String] = Some ("./flag.png")

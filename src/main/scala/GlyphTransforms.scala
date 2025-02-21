@@ -795,7 +795,6 @@ object GlyphTransforms {
       def diagonal: Vec = Vec(glyph.w, glyph.h)
 
       def copy(fg: Brush=fg, bg: Brush=bg): Glyph = {
-        org.sufrin.logging.Default.info(s"copying $this")
         WithBaseline(glyph.copy(fg, bg), baseLine$)
       }
 
