@@ -275,7 +275,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
 
     /** Make a grid that covers `root` and has the grid-off button on it */
     def makeGridGlyph(root: Glyph): Glyph = {
-      Concentric.atRight(PolygonLibrary.grid(root.diagonal), gridCheckboxForGrid)
+      Concentric.atTop(PolygonLibrary.grid(root.diagonal), gridCheckboxForGrid)
     }
 
     def setGridState(state: Boolean): Unit = {
@@ -312,10 +312,10 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
     var localAnnotation: Option[RootLayer] = None
 
     def makeLocalGlyph(anchor: Glyph): Glyph = {
-      val thisButton: Glyph = TextButton("This is the East, click to pop me down >>> "){
+      val thisButton: Glyph = TextButton("<<< This is the North West corner, click to pop me down"){
         _ => setLocalState(false)
-      }
-      thisButton@@(anchor.guiRoot.diagonal.scaled(1.0f, 0.5f) - thisButton.diagonal)
+      }.turned(45.0f)
+      thisButton@@(Vec.Origin)
     }
 
     def setLocalState(state: Boolean): Unit = {
@@ -363,115 +363,11 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
           pressed, no matter what page/subpage of the app is showing.
         </p>
       </div>,ex,
-      TextButton("Point to the East wall of the window") {
+      TextButton("Point to the North West corner of the window") {
         _ => setLocalState(true)
       }
     ).enlarged(20)
   }
-
-  /*
-  Page("Raw", "") {
-    implicit val Style: StyleSheet = ApplicationStyle
-    import styled.TextButton
-    val anchor = INVISIBLE()
-    var strictHiding = true
-    def applyOverlapPolicy(): Unit = {
-      anchor.guiRoot.Overlay.top match {
-        case None =>
-        case Some(layer) => layer.strictHiding = strictHiding
-      }
-    }
-    val overButton = Row(
-      TextButton("[[[[[ Pop this layer ]]]]]") {
-        _ => anchor.guiRoot.Overlay.pop()
-      }
-    )
-
-    def SEText = "↘"
-    val NWText = "↖"
-    def CROSS  = "❌"
-
-    val text = Paragraphs(35, Justify)(
-      """
-        |This is an overlay that can be nudged or removed.
-        |It is here to demonstrate that pop-ups
-        |on the main body of the controlling window
-        |can be straightforwardly implemented.
-        |""".stripMargin)
-
-    lazy val overlay: Glyph = {
-      Col.centered(
-        Row(TextButton(CROSS) {
-          _ =>
-            anchor.guiRoot.Overlay.top match {
-              case None =>
-              case _ => anchor.guiRoot.Overlay.pop()
-            }
-        }, em, em, text), ex,
-        Row.centered(
-          TextButton(NWText)  {
-            _ =>
-              overlay @@ (overlay.location - (30, 50))
-              anchor.guiRoot.Overlay.set(overlay)
-              applyOverlapPolicy()
-          }, em,
-          TextButton(SEText) {
-            _ =>
-              overlay @@ (overlay.location + (30, 50))
-              anchor.guiRoot.Overlay.set(overlay)
-              applyOverlapPolicy()
-          }, em,
-        ), ex,
-        TextButton("Push an (effectively modal) overlay") {
-          _ =>
-            overButton @@ (overlay.location + (overlay.w/2f-overButton.w/2f, 0f))
-            anchor.guiRoot.Overlay.pushLayer(overButton, isModal = false)
-        },
-      ).enlarged(30, bg = white).framed(fg = blue)
-    }
-    Col.centered(
-      Paragraphs(35, Left)(
-        """
-          |This page provides a few simple tests of the "raw" overlay
-          |implementation.
-          |""".stripMargin), ex,
-      TextButton("Show the non-modal overlay") {
-        _ =>
-          anchor.guiRoot.Overlay.set(overlay @@ (90, 90), isModal = false)
-          applyOverlapPolicy()
-      }, ex,
-      TextButton("Show the modal overlay") {
-        _ =>
-          anchor.guiRoot.Overlay.set(overlay @@ (190, 190), isModal = true)
-          applyOverlapPolicy()
-      }, ex,
-      anchor,
-      Row(
-        TextButton(NWText) {
-          _ =>
-            overlay @@ (overlay.location - (30, 50))
-            anchor.guiRoot.Overlay.set(overlay, strictHiding = strictHiding)
-        }, em,
-        TextButton(SEText) {
-          _ =>
-            overlay @@ (overlay.location + (30, 50))
-            anchor.guiRoot.Overlay.set(overlay, strictHiding = strictHiding)
-        }
-      ), ex,
-      Col.centered(
-        Row.centered(
-          Label("Enable strict hiding policy: "),
-          CheckBox(initially = strictHiding) {
-            state =>
-              strictHiding = state
-              applyOverlapPolicy()
-          }),
-        Label("viz: partly occluded buttons are effectively hidden")
-      ), ex,
-    )
-  }
-  */
-
 
   val GUI: Glyph = noteBook.Layout.rightButtons().enlarged(40)
 
