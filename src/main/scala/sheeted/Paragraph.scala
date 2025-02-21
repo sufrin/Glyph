@@ -1,8 +1,13 @@
 package org.sufrin.glyph
 package sheeted
 
-import GlyphTypes.Scalar
+import GlyphTypes.{Font, Scalar}
 import DynamicGlyphs.ActiveGlyph
+
+import org.sufrin.glyph.DefaultBrushes.{blue, nothing}
+import org.sufrin.glyph.NaturalSize.Col
+
+import scala.collection.mutable.ListBuffer
 
 
 /**
@@ -17,7 +22,9 @@ object Paragraph {
     }
     glyphXML.Paragraph.fromGlyphs(localSheet, glyphs, None)
   }
+
 }
+
 
 /**
  * An active paragraph of width `ems` ems, initially formatted from by `text` using `style` to determine font.

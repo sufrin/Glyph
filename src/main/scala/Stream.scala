@@ -48,6 +48,7 @@ class StreamIterator[T](iterator: Iterator[T]) extends Stream[T] {
     (iterator.hasNext && { buffer=Some(iterator.next()); true })
   var buffer: Option[T] = None
   def element: T = buffer.get
+  def update(element: T): Unit = buffer=Some(element)
   def nextElement(): Unit = {
     buffer = None
     hasElement

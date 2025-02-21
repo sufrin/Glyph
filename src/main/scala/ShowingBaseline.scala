@@ -5,13 +5,13 @@ import GlyphTypes.Scalar
 /**
  *  A visual geometry-checking glyph that is effectively `glyph`. Intended only for debugging.
  *
- *  Iff `enable` is true it is drawn decorated, using `fg`, with a rectangular frame
- *  and (when appropriate) its `baseLine`. These glyphs are not treated as
- *  part of the semantic glyph tree. The methods where this matters are marked with [**] below.
+ *  Iff `enable` is true glyph is drawn decorated with a rectangular frame
+ *  and (when appropriate) its `baseLine` using the `fg` brush. The original glyph is treated as
+ *  part of the semantic glyph tree; but the the framing glyph is not. The methods where this matters are marked with [**] below.
  *  `fg` should have a very small stroke width, otherwise the frame might obliterate parts of the glyph
  *  and its surroundings.
  */
-class DebugGeometry(glyph: Glyph, enable: Variable[Boolean], val fg: Brush) extends Glyph {
+class ShowingBaseline(glyph: Glyph, enable: Variable[Boolean], val fg: Brush) extends Glyph {
   val diagonal: Vec = glyph.diagonal
   val bg: Brush = Brush().color(0)
 
@@ -35,12 +35,13 @@ class DebugGeometry(glyph: Glyph, enable: Variable[Boolean], val fg: Brush) exte
     }
   }
 
-  def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new DebugGeometry(glyph.copy(), enable, fg)
+  def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new ShowingBaseline(glyph.copy(), enable, fg)
 }
 
-object DebugGeometry {
-  /** Debugging frames are drawn in this colour by default. */
-  val frameColor: Brush = Brush("DebugGeometry.frameColor") color 0xFF000000 strokeWidth 1.0f
-  val enableFrame: Variable[Boolean] = new Variable(true)
-  def apply(fg: Brush=frameColor, g: Glyph): Glyph = new DebugGeometry(g, enableFrame, fg)
+object ShowingBaseline {
+  /** Default colour */
+  var fg: Brush = Brush("Showingbaseline.fg") color 0xFF000000 strokeWidth 1.0f
+  /** Boolean Variable controlling visibility of ShowingBaseline frames */
+  val enabled: Variable[Boolean] = new Variable(true)
+  def apply(fg: Brush=fg, g: Glyph): Glyph = new ShowingBaseline(g, enabled, fg)
 }

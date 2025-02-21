@@ -400,7 +400,9 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    /** False unless `atSize` will generate a distinct glyph */
    def resizeable: Boolean = false
 
-   def debugGeometry: Glyph = DebugGeometry(fg=DefaultBrushes.black, thisGlyph)
+   /** yield a glyph that draws bounding box and baseline of this glyph around it */
+   def showingBaseline(fg: Brush): Glyph = ShowingBaseline(fg, thisGlyph)
+   def showingBaseline: Glyph            = ShowingBaseline(ShowingBaseline.fg, thisGlyph)
 }
 
 /**

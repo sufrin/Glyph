@@ -4,6 +4,8 @@ import DefaultBrushes.nothing
 import GlyphTypes._
 import NaturalSize.{Col, Row}
 
+import org.sufrin.glyph.GlyphTransforms.WithBaseline
+
 /**
  *  As a notational convenience. `Glyphs` have intrinsic transforms that correspond to the external transformers implemented
  *  by the classes nested within the object `GlyphTransforms`. The trait `GlyphTransforms` is a mixin used to define the
@@ -124,6 +126,9 @@ trait GlyphTransforms {
   def above(g: Glyph, align: Alignment=Center): Glyph = Col(align=align)(thisGlyph, g)
   def aboveLeft(g: Glyph): Glyph = Col.atLeft(thisGlyph, g)
   def aboveRight(g: Glyph): Glyph = Col.atRight(thisGlyph, g)
+
+  /** behaves as this glyph with the specified baseLine */
+  def withBaseline(baseLine: Scalar): Glyph = WithBaseline(thisGlyph, baseLine)
 }
 
 object GlyphTransforms {
@@ -772,5 +777,32 @@ object GlyphTransforms {
     /** A copy of this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = new Shaded(glyph.copy(), fg, bg, delta, down)
 
+  }
+
+  object WithBaseline {
+    def apply(glyph: Glyph, baseLine$: Scalar): Glyph = new Glyph { thisGlyph =>
+
+      locally { glyph.parent=thisGlyph }
+
+      override def toString: String = s"$glyph.withBaseline(${baseLine$})"
+
+      override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(p)
+
+      override def glyphContaining(p: Vec): Option[Hit] = glyph.glyphContaining(p)
+
+      override def baseLine: Scalar = baseLine$
+
+      def diagonal: Vec = Vec(glyph.w, glyph.h)
+
+      def copy(fg: Brush=fg, bg: Brush=bg): Glyph = {
+        org.sufrin.logging.Default.info(s"copying $this")
+        WithBaseline(glyph.copy(fg, bg), baseLine$)
+      }
+
+      val fg: Brush = glyph.fg
+      val bg: Brush = glyph.bg
+
+      def draw(surface: Surface): Unit = glyph.draw(surface)
+    }
   }
 }

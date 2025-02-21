@@ -404,7 +404,7 @@ object Translation {
     }
 
     case class DecorateTarget(tags: Seq[String], paragraph: Boolean, attributes: TypedAttributeMap, target: Target, ambientFont: Font) extends Target {
-      @inline def raiseBy(glyph: Glyph, by: Scalar): Glyph = withBaseline(glyph, by)
+      @inline def raiseBy(glyph: Glyph, by: Scalar): Glyph = glyph.withBaseline(by)
 
       def decorated(glyph: Glyph): Glyph = {
         val g0 = glyph
@@ -449,32 +449,6 @@ object Translation {
       val glyph$ = decorated(target.asGlyph)
       val asGlyph: Glyph = raiseBy(glyph$, 0.5f*(glyph$.h+ambientH))
 
-    }
-
-    /**
-     *
-     */
-    def withBaseline(glyph: Glyph, baseLine$: Scalar): Glyph = new Glyph { thisGlyph =>
-
-      locally { glyph.parent=thisGlyph }
-
-      override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(p)
-
-      override def glyphContaining(p: Vec): Option[Hit] = glyph.glyphContaining(p)
-
-      override def baseLine: Scalar = baseLine$
-
-      def diagonal: Vec = Vec(glyph.w, glyph.h)
-
-      def copy(fg: Brush=fg, bg: Brush=bg): Glyph = {
-        org.sufrin.logging.Default.info(s"copying $glyph.atBaseline($baseLine)")
-        withBaseline(glyph.copy(fg, bg), baseLine$)
-      }
-
-      val fg: Brush = glyph.fg
-      val bg: Brush = glyph.bg
-
-      def draw(surface: Surface): Unit = glyph.draw(surface)
     }
 
   }
