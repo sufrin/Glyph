@@ -261,7 +261,7 @@ object Paragraph {
             line += breakable.hyphen()
             //line += interWord()// (from the earlier implementation
             lineWidth += breakable.hyphen.w
-            words.buffer = Some(new BreakableGlyph(breakable.hyphen, glyphs.drop(breakPoint)))
+            words.setElement(new BreakableGlyph(breakable.hyphen, glyphs.drop(breakPoint)))
           }
         case _ =>
       }
