@@ -68,20 +68,26 @@ trait Book {
 
   /**
    * In principle `buttons(i)` has a reaction `oneOf.select(i)`. This
-   * is true when the `buttons` have been constructed by `tabbedBook`.
+   * is true when the `buttons` have been constructed by `buttonedBook`.
    */
-  case class TabbedBook(buttons: Seq[Glyph], oneOf: OneOf)
+  case class BookComponents(buttons: Seq[Glyph], oneOf: OneOf)
 
   /**
-   * Derive a `TabbedBook` that corresponds to the declared pages of thus
-   * notebook. When `uniform` is true, `buttons` will all have the same diagonal, else
-   * they will be at their natural size (modulo styled framing)
+   * Derive a `BookComponents` that corresponds to the declared pages of thus
+   * notebook. When `buttonAlign` is `Justify`, `buttons` will all have the same diagonal, else
+   * they will be at their natural size (modulo styled framing).
+   *
+   * `pageAlign` specifies the alignment of each page of the book within
+   * the bounding box of the book as a whole.
+   *
+   * @see OneOf
    */
-  def tabbedBook(uniform: Boolean, align: Alignment)(implicit sheet: BookSheet): TabbedBook = {
+  def buttonedBook(buttonAlign: Alignment=Justify, pageAlign: Alignment)(implicit sheet: BookSheet): BookComponents = {
     implicit val style: StyleSheet = sheet.buttonSheet
     val glyphs: Seq[Glyph] = pages.toList.map(_.root())
-    val oneOf = DynamicGlyphs.OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=align)(glyphs)
+    val oneOf = DynamicGlyphs.OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
     val keyed = (0 until glyphs.length) zip pages
+    val uniform = buttonAlign==Justify
 
     lazy val buttons = keyed map  {
       case (n: Int, page: Page) =>
@@ -93,20 +99,43 @@ trait Book {
         case (n: Int, page: Page) => UniformSize(page.title){ _ => oneOf.select(n) }
       }
 
-    TabbedBook(if (uniform) UniformSize.constrained(uniformButtons) else buttons, oneOf)
+    BookComponents(if (uniform) UniformSize.constrained(uniformButtons) else buttons, oneOf)
   }
 
-  def checkBoxedBook(uniform: Boolean, align: Alignment)(implicit sheet: BookSheet): TabbedBook = {
+  /**
+   * Derive a `BookComponents` that corresponds to the declared pages of thus
+   * notebook. In this case the  "buttons" as a whole will be checkboxes
+   * derived from  `RadioCheckBoxes` and captioned with the page titles. Ticking a checkbox will select the
+   * corresponding page.
+   *
+   * `buttonAlign` specifies the relationship between the checkbox and caption on each "button" of the
+   * column of buttons.
+   * {{{
+   *   Left    the checkbox is immediately to the left of the checkbox
+   *   Right   the checkbox is on the right of the entire column
+   *           the caption is on the left
+   *   Center  the checkbox is on the right of the entire column
+   *           the caption is centered
+   *   Justify the checkbox is on the right of the entire column
+   *           the caption is just to the left of the checkbox
+   * }}}
+   *
+   * `pageAlign` specifies the alignment of each page of the book within
+   * the bounding box of the book as a whole.
+   *
+   * @see OneOf
+   */
+  def checkBoxedBook(buttonAlign: Alignment=Left, pageAlign: Alignment=Center)(implicit sheet: BookSheet): BookComponents = {
     implicit val style: StyleSheet = sheet.buttonSheet
     val glyphs: Seq[Glyph] = pages.toList.map(_.root())
-    val oneOf = DynamicGlyphs.OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=align)(glyphs)
+    val oneOf = DynamicGlyphs.OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
 
     val radio = RadioCheckBoxes(pages.toList.map(_.title), prefer=pages.head.title){
       case Some(n) => oneOf.select(n)
       case None    => oneOf.select(0)
     }(sheet.buttonSheet.copy(buttonFrame=decoration.Edged()))
 
-    TabbedBook(radio.glyphButtons, oneOf)
+    BookComponents(radio.glyphButtons(buttonAlign), oneOf)
 
   }
 
@@ -132,11 +161,11 @@ trait Book {
    *   menuBar: Glyph
    * }}}
    *
-   * Deliver a `TabbedBook(buttons, oneOf)` without placing the buttons or the `oneOf`. This
+   * Deliver a `BookComponents(buttons, oneOf)` without placing the buttons or the `oneOf`. This
    * makes it possible to implement non-standard juxtapositions of buttons and the notebook page
    * (for example, by having two rows/columns of buttons).
    * {{{
-   *   raw(sheet: StyleSheet, uniform: Boolean = true, align: Alignment=Center): TabbedBook
+   *   raw(sheet: StyleSheet, uniform: Boolean = true, align: Alignment=Center): BookComponents
    * }}}
    */
   object Layout {
@@ -149,60 +178,75 @@ trait Book {
     }
 
     /**
-     * A `TabbedBook` with a button corresponding to each page, and a `OneOf` holding the pages.
+     * A `BookComponents` with a button corresponding to each page, and a `OneOf` holding the pages.
      * Each button selects the corresponding page on the `OneOf` when clicked.
      */
-    def raw(sheet: BookSheet, uniform: Boolean = true, align: Alignment=Center): TabbedBook =
-      tabbedBook(uniform, align)(sheet)
+    def rawButtoned(buttonAlign: Alignment = Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet): BookComponents =
+      buttonedBook(buttonAlign, pageAlign)(sheet)
 
-    def rightCheckBoxed(uniform: Boolean=false, align: Alignment=Center)(implicit sheet: BookSheet): Glyph = {
-      val TabbedBook(buttons, oneOf) = checkBoxedBook(uniform, align)
-      val rhs = Col().atLeft$(buttons)
+    /**
+     * A `BookComponents` with a captioned checkbox corresponding to each page, and a `OneOf` holding the pages.
+     * Each checkbox selects the corresponding page on the `OneOf` when clicked.
+     */
+    def rawCheckBoxed(buttonAlign: Alignment = Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet): BookComponents =
+      checkBoxedBook(buttonAlign, pageAlign)(sheet)
+
+    def rightCheckBoxes(buttonAlign: Alignment = Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet): Glyph = {
+      val BookComponents(buttons, oneOf) = checkBoxedBook(buttonAlign, pageAlign)
+      val rhs = Col(align=Left)(buttons)
       val lhs = oneOf
       val divider = blackLine(4, rhs.h max lhs.h)
-      Row(bg=sheet.buttonSheet.backgroundBrush).centered(lhs, divider, rhs)
-      }
+      Row(align=Mid, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
+    }
 
-
-    def rightButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: BookSheet):  Glyph   = {
-      val TabbedBook(buttons, oneOf) = tabbedBook(uniform, align)
+    def rightButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet):  Glyph   = {
+      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
       val rhs = Col().atRight$(buttons)
       val lhs = oneOf
       val divider = blackLine(4, rhs.h max lhs.h)
-      Row(bg=sheet.buttonSheet.backgroundBrush).centered(lhs, divider, rhs)
+      Row(align=Mid, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
 
-    def leftButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: BookSheet): Glyph = {
-      val TabbedBook(buttons, oneOf) = tabbedBook(uniform, align)
-      val lhs = Col().atRight$(buttons)
+    def leftButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet): Glyph = {
+      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
+      val lhs = Col(align=Right)(buttons)
       val rhs = oneOf
       val divider = blackLine(2, rhs.h max lhs.h)
-      Row(bg=sheet.buttonSheet.backgroundBrush).centered(lhs, divider, rhs)
+      Row(align=Mid, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
 
-    def rotatedButtons(quads: Int, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: BookSheet) = {
-      val TabbedBook(buttons, oneOf) = tabbedBook(uniform, align)
+    def leftCheckBoxes(buttonAlign: Alignment=Justify, pageAlign: Alignment=Left)(implicit sheet: BookSheet): Glyph = {
+      val BookComponents(buttons, oneOf) = checkBoxedBook(buttonAlign, pageAlign)
+      val lhs = Col(align=Right)(buttons)
+      val rhs = oneOf
+      val divider = blackLine(2, rhs.h max lhs.h)
+      Row(align=Mid, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
+    }
+
+    def rotatedButtons(quads: Int, buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet) = {
+      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
       val lhs = Row().atBottom$(buttons.map { b => b.rotated(quads, bg=nothing) })
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
-      Col(bg=sheet.buttonSheet.backgroundBrush).centered(lhs, divider, rhs)
+      Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
 
-    def skewedButtons(skewX: Scalar, skewY: Scalar, uniform: Boolean=true, align: Alignment=Center)(implicit sheet: BookSheet) = {
-      val TabbedBook(buttons, oneOf) = tabbedBook(uniform, align)
-      val lhs = Row().atBottom$(buttons.map { b => (b.rotated(3, bg=nothing)) })
+    def skewedButtons(skewX: Scalar, skewY: Scalar, buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet) = {
+      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
+      val lhs = Row(align=Bottom)(buttons.map { b => (b.rotated(3, bg=nothing)) })
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
-      Col(bg=sheet.buttonSheet.backgroundBrush).centered(lhs.skewed(-skewX, skewY), divider, rhs)
+      Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs.skewed(-skewX, skewY), divider, rhs)
     }
 
-    def topButtons(uniform: Boolean=true, align: Alignment=Center)(implicit sheet: BookSheet) = {
-      val TabbedBook(buttons, oneOf) = tabbedBook(uniform, align)
+    def topButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet) = {
+      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
       val lhs = Row(bg=nothing).atBottom$(buttons)
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
-      Col(bg=sheet.buttonSheet.backgroundBrush).centered(lhs, divider, rhs)
+      Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
+
   }
 }
 

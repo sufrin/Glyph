@@ -225,6 +225,6 @@ class EventsAndWindows(implicit val style: BookSheet, implicit val translation: 
     }
 
 
-  val GUI: Glyph = nested.Layout.rightButtons().enlarged(20)
+  val GUI: Glyph = nested.Layout.rightCheckBoxes(pageAlign = Center).enlarged(20)
 
 }

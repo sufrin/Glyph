@@ -149,7 +149,7 @@ trait TopLevelGUI {
   }
 
   val root: Glyph = {
-    book.Layout.leftButtons(true)
+    book.Layout.leftButtons(Left, Left)
   }
 }
 

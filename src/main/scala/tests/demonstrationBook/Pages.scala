@@ -1,15 +1,6 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
-
-import GlyphTypes._
-
-import org.sufrin.glyph.glyphXML.{Abstraction, Translation}
-import org.sufrin.glyph.glyphXML.Translation.Target.{ColTarget, Target}
-import org.sufrin.glyph.glyphXML.Visitor.AttributeMap
 import org.sufrin.glyph.styled.BookSheet
-
-import scala.xml.Node
-
 
 object Pages extends Application  {
   import styles._
@@ -32,15 +23,14 @@ object Pages extends Application  {
 
   import glyphXML.Language._
 
-  val interface = new Interface
-
-  lazy val GUI: Glyph = interface.asRNotebook
+  //val interface = new Interface
+  //lazy val GUI: Glyph = interface.asRNotebook
+  lazy val GUI = new SplashScreen().GUI.enlarged(20)
 
   def title = s"""Pages -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
 
   override
   val defaultIconPath: Option[String] = Some ("./flag.png")
 
-  override
-  def onClose(window: Window): Unit = interface.confirmCloseOn(GUI)(window)
+  //override def onClose(window: Window): Unit = interface.confirmCloseOn(GUI)(window)
 }

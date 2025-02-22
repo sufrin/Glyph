@@ -15,7 +15,7 @@ case class StyleSheet
  buttonFontFamily: FontFamily  = FontFamily(),
  buttonFontStyle: FontStyle = FontStyle.NORMAL,
  buttonFontSize: Scalar  = 22f,
- buttonBorderBrush: Brush = Brush("buttonBorder")(color=0XFF777777, width=5f),
+ buttonBorderBrush: Brush = Brush("buttonBorder")(color=0XFF777777, width=5f, cap=DefaultBrushes.ROUND),
  buttonBackgroundBrush: Brush = Brush("transparent")(color=0X00FFFFFF), // transparent
  buttonForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF), // blue
  buttonHoverBrush: Brush = Brush("green")(color=0xFF00FF00), // green

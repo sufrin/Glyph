@@ -85,8 +85,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       val nested = Book()
       val Page = nested.Page
 
-
-      Page("Cell sizes", "data = 9 variable sized labels. Grid(... padx=10, pady=10)") {
+      Page("Cell size", "data = 9 variable sized labels. Grid(... padx=10, pady=10)") {
         val data =
           for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
             Label(f"$i.scaled($scale%1.1f)").scaled(scale)
@@ -109,7 +108,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           ) scaled 0.8f enlarged (50))
       }
 
-      Page("Glyph Placement", "") {
+      Page("Glyph pos'n", "") {
         import CellFit._
         val data =
           for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
@@ -131,11 +130,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         ) scaled 0.75f enlarged (50)
       }
 
-
-      nested.Layout.topButtons()
+      nested.Layout.leftCheckBoxes(buttonAlign=Right, pageAlign=Center)
     }
-
-
 
     Page("Split", "") {
       import DynamicGlyphs.SplitScreen
@@ -475,9 +471,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       }
 
       makePages()
-      book.Layout.rightButtons(uniform = true)
+      book.Layout.leftCheckBoxes(buttonAlign = Right, pageAlign=Center)
     }
 
-  val GUI: Glyph = book.Layout.rightButtons().enlarged(30)
+  val GUI: Glyph = book.Layout.leftCheckBoxes(buttonAlign = Right, pageAlign = Center).enlarged(30)
 
 }

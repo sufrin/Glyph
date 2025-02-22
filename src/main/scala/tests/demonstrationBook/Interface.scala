@@ -96,25 +96,22 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
     <body align="justify" width="65em">
       <p>
         This application demonstrates aspects of the Glyphs library
-        by offering the choice of several demonstration GUIs. These are shown on
-        the pages of a tabbed notebook with the location and style of
-        tabs determined by the command line.
-        Several of the pages have pages nested  within them:
+        by offering the choice of several demonstration interfaces. These are shown on
+        the pages of a "tabbed" notebook and the location and style of
+        tabs is determined when the main application is started from the <b>Splash Screen</b>.
+        Several of the interfaces have nested  interfaces within them:
         their names have * by them.
       </p>
       <p>
         The notebook style is initially -notebook, and
         its scale is initially 1.00. These can  be changed when creating a
-        new instance from the <tt>New Instance</tt> page; and the scale is also changed
-        when the window is resized by dragging an edge/corner when <glyph gid="checkbox"/> is checked.
+        new instance from the <b>Splash Screen</b>; and the scale can also be changed
+        when the window is resized by dragging an edge/corner: this works only when <glyph gid="checkbox"/>
+        is checked.
       </p>
     </body>, anchor
     )
   }
-
-  Page("New Instance", "")(new Instantiation().GUI)
-
-  Page("Text", "") (new TextTool().GUI)
 
   Page("Window Menu Support*", "") (new WindowMenus().GUI)
 
@@ -126,11 +123,13 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
   Page("Using Overlays*", "") (new OverlayUses().GUI)
 
+  Page("Text Tool", "") (new TextTool().GUI)
+
   Page("Events/Windows*", "") (new EventsAndWindows().GUI)
 
   Page("Etc*", "") (new Etcetera().GUI)
 
-
+  Page("Splash Screen", "")(new SplashScreen().GUI)
 
   import utils.Output.withWriteBar
   import book.Layout
@@ -144,10 +143,10 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
     </p>
 
   val writeBarStyle: StyleSheet = content.copy(fontScale=0.9f, buttonFrame = decoration.Framed())
-  lazy val asCheckBoxes = withWriteBar(hint=hint, enabled = true)(Layout.rightCheckBoxed())(writeBarStyle)
-  lazy val asRNotebook = withWriteBar(hint=hint, enabled = true)(Layout.rightButtons())(writeBarStyle)
-  lazy val asLNotebook = withWriteBar(hint=hint, enabled = true)(Layout.leftButtons())(writeBarStyle)
-  lazy val asVNotebook = withWriteBar(hint=hint, enabled = true)(Layout.rotatedButtons(3))(writeBarStyle)
-  lazy val asSNotebook = withWriteBar(hint=hint, enabled = true)(Layout.skewedButtons(0.2f, 0f, uniform = true))(writeBarStyle)
-  lazy val asTNotebook = withWriteBar(hint=hint, enabled = true)(Layout.topButtons())(writeBarStyle)
+  lazy val asCheckBoxes = withWriteBar(hint=hint, enabled = true)(Layout.rightCheckBoxes(pageAlign = Center))(writeBarStyle)
+  lazy val asRNotebook = withWriteBar(hint=hint, enabled = true)(Layout.rightButtons(pageAlign = Center))(writeBarStyle)
+  lazy val asLNotebook = withWriteBar(hint=hint, enabled = true)(Layout.leftButtons(pageAlign = Center))(writeBarStyle)
+  lazy val asVNotebook = withWriteBar(hint=hint, enabled = true)(Layout.rotatedButtons(3, pageAlign = Center))(writeBarStyle)
+  lazy val asSNotebook = withWriteBar(hint=hint, enabled = true)(Layout.skewedButtons(0.2f, 0f, buttonAlign = Justify, pageAlign = Center))(writeBarStyle)
+  lazy val asTNotebook = withWriteBar(hint=hint, enabled = true)(Layout.topButtons(pageAlign = Center))(writeBarStyle)
 }
