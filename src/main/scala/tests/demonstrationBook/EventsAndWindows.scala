@@ -136,7 +136,7 @@ class EventsAndWindows(implicit val style: BookSheet, implicit val translation: 
         }), ex scaled 2,
         CatchEvents.framed(), ex scaled 2,
         theLog
-      ).enlarged(20)
+      ).enlarged(20).edged()
 
     }
 
@@ -225,6 +225,6 @@ class EventsAndWindows(implicit val style: BookSheet, implicit val translation: 
     }
 
 
-  val GUI: Glyph = nested.Layout.rightCheckBoxes(pageAlign = Center).enlarged(20)
+  val GUI: Glyph = nested.Layout.leftCheckBoxes(pageAlign = Center).enlarged(20)
 
 }

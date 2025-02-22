@@ -8,9 +8,9 @@ import styled.Book
 import styled.BookSheet
 import styled.StringLog
 import styled.CheckBox
-import NaturalSize.{Col, Row, Grid}
+import NaturalSize.{Col, Grid, Row}
 import GlyphTypes.Scalar
-import Glyphs.Polygon
+import Glyphs.{Polygon, Rect}
 
 class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: StyleSheet = style.buttonSheet.copy(fontScale = 0.8f)
@@ -42,19 +42,18 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       }
 
 
-      Col.centered(
-      Col.centered$(
-        List(.5f, .3f, .25f, .125f).map(row(_))
-      ), ex,ex,
+      Col(align=Center)(
+        Col(align=Center)(List(.5f, .3f, .25f, .125f).map(row(_))),
+        ex,ex,
         Label("The effect of 35px enlargement and a wider frame brush  [red(width=30)]."), ex,
         Row(
           longer.framed(fg=fg.copy(width=30), nothing, .3f), em, em,
           longer.framed(fg=fg.copy(width=30), nothing, .5f)
         )
-      )
+      ).enlarged(40)
     }
 
-  Page("Framed Text #2","Texts framed with red(width = 10, cap = ROUND) at different curvatures") {
+ Page("Framed Text #2","Texts framed with red(width = 10, cap = ROUND) at different curvatures") {
     val fg = red(width = 10, cap = ROUND).copy()
 
     def short = Label("short").rotated(1)
@@ -78,11 +77,11 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
 
     val emWidth = em.w
 
-    NaturalSize.Grid(fg=black(width=0), padx=10f, pady=10f, width=2)(
+    NaturalSize.Grid(padx=10f, pady=10f, width=2)(
       row(0.5f),     row(.3f),
       row(0.25f),    row(.125f),
       row(.5f, 0f, 30), row(0.3f, 0f, 30)
-    ).enlarged(20)
+    ).enlarged(40)
 
   }
 
@@ -102,13 +101,11 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
           med.enlarged(px).edged(fg, nothing),
           long.enlarged(px).edged(fg, nothing))
 
-
-
     Col.centered(
-      Grid(fg=black(width=0), padx=10, pady=10, width=4, height=5).rows(List(0f, 20f, 30f, 40f).flatMap(row(_))), ex,
+      Grid(padx=10, pady=10, width=4, height=5).rows(List(0f, 20f, 30f, 40f).flatMap(row(_))), ex,
       Label("The effect of 20px enlargement and a wider frame brush  [red(width=30)]."), ex,
       long.enlarged(20).edged(fg=fg.copy(width=30), nothing)
-    )
+    ) enlarged 40
   }
 
 
@@ -131,7 +128,6 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
           cross.mounted(yellowHuge(width = 16, cap = ROUND), red), em,
         ), ex,
         Row.centered(
-          star.mounted(fg = black(width = 4, cap = ROUND), bg = nothing), em,
           star.mounted(fg = black(width = 10, cap = ROUND), bg = nothing), em,
           star.mounted(fg = black(width = 20, cap = ROUND), bg = nothing), em,
           star.mounted(fg = black(width = 30, cap = ROUND), bg = nothing), em,
@@ -153,7 +149,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
           glyph.framed(red(width = 30, cap = ROUND), red), em,
           glyph.framed(red(width = 30, cap = ROUND), green)
         ), ex,
-      ).scaled(0.98f)
+      ).scaled(0.98f).enlarged(40)
     }
 
     Page("Edged", "Glyph edging") {
@@ -198,10 +194,10 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
           glyph.edged(red(width = 30, cap = ROUND), red), em,
           glyph.edged(red(width = 30, cap = ROUND), green)
         ), ex,
-      ).scaled(0.98f)
+      ).scaled(0.98f).enlarged(40f)
     }
 
-    val GUI: Glyph = book.Layout.rightButtons().enlarged(20)
+    val GUI: Glyph = book.Layout.leftCheckBoxes().enlarged(40)
 
 
 }

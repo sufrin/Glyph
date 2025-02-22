@@ -120,7 +120,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
             TextButton("SouthEast(the target)") { _ => startLocatorAt(SouthEast(theTarget)) },
             TextButton("Another real button!") { _ => OK(Label("Congratulations!\nYou found another\nreal button."), South(theTarget)).start() },
           ))),
-      ex scaled 5)
+      ex scaled 5) enlarged 40
   }
 
   Page("Locators", "Locators for Popups and Menus") {
@@ -189,5 +189,5 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
       ), em)
   }
 
-  val GUI: Glyph = book.Layout.rightButtons().enlarged(20)
+  val GUI: Glyph = book.Layout.leftCheckBoxes().enlarged(40)
 }

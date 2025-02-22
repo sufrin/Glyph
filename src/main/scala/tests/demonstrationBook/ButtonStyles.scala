@@ -105,5 +105,5 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   }
 
 
-  val GUI: Glyph = book.Layout.rightButtons()
+  val GUI: Glyph = book.Layout.leftCheckBoxes()
 }

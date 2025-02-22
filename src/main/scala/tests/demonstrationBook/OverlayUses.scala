@@ -366,9 +366,9 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
       TextButton("Point to the North West corner of the window") {
         _ => setLocalState(true)
       }
-    ).enlarged(20)
+    )
   }
 
-  val GUI: Glyph = noteBook.Layout.rightButtons().enlarged(40)
+  val GUI: Glyph = noteBook.Layout.leftCheckBoxes(pageAlign = Center).enlarged(40)
 
 }

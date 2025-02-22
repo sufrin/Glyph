@@ -17,14 +17,14 @@ class  SplashScreen(implicit sheet: BookSheet, implicit val translator: glyphXML
 
     lazy val Duplicated = new Interface with Application {
       def GUI: Glyph =
-        if      (extraArgs contains "-notebook")   asRNotebook
+        if      (extraArgs contains "-notebook")   asLNotebook
         else if (extraArgs contains "-rnotebook")  asRNotebook
         else if (extraArgs contains "-lnotebook")  asLNotebook
         else if (extraArgs contains "-snotebook")  asSNotebook
         else if (extraArgs contains "-vnotebook")  asVNotebook
         else if (extraArgs contains "-tnotebook")  asTNotebook
         else if (extraArgs contains "-cnotebook")  asCheckBoxes
-        else asRNotebook
+        else asLNotebook
 
       def title = s"""Demonstration Book -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
 
@@ -39,7 +39,7 @@ class  SplashScreen(implicit sheet: BookSheet, implicit val translator: glyphXML
     var style: String = "-notebook"
     var scale: String = "-scale=0.8"
     var screen: String = "-screen=p"
-    val styles  = "-notebook/-cnotebook/-lnotebook/-snotebook/-vnotebook/-tnotebook".split("/").toList
+    val styles  = "-notebook/-cnotebook/-rnotebook/-snotebook/-vnotebook/-tnotebook".split("/").toList
     val scales  = "-scale=1.2/-scale=1.0/-scale=0.9/-scale=0.8/-scale=0.75/-scale=0.7/-scale=0.6".split("/").toList.reverse
     val screens = "-screen=p/-screen=0/-screen=1/-screen=2".split("/").toList
 
@@ -74,13 +74,13 @@ class  SplashScreen(implicit sheet: BookSheet, implicit val translator: glyphXML
       <fill/>
       <row width="1*width">
         <fill/>
-        <div width="0.75*width" textForeground="red" frame="black">
-          <p hang="-notebook "  parIndent="2em">on the right</p>
-          <p hang="-cnotebook"  parIndent="2em">checkboxes on the right</p>
-          <p hang="-lnotebook"  parIndent="2em">on the left</p>
-          <p hang="-snotebook"  parIndent="2em">slanted along the top</p>
-          <p hang="-vnotebook"  parIndent="2em">vertically along the top</p>
-          <p hang="-tnotebook"  parIndent="2em">horizontally along the top</p>
+        <div width="0.95*width" textForeground="red" frame="nothing">
+          <p hang="-notebook "  parIndent="2em">buttons on the left</p>
+          <p hang="-cnotebook"  parIndent="2em">checkboxes on the left</p>
+          <p hang="-rnotebook"  parIndent="2em">buttons on the right</p>
+          <p hang="-snotebook"  parIndent="2em">buttons slanted along the top</p>
+          <p hang="-vnotebook"  parIndent="2em">buttons vertically along the top</p>
+          <p hang="-tnotebook"  parIndent="2em">buttons horizontally along the top</p>
         </div>
         <fill/>
       </row>

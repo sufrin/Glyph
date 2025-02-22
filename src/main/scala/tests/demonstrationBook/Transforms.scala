@@ -156,9 +156,9 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
             Label(f" .turned($a%2.1f) ") :: List(true, false).flatMap {
               tight => for { glyph <- List(rect, star) } yield sample(glyph, a, tight)
             }
-          NaturalSize.Grid(fg=black(width=0), width=5)(List(0f, 50f, 90f, 140f, 180f, 275f).flatMap(OneRow(_)))
+          NaturalSize.Grid(width=5)(List(0f, 50f, 90f, 140f, 180f, 275f).flatMap(OneRow(_)))
         }
-      )
+      ) enlarged 40
     }
 
     Page("Skew", "Skew transforms") {
@@ -271,6 +271,6 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
       ).enlarged(20)
     }
 
-    val GUI: Glyph = nested.Layout.rightButtons()
+    val GUI: Glyph = nested.Layout.leftCheckBoxes()
 
 }

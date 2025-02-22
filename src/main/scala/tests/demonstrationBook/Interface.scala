@@ -143,7 +143,9 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
     </p>
 
   val writeBarStyle: StyleSheet = content.copy(fontScale=0.9f, buttonFrame = decoration.Framed())
-  lazy val asCheckBoxes = withWriteBar(hint=hint, enabled = true)(Layout.rightCheckBoxes(pageAlign = Center))(writeBarStyle)
+
+
+  lazy val asCheckBoxes = withWriteBar(hint=hint, enabled = true)(Layout.leftCheckBoxes(pageAlign = Center))(writeBarStyle)
   lazy val asRNotebook = withWriteBar(hint=hint, enabled = true)(Layout.rightButtons(pageAlign = Center))(writeBarStyle)
   lazy val asLNotebook = withWriteBar(hint=hint, enabled = true)(Layout.leftButtons(pageAlign = Center))(writeBarStyle)
   lazy val asVNotebook = withWriteBar(hint=hint, enabled = true)(Layout.rotatedButtons(3, pageAlign = Center))(writeBarStyle)
