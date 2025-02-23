@@ -18,28 +18,49 @@ trait Application {
   def title: String
 
   /**
-   * Invoked on requests to close
+   * Invoked on requests to close the window directly associated with
+   * this application. May be overridden
    * @param window
+   * @see onStart
    */
-  def onClose(window: Window): Unit = window.close()
+  def handleWindowCloseRequest(window: Window): Unit = window.close()
 
-  val onUnfocussed: EventKey => Unit =  {
-    case event: EventKey =>
+  /**
+   * Invoked when a keystroke is made in the window directly associated with
+   * this application and that window has no glyph with the keyboard focus.
+   * May be overridden.
+   *
+   * @param event
+   * @see onStart
+   */
+  def handleUnfocussedKey(event: EventKey): Unit =  {
       // TODO: we really should beep!
       // implicit val basic: StyleSheet = styles.Default
       // overlaydialogues.Dialogue.OK(styled.text.Label(s"Unexpected $key")).OnRootOf(GUI).start()
       val key = s"Key ${Modifiers.toBitmap(event).toLongString} ${event.getKey}"
-      logging.Default.warn(s"Key unexpected: ${key}")
+      logging.Default.warn(s"Keystroke unexpected: ${key}")
+  }
+  /**
+   * Invoked just after the GUI has been installed in a window.
+   * Default implementation is to install (in the rootGlyph of the window)
+   * the local handlers for window close requests and unfocussed keystroke events.
+   * {{{
+   *   handleWindowCloseRequest(window)
+   *   handleUnfocussedKey(keyEvent)
+   * }}}
+   *
+   *
+   * @param rootGlyph
+   */
+  protected def onStart(rootGlyph: RootGlyph): Unit = {
+    rootGlyph.onCloseRequest (handleWindowCloseRequest(_))
+    rootGlyph.handleUnfocussedKey (handleUnfocussedKey(_))
   }
 
   val defaultIconPath: Option[String] = None
   val extraArgs = new ArrayBuffer[String]()
   var useScreen: Char = 'p'
   var scaleFactor = 1.0f
-
-  val installRootHandlers: Boolean = false
-
-
   def main(args: Array[String]): Unit = {
     import io.github.humbleui.jwm.Screen
     var icon: Option[String] = defaultIconPath
@@ -108,9 +129,9 @@ trait Application {
           case _   => getScreen(useScreen-'0')
         }
       }.start()
-      if (installRootHandlers) GUI.findRoot.onCloseRequest(onClose(_))
-      // default handler for all unexpected keys
-      if (installRootHandlers) GUI.findRoot.handleUnfocussedKey (onUnfocussed)
+
+      onStart((GUI).findRoot)
+
     })
   }
 

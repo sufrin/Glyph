@@ -1272,10 +1272,9 @@ object LargeTest extends Application {
   val theGUI     = new LargeTestGUI {}
   val GUI: Glyph = theGUI.root
 
-  override val installRootHandlers: Boolean = true
 
-  override val onUnfocussed: EventKey => Unit = {
-    case event => if (event.isPressed) {
+  override def handleUnfocussedKey(event: EventKey): Unit = {
+    if (event.isPressed) {
       import io.github.humbleui.jwm.Key._ // this is inelegant, but there's no straightforward way to import all keys into GlyphTypes then re-export them
       event.getKey match {
         case LEFT  => theGUI.oneOf.prev()

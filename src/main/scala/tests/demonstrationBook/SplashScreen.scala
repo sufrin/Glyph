@@ -16,7 +16,7 @@ class  SplashScreen(implicit sheet: BookSheet, implicit val translator: glyphXML
   val GUI: Glyph = {
 
     lazy val Duplicated = new Interface with Application {
-      def GUI: Glyph =
+      val GUI: Glyph =
         if      (extraArgs contains "-notebook")   asLNotebook
         else if (extraArgs contains "-rnotebook")  asRNotebook
         else if (extraArgs contains "-lnotebook")  asLNotebook
@@ -32,7 +32,7 @@ class  SplashScreen(implicit sheet: BookSheet, implicit val translator: glyphXML
       val defaultIconPath: Option[String] = Some("./flag.png")
 
       override
-      def onClose(window: Window): Unit = confirmCloseOn(GUI)(window)
+      def handleWindowCloseRequest(window: Window): Unit = confirmCloseOn(GUI)(window)
 
     }
 

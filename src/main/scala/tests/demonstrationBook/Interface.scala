@@ -15,10 +15,11 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
   val button: StyleSheet = style.buttonSheet
 
   def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
-    import styled.overlaydialogues.Dialogue.OKNO
+    import styled.windowdialogues.Dialogue.OKNO
     // TODO: windowdialogues need set software scale more carefully than now if autoScale
+    println("CLOSING?")
     val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
-      Label("Do you want to Exit?")(content) scaled 1.5f
+      Label("Do you want to Exit?") scaled 1.5f
     ).enlarged(50)
     OKNO(prompt,
       title = "Exit Dialogue", ok = " Exit now ", no = " Continue ")(button).InFront(glyph).andThen(close => if (close) window.close())
