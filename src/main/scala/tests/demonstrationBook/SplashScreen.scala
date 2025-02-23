@@ -1,22 +1,29 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import styled.{BookSheet, RadioCheckBoxes, TextButton}
+import styled.{BookSheet, Label, RadioCheckBoxes, TextButton}
 import NaturalSize._
+import styles.decoration
 
-import io.github.humbleui.skija.PaintStrokeCap
-import org.sufrin.glyph.styles.ButtonStyle
-
-class  SplashScreen(implicit sheet: BookSheet, implicit val translator: glyphXML.Translation) {
+class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyphXML.Translation) {
   implicit val  buttons: StyleSheet =
-                sheet.pageSheet.copy(buttonFrame = styles.decoration.Edged(sheet.pageSheet.buttonForegroundBrush(width=5, cap=PaintStrokeCap.ROUND), sheet.pageSheet.buttonBackgroundBrush))
+                sheet.pageSheet.copy(
+                  buttonFrame =
+                    decoration.Edged(sheet.pageSheet.buttonForegroundBrush(width=3).sliced(5,2),
+                                     sheet.pageSheet.buttonBackgroundBrush)
+                )
   import buttons.{em,ex}
 
   import GlyphTypes.Window
-  val GUI: Glyph = {
 
-    lazy val Duplicated = new Interface with Application {
-      val GUI: Glyph =
+
+  lazy val thisApplication: Application = new Interface with Application {
+
+      // The computed root of the running glyph,
+      private var theRootGlyph:Glyph = null
+
+      def GUI: Glyph = {
+        theRootGlyph =
         if      (extraArgs contains "-notebook")   asLNotebook
         else if (extraArgs contains "-rnotebook")  asRNotebook
         else if (extraArgs contains "-lnotebook")  asLNotebook
@@ -25,6 +32,8 @@ class  SplashScreen(implicit sheet: BookSheet, implicit val translator: glyphXML
         else if (extraArgs contains "-tnotebook")  asTNotebook
         else if (extraArgs contains "-cnotebook")  asCheckBoxes
         else asLNotebook
+        theRootGlyph
+      }
 
       def title = s"""Demonstration Book -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
 
@@ -32,8 +41,17 @@ class  SplashScreen(implicit sheet: BookSheet, implicit val translator: glyphXML
       val defaultIconPath: Option[String] = Some("./flag.png")
 
       override
-      def handleWindowCloseRequest(window: Window): Unit = confirmCloseOn(GUI)(window)
+      def handleWindowCloseRequest(window: Window): Unit = confirmCloseOn(theRootGlyph)(window)
 
+      def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
+        import styled.windowdialogues.Dialogue.OKNO
+        // TODO: windowdialogues need set software scale more carefully than now if autoScale
+        val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
+          Label("Do you want to Exit?")(sheet.pageSheet) scaled 1.5f
+        ).enlarged(50)
+        OKNO(prompt,
+          title = "Exit Dialogue", ok = " Exit now ", no = " Continue ")(button).InFront(glyph).andThen(close => if (close) window.close())
+      }
     }
 
     var style: String = "-notebook"
@@ -87,26 +105,32 @@ class  SplashScreen(implicit sheet: BookSheet, implicit val translator: glyphXML
       <fill/>
       <p align="justify">There is no artificial limit to the number of instances that can be running at once within a single JVM,
         (though space constraints within the JVM will impose a natural limit).</p>
-    </div> enlarged 15
+    </div>.enlarged(15).framed(DefaultBrushes.black.sliced(10, 5)).enlarged(15)
 
-    lazy val helpButton: Glyph = TextButton("Help") {
-      _ => styled.windowdialogues.Dialogue.OK(help, title="Help").SouthEast(startButton).start()
-    }
+
+    val splashStyle: StyleSheet = sheet.buttonSheet.copy(
+        fontScale=1.1f
+    )
 
     lazy val startButton = TextButton(" START ") {
-      _ => println(s"$scale $style"); Duplicated.main(Array(scale, style, screen))
-    } scaled(2)
+      _ => thisApplication.main(Array(scale, style, screen))
+    }(splashStyle)
+
+    lazy val helpButton: Glyph = TextButton("Help") {
+      _ => styled.windowdialogues.Dialogue.OK(help, title="Help").SouthEast(helpButton).start()
+    }(splashStyle)
 
 
-    Col.centered(
-      startButton, ex scaled 2,
-      Row.atTop(
-        styleSelect.arrangedVertically(), em scaled 4,
-        scaleSelect.arrangedVertically(), em scaled 4,
-        screenSelect.arrangedVertically(),
-      ),
+    val styleDefinitionButtons: Glyph = Row.atTop(
+      styleSelect.arrangedVertically(), em scaled 4,
+      scaleSelect.arrangedVertically(), em scaled 4,
+      screenSelect.arrangedVertically(),
+    ) . enlarged(15) . edged(splashStyle.buttonForegroundBrush(width=3).sliced(5, 2))
+
+    val GUI: Glyph = Col.centered(
+      FixedSize.Row(align=Top, width = styleDefinitionButtons.w*1.1f)(startButton, splashStyle.hFill(), helpButton),
       ex scaled 2,
-      helpButton
+      styleDefinitionButtons,
     ) enlarged 15
-  }
+
 }

@@ -19,17 +19,15 @@ object Pages extends Application  {
     textFontSize = 20,
     backgroundBrush = DefaultBrushes.white
   )
-  implicit val bookStyle: BookSheet =
+  implicit val bookSheet: BookSheet =
     BookSheet(buttonSheet=interfaceStyle,
               pageSheet=interfaceStyle.copy(buttonFrame=decoration.Unframed, fontScale=0.9f))
 
-  import glyphXML.Language._
+  import glyphXML.Language.translation
 
-  //val interface = new Interface
-  //lazy val GUI: Glyph = interface.asRNotebook
   lazy val GUI = new SplashScreen().GUI.enlarged(20)
 
-  def title = s"""Pages -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
+  def title = s"""Demonstration Book"""
 
   override
   val defaultIconPath: Option[String] = Some ("./flag.png")

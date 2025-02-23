@@ -101,6 +101,7 @@ case class StyleSheet
   }
   lazy val em: Glyph = new FixedSize.Space(emWidth, 1f, 0, 0)
   lazy val ex: Glyph = new FixedSize.Space(1f, exHeight, 0, 0)
+  def  hFill(ems: Int=1, stretch: Scalar=1): Glyph = new FixedSize.Space(ems*emWidth, exHeight, stretch, 0)
 
   @inline private def styled(fontStyle: FontStyle): StyleSheet = copy(textFontStyle = fontStyle)
   def italicStyle: StyleSheet = styled(FontStyle.ITALIC)
