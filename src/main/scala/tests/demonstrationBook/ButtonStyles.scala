@@ -25,34 +25,42 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   val anchor = INVISIBLE()
 
   /** A reaction used below that pops up a Dialogue on which `glyph` is shown. */
-  def showSource(source: Glyph): Reaction = {
+  def showSourceCode(source: Glyph): Reaction = {
     _ => styled.windowdialogues.Dialogue.OK(source.enlarged(20).edged().enlarged(20)).East(anchor).start()
   }
 
+  locally {
+    translation("CENTERCODE") = new glyphXML.Macro(
+      <div width="$width(75em)" textFontFamily="Courier" ><row width="1*width"><fill/>&BODY;<fill/></row></div>
+    )
+
+    translation("SOURCECODE") = new glyphXML.Macro(
+      <div width="$width(75em)">
+        <CENTERCODE width="$width">
+          &BODY0;
+        </CENTERCODE>
+        <fill/>
+        &BODY1..;
+      </div>
+    )
+  }
+
   Page("Framed", "") {
-    import styles.decoration.{Framed,unDecorated, Edged}
+    import styles.decoration.{Framed,unDecorated, Edged, Decorated}
     import styled.TextButton
     Col.centered(
       anchor,
       <div width="75em">
-        <MACRO key="CENTERCODE"><div textFontFamily="Courier" textFontSize={s"${styleSheet.textFontSize*0.9}"}><row width="1*width"><fill/>&BODY;<fill/></row></div></MACRO>
-        <MACRO key="SOURCECODE"><div width="95em" textFontSize={s"${styleSheet.textFontSize*0.9}"}>
-          <CENTERCODE>&BODY;</CENTERCODE>
-          <fill/>
-          <p>Notice that the button is constructed using the <b>&DEC;</b> decoration.</p>
-          <p>The StyleSheet <tt>styleSheet</tt> is the currently-prevailing implicit sheet for this page.</p></div>
-        </MACRO>
-
         <p>The <b>Framed</b> buttons below were constructed with implicit styles that included specifications of rim width and radius:</p>
 
-        <CENTERCODE>
+        <CENTERCODE width="75em">
         <![CDATA[
             buttonBackgroundBrush=lightGrey,
             buttonFrame = Framed(fg=darkGrey(width=...),
                                  bg=lightGrey, enlarge=0.15f, radiusFactor = ...)))]]>
         </CENTERCODE>
         <fill/>
-      </div>.enlarged(20), ex,
+      </div>.enlarged(20), vSpace(),
       TextButton("Framed(width=4, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width=4), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
       TextButton("Framed(width=8, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width=8), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
       TextButton("Framed(width=10, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width=10), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
@@ -61,49 +69,63 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
       TextButton("Framed(width=8, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width = 8), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex,
       TextButton("Framed(width=10, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width = 10), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex, ex,
       TextButton("Edged(width=10)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Edged(darkGrey(width = 10, cap=ROUND), lightGrey, enlarge = 0.15f, radiusFactor = 0f))), ex, ex,
-      <p width="75em" align="center">Buttons constructed in a variety of ways (click to see their source)</p>,
+      <p width="75em" align="center">Buttons framed in a variety of ways (click to see their source)</p>,
       vSpace(2),
         TextButton("Button #1")
-        { showSource(
-          <SOURCECODE DEC="Undecorated">
-            <![CDATA[
-             TextButton("Button #1")
-             { _=> ... }
-             (styleSheet.copy(buttonDecoration = Undecorated, buttonBackgroundBrush=lightGrey))
-             .enlarged(10).edged(bg=lightGrey, fg=DefaultBrushes.brown(width=10, cap=ROUND).dashed(20,10))
-           ]]>
-          </SOURCECODE>
+        { showSourceCode(
+          <SOURCECODE width="75em" DEC="Undecorated">
+      <![CDATA[
+       TextButton("Button #1")
+       { _=> ... }(styleSheet.copy(
+          buttonBackgroundBrush = lightGrey,
+          buttonDecoration      = Undecorated
+         )
+         .enlarged(10)
+         .edged(bg=lightGrey,
+                fg=brown(width=10, cap=ROUND).dashed(20,10))
+     ]]>
+    </SOURCECODE>
         ) }
         (styleSheet.copy(buttonDecoration = unDecorated, buttonBackgroundBrush=lightGrey))
         .enlarged(10).edged(fg=DefaultBrushes.brown(width=10, cap=ROUND).dashed(20,10))
+
       beside hSpace(4) beside
-        TextButton("Button #2")
-        { showSource(
-         <SOURCECODE DEC="Undecorated">
-            <![CDATA[
-             TextButton("Button #2")
-             { _=> ... }
-              (styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = unDecorated))
-              .enlarged(20).edged(bg=lightGrey, fg=DefaultBrushes.red(width=20, cap=ROUND).dashed(20,20))
-           ]]>
+
+          TextButton("Button #2")
+        { showSourceCode(
+         <SOURCECODE width="75em" DEC="Undecorated">
+    <![CDATA[
+     TextButton("Button #2")
+     { _=> ... }(styleSheet.copy(
+        buttonBackgroundBrush = lightGrey,
+        buttonDecoration      = unDecorated)
+       )
+       .enlarged(20)
+       .edged(bg=lightGrey,
+              fg=.red(width=20, cap=ROUND).dashed(20,20))
+   ]]>
          </SOURCECODE>
         ) }
-        (styleSheet.copy(buttonBackgroundBrush=lightGrey.rounded(5), buttonDecoration = unDecorated))
+        (styleSheet.copy(buttonBackgroundBrush=lightGrey,
+                         buttonDecoration = unDecorated))
         .enlarged(20, bg=lightGrey).edged(bg=lightGrey, fg=DefaultBrushes.red(width=20, cap=ROUND).dashed(20,20))
       beside hSpace(4) beside
       TextButton("Button #3")
-      { showSource(
-        <SOURCECODE DEC="Decorated">
-          <![CDATA[
-             TextButton("Show source #3")
-             { _=> ... }
-              (styleSheet.copy(buttonBackgroundBrush=lightGrey.rounded(5),
-                               buttonDecoration = styles.decoration.Decorated
-                               { glyph => glyph.enlarged(20).edged(bg=lightGrey, fg=DefaultBrushes.red(width=20, cap=ROUND).dashed(20,20)) }]]>
+      { showSourceCode(
+        <SOURCECODE width="75em"  DEC="Decorated">
+    <![CDATA[
+       TextButton("Show source #3")
+       { _=> ... }
+        (styleSheet.copy(buttonBackgroundBrush=lightGrey.rounded(5),
+                         buttonDecoration = Decorated
+                         { glyph => glyph.enlarged(20)
+                                         .edged(bg=lightGrey,
+                                                fg=red(width=20, cap=ROUND)
+                                                      .dashed(20,20)) }]]>
         </SOURCECODE>
       ) }
       (styleSheet.copy(buttonBackgroundBrush=lightGrey.rounded(5),
-                       buttonDecoration = styles.decoration.Decorated
+                       buttonDecoration = Decorated
                         { glyph => glyph.enlarged(20).edged(bg=lightGrey, fg=DefaultBrushes.red(width=20, cap=ROUND).dashed(20,20)) }))
     )
   }
@@ -140,7 +162,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
                               Shaded(fg=darkGrey,
                                      bg=lightGrey, delta=..., down=...)))]]>
       </div>.enlarged(20), ex,
-      TextButton("Shaded  (18,  down=true)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 18f, down = true))), ex,
+      TextButton("Shaded  (18, down=true)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 18f, down = true))), ex,
       TextButton("Shaded  (8,  down=false)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 8f, down = false))), ex,
       TextButton("Shaded  (12, down=false)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 12f, down = false))), ex,
       TextButton("Shaded  (18, down=false)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 18f, down = false))), ex, ex,

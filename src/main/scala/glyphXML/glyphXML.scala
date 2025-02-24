@@ -131,7 +131,7 @@ class Macro(body: Node) {
 
     val bindings = new mutable.HashMap[String,Seq[Node]]()
     bindings.addAll(actuals)
-    for { i <- 0 until children.length }
+    for { i <- 0 to children.length }
         bindings.addAll(List(s"BODY$i.."->children.drop(i)))
     bindings.addAll(List("BODY"->children))
     // TODO:  ListMap appears to have no effective constructor from lists of pairs -- at least none that IntelliJ Scala accepts
@@ -139,9 +139,9 @@ class Macro(body: Node) {
     def substitute(node: Node): Seq[Node] = {
       node match {
         case EntityRef(id) =>
-          if (!bindings.contains(id) && id.startsWith("BODY")) org.sufrin.logging.Default.warn(s"Macro reference $invocation has no $id in $body")
+          if (!bindings.contains(id)) org.sufrin.logging.Default.warn(s"Macro reference $invocation has no $id in $body")
           bindings.get(id) match {
-            case None        => Text(invocationAttributes.getOrElse(id, node.toString))
+            case None        => Text(invocationAttributes.getOrElse(id, if (id.startsWith("BODY")) "" else node.toString))
             case Some(nodes) => nodes.flatMap(substitute(_))
           }
         case elem: Elem =>
