@@ -133,7 +133,7 @@ trait Book {
     val radio = RadioCheckBoxes(pages.toList.map(_.title), prefer=pages.head.title){
       case Some(n) => oneOf.select(n)
       case None    => oneOf.select(0)
-    }(sheet.buttonSheet.copy(buttonFrame=decoration.Edged()))
+    }(sheet.buttonSheet.copy(buttonDecoration=decoration.Edged()))
 
     BookComponents(radio.glyphButtons(buttonAlign), oneOf)
 

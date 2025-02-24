@@ -265,7 +265,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       val oneOfBG = OneOf(bg=black(alpha=0.25f))(aaa(), bbb(), ccc())
       val oneOfPB = OneOf()(ddd(), eee())
 
-      val buttonSheet: StyleSheet = pageSheet.copy(buttonFrame=styles.decoration.Edged(fg=lightGrey.copy(width=16, cap=ROUND)))
+      val buttonSheet: StyleSheet = pageSheet.copy(buttonDecoration=styles.decoration.Edged(fg=lightGrey.copy(width=16, cap=ROUND)))
 
       val next = TextButton("Next State") {
         _ => oneOf.next(); oneOfBG.next(); oneOfPB.next()
@@ -350,7 +350,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       import BooleanGlyphs._
       import DynamicGlyphs.OneOf
       import styled._
-      implicit val pageSheet=style.pageSheet.copy(buttonFrame = Framed(fg=blue(width=6, cap=ROUND), enlarge=.25f, radiusFactor = .3f))
+      implicit val pageSheet=style.pageSheet.copy(buttonDecoration = Framed(fg=blue(width=6, cap=ROUND), enlarge=.25f, radiusFactor = .3f))
 
 
       def Monitor(whenFalse: String, whenTrue: String, toggle: OnOffButton): OneOf = {

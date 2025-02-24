@@ -4,52 +4,107 @@ package tests.demonstrationBook
 import styled.TextButton
 import styled.Label
 import styled.windowdialogues.Dialogue
-import Dialogue.{CHOOSE,OK}
+
+import Dialogue.{CHOOSE, OK}
 import NaturalSize.{Col, Row}
 import styled.Book
 import styled.BookSheet
 import Glyphs.{INVISIBLE, Rect}
 
+import org.sufrin.glyph.DefaultBrushes.ROUND
+import org.sufrin.glyph.ReactiveGlyphs.Reaction
+
 
 class ButtonStyles (implicit val style: BookSheet, implicit val translation: glyphXML.Translation) {
   implicit val styleSheet: StyleSheet = style.pageSheet
   import translation._
-  import styleSheet.{ex, em}
+  import styleSheet.{ex, em, hSpace, vSpace}
   import DefaultBrushes.{red,blue,lightGrey,darkGrey,green,yellowHuge}
   val book = Book()
   val Page = book.DefinePage
+  val anchor = INVISIBLE()
+
+  /** A reaction used below that pops up a Dialogue on which `glyph` is shown. */
+  def showSource(source: Glyph): Reaction = {
+    _ => styled.windowdialogues.Dialogue.OK(source.enlarged(20).edged().enlarged(20)).East(anchor).start()
+  }
 
   Page("Framed", "") {
-    import styles.decoration.{Framed,Unframed}
+    import styles.decoration.{Framed,unDecorated, Edged}
     import styled.TextButton
     Col.centered(
-      <div width="55em">
-        <p> These buttons are of the form:</p>
+      anchor,
+      <div width="75em">
+        <MACRO key="CENTERCODE"><div textFontFamily="Courier" textFontSize={s"${styleSheet.textFontSize*0.9}"}><row width="1*width"><fill/>&BODY;<fill/></row></div></MACRO>
+        <MACRO key="SOURCECODE"><div width="95em" textFontSize={s"${styleSheet.textFontSize*0.9}"}>
+          <CENTERCODE>&BODY;</CENTERCODE>
+          <fill/>
+          <p>Notice that the button is constructed using the <b>&DEC;</b> decoration.</p>
+          <p>The StyleSheet <tt>styleSheet</tt> is the currently-prevailing implicit sheet for this page.</p></div>
+        </MACRO>
+
+        <p>The <b>Framed</b> buttons below were constructed with implicit styles that included specifications of rim width and radius:</p>
+
+        <CENTERCODE>
         <![CDATA[
-        TextButton("Framed(width=..., radiusFactor=...)") { _ => }(
-            styleSheet.copy(buttonBackgroundBrush=lightGrey,
-                            buttonFrame =
-                              Framed(fg=darkGrey(width=...),
-                                     bg=lightGrey, enlarge=0.15f, radiusFactor = ...)))]]>
+            buttonBackgroundBrush=lightGrey,
+            buttonFrame = Framed(fg=darkGrey(width=...),
+                                 bg=lightGrey, enlarge=0.15f, radiusFactor = ...)))]]>
+        </CENTERCODE>
         <fill/>
       </div>.enlarged(20), ex,
-      TextButton("Framed(width=4, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonFrame = Framed(darkGrey(width=4), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
-      TextButton("Framed(width=8, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonFrame = Framed(darkGrey(width=8), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
-      TextButton("Framed(width=10, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonFrame = Framed(darkGrey(width=10), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
-      TextButton("Framed(width=2, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonFrame = Framed(darkGrey(width = 2), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex,
-      TextButton("Framed(width=4, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonFrame = Framed(darkGrey(width = 4), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex,
-      TextButton("Framed(width=8, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonFrame = Framed(darkGrey(width = 8), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex,
-      TextButton("Framed(width=10, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonFrame = Framed(darkGrey(width = 10), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex, ex,
-      <p width="55em" align="center">A hand-styled button</p>, ex,
-      <div><![CDATA[
-        TextButton("Hand-framed")  { _ => }
-                (styleSheet.copy(
-                        buttonBackgroundBrush=lightGrey,
-                        buttonFrame          = Unframed)).framed(bg=lightGrey,
-                                                                 fg=yellow(width=8))]]></div>, ex, ex,
-        TextButton("Hand Styled")  { _ => }
-                (styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonFrame = Unframed)).framed(bg=lightGrey, fg=yellowHuge(width=8)), ex,
-      <p width="55em" align="center"><tt>styleSheet</tt> is the implicit style <tt>Sheet</tt> for this <tt>Book.Page</tt></p>
+      TextButton("Framed(width=4, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width=4), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
+      TextButton("Framed(width=8, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width=8), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
+      TextButton("Framed(width=10, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width=10), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
+      TextButton("Framed(width=2, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width = 2), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex,
+      TextButton("Framed(width=4, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width = 4), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex,
+      TextButton("Framed(width=8, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width = 8), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex,
+      TextButton("Framed(width=10, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width = 10), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex, ex,
+      TextButton("Edged(width=10)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Edged(darkGrey(width = 10, cap=ROUND), lightGrey, enlarge = 0.15f, radiusFactor = 0f))), ex, ex,
+      <p width="75em" align="center">Buttons constructed in a variety of ways (click to see their source)</p>,
+      vSpace(2),
+        TextButton("Button #1")
+        { showSource(
+          <SOURCECODE DEC="Undecorated">
+            <![CDATA[
+             TextButton("Button #1")
+             { _=> ... }
+             (styleSheet.copy(buttonDecoration = Undecorated, buttonBackgroundBrush=lightGrey))
+             .enlarged(10).edged(bg=lightGrey, fg=DefaultBrushes.brown(width=10, cap=ROUND).dashed(20,10))
+           ]]>
+          </SOURCECODE>
+        ) }
+        (styleSheet.copy(buttonDecoration = unDecorated, buttonBackgroundBrush=lightGrey))
+        .enlarged(10).edged(fg=DefaultBrushes.brown(width=10, cap=ROUND).dashed(20,10))
+      beside hSpace(4) beside
+        TextButton("Button #2")
+        { showSource(
+         <SOURCECODE DEC="Undecorated">
+            <![CDATA[
+             TextButton("Button #2")
+             { _=> ... }
+              (styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = unDecorated))
+              .enlarged(20).edged(bg=lightGrey, fg=DefaultBrushes.red(width=20, cap=ROUND).dashed(20,20))
+           ]]>
+         </SOURCECODE>
+        ) }
+        (styleSheet.copy(buttonBackgroundBrush=lightGrey.rounded(5), buttonDecoration = unDecorated))
+        .enlarged(20, bg=lightGrey).edged(bg=lightGrey, fg=DefaultBrushes.red(width=20, cap=ROUND).dashed(20,20))
+      beside hSpace(4) beside
+      TextButton("Button #3")
+      { showSource(
+        <SOURCECODE DEC="Decorated">
+          <![CDATA[
+             TextButton("Show source #3")
+             { _=> ... }
+              (styleSheet.copy(buttonBackgroundBrush=lightGrey.rounded(5),
+                               buttonDecoration = styles.decoration.Decorated
+                               { glyph => glyph.enlarged(20).edged(bg=lightGrey, fg=DefaultBrushes.red(width=20, cap=ROUND).dashed(20,20)) }]]>
+        </SOURCECODE>
+      ) }
+      (styleSheet.copy(buttonBackgroundBrush=lightGrey.rounded(5),
+                       buttonDecoration = styles.decoration.Decorated
+                        { glyph => glyph.enlarged(20).edged(bg=lightGrey, fg=DefaultBrushes.red(width=20, cap=ROUND).dashed(20,20)) }))
     )
   }
 
@@ -67,9 +122,9 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
                               Blurred(fg=red,
                                       blur=..., spread=...)))]]>
     </div>.enlarged(20), ex,
-      TextButton("Blurred(blur=10f, spread=5f)") { _ => }(styleSheet.copy(buttonBackgroundBrush=red, buttonFrame=blurFrame(10f, 5f))), ex,
-      TextButton("Blurred(blur=10f, spread=10f)"){ _ => }(styleSheet.copy(buttonBackgroundBrush=red, buttonFrame=blurFrame(10f, 10f))), ex,
-      TextButton("Blurred(blur=20f, spread=10f)"){ _ => }(styleSheet.copy(buttonBackgroundBrush=red, buttonFrame=blurFrame(20f, 10f))), ex,
+      TextButton("Blurred(blur=10f, spread=5f)") { _ => }(styleSheet.copy(buttonBackgroundBrush=red, buttonDecoration=blurFrame(10f, 5f))), ex,
+      TextButton("Blurred(blur=10f, spread=10f)"){ _ => }(styleSheet.copy(buttonBackgroundBrush=red, buttonDecoration=blurFrame(10f, 10f))), ex,
+      TextButton("Blurred(blur=20f, spread=10f)"){ _ => }(styleSheet.copy(buttonBackgroundBrush=red, buttonDecoration=blurFrame(20f, 10f))), ex,
       <p width="55em" align="center"><tt>styleSheet</tt> is the implicit style <tt>Sheet</tt> for this <tt>Book.Page</tt></p>
     )
   }
@@ -85,10 +140,10 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
                               Shaded(fg=darkGrey,
                                      bg=lightGrey, delta=..., down=...)))]]>
       </div>.enlarged(20), ex,
-      TextButton("Shaded  (18,  down=true)") { _ => }(styleSheet.copy(buttonFrame = Shaded(delta = 18f, down = true))), ex,
-      TextButton("Shaded  (8,  down=false)") { _ => }(styleSheet.copy(buttonFrame = Shaded(delta = 8f, down = false))), ex,
-      TextButton("Shaded  (12, down=false)") { _ => }(styleSheet.copy(buttonFrame = Shaded(delta = 12f, down = false))), ex,
-      TextButton("Shaded  (18, down=false)") { _ => }(styleSheet.copy(buttonFrame = Shaded(delta = 18f, down = false))), ex, ex,
+      TextButton("Shaded  (18,  down=true)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 18f, down = true))), ex,
+      TextButton("Shaded  (8,  down=false)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 8f, down = false))), ex,
+      TextButton("Shaded  (12, down=false)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 12f, down = false))), ex,
+      TextButton("Shaded  (18, down=false)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 18f, down = false))), ex, ex,
       <p width="55em" align="center"><tt>styleSheet</tt> is the implicit style <tt>Sheet</tt> for this <tt>Book.Page</tt></p>, ex, ex,
 
 

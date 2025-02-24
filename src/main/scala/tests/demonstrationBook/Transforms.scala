@@ -133,7 +133,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
             )
           }
         ) scaled 0.7f
-      )
+      ).enlarged(40)
     }
 
     Page("Tight v. Natural turns #2", "") {

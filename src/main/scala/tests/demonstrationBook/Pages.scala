@@ -13,7 +13,7 @@ object Pages extends Application  {
   val LocalSheet: StyleSheet = StyleSheet()
 
   val interfaceStyle: StyleSheet = LocalSheet.copy(
-    buttonFrame=styles.decoration.Blurred(fg=DefaultBrushes.blue, blur=5, spread=5, delta=5),
+    buttonDecoration=styles.decoration.Blurred(fg=DefaultBrushes.blue, blur=5, spread=5, delta=5),
     buttonFontSize = 20,
     labelFontSize = 20,
     textFontSize = 20,
@@ -21,7 +21,7 @@ object Pages extends Application  {
   )
   implicit val bookSheet: BookSheet =
     BookSheet(buttonSheet=interfaceStyle,
-              pageSheet=interfaceStyle.copy(buttonFrame=decoration.Unframed, fontScale=0.9f))
+              pageSheet=interfaceStyle.copy(buttonDecoration=decoration.unDecorated, fontScale=0.9f))
 
   import glyphXML.Language.translation
 

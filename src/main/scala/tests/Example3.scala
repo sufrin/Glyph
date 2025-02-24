@@ -19,7 +19,7 @@ trait Example3Interface {
   val variableColor: Brush = green()
 
   implicit val LocalStyle: StyleSheet =
-    StyleSheet(buttonFrame=Framed(fg = blue(width = 8, cap=ROUND), bg=white, radiusFactor = 0.3f),
+    StyleSheet(buttonDecoration=Framed(fg = blue(width = 8, cap=ROUND), bg=white, radiusFactor = 0.3f),
           labelBackgroundBrush = variableColor
     )
 

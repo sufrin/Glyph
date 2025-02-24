@@ -6,7 +6,7 @@ import NaturalSize.{Col, Row}
 import BooleanGlyphs.OnOffButton
 
 import org.sufrin.glyph.styles.decoration
-import org.sufrin.glyph.glyphXML.Abstraction
+import org.sufrin.glyph.glyphXML.Macro
 
 class Interface(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   val book = Book()
@@ -27,7 +27,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
   locally {
     translation("anchor") = { _ => Glyphs.INVISIBLE() }
     translation("caption") =
-      new Abstraction(<p align="center"><b>&BODY;</b></p>)
+      new Macro(<p align="center"><b>&BODY;</b></p>)
 
     /**
      *  A simple implementation of <itemize> blocks containing <item>s.
@@ -54,7 +54,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
      */
 
     translation("item") =
-      new Abstraction(
+      new Macro(
         <row inheritWidth="true">
           <!--attributes AT="ITEM" id="tag:item"/-->
           <fill width="$itemIndent"/>
@@ -64,7 +64,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
         </row>)
 
     translation("itemize") =
-      new Abstraction(
+      new Macro(
         <SCOPE>
         <ATTRIBUTES key="tag:item" logging="$logging(false)" leftMargin="$leftMargin(5em)" hang="$hang( * )"  itemIndent="$itemIndent(2em)"  itemWidth="$itemWidth(50em)" itemAlign="$itemAlign(justify)"/>
         <span itemIndent="$itemIndent(2em)">
@@ -79,7 +79,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
   Page("Welcome", "") {
     val anchor = Glyphs.INVISIBLE()
-    val checkBox = CheckBox(initially=false) { state => anchor.guiRoot.autoScale=state }(content.copy(buttonFrame = styles.decoration.Framed(fg=DefaultBrushes.blue, bg=DefaultBrushes.nothing)))
+    val checkBox = CheckBox(initially=false) { state => anchor.guiRoot.autoScale=state }(content.copy(buttonDecoration = styles.decoration.Framed(fg=DefaultBrushes.blue, bg=DefaultBrushes.nothing)))
     import translation._
     translation("checkbox") = { _ => checkBox }
     Col.centered(
@@ -132,7 +132,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
     current appearance in a .png file.
     </p>
 
-  val writeBarStyle: StyleSheet = content.copy(fontScale=0.9f, buttonFrame = decoration.Framed())
+  val writeBarStyle: StyleSheet = content.copy(fontScale=0.9f, buttonDecoration = decoration.Framed())
 
 
   lazy val asCheckBoxes = withWriteBar(hint=hint, enabled = true)(Layout.leftCheckBoxes(pageAlign = Center))(writeBarStyle)

@@ -14,7 +14,107 @@ import scala.collection.mutable.ArrayBuffer
 import scala.xml._
 
 
-class Abstraction(body: Node) {
+/**
+ * Implementation of simple "hygienic" macro abstractions.
+ *
+ * When a macro named "name" whose body is `body` is invoked by
+ * {{{
+ *  <name invocationAttributes > ... </name>
+ * }}}
+ *
+ * its `body` is expanded, then the expansion is
+ * treated as if it had been written explicitly.
+ *
+ * Expansion first filters the invocation body (...), keeping only element-like parts, and visible text.
+ * Then certain substitutions are made:
+ *
+ * {{{
+ *   &BODY;         by the entire (filtered) ...
+ *   &BODY1;        by the first element of the (filtered) ...
+ *   &BODY2;        by the first element of the (filtered) ...
+ *   &BODYn;        by the nth element of the (filtered) ...
+ *   &BODYn..;      by the elements of the (filtered) ...
+ *                  that succeed n, inclusive of `n`.
+ *                  (`&BODY;` is equivalent to `&BODY..0;`)
+ *   &invAttrName;  by the value of the named invocation attribute
+ * }}}
+ *
+ * Substitutions are also made to attributes of the elements in `body` whose values take one of the forms
+ * {{{
+ *  "$invAttrName"           by the value of the invocation attribute
+ *                           (defaulting to "")
+ *  "$invAttrName(default)"  as above, defaulting to default
+ * }}}
+ *
+ *
+ * Example: with:
+ * {{{
+ *   <MACRO key="cj">
+ *     <div width="$width(21em)">
+ *         <p align="center"><b>CJ in &width;</b></p>
+ *         <p align="center">&BODY0;</p>
+ *         <p align="right">&BODY1;</p>
+ *     </div>
+ *   </MACRO>
+ * }}}
+ * the invocation
+ * {{{
+ *   <cj width="42"><b>Able</b><span>Baker</span></cj>
+ * }}}
+ * should expand to
+ * {{{
+ *   <div width="42em">
+ *         <p align="center"><b>CJ in 42em</b></p>
+ *         <p align="center"><b>Able</b></p>
+ *         <p align="right"><span>Baker</span></p>
+ *   </div>
+ * }}}
+ * and the invocation
+ * {{{
+ *    <cj><b>Able</b><span>Baker</span></cj>
+ * }}}
+ * should expand to
+ * {{{
+ *    <div width="21em">
+ *          <p align="center"><b>CJ in 42em</b></p>
+ *          <p align="center"><b>Able</b></p>
+ *          <p align="right"><span>Baker</span></p>
+ *    </div>
+ * }}}
+ *
+ *
+ * TODO: the simple "&BODY...; machinery is not very sophisticated.
+ *
+ *
+ *
+ * Finally, with
+ * {{{
+ * <MACRO key="cj">
+ *   <div width="$width">
+ *   <p after="0">&BODY0..;</p>
+ *   <p after="1">&BODY1..;</p>
+ *   <p after="2">&BODY2..;</p>
+ *   <p after="3">&BODY3..;</p>
+ *   </div>
+ * </MACRO>
+ * }}}
+ * the invocation
+ * {{{
+ *  <cj width="42"><b>0</b><b>1</b><b>2</b><b>3</b><b>4</b></cj>
+ * }}}
+ * should expand to
+ * {{{
+ *       <div width="42em">
+ *          <p after="0"><b>0</b><b>1</b><b>2</b><b>3</b><b>4</b></p>
+ *          <p after="1"><b>1</b><b>2</b><b>3</b><b>4</b></p>
+ *          <p after="2"><b>2</b><b>3</b><b>4</b></p>
+ *          <p after="3"><b>3</b><b>4</b></p>
+ *       </div>
+ * }}}
+ *
+ * * @param body
+ */
+class Macro(body: Node) {
 
   def expansion(invocationAttributes: AttributeMap, invocation: Node): Seq[Node] = {
 
@@ -31,16 +131,18 @@ class Abstraction(body: Node) {
 
     val bindings = new mutable.HashMap[String,Seq[Node]]()
     bindings.addAll(actuals)
+    for { i <- 0 until children.length }
+        bindings.addAll(List(s"BODY$i.."->children.drop(i)))
     bindings.addAll(List("BODY"->children))
     // TODO:  ListMap appears to have no effective constructor from lists of pairs -- at least none that IntelliJ Scala accepts
 
     def substitute(node: Node): Seq[Node] = {
       node match {
         case EntityRef(id) =>
-          if (!bindings.contains(id) && id.startsWith("BODY")) org.sufrin.logging.Default.warn(s"Abstraction reference $invocation has no $id in $body")
+          if (!bindings.contains(id) && id.startsWith("BODY")) org.sufrin.logging.Default.warn(s"Macro reference $invocation has no $id in $body")
           bindings.get(id) match {
-            case None             => List(node)
-            case Some(nodes)      => nodes.flatMap(substitute(_))
+            case None        => Text(invocationAttributes.getOrElse(id, node.toString))
+            case Some(nodes) => nodes.flatMap(substitute(_))
           }
         case elem: Elem =>
           elem.copy(child = elem.child.flatMap(substitute(_)), attributes = substAttrs(elem.attributes, invocationAttributes/*invocation.attributes.asAttrMap*/))
@@ -62,7 +164,7 @@ class Abstraction(body: Node) {
               actualAttributes.get(ref) match {
                 case Some(value) => value
                 case None =>
-                  org.sufrin.logging.Default.warn(s"Abstraction reference $invocation has no parameter $ref")
+                  org.sufrin.logging.Default.warn(s"Macro reference $invocation has no parameter $ref")
                   ""
               }
             case _ => value
@@ -82,6 +184,7 @@ class Abstraction(body: Node) {
     }
 
     val result = substitute(body)
+
     val logging = invocationAttributes.getOrElse("logging", "")
     if (logging.nonEmpty && logging.toLowerCase != "false") {
       org.sufrin.logging.Default.info(s"Expanding $logging  ($body)")
@@ -95,7 +198,7 @@ class Abstraction(body: Node) {
 
 class Primitives {
   val translationMap:       mutable.Map[String, Translation]  = mutable.LinkedHashMap[String, Translation]()
-  val abstractionMap:       mutable.Map[String, Abstraction]  = mutable.LinkedHashMap[String, Abstraction]()
+  val abstractionMap:       mutable.Map[String, Macro]        = mutable.LinkedHashMap[String, Macro]()
   val genericAttributesMap: mutable.Map[String, AttributeMap] = mutable.LinkedHashMap[String, AttributeMap]()
   val entityMap:            mutable.Map[String, String]       = mutable.LinkedHashMap[String, String]()
   val elementMap:           mutable.Map[String, Elem]         = mutable.LinkedHashMap[String, Elem]()
@@ -152,7 +255,7 @@ class Primitives {
   }
 
   /** Declare a new macro */
-  def update(id: String, abbr: Abstraction) : Unit = abstractionMap(id) = abbr
+  def update(id: String, abbr: Macro) : Unit = abstractionMap(id) = abbr
 }
 
 object Paragraph {
@@ -480,10 +583,12 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
   }
 
   def Float(key: String, alt: Float)(implicit source: SourceLocation): Float = attributes.get(key) match {
-    case Some (s) =>
-      try { s.toFloat }
+    case Some (spec) =>
+      try {
+        spec.toFloat
+      }
       catch {
-        case exn: Throwable  => org.sufrin.logging.Default.warn(s"$key(=$s) should be a Float [using $alt] ($at)")
+        case exn: Throwable  => org.sufrin.logging.Default.warn(s"$key(=$spec) should be a Float [using $alt] ($at)")
           alt
       }
     case None     => alt
@@ -571,7 +676,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
     val fontDetail: StyleSheet =
       sheet
         .copy(
-          fontScale       = Float("fontScale",              1.0f),
+          fontScale       = Float("fontScale", 1.0f),
 
           textFontStyle   = FontFamily.styleNamed(String("textStyle", "")),
           textFontFamily  = FontFamily(String("fontFamily", String("textFontFamily", sheet.textFontFamily.name))),
@@ -583,7 +688,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
 
           buttonFontStyle  = FontFamily.styleNamed(String("buttonStyle", "")),
           buttonFontFamily = FontFamily(String("fontFamily", String("buttonFontFamily", sheet.buttonFontFamily.name))),
-          buttonFontSize   = Float("fontSize", Float("buttonFontSize",                  sheet.buttonFontSize)),
+          buttonFontSize   = Float("fontSize", Float("buttonFontSize", sheet.buttonFontSize)),
         )
 
     // Units are computed relative to the font details, which may have been redeclared
@@ -631,7 +736,7 @@ class Translation(val primitives: Primitives=new Primitives) {
 
 
   /** Declare a new macro */
-  def update(id: String, abbr: Abstraction) : Unit = primitives(id) = abbr
+  def update(id: String, abbr: Macro) : Unit = primitives(id) = abbr
 
   def extendContextFor(tag: String)(inherited: AttributeMap, local: Map[String,String]): AttributeMap = inherited ++ local
 
@@ -739,7 +844,7 @@ class Translation(val primitives: Primitives=new Primitives) {
             Decorated(ColTarget(sheet.backgroundBrush, chunks = translate(tags$, false, attributes$, sheet$, children$)))
 
           case "col" =>
-            val glyphs: Seq[Target] = children.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, paragraph, attributes$$, sheet$, source) }
+            val glyphs: Seq[Target] = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$$, sheet$, source) }
             val alignment = attributes$.Align("align", Left)
             Decorated(ColTarget(sheet$.backgroundBrush, glyphs, alignment))
 
@@ -748,7 +853,7 @@ class Translation(val primitives: Primitives=new Primitives) {
             val inheritWidth = attributes$.Bool("inheritwidth", false)
             val defaultWidth = if (inheritWidth) sheet$.parWidth else 0f
             val width = attributes$.Units("width", defaultWidth)(attributes$, sheet$)
-            val glyphs = children.filter(_.isInstanceOf[Elem]).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }.map(_.asGlyph)
+            val glyphs = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }.map(_.asGlyph)
             val valign: VAlignment = attributes$.VAlign("valign", Top)
             val glyph = if (width==0f)
                  NaturalSize.Row(align=valign, bg=sheet$.backgroundBrush)(glyphs)
@@ -828,18 +933,25 @@ class Translation(val primitives: Primitives=new Primitives) {
             val result = children.flatMap { child => translate(tags$, paragraph, attributes$$$, sheet$, child) }
             result
 
+          case "MACRO" =>
+              // Define the macro named after the given key: the effect is to introduce a new kind of tagged element
+              // The scope of this is the body of the closest enclosing <SCOPE></SCOPE> element; but is global if there is no such element.
+              val id = localAttributes.String("key", "")
+              abstractionMap(id) = new Macro(children.head)
+              List()
+
           case "ENTITY" =>
-            // Set the attributes defined for the given id.
+            // Set the attributes defined for the given key.
             // The scope of this is the body of the closest enclosing nonempty <ATTRIBUTES></ATTRIBUTES>; but is global if the body is empty.
             val id = localAttributes.String("key", "")
             val expansion = localAttributes.String("expansion", "")
-            entityMap(id)=expansion
+            entityMap(id) = expansion
             val attributes$$$=attributes$.removedAll(List("id", "expansion"))
             val result = children.flatMap { child => translate(tags$, paragraph, attributes$$$, sheet$, child) }
             result
 
           case "ELEMENT" =>
-            // Set the attributes defined for the given id.
+            // Define the element corresponding to the given key.
             // The scope of this is the body of the closest enclosing nonempty <ATTRIBUTES></ATTRIBUTES>; but is global if the body is empty.
             val id = localAttributes.String("key", "")
             val children$ = children.filterNot(isBlank)
@@ -872,7 +984,7 @@ class Translation(val primitives: Primitives=new Primitives) {
                   case None =>
                     translatePCData(tags$, false, Map.empty, StyleSheet(), source.toString())
                   case Some(abstraction) =>
-                    //println(s"Abstraction ${attributes$.asString}")
+                    //println(s"Macro ${attributes$.asString}")
                     val expanded: Seq[Node] = abstraction.expansion(attributes$, source)
                     translate(tags$, paragraph, attributes$, sheet$, expanded)
                 }
@@ -979,7 +1091,8 @@ object Language {
           super.translate(tags, paragraph, attributes.updated("textFontFamily", "Courier"), sheet, children)
         }
       }
-      meaning("caption") = new Abstraction(<p align="center"><b>&BODY;</b></p>)
+      meaning("center")  = new Macro(<row width="1*width"><fill/>&BODY;<fill/></row>)
+      meaning("caption") = new Macro(<p align="center"><b>&BODY;</b></p>)
   }
 
   implicit def XMLtoGlyph(source: Node)(implicit sheet: StyleSheet): Glyph = translation.XMLNodetoGlyph(source: Node)

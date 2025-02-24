@@ -119,7 +119,7 @@ class CalculatorGUI()(implicit sheet: StyleSheet) extends AdderGUI()(sheet) {
     case Some(3) =>  setOp("/", _./, flip(_./), _.*)
     case None => operations.select(0)
     case _ =>
-  }(sheet.copy(fontScale = 0.75f, buttonFrame=decoration.Unframed))
+  }(sheet.copy(fontScale = 0.75f, buttonDecoration=decoration.unDecorated))
 
   override def root: Glyph = Col.centered(
     super.root, ex,
@@ -134,8 +134,8 @@ trait TopLevelGUI {
   val book: Book = Book()
   val Page = book.Page
 
-  implicit val pageStyle: StyleSheet = StyleSheet(backgroundBrush=white, buttonFrame=decoration.Blurred(blue, nothing, 15f, 5f))
-  implicit val bookStyle: BookSheet = BookSheet(buttonSheet = pageStyle, pageSheet=pageStyle.copy(buttonFrame = decoration.Unframed))
+  implicit val pageStyle: StyleSheet = StyleSheet(backgroundBrush=white, buttonDecoration=decoration.Blurred(blue, nothing, 15f, 5f))
+  implicit val bookStyle: BookSheet = BookSheet(buttonSheet = pageStyle, pageSheet=pageStyle.copy(buttonDecoration = decoration.unDecorated))
 
 
   Page("Adder", "") {

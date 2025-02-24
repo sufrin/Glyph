@@ -8,7 +8,7 @@ import NaturalSize.{Col, Row}
 
 import io.github.humbleui.jwm.{App, EventMouseScroll}
 import org.sufrin.glyph.overlaydialogues
-import org.sufrin.glyph.styles.decoration.Unframed
+import org.sufrin.glyph.styles.decoration.unDecorated
 
 
 /**
@@ -117,7 +117,7 @@ object Dialogue {
 
     lazy val button: Glyph =
       if (nested)
-        styled.MenuButton(name) (reaction) (sheet.copy(buttonFrame = Unframed))
+        styled.MenuButton(name) (reaction) (sheet.copy(buttonDecoration = unDecorated))
       else
         styled.TextButton(name) (reaction) (sheet)
 

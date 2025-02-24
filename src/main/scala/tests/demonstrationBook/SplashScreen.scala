@@ -8,7 +8,7 @@ import styles.decoration
 class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyphXML.Translation) {
   implicit val  buttons: StyleSheet =
                 sheet.pageSheet.copy(
-                  buttonFrame =
+                  buttonDecoration =
                     decoration.Edged(sheet.pageSheet.buttonForegroundBrush(width=3).sliced(5,2),
                                      sheet.pageSheet.buttonBackgroundBrush)
                 )

@@ -3,7 +3,7 @@ package tests
 
 import glyphXML.Translation.AttributeMap
 import Glyphs.INVISIBLE
-import glyphXML.{Abstraction, Translation}
+import glyphXML.{Macro, Translation}
 import styled.windowdialogues.Dialogue
 
 import org.sufrin.glyph.styled.{Book, BookSheet, TextButton}
@@ -35,7 +35,15 @@ object glyphXMLTest extends Application {
         }
       }
       meaning("caption") =
-        new Abstraction(<p align="center"><b>&BODY;</b></p>)
+        new Macro(<p align="center"><b>&BODY;</b></p>)
+
+      meaning("cj") = new Macro(
+       <div width="$width">
+         <p after="0">&BODY0..;</p>
+         <p after="1">&BODY1..;</p>
+         <p after="2">&BODY2..;</p>
+         <p after="3">&BODY3..;</p>
+      </div>)
     }
 
 
@@ -46,7 +54,7 @@ object glyphXMLTest extends Application {
       translator("B1")        =  TextButton("Button1"){ _ => println(s"B1") }(_).turned(10)
       translator("B2")        =  TextButton("Button2"){ _ => println(s"B2") }(_)
       translator("B3")        =  TextButton("Button3"){ _ => println(s"B3") }(_)
-      translator("LINK")      =  sheet => TextButton("LINK"){ _ => println(s"LINK") }(sheet.copy(buttonFrame = styles.decoration.Unframed))
+      translator("LINK")      =  sheet => TextButton("LINK"){ _ => println(s"LINK") }(sheet.copy(buttonDecoration = styles.decoration.unDecorated))
       translator("L1")        =  Label("Label1")(_)
       translator("L2")        =  Label("Label2")(_)
       translator("L3")        =  Label("Label3")(_)
@@ -64,13 +72,13 @@ object glyphXMLTest extends Application {
     val sheet: StyleSheet = StyleSheet().copy(
         backgroundBrush       = DefaultBrushes.nothing,
         buttonForegroundBrush = DefaultBrushes.red,
-        buttonFrame           = styles.decoration.Blurred(fg=DefaultBrushes.red(width=10), bg=DefaultBrushes.nothing, blur=5f, spread=5f)
+        buttonDecoration           = styles.decoration.Blurred(fg=DefaultBrushes.red(width=10), bg=DefaultBrushes.nothing, blur=5f, spread=5f)
       )
     implicit val pageSheet: StyleSheet = StyleSheet().copy(
         backgroundBrush       = DefaultBrushes.nothing,
         buttonForegroundBrush = sheet.textForegroundBrush,
         buttonFontSize        = sheet.textFontSize*0.9f,
-        buttonFrame           = styles.decoration.Framed(fg=DefaultBrushes.red(width=2), bg=DefaultBrushes.nothing)
+        buttonDecoration           = styles.decoration.Framed(fg=DefaultBrushes.red(width=2), bg=DefaultBrushes.nothing)
     )
     implicit val bookStyle: BookSheet = new BookSheet(buttonSheet = sheet, pageSheet = pageSheet)
 
@@ -307,6 +315,7 @@ object glyphXMLTest extends Application {
           <p>
           In short, <i>spaces usually appear in a rendered paragraph wherever they appear in the paragraph body.</i></p>
         </SCOPE>
+        <cj logging="true" width="42em"><b>0</b><b>1</b><b>2</b><b>3</b><b>4</b></cj>
       </body>
   }
 

@@ -114,7 +114,7 @@ object Dialogue {
 
     lazy val button: Glyph =
       if (nested)
-        styled.MenuButton(name) (reaction) (sheet.copy(buttonFrame=styles.decoration.Unframed))
+        styled.MenuButton(name) (reaction) (sheet.copy(buttonDecoration=styles.decoration.unDecorated))
       else
         styled.TextButton(name) (reaction) (sheet)
 

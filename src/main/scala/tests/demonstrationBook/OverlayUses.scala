@@ -156,7 +156,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
     }
 
     val smallStyle = style.pageSheet.copy(
-        buttonFrame=decoration.Blurred(fg=DefaultBrushes.green, blur=5, spread=5),
+        buttonDecoration=decoration.Blurred(fg=DefaultBrushes.green, blur=5, spread=5),
         buttonForegroundBrush = DefaultBrushes.black,
         buttonHoverBrush = DefaultBrushes.darkGrey,
         labelForegroundBrush = DefaultBrushes.green,

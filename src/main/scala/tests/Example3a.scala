@@ -17,7 +17,7 @@ trait Example3aInterface {
   val variableColor: Brush = green()
 
   implicit val LocalStyle: StyleSheet =
-    StyleSheet(buttonFrame=decoration.Blurred(blur=10f, spread=10f, fg = yellowHuge(width = 8, cap=SQUARE)),
+    StyleSheet(buttonDecoration=decoration.Blurred(blur=10f, spread=10f, fg = yellowHuge(width = 8, cap=SQUARE)),
           labelBackgroundBrush = variableColor
     )
 

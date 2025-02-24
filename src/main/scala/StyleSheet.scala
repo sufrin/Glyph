@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 
 import GlyphTypes.{Font, FontStyle, Scalar}
-import styles.decoration.{Framed, Unframed}
+import styles.decoration.{Framed, unDecorated}
 import styles.{ButtonStyle, CheckboxStyle, decoration, GlyphStyle, MenuStyle, ToggleStyle}
 
 case class StyleSheet
@@ -38,7 +38,7 @@ case class StyleSheet
  parIndent:   Scalar=0f,
  padX: Scalar = 0f,
  padY: Scalar = 0f,
- buttonFrame: styles.decoration.Decoration = styles.decoration.Unframed,
+ buttonDecoration: styles.decoration.Decoration = styles.decoration.unDecorated,
  // Container constraints
  containerDimension: Vec = Vec.Zero,
  //
@@ -74,20 +74,20 @@ case class StyleSheet
     up     = GlyphStyle(font = buttonFont, fg = buttonForegroundBrush, bg = buttonBackgroundBrush),
     down   = GlyphStyle(font = buttonFont, fg = buttonDownBrush, bg = buttonBackgroundBrush),
     hover  = GlyphStyle(font = buttonFont, fg = buttonHoverBrush, bg = buttonBackgroundBrush),
-    frame  = buttonFrame,
+    frame  = buttonDecoration,
     border = 6f,
     toggle = ToggleStyle(on = toggleOn, off = toggleOff),
     checkbox = CheckboxStyle(tick = "✔", cross = "✖", on = toggleOn, off = toggleOff)
   )
 
   /** A stylesheet derived from this one, but with button framing specified by `border`, and decor`. */
-  def withButtonFrame(frame: styles.decoration.Decoration = decoration.Unframed): StyleSheet = copy(buttonFrame=frame)
+  def withButtonFrame(frame: styles.decoration.Decoration = decoration.unDecorated): StyleSheet = copy(buttonDecoration=frame)
 
   lazy val menuStyle: MenuStyle = MenuStyle(
     button = buttonStyle,
     nestedButton = buttonStyle.copy(frame = Framed(fg = DefaultBrushes.black(width = 0), bg = buttonBackgroundBrush)),
     reactive = buttonStyle.copy(frame = Framed(fg = DefaultBrushes.black(width = 0), bg = buttonBackgroundBrush)),
-    inactive = Unframed,
+    inactive = unDecorated,
     bg = DefaultBrushes.lightGrey,
     fg = DefaultBrushes.lightGrey,
   )
@@ -101,7 +101,11 @@ case class StyleSheet
   }
   lazy val em: Glyph = new FixedSize.Space(emWidth, 1f, 0, 0)
   lazy val ex: Glyph = new FixedSize.Space(1f, exHeight, 0, 0)
+
   def  hFill(ems: Int=1, stretch: Scalar=1): Glyph = new FixedSize.Space(ems*emWidth, exHeight, stretch, 0)
+  def  vFill(exs: Int=1, stretch: Scalar=1): Glyph = new FixedSize.Space(emWidth, exs*exHeight, 0, stretch)
+  def  hSpace(ems: Int=1): Glyph = new FixedSize.Space(ems*emWidth, exHeight, 0, 0)
+  def  vSpace(exs: Int=1): Glyph = new FixedSize.Space(emWidth, exs*exHeight, 0, 0)
 
   @inline private def styled(fontStyle: FontStyle): StyleSheet = copy(textFontStyle = fontStyle)
   def italicStyle: StyleSheet = styled(FontStyle.ITALIC)

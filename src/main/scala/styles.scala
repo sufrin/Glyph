@@ -61,7 +61,8 @@ package styles
   }
 
   /**
-   * Decorations to be applied to button-like glyphs
+   * Decorations normally applied to button-like `styled` glyphs and
+   * other components as they are being constructed.
    */
   package decoration {
     /** The decoration applied to a glyph */
@@ -83,14 +84,17 @@ package styles
         glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).framed(fg, bg, radiusFactor)
     }
 
+    /** Decorate the glyph with `.enlarge(enlargement).edged(fg, bg)`. The `enlargement` is enlarge` itself if `enlarge>1`,
+     * otherwise `enlarge * (thisGlyph.w min thisGlyph.h)`
+     */
     case class Edged(fg: Brush=DefaultBrushes.black, bg: Brush=DefaultBrushes.nothing, enlarge: Scalar = 0.15f, radiusFactor: Scalar = 0f) extends Decoration {
       def decorate(glyph: Glyph): Glyph =
         glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).edged(fg, bg)
     }
 
     /**
-     * Decorate the frame with shading
-     * else the top left corner. The enlargement is `enlarge` itself if `enlarge>1`, otherwise `enlarge * (thisGlyph.w min thisGlyph.h)`
+     * Decorate the glyph with `.shaded(fg, bg, enlarge, delta, down)`. The pre-framing enlargement is `enlarge` itself if `enlarge>1`,
+     * otherwise `enlarge * (thisGlyph.w min thisGlyph.h)`
      *
      * @param fg      foreground of the shading
      * @param bg      background of the shading
@@ -104,19 +108,33 @@ package styles
       def decorate(glyph: Glyph): Glyph = glyph.shaded(fg, bg, enlarge, delta, down)
     }
 
-    case class Blurred(fg: Brush=DefaultBrushes.black, bg: Brush = DefaultBrushes.nothing, blur: Scalar, spread: Scalar, delta: Scalar = 0f) extends Decoration {
-      def decorate(glyph: Glyph): Glyph = Glyphs.BlurredFrame(blur, spread, fg, bg, dx = delta, dy = delta)(glyph)
+    /** Decorated the `.enlarged(enlargement)` glyph with
+     *
+     * {{{ BlurredFrame(blur, spread, fg, bg, dx, dy) }}}
+     *
+     * The pre-decoration `enlargement` is enlarge` itself if
+     * {{{ enlarge>1 }}}
+     * otherwise it is {{{enlarge * (the glyph's width min the glyph's height)}}}
+     */
+    case class Blurred(fg: Brush=DefaultBrushes.black, bg: Brush = DefaultBrushes.nothing, blur: Scalar, spread: Scalar, delta: Scalar = 0f, enlarge: Scalar=0f) extends Decoration {
+
+      def decorate(glyph: Glyph): Glyph = {
+        val enlargement = if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge
+        Glyphs.BlurredFrame(blur, spread, fg, bg, dx = delta, dy = delta)(glyph enlarged enlargement)
+      }
     }
 
-    /** Decoration by a glyph transform */
-    case class Transformed(transform: Glyph=>Glyph) extends Decoration {
+    /**
+     *  Decorated by a glyph transform
+     */
+    case class Decorated(transform: Glyph=>Glyph) extends Decoration {
       def decorate(glyph: Glyph): Glyph = transform(glyph)
     }
 
     /**
      * Leave the glyph undecorated.
      */
-    case object Unframed extends Decoration {
+    case object unDecorated extends Decoration {
       def decorate(glyph: Glyph): Glyph = glyph
     }
   }
@@ -130,7 +148,7 @@ package styles
    , frame: decoration.Decoration
    , border: Float
   ) {
-    lazy val nested: ButtonStyle = this.copy(frame = decoration.Unframed)
+    lazy val nested: ButtonStyle = this.copy(frame = decoration.unDecorated)
   }
 
   /**
