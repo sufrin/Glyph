@@ -133,37 +133,36 @@ Magdalen College, Oxford}}
 \maketitle
 \begin{abstract}
 
-In this note we introduce the \Glyph user-interface library for Scala.  Its
+Here we introduce the \Glyph user-interface library for Scala.  Its
 graphical features are geometrically compositional:  rendered using
 a small subset of the facilities of  Google's \Skia{\footnote{\Skia
 is a highly portable 2-D graphics library used in the implementation of several
 browsers, including Chrome.}}, as delivered (in the JVM) by the \textbf{Skija}
 library.\footnote{The present prototype
 runs on Linux, Windows, OS/X (both x86 and Apple Mx processors)}
-
+%
 Our motivation for developing the library was our frustration, over many years,
 with complex UI frameworks that impose a uniform style, and that make
 it hard to develop novel modes of interaction.\footnote{There is
-nothing wrong with uniform styling: it's the cost of straying outside
-the styling envelope that we want to diminish. An interface designer
+nothing wrong with uniform styling: but the cost of straying outside
+the styling envelope needs to diminish. An interface designer
 who doesn't mind learning a new language (Dart) and staying within its
 envelope might be rewarded by investigating Google's
-\href{https://api.flutter.dev/index.html}{Flutter}: a comprehensive kit
-for building app(lication)s for a large variety of devices
-and operating systems.} 
+\href{https://api.flutter.dev/index.html}{Flutter}.} 
 
-The belief that has guided this work is that a rich set of interactive
+What has guided this work is the idea that a rich set of interactive
 interface components can be composed using a small collection of combining
-forms, together with a suitable collection of elementary visual
-components -- some reactive.
-So instead of (just) providing a uniformly-styled ``high level''
+forms, and a suitable collection of elementary visual
+and reactive components.
+
+Instead of (just) providing a uniformly-styled ``high level''
 toolkit, we have provided enough elements and combining forms for
 an innovative UI designer to experiment with, and a collection of
 implementations of conventional components (for example buttons,
 checkboxes, text input components, notebooks) to serve as models.
 
-Code and examples can be found in
-the public repository at
+Code, along with several  example programs to demonstrate principles,
+can be found in the public repository at
 \begin{center}
 \href{https://github.com/sufrin/Glyph}{https://github.com/sufrin/Glyph}.
 \end{center}\vfill
@@ -385,33 +384,41 @@ extension of \SCALA{Glyph}, and are also usually constructed by
         Concentric      OneOf
 \end{scala}
 
-The \SCALA{Row} and \SCALA{Col} compositions are (almost)
+The \Scala{Row} and \Scala{Col} compositions are (almost)
 explainable by their names. Each has variants that
 explain the exact way in which components are aligned. Here
-are the \SCALA{Row.atTop(...)} \SCALA{Row.centered(...)} \SCALA{Row.atBottom(...)}
-compositions of a pair of rectangles:\footnote{\Scala{Row}, and \Scala{Row.atTop}
-mean the same.}
+are three differently-aligned rows of a pair of rectangles:\footnote{
+\Scala{Row} and \Scala{Row(align=Top)}
+mean the same. We will later meet \Scala{Row(align=Baseline)(...)}.}
 \begin{center}
-
 \pdffig[scale=0.5]{PNG/row-t}
 \quad\quad
 \pdffig[scale=0.5]{PNG/row-c}
 \quad\quad
 \pdffig[scale=0.5]{PNG/row-b}
 \end{center}
+\begin{scala}
+   Row(align=Top)(b,r) Row(align=Mid)(b,r) Row(align=Bottom)(b,r)
+\end{scala}
 
-Here
-are the \SCALA{Col.atLeft(...)} \SCALA{Col.centered(...)} \SCALA{Col.atRight(...)}
-compositions of a different pair:\footnote{\Scala{Col}, and
-\Scala{Col.atLeft} mean the same.}
+
+
+
+
+
+Here are three differently-aligned columns of a pair of rectangles:\footnote{
+\Scala{Col}, and \Scala{Col(align=Left)} mean the same.}
+
 \begin{center}
-
 \pdffig[scale=0.5]{PNG/col-l}
 \quad\quad
 \pdffig[scale=0.5]{PNG/col-c}
 \quad\quad
 \pdffig[scale=0.5]{PNG/col-r}
 \end{center}
+\begin{scala}
+   Col(align=Left)(b,r) Col(align=Center)(b,r) Col(align=Right)(b,r)
+\end{scala}
 
 The row and column compositions described above yield glyphs that
 are ``naturally'' sized. Thus, for example, a row's width is the
@@ -439,16 +446,16 @@ def redR:  Glyph = FilledRect(50f, 25f, fg=red)
 def blueR: Glyph = FilledRect(100f, 25, fg=blue)
 \end{scala}
 
-Finally, here are the \SCALA{Concentric.centered(...)},
-\SCALA{Concentric.atTop(...)} and \\d\SCALA{Concentric.atRight(...)}
-compositions of a point and a pair of rectangles:\footnote{\Scala{Concentric}, and
-\Scala{Concentric.centered} mean the same;
-and there are (of course) \Scala{atLeft} and \Scala{atBottom} variants
-of \Scala{Concentric}.}
-
+Finally, below we show three of the possible \SCALA{Concentric} 
+compositions of a point and a pair of rectangles; respectively:
+\begin{scala}
+        Concentric(rowAlign=Mid, colAlign=Center)(p,b,r)
+        Concentric(rowAlign=Mid, colAlign=Right)(p,b,r)
+        Concentric(rowAlign=Top, colAlign=Center)(p,b,r)      
+\end{scala}
 
 \begin{center}
-\pdffig[scale=0.5]{PNG/conc}
+\pdffig[scale=0.5]{PNG/conc} 
 \quad\quad
 \pdffig[scale=0.5]{PNG/conc-t}
 \quad\quad
@@ -456,6 +463,15 @@ of \Scala{Concentric}.}
 \end{center}
 
 
+The vertical and horizontal aspects of their alignments are, in general,
+specified independently; but there are shorthands for common cases. Here
+we could have written:
+
+\begin{scala}
+        Concentric.Center(p,b,r)
+        Concentric.Top(p,b,r)
+        Concentric.Right(p,b,r)      
+\end{scala}
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
@@ -550,7 +566,7 @@ Grid(fg = red(width=0), padx=10, pady=10).grid(width=3)(data)
 \PNGFIGURE[scale=0.5]{gridtable}{Table presentations of a grid}
 
 
-\PNGFIGURE[scale=0.5]{gridcellFit}{Individual cell placement}
+\PNGFIGURE[scale=0.5]{gridcellFit}{Individual cell placement with \texttt{fitToCell}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
@@ -558,7 +574,10 @@ Grid(fg = red(width=0), padx=10, pady=10).grid(width=3)(data)
 \clearpage
 \SSS{OneOf: Temporal Alternations of Glyphs}
 The \SCALA{OneOf} composition is used primarily in the implementation of
-dynamically ``paged'' interfaces. It constructs a glyph whose appearance is chosen
+dynamically ``paged'' interfaces\footnote{Such as those provided in
+the \Scala{Book()} API.} or in the presentation of
+alternate captions on reactive glyphs.\footnote{Such
+as those used in the \Scala{Checkbox} and \Scala{TextToggle} APIs}. It constructs a glyph whose appearance is chosen
 dynamically from a palette of component glyphs.
 Its bounding box is the union of the bounding boxes of its component glyphs;
 and it shows only one of them at a time, namely the one selected most recently by  its \SCALA{select} method,
@@ -657,7 +676,7 @@ programmer who likes the idea of ``notationally sugared'' APIs.}
 
 For example:
 \begin{scala}
-Row.centered(
+Row(align=Mid)(
    Point(Wide.blue(width=2*Wide.blue.strokeWidth, cap=BUTT)),
    Skip(2*Wide.blue.strokeWidth),
    Rect(150f, 100f, Brush("")(color=red.color,
@@ -675,7 +694,9 @@ denotes the glyph
 \newpage
 \S{Glyph Transformers}
 
-Glyph transformers are used to derive glyphs from simpler glyphs. For example:
+Glyph transformers are used to derive glyphs from simpler glyphs. Almost
+all transformers are provided as intrinsic methods of all glyphs.
+For example:
 
 \glyph[scale=0.6]{eg1f}
 
@@ -701,9 +722,8 @@ be irrelevant.}
 \end{center}
 \end{comment}
 
-Most of these ``extrinsic'' transformers are also delivered as
-``intrinsic'' methods of glyphs. At the time of writing the intrinsic
-transformers are:
+
+Intrinsic glyph transformers include:
 
 \begin{scala}
   def scaled(scale: Scale): Glyph 
@@ -712,20 +732,23 @@ transformers are:
   def enlargedBy(w: Scalar, h: Scalar, ...): Glyph 
   def rotated(quadrants: Int, ...): Glyph 
   def turned(degrees: Scalar, circular: Boolean, ...): Glyph 
-  def skewed(skewX: Scalar, skewY: Scalar, ...): Glyph =
-  def mirrored(leftRight: Boolean, topBottom: Boolean, ...): Glyph =
+  def skewed(skewX: Scalar, skewY: Scalar, ...): Glyph 
+  def mirrored(leftRight: Boolean, topBottom: Boolean, ...): Glyph
+\end{scala}
+\begin{scala}
   def framed(fg: Brush = Glyphs.Framed.defaultFG,
              bg: Brush = Glyphs.Framed.defaultBG): Glyph
   def edged(fg: Brush = Glyphs.Framed.defaultFG,
             bg: Brush = Glyphs.Framed.defaultBG): Glyph
-  def shaded(...
-             enlarge: Scalar = 0.25f,
+  def shaded(enlarge: Scalar = 0.25f,
              delta: Scalar = 8f,
-             down: Boolean=false): Glyph =      
+             down: Boolean=false, ...): Glyph
+  def beside(g: Glyph, align: VAlignment=Mid): Glyph 
+  def above(g: Glyph, align: Alignment=Center): Glyph 
 \end{scala}
 
 In the above signatures, the abbreviation \SCALA{...} stands for the declaration that `fg` and `bg` parameters be inherited from
-``this'' Glyph unless otherwise specified. For example, the full signature of \SCALA{mirrored} is:
+the glyph being transformed, unless otherwise specified. For example, the full signature of \SCALA{mirrored} is:
 \begin{scala}
 
   def mirrored(leftRight: Boolean, topBottom: Boolean,
@@ -733,9 +756,10 @@ In the above signatures, the abbreviation \SCALA{...} stands for the declaration
                bg: Brush = thisGlyph.bg): Glyph    
 \end{scala}
 
-Figure \ref{intrinsics} shows a few examples of their use:
+Figure \ref{intrinsics} shows a few more examples of their use:
 
 \begin{figure}[t]
+\label{intrinsics}
 
 \PNGfig[scale=0.35]{eg1g}
 \hfill
@@ -767,7 +791,6 @@ g.skewed(0.5f, 0f).enlarged(27, bg=yellow(alpha=0.2f))
 \SCALA{g.skewed(0.5f, 0.0f).framed().turned(30f).framed(fg=redFrame)}
 \end{center}
 \caption{Intrinsic glyph transformers in use}
-\label{intrinsics}
 \end{figure}
 
 \clearpage
@@ -1576,7 +1599,7 @@ program will be to add an uncoloured
 expressed in (possibly fractional) ``logical units'' (ux) -- these sometimes correspond
 to the physical pixels on a screen, but on some high-resolution
 screens a \textbf{ux} may correspond to more than one
-pixel. \Textbf{Glyph} manages the correspondence.} border around the label.
+pixel. \textbf{Glyph} manages the correspondence.} border around the label.
 The colours and font of unstyled labels are given default values in
 the definition of \Scala{Label}.
 

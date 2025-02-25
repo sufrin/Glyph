@@ -231,14 +231,14 @@ object GlyphTransforms {
         val (xrf, yrf) =
           if (radiusFactor>0f) (radiusFactor, radiusFactor) else (.25f, .25f)
 
-        Glyphs.Concentric()(
+        Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
           RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = bg, bg = nothing),
           RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg, bg = nothing),
           glyph)
       } else {
         val gw = glyph.w + fg.strokeWidth * 2
         val gh = glyph.h + fg.strokeWidth * 2
-        Glyphs.Concentric()(
+        Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
           FilledRect(gw, gh, fg = bg, bg = nothing),
           Rect(gw, gh, fg = fg, bg = nothing),
           glyph)

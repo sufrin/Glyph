@@ -275,7 +275,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
 
     /** Make a grid that covers `root` and has the grid-off button on it */
     def makeGridGlyph(root: Glyph): Glyph = {
-      Concentric.atTop(PolygonLibrary.grid(root.diagonal), gridCheckboxForGrid)
+      Concentric.Top(PolygonLibrary.grid(root.diagonal), gridCheckboxForGrid)
     }
 
     def setGridState(state: Boolean): Unit = {

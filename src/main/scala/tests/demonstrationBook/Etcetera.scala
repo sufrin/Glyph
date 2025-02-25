@@ -25,7 +25,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
     Page("Animation", "") {
       import DynamicGlyphs.{Periodic, Transform, Transformable}
-      val shape = Glyphs.Concentric(bg=yellowHuge)(
+      val shape = Glyphs.Concentric(rowAlign=Mid, colAlign=Center, bg=yellowHuge)(
         FilledOval(40, 40, fg=blue),
         FilledRect(30, 10, fg=red) beside FilledRect(10, 10, fg=green))
 

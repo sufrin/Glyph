@@ -163,13 +163,13 @@ object Glyphs  {
    *
    *  `centered` aligns the centres of the glyphs.
    *
-   *  `atTop` aligns their north-south axes, and their top edges
+   *  `Top` aligns their north-south axes, and their top edges
    *
-   *  `atBottom` aligns their north-south axes, and their bottom edges
+   *  `Bottom` aligns their north-south axes, and their bottom edges
    *
-   *  `atLeft` aligns their west-east axes, and their west (left) edges
+   *  `Left` aligns their west-east axes, and their west (left) edges
    *
-   *  `atRight` aligns their west-east axes, and their east (right) edges
+   *  `Right` aligns their west-east axes, and their east (right) edges
    *
    *  The glyphs are drawn in their order in the argument sequence -- last on top
    *
@@ -182,27 +182,38 @@ object Glyphs  {
 
     val fg: Brush
     val bg: Brush
+    val rowAlign: VAlignment
+    val colAlign: Alignment
 
-    def apply(theGlyphs: Seq[Glyph]): Composite = aligned(0.5f, 0.5f, theGlyphs, "centered")
-    def apply(theGlyph: Glyph, theGlyphs: Glyph*): Composite = aligned(0.5f, 0.5f, theGlyph :: theGlyphs.toList, "centered")
+    def apply(theGlyphs: Seq[Glyph]): Composite = aligned(rowAlign.proportion, colAlign.proportion, theGlyphs, s"($rowAlign,$colAlign)")
+    def apply(theGlyph: Glyph, theGlyphs: Glyph*): Composite = aligned(rowAlign.proportion, colAlign.proportion, theGlyph :: theGlyphs.toList, s"($rowAlign,$colAlign)")
 
-    def centered(theGlyphs: Glyph*): Composite = aligned(0.5f, 0.5f, theGlyphs, "centered")
+    def Center(glyph: Glyph, theGlyphs: Glyph*): Composite = aligned(0.5f, 0.5f, glyph::theGlyphs.toList, "Center")
+    def Center(theGlyphs: Seq[Glyph]): Composite = aligned(0.5f, 0.5f, theGlyphs, "Center")
 
-    def centered$(theGlyphs: Seq[Glyph]): Composite = aligned(0.5f, 0.5f, theGlyphs, "centered")
+    def Mid(glyph: Glyph, theGlyphs: Glyph*): Composite = aligned(0.5f, 0.5f, glyph::theGlyphs.toList, "Mid")
+    def Mid(theGlyphs: Seq[Glyph]): Composite = aligned(0.5f, 0.5f, theGlyphs, "Mid")
 
-    def atTop(theGlyphs: Glyph*): Composite = aligned(0.5f, 0f, theGlyphs, "atTop")
+    def Top(glyph: Glyph, theGlyphs: Glyph*): Composite = aligned(0.5f, 0f, glyph::theGlyphs.toList, "Top")
+    def Top(theGlyphs: Seq[Glyph]): Composite = aligned(0.5f, 0f, theGlyphs, "Top")
 
-    def atLeft(theGlyphs: Glyph*): Composite = aligned(0f, 0.5f, theGlyphs, "atLeft")
+    def Left(glyph: Glyph, theGlyphs: Glyph*): Composite = aligned(0f, 0.5f, glyph::theGlyphs.toList, "Left")
+    def Left(theGlyphs: Seq[Glyph]): Composite = aligned(0f, 0.5f, theGlyphs, "Left")
 
-    def atBottom(theGlyphs: Glyph*): Composite = aligned(0.5f, 1.0f, theGlyphs, "atBottom")
+    def Bottom(glyph: Glyph, theGlyphs: Glyph*): Composite = aligned(0.5f, 1f, glyph::theGlyphs.toList, "Bottom")
+    def Bottom(theGlyphs: Seq[Glyph]): Composite = aligned(0.5f, 1f, theGlyphs, "Bottom")
 
-    def atRight(theGlyphs: Glyph*): Composite = aligned(1f, 0.5f, theGlyphs, "atRight")
+    def Right(glyph: Glyph, theGlyphs: Glyph*): Composite = aligned(1f, 0.5f, glyph::theGlyphs.toList, "Right")
+    def Right(theGlyphs: Seq[Glyph]): Composite = aligned(1f, 0.5f, theGlyphs, "Right")
 
-    def apply(fg: Brush = DefaultBrushes.nothing, bg: Brush = DefaultBrushes.nothing): ConcentricGenerators = {
-      val (_fg, _bg) = (fg, bg)
+
+    def apply(rowAlign: VAlignment=rowAlign, colAlign: Alignment=colAlign, fg: Brush = DefaultBrushes.nothing, bg: Brush = DefaultBrushes.nothing): ConcentricGenerators = {
+      val (_fg, _bg, _r, _c) = (fg, bg, rowAlign, colAlign)
       new ConcentricGenerators {
         val fg: Brush = _fg
         val bg: Brush = _bg
+        val rowAlign: VAlignment = _r
+        val colAlign: Alignment = _c
       }
     }
 
@@ -246,6 +257,8 @@ object Glyphs  {
   object Concentric extends ConcentricGenerators {
     val bg: Brush = DefaultBrushes.nothing
     val fg: Brush = DefaultBrushes.nothing
+    val rowAlign: VAlignment=org.sufrin.glyph.Mid
+    val colAlign: Alignment=org.sufrin.glyph.Center
   }
 
   /** An empty glyph with the given dimensions */

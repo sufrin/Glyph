@@ -272,7 +272,7 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
 
  protected val closeButtonAppearance: Glyph = closeGlyph match {
     case Some(glyph) =>
-      Glyphs.Concentric(bg=DefaultBrushes.nothing).atLeft(
+      Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
          Glyphs.FilledRect(guiRoot.w, glyph.h*1.2f, fg=DefaultBrushes.lightGrey, bg=DefaultBrushes.lightGrey), // TODO: 5f is a magic number
         glyph,
       )

@@ -56,7 +56,7 @@ object DocumentationDiagrams {
   var theFace: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL)
   var thePointSize: Float = 14.0f
   val theFont:      Font = new Font(theFace, thePointSize)
-  def theText(s: String): Text = Text(s, theFont)
+  def theText(s: String): Text = Text(s, theFont, fg=black)
 
   val units = 20f
   def a = FilledRect(5*units, 3*units, fg=yellow)
@@ -68,7 +68,7 @@ object DocumentationDiagrams {
 
   def write(path: String, captioned: Boolean=true)(glyph: Glyph, _caption: String=""): Unit = {
       val caption = if (_caption.isEmpty) glyph.toString else _caption
-      def text(line: String): Glyph = (theText(s" $line ").asLabel(black))
+      def text(line: String): Glyph = theText(s" $line ")
       lazy val label = Col.aligned(0.0f, caption.split("[\n]").toList.map(text))
       val dir = "PNG"
       if (captioned)
@@ -171,15 +171,14 @@ object DocumentationDiagrams {
         |         Brush("")(color=red.color, width=Wide.blue.strokeWidth, cap=SQUARE)))
         |""".stripMargin)
 
-    write("eg1f.png")(Framed(Wide.red)(eg1e), """Framed(Wide.red)(eg1e)""")
+    write("eg1f.png")(eg1e.framed(Wide.red), """eg1e.framed(Wide.red)""")
 
-    val eg1g = Framed(fg=Wide.red)(Framed(Wide.blue, bg=Wide.blue)(Concentric(FilledOval(120f, 80f, green), Point(Wide.red))))
+    val eg1g = Concentric(FilledOval(120f, 80f, green), Point(Wide.red)).framed(fg=Wide.blue, bg=Wide.blue).framed(fg=Wide.red)
 
     write("eg1g.png")(eg1g,
-      """Framed(Wide.red)(
-        |  Framed(Wide.blue)(
-        |    Concentric(
-        |      FilledOval(120f, 80f, green), Point(Wide.red))))""".stripMargin)
+      """Concentric(FilledOval(120f, 80f, green), Point(Wide.red))
+        | .framed(fg=Wide.blue, bg=Wide.blue)
+        | .framed(fg=Wide.red)""".stripMargin)
 
     write("eg1gskew.png")(eg1g.skewed(0.5f, 0.0f).framed())
 
@@ -218,10 +217,10 @@ object DocumentationDiagrams {
 
     write("eg3.png")(
           Col.centered(a, Rotated(1)(b), Row(a, b, a)),
-          "Col.centered(a,\n Rotated(1)(b), \n Row.atBottom(a, b, a))"
+          "Col.centered(a,\n Rotated(1)(b), \n Row.Bottom(a, b, a))"
     )
     write("eg3a.png")(Row(a, b, a), "Row(a, b, a)")
-    write("eg3b.png")(Row.atTop(a, b, a), "Row.atTop(a, b, a)")
+    write("eg3b.png")(Row.atTop(a, b, a), "Row.Top(a, b, a)")
     write("eg3c.png")(Row.centered(a, b, a), "Row.centered(a, b, a)")
     write("eg3d.png")(Framed(Wide.blue)(Row.centered(a, b, a)), "Framed(Wide.blue)(\n Row.centered(a, b, a))")
     write("eg3d.png")(Framed(Wide.blue)(Row.centered(a, b, a)), "Framed(Wide.blue)(\n Row.centered(a, b, a))")
@@ -241,11 +240,11 @@ object DocumentationDiagrams {
     def em    = Skip(font(18f).measureTextWidth("m"))
 
     write("text1.png")(Framed(grey, nothing)(text1.asGlyph(blue)), "Framed(grey)(text1.asGlyph(blue))")
-    write("text1b.png")(Row.atBottom(Skip(48), Framed(grey, nothing)(text1.atBaseline(blue))), "Row.atBottom(Skip(48), Framed(grey)(text1.atBaseline(blue)))")
+    write("text1b.png")(Row.atBottom(Skip(48), Framed(grey, nothing)(text1.atBaseline(blue))), "Row.Bottom(Skip(48), Framed(grey)(text1.atBaseline(blue)))")
     write("text1a.png")(Framed(grey, nothing)(Row(text1.atBaseline(blue))), "Framed(grey)(Row(text1.atBaseline(blue))")
     write("textrow1.png")(Framed(grey, nothing)(Row(text1.atBaseline(), em, text2.atBaseline())), """Framed(grey)(Row(text1.atBaseline, em, text2.atBaseline))""")
     write("textrow2.png")(Framed(grey, nothing)(Row(text1.asGlyph(), em, text2.asGlyph())), """Framed(grey)(Row(text1.asGlyph(), em, text2.asGlyph()))""")
-    write("textrow3.png")(Framed(grey, nothing)(Row.atBottom(text1.asGlyph(), em, text2.asGlyph())), """Framed(grey)(Row.atBottom(text1.asGlyph, em, text2.asGlyph)""")
+    write("textrow3.png")(Framed(grey, nothing)(Row.atBottom(text1.asGlyph(), em, text2.asGlyph())), """Framed(grey)(Row.Bottom(text1.asGlyph, em, text2.asGlyph)""")
     write("textrow1a.png")(Framed(grey, nothing)(Row.centered(text1.atBaseline(), em, text2.atBaseline(blue))), """Framed(grey)(Row.centered(text1.atBaseline, em, text2.atBaseline)""")
 
     val down = Variable(false)
@@ -286,8 +285,8 @@ object DocumentationDiagrams {
     write("col-r.png", true)(Col.atRight(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
 
     write("conc.png", true)(Concentric(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
-    write("conc-t.png", true)(Concentric.atTop(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
-    write("conc-r.png", true)(Concentric.atRight(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
+    write("conc-t.png", true)(Concentric.Top(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
+    write("conc-r.png", true)(Concentric.Right(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
 
 
 

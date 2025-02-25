@@ -850,16 +850,16 @@ trait LargeTestGUI {
       medex,
       filledStar7(wobbly(blue)),
       medex,
-      Row.centered$(gons.map(_.scaled(0.5f))),
+      Row(align=Mid)(gons.map(_.scaled(0.5f))),
       medex,
-      Row.centered$(fgons.map(_.scaled(0.5f))),
+      Row(align=Mid)(fgons.map(_.scaled(0.5f))),
       medex,
       Row(
-        Concentric.centered$(sides.map { n: Float =>
+        Concentric.Center(sides.map { n: Float =>
           regularPolygon(n.toInt, fg = red(width = 1, alpha = 3f / n))
         }),
         medex,
-        Concentric.centered$(sides.map { n: Float =>
+        Concentric.Center(sides.map { n: Float =>
           regularPolygon(n.toInt, fg = blue(width = 3, alpha = 3f / n))
         })
       )
