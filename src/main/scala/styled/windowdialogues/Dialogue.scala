@@ -97,9 +97,9 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
 
   val ex = Label("X")
 
-  val theBottomRow = Row(bg=bg).atTop$(bottomRow)
+  val theBottomRow = Row(Top, bg)(bottomRow)
 
-  val theRoot = Col(bg=bg).centered(blurb, theBottomRow)
+  val theRoot = Col(align=Center, bg=bg)(blurb, theBottomRow)
 
   var running: Option[Interaction] = None
 

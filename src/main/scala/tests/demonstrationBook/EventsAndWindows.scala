@@ -119,7 +119,7 @@ class EventsAndWindows(implicit val style: BookSheet, implicit val translation: 
         val bg: Brush = DefaultBrushes.yellowHuge
       }
 
-      Col.centered(
+      Col(align=Center)(
         <div width="50em" align="justify">
           <p align="center"><b>Events</b></p>
           <p>Mouse and keyboard events happening in the coloured frame below are shown in the log beneath it.
@@ -129,7 +129,7 @@ class EventsAndWindows(implicit val style: BookSheet, implicit val translation: 
              and subsequent <tt>Move</tt> reports in such a sequence of moves.</p>
         </div>,
         ex scaled 2,
-        Row.centered(Label("Shorten the log of Move sequences: "), CheckBox(initially = CatchEvents.elideAdjacentMoves) {
+        Row(align=Mid)(Label("Shorten the log of Move sequences: "), CheckBox(initially = CatchEvents.elideAdjacentMoves) {
           state =>
             CatchEvents.elideAdjacentMoves = state
             theLog.println(if (state) "You are now eliding adjacent move events" else "You are now showing adjacent move events")
@@ -168,9 +168,9 @@ class EventsAndWindows(implicit val style: BookSheet, implicit val translation: 
 
         val header = center(16)("ID") + center(25)("BOUNDS") + center(25)("WORK")
         Dialogue.OK(
-          Col.atLeft(
+          Col(align=Left)(
             Label(header),
-            Col.atLeft$(screens.map(showScreen(_)))),
+            Col(align=Left)(screens.map(showScreen(_)))),
             RelativeTo(screenButton), "Screens").start()
       }
 
@@ -194,15 +194,15 @@ class EventsAndWindows(implicit val style: BookSheet, implicit val translation: 
 
         val header = "Window"
         Dialogue.OK(
-            Col.atLeft(
-              Col.atLeft$(windows.map(showWindow(_)))),
+            Col(align=Left)(
+              Col(align=Left)(windows.map(showWindow(_)))),
             RelativeTo(windowsButton),
             "Windows")
           .start()
       }
 
 
-      Col.centered(
+      Col(align=Center)(
         <div width="55em" align="justify">
           <p align="center"><b>Windows and Screens</b></p>
           <p>An exploration of the low-level interface implemented by the

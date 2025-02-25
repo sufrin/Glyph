@@ -22,32 +22,6 @@ object NaturalSize {
     val skip: Scalar
     val valign: VAlignment
 
-    /** The glyphs are drawn so their centre lines are at the centre line of the row. */
-    def centered(theGlyphs: Glyph*): Composite = aligned(0.5f, theGlyphs)
-
-    /** The glyphs are drawn so their top is at the top of the row. */
-    def atTop(theGlyphs: Glyph*): Composite = aligned(0.0f, theGlyphs)
-
-    /** The glyphs are drawn so their bottom is at the bottom of the row. */
-    def atBottom(theGlyphs: Glyph*): Composite = aligned(1.0f, theGlyphs)
-
-    /** The glyphs are drawn so their centre lines are at the centre line of the row. */
-    def centered$(theGlyphs: Seq[Glyph]): Composite = aligned(0.5f, theGlyphs)
-
-    /** The glyphs are drawn so their top is at the top of the row. */
-    def atTop$(theGlyphs: Seq[Glyph]): Composite = aligned(0.0f, theGlyphs)
-
-    /** The glyphs are drawn so their bottom is at the bottom of the row. */
-    def atBottom$(theGlyphs: Seq[Glyph]): Composite = aligned(1.0f, theGlyphs)
-
-    /** The glyphs are drawn so their baselines align */
-    def atBaseline(theGlyph: Glyph, theGlyphs: Glyph*): Composite =
-      aligned(1f, theGlyph::theGlyphs.toList, atBaseline = true)
-
-    /** The glyphs are drawn so their baselines align */
-    def atBaseline$(theGlyphs: Seq[Glyph]): Composite =
-      aligned(1f, theGlyphs, atBaseline = true)
-
     def apply(first: Glyph, theGlyphs: Glyph*): Composite =
       aligned(valign.proportion, first :: theGlyphs.toList, valign.atBaseline)
 
@@ -133,24 +107,6 @@ object NaturalSize {
     val frame: Brush
     val skip: Scalar
     val halign: Alignment
-
-    /** Glyphs drawn with their centres at the centre line of the column. */
-    def centered(theGlyphs: Glyph*): Composite = aligned(0.5f, theGlyphs)
-
-    /** Glyphs drawn with left edges at the left edge of the column. */
-    def atLeft(theGlyphs: Glyph*): Composite = aligned(0.0f, theGlyphs)
-
-    /** Glyphs drawn with right edges at the right edge of the column. */
-    def atRight(theGlyphs: Glyph*): Composite = aligned(1.0f, theGlyphs)
-
-    /** Glyphs drawn with their centres at the centre line of the column. */
-    def centered$(theGlyphs: Seq[Glyph]): Composite = aligned(0.5f, theGlyphs)
-
-    /** Glyphs drawn with left edges at the left edge of the column. */
-    def atLeft$(theGlyphs: Seq[Glyph]): Composite = aligned(0.0f, theGlyphs)
-
-    /** Glyphs drawn with right edges at the right edge of the column. */
-    def atRight$(theGlyphs: Seq[Glyph]): Composite = aligned(1.0f, theGlyphs)
 
     def apply(first: Glyph, theGlyphs: Glyph*): Composite = aligned(halign.proportion, first :: theGlyphs.toList)
     def apply(theGlyphs: Seq[Glyph]): Composite = aligned(halign.proportion, theGlyphs)

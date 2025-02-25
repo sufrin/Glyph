@@ -46,7 +46,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
       def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
         import styled.windowdialogues.Dialogue.OKNO
         // TODO: windowdialogues need set software scale more carefully than now if autoScale
-        val prompt = Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
+        val prompt = Row(align=Mid)(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
           Label("Do you want to Exit?")(sheet.pageSheet) scaled 1.5f
         ).enlarged(50)
         OKNO(prompt,
@@ -121,13 +121,13 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
     }(splashStyle)
 
 
-    val styleDefinitionButtons: Glyph = Row.atTop(
+    val styleDefinitionButtons: Glyph = Row(align=Top)(
       styleSelect.arrangedVertically(), em scaled 4,
       scaleSelect.arrangedVertically(), em scaled 4,
       screenSelect.arrangedVertically(),
     ) . enlarged(15) . edged(splashStyle.buttonForegroundBrush(width=3).sliced(5, 2))
 
-    val GUI: Glyph = Col.centered(
+    val GUI: Glyph = Col(align=Left)(
       FixedSize.Row(align=Top, width = styleDefinitionButtons.w*1.1f)(startButton, splashStyle.hFill(), helpButton),
       ex scaled 2,
       styleDefinitionButtons,

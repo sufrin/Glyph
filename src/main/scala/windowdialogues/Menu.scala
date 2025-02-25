@@ -66,8 +66,8 @@ class Menu(entries: Seq[Glyph]) { thisPopup =>
                   if (button.isMenuButton) button  else button.afterReact{ _ => close() }
             case _ => glyph
           }
-          val col = Col.atLeft$(entries.map(afterReact))
-          Col.atLeft(killButton, col)
+          val col = Col(align=Left)(entries.map(afterReact))
+          Col(align=Left)(killButton, col)
     })
 
     // TODO: Perhaps we need an "annular" reactiveGlyph into which menus can be nested.
@@ -208,7 +208,7 @@ object Menu {
    * only to compute the sizes of menus that are to be placed at certain `Location`s.
    */
   def topBar(entries: Seq[Glyph]): Glyph = {
-      NaturalSize.Col.atLeft(PolygonLibrary.closeButtonGlyph, NaturalSize.Col.atLeft$(entries))
+      NaturalSize.Col(align=Left)(PolygonLibrary.closeButtonGlyph, NaturalSize.Col(align=Left)(entries))
   }
 
   /** A popup menu with `entries` as glyphs: located as specified by `position`. */

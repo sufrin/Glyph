@@ -22,7 +22,7 @@ object Dialogue {
    *  any of the buttons on its bottom row, by hitting the kill button placed on its top row.
    */
   def CLOSEABLE[T](guiRoot: Glyph, bottomRow: Seq[Glyph]): Dialogue[T] =
-    new Dialogue[T](Col.centered(guiRoot, Row.atTop$(bottomRow)), closeGlyph = Some(defaultCloseGlyph))
+    new Dialogue[T](Col(align=Center)(guiRoot, Row(Top)(bottomRow)), closeGlyph = Some(defaultCloseGlyph))
 
   import ReactiveGlyphs.GenericButton
 
@@ -85,7 +85,7 @@ object Dialogue {
     }
 
     lazy val popup: Dialogue[Unit] =
-      new Dialogue[Unit](Col(bg=sheet.menuStyle.bg).centered$(uniform), East(button), Some(defaultCloseGlyph), isMenu = true) {
+      new Dialogue[Unit](Col(align=Center, bg=sheet.menuStyle.bg)(uniform), East(button), Some(defaultCloseGlyph), isMenu = true) {
       // Reactivate the button when the menu is popped down
       onClose{ _ =>
         button match {
@@ -322,7 +322,7 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
 
         }
         theCloseButton = Some(closeButton)
-        Col(bg = DefaultBrushes.nothing).atLeft (
+        Col(align=Left, bg = DefaultBrushes.nothing) (
             closeButton,
             guiRoot//.enlargedTo(closeButton.w, guiRoot.h, bg = DefaultBrushes.white)
         ).framed(bg = DefaultBrushes.white)

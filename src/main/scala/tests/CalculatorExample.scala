@@ -95,10 +95,10 @@ class AdderGUI()(implicit sheet: StyleSheet)  {
     }
   }
 
-  def root: Glyph = Col.centered(
+  def root: Glyph = Col(align=Center)(
     helpGlyph, ex,
     Row(TextButton("Clear") { _ => clear() }), ex,
-    Row.centered(c.framed(), Label(" = "), a.framed(), opGlyph, b.framed())
+    Row(align=Mid)(c.framed(), Label(" = "), a.framed(), opGlyph, b.framed())
   )
 
 }
@@ -121,9 +121,9 @@ class CalculatorGUI()(implicit sheet: StyleSheet) extends AdderGUI()(sheet) {
     case _ =>
   }(sheet.copy(fontScale = 0.75f, buttonDecoration=decoration.unDecorated))
 
-  override def root: Glyph = Col.centered(
+  override def root: Glyph = Col(align=Center)(
     super.root, ex,
-    Row.centered(styled.Label("Chose an operator "),
+    Row(align=Mid)(styled.Label("Chose an operator "),
                  Grid().grid(height=2)(operations.glyphRows)) enlarged 20
   ) enlarged 20
 

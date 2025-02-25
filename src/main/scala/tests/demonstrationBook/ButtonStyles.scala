@@ -48,7 +48,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   Page("Framed", "") {
     import styles.decoration.{Framed,unDecorated, Edged, Decorated}
     import styled.TextButton
-    Col.centered(
+    Col(align=Center)(
       anchor,
       <div width="75em">
         <p>The <b>Framed</b> buttons below were constructed with implicit styles that included specifications of rim width and radius:</p>
@@ -133,7 +133,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   Page("Blurred"){
     import styles.decoration.Blurred
     def blurFrame(blur: Float, spread: Float) = Blurred(fg=red, blur=blur, spread=spread)
-    Col.centered(
+    Col(align=Center)(
     <div width="55em">
       <p> These buttons are of the form:
       </p>
@@ -153,7 +153,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
 
   Page("Shaded", "") {
     import styles.decoration.Shaded
-    Col.centered(
+    Col(align=Center)(
       <div width="55em">
         <p> These buttons are of the form:</p>
         <![CDATA[

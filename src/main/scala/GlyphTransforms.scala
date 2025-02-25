@@ -119,13 +119,13 @@ trait GlyphTransforms {
 
   /**  `Row.centered(thisGlyph, g)` */
   def beside(g: Glyph, align: VAlignment=Mid): Glyph = Row(align=align)(thisGlyph, g)
-  def besideTop(g: Glyph): Glyph = Row.atTop(thisGlyph, g)
-  def besideBottom(g: Glyph): Glyph = Row.atBottom(thisGlyph, g)
+  def besideTop(g: Glyph): Glyph = beside(g, align=Top)
+  def besideBottom(g: Glyph): Glyph = beside(g, align=Bottom)
 
   /**  `Col.centered(thisGlyph, g)` */
   def above(g: Glyph, align: Alignment=Center): Glyph = Col(align=align)(thisGlyph, g)
-  def aboveLeft(g: Glyph): Glyph = Col.atLeft(thisGlyph, g)
-  def aboveRight(g: Glyph): Glyph = Col.atRight(thisGlyph, g)
+  def aboveLeft(g: Glyph): Glyph = above(g, align=Left)
+  def aboveRight(g: Glyph): Glyph = above(g, align=Right)
 
   /** behaves as this glyph with the specified baseLine */
   def withBaseline(baseLine: Scalar): Glyph = WithBaseline(thisGlyph, baseLine)

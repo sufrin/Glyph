@@ -27,7 +27,7 @@ trait Example3Interface {
   import styled.Label
 
 
-  val GUI: Glyph = Col(bg=lightGrey).centered(
+  val GUI: Glyph = Col(align=Center, bg=lightGrey)(
     Label("A simple label") enlarged(20),
     Row(TextButton("make it yellow") { _ => variableColor color yellowHuge.color },
         TextButton("make it red")    { _ => variableColor color red.color })

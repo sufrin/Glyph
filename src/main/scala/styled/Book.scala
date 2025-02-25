@@ -29,7 +29,7 @@ trait Book {
       if (gloss.isEmpty)
         glyph
       else
-        Col.centered(Label(gloss), ex, glyph)
+        Col(align=Center)(Label(gloss), ex, glyph)
   }
 
   val pages: ArrayBuffer[Page] = new ArrayBuffer[Page]()
@@ -201,7 +201,7 @@ trait Book {
 
     def rightButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet):  Glyph   = {
       val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
-      val rhs = Col().atRight$(buttons)
+      val rhs = Col(align=Right)(buttons)
       val lhs = oneOf
       val divider = blackLine(4, rhs.h max lhs.h)
       Row(align=Mid, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
@@ -225,7 +225,7 @@ trait Book {
 
     def rotatedButtons(quads: Int, buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet) = {
       val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
-      val lhs = Row().atBottom$(buttons.map { b => b.rotated(quads, bg=nothing) })
+      val lhs = Row(Bottom)(buttons.map { b => b.rotated(quads, bg=nothing) })
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
       Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
@@ -241,7 +241,7 @@ trait Book {
 
     def topButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet) = {
       val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
-      val lhs = Row(bg=nothing).atBottom$(buttons)
+      val lhs = Row(align=Bottom, bg=nothing)(buttons)
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
       Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)

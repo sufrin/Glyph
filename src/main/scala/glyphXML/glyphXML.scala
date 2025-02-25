@@ -284,14 +284,13 @@ object Paragraph {
         glyphs$
       )
 
-    val column = NaturalSize.Col(bg = sheet.textBackgroundBrush).atLeft$(galley.toSeq)
+    val column = NaturalSize.Col(bg = sheet.textBackgroundBrush, align=Left)(galley.toSeq)
 
 
     hangGlyph match {
       case None =>
         if (true || leftMargin > 0f)
-          NaturalSize.Row(bg = sheet.textBackgroundBrush)
-            .centered(
+          NaturalSize.Row(Mid, bg = sheet.textBackgroundBrush)(
               FixedSize.Space(w =  leftMargin, h = 0f, stretch = 0f),
               column,
               FixedSize.Space(w = sheet.rightMargin, h = 0f, stretch = 0f))
@@ -300,9 +299,8 @@ object Paragraph {
 
       case Some(theGlyph) =>
         val space = FixedSize.Space(leftMargin-theGlyph.w,theGlyph.h, 0f)
-        NaturalSize.Row(bg = sheet.textBackgroundBrush)
-          .centered(
-            NaturalSize.Row(bg = sheet.textBackgroundBrush).atTop(theGlyph, space, column),
+        NaturalSize.Row(Mid, bg = sheet.textBackgroundBrush)(
+            NaturalSize.Row(Top, bg = sheet.textBackgroundBrush)(theGlyph, space, column),
             FixedSize.Space(w = sheet.rightMargin, h = 0f, stretch = 0f))
     }
   }
@@ -391,7 +389,7 @@ object Paragraph {
           case breakableGlyph: BreakableGlyph if false  =>
             val glyphs = breakableGlyph.glyphs
             val breakPoint: Int = breakableGlyph.maximal(maxWidthfloor)
-            galley += NaturalSize.Row.atTop$(glyphs.take(breakPoint)).framed(fg = DefaultBrushes.red(width=2))
+            galley += NaturalSize.Row(Top)(glyphs.take(breakPoint)).framed(fg = DefaultBrushes.red(width=2))
           case other =>
             galley += NaturalSize.Row(Glyphs.FilledRect(maxWidthfloor, other.h, fg = DefaultBrushes.red(width=2)))
         }
@@ -486,11 +484,7 @@ object Translation {
 
     case class ColTarget(background: Brush, chunks: Seq[Target], alignment: Alignment = Left) extends Target {
       val theGlyphs = chunks.map(_.asGlyph)
-      val theGlyph =  alignment match {
-        case Justify | Right  => NaturalSize.Col(bg=background).atRight$(theGlyphs)
-        case Center => NaturalSize.Col(bg=background).centered$(theGlyphs)
-        case _      => NaturalSize.Col(bg=background).atLeft$(theGlyphs)
-      }
+      val theGlyph =  NaturalSize.Col(align=alignment, bg=background)(theGlyphs)
       val asGlyph: Glyph = theGlyph
     }
 
@@ -1047,7 +1041,7 @@ class Translation(val primitives: Primitives=new Primitives) {
     val rawLines = text.split('\n').toSeq
     val lines    = if (attributes.Bool("normalizePCData", true)) stripCommonIndentation(rawLines) else rawLines
     val glyphs   = lines.map(makeText(_, textFont, fg, bg).asGlyph(fg, bg))
-    List(GlyphTarget(paragraph, sheet, NaturalSize.Col(bg = bg).atLeft$(glyphs)))
+    List(GlyphTarget(paragraph, sheet, NaturalSize.Col(align=Left, bg = bg)(glyphs)))
   }
 
 
@@ -1058,8 +1052,7 @@ class Translation(val primitives: Primitives=new Primitives) {
     val translator = this
     //import PrettyPrint.AnyPretty
     //for { t <- (translator.translate(Nil, false, Map.empty, sheet, source)) } t.prettyPrint()
-    NaturalSize.Col()
-      .centered$(translator.translate(Nil, false, Map.empty, sheet, source).map(_.asGlyph))
+    NaturalSize.Col(align=Center)(translator.translate(Nil, false, Map.empty, sheet, source).map(_.asGlyph))
   }
 
   implicit def XMLNodetoGlyph(source: Node)(implicit sheet: StyleSheet): Glyph = this(source)(sheet)

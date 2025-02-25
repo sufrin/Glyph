@@ -82,7 +82,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
     val checkBox = CheckBox(initially=false) { state => anchor.guiRoot.autoScale=state }(content.copy(buttonDecoration = styles.decoration.Framed(fg=DefaultBrushes.blue, bg=DefaultBrushes.nothing)))
     import translation._
     translation("checkbox") = { _ => checkBox }
-    Col.centered(
+    Col(align=Center)(
     <body align="justify" width="65em">
       <p>
         This application demonstrates aspects of the Glyphs library

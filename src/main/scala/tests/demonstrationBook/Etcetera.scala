@@ -51,7 +51,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
       val animations: Seq[Animation] = for { i<-1 to 12 } yield new Animation()
 
-      Col.centered(
+      Col(align=Center)(
 
         Paragraph(50, Justify)(
           """A grid of rotating buttons. Individual buttons are started/stopped
@@ -90,8 +90,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
             Label(f"$i.scaled($scale%1.1f)").scaled(scale)
 
-        Col.centered(
-          Col.atLeft(
+        Col(align=Center)(
+          Col(align=Left)(
             Label(".grid(width=3)(data) -- row data as uniform size cells"),
             NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex,
             Label(".grid(height=3)(data) -- col data as uniform size cells"),
@@ -119,7 +119,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           data.updated(4, lab)
         }
 
-        Col.centered(
+        Col(align=Center)(
           Label("grid with data(4).fitToCell(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
           NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Enlarge)), ex, ex,
           NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(ShiftNorth)), ex, ex,
@@ -154,7 +154,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         case proportion: Scalar => dynamic.setBoundary(proportion)
       }
       val static = SplitScreen(left() enlarged 30, right() enlarged 30, dynamic=false, fg=darkGrey.strokeWidth(6f))
-      Col.centered(
+      Col(align=Center)(
         Paragraph(60, Justify)(
           """
             |This is a test of the SplitScreen glyph. The test shows a pair of glyphs side by
@@ -212,9 +212,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         <p hang="* ">Clicking the primary button when control+shift are pressed resets scale and position .</p>
       </div>
 
-      Col.centered(
+      Col(align=Center)(
         describe, ex,
-        Row.centered$(List(1.2f, 0.75f, 0.5f).map(ScaleButton)), ex,
+        Row(align=Mid)(List(1.2f, 0.75f, 0.5f).map(ScaleButton)), ex,
         viewPort, ex,
         TextButton("Reset") {
           _ => viewPort.reset()
@@ -235,7 +235,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         }
       )
 
-      Col.centered(
+      Col(align=Center)(
         Label("TextField: a text entry field"),
         ex,
         ex,
@@ -276,7 +276,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       }(buttonSheet)
 
 
-      Col(fg=nothing, bg=white).centered(
+      Col(fg=nothing, bg=white, align=Center)(
         Paragraph(60, Left)(
           """
             |The background of a OneOf can be specified. If left unspecified it
@@ -288,9 +288,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
             |
             |""".stripMargin), ex,
         Row(fg=nothing, bg=white)(next, em, em, sel0), ex, ex,
-        Col.centered(Label(s"""oneOf=OneOf(bg=grey)(AAA,BBB,CCCCCC)"""), ex, oneOfBG scaled .7f).enlarged(40).framed(), ex, ex,
-        Col.centered(Label(s"""oneOf=OneOf()(AAA,BBB,CCCCCC)"""), ex, oneOf scaled .7f).enlarged(40).framed(), ex, ex,
-        Col.centered(Label(s"""oneOf=OneOf()(Ping, Poobah)"""), ex, oneOfPB scaled .7f).enlarged(40).framed(), ex, ex, ex,
+        Col(align=Center)(Label(s"""oneOf=OneOf(bg=grey)(AAA,BBB,CCCCCC)"""), ex, oneOfBG scaled .7f).enlarged(40).framed(), ex, ex,
+        Col(align=Center)(Label(s"""oneOf=OneOf()(AAA,BBB,CCCCCC)"""), ex, oneOf scaled .7f).enlarged(40).framed(), ex, ex,
+        Col(align=Center)(Label(s"""oneOf=OneOf()(Ping, Poobah)"""), ex, oneOfPB scaled .7f).enlarged(40).framed(), ex, ex, ex,
         Label("The OneOf component glyphs AAA, BBB, ... are:"), ex,
         Row(fg=nothing, bg=white)(aaa(), em, bbb(), em, ccc(), em, ddd(), em, eee()) scaled 0.8f
 
@@ -328,7 +328,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         }
       }
 
-      Col.centered(
+      Col(align=Center)(
         Paragraph(50, Justify)(
           """
             |Several linked sliders subjected to a variety of
@@ -338,7 +338,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
             |""".stripMargin), ex,
         sh hint "",
         shu hint " turned 5" turned 5f framed (black),
-        Row.centered(sv hint " scaled 1.5" scaled(1.5f) framed(black), em,
+        Row(align=Mid)(sv hint " scaled 1.5" scaled(1.5f) framed(black), em,
           svu hint " rotated 2" rotated(2) framed(black), em,
           svr hint " skewed (.2,0) turned 180" skewed(0.2f, 0f) turned(180f) framed(black), em,
           shr hint " scaled 0.5f rotated 3" scaled 0.5f rotated 3),
@@ -360,11 +360,11 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       }
 
       val star  = PolygonLibrary.openStargon(7, C=64f, R=55f, fg=red(width=2))
-      val other = PolygonLibrary.filledRegularPolygon(7, C=64f, R=55f, fg=red(width=2))
+      val other = PolygonLibrary.filledRegularPolygon(7, C=64f, R=55f, fg=blue(width=2))
 
       lazy val state1 = Monitor(whenFalse="The toggle is off", whenTrue="The toggle is on", t1)
       lazy val state2 = Monitor(whenFalse="The tick is off", whenTrue="The tick is on", t2)
-      lazy val state3 = Monitor(whenFalse="The red shape is showing", whenTrue="The blue shape is showing", t3)
+      lazy val state3 = Monitor(whenFalse="The hexagon is showing", whenTrue="The star is showing", t3)
 
       lazy val t1:OnOffButton = TextToggle(whenFalse="Turn the toggle On", whenTrue="Turn the toggle Off", initially=true) {
         case true => state1.select(1)
@@ -401,7 +401,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           }
         }
 
-        Col.centered(
+        Col(align=Center)(
           Paragraph(50, Justify)(
             """Four ColourButtons. In the top row, the foreground colour changes
               |as the mouse hovers or is pressed. In the bottom row, the background colour changes
@@ -421,18 +421,18 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         HintManager(t3, 5.0, "Guess what this is for!")
       }
 
-      Col.centered(
+      Col(align=Center)(
         NaturalSize.Grid(fg=black(width=0), padx=10f).table(width=3)(List(
           state1, state2,            state3,
-          t1,     t2 scaled 1.7f,    t3
+          t1,     t2 scaled 1.7f,    t3.enlarged(15)
         )).enlarged(40f).framed(black), ex, ex,
 
         NaturalSize.Grid.Width(1)(
-          Col.centered(
+          Col(align=Center)(
             Label("A TextToggle can have multi-line legends in either or both states."), ex,
             TextToggle(whenTrue = ("True"), whenFalse = ("Not True\n(or true)"), initially = true) { _ => }, ex,
           ).enlarged(10f),
-          Col.centered(
+          Col(align=Center)(
             Label("A GlyphToggle can have differently sized and shaped glyphs in each state"), ex,
             GlyphToggle(
               whenTrue =  star(fg = blue)  scaled 1f,
@@ -464,8 +464,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
             //import styled.text.Label
             val labels = group.map { name => styled.Label(name, Left) }
             val llength = labels.length / 2
-            Row(NaturalSize.Col.atLeft$(labels.take(llength)).enlarged(20).framed(), em, em,
-              NaturalSize.Col.atLeft$(labels.drop(llength)).enlarged(20).framed())
+            Row(NaturalSize.Col(align=Left)(labels.take(llength)).enlarged(20).framed(), em, em,
+              NaturalSize.Col(align=Left)(labels.drop(llength)).enlarged(20).framed())
           }
         }
       }

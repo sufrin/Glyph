@@ -31,7 +31,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
     def showChoice(s: String): Unit =
       styled.overlaydialogues.Dialogue.OK(Label(if (s eq null) "You made no choice" else s"You chose $s")).South(anchor).start()
 
-    Col.centered(
+    Col(align=Center)(
       <div width="40em" align="justify">
       <p>
         This page tests popup dialogues from which multiple choices can be made.
@@ -75,7 +75,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
 
     lazy val theTarget = Label("This is the target").scaled(2).framed()
 
-    Col.centered(
+    Col(align=Center)(
         <div width="60em" align="justify">
           <p>
             This page tests various Dialogue.Location locators for window dialogues and menus.
@@ -87,7 +87,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
           <p> (2) whether menus behave properly; including whether closing them causes their 'host' glyph to become responsive. </p>
           <p>"Self-referential" buttons that make themselves the target  glyph are straightforward to implement.</p>
         </div>,
-      Col.atRight(
+      Col(align=Right)(
         TextButton("A real button!")          { _ => OK(Label("Congratulations!\nYou found\na real button."), South(theTarget)).start() },
         TextButton("South(the target)")       { _ => startLocatorAt(South(theTarget)) },
         TextButton("NorthFor(×)(the target)") { _ => startLocatorAt(NorthFor(X)(theTarget)) },
@@ -138,7 +138,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
     import Location._
 
     Row(em,
-      Col.centered(
+      Col(align=Center)(
         <div width="60em" align="justify">
           <p>This test places windowdialogues.Menu instances around the outside of the target (red)
           square, and in a couple of other places, using the

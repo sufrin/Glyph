@@ -26,7 +26,7 @@ trait Example3aInterface {
 
   val labelColor: Brush = green()
 
-  val GUI: Glyph = Col(bg=lightGrey).centered(
+  val GUI: Glyph = Col(bg=lightGrey, align=Center)(
     Label("A simple label") enlarged(20),
     Row(TextButton("make it yellow") { _ => variableColor color yellowHuge.color },
         TextButton("make it red")    { _ => variableColor color red.color })

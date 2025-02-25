@@ -33,9 +33,9 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       def longer: Glyph = <p align="justify" width="20em">A text paragraph that may obscure a low curvature frame.</p>.enlarged(25)
 
       def row(rf: Scalar): Glyph = {
-        Col.atLeft(
+        Col(align=Left)(
           Label(f"curvature=${1f/rf}%1.2f radiusFactor=$rf%1.3f\n").scaled(0.7f),
-          Row.centered(
+          Row(align=Mid)(
             short.framed(fg, nothing, rf), em,
             med.framed(fg, nothing, rf), em,
             long.framed(fg, nothing, rf)))
@@ -66,10 +66,10 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
 
     def row(rf: Scalar, enlarge: Scalar = 0f, strokeWidth: Scalar=fg.strokeWidth): Glyph = {
       fg.strokeWidth(strokeWidth)
-      Col.centered(
+      Col(align=Center)(
         ex.scaled(0.5f),
         Label(f"curvature=${1f/rf}%1.2f radiusFactor=$rf%1.3f strokeWidth=$strokeWidth%1.1f\n").scaled(0.7f),
-        Row.centered(
+        Row(align=Mid)(
           short.enlarged(enlarge).framed(fg, nothing, rf), em,
           med.enlarged(enlarge).framed(fg, nothing, rf), em,
           long.enlarged(enlarge).framed(fg, nothing, rf)))
@@ -101,7 +101,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
           med.enlarged(px).edged(fg, nothing),
           long.enlarged(px).edged(fg, nothing))
 
-    Col.centered(
+    Col(align=Center)(
       Grid(padx=10, pady=10, width=4, height=5).rows(List(0f, 20f, 30f, 40f).flatMap(row(_))), ex,
       Label("The effect of 20px enlargement and a wider frame brush  [red(width=30)]."), ex,
       long.enlarged(20).edged(fg=fg.copy(width=30), nothing)
@@ -115,25 +115,25 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       def star = PolygonLibrary.filledStargon(9, fg=blueLine).scaled(.5f).framed()
       def cross = Polygon(star.w, star.h, blue(width=4))((0, 0), (star.w, star.h), (0, star.h), (star.w, 0), (0,0) ) scaled 0.5f
 
-      Col.centered(
-        Row().centered(
+      Col(align=Center)(
+        Row(align=Mid)(
           star, em,
           star.mounted(red(width = 38, cap = SQUARE), green), em,
           star.mounted(red(width = 8, cap = ROUND), green), em,
           star.mounted(red(width = 8, cap = ROUND), red)), ex,
-        Row.centered(cross, em,
+        Row(align=Mid)(cross, em,
           cross.mounted(yellowHuge(width = 8, cap = ROUND), nothing), em,
           cross.mounted(yellowHuge(width = 8, cap = ROUND), red), em,
           cross.mounted(yellowHuge(width = 16, cap = ROUND), nothing), em,
           cross.mounted(yellowHuge(width = 16, cap = ROUND), red), em,
         ), ex,
-        Row.centered(
+        Row(align=Mid)(
           star.mounted(fg = black(width = 10, cap = ROUND), bg = nothing), em,
           star.mounted(fg = black(width = 20, cap = ROUND), bg = nothing), em,
           star.mounted(fg = black(width = 30, cap = ROUND), bg = nothing), em,
           star.mounted(fg = black(width = 40, cap = ROUND), bg = yellowHuge), em
         ), ex,
-        Row.centered(
+        Row(align=Mid)(
           cross.framed(fg = yellowHuge(width = 24, cap = SQUARE), bg = nothing), em,
           cross.framed(fg = yellowHuge(width = 24, cap = ROUND), bg = nothing), em,
           cross.mounted(yellowHuge(width = 18, cap=ROUND), nothing), em,
@@ -142,10 +142,10 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
           Label("FOOTLE").rotated(1).framed(fg = green(width = 24, cap = ROUND), bg = red), em,
           Label("FOOTLE").rotated(1).framed(fg = green(width = 24, cap = SQUARE), bg = nothing), em,
         ), ex,
-        Row.centered(
+        Row(align=Mid)(
           glyph.framed(red(width = 30, cap = SQUARE), green), em,
           glyph.framed(red(width = 30, cap = ROUND), nothing)), ex,
-        Row.centered(
+        Row(align=Mid)(
           glyph.framed(red(width = 30, cap = ROUND), red), em,
           glyph.framed(red(width = 30, cap = ROUND), green)
         ), ex,
@@ -158,27 +158,27 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       def star = PolygonLibrary.filledStargon(9, fg=blueLine).scaled(.5f).framed()
       def cross = Polygon(star.w, star.h, blue(width = 4))((0, 0), (star.w, star.h), (0, star.h), (star.w, 0), (0,0)) scaled 0.5f
 
-      Col.centered(
-        Row().centered(
+      Col(align=Center)(
+        Row(align=Mid)(
           star, em,
           star.edged(red(width = 8, cap = SQUARE), green), em,
           star.edged(red(width = 8, cap = ROUND), green), em,
           star.edged(red(width = 8, cap = ROUND), red)
         ), ex,
-        Row.centered(cross, em,
+        Row(align=Mid)(cross, em,
           cross.edged(yellowHuge(width = 8, cap = ROUND), nothing), em,
           cross.edged(yellowHuge(width = 8, cap = ROUND), red), em,
           cross.edged(yellowHuge(width = 16, cap = ROUND), nothing), em,
           cross.edged(yellowHuge(width = 16, cap = ROUND), red), em,
         ), ex,
-        Row.centered(
+        Row(align=Mid)(
           star.edged(fg = black(width = 4, cap = ROUND), bg = nothing), em,
           star.edged(fg = black(width = 10, cap = ROUND), bg = nothing), em,
           star.edged(fg = black(width = 20, cap = ROUND), bg = nothing), em,
           star.edged(fg = black(width = 30, cap = ROUND), bg = nothing), em,
           star.edged(fg = black(width = 40, cap = ROUND), bg = yellowHuge), em
         ), ex,
-        Row.centered(
+        Row(align=Mid)(
           cross.framed(fg = yellowHuge(width = 24, cap = SQUARE), bg = nothing), em,
           cross.framed(fg = yellowHuge(width = 24, cap = ROUND), bg = nothing), em,
           cross.edged(yellowHuge(width = 18, cap = ROUND), nothing), em,
@@ -187,10 +187,10 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
           Label("FOOTLE").rotated(1).edged(fg = green(width = 24, cap = ROUND), bg = red), em,
           Label("FOOTLE").rotated(1).edged(fg = green(width = 24, cap = SQUARE), bg = nothing), em,
         ), ex,
-        Row.centered(
+        Row(align=Mid)(
           glyph.edged(red(width = 30, cap = SQUARE), green), em,
           glyph.edged(red(width = 30, cap = ROUND), nothing)), ex,
-        Row.centered(
+        Row(align=Mid)(
           glyph.edged(red(width = 30, cap = ROUND), red), em,
           glyph.edged(red(width = 30, cap = ROUND), green)
         ), ex,

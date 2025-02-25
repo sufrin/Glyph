@@ -280,11 +280,7 @@ object Label {
       case 1 => Text(text, detail.font).asGlyph(detail.fg, detail.bg)
       case _ => {
         val texts = lines.map { line => Text(line, detail.font).asGlyph(detail.fg, detail.bg) }
-        align match {
-          case Right => Col(bg = detail.bg).atRight$(texts)
-          case Left | Justify => Col(bg = detail.bg).atLeft$(texts)
-          case Center => Col(bg = detail.bg).centered$(texts)
-        }
+        Col(align=align, bg = detail.bg)(texts)
       }
     }
   }

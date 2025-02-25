@@ -15,7 +15,7 @@ trait Example2Interface {
   val variableColor: Brush = green()
   // val courier = Font(FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL), 30f)
 
-  val GUI: Glyph = Col(bg=lightGrey).centered(
+  val GUI: Glyph = Col(align=Center, bg=lightGrey)(
     Label("A simple label", fg=white) enlarged(20, bg=variableColor),
     Row(TextButton("make it blue") { _ => variableColor color blue.color }.framed(fg=blueish, bg=blueish),
         TextButton("make it red")  { _ => variableColor color red.color }.framed(fg=blueish, bg=blueish))

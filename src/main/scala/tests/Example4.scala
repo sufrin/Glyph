@@ -25,9 +25,9 @@ trait Example4Interface {
     </div>
 
   val a, b, c = field()
-  val GUI: Glyph = Col.centered(
+  val GUI: Glyph = Col(align=Center)(
     help,
-    Row.centered(
+    Row(align=Mid)(
       c.framed(),
       Label(" = "),
       a.framed(),

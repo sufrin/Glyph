@@ -47,7 +47,7 @@ object Output
         }
     }
     if (hint ne null) HintManager(target=writeBar, 5.0, hint).onlyWhen(enabled)
-    Col.centered(
+    Col(align=Center)(
       writeBar.asInstanceOf[Glyph],
       gui
     )

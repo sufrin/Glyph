@@ -36,9 +36,9 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
     }
 
     def diaGlyph(s: String): Glyph =
-      Row.centered(PolygonLibrary.star7(fg=redLine, R=50f, C=50f), em, <p>This is a long pro-forma text for a dialogue that I expect to be justified properly in all the dialogues.</p>)
+      Row(align=Mid)(PolygonLibrary.star7(fg=redLine, R=50f, C=50f), em, <p>This is a long pro-forma text for a dialogue that I expect to be justified properly in all the dialogues.</p>)
 
-    Col.centered(
+    Col(align=Center)(
       <p width="50em" align="justify">
         On this page we are testing modal dialogues implemented on
         overlays within the current window. You can
@@ -168,7 +168,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
       implicit val pageStyle: StyleSheet = smallStyle
       Menu("D")(
         MenuButton("A1") { _ => println("A1") },
-        Row(bg=pageStyle.backgroundBrush).centered(Label("Checked when E is enabled: "), MenuCheckBox(true){ state=>menuE.enabled(state) }),
+        Row(bg=pageStyle.backgroundBrush, align=Mid)(Label("Checked when E is enabled: "), MenuCheckBox(true){ state=>menuE.enabled(state) }),
         Label("Nor is this a button"),
         NestedMenu("innerCC >")(
           MenuButton("CCC1") { _ => println("CCC1") },
@@ -211,7 +211,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
     }
 
 
-      Col.centered(
+      Col(align=Center)(
         Label("Two menus"),
         Row(menuA, em, menuC), ex, ex,
         Label("Two menus with larger content"),
@@ -231,7 +231,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
     def content: IRect = theTarget.guiRoot.eventHandler.window.getContentRect
 
     Row(em,
-      Col.centered(
+      Col(align=Center)(
         <div width="50em" align="justify">
           <p>This test places (OK) dialogues around the outside of the target red
              square using the intrinsic methods of <tt>overlaydialogues.Dialogue</tt>
@@ -338,7 +338,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
 
     //////////////////////////////
 
-    Col.centered(
+    Col(align=Center)(
       anchor, // invisible anchor, to locate the GUI root
       <div width="45em" align="justify">
         <p>
@@ -355,7 +355,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
           the checkbox below.
         </p>
       </div>,
-      Row.centered(Label("Grid: "), gridCheckboxForPage), ex, ex,
+      Row(align=Mid)(Label("Grid: "), gridCheckboxForPage), ex, ex,
       <div width="45em" align="justify">
         <p>
           The button below pops up an annotation overlay that points to

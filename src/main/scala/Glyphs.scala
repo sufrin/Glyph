@@ -581,7 +581,7 @@ object Glyphs  {
 
 
   case class BreakableGlyph(hyphen: Glyph, glyphs: Seq[Glyph]) extends Glyph {
-    val rep = NaturalSize.Row.atTop$(glyphs)
+    val rep = NaturalSize.Row(Top)(glyphs)
     override val baseLine = glyphs.head.baseLine
     def draw(surface: Surface): Unit = rep.draw(surface)
     def diagonal: Vec = rep.diagonal

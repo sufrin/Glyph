@@ -44,7 +44,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
       def B(text: String, rot: Scalar, w: Scalar, h: Scalar): Glyph =
         styled.Label(f" ($w%2.2f, $h%2.2f)\n($rot%2.2f)").scaled(0.8f).above(rect.turnedBoxed(w, h)(rot)).framed(tightBox).enlarged(8f)
 
-      Col.centered(
+      Col(align=Center)(
         <div width="65em" align="justify">
           <p>
             The glyph <tt>g.turned(...)</tt> with <tt>tight=true</tt> has a <i>square</i> bounding box whose side is the larger of the two sides of
@@ -91,7 +91,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
         ),
         //ex scaled 1.5f,
         styled.Label("R/T turned d, for d in 0, -22.5, -45, -67.5, -90"), ex,
-        Row.centered(
+        Row(align=Mid)(
           {
             val (hh, ww) = (4.5f * h, h / 1.5f)
             val r = Rect(ww, hh, fg = Brush()(width = 2.5f, color = 0XFFff00ff))
@@ -146,7 +146,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
       def star = PolygonLibrary.star7(C=50f, R=50f, fg = Brush()(width = 2.5f, color = 0XFFff00ff))
 
       val (r, g, b) = (red(width=1, cap=SQUARE), green(width=1, cap=SQUARE), black(width=1, cap=SQUARE))
-      Col.centered(Label("Tight (red) v. natural (green) bounding boxes."), ex,
+      Col(align=Center)(Label("Tight (red) v. natural (green) bounding boxes."), ex,
         {
           def sample(glyph: Glyph, a: Scalar, tight: Boolean): Glyph =  Concentric(
             glyph(b).turned(a, tight).framed(if (tight) r else g).enlarged(10f),
@@ -176,7 +176,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
         Label(f" x=$skewX%1.1f ").above(Skewed(skewX, 0f)(g).framed())
 
 
-      val pics = Col.centered(
+      val pics = Col(align=Center)(
         Label(".skewed(x, 0)"), ex,
         Row(
           L("C", .0f, circ),
@@ -202,14 +202,14 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
       val BASE = base scaled 2f
       val skews = List(-0.95f, -0.7f, -0.5f, -0.3f, 0f, 0.3f, 0.5f, 0.7f, 0.9f)
 
-      def Sk(sx: Scalar, sy: Scalar): Glyph = Col.centered(
-        Label(f"$sx%1.1f\n$sy%1.1f"), Skewed(sx, sy)(Col.centered(star7(fg=red).scaled(.15f), Rect(BASE.x, BASE.y, fg = blueLine), Label("A"))).framed()
+      def Sk(sx: Scalar, sy: Scalar): Glyph = Col(align=Center)(
+        Label(f"$sx%1.1f\n$sy%1.1f"), Skewed(sx, sy)(Col(align=Center)(star7(fg=red).scaled(.15f), Rect(BASE.x, BASE.y, fg = blueLine), Label("A"))).framed()
       )
 
-      Col.centered(
+      Col(align=Center)(
         <p width="50em"><tt>g.skewed(dx, dy)</tt> skews <tt>g</tt> rightwards as <tt>y</tt> increases, and downwards as <tt>x</tt> increases</p>,
         ex, ex,
-        Row.centered(
+        Row(align=Mid)(
           Sk(0.5f, 0f), em,
           Sk(-0.5f, 0f), em,
           Sk(0f, 0.5f), em,
@@ -220,9 +220,9 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
         ), ex, ex,
         pics, ex, ex,
         Label("R.skewed(x, 0).above(R.skewed(0, x))"), ex,
-        Row.centered$(
+        Row(align=Mid)(
           skews.map { x =>
-            Col.centered(
+            Col(align=Center)(
               Label(f"x = $x%3.1f"),
               FilledRect(BASE.x, BASE.y, fg = redLine).skewed(x, 0f).framed(),
               FilledRect(BASE.x, BASE.y, fg = redLine).skewed(0f, x).framed()
@@ -241,10 +241,10 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
 
       def rowABCD = Row(bigAB().rotated(3), bigCD().rotated(3)).framed()
 
-      Col.centered(
+      Col(align=Center)(
         Label("S=_.skewed(0.5,0.5); M=_.mirrored(true, true)"), ex,
         ex,
-        Row.centered(
+        Row(align=Mid)(
           Label("g ").above(framedA.framed()), ex, ex,
           Label("S(g) ").above(framedA.skewed(0.5f, 0.5f).framed()), em, em,
           Label("M(g) ").above(framedA.mirrored(leftRight = true,
@@ -252,14 +252,14 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
           Label("S(M(g)) ").above(framedA.mirrored(leftRight = true, topBottom = true).skewed(0.5f, 0.5f).framed()), em, em,
           Label("M(S(M(g))) ").above(framedA.mirrored(leftRight = true, topBottom = true).skewed(0.5f, 0.5f).mirrored(leftRight = true, topBottom = true).framed())
         ), ex, ex, Label("s=_.skewed(0.5, 0)"), ex,
-        Row.centered(
+        Row(align=Mid)(
           Label("g ").above(rotA.framed()), ex, ex,
           Label("s(g) ").above(rotA.skewed(0.5f, 0f).framed()), em, em,
           Label("M(g) ").above(rotA.mirrored(leftRight = true, topBottom = true).framed()), em, em,
           Label("s(M(g)) ").above(rotA.mirrored(leftRight = true, topBottom = true).skewed(0.5f, 0f).framed()), em, em,
           Label("M(s(M(g))) ").above(rotA.mirrored(leftRight = true, topBottom = true).skewed(0.5f, 0f).mirrored(leftRight = true, topBottom = true).framed()),
         ), ex, ex, Label("m=_.mirrored(false, true)"), ex,
-        Row.centered(
+        Row(align=Mid)(
           Label("g ").above(rowABCD.framed()), ex, ex,
           Label("s(g) ").above(rowABCD.skewed(0.5f, 0f).framed()), em, em,
           Label("m(g) ").above(rowABCD.mirrored(leftRight = false, topBottom = true).framed()), em, em,

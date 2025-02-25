@@ -52,7 +52,7 @@ class TextTool(implicit style: StyleSheet)  {
   defs("TEXTFIELD") = _=>textField.framed()
 
 
-  val GUI: Glyph = NaturalSize.Col.centered(
+  val GUI: Glyph = NaturalSize.Col(align=Center)(
     anchor,
     <body width="60em" align="justify" fg="blue" parSkip="0.75em" itemWidth="60em" source={SOURCE}>
       <p>

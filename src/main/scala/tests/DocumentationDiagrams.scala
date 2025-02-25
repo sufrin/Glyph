@@ -72,7 +72,7 @@ object DocumentationDiagrams {
       lazy val label = Col.aligned(0.0f, caption.split("[\n]").toList.map(text))
       val dir = "PNG"
       if (captioned)
-        External.renderBitmap(Col.centered(label, Skip(10), glyph), s"${dir}/cap-$path", scale=5.0f)
+        External.renderBitmap(Col(align=Center)(label, Skip(10), glyph), s"${dir}/cap-$path", scale=5.0f)
       External.renderBitmap(glyph, s"${dir}/$path", scale=0.5f)
     }
 
@@ -80,7 +80,7 @@ object DocumentationDiagrams {
     def text(line: String): Glyph = (theText(s" $line ").asLabel(black))
     lazy val label = Col.aligned(0.0f, caption.split("[\n]").toList.map(text))
     val dir = "PNG"
-    External.renderBitmap(Col.centered(label, Skip(5), Scaled(0.5f)(Label(s"${glyph.diagonal}", fg=black)), Skip(10), glyph), s"${dir}/$path", scale = 5.0f)
+    External.renderBitmap(Col(align=Center)(label, Skip(5), Scaled(0.5f)(Label(s"${glyph.diagonal}", fg=black)), Skip(10), glyph), s"${dir}/$path", scale = 5.0f)
   }
 
   def main(args: Array[String]): Unit = {
@@ -142,29 +142,29 @@ object DocumentationDiagrams {
     write("eg1.png")(Col(fa, fb))
     write("eg1a.png")(Row(Col(fa, fb), Col(fa,fb)), "Row(Col(a, b), Col(a,b)")
     write("eg1b.png")(Col(Row(a,b), Row(a,b)), "Col(Row(a,b), Row(a,b)")
-    write("eg1c.png")(Row.centered(a, b), "Row.centered(a,b)")
-    write("eg1d.png")(Row.centered(Point(Wide.blue(cap=ROUND)), Skip(Wide.blue.strokeWidth), Rect(150f, 100f, Wide.blue(cap=ROUND))),
-    """|Row.centered(Point(Wide.blue(cap=ROUND)),
+    write("eg1c.png")(Row(align=Mid)(a, b), "Row(align=Mid)(a,b)")
+    write("eg1d.png")(Row(align=Mid)(Point(Wide.blue(cap=ROUND)), Skip(Wide.blue.strokeWidth), Rect(150f, 100f, Wide.blue(cap=ROUND))),
+    """|Row(align=Mid)(Point(Wide.blue(cap=ROUND)),
        |             Skip(Wide.blue.strokeWidth),
        |             Rect(150f, 100f, Wide.blue(cap=ROUND)))
        |""".stripMargin)
 
-    def eg1e = Row.centered(Point(Wide.blue),
+    def eg1e = Row(align=Mid)(Point(Wide.blue),
                             Skip(Wide.blue.strokeWidth),
                             Point(Wide.green), Rect(150f, 100f, Wide.blue))
 
     write("eg1e.png")(eg1e,
-      """Row.centered(Point(Wide.blue),
+      """Row(align=Mid)(Point(Wide.blue),
         |             Skip(Wide.blue.strokeWidth),
         |             Point(Wide.green), Rect(150f, 100f, Wide.blue)
         |""".stripMargin)
 
-    def eg1ex = Row.centered(Point(Wide.blue(width=2*Wide.blue.strokeWidth, cap=BUTT)),
+    def eg1ex = Row(align=Mid)(Point(Wide.blue(width=2*Wide.blue.strokeWidth, cap=BUTT)),
       Skip(2*Wide.blue.strokeWidth),
       Rect(150f, 100f, Brush("")(color=red.color, width=Wide.blue.strokeWidth, cap=SQUARE)))
 
     write("eg1ex.png")(eg1ex,
-      """Row.centered(
+      """Row(align=Mid)(
         |    Point(Wide.blue(width=2*Wide.blue.strokeWidth, cap=BUTT)),
         |    Skip(2*Wide.blue.strokeWidth),
         |    Rect(150f, 100f,
@@ -201,7 +201,7 @@ object DocumentationDiagrams {
     val egc = eg1e
 
     write("egc.png")(egc,
-      """Row.centered(Point(Wide.blue),
+      """Row(align=Mid)(Point(Wide.blue),
         |             Skip(Wide.blue.strokeWidth),
         |             Point(Wide.green), Rect(150f, 100f, Wide.blue)
         |""".stripMargin)
@@ -216,14 +216,14 @@ object DocumentationDiagrams {
 
 
     write("eg3.png")(
-          Col.centered(a, Rotated(1)(b), Row(a, b, a)),
-          "Col.centered(a,\n Rotated(1)(b), \n Row.Bottom(a, b, a))"
+          Col(align=Center)(a, Rotated(1)(b), Row(a, b, a)),
+          "Col(align=Center)(a,\n Rotated(1)(b), \n Row.Bottom(a, b, a))"
     )
     write("eg3a.png")(Row(a, b, a), "Row(a, b, a)")
-    write("eg3b.png")(Row.atTop(a, b, a), "Row.Top(a, b, a)")
-    write("eg3c.png")(Row.centered(a, b, a), "Row.centered(a, b, a)")
-    write("eg3d.png")(Framed(Wide.blue)(Row.centered(a, b, a)), "Framed(Wide.blue)(\n Row.centered(a, b, a))")
-    write("eg3d.png")(Framed(Wide.blue)(Row.centered(a, b, a)), "Framed(Wide.blue)(\n Row.centered(a, b, a))")
+    write("eg3b.png")(Row(align=Top)(a, b, a), "Row(align=Top)(a, b, a)")
+    write("eg3c.png")(Row(align=Mid)(a, b, a), "Row(align=Mid)(a, b, a)")
+    write("eg3d.png")(Framed(Wide.blue)(Row(align=Mid)(a, b, a)), "Framed(Wide.blue)(\n Row(align=Mid)(a, b, a))")
+    write("eg3d.png")(Framed(Wide.blue)(Row(align=Mid)(a, b, a)), "Framed(Wide.blue)(\n Row(align=Mid)(a, b, a))")
 
 
     write("oneof.png")(oneof, oneof.toString)
@@ -240,12 +240,12 @@ object DocumentationDiagrams {
     def em    = Skip(font(18f).measureTextWidth("m"))
 
     write("text1.png")(Framed(grey, nothing)(text1.asGlyph(blue)), "Framed(grey)(text1.asGlyph(blue))")
-    write("text1b.png")(Row.atBottom(Skip(48), Framed(grey, nothing)(text1.atBaseline(blue))), "Row.Bottom(Skip(48), Framed(grey)(text1.atBaseline(blue)))")
+    write("text1b.png")(Row(align=Bottom)(Skip(48), Framed(grey, nothing)(text1.atBaseline(blue))), "Row.Bottom(Skip(48), Framed(grey)(text1.atBaseline(blue)))")
     write("text1a.png")(Framed(grey, nothing)(Row(text1.atBaseline(blue))), "Framed(grey)(Row(text1.atBaseline(blue))")
     write("textrow1.png")(Framed(grey, nothing)(Row(text1.atBaseline(), em, text2.atBaseline())), """Framed(grey)(Row(text1.atBaseline, em, text2.atBaseline))""")
     write("textrow2.png")(Framed(grey, nothing)(Row(text1.asGlyph(), em, text2.asGlyph())), """Framed(grey)(Row(text1.asGlyph(), em, text2.asGlyph()))""")
-    write("textrow3.png")(Framed(grey, nothing)(Row.atBottom(text1.asGlyph(), em, text2.asGlyph())), """Framed(grey)(Row.Bottom(text1.asGlyph, em, text2.asGlyph)""")
-    write("textrow1a.png")(Framed(grey, nothing)(Row.centered(text1.atBaseline(), em, text2.atBaseline(blue))), """Framed(grey)(Row.centered(text1.atBaseline, em, text2.atBaseline)""")
+    write("textrow3.png")(Framed(grey, nothing)(Row(align=Bottom)(text1.asGlyph(), em, text2.asGlyph())), """Framed(grey)(Row.Bottom(text1.asGlyph, em, text2.asGlyph)""")
+    write("textrow1a.png")(Framed(grey, nothing)(Row(align=Mid)(text1.atBaseline(), em, text2.atBaseline(blue))), """Framed(grey)(Row(align=Mid)(text1.atBaseline, em, text2.atBaseline)""")
 
     val down = Variable(false)
     write("dynamic.png")((Shaded.Dynamic(fg=blue, bg=nothing, delta=10f, down=down)(FilledRect(150, 150, red))))
@@ -269,9 +269,9 @@ object DocumentationDiagrams {
     val greenish = blueish(color=0xFF009900)
     def wibbly(brush: Brush) = brush().pathEffect(PathEffect.makeDiscrete(4.0f, 5.5f, 18))
 
-    write("row-c.png", true)(Row.centered(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
-    write("row-t.png", true)(Row.atTop(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
-    write("row-b.png", true)(Row.atBottom(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
+    write("row-c.png", true)(Row(align=Mid)(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
+    write("row-t.png", true)(Row(align=Top)(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
+    write("row-b.png", true)(Row(align=Bottom)(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
     import FixedSize.Space.tab
     write("row-fixed.png", true)(FixedSize.Row(350f, bg=lightGrey)(tab, FilledRect(50f, 25f, fg=red), FilledRect(100f, 25, fg=blue), FilledRect(50f, 25f, fg=red)).framed(black))
     write("row-fixed-j.png", true)(FixedSize.Row(350f, bg=lightGrey)(
@@ -280,9 +280,9 @@ object DocumentationDiagrams {
       FilledRect(50f, 25f, fg=red)).framed(black))
 
 
-    write("col-c.png", true)(Col.centered(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
-    write("col-l.png", true)(Col.atLeft(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
-    write("col-r.png", true)(Col.atRight(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
+    write("col-c.png", true)(Col(align=Center)(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
+    write("col-l.png", true)(Col(align=Left)(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
+    write("col-r.png", true)(Col(align=Right)(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
 
     write("conc.png", true)(Concentric(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
     write("conc-t.png", true)(Concentric.Top(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
@@ -326,8 +326,8 @@ object DocumentationDiagrams {
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
 
-      Col.centered(
-        Col.atLeft(
+      Col(align=Center)(
+        Col(align=Left)(
           Label(".grid(width=3)(data) -- row data as uniform size cells"),
           NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10, width=3)(data), ex,
           Label(".grid(height=3)(data) -- col data as uniform size cells"),
@@ -350,7 +350,7 @@ object DocumentationDiagrams {
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
 
-      Col.centered(
+      Col(align=Center)(
         // NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(height = 1)(data), ex,
         NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(width = 1)(data).enlarged(10f), ex, ex,
         NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10, width=1).rows(data).enlarged(10f), ex,
@@ -373,7 +373,7 @@ object DocumentationDiagrams {
         data.updated(4, lab)
       }
 
-      Col.centered(
+      Col(align=Center)(
         //Label("grid with data(4).fitToCell(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex, ex,
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Stretch)), ex, ex,
