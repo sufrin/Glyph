@@ -106,7 +106,7 @@ trait Application {
 
         def getScreen(n: Int): Screen = {
           val screens = App.getScreens
-          screens(n min screens.length)
+          screens(n min screens.length-1)
         }
 
         override def args: List[String] = extraArgs.toList
