@@ -177,8 +177,8 @@ object DocumentationDiagrams {
 
     write("eg1g.png")(eg1g,
       """Concentric(FilledOval(120f, 80f, green), Point(Wide.red))
-        | .framed(fg=Wide.blue, bg=Wide.blue)
-        | .framed(fg=Wide.red)""".stripMargin)
+        |           .framed(fg=Wide.blue, bg=Wide.blue)
+        |           .framed(fg=Wide.red)""".stripMargin)
 
     write("eg1gskew.png")(eg1g.skewed(0.5f, 0.0f).framed())
 
@@ -309,10 +309,13 @@ object DocumentationDiagrams {
 
     val wibRed = Brush("wibRed")(color=0x77ff0000, width=16f, pathEffect=PathEffect.makeDiscrete(4.0f, 15.5f, 3))
     val wibRedder = red(width=12f, pathEffect=PathEffect.makeDiscrete(4.0f, 15.5f, 3), cap=BUTT)
+
+    val para=Label("""This is text with a special edging.""")
     write("redframed.png", false)(
-      Label("Hello!", font(32)).enlarged(40).framed(fg=red(width=12f, pathEffect=PathEffect.makeDiscrete(3f, 12.5f, 15), cap=BUTT)))
-    write("redframed.png", false)(
-      Label("Hello!", font(32)).enlarged(40).framed(fg = red(width = 4f, pathEffect = PathEffect.makeDiscrete(7f, 12.5f, 15), cap = BUTT)))
+      para.enlarged(20).edged(fg = black(width = 2f).sliced(2.5f, 5f)).enlarged(10))
+
+    write("dashframed.png", false)(
+      para.enlarged(20).edged(fg = black(width = 2f).dashed(15f, 5f)).enlarged(10))
 
     write("redpoly.png", false)(
       Polygon(200, 200, fg = red(width = 4f, pathEffect = PathEffect.makeDiscrete(5f, 100f, 15), cap = ROUND)
@@ -352,8 +355,8 @@ object DocumentationDiagrams {
 
       Col(align=Center)(
         // NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(height = 1)(data), ex,
-        NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(width = 1)(data).enlarged(10f), ex, ex,
-        NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10, width=1).rows(data).enlarged(10f), ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 1)(data).enlarged(10f), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10, width=1).rows(data).enlarged(10f), ex,
        // NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(width = 0,  height=0)(Label("XYZZY") :: data.toList)
       )
 

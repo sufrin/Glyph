@@ -912,13 +912,12 @@ Rendered straightforwardly with \SCALA{fg=blue} the filled and open stargons are
 \end{center}
 
 
- The  \SCALA{blueish: Brush} is the same color as blue, but wider: it has "wobbly" edges specified by its
- \SCALA{pathEffect}.
+ The  \SCALA{blueish: Brush} is the same color as blue, but wider: it
+ has "wobbly" edges specified by a path effect described by \Scala{sliced}.
 
 \begin{scala}
   val blueish =
-        blue(width      = blue.strokeWidth*2,
-             pathEffect = PathEffect.makeDiscrete(25.0f, 4.0f, 1))
+        blue(width = blue.strokeWidth*2).sliced(25.0f, 4.0f, 1)
 \end{scala}
 
 Rendered in blueish, the stargons are:
@@ -950,32 +949,33 @@ See if you can explain why the generator doesn't work, by guessing the $n$ used 
 open one uses a brush without a path effect.
 \begin{center}
 \pdffig[scale=0.3]{PNG/openstarw18}
+
 \pdffig[scale=0.3]{PNG/filledstarw18}
 \end{center}
 \end{comment}
 
 Using brushes with path effects to draw frames can give aesthetically
-interesting results. For example, here is:
+interesting results. For example:
+
 \begin{scala}
-  Label("Hello!", font(32))
-  .enlarged(40)
-  .framed(fg=red(width=4f,
-                 pathEffect=PathEffect.makeDiscrete(7f, 12.5f, 15),
-                 cap=BUTT)))
-\end{scala}
+  Label("...").enlarged(20)
+              .edged(fg = black(width = 2f).sliced(2.5f, 5f))
+              .enlarged(10))
+\end{scala}  
 \begin{center}
 \PNGfig[scale=0.7]{redframed}
 \end{center}
 
-The three parameters of \Scala{makeDiscrete} are, in turn, the length of each ``segment'' into which the path
-drawn by the paint will be sliced, the limit of displacement of the endpoints of the segment from
-the path, and a seed for the generation of random displacements.
+The three parameters of \Scala{sliced} are, in turn, the
+length of each ``segment'' into which the path drawn by the
+paint will be sliced, the limit of the random displacement of the
+endpoints of the segment from the path, and (if it appears) a seed for the
+generation of the displacements.
+
 It's easier to see the effect of the displacement limit when the path is a straight line. Here's
 \begin{scala}
   Polygon(200, 200,
-          fg = red(width = 4f,
-                   pathEffect = PathEffect.makeDiscrete(5f, 100f, 15),
-                   cap = ROUND)
+          fg = red(width = 4f, cap = ROUND).sliced(5f, 100f, 15)
   )((0, 100), (200, 100)).enlarged(4).framed())
 \end{scala}
 
@@ -983,8 +983,18 @@ It's easier to see the effect of the displacement limit when the path is a strai
 \PNGfig[scale=0.5]{redpoly}
 \end{center}
 
-Many other path effects are available from
-\textbf{Skia} \textit{via} \textbf{Skija}.
+Another path effect leads to dashed/dotted lines. 
+\begin{scala}
+  Label("...").enlarged(20)
+              .edged(fg = black(width = 2f).dashed(15f, 5f))
+              .enlarged(10))
+\end{scala}
+\begin{center}
+\PNGfig[scale=0.7]{dashframed}
+\end{center}
+
+Many other effects are available from
+\textbf{Skia} \textit{via} \textbf{Skija}. 
 
 \clearpage
 \SSS{Blurred Paint Effects}
