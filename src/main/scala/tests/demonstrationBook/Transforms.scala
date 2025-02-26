@@ -25,7 +25,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
       val w = h * 0.25f
 
       def rect = Rect(w, h, fg = blueLine)
-      // Concentric.centered(Rect(w, w/4, red), FilledOval(w, w, blue(alpha=0.3f))).framed(blue)
+      // Concentric.Center(Rect(w, w/4, red), FilledOval(w, w, blue(alpha=0.3f))).framed(blue)
 
       def wr(deg: Scalar): Glyph = {
         val d = rect.diagonal

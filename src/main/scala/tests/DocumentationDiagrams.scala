@@ -272,11 +272,11 @@ object DocumentationDiagrams {
     write("row-c.png", true)(Row(align=Mid)(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
     write("row-t.png", true)(Row(align=Top)(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
     write("row-b.png", true)(Row(align=Bottom)(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
-    import FixedSize.Space.tab
-    write("row-fixed.png", true)(FixedSize.Row(350f, bg=lightGrey)(tab, FilledRect(50f, 25f, fg=red), FilledRect(100f, 25, fg=blue), FilledRect(50f, 25f, fg=red)).framed(black))
+    import FixedSize.Space.fill
+    write("row-fixed.png", true)(FixedSize.Row(350f, bg=lightGrey)(fill, FilledRect(50f, 25f, fg=red), FilledRect(100f, 25, fg=blue), FilledRect(50f, 25f, fg=red)).framed(black))
     write("row-fixed-j.png", true)(FixedSize.Row(350f, bg=lightGrey)(
-      FilledRect(50f, 25f, fg=red), tab,
-      FilledRect(100f, 25, fg=blue), tab,
+      FilledRect(50f, 25f, fg=red), fill,
+      FilledRect(100f, 25, fg=blue), fill,
       FilledRect(50f, 25f, fg=red)).framed(black))
 
 

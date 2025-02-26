@@ -186,7 +186,8 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
       surface.withOrigin(location.x, 0) {
         TextModel.rePan()
         val right = TextModel.rightText(fg)
-        var left = TextModel.leftText(panBy, fg)
+        val left = TextModel.leftText(panBy, fg)
+        //println(s"${left.baseLine} ${right.baseLine}")
         left.draw(surface)
         surface.withOrigin(left.w, 0) {
           right.draw(surface)
@@ -223,6 +224,8 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
   }
 
 def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
+def giveUpKeyboardFocus(): Unit = guiRoot.giveupFocus()
+
 
 
   /** A copy of this glyph; perhaps with different foreground/background */
@@ -298,12 +301,15 @@ def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
     def rightString: String            = new String(buffer, right, N-right)
 
     /** The `Text` to the left of the cursor: for drawing */
-    @inline def leftText:         Text = Text(leftString, font)
+    @inline def leftText: Text = Text(leftString, font)
+
     /** The `Text` to the right of the cursor */
-    @inline def rightText(fg: Brush):        Text = Text(rightString, font, fg, transient = true)
+    @inline def rightText(fg: Brush): Text = Text(rightString, font, fg, transient = true)
+
     /** The `Text` to the left of the cursor from the `from`th character */
     @inline def leftText(from: Int, fg: Brush): Text = Text(leftString(from), font, fg, transient = true)
 
+    /** The entire `Text` */
     @inline def allText(from: Int): Text = Text(new String(buffer, from, left+N-right-from), font)
 
     @inline def hasLeft:  Boolean = left!=0

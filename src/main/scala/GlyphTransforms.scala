@@ -117,12 +117,12 @@ trait GlyphTransforms {
   def inCavity(w: Scalar, h: Scalar, dx: Scalar, dy: Scalar): Glyph =
     new GlyphTransforms.InCavity(w, h, dx, dy, thisGlyph, thisGlyph.fg, thisGlyph.bg)
 
-  /**  `Row.centered(thisGlyph, g)` */
+  /**  `Row.Center(thisGlyph, g)` */
   def beside(g: Glyph, align: VAlignment=Mid): Glyph = Row(align=align)(thisGlyph, g)
   def besideTop(g: Glyph): Glyph = beside(g, align=Top)
   def besideBottom(g: Glyph): Glyph = beside(g, align=Bottom)
 
-  /**  `Col.centered(thisGlyph, g)` */
+  /**  `Col.Center(thisGlyph, g)` */
   def above(g: Glyph, align: Alignment=Center): Glyph = Col(align=align)(thisGlyph, g)
   def aboveLeft(g: Glyph): Glyph = above(g, align=Left)
   def aboveRight(g: Glyph): Glyph = above(g, align=Right)

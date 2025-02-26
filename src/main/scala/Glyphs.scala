@@ -161,7 +161,7 @@ object Glyphs  {
   /**
    *  All `Concentric.method(...)` lay out their argument glyphs in some sense concentrically.
    *
-   *  `centered` aligns the centres of the glyphs.
+   *  `Center` aligns the centres of the glyphs.
    *
    *  `Top` aligns their north-south axes, and their top edges
    *

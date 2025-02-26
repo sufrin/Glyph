@@ -269,7 +269,7 @@ trait LargeTestGUI {
       }
     }
 
-    def fill = FixedSize.Space(0f, 1f)
+    def fill = FixedSize.Space.fill
 
     val caption = textColumn()(
       "(5) Five dependent toggles with states shown in various ways.\nFlipping each causes others to change state."
@@ -280,7 +280,7 @@ trait LargeTestGUI {
         medex,
         FixedSize
           .Row(caption.w)
-          .centered(
+          .Mid(
             fill,
             toggle0,
             fill,
@@ -317,6 +317,9 @@ trait LargeTestGUI {
             "Report from TextField"
           )
           .start()
+      },
+      onCursorLeave = {
+        _ => anchor1.guiRoot.giveupFocus()
       }
     )
 
@@ -325,15 +328,23 @@ trait LargeTestGUI {
       medex,
       medex,
       medex,
-      Label("(the cursor is always kept in view)"),
-      Label("(visual cues are given for off-field textlayout)"),
-      Label(" "),
-      Label("Ctrl/Cmd C - copy all"),
-      Label("Ctrl/Cmd X - cut all to clipboard"),
-      Label("Ctrl/Cmd V - insert from clipboard"),
-      Label("Home/End/Left/Right/Backspace"),
-      Label(" "),
-      Framed(blue)(theText),
+      SimpleParagraphs(70, align=Left)(
+        """When the mouse pointer is NOT the within the text field border the Left and Right keys cause
+          |the previous (next) page of the demonstration to be shown.
+          |
+          |When the mouse pointer is within the text field border, the cursor (a bold I-Beam) is always kept in view, and
+          |the following additional keystrokes function as expected:
+          |
+          |[*] Ctrl/Cmd C - copy all to the clipboard
+          |[*] Ctrl/Cmd X - cut all to clipboard
+          |[*] Ctrl/Cmd V - insert the content of the clipboard
+          |[*] Home/End/Left/Right - move the text cursor within the text
+          |[*] Backspace - delete the character to the left of the cursor
+          |[*] Delete - deletes the character to the right of the cursor and this is what happens to a long para
+          |
+          |
+          |""".stripMargin), medex,
+      theText.edged(blackFrame),
       Label(""),
       ShadedButton(
         "OS/X Symbols palette (double-click on a symbol to insert it)"
@@ -347,7 +358,8 @@ trait LargeTestGUI {
             RelativeTo(anchor1),
             "Unimplemented"
           ).start()
-        else
+        else {
+          theText.takeKeyboardFocus()
           try io.github.humbleui.jwm.App.openSymbolsPalette()
           catch {
             case _: Throwable =>
@@ -357,6 +369,7 @@ trait LargeTestGUI {
                 "Unimplemented"
               ).start()
           }
+        }
       },
       anchor1
     )
@@ -367,18 +380,19 @@ trait LargeTestGUI {
     val med = Text("Medium∑y", medFont)
     val small = Text("Small(y)", smallFont)
     val giant = Text("Giant∑y", giantFont)
-    val sp = Text(" ", smallFont)
+    val sp = FixedSize.Space(Text(" ", smallFont).w, 0f, 0f)
     def blob = Row(Baseline)(sp, FilledRect(3f, huge.h, fg=red).withBaseline(huge.baseLine), sp)
-    def tab=FixedSize.Space(1.0f,1.0f)
+    import FixedSize.Space.fill
 
-    def space = sp.asGlyph()
 
-    val texts = List(tab, large, med, small, huge, tab)
+    val texts = List(fill, large, med, small, huge, fill)
 
     def atTop       = NaturalSize.Row(align=Top)(texts.map(_.copy(fg=red)))
     def atMid       = NaturalSize.Row(align=Mid)(texts.map(_.copy(fg=green)))
     def atBottom    = NaturalSize.Row(align=Bottom)(texts.map(_.copy(fg=blue)))
     def atBaseline  = NaturalSize.Row(align=Baseline)(texts.map(_.copy(fg=black))).showingBaseline
+
+
 
     locally { ShowingBaseline.fg = red.dashed(10,4) }
 
@@ -397,7 +411,13 @@ trait LargeTestGUI {
       textColumn()("A Row(align=Baseline) of two Row(align=Baseline) with a huge dash between"),
       Row(Baseline)(atBaseline, Text("-", hugeFont).showingBaseline, Row(align=Baseline)(huge(),large(),med()).showingBaseline),
       medex, textColumn()("FixedSize.Row(align=Baseline)"),
-      FixedSize.Row(width=atBaseline.w*1.3f, align=Baseline)(blob::texts.map(_.copy())).showingBaseline
+      FixedSize.Row(width=atBaseline.w*1.3f, align=Baseline)(blob::texts.map(_.copy())).edged().showingBaseline,
+      medex, medex,
+      textColumn()("Stretchable spaces used as rules between glyphs"),
+      { def rule = new FixedSize.Space(1, 0, 1, 0, nothing, black(width=2).dashed(5f, 5f), baseLine=large.baseLine)
+        FixedSize.Row(width = atBaseline.w * 1.3f, align = Baseline)(large(), rule, med(), rule, rule, small(), rule, huge()).edged()
+      }
+
     )
   }
 
@@ -1206,9 +1226,9 @@ trait LargeTestGUI {
     .Row(screenWidth, align=Mid)(
       FramedButton(" ← ") { _ => oneOf.prev() },
       FramedButton(" → ") { _ => oneOf.next() },
-      FixedSize.Space(0f, 2f), // flexible space => right-justify the resizing button
+      FixedSize.Fill(0f, 2f), // flexible space => right-justify the resizing button
       Row(align=Mid)(for {i <- 0 until oneOf.length} yield sceneButton(i)),
-      FixedSize.Space(0f, 1f), // flexible space => right-justify the resizing button
+      FixedSize.Fill(0f, 1f), // flexible space => right-justify the resizing button
       Row(align=Mid, skip=10)(Label("Window resizing enabled "), Resizing.enableButton),
       popupAnchor
     )

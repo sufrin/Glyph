@@ -762,7 +762,7 @@ class Translation(val primitives: Primitives=new Primitives) {
       chunks.toSeq
     } else {
       val lines = text.split("[\n]").map(_.trim).filterNot(_.isEmpty).map(solidText(_)).toSeq
-      // List(WordGlyph(NaturalSize.Col(bg=sheet.textBackgroundBrush).atLeft$(lines), sheet.textFontStyle.toString))
+      // List(WordGlyph(NaturalSize.Col(bg=sheet.textBackgroundBrush).Left(lines), sheet.textFontStyle.toString))
       List(ColTarget(sheet.backgroundBrush, lines ))
     }
   }

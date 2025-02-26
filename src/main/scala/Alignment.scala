@@ -22,13 +22,13 @@ trait Alignment {
   val proportion: Float
 
   /** A fresh stretchable glyph of zero length and `left` stretchability */
-  def leftFill() = FixedSize.Space(0, left)
+  def leftFill() = FixedSize.Fill(0, left)
 
   /** A fresh stretchable glyph of zero length and `right` stretchability */
-  def rightFill() = FixedSize.Space(0, right)
+  def rightFill() = FixedSize.Fill(0, right)
 
   /** A fresh stretchable glyph of zero length and `last` stretchability */
-  def lastFill() = FixedSize.Space(0, last)
+  def lastFill() = FixedSize.Fill(0, last)
 }
 
 case object Left extends Alignment {
