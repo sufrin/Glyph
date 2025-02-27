@@ -1945,7 +1945,7 @@ def  format(d: Double): String = f"$d%.5g"
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
-\S{What next?}
+\section*{What next?}
 If you have found these example interfaces interesting and would like to
 study one or two larger working examples that use many features
 of \Glyph then \Scala{tests.demonstrationBook.Pages} is a
@@ -1980,7 +1980,7 @@ to build ``real'' application programs.
 
 
 
-\S{Acknowledgements}
+\section*{Acknowledgements}
 This work would not have been possible were it not for the
 open source \href{https://skia.org/}{\textbf{Skia}},
 \href{https://github.com/HumbleUI/HumbleUI}{\textbf{Skija}},

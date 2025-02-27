@@ -20,7 +20,7 @@ trait Brushes {
   val redFrame   = Brush("redFrame").color(0xFFee0000).strokeWidth(5.0f).cap(ROUND)
   val blue       = Brush("blue").color(0xFF0000ff).strokeWidth(0f)
   val blueLine   = Brush("blueLine").color(0xFF0000ff).strokeWidth(2.0f).cap(SQUARE)
-  val blueFrame  = Brush("blueFrame").color(0xFF00ff00).strokeWidth(5.0f).strokeCap(ROUND)
+  val blueFrame  = Brush("blueFrame").color(0xFF00ff00).strokeWidth(5.0f).cap(ROUND)
   val green      = Brush("green").color(0xFF00ff00).strokeWidth(0f)
   val greenLine  = Brush("greenLine").color(0xFF00ff00).strokeWidth(2.0f).cap(SQUARE)
   val greenFrame = Brush("greenFrame").color(0xFF00ff00).strokeWidth(5.0f).cap(ROUND)
@@ -37,6 +37,9 @@ trait Brushes {
   val grey2      = Brush(s"grey2")(color = 0XFFCDCDCD)
   val grey3      = Brush(s"grey3")(color = 0XFFC5C5C5)
   val grey4      = Brush(s"grey4")(color = 0XFFC2C2C2)
+  val yellow     = Brush("yellow").color(0xFFffdd00)
+  val yellowLine = Brush("yellow").color(0xFFffdd00).strokeWidth(2).cap(SQUARE)
+  val yellowFrame= Brush("yellow").color(0xFFffdd00).strokeWidth(5).cap(SQUARE)
   /** Using the new Brush API */
   val yellowHuge = Brush("yellowHuge")(color=0xFFffdd00, width=75f, cap=ROUND, antiAlias = true)
   val brown: Brush = Brush("brown")(color=0xFF964b00, width=0f)

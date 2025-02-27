@@ -11,16 +11,19 @@ import DefaultBrushes._
  */
 
 trait Example2Interface {
-  val blueish: Brush = blue(cap=ROUND, width=8)
-  val variableColor: Brush = green()
-  // val courier = Font(FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL), 30f)
+  val buttonFrame:     Brush = blue(cap=ROUND, width=18)
+  val labelBackground: Brush = green().rounded(18)
+  val font = FontFamily("Courier").makeFont(size=32)
+  val spacer = Rect(0, 20, fg=nothing)
 
-  val GUI: Glyph = Col(align=Center, bg=lightGrey)(
-    Label("A simple label", fg=white) enlarged(20, bg=variableColor),
-    Row(TextButton("make it blue") { _ => variableColor color blue.color }.framed(fg=blueish, bg=blueish),
-        TextButton("make it red")  { _ => variableColor color red.color }.framed(fg=blueish, bg=blueish))
-  ).enlarged(40f).enlarged(20f, bg=yellowHuge)
-
+  val GUI: Glyph = Col(align=Center, bg=lightGrey) (
+    Label("A simple label", font, fg=white, bg=labelBackground) enlarged(20),
+    spacer,
+    Row(skip=10)(
+        TextButton("make it blue") { _ => labelBackground.color(blue.color) }.edged(buttonFrame),
+        TextButton("make it red")  { _ => labelBackground.color(red.color) }.edged(buttonFrame)
+    )
+  ).enlarged(20)
 }
 
 object Example2 extends Application  with Example2Interface {

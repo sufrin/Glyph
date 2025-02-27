@@ -52,7 +52,7 @@ object SimpleParagraphs {
     }
 
     val result = ListBuffer[Glyph]()
-    
+
     for { par <- text.split("\n\n+[ ]*|\n\\[").toList } {
         var content = par
         var indent = 0

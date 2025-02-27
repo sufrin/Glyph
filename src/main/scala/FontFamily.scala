@@ -51,7 +51,7 @@ class FontFamily(val name: String) {
    *  Yields the font specified by this family in `style` at `size`. A font is
    *  made only once, and thereafter cached.
    */
-  def  makeFont(style: GlyphTypes.FontStyle, size: Scalar): Font = {
+  def  makeFont(style: GlyphTypes.FontStyle=FontStyle.NORMAL, size: Scalar): Font = {
     val id=(name, style, size)
     FontFamily.cache.get(id) match {
       case Some(font) =>

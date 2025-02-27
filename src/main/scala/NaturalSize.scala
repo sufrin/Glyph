@@ -64,7 +64,7 @@ object NaturalSize {
           else
             glyph.vStretch(height, proportion, glyph.h)
         glyph @@ Vec(x, extra + y)
-        x += glyph.w
+        x += glyph.w + skip
       }
       new Composite(theUniformGlyphs) {
         override val kind: String = "Row"
@@ -143,7 +143,7 @@ object NaturalSize {
       for {glyph <- theUniformGlyphs} {
         val extra = glyph.hStretch(width, proportion, glyph.w)
         glyph @@ Vec(x + extra, y)
-        y += glyph.h
+        y += glyph.h + skip
       }
       new Composite(theUniformGlyphs) {
         override val kind: String = "Col"

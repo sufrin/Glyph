@@ -1,40 +1,40 @@
 package org.sufrin.glyph
 package tests
-import Glyphs._
-import NaturalSize._
+import Glyphs.Rect
+import NaturalSize.{Col, Row}
 import DefaultBrushes._
 
-import org.sufrin.glyph.styles.decoration.Framed
-
-
 /**
- * Style to be used throughout the interface
- */
-
-/**
- * Interface using styled glyphs
+ * Interface using implicitly-styled glyphs
  */
 
 trait Example3Interface {
-  val variableColor: Brush = green()
+  implicit val style: StyleSheet
 
-  implicit val LocalStyle: StyleSheet =
-    StyleSheet(buttonDecoration=Framed(fg = blue(width = 8, cap=ROUND), bg=white, radiusFactor = 0.3f),
-          labelBackgroundBrush = variableColor
-    )
+  val spacer = Rect(0, 20, fg=nothing)
 
   import styled.TextButton
   import styled.Label
 
 
-  val GUI: Glyph = Col(align=Center, bg=lightGrey)(
+  def GUI: Glyph = Col(align=Center, bg=lightGrey) (
     Label("A simple label") enlarged(20),
-    Row(TextButton("make it yellow") { _ => variableColor color yellowHuge.color },
-        TextButton("make it red")    { _ => variableColor color red.color })
-  ).enlarged(40f).enlarged(20f, bg=yellowHuge)
+    spacer,
+    Row(skip=10)(
+      TextButton("make it blue") { _ => style.labelBackgroundBrush.color(blue.color) },
+      TextButton("make it red")  { _ => style.labelBackgroundBrush.color(red.color) }
+    )
+  ).enlarged(20)
 
 }
 
 object Example3 extends Application  with Example3Interface {
+  val style: StyleSheet = StyleSheet(
+    labelBackgroundBrush  = green().rounded(18),
+    labelForegroundBrush  = white,
+    labelFontFamily       = FontFamily("Courier"),
+    labelFontSize         = 32,
+    buttonDecoration      = styles.decoration.Edged(blue(cap=ROUND, width=18))
+  )
   override def title: String = "Example 3"
 }

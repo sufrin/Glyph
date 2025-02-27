@@ -4,6 +4,7 @@ package tests
 import Glyphs.Label
 
 object Example1 extends Application  {
-  val GUI: Glyph = Label("A simple label") enlarged 20
+  val font = FontFamily("Courier").makeFont(size=32)
+  val GUI: Glyph = Label("A simple label", font)
   override def title: String = "Example 1"
 }

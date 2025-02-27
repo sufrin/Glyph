@@ -1,39 +1,82 @@
 
 package org.sufrin.glyph
 package tests
+import  DefaultBrushes._
 
-import Glyphs._
-import NaturalSize._
-import DefaultBrushes._
-
-import org.sufrin.glyph.styles.decoration
-
-
-/**
- * Interface using styled glyphs
- */
-
-trait Example3aInterface {
-  val variableColor: Brush = green()
-
-  implicit val LocalStyle: StyleSheet =
-    StyleSheet(buttonDecoration=decoration.Blurred(blur=10f, spread=10f, fg = yellowHuge(width = 8, cap=SQUARE)),
-          labelBackgroundBrush = variableColor
-    )
-
-  import styled.TextButton
-  import styled.Label
-
-  val labelColor: Brush = green()
-
-  val GUI: Glyph = Col(bg=lightGrey, align=Center)(
-    Label("A simple label") enlarged(20),
-    Row(TextButton("make it yellow") { _ => variableColor color yellowHuge.color },
-        TextButton("make it red")    { _ => variableColor color red.color })
-  ).enlarged(40f).enlarged(20f, bg=yellowHuge)
-
-}
-
-object Example3a extends Application  with Example3aInterface {
+object Example3a extends Application  with Example3Interface {
+  val style: StyleSheet = StyleSheet(
+    labelBackgroundBrush  = green().rounded(18),
+    labelForegroundBrush  = white,
+    labelFontFamily       = FontFamily("Courier"),
+    labelFontSize         = 32,
+    buttonBackgroundBrush = grey2,
+    buttonForegroundBrush = black,
+    buttonDecoration      = styles.decoration.Framed(fg=darkGrey(cap=ROUND, width=6), bg=grey2, radiusFactor = 0.3f)
+  )
   override def title: String = "Example 3a"
 }
+
+
+
+object Example3b extends Application  with Example3Interface {
+  val style: StyleSheet = StyleSheet(
+    labelBackgroundBrush  = green().rounded(18),
+    labelForegroundBrush  = white,
+    labelFontFamily       = FontFamily("Courier"),
+    labelFontSize         = 32,
+    buttonBackgroundBrush = nothing,
+    buttonForegroundBrush = red,
+    buttonDecoration      = styles.decoration.Blurred(fg=yellow, bg=nothing, 16, 5)
+  )
+  override def title: String = "Example 3b"
+}
+
+object Example3c extends Application  with Example3Interface {
+  val style: StyleSheet = StyleSheet(
+    labelBackgroundBrush  = green().rounded(18),
+    labelForegroundBrush  = white,
+    labelFontFamily       = FontFamily("Courier"),
+    labelFontSize         = 32,
+    buttonBackgroundBrush = nothing,
+    buttonForegroundBrush = black,
+    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=nothing, 16, 5)
+  )
+  override def title: String = "Example 3c"
+}
+
+/** Extending an interface to provide a clone button  */
+
+/** A parameterized class implementing `Example3Interface` by defining  (its) style. */
+class Example3dInterface(val style: StyleSheet) extends Example3Interface { }
+
+/** The application's main now makes an instance of `Example3dInterface` and puts it
+ *  beside a button whose reaction is to clone a new Application with an identical
+ *  GUI.
+ */
+object Example3d extends Application {
+  def roundGreen: Brush = green().rounded(18)
+
+  implicit val style: StyleSheet = StyleSheet(
+    labelBackgroundBrush  = roundGreen,
+    labelForegroundBrush  = white,
+    labelFontFamily       = FontFamily("Courier"),
+    labelFontSize         = 32,
+    buttonBackgroundBrush = nothing,
+    buttonForegroundBrush = black,
+    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=nothing, 16, 5)
+  )
+
+  val cloneButton: Glyph = styled.TextButton("Clone") {
+    _ =>
+      val clone = new Application {
+        override def title: String = "Example 3d clone"
+        val GUI: Glyph = new Example3dInterface(style.copy(labelBackgroundBrush = roundGreen)).GUI beside (cloneButton rotated 1)
+      }
+      clone.main(Array())
+  }
+
+  val GUI: Glyph = new Example3dInterface(style).GUI beside (cloneButton rotated 1)
+
+  override def title: String = "Example 3d"
+}
+

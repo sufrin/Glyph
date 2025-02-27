@@ -1,30 +1,29 @@
 package org.sufrin.glyph
 package tests
-
 import NaturalSize.{Col, Row}
 import styled.overlaydialogues.Dialogue.OK
 import styled._
 
-trait Example4Interface {
-  implicit val Style: StyleSheet = StyleSheet()
+class Example4Interface(sheet: StyleSheet) {
+  implicit val style: StyleSheet = sheet
+
   import glyphXML.Language._
 
-  lazy val fields = List(a, b, c)
-
-  import overlaydialogues.Dialogue.OK
   val help: Glyph =
-    <div width="40em" textFontSize="18" align="justify">
+    <div width="45em" align="justify">
     <p>
     This app solves the equation <i>c = a + b</i> if at least two of <i>a, b, c</i>
     are well-formed numbers: possibly floating-point.
     </p>
     <p>
-      Typing <tt>↩</tt> (<i>ie. the enter key</i> in any of the text fields, causes the
+      Typing <tt>↩</tt> (<i>ie. the enter key</i>) in any of the text fields, causes the
       equation to be re-solved.
     </p>
     </div>
 
-  val a, b, c = field()
+  val a, b, c = textField()
+  val fields = List(a, b, c)
+
   val GUI: Glyph = Col(align=Center)(
     help,
     Row(align=Mid)(
@@ -36,12 +35,12 @@ trait Example4Interface {
     )
   ) enlarged 25
 
-  def field(): TextField = TextField(
+  def textField(): TextField = TextField(
     size = 8,
     onEnter = {
       case s: String if s.toDoubleOption.isDefined => calculemus()
       case s: String =>
-        OK( <p align="center" width="15em">The text {s"'$s'"} doesn't look much like a number. Enter it again plase.</p> ).InFront(help).start()
+        OK( <p align="justify" width="20em">The text {s"'$s'"} doesn't look much like a num_ber. Enter it again please.</p> ).InFront(help).start()
     }
   )
 
@@ -66,6 +65,8 @@ trait Example4Interface {
   }
 }
 
-object Example4 extends Application with Example4Interface {
+object Example4 extends Application {
+  val sheet: StyleSheet = StyleSheet()
+  val GUI: Glyph = new Example4Interface(sheet).GUI
   override def title: String = "Example4"
 }
