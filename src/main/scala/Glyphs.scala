@@ -294,7 +294,9 @@ object Glyphs  {
     def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new INVISIBLE(fg, bg)
   }
 
-  def INVISIBLE(fg: Brush = DefaultBrushes.invisible, bg: Brush = DefaultBrushes.invisible): Glyph = new INVISIBLE(fg, bg)
+  object INVISIBLE {
+    def apply(fg: Brush = DefaultBrushes.invisible, bg: Brush = DefaultBrushes.invisible): Glyph = new INVISIBLE(fg, bg)
+  }
 
   /**
    * A point, made with the given paint. If the paint is thick then it's more of a blob than a point.
