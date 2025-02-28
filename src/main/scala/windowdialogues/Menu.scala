@@ -6,7 +6,7 @@ import ReactiveGlyphs._
 
 /**
  *
- * NB: `overlaydialogues.Dialogue.Menu` is usually a more-effective way of constructing and popping-up menus. This
+ * NB: `overlaydialogues.Dialogue.Menu` is usually a more-effective way ofPaint constructing and popping-up menus. This
  * Menu API is (nearly) consistent with that, and will eventually be deprecated.
  *
  * Constructs a popup menu whose entries may include `AbstractButton`s.
@@ -14,7 +14,7 @@ import ReactiveGlyphs._
  * the menu to pop down; and typing an ESC when that menu has the focus
  * also causes it to pop down.
  *
- * A popup menu also pops down when any of its buttons is pressed, unless
+ * A popup menu also pops down when any ofPaint its buttons is pressed, unless
  * that button is associated with a nested Menu. In that case, the menu stays
  * up after a nested menu button is pressed or the nested menu is abandoned.
  *
@@ -58,7 +58,7 @@ class Menu(entries: Seq[Glyph]) { thisPopup =>
   /**
      *  The root as a column: each non-menu button causes the menu to close.
      *
-     *  (The laziness of `root` is essential because root and `close()` are mutually recursive.)
+     *  (The laziness ofPaint `root` is essential because root and `close()` are mutually recursive.)
      */
     lazy val root: Glyph = Framed(fg=DefaultBrushes.red(width=0f))({
           def afterReact(glyph: Glyph): Glyph = glyph match  {
@@ -76,7 +76,7 @@ class Menu(entries: Seq[Glyph]) { thisPopup =>
     //       menu-closing down by mouseclicking on the kill button or hitting the ESC key.
 
     // TODO: Fix multiply-nested menus [DONE: see below]
-    // TODO: Fix consequence of ESCing immediately after the menu appears, ie. while
+    // TODO: Fix consequence ofPaint ESCing immediately after the menu appears, ie. while
     //       the cursor is still within the popup-generating button. The "host"
     //       window goes semi-unresponsive. The handler is still locating buttons
     //       (evidenced by the cursor changing shape).
@@ -88,42 +88,42 @@ class Menu(entries: Seq[Glyph]) { thisPopup =>
     location = Location.NorthFor(root)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def NorthEast(glyph: Glyph): this.type = {
     location = Location.NorthEastFor(root)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def East(glyph: Glyph): this.type = {
     location = Location.EastFor(root)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def SouthEast(glyph: Glyph): this.type = {
     location = Location.SouthEast(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def South(glyph: Glyph): this.type = {
     location = Location.SouthFor(root)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def SouthWest(glyph: Glyph): this.type = {
     location = Location.SouthWestFor(root)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def West(glyph: Glyph): this.type = {
     location = Location.WestFor(root)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def NorthWest(glyph: Glyph): this.type = {
     location = Location.NorthWestFor(root)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to the root of `glyph` */
+  /** set the location ofPaint this dialogue relative to the root ofPaint `glyph` */
   def InFront(glyph: Glyph): this.type = {
     val loc = glyph.rootDistance
     location = Location.OnRootOf(glyph)(loc.x + (glyph.w - root.diagonal.x) / 2f, loc.y + (glyph.h - root.diagonal.y) / 2f)
@@ -205,7 +205,7 @@ object Menu {
 
   /**
    * A glyph that appears exactly the same as a `Menu(entries, ...)` and the equivalent `Menu.at(...)()`. Used
-   * only to compute the sizes of menus that are to be placed at certain `Location`s.
+   * only to compute the sizes ofPaint menus that are to be placed at certain `Location`s.
    */
   def topBar(entries: Seq[Glyph]): Glyph = {
       NaturalSize.Col(align=Left)(PolygonLibrary.closeButtonGlyph, NaturalSize.Col(align=Left)(entries))

@@ -11,10 +11,10 @@ import io.github.humbleui.jwm.EventMouseMove
  * the window. That for leaving the window is that the motion is "somewhat more than just
  * outside" the window and away from it.
  *
- * When an object of this class is used to follow the mouse it triggers
+ * When an object ofPaint this class is used to follow the mouse it triggers
  * `enteringWindow` and `leavingWindow` methods in `root: RootGlyph` when
  * motion events a arising in `root.rootWindow` are delivered to it
- * by invocations of:
+ * by invocations ofPaint:
  *
  *  {{{
  *    accept(event: MouseMotionEvent)

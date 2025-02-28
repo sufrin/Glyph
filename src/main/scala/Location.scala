@@ -44,7 +44,7 @@ object Location {
   def OnRootOf(glyph: Glyph)(x: Scalar, y: Scalar): RelativeTo = RelativeTo(glyph.guiRoot, Vec(x, y))
 
 
-  /** At a location in logical space relative to the location of the glyph */
+  /** At a location in logical space relative to the location ofPaint the glyph */
   case class RelativeTo(glyph: Glyph, offset: Vec = Vec.Zero) extends Location {
     def rootDistance:    Vec      = glyph.rootDistance
 

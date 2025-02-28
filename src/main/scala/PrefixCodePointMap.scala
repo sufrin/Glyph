@@ -2,7 +2,7 @@ package org.sufrin.glyph
 
 import scala.collection.{immutable, mutable, Seq}
 
-// Generalization of `PrefixMap` to support `CodePointSequence` rather than just `String`
+// Generalization ofPaint `PrefixMap` to support `CodePointSequence` rather than just `String`
 class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSequence, T] {
     import PrefixCodePointMap._
     private var suffixes: immutable.Map[CodePoint, PrefixCodePointMap[T]] = immutable.Map.empty
@@ -21,23 +21,23 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
         suffixes get (s(from)) flatMap (_.get(s, from + 1))
 
     /**
-     * Yield `Some(t, i)` where `t` is the value of the mapping at longest prefix of `s` that
-     * matches one of the mapping's domain elements, and `i` is the length
-     * of that prefix. If there is no such prefix, yield `None`.
+     * Yield `Some(t, i)` where `t` is the value ofPaint the mapping at longest prefix ofPaint `s` that
+     * matches one ofPaint the mapping's domain elements, and `i` is the length
+     * ofPaint that prefix. If there is no such prefix, yield `None`.
      */
     def longestPrefixMatch(s: CodePointSequence): Option[(T, Int)] = longestPrefixMatch(forwardIterator(s))
 
     /**
-     * Yield `Some(t, i)` where `t` is the value of the mapping at longest suffix of {{{s take upTo}}} that
-     * matches one of the mapping's domain elements, and `i` is the length
-     * of that suffix.  If there is no such prefix, yield `None`.
+     * Yield `Some(t, i)` where `t` is the value ofPaint the mapping at longest suffix ofPaint {{{s take upTo}}} that
+     * matches one ofPaint the mapping's domain elements, and `i` is the length
+     * ofPaint that suffix.  If there is no such prefix, yield `None`.
      */
     def longestSuffixMatch(s: CodePointSequence, upTo: Int): Option[(T, Int)] = longestPrefixMatch(reversedIterator(s, upTo))
 
     /**
-     * Yield `Some(t, i)` where `t` is the value of the mapping at longest prefix of `it` that
-     * matches one of the mapping's domain elements, and `i` is the length
-     * of that prefix. If there is no such prefix, yield `None`.
+     * Yield `Some(t, i)` where `t` is the value ofPaint the mapping at longest prefix ofPaint `it` that
+     * matches one ofPaint the mapping's domain elements, and `i` is the length
+     * ofPaint that prefix. If there is no such prefix, yield `None`.
      *
      */
     def longestPrefixMatch(it: Iterator[CodePoint]): Option[(T, Int)] = { // Inv:
@@ -52,7 +52,7 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
       // namely `it take edges`.
       var node: PrefixCodePointMap[T] = this
 
-      // the number of edges so far traversed
+      // the number ofPaint edges so far traversed
       var edges = 0
       while (it.hasNext && (node ne null)) {
         if (node.value.nonEmpty) result = Some(node.value.get, edges)
@@ -65,7 +65,7 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
 
 
     /**
-     * Returns the (shared) subtree of `map` at the `path`s drop it.length.
+     * Returns the (shared) subtree ofPaint `map` at the `path`s drop it.length.
      * The tree is extended, if necessary, by adding additional nodes
      * for the characters along the given path.
      */
@@ -83,7 +83,7 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
       }
 
     /**
-     * Returns the (shared) subtree of `map` at the path `s`.
+     * Returns the (shared) subtree ofPaint `map` at the path `s`.
      * The tree is extended, if necessary, by adding additional nodes
      * for the characters along the given path.
      */
@@ -117,7 +117,7 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
       else suffixes get (s(from)) flatMap (_.remove(s, from + 1))
 
     /**
-     * Return an iterator that yields the pairs of the maplet.
+     * Return an iterator that yields the pairs ofPaint the maplet.
      */
     def iterator: Iterator[(CodePointSequence, T)] =
       (for {v <- value.iterator} yield (Nil, v)) ++ // the value, if any
@@ -126,8 +126,8 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
              }
         yield (chr +: s, v))
 
-    /** An iterator that returns the pairs of the mapping, with
-     * domain elements represented as lists of characters.
+    /** An iterator that returns the pairs ofPaint the mapping, with
+     * domain elements represented as lists ofPaint characters.
      */
     def pathIterator: Iterator[(CodePointSequence, T)] =
       (for {v <- value.iterator} yield (Nil, v)) ++ // the value, if any
@@ -155,8 +155,8 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
     }
 
     /** A string representing the
-     * structure of the representation
-     * of the mapping
+     * structure ofPaint the representation
+     * ofPaint the mapping
      */
     def show: String = repString(1)
 

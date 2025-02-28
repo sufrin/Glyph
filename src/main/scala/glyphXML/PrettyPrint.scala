@@ -16,7 +16,7 @@ object PrettyPrint {
 
   def XMLElem(xobj: xml.Node): PrettyPrintable =
     new PrettyPrintable {
-      /** The name of the class (or object) */
+      /** The name ofPaint the class (or object) */
       def prefix: String = xobj match {
         case xml.Elem(str, str1, data, binding, child @ _*) => s"<$str1$data>"
         case xml.Text(buffer) => s"\"${buffer.replaceAll("[\\n][ ]*", "⎆")}\""
@@ -24,7 +24,7 @@ object PrettyPrint {
         case xml.EntityRef(text) => s"&$text;"
       }
 
-      /** The number of fields/elements of the object */
+      /** The number ofPaint fields/elements ofPaint the object */
       def arity: Int = xobj match {
         case xml.Elem(str, str1, data, binding, child @ _*) => child.length
         case _ => 0
@@ -38,17 +38,17 @@ object PrettyPrint {
 
 
   /**
-   *  All objects of all structured classes can present a
+   *  All objects ofPaint all structured classes can present a
    *  custom "face" to the pretty-printer.
    */
   trait PrettyPrintable {
-    /** The name of the class (or object)  */
+    /** The name ofPaint the class (or object)  */
     def prefix:  String
 
-    /** The number of fields/elements of the object */
+    /** The number ofPaint fields/elements ofPaint the object */
     def arity:   Int
 
-    /** The `i`'th field/element of the object as a name-value pair */
+    /** The `i`'th field/element ofPaint the object as a name-value pair */
     def field(i: Int): (String, Any) = ("?", "?")
 
     def name(i: Int):  String = field(i)._1
@@ -80,7 +80,7 @@ object PrettyPrint {
 
   /**
    *  Vertical bar -- indentation token for all
-   *  but the last field/element of a product/sequence
+   *  but the last field/element ofPaint a product/sequence
    */
   val verticalBar = "\u2502 "
   /** Field indent -- always appears as the last indentation token on a line  */
@@ -91,11 +91,11 @@ object PrettyPrint {
    *
    * 1. as itself if it is a (non-function) primitive
    *
-   * 2. as the vertically-aligned fields of a case object if it is a product, unless
+   * 2. as the vertically-aligned fields ofPaint a case object if it is a product, unless
    *
    *  2.1 it is a product with a single primitive-valued field, in which case its `toString` is printed
    *
-   *  2.2 or it is a tuple of primitive values, in which case its `toString` is printed
+   *  2.2 or it is a tuple ofPaint primitive values, in which case its `toString` is printed
    *
    *
    * 3. as its vertically aligned elements, if it is an `Iterable`
@@ -106,9 +106,9 @@ object PrettyPrint {
    *
    *
    * @param obj the object to be prettyprinted
-   * @param lastInSeq is it being printed as the last element/field of a sequence or product
-   * @param indentStack specification, in reverse order, of the indentation to be printed on each line
-   * @param fieldName the field name (within a product) of the object if it is within a product, else `None`
+   * @param lastInSeq is it being printed as the last element/field ofPaint a sequence or product
+   * @param indentStack specification, in reverse order, ofPaint the indentation to be printed on each line
+   * @param fieldName the field name (within a product) ofPaint the object if it is within a product, else `None`
    */
   def prettyPrint(obj: Any, lastInSeq: Boolean = true, indentStack: List[String] = List(), fieldName: Option[String] = None): Unit = {
     if (indentStack.length>15) return

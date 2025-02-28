@@ -22,34 +22,15 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
   val Page = book.Page
   import DefaultBrushes._
 
-  Page("Edged", "Glyph edging") {
+  if (false) Page("Edged", "Glyph edging") {
     val (x, y) = (150f, 100f)
     def label = SimpleParagraphs(15, align=Center, font=FontFamily("Courier")(35))("""The rain in spain falls mainly in the plain""").edged()
     def long = SimpleParagraphs(35, align=Center, font=FontFamily("Courier")(35))("""The rain in spain falls mainly in the plain""").edged()
     def star = PolygonLibrary.filledStargon(9, fg=blueLine).scaled(.5f).framed()
     def cross = Polygon(star.w, star.h, blue(width = 4))((0, 0), (star.w, star.h), (0, star.h), (star.w, 0), (0,0)) scaled 0.5f
 
-    def frame(fg: Brush=nothing,  bg: Brush=nothing, radius: Scalar = 0f)(glyph: Glyph): Glyph = {
-        val rad = if (radius<0f)    radius else {
-                  if (radius==0f)   bg.strokeWidth max fg.strokeWidth max 1.0f
-                  if (radius<=1.0f) (glyph.h min glyph.w)*radius
-                  else radius
-        }
 
-      @inline def round(brush: Brush): Brush = if (rad==0) brush else brush(width=rad).rounded(rad)
-
-        lazy val frameOnly: Glyph = Rect(glyph.w+rad*2, glyph.h+rad*2, fg=round(fg))
-        lazy val mountOnly: Glyph = FilledRect(glyph.w+rad, glyph.h+rad, fg=round(bg))
-
-        Glyphs.Concentric(
-          (fg.getAlpha!=0, bg.getAlpha!=0) match {
-            case (true, true)  => List(mountOnly, glyph)
-            case (true, false) => List(frameOnly, glyph)
-            case (false, true) => List(mountOnly, glyph)
-            case _ => List(glyph)
-          }
-        )
-    }
+    def frame(fg: Brush=nothing,  bg: Brush=nothing, radius: Scalar = 0f)(glyph: Glyph): Glyph = glyph.framed(fg, bg, radius)
 
       Grid(padx=10, pady=20, fg=nothing, width=5).rows(
         label.edged(fg=red(width = 10, cap = ROUND), bg=nothing),
@@ -82,44 +63,44 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       )) .scaled(0.7f)
   }
 
-  Page("Framed Text #1", "Texts framed with red(width = 10, cap = ROUND) at different curvatures") {
+  Page("Framed Text #1", "Texts .framed(red(width=10, cap=ROUND), nothing, radius) at different radii") {
       val fg = red(width = 10, cap = ROUND).copy()
 
 
-      def short = Label("short")
+      def short = Label(" short ")
 
-      def med = Label("A medium length label")
+      def med = Label(" A medium length label ")
 
       def long: Glyph = <p align="justify" width="20em">A text paragraph that may obscure a low curvature frame.</p>.enlarged(25)
       def longer: Glyph = <p align="justify" width="20em">A text paragraph that may obscure a low curvature frame.</p>.enlarged(25)
 
       def row(rf: Scalar): Glyph = {
-        Col(align=Left)(
-          Label(f"curvature=${1f/rf}%1.2f radiusFactor=$rf%1.3f\n").scaled(0.7f),
+        Col(align=Center)(
+          Label(f"radius=$rf%1.3f\n").scaled(0.7f),
           Row(align=Mid)(
             short.framed(fg, nothing, rf), em,
             med.framed(fg, nothing, rf), em,
-            long.framed(fg, nothing, rf)))
+            long.framed(fg, nothing, rf)), ex)
       }
 
 
       Col(align=Center)(
-        Col(align=Center)(List(.5f, .3f, .25f, .125f).map(row(_))),
+        Col(align=Center)(List(3f, 5f, .25f, .125f).map(row(_))),
         ex,ex,
-        Label("The effect of 35px enlargement and a wider frame brush  [red(width=30)]."), ex,
+        Label("The effect of a wider frame brush [red(width=30)] and longer text."), ex,
         Row(
-          longer.framed(fg=fg.copy(width=30), nothing, .3f), em, em,
-          longer.framed(fg=fg.copy(width=30), nothing, .5f)
+          longer.framed(fg=fg.copy(width=30), nothing, 3f), em, em,
+          longer.framed(fg=fg.copy(width=30), nothing, 5f)
         )
       ).enlarged(40)
     }
 
- Page("Framed Text #2","Texts framed with red(width = 10, cap = ROUND) at different curvatures") {
+  Page("Framed Text #2","Texts .framed(red(width=10, cap=ROUND), nothing, radius) at different radii") {
     val fg = red(width = 10, cap = ROUND).copy()
 
-    def short = Label("short").rotated(1)
+    def short = Label(" short ").rotated(1)
 
-    def med = Label("A medium length label").rotated(1)
+    def med = Label(" A medium length label ").rotated(1)
 
     def long: Glyph = <p align="justify" width="12em">A text para_graph that may ob_scure a low-_curv_a_ture frame</p>.enlarged(25)
 
@@ -129,7 +110,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       fg.strokeWidth(strokeWidth)
       Col(align=Center)(
         ex.scaled(0.5f),
-        Label(f"curvature=${1f/rf}%1.2f radiusFactor=$rf%1.3f strokeWidth=$strokeWidth%1.1f\n").scaled(0.7f),
+        Label(f"radius=$rf%1.3f strokeWidth=$strokeWidth%1.1f\n").scaled(0.7f),
         Row(align=Mid)(
           short.enlarged(enlarge).framed(fg, nothing, rf), em,
           med.enlarged(enlarge).framed(fg, nothing, rf), em,
@@ -139,9 +120,9 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
     val emWidth = em.w
 
     NaturalSize.Grid(padx=10f, pady=10f, width=2)(
-      row(0.5f),     row(.3f),
-      row(0.25f),    row(.125f),
-      row(.5f, 0f, 30), row(0.3f, 0f, 30)
+      row(3f),         row(5f),
+      row(0.25f),      row(.125f),
+      row(3f, 0f, 30), row(5f, 0f, 30)
     ).enlarged(40)
 
   }
@@ -164,7 +145,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
 
     Col(align=Center)(
       Grid(padx=10, pady=10, width=4, height=5).rows(List(0f, 20f, 30f, 40f).flatMap(row(_))), ex,
-      Label("The effect of 20px enlargement and a wider frame brush  [red(width=30)]."), ex,
+      Label("The effect ofPaint 20px enlargement and a wider frame brush  [red(width=30)]."), ex,
       long.enlarged(20).edged(fg=fg.copy(width=30), nothing)
     ) enlarged 40
   }

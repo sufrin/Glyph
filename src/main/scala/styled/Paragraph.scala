@@ -11,8 +11,8 @@ import scala.collection.mutable.ListBuffer
 
 
 /**
- * A paragraph of width `ems` ems, formed by `text` using `style` to determine font. The words of the paragraph
- * are separated by sequences of space or newline.
+ * A paragraph ofPaint width `ems` ems, formed by `text` using `style` to determine font. The words ofPaint the paragraph
+ * are separated by sequences ofPaint space or newline.
  */
 object Paragraph {
   def apply(ems: Scalar, align: Alignment)(text: String)(implicit style: StyleSheet): Glyph = {
@@ -27,7 +27,7 @@ object Paragraph {
 
 
 /**
- * An active paragraph of width `ems` ems, initially formatted from by `text` using `style` to determine font.
+ * An active paragraph ofPaint width `ems` ems, initially formatted from by `text` using `style` to determine font.
  * It is re-formatted whenever its `set(text)` method is invoked.
  */
 class ActiveParagraph(ems: Scalar, align: Alignment, text: String)(implicit style: StyleSheet)
@@ -37,7 +37,7 @@ class ActiveParagraph(ems: Scalar, align: Alignment, text: String)(implicit styl
 }
 
 /**
- * An active paragraph of width `ems` ems, initially formatted from by `text` using `style` to determine font.
+ * An active paragraph ofPaint width `ems` ems, initially formatted from by `text` using `style` to determine font.
  * It is re-formatted whenever its `set(text)` method is invoked.
  */
 object ActiveParagraph {

@@ -4,7 +4,7 @@ import GlyphTypes.Scalar
 
 import org.sufrin.glyph.DefaultBrushes.nothing
 
-/** A collection of `Glyph` constructors */
+/** A collection ofPaint `Glyph` constructors */
 
 object Glyphs  {
 
@@ -21,11 +21,11 @@ object Glyphs  {
     }
 
     /**
-     * The diagonal size of the glyph
+     * The diagonal size ofPaint the glyph
      */
     def diagonal: Vec = glyph.diagonal
 
-    /** A copy of this glyph; perhaps with different foreground/background */
+    /** A copy ofPaint this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = new Image(glyph(fg, bg))
 
   }
@@ -73,8 +73,8 @@ object Glyphs  {
     /**
      * A button-like glyph, whose diagonal is `glyph.diagonal+(delta, delta)`.
      *
-     * Shown (when `down.value` is true)  as glyph, with shading of width zdelta` around the bottom-left corner of glyph.
-     * Shown (when `down.value` is false) as glyph, in the bottom-left corner of the whole.
+     * Shown (when `down.value` is true)  as glyph, with shading ofPaint width zdelta` around the bottom-left corner ofPaint glyph.
+     * Shown (when `down.value` is false) as glyph, in the bottom-left corner ofPaint the whole.
      */
     def Dynamic(fg: Brush=DefaultBrushes.buttonForeground, bg: Brush=DefaultBrushes.buttonBackground, delta: Scalar, down: Variable[Boolean] = Variable(false))(glyph: Glyph) =
       new Dynamic(glyph, fg, bg, delta, down)
@@ -82,8 +82,8 @@ object Glyphs  {
     /**
      * A button-like glyph, whose diagonal is `glyph.diagonal+(delta, delta)`.
      *
-     * Shown (when `down` is true)  as glyph, with shading of width zdelta` around the bottom-left corner of glyph.
-     * Shown (when `down` is false) as glyph, in the bottom-left corner of the whole.
+     * Shown (when `down` is true)  as glyph, with shading ofPaint width zdelta` around the bottom-left corner ofPaint glyph.
+     * Shown (when `down` is false) as glyph, in the bottom-left corner ofPaint the whole.
      */
     def Static(fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, delta: Scalar, down: Boolean=false)(glyph: Glyph) =
         GlyphTransforms.Shaded(glyph, fg, bg, 0f, delta, down)
@@ -119,9 +119,9 @@ object Glyphs  {
    }
 
   /**
-   * A composite made of a collection of  glyphs. Its diagonal is the
-   * bounding rectangle of all its glyphs placed at their locations. It is
-   * drawn by drawing its glyphs in their order of appearance in argument sequence.
+   * A composite made ofPaint a collection ofPaint  glyphs. Its diagonal is the
+   * bounding rectangle ofPaint all its glyphs placed at their locations. It is
+   * drawn by drawing its glyphs in their order ofPaint appearance in argument sequence.
    *
    * Only the first glyph may be (or contain) a reactive.
    *
@@ -163,7 +163,7 @@ object Glyphs  {
   /**
    *  All `Concentric.method(...)` lay out their argument glyphs in some sense concentrically.
    *
-   *  `Center` aligns the centres of the glyphs.
+   *  `Center` aligns the centres ofPaint the glyphs.
    *
    *  `Top` aligns their north-south axes, and their top edges
    *
@@ -177,7 +177,7 @@ object Glyphs  {
    *
    *  The search for reactive glyphs is conducted last-to-first. This is so that a reactive glyph,
    *  or a subtree containing a reactive glyph, may be
-   *  drawn concentrically "on top" of a composite background,
+   *  drawn concentrically "on top" ofPaint a composite background,
    *  but still be found first.
    */
   trait ConcentricGenerators { theseGenerators =>
@@ -243,8 +243,8 @@ object Glyphs  {
         override
         val baseLine = 0f
 
-        val fg = nothing
-        val bg = nothing
+        val fg = theseGenerators.fg
+        val bg = theseGenerators.bg
 
         locally {
           setParents()
@@ -275,10 +275,10 @@ object Glyphs  {
   }
 
   object Skip {
-    /** A horizontal skip of size `d`. */
+    /** A horizontal skip ofPaint size `d`. */
     def h(d: Scalar): Skip = new Skip(d, 0f)
 
-    /** A vertical skip of size `d`. */
+    /** A vertical skip ofPaint size `d`. */
     def v(d: Scalar): Skip = new Skip(0f, d)
 
     def apply(width: Scalar, height: Scalar): Glyph = new Skip(width, height)
@@ -298,7 +298,7 @@ object Glyphs  {
   def INVISIBLE(fg: Brush = DefaultBrushes.invisible, bg: Brush = DefaultBrushes.invisible): Glyph = new INVISIBLE(fg, bg)
 
   /**
-   * A point, made with the given paint. If the paint is thick then it's more of a blob than a point.
+   * A point, made with the given paint. If the paint is thick then it's more ofPaint a blob than a point.
    */
   class Point(val fg: Brush) extends Glyph {
     val diagonal = Vec(paint.getStrokeWidth, paint.getStrokeWidth)
@@ -361,22 +361,22 @@ object Glyphs  {
   }
 
   /**
-   * A shadow frame, possibly surrounding a glyph. The extent of the colouring of the frame
+   * A shadow frame, possibly surrounding a glyph. The extent ofPaint the colouring ofPaint the frame
    * is `diagonal+fudge*(blur+spread)` and the frame is drawn at with `(-dx, -dy)` so that
-   * if there's an `inside` and/or `bg` they get placed at the "densest" part of the frame.
+   * if there's an `inside` and/or `bg` they get placed at the "densest" part ofPaint the frame.
    *
-   * The bounding box is given as `diagonal` though this doesn't take account of the extent of
+   * The bounding box is given as `diagonal` though this doesn't take account ofPaint the extent ofPaint
    * the frame. The companion object's `apply`, and `empty` methods both yield a diagonal that
-   * does take account of the extent of the frame.
+   * does take account ofPaint the extent ofPaint the frame.
    *
    * @param inside the (optional) glyph
-   * @param diagonal the diagonal of the inside of the rectangle
-   * @param blur the degree of blur of the rectangle (outside the diagonal)
-   * @param spread the extent of the spread of the rectangle (outside the diagonal)
-   * @param fg the colour of the shadow box
-   * @param bg the colour (if any) of the background on which inside (if any) is drawn
-   * @param dx the horizontal offset of the shadow from the origin of the drawn shadow box
-   * @param dy the vertical  offset of the shadow from the origin of the drawn shadow box
+   * @param diagonal the diagonal ofPaint the inside ofPaint the rectangle
+   * @param blur the degree ofPaint blur ofPaint the rectangle (outside the diagonal)
+   * @param spread the extent ofPaint the spread ofPaint the rectangle (outside the diagonal)
+   * @param fg the colour ofPaint the shadow box
+   * @param bg the colour (if any) ofPaint the background on which inside (if any) is drawn
+   * @param dx the horizontal offset ofPaint the shadow from the origin ofPaint the drawn shadow box
+   * @param dy the vertical  offset ofPaint the shadow from the origin ofPaint the drawn shadow box
    */
   private class BlurredFrame(val inside: Option[Glyph], val diagonal: Vec, blur: Scalar, spread: Scalar, val fg: Brush, val bg: Brush, val dx: Scalar, dy: Scalar) extends Glyph {
     override val kind: String = "BlurredFrame"
@@ -399,8 +399,8 @@ object Glyphs  {
 
   /**
    *
-   * An open (or solid) round rectangle of the given diagonal. The curve at each corner is in two arcs, whose radii are determined by
-   * multiples of `s` -- the smaller of `diagonal.x, diagonal.y`. The arc that ends laterals has radius `s*xrf`, and the arc
+   * An open (or solid) round rectangle ofPaint the given diagonal. The curve at each corner is in two arcs, whose radii are determined by
+   * multiples ofPaint `s` -- the smaller ofPaint `diagonal.x, diagonal.y`. The arc that ends laterals has radius `s*xrf`, and the arc
    * that ends verticals has radius `s*yrf`.  The smaller the multiple, the tighter-looking are the corners.
    */
   class RRect(val solid: Boolean, val xrf: Scalar, val yrf: Scalar, val diagonal: Vec, val fg: Brush, val bg: Brush) extends Glyph {
@@ -429,8 +429,8 @@ object Glyphs  {
   }
 
   /**
-   * An open (or solid) round rectangle of the given diagonal. The curve at each corner is in two arcs, whose radii are determined by
-   * multiples of `s` -- the smaller of `diagonal.x, diagonal.y`. The arc that ends laterals has radius `s*xrf`, and the arc
+   * An open (or solid) round rectangle ofPaint the given diagonal. The curve at each corner is in two arcs, whose radii are determined by
+   * multiples ofPaint `s` -- the smaller ofPaint `diagonal.x, diagonal.y`. The arc that ends laterals has radius `s*xrf`, and the arc
    * that ends verticals has radius `s*yrf`. The smaller the multiple, the tighter-looking are the corners.
    */
   object RRect extends DefaultPaints {
@@ -589,7 +589,7 @@ object Glyphs  {
     def copy(fg: Brush=this.fg, bg: Brush=this.bg): Glyph = new BreakableGlyph(hyphen, glyphs)
     val fg: Brush = glyphs.head.fg
     val bg: Brush = glyphs.head.bg
-    /** Index of the first of the glyphs that doesn't
+    /** Index ofPaint the first ofPaint the glyphs that doesn't
      * fit within `w`.
      */
     def maximal(width: Scalar):Int = {
@@ -613,7 +613,7 @@ object Glyphs  {
   }
 
   /**
-   *  An empty glyph of diagonal `(width, height)` intended to be used as a spacer
+   *  An empty glyph ofPaint diagonal `(width, height)` intended to be used as a spacer
    */
   object Empty {
     def apply(width: Scalar, height: Scalar): Glyph = new Glyph {

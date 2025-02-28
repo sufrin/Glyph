@@ -4,7 +4,8 @@ import DefaultBrushes.nothing
 import GlyphTypes._
 import NaturalSize.{Col, Row}
 
-import org.sufrin.glyph.GlyphTransforms.WithBaseline
+import org.sufrin.glyph.Glyphs.{FilledRect, Rect}
+import org.sufrin.glyph.GlyphTransforms.{Edged, Framed, WithBaseline}
 
 /**
  *  As a notational convenience. `Glyphs` have intrinsic transforms that correspond to the external transformers implemented
@@ -23,8 +24,8 @@ import org.sufrin.glyph.GlyphTransforms.WithBaseline
  *    R(g1.T(x), g2.T(x), g3.T(x))
  *  }}}
  *
- * When supplied, the `Brush` parameters (`bg` in particular) specify the treatment of any "extra" space in the transformed glyph. We have
- * attempted to make the defaults depend "sensibly" on the similarly-named properties of the transformed glyph; but there may be inconsistencies
+ * When supplied, the `Brush` parameters (`bg` in particular) specify the treatment ofPaint any "extra" space in the transformed glyph. We have
+ * attempted to make the defaults depend "sensibly" on the similarly-named properties ofPaint the transformed glyph; but there may be inconsistencies
  * in our treatment that make it necessary to specify them explicitly.
  */
 trait GlyphTransforms {
@@ -49,12 +50,12 @@ trait GlyphTransforms {
   def enlargedBy(dw: Scalar, dh: Scalar, fg: Brush = thisGlyph.fg, bg: Brush = thisGlyph.bg): Glyph =
     GlyphTransforms.Enlarged.bySize(dw, dh, fg, bg)(thisGlyph)
 
-  /**  This glyph rotated by `quadrants*90` degrees (clockwise) about the centre of its bounding box. [A] */
+  /**  This glyph rotated by `quadrants*90` degrees (clockwise) about the centre ofPaint its bounding box. [A] */
   def rotated(quadrants: Int, fg: Brush = thisGlyph.fg, bg: Brush = thisGlyph.bg): Glyph =
     GlyphTransforms.Rotated(quadrants, fg, bg)(thisGlyph)
 
-  /**  This glyph rotated by `degrees` degrees (clockwise) about the centre of its bounding box. [A]
-   * The resulting bounding box is calculated as the corresponding rotation of
+  /**  This glyph rotated by `degrees` degrees (clockwise) about the centre ofPaint its bounding box. [A]
+   * The resulting bounding box is calculated as the corresponding rotation ofPaint
    * the current bounding box. In some cases this is too big: but
    * if `tight` is true the resulting bounding box is calculated more carefully;
    * this is appropriate for glyphs whose actual bounds
@@ -75,29 +76,29 @@ trait GlyphTransforms {
    * A glyph that renders this glyph inside a surround painted with `fg`, and a mount painted with `bg`.
    * If `fg.strokeCap` is not `ROUND` then the surround/mount are painted as rectangles; otherwise they are
    * painted as round rectangles. A `Mounted` glyph can be extracted from its mount: usually done when
-   * a collection of glyphs is to be provided with uniform dimensions.
+   * a collection ofPaint glyphs is to be provided with uniform dimensions.
    *
    * @see Framed
    */
   def framed(fg: Brush = GlyphTransforms.Framed.defaultFG,
              bg: Brush = GlyphTransforms.Framed.defaultBG,
-             radiusFactor: Scalar = 0f): Glyph =
-             new GlyphTransforms.Framed(thisGlyph, fg = fg, bg = bg, radiusFactor)
+             radius: Scalar = 0f): Glyph =  Framed(fg = fg, bg = bg, radius)(thisGlyph)
 
   /** Same as `framed` */
-  def mounted(fg: Brush = GlyphTransforms.Framed.defaultFG,
-              bg: Brush = fg): Glyph = new GlyphTransforms.Framed(thisGlyph, fg = fg, bg = bg)
+  def mounted(fg:     Brush = nothing,
+              bg:     Brush = nothing,
+              radius: Scalar = 0): Glyph = Framed(fg, bg, radius)(thisGlyph)
 
   /**
-   * This `glyph` with a `fg`-coloured edge around it, and a background of `bg` (==`fg` if `bg` is unspecified).
-   * The `fg` can have any `strokewidth`. The overall bounding diagonal is that of the glyph enlarged by
-   * twice `fg.strokeWidth`. The roundness, if any, of the edge depends on its stroke width; use `framed` if you
+   * This `glyph` with a `fg`-coloured edge around it, and a background ofPaint `bg` (==`fg` if `bg` is unspecified).
+   * The `fg` can have any `strokewidth`. The overall bounding diagonal is that ofPaint the glyph enlarged by
+   * twice `fg.strokeWidth`. The roundness, if any, ofPaint the edge depends on its stroke width; use `framed` if you
    * need a more pronounced rounding.
    *
    * @see framed
    */
   def edged(fg: Brush = GlyphTransforms.Framed.defaultFG,
-            bg: Brush = GlyphTransforms.Framed.defaultBG): Glyph = GlyphTransforms.Edged(fg = fg, bg = bg)(thisGlyph)
+            bg: Brush = GlyphTransforms.Framed.defaultBG): Glyph = Edged(fg = fg, bg = bg)(thisGlyph)
 
   /**  This glyph skewed by factors `skewX`, `skewY`. */
   def skewed(skewX: Scalar, skewY: Scalar, fg: Brush = thisGlyph.fg, bg: Brush = thisGlyph.bg): Glyph =
@@ -107,13 +108,13 @@ trait GlyphTransforms {
   def mirrored(leftRight: Boolean, topBottom: Boolean, fg: Brush = thisGlyph.fg, bg: Brush = thisGlyph.bg): Glyph =
     GlyphTransforms.Mirrored(leftRight, topBottom, fg, bg)(thisGlyph)
 
-  /**  This glyph enlarged by `enlarge*`, with rectilinear shading of width `delta`, at the bottom right corner (if down)
+  /**  This glyph enlarged by `enlarge*`, with rectilinear shading ofPaint width `delta`, at the bottom right corner (if down)
    *   else the top left corner. The enlargement is `enlarge` itself if `enlarge>1`, otherwise `enlarge * (thisGlyph.w min thisGlyph.h)`
    */
   def shaded(fg: Brush = thisGlyph.fg, bg: Brush = thisGlyph.bg, enlarge: Scalar = 0.25f, delta: Scalar = 8f, down: Boolean=false): Glyph =
     new GlyphTransforms.Shaded(thisGlyph.enlarged(if (enlarge < 1f) enlarge * (thisGlyph.w min thisGlyph.h) else enlarge), fg = fg, bg = bg, delta = delta, down)
 
-  /** This glyph in a cavity of size `(w,h)` displaced by `(dx, dy)` */
+  /** This glyph in a cavity ofPaint size `(w,h)` displaced by `(dx, dy)` */
   def inCavity(w: Scalar, h: Scalar, dx: Scalar, dy: Scalar): Glyph =
     new GlyphTransforms.InCavity(w, h, dx, dy, thisGlyph, thisGlyph.fg, thisGlyph.bg)
 
@@ -136,20 +137,42 @@ object GlyphTransforms {
    * A glyph that renders as `glyph` inside a surround painted with `fg`, and a mount painted with `bg`.
    * If `fg.strokeCap` is not `ROUND` then the surround/mount are painted as rectangles; otherwise they are
    * painted as round rectangles. A `Mounted` glyph can be extracted from its mount: usually done when
-   * a collection of glyphs is to be provided with uniform dimensions.
+   * a collection ofPaint glyphs is to be provided with uniform dimensions.
    *
    * @see Mounted
    */
   object Framed extends DefaultPaints {
-    val NOTHING: Brush = Brush("NOTHING").color(0x00000000)
-    def apply(fg: Brush = defaultFG, bg: Brush = defaultBG, radiusFactor: Scalar=0f)(glyph: Glyph): Glyph =
-      new Framed(glyph, fg, bg, radiusFactor)
+    def apply(fg: Brush=nothing,  bg: Brush=nothing, radius: Scalar = 0f)(glyph: Glyph): Glyph = {
+      val rad = if (radius<0f) 0 else {
+        if (radius==0f)   bg.strokeWidth max fg.strokeWidth max 1.0f
+        if (radius<=1.0f) (glyph.h min glyph.w)*radius
+        else radius
+      }
+
+      @inline def round(brush: Brush): Brush = if (rad==0) brush else brush(width=rad).rounded(rad)
+
+      lazy val frameOnly:  Glyph = Rect(glyph.w+rad*2, glyph.h+rad*2,   fg=round(fg))  // open rectangle (may be curved)
+      lazy val mountOnly:  Glyph = FilledRect(glyph.w+rad, glyph.h+rad, fg=round(bg))  // closed rectangle with (rounded) bg
+      lazy val frameAfter: Glyph = FilledRect(mountOnly.w+rad*2, mountOnly.h+rad*2, fg=round(fg))
+
+      Glyphs.Concentric(bg=round(bg))(
+        (fg.getAlpha!=0, bg.getAlpha!=0) match {
+          case (true, true)  => List(mountOnly, frameAfter, glyph)
+          case (true, false) => List(frameOnly, glyph)
+          case (false, true) => List(mountOnly, glyph)
+          case _ => List(glyph)
+        }
+      )
+    }
+
+    //def apply(fg: Brush = defaultFG, bg: Brush = defaultBG, radius: Scalar=0f)(glyph: Glyph): Glyph =
+    //  new Framed(glyph, fg, bg, radius)
   }
 
 
   /**
    * A `TransformedGlyph` is built from a subject glyph, and
-   * can forward a variety of methods to its subjects.
+   * can forward a variety ofPaint methods to its subjects.
    */
   abstract class TransformedGlyph extends Glyph {
     val glyph: Glyph
@@ -162,12 +185,11 @@ object GlyphTransforms {
    * Same as `Framed`
    */
   object Mounted extends DefaultPaints {
-    val NOTHING: Brush = Brush("NOTHING").color(0x00000000)
-    def apply(fg: Brush = defaultFG, bg: Brush = defaultBG)(glyph: Glyph): Glyph = new Framed(glyph, fg, bg)
+    def apply(fg: Brush = defaultFG, bg: Brush = defaultBG, radius: Scalar=0)(glyph: Glyph): Glyph = Framed(fg, bg, radius)(glyph)
   }
 
 
-  /** The glyph displaced by `(dx,dy)` in a cavity of size `(w, h)` */
+  /** The glyph displaced by `(dx,dy)` in a cavity ofPaint size `(w, h)` */
   private class InCavity(w: Scalar, h: Scalar, dx: Scalar, dy: Scalar, val glyph: Glyph, val fg: Brush, val bg: Brush) extends TransformedGlyph {
 
     override def toString: String = s"InCavity($w, $h, $dx, $dy)($glyph)"
@@ -189,28 +211,28 @@ object GlyphTransforms {
     private val delta: Vec = Vec(dx, dy)
 
     /**
-     * The diagonal size of the glyph
+     * The diagonal size ofPaint the glyph
      */
     val diagonal: Vec = Vec(w, h)
 
-    /** A copy of this glyph; perhaps with different foreground/background */
+    /** A copy ofPaint this glyph; perhaps with different foreground/background */
     def copy(fg: Brush=this.fg, bg: Brush=this.bg): Glyph = new InCavity(w, h, dx, dy, glyph, fg, bg)
 
   }
   /**
    * A glyph that renders as `glyph` framed by a surround painted with `fg`, on a mount painted with `bg`.
    *
-   * Unless `fg.cap` is `ROUND` or `radiusFactor` is `0` then the surround/mount are rectangles; otherwise they are
-   * round rectangles, with lateral/vertical radius factors both specified as `radiusFactor` (if it is nonzero), or
+   * Unless `fg.cap` is `ROUND` or `radius` is `0` then the surround/mount are rectangles; otherwise they are
+   * round rectangles, with lateral/vertical radius factors both specified as `radius` (if it is nonzero), or
    * `.25f` if it is zero.
    *
-   * The size of the mounted glyph is always extended by a multiple, `K` of `fg.strokeWidth` in each direction.
+   * The size ofPaint the mounted glyph is always extended by a multiple, `K` ofPaint `fg.strokeWidth` in each direction.
    * When `fg.strokeCap` is `ROUND`, `K` is 3; otherwise it is `2`. The former factor is usually enough for the
-   * bounding box of the original glyph to fit inside the rim of the frame; except when `fg.strokeWidth` is
+   * bounding box ofPaint the original glyph to fit inside the rim ofPaint the frame; except when `fg.strokeWidth` is
    * small.
    *
    * A `Framed` glyph can be extracted from its mount: usually done when
-   * a collection of glyphs is to be provided with uniform dimensions.
+   * a collection ofPaint glyphs is to be provided with uniform dimensions.
    *
    */
   class Framed(val glyph: Glyph, val fg: Brush, val bg: Brush, val radiusFactor: Scalar=0f) extends TransformedGlyph {
@@ -257,9 +279,9 @@ object GlyphTransforms {
 
   object Edged {
     /**
-     * The `glyph` with a `fg`-coloured edge around it, and a background of `bg` (==`fg` if `bg` is unspecified).
-     * The `fg` can have any `strokewidth`. The overall bounding diagonal is that of the glyph enlarged by
-     * twice `fg.strokeWidth`. The roundness, if any, of the edge depends on its stroke width; use `Framed` if you
+     * The `glyph` with a `fg`-coloured edge around it, and a background ofPaint `bg` (==`fg` if `bg` is unspecified).
+     * The `fg` can have any `strokewidth`. The overall bounding diagonal is that ofPaint the glyph enlarged by
+     * twice `fg.strokeWidth`. The roundness, if any, ofPaint the edge depends on its stroke width; use `Framed` if you
      * need a more pronounced rounding.
      */
     def apply(fg: Brush=DefaultBrushes.black, bg: Brush=nothing)(glyph: Glyph): Glyph =
@@ -273,7 +295,7 @@ object GlyphTransforms {
     private val offset: Vec = Vec(edgeWidth, edgeWidth)
 
     /**
-     * The diagonal size of the glyph
+     * The diagonal size ofPaint the glyph
      */
     val diagonal: Vec = glyph.diagonal + offset.scaled(2f)
 
@@ -298,7 +320,7 @@ object GlyphTransforms {
     override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(p-offset)
 
 
-    /** A copy of this glyph; perhaps with different foreground/background */
+    /** A copy ofPaint this glyph; perhaps with different foreground/background */
     def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new Edged(glyph.copy(), fg, bg)
   }
 
@@ -309,7 +331,7 @@ object GlyphTransforms {
      * If both `dw, dh` are zero, then the original `glyph` is returned.
      *
      * Otherwise return a `Glyph` with a bounding box enlarged by `(dw, dh)`. This is
-     * drawn by drawing `glyph` in the centre of the enlarged bounding box.
+     * drawn by drawing `glyph` in the centre ofPaint the enlarged bounding box.
      *
      * Unless otherwise specified, `fg` and `bg` are inherited from `glyph`.
      */
@@ -336,7 +358,7 @@ object GlyphTransforms {
           }
 
           /**
-           * The diagonal size of the glyph
+           * The diagonal size ofPaint the glyph
            */
           def diagonal: Vec = glyph.diagonal + (dw, dh)
 
@@ -353,7 +375,7 @@ object GlyphTransforms {
             glyph.glyphContaining(p - offset)
 
 
-          /** A copy of this glyph; perhaps with different foreground/background */
+          /** A copy ofPaint this glyph; perhaps with different foreground/background */
           def copy(fg: Brush, bg: Brush): Glyph = Enlarged(dw, dh)(glyph.copy(fg, bg))
 
         }
@@ -447,10 +469,10 @@ object GlyphTransforms {
   }
 
   /**
-   *  The given `glyph` rotated by `degrees` degrees. Unless `tight` the bounding box of the
+   *  The given `glyph` rotated by `degrees` degrees. Unless `tight` the bounding box ofPaint the
    *  result is calculated by rotating the glyph's bounding box, and may (for near-circular glyphs)
    *  be insufficiently tight. When `tight` is true, then the bounding box is a square whose side is the
-   *  larger of the sides of the glyph's box: this is tighter for near-circular glyphs.
+   *  larger ofPaint the sides ofPaint the glyph's box: this is tighter for near-circular glyphs.
    *
    *  It took me an unconscionably long time to get the `relativeLocation` function right. In the end
    *  it turned out to be obvious.
@@ -502,15 +524,15 @@ object GlyphTransforms {
             evenQuadrant(Theta - `3pi/2`)
       }
 
-    // Bounding box of the transformed glyph
+    // Bounding box ofPaint the transformed glyph
     def diagonal: Vec = box
 
-    // Centre of the glyph's bounding box
+    // Centre ofPaint the glyph's bounding box
     private val glyphCentre = d scaled 0.5f
-    // Centre of this bounding box
+    // Centre ofPaint this bounding box
     private val thisCentre = diagonal scaled 0.5f
 
-    // Distance of the new centre from the old centre
+    // Distance ofPaint the new centre from the old centre
     private val delta  = thisCentre - glyphCentre
 
 
@@ -536,7 +558,7 @@ object GlyphTransforms {
     locally { glyph.parent = this }
 
     @inline private def relativeLocation(glyphPos: Vec): Vec = {
-      val Vec(x, y) = glyphPos - thisCentre  // vector to the centre of this glyph
+      val Vec(x, y) = glyphPos - thisCentre  // vector to the centre ofPaint this glyph
       val xr = x*cosTheta + y*sinTheta       // rotated by theta
       val yr = y*cosTheta - x*sinTheta
       glyphCentre+Vec(xr, yr)
@@ -570,7 +592,7 @@ object GlyphTransforms {
   }
 
   /**
-   * Glyph formed by skewing the "top" of glyph to the right, and downwards using
+   * Glyph formed by skewing the "top" ofPaint glyph to the right, and downwards using
    * non-negative factors `skewX` and `skewY`.
    *
    * The transformer `Skewed(skewX: Scalar, skewY: Scalar)(glyph)` implements negative
@@ -689,9 +711,9 @@ object GlyphTransforms {
    *
    * TODO: when buttons constructed with `RawButton` are scaled by large factors, their behaviour under mouse motion is flaky  (the
    *       display flashes, and mouse-down events can be missed).
-   *       We don't expect post-construction scaling of buttons to be used very often, but until the behaviour has been investigated
+   *       We don't expect post-construction scaling ofPaint buttons to be used very often, but until the behaviour has been investigated
    *       and fixed it is better to use pre-scaled `up`, `down`, `hover` glyphs inside such buttons,
-   *       and the `.scaled(...)` methods of `RawButton` have been adjusted to use pre-scaled copies of `up`, `down`, `hover`.
+   *       and the `.scaled(...)` methods ofPaint `RawButton` have been adjusted to use pre-scaled copies ofPaint `up`, `down`, `hover`.
    *
    * @see RawButton.hardwareScale
    *
@@ -774,7 +796,7 @@ object GlyphTransforms {
       glyph.glyphContaining(if (down) p-offset else p)
 
 
-    /** A copy of this glyph; perhaps with different foreground/background */
+    /** A copy ofPaint this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = new Shaded(glyph.copy(), fg, bg, delta, down)
 
   }

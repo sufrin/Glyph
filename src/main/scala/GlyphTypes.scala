@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 
 /**
- * One-stop package of things frequently inherited from Skija or mandated by it.
+ * One-stop package ofPaint things frequently inherited from Skija or mandated by it.
  */
 object GlyphTypes {
   type Paint       = io.github.humbleui.skija.Paint
@@ -31,7 +31,7 @@ object GlyphTypes {
 
   object PathEffect {
     /**
-     * Breaks a path into slices of length `sliceLength` and randomly displaces the endpoints away from the original path.
+     * Breaks a path into slices ofPaint length `sliceLength` and randomly displaces the endpoints away from the original path.
      */
     @inline def makeDiscrete(sliceLength: Scalar, displacementLimit: Scalar, seed: Int): PathEffect =
         io.github.humbleui.skija.PathEffect.makeDiscrete(sliceLength, displacementLimit, seed)
@@ -40,8 +40,8 @@ object GlyphTypes {
      *
      *  Dashed line effect
      *  {{{
-     *    onOff: array of lengths.
-     *           Even indices specify length of "on" intervals
+     *    onOff: array ofPaint lengths.
+     *           Even indices specify length ofPaint "on" intervals
      *
      *    phase: starting index into onOff (default 0)
      *  }}}

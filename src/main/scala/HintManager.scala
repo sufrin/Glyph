@@ -13,7 +13,7 @@ class HintManager(val target: Enterable, val hint: Glyph, val seconds: Double) {
   def onlyWhen(allow: => Boolean): this.type = { _allow = { ()=>allow }; this }
 
   val id = s"HintManager${this.hashCode()}"
-  /** The new layer is constructed lazily (in fact, at the point of first entry) because
+  /** The new layer is constructed lazily (in fact, at the point ofPaint first entry) because
    * the target glyph will certainly have been rooted before it is entered,
    * so `target.guiRoot` will by then be meaningful.
    */
@@ -52,7 +52,7 @@ class HintManager(val target: Enterable, val hint: Glyph, val seconds: Double) {
  *
  * If `h: HintManager` then `h.onlyWhen(allow: => Boolean)` is the same hint manager, except that the expression
  * `allow` is evaluated whenever `h`'s hint is about to be shown and (if false) the hinto is not shown. This
- * allows the designer to provide ways of suppressing hints, and of avoiding "nagging".
+ * allows the designer to provide ways ofPaint suppressing hints, and ofPaint avoiding "nagging".
  */
 object HintManager {
   def apply(target: Enterable, seconds: Double, hint: Glyph): HintManager = new HintManager(target, hint, seconds)

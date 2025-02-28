@@ -7,7 +7,7 @@ import GlyphTypes.{Scalar}
  * `Space` elements that are designed to fill them.
  *
  * When a row (col) is to be set in a given width (height), its natural size is
- * first established by summing the widths (heights) of its glyphs. If this is
+ * first established by summing the widths (heights) ofPaint its glyphs. If this is
  * smaller than the given width (height), then the excess is distributed among its
  * stretchable `Space` glyphs, in proportion to their stretchability in the appropriate
  * dimension. The aggregate width (height) will now be no less than the given width (height),
@@ -16,9 +16,9 @@ import GlyphTypes.{Scalar}
  *
  * @see FixedSize.Row
  *
- * The Row and Col APIs are designed so that most of the characteristics of the Row(Col) can
- * be pre-set, thereby making it possible to apply them either to an unbounded number of
- * actual glyphs, or to a sequence of glyphs computed elsewhere.
+ * The Row and Col APIs are designed so that most ofPaint the characteristics ofPaint the Row(Col) can
+ * be pre-set, thereby making it possible to apply them either to an unbounded number ofPaint
+ * actual glyphs, or to a sequence ofPaint glyphs computed elsewhere.
  *
  */
 object FixedSize  {
@@ -27,7 +27,7 @@ object FixedSize  {
    * A possibly-stretchable space used to fill fixed-width rows and columns.
    *
    * If the BACKGROUND is a colour with nonzero alpha, and the BASELINE is nonzero then the space is rendered as a line along the baseline in that colour,
-   * and this means that stretchable spaces can play the role of expandable rules.
+   * and this means that stretchable spaces can play the role ofPaint expandable rules.
    *
    *
    * @param _w minimum width
@@ -56,7 +56,7 @@ object FixedSize  {
     def diagonal: Vec = Vec(_w, _h)
 
 
-    /** A copy of this glyph; perhaps with different foreground/background */
+    /** A copy ofPaint this glyph; perhaps with different foreground/background */
     def copy(fg: Brush=fg, bg: Brush=bg): Glyph = {
       new Space(w, h, xS, yS, fg, bg, baseLine)
     }
@@ -70,13 +70,13 @@ object FixedSize  {
 
   object Space {
     /**
-     * A stretchable space of width `w` and height `h`, stretchability `stretch` in
+     * A stretchable space ofPaint width `w` and height `h`, stretchability `stretch` in
      * both directions, and with the given foreground and background
      */
     def apply(w: Scalar, h: Scalar, stretch: Scalar, fg: Brush=nothing, bg: Brush=nothing): Space =
         new Space(w, h, stretch, stretch, fg, bg)
 
-    /** A horizontal/vertical stretchable filler of nominal width 10ux */
+    /** A horizontal/vertical stretchable filler ofPaint nominal width 10ux */
     def fill: Space = new Space(10f, 10f, 1.0f, 1.0f)
   }
 
@@ -116,7 +116,7 @@ object FixedSize  {
 
   object Row {
     /**
-     * Construct a `RowGenerator` for a row of the given width, with the given foreground and background and alignment.
+     * Construct a `RowGenerator` for a row ofPaint the given width, with the given foreground and background and alignment.
      * {{{
      * Row(
      *  width: Scalar,
@@ -125,30 +125,30 @@ object FixedSize  {
      *  bg: Brush = nothing)(glyphs: ((Glyph, Glyph*) or (Seq[Glyph])
      * }}}
      *
-     * Constructs the horizontal catenation of `glyphs`; its height is the largest of the glyphs' heights; its width is
-     * normally the larger of `width` and the sum of the glyphs' widths. In the former case stretchable spaces are stretched (in proportion
+     * Constructs the horizontal catenation ofPaint `glyphs`; its height is the largest ofPaint the glyphs' heights; its width is
+     * normally the larger ofPaint `width` and the sum ofPaint the glyphs' widths. In the former case stretchable spaces are stretched (in proportion
      * to their horizontal stretchability) so that the bounding box is filled.
      *
      * The glyphs are vertically aligned as follows in the row, as specified by `align`:
      * {{{
-     *   Top      tops of the bounding boxes aligned
-     *   Bottom   bottoms of the bounding boxes aligned
-     *   Mid      (vertical) centers of the bounding boxes aligned
+     *   Top      tops ofPaint the bounding boxes aligned
+     *   Bottom   bottoms ofPaint the bounding boxes aligned
+     *   Mid      (vertical) centers ofPaint the bounding boxes aligned
      *   Baseline the baselines are aligned (for all glyphs with baseline >0)
      * }}}
      *
      *
-     * If the the sum of the glyphs' widths is less than `width`, then the difference between them
+     * If the the sum ofPaint the glyphs' widths is less than `width`, then the difference between them
      * is divided among the `FixedWidth.Space` glyphs in proportion to their horizontal stretchability. Examples, where
      * `space(n)`` has horizontal stretchability `n`, and `g1.w+g2.w+g3.w<500`
      * {{{
      *    Row(align=..., width=500)(g1, space(1), g2)
-     *        g1/g2 is at the left/right edge of the row
+     *        g1/g2 is at the left/right edge ofPaint the row
      *    Row(align=..., width=500)(space(1), g1, g2, space(1))
-     *        g1, g2 are beside each other in the centre of the row
+     *        g1, g2 are beside each other in the centre ofPaint the row
      *    Row(align=..., width=500)(g1, g2, space(1), g3)
-     *        g1, g2 are beside each other at the left edge of the row,
-     *        and g3 is at the right edge of the row.
+     *        g1, g2 are beside each other at the left edge ofPaint the row,
+     *        and g3 is at the right edge ofPaint the row.
      * }}}
      */
     def apply(width: Scalar, align: VAlignment = Top, fg: Brush=nothing, bg: Brush = nothing): RowGenerators = {
@@ -165,7 +165,7 @@ object FixedSize  {
   /** Analogous to `FixedSize.Row` */
   object Col {
     /**
-     * Construct a `ColumnGenerator` for a column of the given height and alignment, with the given foreground and background.
+     * Construct a `ColumnGenerator` for a column ofPaint the given height and alignment, with the given foreground and background.
      * {{{
      * Col(
      *  height: Scalar,
@@ -174,16 +174,16 @@ object FixedSize  {
      *  bg: Brush = nothing)(glyphs: (Glyph, Glyph*) or (Seq[Glyph])
      * }}}
      *
-     * Constructs the vertical catenation of `glyphs`. Its height is
-     * normally the larger of `height` and the sum of the glyphs' heights.
+     * Constructs the vertical catenation ofPaint `glyphs`. Its height is
+     * normally the larger ofPaint `height` and the sum ofPaint the glyphs' heights.
      * In the former case stretchable spaces are stretched (in proportion
      * to their vertical stretchability) so that the bounding box is filled.
      *
      * The glyphs are laterally aligned as follows in the row, as specified by `align`:
      * {{{
-     *   Left    left edges of the bounding boxes
-     *   Right   right edges of the bounding boxes
-     *   Center  lateral centers of the bounding boxes
+     *   Left    left edges ofPaint the bounding boxes
+     *   Right   right edges ofPaint the bounding boxes
+     *   Center  lateral centers ofPaint the bounding boxes
      * }}}
      */
     def apply(height: Scalar, alignment: Alignment=Left, fg: Brush = nothing, bg: Brush = nothing): ColumnGenerators = {
@@ -273,8 +273,8 @@ object FixedSize  {
 
 
     /**
-     * A column-alignment of the glyphs, with each glyph placed laterally at
-     * `proportion` of the difference between the column width and its own width.
+     * A column-alignment ofPaint the glyphs, with each glyph placed laterally at
+     * `proportion` ofPaint the difference between the column width and its own width.
      *
      *
      * {{{ 0.0 <= proportion <= 1.0 && theGlyphs.nonEmpty }}}

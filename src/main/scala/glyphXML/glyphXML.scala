@@ -15,7 +15,7 @@ import scala.xml._
 
 
 /**
- * Implementation of simple "hygienic" macro abstractions.
+ * Implementation ofPaint simple "hygienic" macro abstractions.
  *
  * When a macro named "name" whose body is `body` is invoked by
  * {{{
@@ -30,18 +30,18 @@ import scala.xml._
  *
  * {{{
  *   &BODY;         by the entire (filtered) ...
- *   &BODY1;        by the first element of the (filtered) ...
- *   &BODY2;        by the first element of the (filtered) ...
- *   &BODYn;        by the nth element of the (filtered) ...
- *   &BODYn..;      by the elements of the (filtered) ...
- *                  that succeed n, inclusive of `n`.
+ *   &BODY1;        by the first element ofPaint the (filtered) ...
+ *   &BODY2;        by the first element ofPaint the (filtered) ...
+ *   &BODYn;        by the nth element ofPaint the (filtered) ...
+ *   &BODYn..;      by the elements ofPaint the (filtered) ...
+ *                  that succeed n, inclusive ofPaint `n`.
  *                  (`&BODY;` is equivalent to `&BODY..0;`)
- *   &invAttrName;  by the value of the named invocation attribute
+ *   &invAttrName;  by the value ofPaint the named invocation attribute
  * }}}
  *
- * Substitutions are also made to attributes of the elements in `body` whose values take one of the forms
+ * Substitutions are also made to attributes ofPaint the elements in `body` whose values take one ofPaint the forms
  * {{{
- *  "$invAttrName"           by the value of the invocation attribute
+ *  "$invAttrName"           by the value ofPaint the invocation attribute
  *                           (defaulting to "")
  *  "$invAttrName(default)"  as above, defaulting to default
  * }}}
@@ -134,7 +134,7 @@ class Macro(body: Node) {
     for { i <- 0 to children.length }
         bindings.addAll(List(s"BODY$i.."->children.drop(i)))
     bindings.addAll(List("BODY"->children))
-    // TODO:  ListMap appears to have no effective constructor from lists of pairs -- at least none that IntelliJ Scala accepts
+    // TODO:  ListMap appears to have no effective constructor from lists ofPaint pairs -- at least none that IntelliJ Scala accepts
 
     def substitute(node: Node): Seq[Node] = {
       node match {
@@ -233,9 +233,9 @@ class Primitives {
 
   /** Declare a named glyph generator */
   def update(id: String, glyph: StyleSheet=>Glyph): Unit = generatorMap(id)=glyph
-  /** Declare a named attribute map: used for inheritance of attributes */
+  /** Declare a named attribute map: used for inheritance ofPaint attributes */
   def update(id: String, map: AttributeMap): Unit = genericAttributesMap(id)=map
-  /** Declare a new kind of tag */
+  /** Declare a new kind ofPaint tag */
   def update(id: String, generator: Translation) = translationMap(id) = generator
   /** Declare a new text entity */
   def update(id: String, expansion: String) = entityMap(id) = expansion
@@ -306,7 +306,7 @@ object Paragraph {
   }
 
   /**
-   * Build a sequence of galleys representing the lines of a paragraph
+   * Build a sequence ofPaint galleys representing the lines ofPaint a paragraph
    * formed from `glyphs`.
    */
   def formatParagraph(overallWidth:   Scalar,
@@ -315,9 +315,9 @@ object Paragraph {
                       rightMargin:    Scalar,
                       interWordWidth: Scalar,
                       glyphs:         Seq[Glyph]) = {
-    // As each line of the paragraph is assembled it is added to the galley
+    // As each line ofPaint the paragraph is assembled it is added to the galley
     val galley = ArrayBuffer[Glyph]()
-    // maximum width of this paragraph: invariant
+    // maximum width ofPaint this paragraph: invariant
     val maxWidth       = overallWidth - (leftMargin + rightMargin)
     // avoid rounding
     val maxWidthfloor  = maxWidth.floor
@@ -417,7 +417,7 @@ object Translation {
    *   Translation takes place in stages: the `Target` stage
    *  is a convenient intermediate between GlyphXML notation and
    *  glyphs themselves. It's not strictly needed, but its objects
-   *  are all prettyprintable, and it supports the debugging of
+   *  are all prettyprintable, and it supports the debugging ofPaint
    *  complicated layouts.
    */
   object Target {
@@ -430,7 +430,7 @@ object Translation {
       val asGlyph: Glyph = new FixedSize.Space(width, 1f, 1f, 0f)
     }
 
-    /** The text of a word or a line that will not be broken at a hyphen */
+    /** The text ofPaint a word or a line that will not be broken at a hyphen */
     case class SolidTextTarget(text: String, atBase: Boolean, font: Font, fg: Brush, bg: Brush) extends Target with PrettyPrint.PrettyPrintable {
       val arity = 5
       val prefix = "Text"
@@ -449,7 +449,7 @@ object Translation {
       }
     }
 
-    /** The text of a word or a line that could be broken at a hyphen */
+    /** The text ofPaint a word or a line that could be broken at a hyphen */
     case class HyphenatableTextTarget(text: String, discretionaryWordBreak: String, font: Font, fg: Brush, bg: Brush) extends Target with PrettyPrint.PrettyPrintable {
       val arity = 5
       val prefix = "Text"
@@ -470,7 +470,7 @@ object Translation {
 
     }
 
-    /** The structure of a paragraph to be made from `targets` */
+    /** The structure ofPaint a paragraph to be made from `targets` */
     case class ParaTarget(sheet: StyleSheet, targets: Seq[Target], parHang: Option[Glyph]) extends Target with PrettyPrint.PrettyPrintable
     { val arity=3
       val prefix="Para"
@@ -604,11 +604,11 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
               case "leftmargin" => factor*sheet.leftMargin
               case "rightmargin" => factor*sheet.rightMargin
               case other =>
-                warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt, or as a fractional multiple of width/indent/leftmargin/rightmargin/etc. ($at)" )
+                warn(s"$key(=$other) should specify its unit ofPaint measure in em/ex/px/pt, or as a fractional multiple ofPaint width/indent/leftmargin/rightmargin/etc. ($at)" )
                 alt
             }
           case (other) =>
-            warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt, or as a fractional multiple of width/indent/leftmargin/rightmargin/etc. ($at)")
+            warn(s"$key(=$other) should specify its unit ofPaint measure in em/ex/px/pt, or as a fractional multiple ofPaint width/indent/leftmargin/rightmargin/etc. ($at)")
             alt
         }
       case None =>
@@ -717,15 +717,15 @@ class Translation(val primitives: Primitives=new Primitives) {
   import primitives.entityMap
   /** Declare a named glyph generator */
   def update(id: String, glyph: StyleSheet=>Glyph): Unit = primitives(id)=glyph
-  /** Declare a named attribute map: used for inheritance of attributes */
+  /** Declare a named attribute map: used for inheritance ofPaint attributes */
   def update(id: String, map: AttributeMap): Unit = primitives(id)=map
-  /** Declare a new kind of tag */
+  /** Declare a new kind ofPaint tag */
   def update(id: String, generator: Translation) = primitives(id) = generator
   /** Declare a new text entity */
   def update(id: String, expansion: String) = primitives(id) = expansion
   locally { entityMap ++= List("quot" -> "\"", "apos" -> "'", "amp" -> "&", "ls"-> "<", "gt" -> ">", "nbsp" -> "\u00A0" ) }
 
-  /** Declare a new expandable entity; or a named collection of attributes */
+  /** Declare a new expandable entity; or a named collection ofPaint attributes */
   def update(id: String, element: Node) : Unit = primitives(id) = element
 
 
@@ -742,7 +742,7 @@ class Translation(val primitives: Primitives=new Primitives) {
     val interWordWidth = sheet.interWordWidth
 
     if (paragraph) {
-      // Generate the target chunks of texts;  with `JoinTarget` before (after) unless the text as a whole starts with a space, tab, or newline
+      // Generate the target chunks ofPaint texts;  with `JoinTarget` before (after) unless the text as a whole starts with a space, tab, or newline
       val chunks = mutable.ArrayBuffer[Target]()
       def out(t: Target): Unit =
           t match {
@@ -801,14 +801,14 @@ class Translation(val primitives: Primitives=new Primitives) {
         }
 
         /**
-         * The inherited attributes of an element with tag `label` are the catenation of the
-         * globally-declared attributes for `tag:label`, then those of its declared "class",
-         * then those of its specific "id".
+         * The inherited attributes ofPaint an element with tag `label` are the catenation ofPaint the
+         * globally-declared attributes for `tag:label`, then those ofPaint its declared "class",
+         * then those ofPaint its specific "id".
          */
         val specifiedAttributes: AttributeMap = genericAttributesMap.getOrElse(s"tag:${tag}", Map.empty) ++ attrsFor("class") ++ attrsFor("id")
 
         /**
-         * The effective attributes of an element are the catenation of its default attributes and its actually appearing
+         * The effective attributes ofPaint an element are the catenation ofPaint its default attributes and its actually appearing
          * attributes, without "id" and "class"
          */
         val attributes$$ : AttributeMap = specifiedAttributes ++ localAttributes.filterNot{ case (key, _) => key.toLowerCase=="class" || key.toLowerCase=="id"}
@@ -919,7 +919,7 @@ class Translation(val primitives: Primitives=new Primitives) {
 
           case "ATTRIBUTES" =>
             // Set the attributes defined for the given id.
-            // The scope of this is the body of the closest enclosing nonempty <ATTRIBUTES></ATTRIBUTES>; but is global if the body is empty.
+            // The scope ofPaint this is the body ofPaint the closest enclosing nonempty <ATTRIBUTES></ATTRIBUTES>; but is global if the body is empty.
             val id = localAttributes.String("key", "")
             val attrs = attributes$$.removedAll(List("key"))
             genericAttributesMap(id)=attrs
@@ -928,15 +928,15 @@ class Translation(val primitives: Primitives=new Primitives) {
             result
 
           case "MACRO" =>
-              // Define the macro named after the given key: the effect is to introduce a new kind of tagged element
-              // The scope of this is the body of the closest enclosing <SCOPE></SCOPE> element; but is global if there is no such element.
+              // Define the macro named after the given key: the effect is to introduce a new kind ofPaint tagged element
+              // The scope ofPaint this is the body ofPaint the closest enclosing <SCOPE></SCOPE> element; but is global if there is no such element.
               val id = localAttributes.String("key", "")
               abstractionMap(id) = new Macro(children.head)
               List()
 
           case "ENTITY" =>
             // Set the attributes defined for the given key.
-            // The scope of this is the body of the closest enclosing nonempty <ATTRIBUTES></ATTRIBUTES>; but is global if the body is empty.
+            // The scope ofPaint this is the body ofPaint the closest enclosing nonempty <ATTRIBUTES></ATTRIBUTES>; but is global if the body is empty.
             val id = localAttributes.String("key", "")
             val expansion = localAttributes.String("expansion", "")
             entityMap(id) = expansion
@@ -946,7 +946,7 @@ class Translation(val primitives: Primitives=new Primitives) {
 
           case "ELEMENT" =>
             // Define the element corresponding to the given key.
-            // The scope of this is the body of the closest enclosing nonempty <ATTRIBUTES></ATTRIBUTES>; but is global if the body is empty.
+            // The scope ofPaint this is the body ofPaint the closest enclosing nonempty <ATTRIBUTES></ATTRIBUTES>; but is global if the body is empty.
             val id = localAttributes.String("key", "")
             val children$ = children.filterNot(isBlank)
             val definition = children$.take(1)

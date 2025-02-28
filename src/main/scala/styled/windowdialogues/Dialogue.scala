@@ -12,10 +12,10 @@ import org.sufrin.logging.Loggable
  *   method, and to invoke the continuation (if any) with which it was
  *   started with parameter `null`.
  *
- *   Several kinds of GUI components can be implemented as Popups, including
+ *   Several kinds ofPaint GUI components can be implemented as Popups, including
  *   status/error reports, etc.
  *
- *   TODO: pre-select one of the bottom-row as the meaning of [ENTER]
+ *   TODO: pre-select one ofPaint the bottom-row as the meaning ofPaint [ENTER]
  *
  */
 
@@ -23,7 +23,7 @@ import Location._
 
 object Dialogue extends Loggable {
 
-  /** A dialogue whose gui consists of `blurb` atop a bottom row consisting of buttons built from glyphs. */
+  /** A dialogue whose gui consists ofPaint `blurb` atop a bottom row consisting ofPaint buttons built from glyphs. */
   def apply[T](blurb: Glyph, bottomRow: Seq[Glyph], position: Location=null, title: String = ""): Dialogue[T] = {
     new Dialogue[T](blurb, bottomRow, position, title)
   }
@@ -107,42 +107,42 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
     location = Location.NorthFor(theRoot)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def NorthEast(glyph: Glyph): this.type = {
     location = Location.NorthEastFor(theRoot)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def East(glyph: Glyph): this.type = {
     location = Location.EastFor(theRoot)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def SouthEast(glyph: Glyph): this.type = {
     location = Location.SouthEast(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def South(glyph: Glyph): this.type = {
     location = Location.SouthFor(theRoot)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def SouthWest(glyph: Glyph): this.type = {
     location = Location.SouthWestFor(theRoot)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def West(glyph: Glyph): this.type = {
     location = Location.WestFor(theRoot)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to `glyph` */
+  /** set the location ofPaint this dialogue relative to `glyph` */
   def NorthWest(glyph: Glyph): this.type = {
     location = Location.NorthWestFor(theRoot)(glyph); thisPopup
   }
 
-  /** set the location of this dialogue relative to the root of `glyph` */
+  /** set the location ofPaint this dialogue relative to the root ofPaint `glyph` */
   def InFront(glyph: Glyph): this.type = {
     val loc = glyph.rootDistance
     location = Location.OnRootOf(glyph)(loc.x + (glyph.w - theRoot.diagonal.x) / 2f, loc.y + (glyph.h - theRoot.diagonal.y) / 2f)
@@ -197,7 +197,7 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
           window.focus()
         }
         theInteraction.handler.logEvents = logEvents; theInteraction.start()
-        // Henceforth turn native close requests into calls of close()
+        // Henceforth turn native close requests into calls ofPaint close()
         theRoot.guiRoot.onCloseRequest(_ => close())
         running = Some(theInteraction)
     }

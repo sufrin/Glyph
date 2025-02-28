@@ -54,9 +54,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       Col(align=Center)(
 
         Paragraph(50, Justify)(
-          """A grid of rotating buttons. Individual buttons are started/stopped
+          """A grid ofPaint rotating buttons. Individual buttons are started/stopped
             |by clicking on them; and can be started or stopped together with
-            |the Start all / Stop all toggle button. The speed of the last
+            |the Start all / Stop all toggle button. The speed ofPaint the last
             |started/stopped button(s) can be adjusted with the Faster/Slower
             |buttons.
             |
@@ -138,13 +138,13 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       import ReactiveGlyphs.Slider
       val left = Paragraph(30, Justify)(
         """
-          |This is a justified piece of text that may be quite small.
+          |This is a justified piece ofPaint text that may be quite small.
           |You'll see it on a split screen. When the text on the other
           |screen is not the same width we'll see what happens.
           |""".stripMargin) above ReactiveGlyphs.TextButton("The Left Button") { _ => }.framed()
       val right = Paragraph(40, Left)(
         """
-          |This is a left-justified piece of text that may be quite small.
+          |This is a left-justified piece ofPaint text that may be quite small.
           |You'll see it on a split screen. It'll be a bit wider
           |than the other thing on the screen.
           |""".stripMargin) above ReactiveGlyphs.TextButton("The Right Button") { _ => }.framed()
@@ -157,15 +157,15 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       Col(align=Center)(
         Paragraph(60, Justify)(
           """
-            |This is a test of the SplitScreen glyph. The test shows a pair of glyphs side by
-            |side, each of which contains some text and a reactive glyph. Here we have coupled
+            |This is a test ofPaint the SplitScreen glyph. The test shows a pair ofPaint glyphs side by
+            |side, each ofPaint which contains some text and a reactive glyph. Here we have coupled
             |the SplitScreen dynamically with a
             |Slider.Horizontal that sets the boundary between the left and right
             |glyphs, accompanied by three buttons that respectively move the boundary to the left,
             |exchange left and right, and move the boundary to the right.
             |
             | Notice how the reactives respond when the cursor hovers over
-            |parts of them that are not visible, namely by giving up the
+            |parts ofPaint them that are not visible, namely by giving up the
             |focus if they happened to have it.
             |""".stripMargin), ex, ex,
         dynamic,
@@ -183,8 +183,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         Paragraph(60, Justify)(
           """
             |Below we test the SplitScreen with a static size large enough to accomodate both glyphs.
-            |It was, incidentally, built from copies of the left and right glyphs that appear above;
-            |so also acts as a test for deep-copying of all the glyphs involved in their construction.
+            |It was, incidentally, built from copies ofPaint the left and right glyphs that appear above;
+            |so also acts as a test for deep-copying ofPaint all the glyphs involved in their construction.
             |""".stripMargin), ex,
         static,
         TextButton("L<->R") {
@@ -279,12 +279,12 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       Col(fg=nothing, bg=white, align=Center)(
         Paragraph(60, Left)(
           """
-            |The background of a OneOf can be specified. If left unspecified it
+            |The background ofPaint a OneOf can be specified. If left unspecified it
             |is taken to be the background
-            |of one of the glyphs of maximal area.
+            |ofPaint one ofPaint the glyphs ofPaint maximal area.
             |
             |Click on the buttons below to cycle through the
-            |states of the OneOfs.
+            |states ofPaint the OneOfs.
             |
             |""".stripMargin), ex,
         Row(fg=nothing, bg=white)(next, em, em, sel0), ex, ex,
@@ -331,7 +331,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       Col(align=Center)(
         Paragraph(50, Justify)(
           """
-            |Several linked sliders subjected to a variety of
+            |Several linked sliders subjected to a variety ofPaint
             |scalings, rotations, and skewings.
             |Hover over them for the details. Click
             |or slide or rotate the wheel to set.
@@ -350,7 +350,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       import BooleanGlyphs._
       import DynamicGlyphs.OneOf
       import styled._
-      implicit val pageSheet=style.pageSheet.copy(buttonDecoration = Framed(fg=blue(width=6, cap=ROUND), enlarge=.25f, radiusFactor = .3f))
+      implicit val pageSheet=style.pageSheet.copy(buttonDecoration = Framed(fg=blue(width=6, cap=ROUND), enlarge=.25f, radius = .3f))
 
 
       def Monitor(whenFalse: String, whenTrue: String, toggle: OnOffButton): OneOf = {

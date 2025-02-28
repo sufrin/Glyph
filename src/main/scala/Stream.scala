@@ -2,12 +2,12 @@ package org.sufrin.glyph
 
 
 /**
- * `Iterator`-like structure supporting inspection of  the "current" `element` of
+ * `Iterator`-like structure supporting inspection ofPaint  the "current" `element` ofPaint
  * a sequential structure, providing `hasElement` is true. Unlike an `Iterator`,
  * the current element can be inspected without being "consumed".
  *
  * Nothing is guaranteed about `element` unless `hasElement` yields true.
- * The method `setElement(t)` replaces the stream's view of  its current element with `t`,
+ * The method `setElement(t)` replaces the stream's view ofPaint  its current element with `t`,
  * and makes `hasElement` yield true.
  */
 
