@@ -10,7 +10,9 @@ import styled.StringLog
 import styled.CheckBox
 import NaturalSize.{Col, Grid, Row}
 import GlyphTypes.Scalar
-import Glyphs.{Polygon, Rect}
+import Glyphs.{Concentric, FilledRect, Polygon, Rect, RRect}
+
+import org.sufrin.glyph.Glyphs
 
 class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: StyleSheet = style.buttonSheet.copy(fontScale = 0.8f)
@@ -20,6 +22,65 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
   val Page = book.Page
   import DefaultBrushes._
 
+  Page("Edged", "Glyph edging") {
+    val (x, y) = (150f, 100f)
+    def label = SimpleParagraphs(15, align=Center, font=FontFamily("Courier")(35))("""The rain in spain falls mainly in the plain""").edged()
+    def long = SimpleParagraphs(35, align=Center, font=FontFamily("Courier")(35))("""The rain in spain falls mainly in the plain""").edged()
+    def star = PolygonLibrary.filledStargon(9, fg=blueLine).scaled(.5f).framed()
+    def cross = Polygon(star.w, star.h, blue(width = 4))((0, 0), (star.w, star.h), (0, star.h), (star.w, 0), (0,0)) scaled 0.5f
+
+    def frame(fg: Brush=nothing,  bg: Brush=nothing, radius: Scalar = 0f)(glyph: Glyph): Glyph = {
+        val rad = if (radius<0f)    radius else {
+                  if (radius==0f)   bg.strokeWidth max fg.strokeWidth max 1.0f
+                  if (radius<=1.0f) (glyph.h min glyph.w)*radius
+                  else radius
+        }
+
+      @inline def round(brush: Brush): Brush = if (rad==0) brush else brush(width=rad).rounded(rad)
+
+        lazy val frameOnly: Glyph = Rect(glyph.w+rad*2, glyph.h+rad*2, fg=round(fg))
+        lazy val mountOnly: Glyph = FilledRect(glyph.w+rad, glyph.h+rad, fg=round(bg))
+
+        Glyphs.Concentric(
+          (fg.getAlpha!=0, bg.getAlpha!=0) match {
+            case (true, true)  => List(mountOnly, glyph)
+            case (true, false) => List(frameOnly, glyph)
+            case (false, true) => List(mountOnly, glyph)
+            case _ => List(glyph)
+          }
+        )
+    }
+
+      Grid(padx=10, pady=20, fg=nothing, width=5).rows(
+        label.edged(fg=red(width = 10, cap = ROUND), bg=nothing),
+        label.edged(fg=red(width = 20, cap = ROUND), bg=nothing),
+        label.edged(fg=red(width = 30, cap = ROUND), bg=nothing),
+        label.edged(fg=blue(width = 40, cap = ROUND), bg=green),
+        label.edged(fg=blue(width = 50, cap = ROUND), bg=green),
+
+        frame(fg=greenFrame, radius= 10)(label),
+        frame(fg=greenFrame, radius= 20)(label),
+        frame(fg=greenFrame, radius= 30)(label),
+        frame(fg=greenFrame, radius= 40)(label),
+        frame(fg=greenFrame, radius= 50)(label),
+
+        frame(bg=greenFrame, radius= .0f)(label),
+        frame(bg=greenFrame, radius= .1f)(label),
+        frame(bg=greenFrame, radius= .2f)(label),
+        frame(bg=greenFrame, radius= .3f)(label),
+        frame(bg=greenFrame, radius= .4f)(label),
+
+        frame(fg=redFrame(width=20), radius= .01f)(label),
+        frame(fg=redFrame(width=20), radius= .1f)(label),
+        frame(fg=redFrame(width=20), radius= .2f)(label),
+        frame(fg=redFrame(width=20), radius= .3f)(label),
+        frame(fg=redFrame(width=20), radius= .4f)(label),
+      ).above(Row(align=Mid)(
+        frame(fg=redFrame(width=20), radius= .2f)(long),
+        frame(fg=redFrame(width=20), radius= .3f)(label),
+        frame(fg=redFrame(width=20), radius= .4f)(long),
+      )) .scaled(0.7f)
+  }
 
   Page("Framed Text #1", "Texts framed with red(width = 10, cap = ROUND) at different curvatures") {
       val fg = red(width = 10, cap = ROUND).copy()
@@ -109,7 +170,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
   }
 
 
-    Page("Framed Glyphs", "Glyph framing") {
+  Page("Framed Glyphs", "Glyph framing") {
       val (x, y) = (150f, 100f)
       def glyph = Label("Text Label").scaled(1.5f)
       def star = PolygonLibrary.filledStargon(9, fg=blueLine).scaled(.5f).framed()
@@ -152,50 +213,6 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       ).scaled(0.98f).enlarged(40)
     }
 
-    Page("Edged", "Glyph edging") {
-      val (x, y) = (150f, 100f)
-      def glyph = Label("Text Label").scaled(1.5f)
-      def star = PolygonLibrary.filledStargon(9, fg=blueLine).scaled(.5f).framed()
-      def cross = Polygon(star.w, star.h, blue(width = 4))((0, 0), (star.w, star.h), (0, star.h), (star.w, 0), (0,0)) scaled 0.5f
-
-      Col(align=Center)(
-        Row(align=Mid)(
-          star, em,
-          star.edged(red(width = 8, cap = SQUARE), green), em,
-          star.edged(red(width = 8, cap = ROUND), green), em,
-          star.edged(red(width = 8, cap = ROUND), red)
-        ), ex,
-        Row(align=Mid)(cross, em,
-          cross.edged(yellowHuge(width = 8, cap = ROUND), nothing), em,
-          cross.edged(yellowHuge(width = 8, cap = ROUND), red), em,
-          cross.edged(yellowHuge(width = 16, cap = ROUND), nothing), em,
-          cross.edged(yellowHuge(width = 16, cap = ROUND), red), em,
-        ), ex,
-        Row(align=Mid)(
-          star.edged(fg = black(width = 4, cap = ROUND), bg = nothing), em,
-          star.edged(fg = black(width = 10, cap = ROUND), bg = nothing), em,
-          star.edged(fg = black(width = 20, cap = ROUND), bg = nothing), em,
-          star.edged(fg = black(width = 30, cap = ROUND), bg = nothing), em,
-          star.edged(fg = black(width = 40, cap = ROUND), bg = yellowHuge), em
-        ), ex,
-        Row(align=Mid)(
-          cross.framed(fg = yellowHuge(width = 24, cap = SQUARE), bg = nothing), em,
-          cross.framed(fg = yellowHuge(width = 24, cap = ROUND), bg = nothing), em,
-          cross.edged(yellowHuge(width = 18, cap = ROUND), nothing), em,
-          cross.edged(yellowHuge(width = 18, cap = ROUND), green), em,
-          Label("FOOTLE").rotated(1).edged(fg = green(width = 24, cap = ROUND), bg = nothing), em,
-          Label("FOOTLE").rotated(1).edged(fg = green(width = 24, cap = ROUND), bg = red), em,
-          Label("FOOTLE").rotated(1).edged(fg = green(width = 24, cap = SQUARE), bg = nothing), em,
-        ), ex,
-        Row(align=Mid)(
-          glyph.edged(red(width = 30, cap = SQUARE), green), em,
-          glyph.edged(red(width = 30, cap = ROUND), nothing)), ex,
-        Row(align=Mid)(
-          glyph.edged(red(width = 30, cap = ROUND), red), em,
-          glyph.edged(red(width = 30, cap = ROUND), green)
-        ), ex,
-      ).scaled(0.98f).enlarged(40f)
-    }
 
     val GUI: Glyph = book.Layout.leftCheckBoxes().enlarged(40)
 

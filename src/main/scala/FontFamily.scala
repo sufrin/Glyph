@@ -2,7 +2,7 @@ package org.sufrin.glyph
 
 import GlyphTypes.{Font, FontManager, FontStyle, Scalar, Typeface}
 
-import org.sufrin.glyph.FontFamily.fontDescription
+import org.sufrin.glyph.FontFamily.{fontDescription, styleNamed}
 
 object FontFamily extends org.sufrin.logging.Loggable {
   private val cache=collection.mutable.LinkedHashMap[(String, FontStyle, Scalar), Font]()
@@ -71,6 +71,5 @@ class FontFamily(val name: String) {
         font
     }
   }
-  def apply(size: Scalar)(style: FontStyle): Font = makeFont(style, size)
-  def apply(style:FontStyle)(size: Scalar): Font = makeFont(style, size)
+  def apply(size: Scalar, style: String="normal"): Font = makeFont(style=styleNamed(style), size)
 }

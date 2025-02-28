@@ -59,6 +59,7 @@ object SimpleParagraphs {
         var alignment = align
         var formatting = true
         var skip = true
+        var count = 0
 
         while (formatting) {
           content match {
@@ -74,7 +75,8 @@ object SimpleParagraphs {
         }
 
         val justified   = Col(align=align)(paragraphLines(ems-indent, content, alignment))
-        if (skip) result.addOne(Text(" ", font, fg))
+        if (skip&&count>0) result.addOne(Text(" ", font, fg))
+        count += 1
 
         if (indent!=0) {
            result.addOne(Text(" "*indent, font, fg) beside justified)

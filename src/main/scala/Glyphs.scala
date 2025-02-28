@@ -2,6 +2,8 @@ package org.sufrin.glyph
 
 import GlyphTypes.Scalar
 
+import org.sufrin.glyph.DefaultBrushes.nothing
+
 /** A collection of `Glyph` constructors */
 
 object Glyphs  {
@@ -241,9 +243,8 @@ object Glyphs  {
         override
         val baseLine = 0f
 
-        // TODO: derive fg and bg properly, right now they can be seet with a INVISIBLE
-        val fg = theGlyphs.head.fg
-        val bg = theGlyphs.head.bg
+        val fg = nothing
+        val bg = nothing
 
         locally {
           setParents()
