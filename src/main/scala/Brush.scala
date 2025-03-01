@@ -12,7 +12,7 @@ object Brush {
 
   import io.github.humbleui.skija.PaintStrokeCap
 
-  def of(p: Paint): Brush = {
+  def ofPaint(p: Paint): Brush = {
     p match {
       case b: Brush => b
       case _        =>
