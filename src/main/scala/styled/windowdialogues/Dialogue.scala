@@ -49,17 +49,18 @@ object Dialogue extends Loggable {
     popup
   }
 
-  def CHOOSE(blurb: Glyph, position: Location=null, title: String = "")(choices: String*)(implicit sheet: StyleSheet): Dialogue[String] = {
+  def POPUP(blurb: Glyph, position: Location=null, title: String = "")(choices: String*)(implicit sheet: StyleSheet): Dialogue[String] = {
     lazy val buttons = choices.map {
       choice => styled.TextButton(choice) { _ => popup.close(choice) }
     }
-    lazy val popup: Dialogue[String] = new Dialogue[String](blurb, buttons, position, title)
+    lazy val popup: Dialogue[String] = new Dialogue[String](blurb, buttons, position, title, sheet.popupBackgroundBrush)
     popup
   }
 
 }
 
 class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, theTitle: String, bg: Brush=DefaultBrushes.nothing) { thisPopup =>
+  val background = if (bg.getAlpha==0) blurb.bg else bg
   /**
    * Make a primitive popup from `blurb` atop `bottomRow`; placing it at `location` on the screen.
    */
@@ -97,9 +98,9 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
 
   val ex = Label("X")
 
-  val theBottomRow = Row(Top, bg)(bottomRow)
+  val theBottomRow = Row(Top, background)(bottomRow)
 
-  val theRoot = Col(align=Center, bg=bg)(blurb, theBottomRow)
+  val theRoot = Col(align=Center, bg=background)(blurb, theBottomRow)
 
   var running: Option[Interaction] = None
 

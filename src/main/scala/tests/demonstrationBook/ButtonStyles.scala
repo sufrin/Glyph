@@ -5,7 +5,7 @@ import styled.TextButton
 import styled.Label
 import styled.windowdialogues.Dialogue
 
-import Dialogue.{CHOOSE, OK}
+import Dialogue.{POPUP, OK}
 import NaturalSize.{Col, Grid, Row}
 import styled.Book
 import styled.BookSheet

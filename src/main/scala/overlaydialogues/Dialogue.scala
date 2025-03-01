@@ -21,7 +21,7 @@ object Dialogue {
    *  A generic overlaydialogues "choice" popup, located at the given `position`. It can be popped down without using
    *  any ofPaint the buttons on its bottom row, by hitting the kill button placed on its top row.
    */
-  def CLOSEABLE[T](guiRoot: Glyph, bottomRow: Seq[Glyph]): Dialogue[T] =
+  def POPUP[T](guiRoot: Glyph, bottomRow: Seq[Glyph]): Dialogue[T] =
     new Dialogue[T](Col(align=Center)(guiRoot, Row(Top)(bottomRow)), closeGlyph = Some(defaultCloseGlyph))
 
   import ReactiveGlyphs.GenericButton
@@ -138,7 +138,7 @@ object Dialogue {
     lazy val okButton: Glyph = styled.TextButton(ok) {
       _ => popup.close(())
     }
-    lazy val popup: Dialogue[Unit] = CLOSEABLE[Unit](blurb, List(okButton))
+    lazy val popup: Dialogue[Unit] = POPUP[Unit](blurb, List(okButton))
     popup
   }
 
@@ -168,7 +168,7 @@ object Dialogue {
     lazy val noButton: Glyph = styled.TextButton(no) {
       _ => popup.close(false)
     }
-    lazy val popup: Dialogue[Boolean] = CLOSEABLE[Boolean](blurb, List(okButton, noButton))
+    lazy val popup: Dialogue[Boolean] = POPUP[Boolean](blurb, List(okButton, noButton))
     popup
   }
 
@@ -194,7 +194,7 @@ object Dialogue {
     lazy val buttons = choices.map {
       choice => styled.TextButton(choice) { _ => popup.close(choice) }
     }
-    lazy val popup: Dialogue[String] = CLOSEABLE(blurb, buttons)
+    lazy val popup: Dialogue[String] = POPUP(blurb, buttons)
     popup
   }
 
@@ -214,7 +214,7 @@ object Dialogue {
     lazy val buttons = choices.map {
       case (t, g) => ReactiveGlyphs.RawButton(g(), g(), g()) { _ => popup.close(t) }.framed().enlarged(20)
     }
-    lazy val popup: Dialogue[T] = CLOSEABLE(blurb, buttons)
+    lazy val popup: Dialogue[T] = POPUP(blurb, buttons)
     popup
   }
 }
@@ -300,12 +300,20 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
             //println(s"closeButton $key")
              key.getKey match {
                case ESCAPE  if isModal && !key.isPressed => close()
-               //case UP      if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (0f, -15f); overlayRoot.reDraw()
-               //case DOWN    if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (0f, 15f); overlayRoot.reDraw()
-               //case RIGHT   if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (15f, 0f); overlayRoot.reDraw()
-               //case LEFT    if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (-15f, 0f); overlayRoot.reDraw()
+               case UP      if isModal && !key.isPressed =>
+                 overlayRoot.location = overlayRoot.location + (0f, -15f)
+                 overlayRoot.reDraw()
+               case DOWN    if isModal && !key.isPressed =>
+                 overlayRoot.location = overlayRoot.location + (0f, 15f)
+                 overlayRoot.reDraw()
+               case RIGHT   if isModal && !key.isPressed =>
+                 overlayRoot.location = overlayRoot.location + (15f, 0f)
+                 overlayRoot.reDraw()
+               case LEFT    if isModal && !key.isPressed =>
+                 overlayRoot.location = overlayRoot.location + (-15f, 0f)
+                 overlayRoot.reDraw()
                case HOME    if isModal && !key.isPressed =>
-                 overlayRoot.location = overlayRoot.location - overlayRoot.diagonal
+                 overlayRoot.location = Vec.Zero // overlayRoot.location - overlayRoot.diagonal
                  overlayRoot.reDraw()
                case END     if isModal && !key.isPressed =>
                  overlayRoot.location = overlayRoot.location + overlayRoot.diagonal

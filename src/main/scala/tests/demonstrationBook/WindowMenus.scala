@@ -4,7 +4,7 @@ package tests.demonstrationBook
 import styled.TextButton
 import styled.Label
 import styled.windowdialogues.Dialogue
-import Dialogue.{CHOOSE,OK}
+import Dialogue.{POPUP,OK}
 import NaturalSize.{Col, Row}
 import styled.Book
 import styled.BookSheet
@@ -24,9 +24,9 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
   Page("Dialogues", "") {
     val briefing: Glyph = <p>Choose one of the buttons, or press the close button</p>
     val anchor = INVISIBLE()
-    val c1 = CHOOSE(briefing(), Location.South(anchor), "Choice")("One")
-    val c2 = CHOOSE(briefing(), Location.South(anchor), "Choice")("One", "Two")
-    val c3 = CHOOSE(briefing(), Location.South(anchor), "Choice")("One", "Two", "Three")
+    val c1 = POPUP(briefing(), Location.South(anchor), "Choice")("One")
+    val c2 = POPUP(briefing(), Location.South(anchor), "Choice")("One", "Two")
+    val c3 = POPUP(briefing(), Location.South(anchor), "Choice")("One", "Two", "Three")
 
     def showChoice(s: String): Unit =
       styled.overlaydialogues.Dialogue.OK(Label(if (s eq null) "You made no choice" else s"You chose $s")).South(anchor).start()
