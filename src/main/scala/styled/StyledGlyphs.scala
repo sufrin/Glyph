@@ -13,13 +13,13 @@ import org.sufrin.utility.TextAbbreviations
 import scala.collection.mutable.ArrayBuffer
 
 /**
- *  Systematic construction ofPaint glyphs using implicit styles.
+ *  Systematic construction of glyphs using implicit styles.
  */
 
 
 /**
- * A `StyledButton` is a reactive glyph generator that specifies the essence ofPaint the appearance ofPaint
- * a button-like reactive glyph that responds to a click ofPaint a mouse (or other pointer) button on the
+ * A `StyledButton` is a reactive glyph generator that specifies the essence of the appearance of
+ * a button-like reactive glyph that responds to a click of a mouse (or other pointer) button on the
  * screen.
  *
  * Applying a `StyledButton` to a `Reaction` yields a (reactive) `Glyph`, that responds to mouse movement and clicks.
@@ -27,17 +27,17 @@ import scala.collection.mutable.ArrayBuffer
  *   type ButtonState = Modifiers.toBitMap
  *   type Reaction = ButtonState => Unit
  *
- * Mouse movements and button presses change the tracking state ofPaint a button, which is one ofPaint:
+ * Mouse movements and button presses change the tracking state of a button, which is one of:
  * {{{
  *   up:      when the mouse cursor is nowhere near it
  *   hovered: when the mouse cursor is contained by it
  *   down:    when it is hovered, and a mouse button is held down
  * }}}
  *
- * The tracking state ofPaint a button (usually) determines how it is shown, and different button implementations
+ * The tracking state of a button (usually) determines how it is shown, and different button implementations
  * provide visual feedback about their tracking state in different ways.
  *
- * A button's `reaction` is invoked (ie applied to the state ofPaint the buttons and keyboard shift keys)
+ * A button's `reaction` is invoked (ie applied to the state of the buttons and keyboard shift keys)
  * when the mouse button is released in the `down` tracking state. Note that a "click" can be abandoned
  * by dragging the mouse far enough away from the button for its tracking
  * state to change to `up` before the button is released.
@@ -55,17 +55,17 @@ trait DetailedButton {
 
 
 /**
- *  A `ToggleButton` is a reactive glyph generator that specifies the essence ofPaint the appearance ofPaint
- *  a button-like reactive glyph that responds to a click ofPaint a mouse (or other pointer) button on the
+ *  A `ToggleButton` is a reactive glyph generator that specifies the essence of the appearance of
+ *  a button-like reactive glyph that responds to a click of a mouse (or other pointer) button on the
  *  screen.
  *
- *  The generated button has the physical appearance ofPaint a `StyledButton`, but its state is supplemented by
- *  a boolean that determines which ofPaint its appearances is shown. Clicking on the button inverts the boolean (thereby changing
+ *  The generated button has the physical appearance of a `StyledButton`, but its state is supplemented by
+ *  a boolean that determines which of its appearances is shown. Clicking on the button inverts the boolean (thereby changing
  *  the button's appearance) and applies the `reaction` to the inverted boolean.
  *
  *  If the button is made with a `BooleanVariable` rather than a direct reaction,
  *  then it is registered with the variable, and clicking the button changes
- *  the variable's value, and sets the states ofPaint all registered buttons. This
+ *  the variable's value, and sets the states of all registered buttons. This
  *  is the way to generate several buttons that show and control a single boolean.
  */
 trait ToggleButton { thisToggle =>
@@ -85,21 +85,21 @@ trait ToggleButton { thisToggle =>
  * Generates a button on which the given glyphs are shown, according
  * to its tracking state. This is determined by whether the cursor is nowhere
  * near it (up), hovering over it (hover), or pressed on it (down).
- * Its bounding box is the union ofPaint the bounding boxes ofPaint the component
+ * Its bounding box is the union of the bounding boxes of the component
  * glyphs.
  *
- * Unless `exact` is false, the EXACT shapes ofPaint the glyphs determine which ofPaint
+ * Unless `exact` is false, the EXACT shapes of the glyphs determine which of
  * its states it is in.
  *
- * Usually the shape is considered to be the bounding box ofPaint the glyph;
+ * Usually the shape is considered to be the bounding box of the glyph;
  * but for `Polygon` and `FilledPolygon` glyphs (and others like them as yet to be defined),
- * the shape is considered to be the set ofPaint points within the polygon.
+ * the shape is considered to be the set of points within the polygon.
  *
  * The cursor must be contained by the `up` glyph before
  * it is considered to be hovering; and must be contained by the `hover` glyph
  * before pressing the mouse button on it is considered a press.
  *
- * The details ofPaint its frame, if any, are specified by the (implicit) `ButtonStyle`.
+ * The details of its frame, if any, are specified by the (implicit) `ButtonStyle`.
  */
 case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = true) extends styled.StyledButton {
   def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
@@ -142,9 +142,9 @@ object DecorateWithDetail {
 
 /**
  * Generates a button on which the given text is shown. The details
- * ofPaint how it is shown (font, foreground and background colours, etc)
- * in each ofPaint its states are specified by the (implicit) `ButtonStyle`,
- * as are the details ofPaint its frame, if any.
+ * of how it is shown (font, foreground and background colours, etc)
+ * in each of its states are specified by the (implicit) `ButtonStyle`,
+ * as are the details of its frame, if any.
  *
  * The button's "sensitive" region does not include its decoration.
  */
@@ -161,9 +161,9 @@ case class LightweightTextButton(text: String) extends styled.StyledButton {
 
 /**
  * Generates a button on which the given text is shown. The details
- * ofPaint how it is shown (font, foreground and background colours, etc)
- * in each ofPaint its states are specified by the (implicit) `ButtonStyle`,
- * as are the details ofPaint its frame, if any.
+ * of how it is shown (font, foreground and background colours, etc)
+ * in each of its states are specified by the (implicit) `ButtonStyle`,
+ * as are the details of its frame, if any.
  *
  * The button's "sensitive" region includes its decoration.
  */
@@ -218,10 +218,10 @@ case class MenuButton(text: String) extends styled.StyledButton {
 }
 
 
-/** Generator for a sequence ofPaint text buttons ofPaint identical sizes.
- * Intended for use when constructing a row or column ofPaint
+/** Generator for a sequence of text buttons of identical sizes.
+ * Intended for use when constructing a row or column of
  * buttons that should all occupy the same space. The main
- * motivation for this was setting up the alignment ofPaint tab
+ * motivation for this was setting up the alignment of tab
  * buttons for notebooks.
  *
  * @see Notebook
@@ -290,9 +290,9 @@ object Label {
 /**
  * Generates a button on which the given texts are shown, according to
  * its internal boolean state. The details
- * ofPaint how they are shown (font, foreground and background colours, etc)
- * in each ofPaint its states are specified by the (implicit) `ButtonStyle`,
- * as are the details ofPaint its frame, if any.
+ * of how they are shown (font, foreground and background colours, etc)
+ * in each of its states are specified by the (implicit) `ButtonStyle`,
+ * as are the details of its frame, if any.
  *
  * @param whenTrue the text to show when the boolean state is true
  * @param whenFalse the text to show when the boolean state is false
@@ -413,7 +413,7 @@ case class MenuCheckBox(initially: Boolean) extends ToggleButton {
 
 /**
  * A bounded log to record strings reported by its `println` method.
- * The log may be longer than the size ofPaint the window in which the most
+ * The log may be longer than the size of the window in which the most
  * recent reports are shown.
  */
 class EventLog[Event](size: Int, lines: Int, keepLines: Int=0)(implicit style: StyleSheet) extends Glyph {
@@ -450,14 +450,14 @@ class EventLog[Event](size: Int, lines: Int, keepLines: Int=0)(implicit style: S
     }
   }
   /**
-   * The diagonal size ofPaint the glyph
+   * The diagonal size of the glyph
    */
   def diagonal: Vec = {
     val em = Label("M") // Text("M", style.font).asGlyph()
     Vec(size * em.w, maxQueue * em.h)
   }
 
-  /** A copy ofPaint this glyph; perhaps with different foreground/background */
+  /** A copy of this glyph; perhaps with different foreground/background */
   def copy(fg: Brush, bg: Brush): Glyph = new EventLog(size, lines, keepLines)
 
   val bg: Brush = style.labelBackgroundBrush
@@ -485,15 +485,15 @@ object RadioCheckBoxes {
 }
 
 /**
- * A group ofPaint captioned checkboxes, labelled with `captions`, and with `prefer` as the
- * caption ofPaint the to-be-checkedinitially box.  At most one box can be checked at a time:
+ * A group of captioned checkboxes, labelled with `captions`, and with `prefer` as the
+ * caption of the to-be-checkedinitially box.  At most one box can be checked at a time:
  * so whenever one is checked all the others are unchecked. When the currently-checked box
  * is clicked and becomes unchecked, then the box (if any) captioned `prefer` is checked.
  * @param captions
  * @param prefer
  * @param inheritFramed
  * @param action invoked after a checkbox changes state,
- *               with argument `None` if none ofPaint the boxes is checked, and
+ *               with argument `None` if none of the boxes is checked, and
  *               `Some(ix)` if the `ix`the box is checked.
  * @param detail implicit style applied while constructing the checkboxes.
  */
@@ -523,7 +523,7 @@ class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Bool
   }
 
   def select(boxIndex: Int): Unit = {
-    assert(boxIndex<checkBoxes.length, s"RadioCheckBoxes.select($boxIndex) index out ofPaint range")
+    assert(boxIndex<checkBoxes.length, s"RadioCheckBoxes.select($boxIndex) index out of range")
     checkBoxes(boxIndex).set(true)
   }
 

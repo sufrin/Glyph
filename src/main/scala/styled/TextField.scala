@@ -5,11 +5,11 @@ import org.sufrin.utility.TextAbbreviations
 
 
 /**
- *  A fixed-width reactive glyph that can be edited from the keyboard. The width ofPaint
- *  the glyph is `size * em`, where `em` is the size ofPaint an "m" in the specified font.
- *  The textlayout being edited can be ofPaint any length.
+ *  A fixed-width reactive glyph that can be edited from the keyboard. The width of
+ *  the glyph is `size * em`, where `em` is the size of an "m" in the specified font.
+ *  The textlayout being edited can be of any length.
  *  It is panned, if necessary, to keep the cursor in view.
- *  Simple visual indications are given at each end ofPaint the glyph
+ *  Simple visual indications are given at each end of the glyph
  *  when there is non-visible textlayout at that end.
  *
  *  When the mouse cursor enters this glyph, it grabs the keyboard focus, and this
