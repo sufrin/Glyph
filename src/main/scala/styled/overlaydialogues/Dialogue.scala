@@ -12,7 +12,7 @@ import org.sufrin.glyph.styles.decoration.unDecorated
 
 
 /**
- * Overlay variant of `Dialogue`
+ * Overlay variant ofPaint `Dialogue`
  */
 object Dialogue {
 
@@ -22,7 +22,7 @@ object Dialogue {
 
   /**
    *  A generic overlaydialogues "choice" popup, located at the given `position`. It can be popped down without using
-   *  any of the buttons on its bottom row, by hitting the kill button placed on its top row.
+   *  any ofPaint the buttons on its bottom row, by hitting the kill button placed on its top row.
    */
   def CLOSEABLE[T](guiRoot: Glyph, bottomRow: Seq[Glyph])(implicit style: StyleSheet): Dialogue[T] =
     new Dialogue[T](Col(align=Center)(guiRoot, Row(align=Top)(bottomRow)), closeGlyph = Some(defaultCloseGlyph))
@@ -50,7 +50,7 @@ object Dialogue {
    *   close button/close bar or using the ESC key or
    *   by clicking somewhere outside the popup.
    *
-   *   Every attempt is made to accomodate the popup in a sensible place (to the right of the menu button), or at least in
+   *   Every attempt is made to accomodate the popup in a sensible place (to the right ofPaint the menu button), or at least in
    *   a place where it is completely visible (on its window). But if it has popped up in an inconvenient place, it can be moved using the
    *   HOME and END keys, and the mousewheel. The first moves the popup north-west by its own dimension;
    *   the second moves it south-east by its own dimension. The wheel moves it incrementally in the direction indicated.
@@ -129,7 +129,7 @@ object Dialogue {
    * Its `start()` or `andThen` method yields  `()` if "OK" is clicked; and `null` if the
    * popup is closed from its close button.
    *
-   * The position must be set by one of
+   * The position must be set by one ofPaint
    * the `Dialogue` methods `North`, ... before the dialogue is started.
    * For example:
    * {{{
@@ -150,7 +150,7 @@ object Dialogue {
    * yields true`/`false` respectively when "OK"/"NO" are pressed; or `null` if the dialogue was closed from its
    * close button.
    *
-   * The position must be set by one of
+   * The position must be set by one ofPaint
    * the `Dialogue` methods `North`, `NorthEast`,  ... before the dialogue is started.
    * For example:
    * {{{
@@ -175,12 +175,12 @@ object Dialogue {
     popup
   }
 
-  /** A modal, closeable popup `Dialogue[String]` that shows the `blurb`, and offers each of the given choices on a button. Its
+  /** A modal, closeable popup `Dialogue[String]` that shows the `blurb`, and offers each ofPaint the given choices on a button. Its
    * `start()`, or `andThen` method yields
    * the string on the button that was used; or `null` if the dialogue was closed from its
    * close button.
    *
-   * The position must be set by one of
+   * The position must be set by one ofPaint
    * the `Dialogue` methods `North`, `NorthEast`,  ... before the dialogue is started.
    * For example:
    * {{{
@@ -202,7 +202,7 @@ object Dialogue {
   }
 
   /**
-   * A generalization of  `CHOOSE`, with buttons  labelled with (copies of) the `Glyph` components of `choices`. When
+   * A generalization ofPaint  `CHOOSE`, with buttons  labelled with (copies ofPaint) the `Glyph` components ofPaint `choices`. When
    * `(t, g)` appears as a choice; pressing the button labelled with `g` yields the value `t`. For example:
    * {{{
    *        CHOICE("How many hands?")((1, Label("One")), (2, Label("Two")))
@@ -228,7 +228,7 @@ object Dialogue {
  *
  * @param guiRoot the glyph to be GUI for the dialogue when it is started
  *
- * @param location the location at which the top-left corner of the glyph is to be shown -- typically set non-null post-construction by (eg) `North(glyph)`
+ * @param location the location at which the top-left corner ofPaint the glyph is to be shown -- typically set non-null post-construction by (eg) `North(glyph)`
  *
  * @param closeGlyph If the popup is to have a close button showing `g` in its top left corner, then `Some(g)`
  *
@@ -236,7 +236,7 @@ object Dialogue {
  *
  * @param isMenu When true this dialogue represents a popup menu
  *
- * @tparam T the type of value passed to the continuation (if any) by invoking `close`
+ * @tparam T the type ofPaint value passed to the continuation (if any) by invoking `close`
  *
  */
 class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyph: Option[Glyph] = None, var isModal: Boolean = true, var isMenu: Boolean = false)(implicit style: StyleSheet)
@@ -249,7 +249,7 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
 
   /**
    * This will be the reactive glyph, if any, that also responds to ESCAPE/HOME/END and the mousewheel
-   * It's essential to have one of these if the popup is modal and we wish
+   * It's essential to have one ofPaint these if the popup is modal and we wish
    * the user to be able to abandon the popup without doing anything (eg. making
    * a choice or hitting a nested menu button).
    */
@@ -284,7 +284,7 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
   }
 
   /**
-   * The `guiRoot` decorated with a close button/bar: this is the effective GUI root of the overlay that the dialogue will inhabit.
+   * The `guiRoot` decorated with a close button/bar: this is the effective GUI root ofPaint the overlay that the dialogue will inhabit.
    */
   lazy val overlayRoot: Glyph = {
     // set up the killbutton to (also) respond to ESCAPE with a `close()`
@@ -331,23 +331,23 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
     ).framed(bg = DefaultBrushes.white)
   }
 
-  /** set the location of this dialogue relative to `glyph`  */
+  /** set the location ofPaint this dialogue relative to `glyph`  */
   def North(glyph: Glyph): this.type = { location = Location.NorthFor(overlayRoot)(glyph); thisPopup }
-  /** set the location of this dialogue relative to `glyph`  */
+  /** set the location ofPaint this dialogue relative to `glyph`  */
   def NorthEast(glyph: Glyph): this.type = { location = Location.NorthEastFor(overlayRoot)(glyph); thisPopup }
-  /** set the location of this dialogue relative to `glyph`  */
+  /** set the location ofPaint this dialogue relative to `glyph`  */
   def East(glyph: Glyph): this.type = { location = Location.EastFor(overlayRoot)(glyph); thisPopup }
-  /** set the location of this dialogue relative to `glyph`  */
+  /** set the location ofPaint this dialogue relative to `glyph`  */
   def SouthEast(glyph: Glyph): this.type = { location = Location.SouthEast(glyph); thisPopup }
-  /** set the location of this dialogue relative to `glyph`  */
+  /** set the location ofPaint this dialogue relative to `glyph`  */
   def South(glyph: Glyph): this.type = { location = Location.SouthFor(overlayRoot)(glyph); thisPopup }
-  /** set the location of this dialogue relative to `glyph`  */
+  /** set the location ofPaint this dialogue relative to `glyph`  */
   def SouthWest(glyph: Glyph): this.type = { location = Location.SouthWestFor(overlayRoot)(glyph); thisPopup }
-  /** set the location of this dialogue relative to `glyph`  */
+  /** set the location ofPaint this dialogue relative to `glyph`  */
   def West(glyph: Glyph): this.type = { location = Location.WestFor(overlayRoot)(glyph); thisPopup }
-  /** set the location of this dialogue relative to `glyph`  */
+  /** set the location ofPaint this dialogue relative to `glyph`  */
   def NorthWest(glyph: Glyph): this.type = { location = Location.NorthWestFor(overlayRoot)(glyph); thisPopup }
-  /** set the location of this dialogue relative to the root of `glyph`  */
+  /** set the location ofPaint this dialogue relative to the root ofPaint `glyph`  */
   def InFront(glyph: Glyph): this.type = {
     val loc = glyph.rootDistance
     location = Location.OnRootOf(glyph)(loc.x + (glyph.w - overlayRoot.diagonal.x)/2f, loc.y + (glyph.h - overlayRoot.diagonal.y)/2f)

@@ -7,11 +7,11 @@ import org.sufrin.logging.FINER
 
 
 /**
- *  A fixed-width reactive glyph that can be edited from the keyboard. The width of
- *  the glyph is `size * em`, where `em` is the size of an "m" in the specified font.
- *  The textlayout being edited can be of any length.
+ *  A fixed-width reactive glyph that can be edited from the keyboard. The width ofPaint
+ *  the glyph is `size * em`, where `em` is the size ofPaint an "m" in the specified font.
+ *  The textlayout being edited can be ofPaint any length.
  *  It is panned, if necessary, to keep the cursor in view.
- *  Simple visual indications are given at each end of the glyph
+ *  Simple visual indications are given at each end ofPaint the glyph
  *  when there is non-visible textlayout at that end.
  *
  *  When the mouse cursor enters this glyph, it grabs the keyboard focus, and this
@@ -20,7 +20,7 @@ import org.sufrin.logging.FINER
  *  When the mouse cursor leaves this glyph, it gives up the keyboard focus.
  *
  *  TODO: give visual feedback when this has the keyboard focus.
- *  TODO: styled colouration of cursor
+ *  TODO: styled colouration ofPaint cursor
  *
  * @see styled.TextField for a styled companion object.
  */
@@ -52,7 +52,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
   }
 
   /**
-   * The diagonal size of the glyph
+   * The diagonal size ofPaint the glyph
    */
   def diagonal: Vec = Vec(emDiagonal.x*size, emDiagonal.y)
   val atBaseLine = em.height
@@ -60,7 +60,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
   private def focussed: Boolean = guiRoot.hasKeyboardFocus(this)
 
   /**
-   * Accept textlayout input denoting a diacritical that will become part of a composite character.
+   * Accept textlayout input denoting a diacritical that will become part ofPaint a composite character.
    *
    * TODO: Clarify whether _selection..., _replacement... fields denote anything useable
    *       It's not clear from the example programs
@@ -68,7 +68,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
   override def accept(key: EventTextInputMarked, location: Vec, window: Window): Unit = {
     val start= key.getReplacementStart
     val end  = key.getReplacementEnd
-    // Cases I know of are for single accent characters
+    // Cases I know ofPaint are for single accent characters
     TextModel.insForReplacement(key.getText, 1+end-start) // pending characters to delete
     reDraw()
     resetAbbreviationTrigger()
@@ -82,7 +82,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
 
   /** 
    * The last shift-key that was pressed alone.  
-   * Two successive presses of the same shift key 
+   * Two successive presses ofPaint the same shift key
    * (with nothing else pressed) triggers an abbreviation hunt. 
    */
   private var abbreviationTrigger = Key.UNDEFINED
@@ -141,10 +141,10 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
   }
 
 
-  /** Width of the serifs of the I-beam drawn as the cursor */
+  /** Width ofPaint the serifs ofPaint the I-beam drawn as the cursor */
   val cursorSerifWidth = 5f
   /**
-   *  Top and bottom vertical shrink of the I-beam serifs
+   *  Top and bottom vertical shrink ofPaint the I-beam serifs
    */
   val cursorSerifShrink = 6.0f
 
@@ -164,11 +164,11 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
   val panWarningBrush = fg.copy() strokeWidth 20.0f alpha 0.3
 
   /**
-   *  Offset from start/end of the glyph of x of the pan-warning stroke
+   *  Offset from start/end ofPaint the glyph ofPaint x ofPaint the pan-warning stroke
    */
   val panWarningOffset = panWarningBrush.strokeWidth / 2
 
-  /** The most recent origin of the displayed textlayout */
+  /** The most recent origin ofPaint the displayed textlayout */
   def panBy: Int = TextModel.pan
 
   /**
@@ -228,7 +228,7 @@ def giveUpKeyboardFocus(): Unit = guiRoot.giveupFocus()
 
 
 
-  /** A copy of this glyph; perhaps with different foreground/background */
+  /** A copy ofPaint this glyph; perhaps with different foreground/background */
   def copy(fg: Brush, bg: Brush): Glyph = null
 
   /** Seize focus on entry [prototype only] */
@@ -258,15 +258,15 @@ def giveUpKeyboardFocus(): Unit = guiRoot.giveupFocus()
 
   /** A simple and inefficient textlayout model, for short texts in single fonts.
    *
-   *  The textlayout being edited is a string `textlayout` formed from a sequence of characters
+   *  The textlayout being edited is a string `textlayout` formed from a sequence ofPaint characters
    *  with a current position, represented as a "gap-array"  (buffer)
-   *  of Unicode codepoints.
+   *  ofPaint Unicode codepoints.
    *
    *      {{{
    *          buffer[0 until left] ++ buffer[right until buffer.size]
    *      }}}
    *
-   *  When it needs to be shown, a couple of `Text` glyphs are made from it; this
+   *  When it needs to be shown, a couple ofPaint `Text` glyphs are made from it; this
    *  may well be quite inefficient, but it happens only at human-finger speed.
    *
    *  The model could easily be equipped with an undo/redo feature but it hardly
@@ -300,13 +300,13 @@ def giveUpKeyboardFocus(): Unit = guiRoot.giveupFocus()
     def leftString(from: Int):  String = if (from<0 || left-from<=0) "" else new String(buffer, from, left-from)
     def rightString: String            = new String(buffer, right, N-right)
 
-    /** The `Text` to the left of the cursor: for drawing */
+    /** The `Text` to the left ofPaint the cursor: for drawing */
     @inline def leftText: Text = Text(leftString, font)
 
-    /** The `Text` to the right of the cursor */
+    /** The `Text` to the right ofPaint the cursor */
     @inline def rightText(fg: Brush): Text = Text(rightString, font, fg, transient = true)
 
-    /** The `Text` to the left of the cursor from the `from`th character */
+    /** The `Text` to the left ofPaint the cursor from the `from`th character */
     @inline def leftText(from: Int, fg: Brush): Text = Text(leftString(from), font, fg, transient = true)
 
     /** The entire `Text` */
@@ -316,7 +316,7 @@ def giveUpKeyboardFocus(): Unit = guiRoot.giveupFocus()
     @inline def hasRight: Boolean = right!=N
 
     /**
-     * Implementation of cursor motion to a horizontal location.
+     * Implementation ofPaint cursor motion to a horizontal location.
      */
     def moveTo(x: GlyphTypes.Scalar): Unit = {
       val index = allText(panBy).charIndexOf(x)+panBy

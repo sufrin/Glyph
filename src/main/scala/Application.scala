@@ -42,7 +42,7 @@ trait Application {
   }
   /**
    * Invoked just after the GUI has been installed in a window.
-   * Default implementation is to install (in the rootGlyph of the window)
+   * Default implementation is to install (in the rootGlyph ofPaint the window)
    * the local handlers for window close requests and unfocussed keystroke events.
    * {{{
    *   handleWindowCloseRequest(window)
@@ -90,7 +90,7 @@ trait Application {
         s"""(bad flag: $arg)
           |Flags are:
           |-log(logPrefix) => set the (package) prefix for subsequent logPath components
-          |-log(logPath,...logPath)=levelname => set the logging level of the objects named logPrefix.logPath
+          |-log(logPath,...logPath)=levelname => set the logging level ofPaint the objects named logPrefix.logPath
           |-scale=d.dd     => scale the initial display
           |-screen=[0123p] => use the numbered screen (012) or the primary screen (p) for the initial display
           |-icon=$$path    => set the icon path to $$path

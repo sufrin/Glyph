@@ -35,7 +35,7 @@ class AdderGUI()(implicit sheet: StyleSheet)  {
 
   def helpText(): String =
     s""" This app solves c = a $opName b
-      |if at least two of a, b, c look like numbers.
+      |if at least two ofPaint a, b, c look like numbers.
       |
       | Moving the cursor
       |into a text field when the other two look like numbers

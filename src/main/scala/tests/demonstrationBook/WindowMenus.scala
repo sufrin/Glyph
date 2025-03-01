@@ -182,7 +182,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
         TextButton("Dialogue a window at the north west") {
           _ =>
             val body = <p width="25em">This window should be  at the north-west edge of the target.</p>
-            // Construct a dummy from the APPEARANCE of the intended Dialogue
+            // Construct a dummy from the APPEARANCE ofPaint the intended Dialogue
             val dummy: Glyph = styled.windowdialogues.Dialogue.OK(body, East(theTarget)).theRoot
             styled.windowdialogues.Dialogue.OK(body, NorthWestFor(dummy)(theTarget)).start()
         }

@@ -5,10 +5,10 @@ import GlyphTypes._
 
 /**
  *
- * This class provides the machinery for a workaround for an obscure (to me) effect of
- * X11 management of window resize requests and window resize notifications.
+ * This class provides the machinery for a workaround for an obscure (to me) effect ofPaint
+ * X11 management ofPaint window resize requests and window resize notifications.
  *
- * It's used to prevent deeply reentrant invocations of (only)
+ * It's used to prevent deeply reentrant invocations ofPaint (only)
  * `rootWindowResize` that arise from "automatic" window rescaling
  * when the window is resized externally. There ought to be a better way.
  *
@@ -45,21 +45,21 @@ object RootGlyph extends org.sufrin.logging.Loggable {
 }
 
 /**
- * A top-level glyph that keeps track of the details of the host window of
- * the `Glyph GUIroot`; its geometry, etc. Wrapping a glyph in one of these
+ * A top-level glyph that keeps track ofPaint the details ofPaint the host window ofPaint
+ * the `Glyph GUIroot`; its geometry, etc. Wrapping a glyph in one ofPaint these
  * makes it possible to provide ``global'' services (such a popups)
  * from reactive glyphs without them needing to refer to a global object.
  *
  * `RootGlyph`s are inserted automatically when an `Interaction` is constructed
- * from a `Window` and the root `Glyph`  `GUIroot` of an application-specific glyph tree.
+ * from a `Window` and the root `Glyph`  `GUIroot` ofPaint an application-specific glyph tree.
  *
  * Note:
  *
  * This class has become a repository for the many methods and services needed to mediate between
- * the very large variety of reactive glyphs and the window-system/event-handler. At some point it may
+ * the very large variety ofPaint reactive glyphs and the window-system/event-handler. At some point it may
  * be advantageous to refactor/modularize its functionality; but for the moment convenience lures.
  *
- * There is no principled reason why most variables and methods here are public -- indeed some of them should
+ * There is no principled reason why most variables and methods here are public -- indeed some ofPaint them should
  * be less universally accessible than this.
  */
 class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
@@ -84,7 +84,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   val nonReentrant = new NonReentrant       // Linux variant is very picky about re-entrant resizes.
 
   /**
-   * Regenerate the `GUIroot` to be of size (no more than) `(newW, newH)` if
+   * Regenerate the `GUIroot` to be ofPaint size (no more than) `(newW, newH)` if
    * it is `resizeable`. Otherwise, if `autoScale` is true the current `Interaction`'s software scale
    * is changed uniformly to accomodate the new window size. Otherwise resynchronize the
    * window size to its original value, and thereby appear to refuse to change in response
@@ -92,7 +92,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    *
    * Invoked by the `EventManager` (with force=false) and from GUI code (with force=true). In the
    * former case, if the window `resizeable` and is being manually resized, its window is synchronized with the
-   * size of its content at the first mouse motion after the resizing drag finishes.
+   * size ofPaint its content at the first mouse motion after the resizing drag finishes.
    *
    * @param newW
    * @param newH
@@ -188,12 +188,12 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   var diagonal: Vec = GUIroot.diagonal
   locally { GUIroot.parent = this }
   override def toString: String = s"RootGlyph\n\tdelegate = $GUIroot"
-  /** The root Window of this interaction */
+  /** The root Window ofPaint this interaction */
   var  rootWindow: Window = null
 
-  /** The actual width of the window; not the proposed width of the glyph  */
+  /** The actual width ofPaint the window; not the proposed width ofPaint the glyph  */
   def W: Scalar = rootWindow.getContentRectAbsolute.getWidth.toFloat
-  /** The actual height of the window; not the proposed height of the glyph  */
+  /** The actual height ofPaint the window; not the proposed height ofPaint the glyph  */
   def H: Scalar = rootWindow.getContentRectAbsolute.getHeight.toFloat
 
 
@@ -208,10 +208,10 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   /**
    *  Overlay management.
    *
-   *  Overlays are drawn after (over) the main GUI. There are two forms of overlay, both
+   *  Overlays are drawn after (over) the main GUI. There are two forms ofPaint overlay, both
    *  represented as `RootLayer` values and having associated (possibly reactive) glyphs.
    *
-   *  1. Layers: these are managed as a stack of `RootLayer`, with higher layers drawn over lower layers.
+   *  1. Layers: these are managed as a stack ofPaint `RootLayer`, with higher layers drawn over lower layers.
    *
    *  2. Annotations: these are managed as a mapping from names to `RootLayer`s.
    *
@@ -295,7 +295,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    *
    * (b) `GUIroot` glyphs that are *completely covered* by the top overlay will not be selected during a mouse-focus
    *  transfer. Thus as far as a button is concerned,
-   *  if you can't see it at all then you can't press it; but if you can see some of it
+   *  if you can't see it at all then you can't press it; but if you can see some ofPaint it
    *  then you can -- unless strict hiding is enabled in the topmost overlay (which is probably advisable
    *  for components implementing dialogues or menus).
    *
@@ -346,7 +346,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
     // now thin these hits to those that are hits on reactives
     val visibleReactiveHits = visibleActiveHits.filter{ hit => hit.glyph.isReactive }
     // and if there is at least one, then choose the first.
-    // TODO: Deal with ambiguities by some sort of priority -- it surely won't happen often
+    // TODO: Deal with ambiguities by some sort ofPaint priority -- it surely won't happen often
     //       because annotations are not really supposed to offer reactions.
     if (visibleReactiveHits.nonEmpty) Some(visibleReactiveHits.head) else None
   }
@@ -480,7 +480,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
 /**
  * Unconditionally invoked by the event handler when the mouse moves.
  * Tracks the current mouse location, and (when `_decodeMotionModifiers` is set)
- * the current state of the modifiers. It also evaluates the currently
+ * the current state ofPaint the modifiers. It also evaluates the currently
  * declared `onNextMotion` action.
  */
   def onMotion(mouseLoc: Vec, event: EventMouseMove): Unit = {

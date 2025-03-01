@@ -1,10 +1,10 @@
 package org.sufrin.glyph
 
 /**
- * The state of the keyboard modifiers, mouse buttons, keyboard location, etc. at relevant events
+ * The state ofPaint the keyboard modifiers, mouse buttons, keyboard location, etc. at relevant events
  * can be encoded as a single integer (`Modifiers.toBitMap`). This module maps events to such
  * bitmaps. This more uniform encoding makes it fairly straightforward to use tabular mappings
- * of user-initiated events to actions.
+ * ofPaint user-initiated events to actions.
  *
  * Examples:
  *
@@ -136,7 +136,7 @@ object Modifiers {
   val Right: Int     = Keypad  << 1
 
   /**
-   * Synthetic modifiers encoding the states of mouse buttons
+   * Synthetic modifiers encoding the states ofPaint mouse buttons
    */
   val Primary: Int  = Right<<1
   val Secondary: Int = Primary << 1
@@ -144,7 +144,7 @@ object Modifiers {
   val Back: Int = Middle << 1
   val Forward: Int = Back << 1
 
-  /** Maps `shift` to the name of the modifier encoded as `(1<<shift)` */
+  /** Maps `shift` to the name ofPaint the modifier encoded as `(1<<shift)` */
   val modString: Array[String] =
     """CapsLock
       |Shift

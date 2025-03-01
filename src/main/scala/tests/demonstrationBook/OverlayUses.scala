@@ -21,7 +21,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
   import pageStyle.{ex, em}
   import translation._
 
-  // Each subpage of this page declares its own style,
+  // Each subpage ofPaint this page declares its own style,
   // usually the standard application style, except for
   // the Menus subpage, which declares local styles
   // for some menus.
@@ -259,7 +259,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
             dial("South").South(theTarget).start()
             dial("SouthWest").SouthWest(theTarget).start()
             dial("West").West(theTarget).start()
-            dial("In front of").InFront(theTarget).start()
+            dial("In front ofPaint").InFront(theTarget).start()
         },
         ex scaled 10,
         theTarget,
@@ -363,7 +363,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
           pressed, no matter what page/subpage of the app is showing.
         </p>
       </div>,ex,
-      TextButton("Point to the North West corner of the window") {
+      TextButton("Point to the North West corner ofPaint the window") {
         _ => setLocalState(true)
       }
     )

@@ -2,10 +2,10 @@ package org.sufrin.glyph
 
 /**
  *  An `Alignment` describes alignments used when justifying paragraphs.
- *  Its `left, right` scalars describe the stretchability of the spaces
- *  that will be placed at the left and right of each line of a justified
- *  paragraph. Its `last` scalar is the stretchability at the right of
- *  the final line of the paragraph (which may have fewer words in it
+ *  Its `left, right` scalars describe the stretchability ofPaint the spaces
+ *  that will be placed at the left and right ofPaint each line ofPaint a justified
+ *  paragraph. Its `last` scalar is the stretchability at the right ofPaint
+ *  the final line ofPaint the paragraph (which may have fewer words in it
  *  than the others.
  *
  * @see text
@@ -18,16 +18,16 @@ trait Alignment {
   val right: Scale
   val last: Scale
 
-  /**  Proportion of excess space to use when Col setting */
+  /**  Proportion ofPaint excess space to use when Col setting */
   val proportion: Float
 
-  /** A fresh stretchable glyph of zero length and `left` stretchability */
+  /** A fresh stretchable glyph ofPaint zero length and `left` stretchability */
   def leftFill() = FixedSize.Fill(0, left)
 
-  /** A fresh stretchable glyph of zero length and `right` stretchability */
+  /** A fresh stretchable glyph ofPaint zero length and `right` stretchability */
   def rightFill() = FixedSize.Fill(0, right)
 
-  /** A fresh stretchable glyph of zero length and `last` stretchability */
+  /** A fresh stretchable glyph ofPaint zero length and `last` stretchability */
   def lastFill() = FixedSize.Fill(0, last)
 }
 
@@ -53,9 +53,9 @@ case object Justify extends Alignment {
 }
 
 trait VAlignment {
-  /**  Proportion of excess space to use when Row setting */
+  /**  Proportion ofPaint excess space to use when Row setting */
   val proportion: Float
-  /** Are baselines to be aligned (independent of proportion) */
+  /** Are baselines to be aligned (independent ofPaint proportion) */
   val atBaseline: Boolean = false
 }
 case object Top extends VAlignment {

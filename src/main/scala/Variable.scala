@@ -12,19 +12,19 @@ class Variable[T](
 
   override def toString: String = s"${_theValue}"
 
-  /** Set the `value` of the variable
+  /** Set the `value` ofPaint the variable
    *  @see value_=
    */
   def set(value: T): Unit = this.value = value
 
-  /** Yield the value of the variable */
+  /** Yield the value ofPaint the variable */
   def get: T = _theValue
 
-  /** Yield the value of the variable */
+  /** Yield the value ofPaint the variable */
   def value: T = _theValue
 
   /**
-   * Set the value of the variable, and
+   * Set the value ofPaint the variable, and
    * trigger `onChange(oldValue, value)`
    * if they differ.
    */
@@ -37,7 +37,7 @@ class Variable[T](
 
 /**
  * An active `Variable[Boolean]` that triggers a reaction when its
- * value changes. As a convenience it enables a list of things to
+ * value changes. As a convenience it enables a list ofPaint things to
  * be registered with it.
  */
 class BooleanVariable[T](initially: Boolean, reaction: Boolean => Unit) extends

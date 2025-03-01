@@ -11,7 +11,7 @@ object Example3a extends Application  with Example3Interface {
     labelFontSize         = 32,
     buttonBackgroundBrush = grey2,
     buttonForegroundBrush = black,
-    buttonDecoration      = styles.decoration.Framed(fg=darkGrey(cap=ROUND, width=6), bg=grey2, radiusFactor = 0.3f)
+    buttonDecoration      = styles.decoration.Framed(fg=darkGrey(cap=ROUND, width=6), bg=grey2, radius = 0.3f)
   )
   override def title: String = "Example 3a"
 }
@@ -49,7 +49,7 @@ object Example3c extends Application  with Example3Interface {
 /** A parameterized class implementing `Example3Interface` by defining  (its) style. */
 class Example3dInterface(val style: StyleSheet) extends Example3Interface { }
 
-/** The application's main now makes an instance of `Example3dInterface` and puts it
+/** The application's main now makes an instance ofPaint `Example3dInterface` and puts it
  *  beside a button whose reaction is to clone a new Application with an identical
  *  GUI.
  */

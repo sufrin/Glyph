@@ -4,7 +4,7 @@ import io.github.humbleui.jwm.{EventMouseScroll, Window}
 import org.sufrin.glyph.GlyphTransforms.Edged
 
 /**
- *  A collection of `Reactive` glyph types.
+ *  A collection ofPaint `Reactive` glyph types.
  */
 object ReactiveGlyphs {
 
@@ -33,7 +33,7 @@ object ReactiveGlyphs {
   }
 
   /**
-   * A `GenericButton` keeps track of whether the cursor is hovering over it, and
+   * A `GenericButton` keeps track ofPaint whether the cursor is hovering over it, and
    * whether it has been pressed but not released. If the mouse is pressed and then released
    * it invokes `react()`. If the mouse is pressed over it, but released elsewhere,
    * then there is no reaction.
@@ -46,7 +46,7 @@ object ReactiveGlyphs {
 
     /**
      * Reaction to invoke on the UI thread after the main reaction has run.
-     * Used in the decoration of menu buttons
+     * Used in the decoration ofPaint menu buttons
      */
     private var _afterReact: Option[Reaction] = None
     /** Specify a reaction to invoke after the main reaction  */
@@ -69,14 +69,14 @@ object ReactiveGlyphs {
     var inactive: Boolean = false
     var enabled:  Boolean = true
     /**
-     * The most recent state of the modifiers (shift keys, button keys).
+     * The most recent state ofPaint the modifiers (shift keys, button keys).
      * This is intended to support hinting: maintained but as-yet unused.
      */
     var modifiers: Int    = 0
     @inline def disabled: Boolean = !enabled
 
     /**
-     * Return the current enabled state of the glyph; set the new state
+     * Return the current enabled state ofPaint the glyph; set the new state
      */
     override def enabled(state: Boolean): Boolean = {
       val oldState = enabled
@@ -89,7 +89,7 @@ object ReactiveGlyphs {
     def showState: String = s"""${S("P")(pressed)}${S("H")(hovered)} $A... """
 
     /**
-     * Invoke the button's reaction independently of its pressed/hovered state,
+     * Invoke the button's reaction independently ofPaint its pressed/hovered state,
      * then reset its state.
      *
      * TODO: for shortcuts
@@ -224,11 +224,11 @@ object ReactiveGlyphs {
     }
 
     /**
-     * The diagonal size of the glyph
+     * The diagonal size ofPaint the glyph
      */
     override def diagonal: Vec = glyph.diagonal
 
-    /** A copy of this glyph; perhaps with different foreground/background */
+    /** A copy ofPaint this glyph; perhaps with different foreground/background */
     def copy(fg: Brush=this.fg, bg: Brush=this.bg): Glyph =
       new ColourButton(appearance(fg.copy(), bg.copy()), down, hover, background, react)
 
@@ -250,11 +250,11 @@ object ReactiveGlyphs {
     }
 
     /**
-     *  When true, it is assumed that the button area is the union of the bounding
-     *  boxes of the three glyphs, and whether the mouse cursor is within the button.
+     *  When true, it is assumed that the button area is the union ofPaint the bounding
+     *  boxes ofPaint the three glyphs, and whether the mouse cursor is within the button.
      *
      *  When false, the up, down, and hover glyph shapes are used, individually, depending on
-     *  the state of the button, to determine whether the cursor is within the button.
+     *  the state ofPaint the button, to determine whether the cursor is within the button.
      */
     def asBounded: Boolean = !withDetailedShape
     val withDetailedShape: Boolean = false
@@ -347,7 +347,7 @@ object ReactiveGlyphs {
 
     /**
      * A button with up/down/hover glyphs, but no offsets/alphas
-     * that reflect its state. The exact shape of the glyphs are used to
+     * that reflect its state. The exact shape ofPaint the glyphs are used to
      * decide whether the mouse cursor is within the button.
      */
     def exact(up: Glyph, down: Glyph, hover: Glyph)(reaction: Reaction): RawButton =
@@ -362,7 +362,7 @@ object ReactiveGlyphs {
     /**
      * A button with up/down/hover glyphs specified by `up` but no offsets/alphas
      * that reflect its state. The down and hover colours are specified by the given paints.
-     * The exact shape of the glyph  used to
+     * The exact shape ofPaint the glyph  used to
      * decide whether the mouse cursor is within the button.
      */
     def exact(up: Glyph, down: Brush, hover: Brush)(reaction: Reaction): RawButton =
@@ -406,7 +406,7 @@ object ReactiveGlyphs {
 
     /**
      *   A framed button whose up, down, and hover glyphs are all `up`, and whose action is
-     *   independent of the state of the keyboard modifiers or the mouse button that was pressed.
+     *   independent ofPaint the state ofPaint the keyboard modifiers or the mouse button that was pressed.
      */
     def apply(up: Glyph)(action: => Unit): RawButton = new RawButton(
       Edged(DefaultBrushes.upFrame)(up),
@@ -457,14 +457,14 @@ object ReactiveGlyphs {
     var inactive: Boolean = false
     var enabled:  Boolean = true
     /**
-     * The most recent state of the modifiers (shift keys, button keys).
+     * The most recent state ofPaint the modifiers (shift keys, button keys).
      * This is intended to support hinting: maintained but as-yet unused.
      */
     var modifiers: Int    = 0
     @inline def disabled: Boolean = !enabled
 
     /**
-     * Return the current enabled state of the glyph; set the new state
+     * Return the current enabled state ofPaint the glyph; set the new state
      */
     override def enabled(state: Boolean): Boolean = {
       val oldState = enabled
@@ -583,7 +583,7 @@ object ReactiveGlyphs {
 
     locally { track.parent = this }
 
-    /** A copy of this glyph; perhaps with different foreground/background */
+    /** A copy ofPaint this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = new HorizontalSlider(track, image, initialProportion, fg, bg, reaction)
   }
 
@@ -648,7 +648,7 @@ object ReactiveGlyphs {
 
     locally { track.parent = this }
 
-    /** A copy of this glyph; perhaps with different foreground/background */
+    /** A copy ofPaint this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = new VerticalSlider(track, image, initialProportion, fg, bg, reaction)
   }
 
@@ -664,7 +664,7 @@ object ReactiveGlyphs {
   /**
    *
    *   A reactive glyph that delegates all accepts to `glyph`.
-   *   Usually one or more of the accept methods will be overridden.
+   *   Usually one or more ofPaint the accept methods will be overridden.
    */
   class Delegate(glyph: ReactiveGlyph) extends ReactiveGlyph {
 
@@ -676,11 +676,11 @@ object ReactiveGlyphs {
     def draw(surface: Surface): Unit = glyph.draw(surface)
 
     /**
-     * The diagonal size of the glyph
+     * The diagonal size ofPaint the glyph
      */
     def diagonal: Vec = glyph.diagonal
 
-    /** A copy of this glyph; perhaps with different foreground/background */
+    /** A copy ofPaint this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = new Delegate(glyph)
 
     val fg: Brush = glyph.fg

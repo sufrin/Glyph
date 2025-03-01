@@ -266,7 +266,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
           Label("s(m(g)) ").above(rowABCD.mirrored(leftRight = false, topBottom = true).skewed(0.5f, 0f).framed()), em, em,
           Label("m(s(m(g))) ").above(rowABCD.mirrored(leftRight = false, topBottom = true).skewed(0.5f, 0f).mirrored(leftRight = false, topBottom = true).framed())
         ), ex,
-        Label("Notice how the row (g) of vertical glyphs was skewed\nto the right as if from the top by m(s(m(g)))\n\nThis is the same effect as Skewed(-0.5,0)"), ex,
+        Label("Notice how the row (g) ofPaint vertical glyphs was skewed\nto the right as if from the top by m(s(m(g)))\n\nThis is the same effect as Skewed(-0.5,0)"), ex,
         rowABCD.skewed(-0.5f, 0)
       ).enlarged(20)
     }

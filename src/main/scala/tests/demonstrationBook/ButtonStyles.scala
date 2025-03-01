@@ -6,12 +6,13 @@ import styled.Label
 import styled.windowdialogues.Dialogue
 
 import Dialogue.{CHOOSE, OK}
-import NaturalSize.{Col, Row}
+import NaturalSize.{Col, Grid, Row}
 import styled.Book
 import styled.BookSheet
 import Glyphs.{INVISIBLE, Rect}
 
-import org.sufrin.glyph.DefaultBrushes.ROUND
+import org.sufrin.glyph.DefaultBrushes.{nothing, redFrame, ROUND}
+import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.ReactiveGlyphs.Reaction
 
 
@@ -48,85 +49,42 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   Page("Framed", "") {
     import styles.decoration.{Framed,unDecorated, Edged, Decorated}
     import styled.TextButton
-    Col(align=Center)(
-      anchor,
-      <div width="75em">
-        <p>The <b>Framed</b> buttons below were constructed with implicit styles that included specifications of rim width and radius:</p>
-
-        <CENTERCODE width="75em">
-        <![CDATA[
-            buttonBackgroundBrush=lightGrey,
-            buttonFrame = Framed(fg=darkGrey(width=...),
-                                 bg=lightGrey, enlarge=0.15f, radiusFactor = ...)))]]>
-        </CENTERCODE>
-        <fill/>
-      </div>.enlarged(20), vSpace(),
-      TextButton("Framed(width=4, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width=4), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
-      TextButton("Framed(width=8, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width=8), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
-      TextButton("Framed(width=10, radiusFactor=0.35)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width=10), lightGrey, enlarge=0.15f, radiusFactor = 0.35f))), ex,
-      TextButton("Framed(width=2, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width = 2), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex,
-      TextButton("Framed(width=4, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width = 4), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex,
-      TextButton("Framed(width=8, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width = 8), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex,
-      TextButton("Framed(width=10, radiusFactor=0.25)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Framed(darkGrey(width = 10), lightGrey, enlarge = 0.15f, radiusFactor = 0.25f))), ex, ex,
-      TextButton("Edged(width=10)") { _ => }(styleSheet.copy(buttonBackgroundBrush=lightGrey, buttonDecoration = Edged(darkGrey(width = 10, cap=ROUND), lightGrey, enlarge = 0.15f, radiusFactor = 0f))), ex, ex,
-      <p width="75em" align="center">Buttons framed in a variety of ways (click to see their source)</p>,
-      vSpace(2),
-        TextButton("Button #1")
+    def framed(fg: String, bg: String, radius: Scalar, buttonBG: String="lightGrey"): Glyph =
+        TextButton(s"Framed($fg, $bg, $radius)")
         { showSourceCode(
-          <SOURCECODE width="75em" DEC="Undecorated">
-      <![CDATA[
-       TextButton("Button #1")
-       { _=> ... }(styleSheet.copy(
-          buttonBackgroundBrush = lightGrey,
-          buttonDecoration      = Undecorated
-         )
-         .enlarged(10)
-         .edged(bg=lightGrey,
-                fg=brown(width=10, cap=ROUND).dashed(20,10))
-     ]]>
-    </SOURCECODE>
-        ) }
-        (styleSheet.copy(buttonDecoration = unDecorated, buttonBackgroundBrush=lightGrey))
-        .enlarged(10).edged(fg=DefaultBrushes.brown(width=10, cap=ROUND).dashed(20,10))
+          <div align="left" width="75em" DEC="Undecorated">
+            <p>buttonBackgroundBrush={buttonBG}</p><p>buttonDecoration = Framed({fg}, {bg}, enlarge=0.9f, radius={radius.toString})</p>
+          </div>)
+        }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG), buttonDecoration = Framed(DefaultBrushes(fg), DefaultBrushes(bg), enlarge=0.9f, radius=radius)))
 
-      beside hSpace(4) beside
-
-          TextButton("Button #2")
-        { showSourceCode(
-         <SOURCECODE width="75em" DEC="Undecorated">
-    <![CDATA[
-     TextButton("Button #2")
-     { _=> ... }(styleSheet.copy(
-        buttonBackgroundBrush = lightGrey,
-        buttonDecoration      = unDecorated)
-       )
-       .enlarged(20)
-       .edged(bg=lightGrey,
-              fg=.red(width=20, cap=ROUND).dashed(20,20))
-   ]]>
-         </SOURCECODE>
-        ) }
-        (styleSheet.copy(buttonBackgroundBrush=lightGrey,
-                         buttonDecoration = unDecorated))
-        .enlarged(20, bg=lightGrey).edged(bg=lightGrey, fg=DefaultBrushes.red(width=20, cap=ROUND).dashed(20,20))
-      beside hSpace(4) beside
-      TextButton("Button #3")
+    def edged(fg: String, bg: String, radius: Scalar, buttonBG: String="lightGrey"): Glyph =
+      TextButton(s"Edged($fg, $bg)")
       { showSourceCode(
-        <SOURCECODE width="75em"  DEC="Decorated">
-    <![CDATA[
-       TextButton("Show source #3")
-       { _=> ... }
-        (styleSheet.copy(buttonBackgroundBrush=lightGrey.rounded(5),
-                         buttonDecoration = Decorated
-                         { glyph => glyph.enlarged(20)
-                                         .edged(bg=lightGrey,
-                                                fg=red(width=20, cap=ROUND)
-                                                      .dashed(20,20)) }]]>
-        </SOURCECODE>
-      ) }
-      (styleSheet.copy(buttonBackgroundBrush=lightGrey.rounded(5),
-                       buttonDecoration = Decorated
-                        { glyph => glyph.enlarged(20).edged(bg=lightGrey, fg=DefaultBrushes.red(width=20, cap=ROUND).dashed(20,20)) }))
+        <div align="Left" width="75em" DEC="Undecorated">
+          <p>buttonBackgroundBrush={buttonBG}</p><p>Edged({fg}, {bg}, enlarge=0.9f)</p>
+        </div>)
+      }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG), buttonDecoration = Edged(DefaultBrushes(fg), DefaultBrushes(bg), enlarge=.9f)))
+
+    Col(align=Center)(
+      <div width="60em" align="justify">
+        <p align="center">Button decoration with Framed and Edged.</p>
+        <p>Edged: the width/curvature of the edge depends only on the width/cap of <tt>fg</tt>, and the
+           <tt>bg</tt> is ignored.
+        </p>
+        <p>Framed: the width and curvature of the frame (if <tt>fg</tt> is not <b>nothing</b>) is determined by <tt>radius</tt> (if that is not zero), else by <tt>fg</tt>'s width;
+           the curvature of the background  (if <tt>bg</tt> is not <b>nothing</b>) is determined by <tt>radius</tt>.
+        </p>
+        <p>Click on any of the buttons to see the relevant parts of its style.</p>
+      </div>,
+      anchor,
+      Grid(width=3, padx=10, pady=10).rows(
+      framed("darkGrey/0/ROUND", "", 10), framed("darkGrey/0/ROUND", "", 20), framed("darkGrey/0/ROUND", "", 30),
+      edged("darkGrey/10/ROUND", "", 10) ,  edged("darkGrey/20/ROUND", "yellow", 20) ,  edged("darkGrey/30/ROUND", "", 30),
+      edged("darkGrey/10/SQUARE", "", 10) ,  edged("darkGrey/20/SQUARE", "yellow", 20) ,  edged("darkGrey/30/SQUARE", "", 30),
+      framed("", "lightGrey", 10) ,  framed("", "lightGrey", 20) ,  framed("", "lightGrey", 30),
+      framed("red/10", "", 10, "yellow") ,  framed("red/20", "", 20, "yellow") ,  framed("red/30", "", 30, "yellow"),
+      framed("darkGrey/10/ROUND", "nothing", 10) ,  framed("darkGrey/20/ROUND", "nothing", 20) ,  framed("darkGrey/30/ROUND", "nothing", 30)
+      )
     )
   }
 

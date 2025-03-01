@@ -1,12 +1,12 @@
 package org.sufrin.microCSO
 
 /**
- * A drastically simplified sublanguage of ThreadCSO using only
+ * A drastically simplified sublanguage ofPaint ThreadCSO using only
  * virtual threads.
  *
- * TODO: pay more attention to the details of || terminations
- *       when a component fails/stops, and of the interruption
- *       of waiting peers in the face of channel closure.
+ * TODO: pay more attention to the details ofPaint || terminations
+ *       when a component fails/stops, and ofPaint the interruption
+ *       ofPaint waiting peers in the face ofPaint channel closure.
  */
 
 import java.util.concurrent.{LinkedBlockingQueue, TimeUnit}

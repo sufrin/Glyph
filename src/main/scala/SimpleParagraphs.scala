@@ -9,19 +9,19 @@ import scala.collection.mutable.ListBuffer
 
 object SimpleParagraphs {
   /**
-   * A glyph formed of the paragraphs of `text` with blank lines between them.
+   * A glyph formed ofPaint the paragraphs ofPaint `text` with blank lines between them.
    * No paragraph is wider than `ems` characters.
    *
    * The `text` is split into paragraphs at boundaries where an empty or empty-looking line appears, or
    * where a line starts with "[".
    *
-   * The words of each paragraph are then used to fill lines of length no more than `ems`, and the
-   * glyph that results is the Col composition of the Text formed of these lines.
+   * The words ofPaint each paragraph are then used to fill lines ofPaint length no more than `ems`, and the
+   * glyph that results is the Col composition ofPaint the Text formed ofPaint these lines.
    *
-   * Normally each line has the alignment specified by `align`; but if the first word of a paragraph starts with
-   * [C] then the alignment  of the paragraph is Center. Likewise, if it starts with [R] the rest of the
-   * paragraph is right-aligned. [I] indents the rest of the paragrap. [*] indents and bulletpoints
-   * the rest of the paragraph.
+   * Normally each line has the alignment specified by `align`; but if the first word ofPaint a paragraph starts with
+   * [C] then the alignment  ofPaint the paragraph is Center. Likewise, if it starts with [R] the rest ofPaint the
+   * paragraph is right-aligned. [I] indents the rest ofPaint the paragrap. [*] indents and bulletpoints
+   * the rest ofPaint the paragraph.
    */
   def apply(ems: Int, font: Font = DefaultBrushes.buttonFont, fg: Brush = blue, align: Alignment=Left)(text: String): Glyph = {
     val emWidth = Text("n", font).w
@@ -59,6 +59,7 @@ object SimpleParagraphs {
         var alignment = align
         var formatting = true
         var skip = true
+        var count = 0
 
         while (formatting) {
           content match {
@@ -74,7 +75,8 @@ object SimpleParagraphs {
         }
 
         val justified   = Col(align=align)(paragraphLines(ems-indent, content, alignment))
-        if (skip) result.addOne(Text(" ", font, fg))
+        if (skip&&count>0) result.addOne(Text(" ", font, fg))
+        count += 1
 
         if (indent!=0) {
            result.addOne(Text(" "*indent, font, fg) beside justified)
