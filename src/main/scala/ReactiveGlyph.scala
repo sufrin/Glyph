@@ -2,9 +2,9 @@ package org.sufrin.glyph
 
 /**
  *    A `ReactiveGlyph` can react to mouse, scrolling, and keyboard events. It
- *    discriminates on the detailed kind ofPaint event.
+ *    discriminates on the detailed kind of event.
  *
- *    It is essential for the correct implementation ofPaint
+ *    It is essential for the correct implementation of
  *    `contains`, THAT EVERY REACTIVE GLYPH IMPLEMENTATION invokes
  *    `surface.safeAffine(this)` if it is drawn with
  *    a transform in place.
@@ -20,7 +20,7 @@ abstract class ReactiveGlyph extends Glyph {
 
   /**
    *
-   *  This maps the screen locations ofPaint mouse events to their
+   *  This maps the screen locations of mouse events to their
    *  locations relative to the location where this glyph was
    *  last drawn.
    *
@@ -32,7 +32,7 @@ abstract class ReactiveGlyph extends Glyph {
   var reverseTransform: Vec    => Vec = { v => v }
 
   /**
-   *  When nonzero, `_scope` is the diagonal ofPaint the (absolute) bounding box within which a
+   *  When nonzero, `_scope` is the diagonal of the (absolute) bounding box within which a
    *  reactive glyph can still be considered to contain the cursor.
    */
   var _scope = Vec.Zero
@@ -46,11 +46,11 @@ abstract class ReactiveGlyph extends Glyph {
 
   /**
    * Returns whether this reactive glyph contains the given screen location.
-   * It takes account ofPaint the fact that this reactive glyph
-   * (or one ofPaint its ancestors) may have been scaled rotated
+   * It takes account of the fact that this reactive glyph
+   * (or one of its ancestors) may have been scaled rotated
    * or translated.
    *
-   * The drawing method ofPaint each reactive glyph MUST save the
+   * The drawing method of each reactive glyph MUST save the
    * affine transform in place when it is drawn.
    *
    */
@@ -64,7 +64,7 @@ abstract class ReactiveGlyph extends Glyph {
     glyph.contains(rootDistance + relativeLocation) && ((_scope eq Vec.Zero) || (screenLocation within _scope))
   }
 
-  /** The glyph-relative position ofPaint the given screen location  */
+  /** The glyph-relative position of the given screen location  */
   def glyphLocation(screenLocation: Vec): Vec = reverseTransform(screenLocation)
 
   var _changedState: Boolean = false

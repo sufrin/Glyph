@@ -52,7 +52,7 @@ object NumberUtils {
 
   def roman(num: Int): String = Roman(num).toLowerCase
   def Roman(num: Int): String = {
-    assert(0<=num && num<600000, "Number out ofPaint representable range (1-600000)")
+    assert(0<=num && num<600000, "Number out of representable range (1-600000)")
     var rep = ""
     var n = num
     for ((value, numeral) <- romanNumerals) {
@@ -65,7 +65,7 @@ object NumberUtils {
   }
 
   /**
-   *   Pre: `s` consists only ofPaint hexadecimal characters
+   *   Pre: `s` consists only of hexadecimal characters
    *   @return the integer represented in hexadecimal by the string `s`.
    */
   def hexToInt(s: String): Int = {

@@ -54,9 +54,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       Col(align=Center)(
 
         Paragraph(50, Justify)(
-          """A grid ofPaint rotating buttons. Individual buttons are started/stopped
+          """A grid of rotating buttons. Individual buttons are started/stopped
             |by clicking on them; and can be started or stopped together with
-            |the Start all / Stop all toggle button. The speed ofPaint the last
+            |the Start all / Stop all toggle button. The speed of the last
             |started/stopped button(s) can be adjusted with the Faster/Slower
             |buttons.
             |
@@ -138,13 +138,13 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       import ReactiveGlyphs.Slider
       val left = Paragraph(30, Justify)(
         """
-          |This is a justified piece ofPaint text that may be quite small.
+          |This is a justified piece of text that may be quite small.
           |You'll see it on a split screen. When the text on the other
           |screen is not the same width we'll see what happens.
           |""".stripMargin) above ReactiveGlyphs.TextButton("The Left Button") { _ => }.framed()
       val right = Paragraph(40, Left)(
         """
-          |This is a left-justified piece ofPaint text that may be quite small.
+          |This is a left-justified piece of text that may be quite small.
           |You'll see it on a split screen. It'll be a bit wider
           |than the other thing on the screen.
           |""".stripMargin) above ReactiveGlyphs.TextButton("The Right Button") { _ => }.framed()
@@ -157,15 +157,15 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       Col(align=Center)(
         Paragraph(60, Justify)(
           """
-            |This is a test ofPaint the SplitScreen glyph. The test shows a pair ofPaint glyphs side by
-            |side, each ofPaint which contains some text and a reactive glyph. Here we have coupled
+            |This is a test of the SplitScreen glyph. The test shows a pair of glyphs side by
+            |side, each of which contains some text and a reactive glyph. Here we have coupled
             |the SplitScreen dynamically with a
             |Slider.Horizontal that sets the boundary between the left and right
             |glyphs, accompanied by three buttons that respectively move the boundary to the left,
             |exchange left and right, and move the boundary to the right.
             |
             | Notice how the reactives respond when the cursor hovers over
-            |parts ofPaint them that are not visible, namely by giving up the
+            |parts of them that are not visible, namely by giving up the
             |focus if they happened to have it.
             |""".stripMargin), ex, ex,
         dynamic,
@@ -183,8 +183,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         Paragraph(60, Justify)(
           """
             |Below we test the SplitScreen with a static size large enough to accomodate both glyphs.
-            |It was, incidentally, built from copies ofPaint the left and right glyphs that appear above;
-            |so also acts as a test for deep-copying ofPaint all the glyphs involved in their construction.
+            |It was, incidentally, built from copies of the left and right glyphs that appear above;
+            |so also acts as a test for deep-copying of all the glyphs involved in their construction.
             |""".stripMargin), ex,
         static,
         TextButton("L<->R") {
@@ -256,13 +256,14 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     Page("OneOf", "OneOf backgrounds") {
       import DynamicGlyphs.OneOf
 
-      val aaa = Label("AAA").copy(fg=blue,bg=yellowHuge(width=2f)).framed(fg=yellowHuge)
+      val aaa = Label("AAA").copy(fg=blue).enlarged(90, bg=yellow)
       val bbb = Label("BBB").copy(fg=blue, bg=nothing).scaled(2f)
       val ccc = Label("CCCCCC").copy(fg=blue, bg=red(width=2f)).scaled(2f).enlarged(10f)
       val ddd = Label("Ping").copy(bg=nothing, fg=black).scaled(1.5f).enlarged(10f)
       val eee = Label("Poobah is longer").copy(bg=green, fg=black).scaled(1.5f).enlarged(10f)
-      val oneOf = OneOf()(aaa(), bbb(), ccc())
-      val oneOfBG = OneOf(bg=black(alpha=0.25f))(aaa(), bbb(), ccc())
+
+      val oneOf   = OneOf()(aaa(), bbb(), ccc())
+      val oneOfBG = OneOf(bg=lightGrey)(aaa(), bbb(), ccc())
       val oneOfPB = OneOf()(ddd(), eee())
 
       val buttonSheet: StyleSheet = pageSheet.copy(buttonDecoration=styles.decoration.Edged(fg=lightGrey.copy(width=16, cap=ROUND)))
@@ -279,12 +280,12 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       Col(fg=nothing, bg=white, align=Center)(
         Paragraph(60, Left)(
           """
-            |The background ofPaint a OneOf can be specified. If left unspecified it
+            |The background of a OneOf can be specified. If left unspecified it
             |is taken to be the background
-            |ofPaint one ofPaint the glyphs ofPaint maximal area.
+            |of one of the glyphs of maximal area.
             |
             |Click on the buttons below to cycle through the
-            |states ofPaint the OneOfs.
+            |states of the OneOfs.
             |
             |""".stripMargin), ex,
         Row(fg=nothing, bg=white)(next, em, em, sel0), ex, ex,
@@ -292,7 +293,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         Col(align=Center)(Label(s"""oneOf=OneOf()(AAA,BBB,CCCCCC)"""), ex, oneOf scaled .7f).enlarged(40).framed(), ex, ex,
         Col(align=Center)(Label(s"""oneOf=OneOf()(Ping, Poobah)"""), ex, oneOfPB scaled .7f).enlarged(40).framed(), ex, ex, ex,
         Label("The OneOf component glyphs AAA, BBB, ... are:"), ex,
-        Row(fg=nothing, bg=white)(aaa(), em, bbb(), em, ccc(), em, ddd(), em, eee()) scaled 0.8f
+        Row(bg=nothing, fg=nothing, align=Mid)(aaa(), em, bbb(), em, ccc(), em, ddd(), em, eee()) scaled 0.8f
 
       ).enlarged(40)
     }
@@ -331,7 +332,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       Col(align=Center)(
         Paragraph(50, Justify)(
           """
-            |Several linked sliders subjected to a variety ofPaint
+            |Several linked sliders subjected to a variety of
             |scalings, rotations, and skewings.
             |Hover over them for the details. Click
             |or slide or rotate the wheel to set.

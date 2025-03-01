@@ -66,7 +66,7 @@ trait Vec {
   final def union(other: Vec): Vec = Vec(this.x max other.x, this.y max other.y)
 
   /**
-   * Does this `Vec` fall wholly inside the box ofPaint the given `diagonal` at `origin`
+   * Does this `Vec` fall wholly inside the box of the given `diagonal` at `origin`
    */
   final def inside(origin: Vec, diagonal: Vec): Boolean =
     origin.x <= x && x <= origin.x + diagonal.x && origin.y <= y && y <= origin.y + diagonal.y

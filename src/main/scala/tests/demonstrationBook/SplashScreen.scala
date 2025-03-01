@@ -19,7 +19,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
 
   lazy val thisApplication: Application = new Interface with Application {
 
-      // The computed root ofPaint the running glyph,
+      // The computed root of the running glyph,
       private var theRootGlyph:Glyph = null
 
       def GUI: Glyph = {

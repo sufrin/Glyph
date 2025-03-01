@@ -12,7 +12,7 @@ object Text extends DefaultPaints {
    * @param font
    * @param fg
    * @param bg
-   * @param transient true if there is no point in sharing this `(string,font)`'s IMPLEMENTATION with those ofPaint
+   * @param transient true if there is no point in sharing this `(string,font)`'s IMPLEMENTATION with those of
    *                  others. The space saving afforded by sharing can be considerable.
    * @return
    */
@@ -27,14 +27,14 @@ object Text extends DefaultPaints {
     val implementation: io.github.humbleui.skija.TextLine
 
     /**
-     * The index ofPaint the character (Unicode codepoint) whose visual representation is laterally offset by `distance` from the
-     * start ofPaint the displayed text.
+     * The index of the character (Unicode codepoint) whose visual representation is laterally offset by `distance` from the
+     * start of the displayed text.
      */
     def charIndexOf(distance: Scalar): Int = implementation.getOffsetAtCoord(distance)
 
     /**
-     * The lateral offset from the start ofPaint the displayed text ofPaint the visual representation ofPaint the `index`th character
-     * ofPaint the string.
+     * The lateral offset from the start of the displayed text of the visual representation of the `index`th character
+     * of the string.
      *
      * {{{
      *   charIndexOf(lateralOffsetOf(n)) = n (for 0<=n<string.length)
@@ -43,7 +43,7 @@ object Text extends DefaultPaints {
     def lateralOffsetOf(index: Int): Scalar = implementation.getCoordAtOffset(index)
 
     /**
-     * Font-specific identifiers ofPaint the individual characters ofPaint the text. "These IDs
+     * Font-specific identifiers of the individual characters of the text. "These IDs
      * help in rendering text efficiently".
      */
     def glyphIDs: Seq[Short] = implementation.getGlyphs.toSeq
@@ -76,8 +76,8 @@ object Text extends DefaultPaints {
     }
 
     /**
-     * Distance from the top ofPaint the glyph to the baseline ofPaint the font in which it will be drawn.
-     * To construct a horizontal glyph ofPaint glyphs ... aligned at their baselines:
+     * Distance from the top of the glyph to the baseline of the font in which it will be drawn.
+     * To construct a horizontal glyph of glyphs ... aligned at their baselines:
      * {{{
      * Row(align=Baseline)(...)
      * }}}

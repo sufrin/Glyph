@@ -6,9 +6,9 @@ package styles
  * GUIs whose components take implicit context parameters.
  *
  * This "high level" notion is an alternative to the "low level"
- * provision ofPaint default foreground, background, and font parameters.
+ * provision of default foreground, background, and font parameters.
  *
- * The StyleSheet class incorporates many ofPaint these individual
+ * The StyleSheet class incorporates many of these individual
  * style components.
  *
  * @see StyleSheet
@@ -44,10 +44,10 @@ package styles
     def toGlyph(string: String, fg: Brush = fg, bg: Brush = bg): Glyph = Text(string, font).asGlyph(fg, bg)
 
     lazy val emWidth: Scalar = font.measureTextWidth("M")
-    /** height ofPaint an X  in the button font */
+    /** height of an X  in the button font */
     lazy val exHeight: Scalar = font.measureText("X").getHeight
 
-    /** Space ofPaint dimension `emWidth * exHeight` */
+    /** Space of dimension `emWidth * exHeight` */
     lazy val strut: Glyph = new FixedSize.Space(emWidth, exHeight, 0f, 0f)
 
     /** An `emWidth/2` stretchable space */
@@ -73,10 +73,10 @@ package styles
     /**
      * Decorate the glyph with a (possibly-curved) frame
      *
-     * @param fg           foreground ofPaint the frame
-     * @param bg           background ofPaint the frame
-     * @param enlarge      (if `<1`) multiple ofPaint the smaller ofPaint the two glyph dimensions to enlarge the glyph by; otherwise absolute value to enlarge the glyph by.
-     * @param radius (if `==0`) a rectangular frame; otherwise the `radius` ofPaint the corner curves
+     * @param fg           foreground of the frame
+     * @param bg           background of the frame
+     * @param enlarge      (if `<1`) multiple of the smaller of the two glyph dimensions to enlarge the glyph by; otherwise absolute value to enlarge the glyph by.
+     * @param radius (if `==0`) a rectangular frame; otherwise the `radius` of the corner curves
      * @see GlyphTransforms.Framed
      */
     case class Framed(fg: Brush=DefaultBrushes.black, bg: Brush=DefaultBrushes.nothing, enlarge: Scalar = 0.15f, radius: Scalar = 0f) extends Decoration {
@@ -96,10 +96,10 @@ package styles
      * Decorate the glyph with `.shaded(fg, bg, enlarge, delta, down)`. The pre-framing enlargement is `enlarge` itself if `enlarge>1`,
      * otherwise `enlarge * (thisGlyph.w min thisGlyph.h)`
      *
-     * @param fg      foreground ofPaint the shading
-     * @param bg      background ofPaint the shading
-     * @param enlarge (if `<1`) multiple ofPaint the smaller ofPaint the two glyph dimensions to enlarge the glyph by; otherwise absolute value to enlarge the glyph by.
-     * @param delta   width ofPaint the shading
+     * @param fg      foreground of the shading
+     * @param bg      background of the shading
+     * @param enlarge (if `<1`) multiple of the smaller of the two glyph dimensions to enlarge the glyph by; otherwise absolute value to enlarge the glyph by.
+     * @param delta   width of the shading
      * @param down    if true the frame is around the bottom right, else it is around the top left
      * @see Glyph.shaded
      * @see Glyphs.Shaded

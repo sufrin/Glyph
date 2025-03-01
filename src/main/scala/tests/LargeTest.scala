@@ -138,11 +138,11 @@ trait LargeTestGUI {
   }
 
   /** An invisible glyph that will act as the anchor for popups.
-   * It will be placed at the (right) end ofPaint the menu bar.
+   * It will be placed at the (right) end of the menu bar.
    */
   private val popupAnchor: Glyph = INVISIBLE()
 
-  /** A small but important test ofPaint placing reactives in `OneOf`s */
+  /** A small but important test of placing reactives in `OneOf`s */
   private val scene4 = Framed()(
     Col(align=Center)(
       textColumn(fg = red)(
@@ -330,17 +330,17 @@ trait LargeTestGUI {
       medex,
       SimpleParagraphs(70, align=Left)(
         """When the mouse pointer is NOT the within the text field border the Left and Right keys cause
-          |the previous (next) page ofPaint the demonstration to be shown.
+          |the previous (next) page of the demonstration to be shown.
           |
           |When the mouse pointer is within the text field border, the cursor (a bold I-Beam) is always kept in view, and
           |the following additional keystrokes function as expected:
           |
           |[*] Ctrl/Cmd C - copy all to the clipboard
           |[*] Ctrl/Cmd X - cut all to clipboard
-          |[*] Ctrl/Cmd V - insert the content ofPaint the clipboard
+          |[*] Ctrl/Cmd V - insert the content of the clipboard
           |[*] Home/End/Left/Right - move the text cursor within the text
-          |[*] Backspace - delete the character to the left ofPaint the cursor
-          |[*] Delete - deletes the character to the right ofPaint the cursor and this is what happens to a long para
+          |[*] Backspace - delete the character to the left of the cursor
+          |[*] Delete - deletes the character to the right of the cursor and this is what happens to a long para
           |
           |
           |""".stripMargin), medex,
@@ -401,14 +401,14 @@ trait LargeTestGUI {
         """(7) Various NaturalSize.Row(align=...) alignments
           |[Top(red), Mid(green), Bottom(blue), Baseline(black)]
           |showing baseline+frame in dashed red explicitly when a baseline is present.
-          |The tall vertical bar has the height and baseline ofPaint the Huge glyph.
+          |The tall vertical bar has the height and baseline of the Huge glyph.
           """.stripMargin
       ),
       TextToggle(whenFalse="Enable baseline displays", whenTrue="Disable baseline displays", initially = true){ state => ShowingBaseline.enabled.set(state)}.shaded(),
       medex, atTop.edged() beside  blob beside atMid.edged(),
       medex, atBottom.edged() beside blob beside atBaseline.showingBaseline,
       medex scaled 2,
-      textColumn()("A Row(align=Baseline) ofPaint two Row(align=Baseline) with a huge dash between"),
+      textColumn()("A Row(align=Baseline) of two Row(align=Baseline) with a huge dash between"),
       Row(Baseline)(atBaseline, Text("-", hugeFont).showingBaseline, Row(align=Baseline)(huge(),large(),med()).showingBaseline),
       medex, textColumn()("FixedSize.Row(align=Baseline)"),
       FixedSize.Row(width=atBaseline.w*1.3f, align=Baseline)(blob::texts.map(_.copy())).edged().showingBaseline,
@@ -606,7 +606,7 @@ trait LargeTestGUI {
 
     Col(align=Center)(
       textColumn(smallFont, blue)(
-        """(11) Making buttons ofPaint pre-scaled glyphs
+        """(11) Making buttons of pre-scaled glyphs
           |""".stripMargin),
       space,
       rowA(rawB),
@@ -661,10 +661,10 @@ trait LargeTestGUI {
     Col(align=Center)(
         textColumn(buttonFont, blue)("""(12) Testing reactive-tracking under geometry transforms."""), medex, medex,
 
-        textColumn(buttonFont, blue)("""Buttons ofPaint a pre-rotated text glyph."""),
+        textColumn(buttonFont, blue)("""Buttons of a pre-rotated text glyph."""),
         Row(butOfRot(0), sp, butOfRot(2), sp, butOfRot(1), sp, butOfRot(3)),
         medex,
-        textColumn(buttonFont, blue)("Post-Rotated and turned buttons ofPaint the same glyph"),
+        textColumn(buttonFont, blue)("Post-Rotated and turned buttons of the same glyph"),
         Row(
           rotOfBut(0),
           sp,
@@ -684,7 +684,7 @@ trait LargeTestGUI {
           turnOfBut(80)
         ),
         medex,
-        textColumn(buttonFont, blue)("Buttons ofPaint the same glyph after framing then turning"),
+        textColumn(buttonFont, blue)("Buttons of the same glyph after framing then turning"),
         Row(
           butOfTurn(20),
           sp,
@@ -937,7 +937,7 @@ trait LargeTestGUI {
       val noEffect    = hoverColor.pathEffect
       val wibEffect    = wibbly(green).pathEffect
 
-       //Each ofPaint these checkboxes MUTATEs its associated colour
+       //Each of these checkboxes MUTATEs its associated colour
       val tUp = CheckBox(initially = false) {
         case true  => upColor pathEffect wibEffect
         case false => upColor pathEffect noEffect
@@ -965,7 +965,7 @@ trait LargeTestGUI {
           tHover
         ),
         ex, ex,
-        Label("Glyphbutton made with polygonal glyphs, then framed\n(the cursor must enter filled part ofPaint the glyph)"),ex,
+        Label("Glyphbutton made with polygonal glyphs, then framed\n(the cursor must enter filled part of the glyph)"),ex,
         GlyphButton(
           filledStar7(upColor),
           filledStar7(downColor)  rotated 2,
@@ -1172,22 +1172,22 @@ trait LargeTestGUI {
   private val helpGUI = Framed(whiteFrame)(
     Col(align=Center)(
     SimpleParagraphs(ems=70, smallFont, blue)(
-      """[C] This is a test ofPaint some basic Glyph  components.
+      """[C] This is a test of some basic Glyph  components.
         |
         |If its window doesn't fit on your screen, or if you'd like it to be bigger, first click the window
-        |resizing checkbox to enable dynamic resizing; then drag one ofPaint the window edges. While you are dragging,
+        |resizing checkbox to enable dynamic resizing; then drag one of the window edges. While you are dragging,
         |the window will be continuously resized (keeping the same aspect ratio) and its content rescaled accordingly.
         |
-        |The test has a few  numbered scenes that can be accessed in rotation by typing one ofPaint the "←" and "→" keys,
-        |or clicking one ofPaint the buttons at the left end ofPaint the menu bar or one ofPaint the numbered buttons.
+        |The test has a few  numbered scenes that can be accessed in rotation by typing one of the "←" and "→" keys,
+        |or clicking one of the buttons at the left end of the menu bar or one of the numbered buttons.
         |
         |[C] ----------------
         |
         |
         |The scenes arose arose organically during development so some now appear redundant. We have nevertheless continued to
-        |maintain the application because it is a good regression test for the most basic functions ofPaint the kit.
+        |maintain the application because it is a good regression test for the most basic functions of the kit.
         |
-        |Elsewhere there are demonstrations ofPaint some ofPaint the derived GUI components, such as styled texts, menus, and popups.""".stripMargin
+        |Elsewhere there are demonstrations of some of the derived GUI components, such as styled texts, menus, and popups.""".stripMargin
     )
   ))
 
@@ -1219,7 +1219,7 @@ trait LargeTestGUI {
     scene20,
     scene21
   )
-  /** Width ofPaint the menu bar */
+  /** Width of the menu bar */
   private val screenWidth = scenes.map(_.w).max
   val oneOf: OneOf = OneOf.seq(bg = white)(scenes)
   val menu: Glyph = FixedSize

@@ -109,11 +109,11 @@ class EventsAndWindows(implicit val style: BookSheet, implicit val translation: 
 
 
         /**
-         * The diagonal size ofPaint the glyph
+         * The diagonal size of the glyph
          */
         def diagonal: Vec = Vec(60 * em.w, 5 * ex.h)
 
-        /** A copy ofPaint this glyph; perhaps with different foreground/background */
+        /** A copy of this glyph; perhaps with different foreground/background */
         def copy(fg: Brush, bg: Brush): Glyph = null
         val fg: Brush = DefaultBrushes.black
         val bg: Brush = DefaultBrushes.yellowHuge
@@ -129,7 +129,7 @@ class EventsAndWindows(implicit val style: BookSheet, implicit val translation: 
              and subsequent <tt>Move</tt> reports in such a sequence of moves.</p>
         </div>,
         ex scaled 2,
-        Row(align=Mid)(Label("Shorten the log ofPaint Move sequences: "), CheckBox(initially = CatchEvents.elideAdjacentMoves) {
+        Row(align=Mid)(Label("Shorten the log of Move sequences: "), CheckBox(initially = CatchEvents.elideAdjacentMoves) {
           state =>
             CatchEvents.elideAdjacentMoves = state
             theLog.println(if (state) "You are now eliding adjacent move events" else "You are now showing adjacent move events")

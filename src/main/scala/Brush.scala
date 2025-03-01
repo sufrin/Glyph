@@ -12,11 +12,11 @@ object Brush {
 
   import io.github.humbleui.skija.PaintStrokeCap
 
-  def ofPaint(p: Paint): Brush = {
+  def of(p: Paint): Brush = {
     p match {
       case b: Brush => b
       case _        =>
-        new Brush (f"ofPaint(0X${p.getColor}%08X)")
+        new Brush (f"of(0X${p.getColor}%08X)")
         .color (p.getColor)
         .strokeWidth (p.getStrokeWidth)
         .strokeCap (p.getStrokeCap)
@@ -43,7 +43,7 @@ object Brush {
 
 /**
  * `Brush`es are the principal means by which pigments (paints, colours) are applied to `Surface`s
- * when a `Glyph` is rendered on it. This class is a subclass ofPaint `io.github.humbleui.skija.Paint`, but
+ * when a `Glyph` is rendered on it. This class is a subclass of `io.github.humbleui.skija.Paint`, but
  * provides an intelligible and efficient API for building, modifying, and deriving paint-potent objects.
  *
  * The standard notation for constructing a named `Brush` with features `(name="...", f1=v1, f2=v2, ...)` is:
@@ -52,13 +52,13 @@ object Brush {
  * }}}
  *
  * Features not mentioned in the parameter list take default values -- usually "neutral" or "ignorable", as described in the `Paint`.
- * Example: a `ROUND` red brush ofPaint width 30.
+ * Example: a `ROUND` red brush of width 30.
  * {{{
  *   val rre = Brush("roundredexample")(color=0XFFFF0000, cap=Brush.ROUND, width=30f)
  * }}}
  *
- * A `Brush` is mutable: its individual attributes can be changed dynamically by invoking one ofPaint the
- * inline methods marked "Mutation" below. Each ofPaint these return the brush itself; so they can be
+ * A `Brush` is mutable: its individual attributes can be changed dynamically by invoking one of the
+ * inline methods marked "Mutation" below. Each of these return the brush itself; so they can be
  * "chained". For example, the following expression yields `rre` itself after the specified changes
  * have been applied.
  * {{{
@@ -68,7 +68,7 @@ object Brush {
  * As far as possible we have named brush attributes ("getters"), brush mutation methods ("setters"), and brush construction and
  * copying parameters systematically. They won't necessarily have the same names as their counterparts within `Paint`.
  *
- * @param name the name ofPaint the brush: this can be changed, but it's not advisable to do so except
+ * @param name the name of the brush: this can be changed, but it's not advisable to do so except
  *             to contribute to a systematic debugging discipline.
  *
  * We strongly advise against using "pure" `Paint` or its methods in a `Glyph` application. Nothing will
@@ -91,7 +91,7 @@ class Brush(var name: String) extends Paint {
    if (Brush.includeDetail) s"$id$width$cap" else id
   }
 
-  /** A copy ofPaint `this`` brush with changed attributes as specified. */
+  /** A copy of `this`` brush with changed attributes as specified. */
   def apply(name: String        = this.name,
             color: Int          = this.color,
             width: Float        = this.strokeWidth,
@@ -119,7 +119,7 @@ class Brush(var name: String) extends Paint {
       . shader(shader)
       . blendMode(blendMode)
 
-  /** A copy ofPaint this brush with the same name. */
+  /** A copy of this brush with the same name. */
   def copy: Brush =
     Brush(name)
       .color(color)
@@ -267,9 +267,9 @@ class Brush(var name: String) extends Paint {
   /**
    * A new dropshadowed brush, with shadow based on this brush's colour.
    *
-   * @param blur extent ofPaint the blur
-   * @param dx horizontal displacement ofPaint the blur
-   * @param dy vertical displacement ofPaint the blur
+   * @param blur extent of the blur
+   * @param dx horizontal displacement of the blur
+   * @param dy vertical displacement of the blur
    * @return a new brush
    */
   def blurred(blur: Scalar, dx: Scalar=0f, dy: Scalar=0f): Brush = {

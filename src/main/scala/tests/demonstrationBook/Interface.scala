@@ -30,7 +30,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
       new Macro(<p align="center"><b>&BODY;</b></p>)
 
     /**
-     *  A simple implementation ofPaint <itemize> blocks containing <item>s.
+     *  A simple implementation of <itemize> blocks containing <item>s.
      *  {{{
      *    <itemize logging[=false]
      *             leftMargin[=5em]
@@ -49,7 +49,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
      *  Each <item> can specify its own hang, itemAlign, and itemWidth attributes, but otherwise inherits them from
      *  the closest lexically enclosing <itemize>
      *
-     *  <itemize> environments may not (at present) be nested, but the appearance ofPaint
+     *  <itemize> environments may not (at present) be nested, but the appearance of
      *  nesting can be given by changing hang text and increasing the itemIndent.
      */
 

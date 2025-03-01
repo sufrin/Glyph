@@ -3,9 +3,9 @@ package org.sufrin.glyph
 import scala.collection.mutable.ArrayBuffer
 import GlyphTypes.Scalar
 
-/* The Row and Col APIs are designed so that most ofPaint the characteristics ofPaint the Row(Col) can
- * be pre-set, thereby making it possible to apply them either to an unbounded number ofPaint
- * actual glyphs, or to a sequence ofPaint glyphs computed elsewhere.
+/* The Row and Col APIs are designed so that most of the characteristics of the Row(Col) can
+ * be pre-set, thereby making it possible to apply them either to an unbounded number of
+ * actual glyphs, or to a sequence of glyphs computed elsewhere.
  */
 
 object NaturalSize {
@@ -41,8 +41,8 @@ object NaturalSize {
     }
 
     /**
-     * A row-alignment ofPaint the glyphs, with each glyph placed vertically at
-     * `proportion` ofPaint the difference between the row height and its own height.
+     * A row-alignment of the glyphs, with each glyph placed vertically at
+     * `proportion` of the difference between the row height and its own height.
      *
      * {{{ 0.0 <= proportion <= 1.0 && theGlyphs.nonEmpty }}}
      */
@@ -126,8 +126,8 @@ object NaturalSize {
 
 
     /**
-     * A column-alignment ofPaint the glyphs, with each glyph placed laterally at
-     * `proportion` ofPaint the difference between the column width and its own width.
+     * A column-alignment of the glyphs, with each glyph placed laterally at
+     * `proportion` of the difference between the column width and its own width.
      *
      *
      * {{{ 0.0 <= proportion <= 1.0 && theGlyphs.nonEmpty }}}
@@ -178,19 +178,19 @@ object NaturalSize {
   /**
    * {{{ Row(align: VAlignment=Top, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f)(glyphs) }}}
    *
-   * Constructs the horizontal catenation ofPaint `glyphs`; its height is the largest ofPaint the glyphs' heights; its width is
-   * normally the sum ofPaint the glyphs' widths.
+   * Constructs the horizontal catenation of `glyphs`; its height is the largest of the glyphs' heights; its width is
+   * normally the sum of the glyphs' widths.
    *
    * The glyphs are vertically aligned as follows in the row, as specified by `align`:
    * {{{
-   *   Top      tops ofPaint the bounding boxes aligned
-   *   Bottom   bottoms ofPaint the bounding boxes aligned
-   *   Mid      (vertical) centers ofPaint the bounding boxes aligned
+   *   Top      tops of the bounding boxes aligned
+   *   Bottom   bottoms of the bounding boxes aligned
+   *   Mid      (vertical) centers of the bounding boxes aligned
    *   Baseline baselines aligned when>0; otherwise as Bottom
    * }}}
    *
    * If `uniform`, then the glyphs are all treated as if their height(width)
-   * was the same as the maximal height(width) ofPaint all the glyphs; and each glyph is treated as if its width were `glyph.w+skip`,
+   * was the same as the maximal height(width) of all the glyphs; and each glyph is treated as if its width were `glyph.w+skip`,
    * thereby leaving a little horizontal space between them in the row.
    *
    * If `frame` is a nontrivial brush, then vertical lines with foreground `frame` are
@@ -210,18 +210,18 @@ object NaturalSize {
    *
    * {{{ Col(align: Alignment=Left, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f)(glyphs) }}}
    *
-   * Constructs the vertical catenation ofPaint `glyphs`; its height is the sum ofPaint the glyphs' heights; its height is
-   * normally the sum ofPaint the glyphs' heights.
+   * Constructs the vertical catenation of `glyphs`; its height is the sum of the glyphs' heights; its height is
+   * normally the sum of the glyphs' heights.
    *
    * The glyphs are vertically aligned as follows in the row, as specified by `align`:
    * {{{
-   *      Left      left edges ofPaint the bounding boxes aligned
-   *      Right     right edges ofPaint the bounding boxes aligned
-   *      Center    centerlines ofPaint the bounding boxes aligned
+   *      Left      left edges of the bounding boxes aligned
+   *      Right     right edges of the bounding boxes aligned
+   *      Center    centerlines of the bounding boxes aligned
    *    }}}
    *
    *  If `uniform`, then the glyphs are all treated as if their height
-   *  was the same as the maximal height ofPaint all the glyphs; and each glyph is treated as if its height were `glyph.h+skip`,
+   *  was the same as the maximal height of all the glyphs; and each glyph is treated as if its height were `glyph.h+skip`,
    *  thereby leaving a little vertical space between them in the column.
    *
    * If `frame` is a nontrivial brush (ie with alpha>0), then horizontal lines with foreground `frame` are
@@ -242,8 +242,8 @@ object NaturalSize {
     /*
      *  All `GridGenerators` methods with `width`, and/or `height`, and 'glyphs` formal parameters interpret
      *  glyphs as follows:
-     *  if there's a `width` parameter then glyphs is interpreted as a catenation ofPaint rows ofPaint the given `width`;
-     *  if there's a `height` parameter then glyphs is interpreted as a catenation ofPaint columns ofPaint the given `height`.
+     *  if there's a `width` parameter then glyphs is interpreted as a catenation of rows of the given `width`;
+     *  if there's a `height` parameter then glyphs is interpreted as a catenation of columns of the given `height`.
      *  if there are both `width` and `height` parameters, then if one argument is omitted,
      *  `glyphs` is interpreted as if the method had only one formal paramater; if
      *  both arguments are omitted then `width` is taken to be `ceiling(sqrt(glyphs.length))`.
@@ -260,7 +260,7 @@ object NaturalSize {
 
 
       /**
-       * Glyphs are arranged as a grid ofPaint uniformly-sized cells, dimensioned to (just) fit
+       * Glyphs are arranged as a grid of uniformly-sized cells, dimensioned to (just) fit
        * them all.
        */
     def grid(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Glyph = {
@@ -274,7 +274,7 @@ object NaturalSize {
     }
 
       /**
-       * Glyphs are arranged as a grid ofPaint uniformly-sized cells, dimensioned to (just) fit
+       * Glyphs are arranged as a grid of uniformly-sized cells, dimensioned to (just) fit
        * them all.
        */
     def apply(glyphs: Seq[Glyph]): Glyph           = grid(width, height)(glyphs)
@@ -338,7 +338,7 @@ object NaturalSize {
     }
 
       /**
-       * Glyphs are arranged as a grid ofPaint constant-height rows, dimensioned to (just) fit
+       * Glyphs are arranged as a grid of constant-height rows, dimensioned to (just) fit
        * all cells in each row.
        */
     def rows(glyphs: Seq[Glyph]): Glyph = table(width=width, height=0)(glyphs)
@@ -348,7 +348,7 @@ object NaturalSize {
 
 
       /**
-       * Glyphs are arranged as a grid ofPaint constant-width columns, dimensioned to (just) fit
+       * Glyphs are arranged as a grid of consrtant-width columns, dimensioned to (just) fit
        * all cells in each column.
        */
     def cols(glyphs: Seq[Glyph]): Glyph = table(width=0, height=height)(glyphs)

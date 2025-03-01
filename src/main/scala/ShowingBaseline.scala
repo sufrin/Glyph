@@ -7,8 +7,8 @@ import GlyphTypes.Scalar
  *
  *  Iff `enable` is true glyph is drawn decorated with a rectangular frame
  *  and (when appropriate) its `baseLine` using the `fg` brush. The original glyph is treated as
- *  part ofPaint the semantic glyph tree; but the the framing glyph is not. The methods where this matters are marked with [**] below.
- *  `fg` should have a very small stroke width, otherwise the frame might obliterate parts ofPaint the glyph
+ *  part of the semantic glyph tree; but the the framing glyph is not. The methods where this matters are marked with [**] below.
+ *  `fg` should have a very small stroke width, otherwise the frame might obliterate parts of the glyph
  *  and its surroundings.
  */
 class ShowingBaseline(glyph: Glyph, enable: Variable[Boolean], val fg: Brush) extends Glyph {
@@ -41,7 +41,7 @@ class ShowingBaseline(glyph: Glyph, enable: Variable[Boolean], val fg: Brush) ex
 object ShowingBaseline {
   /** Default colour */
   var fg: Brush = Brush("Showingbaseline.fg") color 0xFF000000 strokeWidth 1.0f
-  /** Boolean Variable controlling visibility ofPaint ShowingBaseline frames */
+  /** Boolean Variable controlling visibility of ShowingBaseline frames */
   val enabled: Variable[Boolean] = new Variable(true)
   def apply(fg: Brush=fg, g: Glyph): Glyph = new ShowingBaseline(g, enabled, fg)
 }

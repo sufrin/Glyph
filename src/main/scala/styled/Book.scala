@@ -7,7 +7,7 @@ import NaturalSize.nothing
 case class BookSheet(buttonSheet:  StyleSheet, pageSheet: StyleSheet)
 
 /**
- * Manage the declaration ofPaint notebook pages and the construction ofPaint
+ * Manage the declaration of notebook pages and the construction of
  * notebook GUIs.
  */
 trait Book {
@@ -73,12 +73,12 @@ trait Book {
   case class BookComponents(buttons: Seq[Glyph], oneOf: OneOf)
 
   /**
-   * Derive a `BookComponents` that corresponds to the declared pages ofPaint thus
+   * Derive a `BookComponents` that corresponds to the declared pages of thus
    * notebook. When `buttonAlign` is `Justify`, `buttons` will all have the same diagonal, else
    * they will be at their natural size (modulo styled framing).
    *
-   * `pageAlign` specifies the alignment ofPaint each page ofPaint the book within
-   * the bounding box ofPaint the book as a whole.
+   * `pageAlign` specifies the alignment of each page of the book within
+   * the bounding box of the book as a whole.
    *
    * @see OneOf
    */
@@ -103,25 +103,25 @@ trait Book {
   }
 
   /**
-   * Derive a `BookComponents` that corresponds to the declared pages ofPaint thus
+   * Derive a `BookComponents` that corresponds to the declared pages of thus
    * notebook. In this case the  "buttons" as a whole will be checkboxes
    * derived from  `RadioCheckBoxes` and captioned with the page titles. Ticking a checkbox will select the
    * corresponding page.
    *
-   * `buttonAlign` specifies the relationship between the checkbox and caption on each "button" ofPaint the
-   * column ofPaint buttons.
+   * `buttonAlign` specifies the relationship between the checkbox and caption on each "button" of the
+   * column of buttons.
    * {{{
-   *   Left    the checkbox is immediately to the left ofPaint the checkbox
-   *   Right   the checkbox is on the right ofPaint the entire column
+   *   Left    the checkbox is immediately to the left of the checkbox
+   *   Right   the checkbox is on the right of the entire column
    *           the caption is on the left
-   *   Center  the checkbox is on the right ofPaint the entire column
+   *   Center  the checkbox is on the right of the entire column
    *           the caption is centered
-   *   Justify the checkbox is on the right ofPaint the entire column
-   *           the caption is just to the left ofPaint the checkbox
+   *   Justify the checkbox is on the right of the entire column
+   *           the caption is just to the left of the checkbox
    * }}}
    *
-   * `pageAlign` specifies the alignment ofPaint each page ofPaint the book within
-   * the bounding box ofPaint the book as a whole.
+   * `pageAlign` specifies the alignment of each page of the book within
+   * the bounding box of the book as a whole.
    *
    * @see OneOf
    */
@@ -140,15 +140,15 @@ trait Book {
   }
 
   /**
-   * Deliver complete notebook glyphs based on the declared pages ofPaint the notebook
-   * The bounding box ofPaint each notebook page is the union ofPaint the bounding boxes ofPaint
+   * Deliver complete notebook glyphs based on the declared pages of the notebook
+   * The bounding box of each notebook page is the union of the bounding boxes of
    * the pages.
    *
-   * Complete glyphs are delivered by one ofPaint the methods below, whose
-   * names suggest the placement ofPaint the buttons associated with the notebook
+   * Complete glyphs are delivered by one of the methods below, whose
+   * names suggest the placement of the buttons associated with the notebook
    * in relation to the glyph itself.
    *
-   * The `align` parameter indicates the horizontal alignment ofPaint each page with respect to
+   * The `align` parameter indicates the horizontal alignment of each page with respect to
    * the overall bounding box (by default this is `Center`). If `uniform` is true,
    * then the buttons all have the same size.
    * {{{
@@ -162,8 +162,8 @@ trait Book {
    * }}}
    *
    * Deliver a `BookComponents(buttons, oneOf)` without placing the buttons or the `oneOf`. This
-   * makes it possible to implement non-standard juxtapositions ofPaint buttons and the notebook page
-   * (for example, by having two rows/columns ofPaint buttons).
+   * makes it possible to implement non-standard juxtapositions of buttons and the notebook page
+   * (for example, by having two rows/columns of buttons).
    * {{{
    *   raw(sheet: StyleSheet, uniform: Boolean = true, align: Alignment=Center): BookComponents
    * }}}

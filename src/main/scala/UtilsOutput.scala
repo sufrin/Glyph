@@ -21,8 +21,8 @@ object Output
   }
 
   /**
-   *  Return a Glyph for use as a GUI. It consists ofPaint the given `gui` beneath a thin grey bar that when clicked
-   *  invites the user to save the current appearance ofPaint the GUI in a (timestamped) `.png` file.
+   *  Return a Glyph for use as a GUI. It consists of the given `gui` beneath a thin grey bar that when clicked
+   *  invites the user to save the current appearance of the GUI in a (timestamped) `.png` file.
    *
    *  If non-null, the  `hint` shows for 5 seconds whenever the cursor hovers over the thin bar.
    *

@@ -11,7 +11,7 @@ object DynamicGlyphs {
 
   /**
    * A `Glyph` with the same diagonal as `glyph`, which is drawn at the
-   * current `value` ofPaint `hardwareScale`, within the original bounding box.
+   * current `value` of `hardwareScale`, within the original bounding box.
    *
    * `hardwareScale` is the variable `theScale`, unless `theScale` is `null`, in which case a  new
    * `Variable` (with value 1.0f is allocated.
@@ -29,7 +29,7 @@ object DynamicGlyphs {
     }
 
     /**
-     * The diagonal size ofPaint the glyph
+     * The diagonal size of the glyph
      */
     val diagonal: Vec = glyph.diagonal
 
@@ -72,7 +72,7 @@ object DynamicGlyphs {
    * reset.
    *
    * The buck stops here when it comes to locating the active glyph containing a given point.
-   * In short, one ofPaint these glyphs CANNOT USEFULLY contain any reactivess.
+   * In short, one of these glyphs CANNOT USEFULLY contain any reactivess.
    * TODO: the above would require a new focussed within the top-level dispatcher; namely
    *       one to which all events are forwarded from the top level. This amounts to an
    *       internal virtual window. Probably straightforward to deliver eventuallly.
@@ -106,7 +106,7 @@ object DynamicGlyphs {
     import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, KeyModifier, Window}
 
     /**
-     * The last known coordinates ofPaint the mouse
+     * The last known coordinates of the mouse
      */
     object MousePosition {
       var lastX, lastY = 0
@@ -204,13 +204,13 @@ object DynamicGlyphs {
 
 
   /**
-   * Dynamically chooseable glyph from among the sequence ofPaint `glyphs`, that behaves exactly like
-   * the currently-selected ofPaint the glyphs, whose origin is at the centre ofPaint the bounding box.
+   * Dynamically chooseable glyph from among the sequence of `glyphs`, that behaves exactly like
+   * the currently-selected of the glyphs, whose origin is at the centre of the bounding box.
    *
-   * Its bounding box is the union ofPaint the bounding boxes ofPaint `glyphs` enlarged by
-   * a perimeter ofPaint half the foreground strokewidth.
+   * Its bounding box is the union of the bounding boxes of `glyphs` enlarged by
+   * a perimeter of half the foreground strokewidth.
    *
-   * Its `bg` is set to `BG`, if that appears, else to the `bg` ofPaint the largest (in area) ofPaint the glyphs.
+   * Its `bg` is set to `BG`, if that appears, else to the `bg` of the largest (in area) of the glyphs.
    */
   class OneOf(val glyphs: Seq[Glyph], align: Alignment, val fg: Brush, BG: Brush=null, val enableBG: Boolean = true) extends Composite(glyphs) {
     val bg = if (BG eq null) OneOf.largestBG(glyphs) else BG
@@ -266,7 +266,7 @@ object DynamicGlyphs {
       selectedGlyph.contains(p)
 
     /**
-     * A  copy ofPaint this glyph: made with the same constructor
+     * A  copy of this glyph: made with the same constructor
      */
     def copy(fg: Brush=fg, bg:Brush=bg): Glyph = new OneOf(glyphs, align, fg, bg)
   }
@@ -292,7 +292,7 @@ object DynamicGlyphs {
 
   /**
    * A (laterally) split screen that (initially) juxtaposes `left` to `right`. If `dynamic`
-   * its bounding box is large enough to accomodate each ofPaint them separately; else it is large
+   * its bounding box is large enough to accomodate each of them separately; else it is large
    * enough to accomodate them side-by-side. The boundary between the current left and right
    * is drawn as a vertical line with the brush `fg`.
    *
@@ -318,7 +318,7 @@ object DynamicGlyphs {
     def proportion: Scalar = _proportion
 
     /**
-     * Set the boundary at `proportion` ofPaint the width ofPaint the bounding box.
+     * Set the boundary at `proportion` of the width of the bounding box.
      * @param proportion
      */
     def setBoundary(proportion: Scalar): Unit = {
@@ -374,7 +374,7 @@ object DynamicGlyphs {
       else None
     }
 
-    /** A copy ofPaint this glyph; perhaps with different foreground/background */
+    /** A copy of this glyph; perhaps with different foreground/background */
     def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new SplitScreen(left, right, dynamic, fg, bg)
 
   }
@@ -392,8 +392,8 @@ object DynamicGlyphs {
   }
 
   /**
-   * An active glyph whose bounding box is that ofPaint `background` and that initially shows `background`.
-   * Thereafter it always shows `toGlyph(current)` (clipped to the bounding box ofPaint `background`)
+   * An active glyph whose bounding box is that of `background` and that initially shows `background`.
+   * Thereafter it always shows `toGlyph(current)` (clipped to the bounding box of `background`)
    * after the first and subsequent assignments  to `current`. Although this is unenforceable,
    * it makes sense for `background` to be `toGlyph(initial)`.
    */
@@ -447,9 +447,9 @@ object DynamicGlyphs {
   type Transform = Glyph => Glyph
 
   /**
-   * An `ActiveGlyph[Int]` constructed from an original `glyph` by applying a sequence ofPaint transforms to it.
+   * An `ActiveGlyph[Int]` constructed from an original `glyph` by applying a sequence of transforms to it.
    * The resulting active glyph shows `transforms(i%transforms.length)(glyph)` when in state `i`.
-   * Its bounding box is the union ofPaint the bounding boxes ofPaint the transformed glyphs; and each glyph
+   * Its bounding box is the union of the bounding boxes of the transformed glyphs; and each glyph
    * is effectively centered in it when shown.
    * @param glyph
    * @param transforms
@@ -482,7 +482,7 @@ object DynamicGlyphs {
 
     locally { currentGlyph = toGlyph(current) }
 
-    /** A copy ofPaint this glyph; perhaps with different foreground/background */
+    /** A copy of this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = Glyphs.INVISIBLE()
   }
 

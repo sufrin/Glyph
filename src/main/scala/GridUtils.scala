@@ -5,11 +5,11 @@ import scala.language.implicitConversions
  * Utilities for building grids from sequences
  */
 object GridUtils  {
-  /** The rows ofPaint a sequence presented in row order  */
+  /** The rows of a sequence presented in row order  */
   def byRow[T](width: Int, seq: Seq[T]):  Seq[Seq[T]] =
     seq.sliding(width, width).toSeq
 
-  /** The (rows, columns) ofPaint a sequence presented in row order, padded with padding so that all columns are the same height  */
+  /** The (rows, columns) of a sequence presented in row order, padded with padding so that all columns are the same height  */
   def asRows[T](padding: T)(width: Int, seq: Seq[T]):  (Seq[Seq[T]], Seq[Seq[T]]) = {
     val deficit = seq.length % width
     val rows =

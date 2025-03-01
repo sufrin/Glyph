@@ -7,7 +7,7 @@ import CharSequenceOperations._
  *   Represents a mutable finite mapping, {{{map: [Char] -> T}}}
  *
  *   The representation is a tree, whose edges are individual letters
- *   ofPaint the character sequences ofPaint the domain, and whose nodes contain
+ *   of the character sequences of the domain, and whose nodes contain
  *   range elements when appropriate.
  *
  *   For example:
@@ -35,15 +35,15 @@ import CharSequenceOperations._
  *   longestPrefixMatch the path s(0), s(1), ... from the root node: this will reach
  *   a node 'm', which has value either `None`, or `Some(t)`.
  *
- *   The methods ofPaint the trait `mutable.Map` are implemented by
- *   inheritance from the scala library mixin ofPaint the same name.
+ *   The methods of the trait `mutable.Map` are implemented by
+ *   inheritance from the scala library mixin of the same name.
  *
  *   The immutable map valued variable `suffixes` is used to
  *   map each edge to its subtree. We could have used a mutable
  *   map here, but the stock immutable map has less overhead, being
- *   in essence a list ofPaint pairs. The ordering ofPaint the arcs in the
- *   representation ofPaint each node is effectively indeterminate unless
- *   some constraint is placed on the ordering ofPaint its pairs.
+ *   in essence a list of pairs. The ordering of the arcs in the
+ *   representation of each node is effectively indeterminate unless
+ *   some constraint is placed on the ordering of its pairs.
  */
 
 class   PrefixMap[T]
@@ -65,23 +65,23 @@ class   PrefixMap[T]
       suffixes get (s.charAt(from)) flatMap (_.get(s, from+1))
 
   /**
-   * Yield `Some(t, i)` where `t` is the value ofPaint the mapping at longest prefix ofPaint `s` that
-   * matches one ofPaint the mapping's domain elements, and `i` is the length
-   * ofPaint that prefix. If there is no such prefix, yield `None`.
+   * Yield `Some(t, i)` where `t` is the value of the mapping at longest prefix of `s` that
+   * matches one of the mapping's domain elements, and `i` is the length
+   * of that prefix. If there is no such prefix, yield `None`.
    */
   def longestPrefixMatch(s: CharSequence): Option[(T, Int)] = longestPrefixMatch(s.forwardIterator())
 
   /**
-   * Yield `Some(t, i)` where `t` is the value ofPaint the mapping at longest suffix ofPaint {{{s take upTo}}} that
-   * matches one ofPaint the mapping's domain elements, and `i` is the length
-   * ofPaint that suffix.  If there is no such prefix, yield `None`.
+   * Yield `Some(t, i)` where `t` is the value of the mapping at longest suffix of {{{s take upTo}}} that
+   * matches one of the mapping's domain elements, and `i` is the length
+   * of that suffix.  If there is no such prefix, yield `None`.
    */
   def longestSuffixMatch(s: CharSequence, upTo: Int): Option[(T, Int)] = longestPrefixMatch(s.reversedIterator(upTo))
 
   /**
-   * Yield `Some(t, i)` where `t` is the value ofPaint the mapping at longest prefix ofPaint `it` that
-   * matches one ofPaint the mapping's domain elements, and `i` is the length
-   * ofPaint that prefix. If there is no such prefix, yield `None`.
+   * Yield `Some(t, i)` where `t` is the value of the mapping at longest prefix of `it` that
+   * matches one of the mapping's domain elements, and `i` is the length
+   * of that prefix. If there is no such prefix, yield `None`.
    *
    */
   def longestPrefixMatch(it: Iterator[Char]): Option[(T, Int)] =
@@ -97,7 +97,7 @@ class   PrefixMap[T]
     // namely `it take edges`.
     var node:   PrefixMap[T]   = this
 
-    // the number ofPaint edges so far traversed
+    // the number of edges so far traversed
     var edges                   = 0
     while (it.hasNext && (node ne null)) {
       if (node.value.nonEmpty) result = Some(node.value.get, edges)
@@ -110,7 +110,7 @@ class   PrefixMap[T]
 
 
   /**
-   *  Returns the (shared) subtree ofPaint `map` at the path `s drop it.length`.
+   *  Returns the (shared) subtree of `map` at the path `s drop it.length`.
    *  The tree is extended, if necessary, by adding additional nodes
    *  for the characters along the given path.
    */
@@ -128,7 +128,7 @@ class   PrefixMap[T]
     }
 
   /**
-   *  Returns the (shared) subtree ofPaint `map` at the path `s`.
+   *  Returns the (shared) subtree of `map` at the path `s`.
    *  The tree is extended, if necessary, by adding additional nodes
    *  for the characters along the given path.
    */
@@ -162,7 +162,7 @@ class   PrefixMap[T]
     else suffixes get (s.charAt(from)) flatMap (_.remove(s, from+1))
 
   /**
-   *  Return an iterator that yields the pairs ofPaint the maplet.
+   *  Return an iterator that yields the pairs of the maplet.
    */
   def iterator: Iterator[(String, T)] =
     (for {v  <- value.iterator } yield ("", v)) ++ // the value, if any
@@ -171,8 +171,8 @@ class   PrefixMap[T]
             }
       yield (s"$chr$s", v))
 
-  /** An iterator that returns the pairs ofPaint the mapping, with
-   *  domain elements represented as lists ofPaint characters.
+  /** An iterator that returns the pairs of the mapping, with
+   *  domain elements represented as lists of characters.
    */
   def pathIterator: Iterator[(List[Char], T)] =
     (for {v  <- value.iterator } yield (Nil, v)) ++ // the value, if any
@@ -197,8 +197,8 @@ class   PrefixMap[T]
   def subtractOne(s: CharSequence): this.type = { remove(s); this }
 
   /** A string representing the
-   * structure ofPaint the representation
-   * ofPaint the mapping
+   * structure of the representation
+   * of the mapping
    */
   def show: String = repString(1)
 
@@ -228,7 +228,7 @@ object PrefixMap {
   def apply[T](pairs:  (CharSequence, T)*): PrefixMap[T] = apply(pairs)
 
   /**
-   *  Construct a new mapping from an iterable generator ofPaint pairs
+   *  Construct a new mapping from an iterable generator of pairs
    */
   def apply[T](pairs: Iterable[(CharSequence, T)]): PrefixMap[T] =
   { val map = new PrefixMap[T]
@@ -237,7 +237,7 @@ object PrefixMap {
   }
 
   /**
-   *  Construct a new mapping from an iterator ofPaint pairs
+   *  Construct a new mapping from an iterator of pairs
    */
   def apply[T](pairs: Iterator[(CharSequence, T)]): PrefixMap[T] =
   { val map = new PrefixMap[T]

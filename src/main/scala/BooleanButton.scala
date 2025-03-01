@@ -4,14 +4,14 @@ import GlyphTypes.Font
 
 
 /**
- *  A family ofPaint boolean button constructors. Instantiate this trait and override
+ *  A family of boolean button constructors. Instantiate this trait and override
  *  the default definitions if necessary.
  *
  *  A boolean button shows glyphs that depend on its internal state (true or false).
  *  It inverts its state when its showing glyph is pressed, and also applies
  *  its `reaction` function to its (new) state.
  *
- * @see Styled for a convenient approach to the styling ofPaint buttons like these.
+ * @see Styled for a convenient approach to the styling of buttons like these.
  * @see EarlyMenuTest for a very simple example.
  */
 trait BooleanButton  {

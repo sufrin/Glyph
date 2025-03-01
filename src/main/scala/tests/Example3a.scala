@@ -49,7 +49,7 @@ object Example3c extends Application  with Example3Interface {
 /** A parameterized class implementing `Example3Interface` by defining  (its) style. */
 class Example3dInterface(val style: StyleSheet) extends Example3Interface { }
 
-/** The application's main now makes an instance ofPaint `Example3dInterface` and puts it
+/** The application's main now makes an instance of `Example3dInterface` and puts it
  *  beside a button whose reaction is to clone a new Application with an identical
  *  GUI.
  */

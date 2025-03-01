@@ -9,7 +9,7 @@ object AffineTransform {
   import io.github.humbleui.skija.Matrix33
   import GlyphTypes.Scalar
   /*
-   * Transforms are arganised as 3 rows ofPaint 3, and represented as `Array[Scalar](9)`
+   * Transforms are arganised as 3 rows of 3, and represented as `Array[Scalar](9)`
    *
    * {{{
    *   a b c
@@ -17,16 +17,16 @@ object AffineTransform {
    *   g h i
    * }}}
    */
-  type Transform = Array[Scalar] // ofPaint size 9
+  type Transform = Array[Scalar] // of size 9
   def  from(matrix: Matrix33): Transform = matrix.getMat
 
   /**
-   * The inverse ofPaint `transform`
+   * The inverse of `transform`
    */
   def inverse(transform: Transform): Transform = {
     val Array(a, b, c,  d, e, f,  g, h, i) = transform
 
-    // calculate the transpose ofPaint determinant(transform)*transform.inverse.transpose
+    // calculate the transpose of determinant(transform)*transform.inverse.transpose
     val A = e * i - f * h; val B = f * g - d * i; val C = d * h - e * g
     val D = c * h - b * i; val E = a * i - c * g; val F = b * g - a * h
     val G = b * f - c * e; val H = c * d - a * f; val I = a * e - b * d
@@ -53,7 +53,7 @@ object AffineTransform {
    */
   def transform(trans: Transform)(p: Vec): Vec = transform(trans, p.x, p.y)
 
-  /** Yield a function that reverses the effect ofPaint `transform(trans)` on a `Vec`  */
+  /** Yield a function that reverses the effect of `transform(trans)` on a `Vec`  */
   def reverse(trans: Transform): Vec => Vec = {
     val Array(a, b, c, d, e, f, g, h, i) = trans
     val A = e * i - f * h; val B = f * g - d * i; val C = d * h - e * g

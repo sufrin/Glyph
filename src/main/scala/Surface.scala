@@ -255,9 +255,9 @@ trait Surface {
   private var _scope: Vec = Vec.Zero
 
   /**
-   * Set the scope ofPaint reactive glyph gestures to be `scope`
-   * during the computation ofPaint `effect`. When nonzero, `_scope` is the
-   * diagonal ofPaint the (absolute) bounding box within which a
+   * Set the scope of reactive glyph gestures to be `scope`
+   * during the computation of `effect`. When nonzero, `_scope` is the
+   * diagonal of the (absolute) bounding box within which a
    * reactive glyph can still be considered to contain the cursor.
    *
    * TODO: It looks like `scope` should be set whenever a clip is
@@ -277,8 +277,8 @@ trait Surface {
 
   /**
    * Tell the given reactive glyph what the most recent co-ordinate transformation
-   * was. Currently intended to be used (only) by the draw methods ofPaint reactive glyphs
-   * in the implementation `contains`; which is a key component ofPaint the focus machinery.
+   * was. Currently intended to be used (only) by the draw methods of reactive glyphs
+   * in the implementation `contains`; which is a key component of the focus machinery.
    */
   def declareCurrentTransform(glyph: ReactiveGlyph) = {
       //println(s"$hardwareScale => $scaleT")
@@ -306,7 +306,7 @@ object Surface {
   import GlyphTypes.Scalar
 
   /**
-   * Flattens a sequence ofPaint 'Vec'tors
+   * Flattens a sequence of 'Vec'tors
    */
   def arrayOfVectors(locs: Seq[Vec]): Array[Float] = {
     val floats = Array.ofDim[Float](2 * locs.length)
@@ -318,7 +318,7 @@ object Surface {
   }
 
   /**
-   * Flattens a sequence ofPaint `Scalar` pairs
+   * Flattens a sequence of `Scalar` pairs
    */
   def arrayOfPairs(locs: Seq[(Scalar, Scalar)]): Array[Float] = {
     val floats = Array.ofDim[Float](2 * locs.length)
@@ -330,7 +330,7 @@ object Surface {
   }
 
   /**
-   * Flattens an iterable ofPaint `Scalar` pairs
+   * Flattens an iterable of `Scalar` pairs
    */
   def arrayOfPairs(locs: Iterable[(Scalar, Scalar)]): Array[Float] = {
     val floats = Array.ofDim[Float](2 * locs.size)

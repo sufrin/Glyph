@@ -65,15 +65,15 @@ object CellFit {
 }
 
 /**
- *  A `Glyph` is the unit ofPaint graphical construction.
+ *  A `Glyph` is the unit of graphical construction.
  *
- *  `Glyph`s are not "aware" ofPaint the absolute location on the screen
+ *  `Glyph`s are not "aware" of the absolute location on the screen
  *  surface at which they will be drawn. Instead, all glyphs are
  *  drawn on drawing surfaces as if they were placed at the origin.
  *
- *  Composite `Glyph`s are composed ofPaint sequences ofPaint glyphs, each ofPaint
- *  which has a location relative to the origin ofPaint the composite.
- *  The origin ofPaint the drawing surface is translated by this amount
+ *  Composite `Glyph`s are composed of sequences of glyphs, each of
+ *  which has a location relative to the origin of the composite.
+ *  The origin of the drawing surface is translated by this amount
  *  before each glyph is drawn.
  */
 trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
@@ -144,7 +144,7 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
   def draw(surface: Surface): Unit
 
   /**
-   * The diagonal size ofPaint the glyph
+   * The diagonal size of the glyph
    */
   def diagonal: Vec
 
@@ -158,23 +158,23 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
 
   /**
-   *  Expandability ofPaint this glyph (within `NaturalSize` grids)
+   *  Expandability of this glyph (within `NaturalSize` grids)
    */
   private var cellFitMethod: CellFit.Method = CellFit.Enlarge
 
   /**
-   * Set the current `cellFitMethod` ofPaint this glyph
+   * Set the current `cellFitMethod` of this glyph
    * @param method
    * @return this
    */
   def cellFit(method: CellFit.Method): this.type = { cellFitMethod=method; this }
 
   /**
-   * Fit this glyph to a cell ofPaint size `(w, h)` as specified by its current
+   * Fit this glyph to a cell of size `(w, h)` as specified by its current
    * `cellFitMethod`
    *
-   * @param w width ofPaint the cell
-   * @param h height ofPaint the cell
+   * @param w width of the cell
+   * @param h height of the cell
    * @param fg foreground used if any expansion happens
    * @param bg background used if any expansion happens
    * @return this glyph padded (etc) to fit `(w, h)` using its current `cellFitMethod`
@@ -184,14 +184,14 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
   /**
    * Stretchability: used when (eg) a stretchable space is to be expanded to make
-   * the content ofPaint a FixedSize container (Row, Col) fit.
+   * the content of a FixedSize container (Row, Col) fit.
    */
   val xStretch: Scalar = 0.0f
   val yStretch: Scalar = 0.0f
 
   private type Shifter = (Scalar, Scalar, Scalar)=>Scalar
   /**
-   *  Expandability ofPaint this glyph when it is being set
+   *  Expandability of this glyph when it is being set
    *  in a row or a column.
    */
   var hStretch, vStretch: Shifter =  { case (space: Scalar, proportion: Scalar, size: Scalar) => (space - size) * proportion}
@@ -207,18 +207,18 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
   /**
    *  Vertical drop from a given location to the baseline. Usually
-   *  derived (or inherited) from the baselines ofPaint one or more fonts.
+   *  derived (or inherited) from the baselines of one or more fonts.
    */
   def baseLine: Scalar = 0f
 
   ////////////// TODO: invoke an efficient redrawing
   /**
-   *  Request a redraw ofPaint the (entire) associated window
+   *  Request a redraw of the (entire) associated window
    *  NB: it might be possible to make this more efficient
    *  by redrawing only higher nodes in the glyph tree,
    *  but the complexity appears not to be worth it, since
    *  there is no perceivable difference in rendering speed
-   *  -- the redraw is hidden by double-buffering ofPaint the drawn
+   *  -- the redraw is hidden by double-buffering of the drawn
    *  GUI.
    */
   def reDraw(): Unit = guiRoot.reDraw()
@@ -233,13 +233,13 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
   /*
    * TODO: Could it be more efficient to use a single public variable?
-   *       If so would the loss ofPaint potential versatility (presently unused anywhere)
+   *       If so would the loss of potential versatility (presently unused anywhere)
    *       be compensated?
    */
 
   /**
    *  A glyph is its own parent until it becomes the child
-   *  ofPaint a composite glyph (further down the tree / higher up the
+   *  of a composite glyph (further down the tree / higher up the
    *  containment hierarchy).
    */
   private var _parent: Glyph = this
@@ -255,7 +255,7 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
   /** Parent in the glyph tree */
   def parent: Glyph = _parent
 
-  /** Is this a root ofPaint a glyph tree */
+  /** Is this a root of a glyph tree */
   def isRoot: Boolean = _parent eq this
 
   /**
@@ -303,7 +303,7 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
   /**
    * The cached closest enclosing root glyph to this.
    * The cache is refreshed if the root's window is closed.
-   * The effect ofPaint this is that a GUI tree can be re-used
+   * The effect of this is that a GUI tree can be re-used
    * in a popup without having to be rebuilt.
    *
    */
@@ -315,7 +315,7 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
   // Containment
 
   /**
-   * Result: distance from this node to the root ofPaint the GUI tree in
+   * Result: distance from this node to the root of the GUI tree in
    * which it is embedded. This is constant, because the tree stays invariant,
    * once it has been built.
    *
@@ -333,7 +333,7 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
   }
 
   /**
-   * Returns the `(x, y)` location ofPaint the content ofPaint this glyph on the screen
+   * Returns the `(x, y)` location of the content of this glyph on the screen
    *
    * Used in positioning popup and popup menu windows.
    *
@@ -353,15 +353,15 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
       loc.y <= p.y && p.y <= loc.y + diagonal.y
   }
 
-  /** Relevant to popping down ofPaint menus.
+  /** Relevant to popping down of menus.
    *  TODO: move elsewhere
    */
   def asMenuButton: this.type = this
   def isMenuButton: Boolean = false
 
   /**
-   * The location ofPaint this glyph relative to the parent glyph.
-   * This is nearly always fixed by the layout algorithm ofPaint its container/composite
+   * The location of this glyph relative to the parent glyph.
+   * This is nearly always fixed by the layout algorithm of its container/composite
    * parent node.
    *
    * @see Row
@@ -384,23 +384,23 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    */
   def @@(x: Scalar, y: Scalar): Glyph = this @@ Vec(x, y)
 
-  /** A copy ofPaint this glyph; perhaps with different foreground/background */
+  /** A copy of this glyph; perhaps with different foreground/background */
   def copy(fg: Brush=fg, bg: Brush=bg): Glyph
   def apply(fg: Brush=fg, bg: Brush=bg): Glyph = this.copy(fg, bg)
 
   /**
-   * A functionally equivalent copy ofPaint this glyph, generated within the
+   * A functionally equivalent copy of this glyph, generated within the
    * given `boundingBox`. By default this is
    * the identity. Glyph-generators can be implemented
    * that use the size parameters to determine the
-   * details ofPaint their internal layout.
+   * details of their internal layout.
    */
    def atSize(boundingBox: Vec): Glyph = this
 
    /** False unless `atSize` will generate a distinct glyph */
    def resizeable: Boolean = false
 
-   /** yield a glyph that draws bounding box and baseline ofPaint this glyph around it */
+   /** yield a glyph that draws bounding box and baseline of this glyph around it */
    def showingBaseline(fg: Brush): Glyph = ShowingBaseline(fg, thisGlyph)
    def showingBaseline: Glyph            = ShowingBaseline(ShowingBaseline.fg, thisGlyph)
 }

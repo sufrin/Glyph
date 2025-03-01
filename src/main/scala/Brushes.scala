@@ -5,7 +5,7 @@ import NumberUtils.hexToInt
 /**
  * A convenience trait that defines several brushes.
  *
- * TODO: these should be systematically named and featured. The range ofPaint
+ * TODO: these should be systematically named and featured. The range of
  *       widths, and caps is unnecessary.
  */
 trait Brushes {
@@ -47,7 +47,7 @@ trait Brushes {
 }
 
 /**
- * Concrete definitions ofPaint a variety ofPaint brushes.
+ * Concrete definitions of a variety of brushes.
  */
 object DefaultBrushes extends Brushes {
   // TODO: better notation for brushes
@@ -70,7 +70,7 @@ object DefaultBrushes extends Brushes {
       case s"0x${hex}" if hex.matches("([0-9a-f])+") =>
         org.sufrin.glyph.Brush(s"0X$hex")(color = hexToInt(hex))
       case name =>
-        org.sufrin.logging.Default.warn(s"$name is not the name ofPaint a colour")
+        org.sufrin.logging.Default.warn(s"$name is not the name of a colour")
         org.sufrin.glyph.Brush(s"red($name)")(color = 0XFFFF0000)
     }
     name match {
@@ -91,7 +91,7 @@ object DefaultBrushes extends Brushes {
 
   def apply(name: String): Brush = namedColour(name)
 
-  // The following are used to set the default attributes ofPaint unstyled glyphs
+  // The following are used to set the default attributes of unstyled glyphs
   //
   var upFrame: Brush = Brush("Brushes.upFrame")       color 0xFF000000 strokeWidth 2f strokeCap ROUND
   var downFrame: Brush = Brush("Brushes.downFrame")   color 0xFFFF0000 strokeWidth 2f strokeCap ROUND

@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 
 /**
  * A ultra-lightweight scheduler implementing the (possibly-repeated)
- * delayed execution ofPaint an event. Every schedule is associated with an
+ * delayed execution of an event. Every schedule is associated with an
  * event and an interval (calibrated in milliseconds).
  *
  * Events, when executed, run on a virtual (lightweight) thread  associated with the schedule;
@@ -73,7 +73,7 @@ class Schedule() {
   }
 
   /**
-   * Cancel the currently-awaited event, if any; then schedule one execution ofPaint
+   * Cancel the currently-awaited event, if any; then schedule one execution of
    * the associated event to take place after the associated interval.
    */
   def once(): Unit = {

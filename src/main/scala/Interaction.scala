@@ -11,13 +11,13 @@ import org.sufrin.logging.Loggable
  * reactions to user- or system-generated events that take
  * place in the window.
  *
- * Various (overrideable) defaults define the size and position ofPaint the window, its title, its initial position
+ * Various (overrideable) defaults define the size and position of the window, its title, its initial position
  * on the screen, etc.
  *
  * @see EventHandler
  *
  * @param window the (main) interaction window
- * @param guiRoot the root glyph ofPaint the GUI for this app/window
+ * @param guiRoot the root glyph of the GUI for this app/window
  *
  * Here's an example main programthat creates a window, associates it with
  * a root GUI glyph, and starts the GUI
@@ -49,9 +49,9 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
   def screen: Screen = window.getScreen
 
   val platform: Platform  = Platform.CURRENT
-  /** X coordinate ofPaint screen on the plane that consists ofPaint all screens */
+  /** X coordinate of screen on the plane that consists of all screens */
   private def screenLeft: Int      = screen.getWorkArea.getLeft
-  /** Y coordinate ofPaint screen on the plane that consists ofPaint all screens */
+  /** Y coordinate of screen on the plane that consists of all screens */
   private def screenTop:  Int      = screen.getWorkArea.getTop
 
   /**
@@ -77,11 +77,11 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
   /** Invoked for an `EventTextInputMarked` when there is no keyboardFocus */
   def onKeyboardUnfocussed(key: EventTextInputMarked): Unit = {}
 
-  /** `(w, h)` ofPaint the root window, scaled (as usual) by the screen-dependent hardwareScale factor */
+  /** `(w, h)` of the root window, scaled (as usual) by the screen-dependent hardwareScale factor */
   def size: Pixels  = Vec.scaleToPixels(initialScaleFactor * hardwareScale, handler.root.w, handler.root.h)
-  /**  how much width/height to add to the natural size ofPaint the GUI root when sizing the window */
+  /**  how much width/height to add to the natural size of the GUI root when sizing the window */
   def inset: Pixels = (1, 1)
-  /** Standard place for the window depends on the number ofPaint open windows */
+  /** Standard place for the window depends on the number of open windows */
   def position(window: Window): Pixels = (screenLeft + 20*App._windows.size, screenTop + 20*App._windows.size)
 
   val handler = new EventHandler { thisHandler =>
@@ -114,7 +114,7 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
   locally { handler.softwareScale = initialScaleFactor }
 
   /**
-   * Set the size, screen position, and title ofPaint the window; construct and install an appropriate `EventHandler`, then
+   * Set the size, screen position, and title of the window; construct and install an appropriate `EventHandler`, then
    * make the window visible.
    */
   def start(): Unit = {

@@ -145,7 +145,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
 
     Col(align=Center)(
       Grid(padx=10, pady=10, width=4, height=5).rows(List(0f, 20f, 30f, 40f).flatMap(row(_))), ex,
-      Label("The effect ofPaint 20px enlargement and a wider frame brush  [red(width=30)]."), ex,
+      Label("The effect of 20px enlargement and a wider frame brush  [red(width=30)]."), ex,
       long.enlarged(20).edged(fg=fg.copy(width=30), nothing)
     ) enlarged 40
   }
