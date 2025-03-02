@@ -214,7 +214,8 @@ object glyphXMLTest extends Application {
       def OK(blurb: Glyph, position: Location=null, title: String="")(implicit sheet: StyleSheet): styled.windowdialogues.Dialogue[Unit] = {
         // Mutual references ok<->popup
         lazy val ok: Glyph = TextButton("OK") { _ => popup.close() }(sheet)
-        lazy val popup: styled.windowdialogues.Dialogue[Unit] = new styled.windowdialogues.Dialogue[Unit](blurb, List(ok), position, title, bg=sheet.backgroundBrush)
+        lazy val popup: styled.windowdialogues.Dialogue[Unit] =
+          new styled.windowdialogues.Dialogue[Unit](blurb, List(ok), position, title, bg=sheet.backgroundBrush)(sheet)
         popup
       }
 

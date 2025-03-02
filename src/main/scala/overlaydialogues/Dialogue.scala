@@ -20,6 +20,8 @@ object Dialogue {
   /**
    *  A generic overlaydialogues "choice" popup, located at the given `position`. It can be popped down without using
    *  any of the buttons on its bottom row, by hitting the kill button placed on its top row.
+   *
+   *  TODO: unbundle first Dialogue parameter
    */
   def POPUP[T](guiRoot: Glyph, bottomRow: Seq[Glyph]): Dialogue[T] =
     new Dialogue[T](Col(align=Center)(guiRoot, Row(Top)(bottomRow)), closeGlyph = Some(defaultCloseGlyph))
@@ -236,7 +238,11 @@ object Dialogue {
  * @tparam T the type of value passed to the continuation (if any) by invoking `close`
  *
  */
-class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyph: Option[Glyph] = None, var isModal: Boolean = true, var isMenu: Boolean = false)
+class Dialogue[T](guiRoot:        Glyph,
+                  var location:   RelativeTo = null,
+                  val closeGlyph: Option[Glyph] = None,
+                  var isModal:    Boolean = true,
+                  var isMenu:     Boolean = false)
 {
   thisPopup =>
 

@@ -27,20 +27,22 @@ import Location._
 object Dialogue extends Loggable {
 
   /** A dialogue whose gui consists of `blurb` atop a bottom row consisting of buttons built from glyphs. */
-  def apply[T](blurb: Glyph, bottomRow: Seq[Glyph], position: Location=null, title: String = ""): Dialogue[T] = {
-    new Dialogue[T](blurb, bottomRow, position, title)
-  }
+  //def apply[T](blurb: Glyph, bottomRow: Seq[Glyph], position: Location=null, title: String = ""): Dialogue[T] = {
+  //  new Dialogue[T](blurb, bottomRow, position, title)
+  //}
 
   def OK(blurb: Glyph, position: Location=null, title: String="")(implicit sheet: StyleSheet): Dialogue[Unit] = {
+    val bg = sheet.popupBackgroundBrush
     // Mutual references ok<->popup
     lazy val ok: Glyph = styled.TextButton("OK") {
       _ => popup.close()
     }
-    lazy val popup: Dialogue[Unit] = new Dialogue[Unit](blurb, List(ok), position, title)
+    lazy val popup: Dialogue[Unit] = new Dialogue[Unit](blurb, List(ok), position, title, bg=bg)
     popup
   }
 
   def OKNO(blurb: Glyph, position: Location=null, title: String = "", ok: String = " OK ", no: String=" NO ")(implicit sheet: StyleSheet): Dialogue[Boolean] = {
+    val bg = sheet.popupBackgroundBrush
     // Mutual references ok<->popup, no<->popup
     lazy val okButton: Glyph = styled.TextButton(ok) {
       _ => popup.close(true)
@@ -48,29 +50,30 @@ object Dialogue extends Loggable {
     lazy val noButton: Glyph = styled.TextButton(no) {
       _ => popup.close(false)
     }
-    lazy val popup: Dialogue[Boolean] = new Dialogue[Boolean](blurb, List(okButton, noButton), position, title)
+    lazy val popup: Dialogue[Boolean] = new Dialogue[Boolean](blurb, List(okButton, noButton), position, title, bg=bg)
     popup
   }
 
   def POPUP(blurb: Glyph, position: Location=null, title: String = "")(choices: String*)(implicit sheet: StyleSheet): Dialogue[String] = {
+    val bg = sheet.popupBackgroundBrush
     lazy val buttons = choices.map {
       choice => styled.TextButton(choice) { _ => popup.close(choice) }
     }
-    lazy val popup: Dialogue[String] = new Dialogue[String](blurb, buttons, position, title, sheet.popupBackgroundBrush)
+    lazy val popup: Dialogue[String] = new Dialogue[String](blurb, buttons, position, title, bg=bg)
     popup
   }
 
 }
 
 class Dialogue[T](blurb:        Glyph,
-                  bottomRow:    Seq[Glyph],
+                  buttons:    Seq[Glyph],
                   var location: Location,
                   theTitle:     String,
-                  bg:           Brush=DefaultBrushes.nothing,
+                  bg:            Brush,
                   var preferred: Int = 0
-                 ) { thisPopup =>
+                 )(implicit sheet: StyleSheet) { thisPopup =>
   val background   = if (bg.getAlpha==0) blurb.bg else bg
-  val maxPreferred = bottomRow.length
+  val maxPreferred = buttons.length
   /**
    * Make a primitive popup from `blurb` atop `bottomRow`; placing it at `location` on the screen.
    */
@@ -108,7 +111,7 @@ class Dialogue[T](blurb:        Glyph,
 
   val ex = Label("X")
 
-  val theBottomRow = Row(Top, background)(bottomRow)
+  val theBottomRow = Row(Top, background)(buttons)
 
   val theRoot = Col(align=Center, bg=background)(blurb, theBottomRow)
 
@@ -202,13 +205,13 @@ class Dialogue[T](blurb:        Glyph,
               case ESCAPE  if !key.isPressed => esc=true; preferred = -1
               case ENTER   if !key.isPressed => esc=true
               case TAB     if !key.isPressed =>
-                bottomRow(preferred) match {
+                buttons(preferred) match {
                   case button: GenericButton =>
                     button.setHover(false)
                   case _ =>
                 }
                 preferred = (preferred+1)%maxPreferred
-                bottomRow(preferred) match {
+                buttons(preferred) match {
                   case button: GenericButton =>
                     button.setHover(true)
                   case _ =>
@@ -217,9 +220,10 @@ class Dialogue[T](blurb:        Glyph,
                 // TODO: beep
             }
             if (esc) {
-              if (preferred>=0) bottomRow(preferred) match {
+              if (preferred>=0) buttons(preferred) match {
                 case button: GenericButton =>
                   button.invokeReaction()
+                  if (!button.isMenuButton) close()
                 case _ =>
                   App.runOnUIThread(() => close())
               }
@@ -245,7 +249,7 @@ class Dialogue[T](blurb:        Glyph,
         theRoot.guiRoot.onCloseRequest(_ => close())
         running = Some(theInteraction)
         // mark preferred
-        if (preferred>=0) bottomRow(preferred) match {
+        if (preferred>=0) buttons(preferred) match {
           case button: GenericButton => button.setHover(true)
           case _ =>
         }

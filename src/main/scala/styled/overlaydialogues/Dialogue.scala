@@ -9,6 +9,8 @@ import NaturalSize.{Col, Row}
 import io.github.humbleui.jwm.{App, EventMouseScroll}
 import org.sufrin.glyph.overlaydialogues
 import org.sufrin.glyph.styles.decoration.unDecorated
+import org.sufrin.glyph.Glyphs.INVISIBLE
+import org.sufrin.glyph.ReactiveGlyphs.GenericButton
 
 
 /**
@@ -24,8 +26,8 @@ object Dialogue {
    *  A generic overlaydialogues "choice" popup, located at the given `position`. It can be popped down without using
    *  any of the buttons on its bottom row, by hitting the kill button placed on its top row.
    */
-  def POPUP[T](guiRoot: Glyph, bottomRow: Seq[Glyph])(implicit style: StyleSheet): Dialogue[T] =
-    new Dialogue[T](Col(align=Center, bg=style.popupBackgroundBrush)(guiRoot, Row(align=Top)(bottomRow)), closeGlyph = Some(defaultCloseGlyph))
+  def POPUP[T](blurb: Glyph, buttons: Seq[Glyph])(implicit style: StyleSheet): Dialogue[T] =
+    new Dialogue[T](blurb, buttons, closeGlyph = Some(defaultCloseGlyph), bg=style.popupBackgroundBrush)
 
   import ReactiveGlyphs.GenericButton
 
@@ -51,7 +53,8 @@ object Dialogue {
    *   by clicking somewhere outside the popup.
    *
    *   Every attempt is made to accomodate the popup in a sensible place (to the right of the menu button), or at least in
-   *   a place where it is completely visible (on its window). But if it has popped up in an inconvenient place, it can be moved using the
+   *   a place where it is completely visible (on its window). But if it has popped up in an inconvenient place, it can be moved
+   *   using the
    *   HOME and END keys, and the mousewheel. The first moves the popup north-west by its own dimension;
    *   the second moves it south-east by its own dimension. The wheel moves it incrementally in the direction indicated.
    *
@@ -72,7 +75,7 @@ object Dialogue {
     lazy val popDowns: Seq[Glyph] = buttons.map { button => afterReact(button) { popup.close() }}
     lazy val width   = popDowns.map(_.w).max
     lazy val uniform = popDowns.map  {
-      glyph =>
+      glyph => if (true) glyph else //**
         if (glyph.isMenuButton)
           glyph.enlargedTo(width, glyph.h)
         else
@@ -88,7 +91,15 @@ object Dialogue {
     }
 
     lazy val popup: Dialogue[Unit] =
-      new Dialogue[Unit](Col(align=Center, bg=sheet.menuStyle.bg)(uniform), East(button), Some(defaultCloseGlyph), isMenu = true) {
+      new Dialogue[Unit](
+            //Col(align=Center, bg=sheet.menuStyle.bg)(uniform), East(button),
+            INVISIBLE(),
+            uniform,
+            East(button),
+            bg=sheet.menuStyle.bg,
+            Some(defaultCloseGlyph),
+            isMenu = true
+        ) {
         // Reactivate the button when the menu is popped down
         onClose{ _ =>
           button match {
@@ -240,16 +251,26 @@ object Dialogue {
  * @tparam T the type of value passed to the continuation (if any) by invoking `close`
  *
  */
-class Dialogue[T](guiRoot:        Glyph,
+class Dialogue[T](
+                  blurb:          Glyph,
+                  buttons:        Seq[Glyph],
                   var location:   RelativeTo = null,
+                  bg:             Brush,
                   val closeGlyph: Option[Glyph] = None,
                   var isModal:    Boolean = true,
                   var isMenu:     Boolean = false,
                   var preferred:  Int     = 0,
-                  val maxPreferred: Int   = 1)(implicit style: StyleSheet)
+                 )(implicit style: StyleSheet)
 {
   thisPopup =>
 
+  val background   = if (bg.getAlpha==0) blurb.bg else bg
+  val guiRoot      =
+    if (isMenu)
+      Col(align=Center, bg=background)(buttons)
+    else
+      Col(align=Center, bg=background)(blurb, Row(align=Mid, bg=background)(buttons))
+  val maxPreferred=buttons.length
 
   import NaturalSize.{Col, Row}
   import ReactiveGlyphs.RawButton
@@ -315,7 +336,19 @@ class Dialogue[T](guiRoot:        Glyph,
         key.getKey match {
           case ESCAPE  if !key.isPressed => esc=true; preferred = -1
           case ENTER   if !key.isPressed => esc=true
-          case TAB     if !key.isPressed => preferred = (preferred+1)%maxPreferred
+          case TAB     if !key.isPressed =>
+            buttons(preferred) match {
+              case button: GenericButton =>
+                button.setHover(false)
+              case _ =>
+            }
+            preferred = (preferred+1)%maxPreferred
+            buttons(preferred) match {
+              case button: GenericButton =>
+                button.setHover(true)
+              case _ =>
+            }
+            println(preferred)
           case UP      if isModal && !key.isPressed => dy -= 15f
           case DOWN    if isModal && !key.isPressed => dy += 15f
           case RIGHT   if isModal && !key.isPressed => dx += 15f
@@ -328,7 +361,16 @@ class Dialogue[T](guiRoot:        Glyph,
                           dy += overlayRoot.diagonal.y
           case other => super.accept(key, location, window)
         }
-        if (esc)  close() else {
+        if (esc)  {
+          if (preferred>=0) buttons(preferred) match {
+            case button: GenericButton =>
+              button.invokeReaction()
+            case _ =>
+              close()
+          }
+          else
+            close()
+        } else {
           val Vec(x, y) = overlayRoot.guiRoot.diagonal-overlayRoot.diagonal-(5,5) // limit
           overlayRoot.location =
             Vec(x min (overlayRoot.location.x+dx) max 0,
@@ -399,6 +441,11 @@ class Dialogue[T](guiRoot:        Glyph,
     glyph.guiRoot.Overlay.pushLayer(overlayRoot, isModal, isMenu=isMenu, offMenuClick={ () => close() })
     if (theCloseButton.isDefined) glyph.guiRoot.grabKeyboard(theCloseButton.get)
     overlayRoot.parent = glyph.guiRoot
+    // mark preferred
+    if (preferred>=0) buttons(preferred) match {
+      case button: GenericButton => button.setHover(true)
+      case _ =>
+    }
   }
 
 
