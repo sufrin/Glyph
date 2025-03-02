@@ -2,7 +2,10 @@ package org.sufrin.glyph
 package styled.windowdialogues
 
 import io.github.humbleui.jwm.Screen
+import org.sufrin.glyph.ReactiveGlyphs.GenericButton
 import org.sufrin.logging.Loggable
+
+import javax.annotation.processing.Generated
 
 /**
  *   A running dialogue is a glyph-tree contained in its own top-level window, and
@@ -59,8 +62,15 @@ object Dialogue extends Loggable {
 
 }
 
-class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, theTitle: String, bg: Brush=DefaultBrushes.nothing) { thisPopup =>
-  val background = if (bg.getAlpha==0) blurb.bg else bg
+class Dialogue[T](blurb:        Glyph,
+                  bottomRow:    Seq[Glyph],
+                  var location: Location,
+                  theTitle:     String,
+                  bg:           Brush=DefaultBrushes.nothing,
+                  var preferred: Int = 0
+                 ) { thisPopup =>
+  val background   = if (bg.getAlpha==0) blurb.bg else bg
+  val maxPreferred = bottomRow.length
   /**
    * Make a primitive popup from `blurb` atop `bottomRow`; placing it at `location` on the screen.
    */
@@ -185,6 +195,39 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
 
           override def screen: Screen = location.screen
 
+          override def onKeyboardUnfocussed(key: EventKey): Unit = {
+            import io.github.humbleui.jwm.Key._
+            var esc = false
+            key.getKey match {
+              case ESCAPE  if !key.isPressed => esc=true; preferred = -1
+              case ENTER   if !key.isPressed => esc=true
+              case TAB     if !key.isPressed =>
+                bottomRow(preferred) match {
+                  case button: GenericButton =>
+                    button.setHover(false)
+                  case _ =>
+                }
+                preferred = (preferred+1)%maxPreferred
+                bottomRow(preferred) match {
+                  case button: GenericButton =>
+                    button.setHover(true)
+                  case _ =>
+                }
+              case _ =>
+                // TODO: beep
+            }
+            if (esc) {
+              if (preferred>=0) bottomRow(preferred) match {
+                case button: GenericButton =>
+                  button.invokeReaction()
+                case _ =>
+                  App.runOnUIThread(() => close())
+              }
+              else
+                App.runOnUIThread(() => close())
+            }
+          }
+
           locally {
             import io.github.humbleui.jwm.{WindowMac, ZOrder}
             window match {
@@ -201,6 +244,11 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
         // Henceforth turn native close requests into calls of close()
         theRoot.guiRoot.onCloseRequest(_ => close())
         running = Some(theInteraction)
+        // mark preferred
+        if (preferred>=0) bottomRow(preferred) match {
+          case button: GenericButton => button.setHover(true)
+          case _ =>
+        }
     }
   }
 

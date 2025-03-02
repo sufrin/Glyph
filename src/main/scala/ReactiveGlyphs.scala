@@ -65,6 +65,11 @@ object ReactiveGlyphs {
     override def asMenuButton: this.type = { _isMenuButton = true; this }
     override def isMenuButton: Boolean   = _isMenuButton
 
+    def setHover(state: Boolean): Unit = {
+      hovered = state
+      reDraw()
+    }
+
     var pressed, hovered: Boolean = false
     var inactive: Boolean = false
     var enabled:  Boolean = true
