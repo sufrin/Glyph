@@ -170,6 +170,6 @@ package styles
 
   case class GlyphButtonStyle
   (frame: decoration.Decoration,
-   border: Scalar
+   //border: Scalar
   )
 

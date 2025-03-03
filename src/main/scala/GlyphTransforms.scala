@@ -84,6 +84,10 @@ trait GlyphTransforms {
              bg: Brush = GlyphTransforms.Framed.defaultBG,
              radius: Scalar = 0f): Glyph =  Framed(fg = fg, bg = bg, radius)(thisGlyph)
 
+  def roundFramed(fg: Brush = GlyphTransforms.Framed.defaultFG,
+             bg: Brush = GlyphTransforms.Framed.defaultBG,
+             radius: Scalar = 0f): Glyph =  GlyphTransforms.RoundFramed(fg = fg, bg = bg, radius)(thisGlyph)
+
   /** Same as `framed` */
   def mounted(fg:     Brush = nothing,
               bg:     Brush = nothing,
@@ -136,7 +140,7 @@ object GlyphTransforms {
   /**
    * A glyph that renders as `glyph` inside a surround painted with `fg`, and a mount painted with `bg`.
    * If `fg.strokeCap` is not `ROUND` then the surround/mount are painted as rectangles; otherwise they are
-   * painted as round rectangles. A `Mounted` glyph can be extracted from its mount: usually done when
+   * painted as round rectangles. A `Framed` glyph can be extracted from its mount: usually done when
    * a collection of glyphs is to be provided with uniform dimensions.
    *
    * @see Mounted
@@ -168,6 +172,71 @@ object GlyphTransforms {
     //def apply(fg: Brush = defaultFG, bg: Brush = defaultBG, radius: Scalar=0f)(glyph: Glyph): Glyph =
     //  new Framed(glyph, fg, bg, radius)
   }
+
+
+  /**
+   * A glyph that renders as `glyph` framed by a surround painted with `fg`, on a mount painted with `bg`.
+   *
+   * If `radiusFactor>0` then the surround and mount are rounded rectangles; otherwise they are square
+   * rectangles.
+   *
+   * When `radiusFactor>0`  it specifies the lateral/vertical radius factors of the rounded rectangles.
+   *
+   * The size of the mounted glyph is always extended by a multiple, `K` of `fg.strokeWidth` in each direction.
+   * The size ofPaint the mounted glyph is always extended by a multiple, `K` ofPaint `fg.strokeWidth` in each direction.
+   * When `fg.strokeCap` is `ROUND`, `K` is 3; otherwise it is `2`. The former factor is usually enough for the
+   * bounding box of the original glyph to fit inside the rim of the frame; except when `fg.strokeWidth` is
+   * small.
+   *
+   */
+  object RoundFramed {
+    def apply(fg: Brush, bg: Brush, radiusFactor: Scalar=0f)(glyph: Glyph): RoundFramed =
+      new RoundFramed(glyph, fg, bg, radiusFactor)
+  }
+
+  class RoundFramed(val glyph: Glyph, val fg: Brush, val bg: Brush, val radiusFactor: Scalar) extends TransformedGlyph {
+    import Glyphs.{FilledRect, Rect, RRect}
+
+    override def toString: String = s"RoundFramed($fg, $bg)($glyph)"
+    override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)
+    override def glyphContaining(p: Vec): Option[Hit] = delegate.glyphContaining(p)
+    override def contains(p: Vec): Boolean = delegate.contains(p)
+    override def copy(fg: Brush = fg, bg: Brush = bg): RoundFramed = new RoundFramed(glyph.copy(), fg, bg, radiusFactor)
+
+
+    val delegate: Glyph = {
+      if (radiusFactor>0f) {
+        val gw = glyph.w + fg.strokeWidth * 3 // Larger than for rectangular: the curvature bites otherwise
+        val gh = glyph.h + fg.strokeWidth * 3
+        // calculate sensible rounding radii
+        val (xrf, yrf) =
+          if (radiusFactor>0f) (radiusFactor, radiusFactor) else (.25f, .25f)
+
+        Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
+          RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = bg, bg = nothing),
+          RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg, bg = nothing),
+          glyph)
+      } else {
+        val gw = glyph.w + fg.strokeWidth * 2
+        val gh = glyph.h + fg.strokeWidth * 2
+        Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
+          FilledRect(gw, gh, fg = bg, bg = nothing),
+          Rect(gw, gh, fg = fg, bg = nothing),
+          glyph)
+      }
+    }
+
+    val diagonal: Vec = delegate.diagonal
+
+    override def draw(surface: Surface): Unit = {
+      delegate.draw(surface)
+    }
+
+    locally { delegate.parent = this }
+
+  }
+
+
 
 
   /**

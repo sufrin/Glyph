@@ -415,7 +415,7 @@ object Glyphs  {
     val rr = diagonal.x min diagonal.y
 
     val r  = SRRECT.makeLTRB(0f, 0f, diagonal.x, diagonal.y, rr*xrf, rr*yrf)
-    val s  = SRRECT.makeLTRB(sw, sw, diagonal.x-sw, diagonal.y-sw, (rr-2*sw)*xrf, (rr-2*sw)*yrf)
+    @inline private def s  = SRRECT.makeLTRB(sw, sw, diagonal.x-sw, diagonal.y-sw, (rr-2*sw)*xrf, (rr-2*sw)*yrf)
 
     def draw(surface: Surface): Unit = {
       //drawBackground(surface)// not needed
