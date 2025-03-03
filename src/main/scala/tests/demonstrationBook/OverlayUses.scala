@@ -8,9 +8,9 @@ import styled.overlaydialogues.Dialogue.{CHOOSE, Menu, NestedMenu, OK, OKNO}
 import NaturalSize.{Col, Row}
 import styled.Book
 import styled.BookSheet
-import styled.{MenuButton, CheckBox, MenuGlyphButton}
+import styled.{CheckBox, MenuButton, MenuGlyphButton}
 import Glyphs._
-import DefaultBrushes.{blue, red, redLine}
+import DefaultBrushes.{blue, nothing, red, redLine, yellow}
 
 import org.sufrin.glyph.styles.decoration
 
@@ -36,7 +36,11 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
     }
 
     def diaGlyph(s: String): Glyph =
-      Row(align=Mid)(PolygonLibrary.star7(fg=redLine, R=50f, C=50f), em, <p>This is a long pro-forma text for a dialogue that I expect to be justified properly in all the dialogues.</p>)
+      Row(align=Mid)(
+        PolygonLibrary.star7(fg=redLine, R=50f, C=50f),
+        em,
+        <p width="30" align="justify">This is a long pro-forma text for a dial_ogue that I expect to be just_ified prop_erly in all the dial_ogues.</p>
+      )
 
     Col(align=Center)(
       <p width="50em" align="justify">
@@ -117,6 +121,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
 
 
   Page("Menus", "") {
+    implicit val pageStyle = style.buttonSheet.copy(popupBackgroundBrush = yellow)
 
     lazy val menuA: Glyph = {
       Menu("A") (
@@ -211,11 +216,14 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
     }
 
 
+
+
       Col(align=Center)(
         Label("Two menus"),
         Row(menuA, em, menuC), ex, ex,
         Label("Two menus with larger content"),
         Row(menuD, em, menuE), ex,
+
       )
     }
 

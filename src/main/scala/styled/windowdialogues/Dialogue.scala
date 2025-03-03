@@ -72,7 +72,7 @@ class Dialogue[T](blurb:        Glyph,
                   bg:            Brush,
                   var preferred: Int = 0
                  )(implicit sheet: StyleSheet) { thisPopup =>
-  val background   = if (bg.getAlpha==0) blurb.bg else bg
+
   val maxPreferred = buttons.length
   /**
    * Make a primitive popup from `blurb` atop `bottomRow`; placing it at `location` on the screen.
@@ -85,6 +85,10 @@ class Dialogue[T](blurb:        Glyph,
   import io.github.humbleui.jwm.App
 
   val closeResult = Variable[Option[T]](None)
+
+  import styled.overlaydialogues.NavigationManager
+
+  val navigation = new NavigationManager(buttons, preferred, nested=false, menu=false)(close())
 
   // println(s"$windowRect, ${nearby.rootDistance}, ${theOffset}")
 
@@ -109,26 +113,24 @@ class Dialogue[T](blurb:        Glyph,
       }
     }
 
-  val ex = Label("X")
+  val theBottomRow = Row(align=Mid, bg=bg)(buttons)
 
-  val theBottomRow = Row(Top, background)(buttons)
-
-  val theRoot = Col(align=Center, bg=background)(blurb, theBottomRow)
+  val GUI = Col(align=Center, bg=bg)(blurb, theBottomRow)
 
   var running: Option[Interaction] = None
 
   def North(glyph: Glyph): this.type = {
-    location = Location.NorthFor(theRoot)(glyph); thisPopup
+    location = Location.NorthFor(GUI)(glyph); thisPopup
   }
 
   /** set the location of this dialogue relative to `glyph` */
   def NorthEast(glyph: Glyph): this.type = {
-    location = Location.NorthEastFor(theRoot)(glyph); thisPopup
+    location = Location.NorthEastFor(GUI)(glyph); thisPopup
   }
 
   /** set the location of this dialogue relative to `glyph` */
   def East(glyph: Glyph): this.type = {
-    location = Location.EastFor(theRoot)(glyph); thisPopup
+    location = Location.EastFor(GUI)(glyph); thisPopup
   }
 
   /** set the location of this dialogue relative to `glyph` */
@@ -138,28 +140,28 @@ class Dialogue[T](blurb:        Glyph,
 
   /** set the location of this dialogue relative to `glyph` */
   def South(glyph: Glyph): this.type = {
-    location = Location.SouthFor(theRoot)(glyph); thisPopup
+    location = Location.SouthFor(GUI)(glyph); thisPopup
   }
 
   /** set the location of this dialogue relative to `glyph` */
   def SouthWest(glyph: Glyph): this.type = {
-    location = Location.SouthWestFor(theRoot)(glyph); thisPopup
+    location = Location.SouthWestFor(GUI)(glyph); thisPopup
   }
 
   /** set the location of this dialogue relative to `glyph` */
   def West(glyph: Glyph): this.type = {
-    location = Location.WestFor(theRoot)(glyph); thisPopup
+    location = Location.WestFor(GUI)(glyph); thisPopup
   }
 
   /** set the location of this dialogue relative to `glyph` */
   def NorthWest(glyph: Glyph): this.type = {
-    location = Location.NorthWestFor(theRoot)(glyph); thisPopup
+    location = Location.NorthWestFor(GUI)(glyph); thisPopup
   }
 
   /** set the location of this dialogue relative to the root of `glyph` */
   def InFront(glyph: Glyph): this.type = {
     val loc = glyph.rootDistance
-    location = Location.OnRootOf(glyph)(loc.x + (glyph.w - theRoot.diagonal.x) / 2f, loc.y + (glyph.h - theRoot.diagonal.y) / 2f)
+    location = Location.OnRootOf(glyph)(loc.x + (glyph.w - GUI.diagonal.x) / 2f, loc.y + (glyph.h - GUI.diagonal.y) / 2f)
     thisPopup
   }
 
@@ -173,7 +175,7 @@ class Dialogue[T](blurb:        Glyph,
   def start(logEvents: Boolean = false): Unit = {
     App.runOnUIThread {
       () =>
-        val theInteraction = new Interaction(App.makeWindow(), theRoot, location.softwareScale) {
+        val theInteraction = new Interaction(App.makeWindow(), GUI, location.softwareScale) {
 
           import io.github.humbleui.jwm.{EventKey, Window}
 
@@ -191,7 +193,7 @@ class Dialogue[T](blurb:        Glyph,
 
           override def size: Pixels = {
             // theRoot.diagonal.scaled(location.effectiveScale).toPair
-            val px = Vec.scaleToPixels(location.effectiveScale, theRoot.diagonal.x, theRoot.diagonal.y)
+            val px = Vec.scaleToPixels(location.effectiveScale, GUI.diagonal.x, GUI.diagonal.y)
             Dialogue.finest(s"Dialogue size:$px")
             px
           }
@@ -200,35 +202,13 @@ class Dialogue[T](blurb:        Glyph,
 
           override def onKeyboardUnfocussed(key: EventKey): Unit = {
             import io.github.humbleui.jwm.Key._
-            var esc = false
+            var drag = true
             key.getKey match {
-              case ESCAPE  if !key.isPressed => esc=true; preferred = -1
-              case ENTER   if !key.isPressed => esc=true
-              case TAB     if !key.isPressed =>
-                buttons(preferred) match {
-                  case button: GenericButton =>
-                    button.setHover(false)
-                  case _ =>
-                }
-                preferred = (preferred+1)%maxPreferred
-                buttons(preferred) match {
-                  case button: GenericButton =>
-                    button.setHover(true)
-                  case _ =>
-                }
-              case _ =>
-                // TODO: beep
-            }
-            if (esc) {
-              if (preferred>=0) buttons(preferred) match {
-                case button: GenericButton =>
-                  button.invokeReaction()
-                  if (!button.isMenuButton) close()
-                case _ =>
-                  App.runOnUIThread(() => close())
-              }
-              else
-                App.runOnUIThread(() => close())
+              case ESCAPE  if !key.isPressed => drag=false; navigation.Action(false)
+              case ENTER   if !key.isPressed => drag=false; navigation.Action(true)
+              case TAB     if !key.isPressed => drag=false; navigation.Next()
+              case other =>
+                // beep()
             }
           }
 
@@ -246,7 +226,7 @@ class Dialogue[T](blurb:        Glyph,
         }
         theInteraction.handler.logEvents = logEvents; theInteraction.start()
         // Henceforth turn native close requests into calls of close()
-        theRoot.guiRoot.onCloseRequest(_ => close())
+        GUI.guiRoot.onCloseRequest(_ => close())
         running = Some(theInteraction)
         // mark preferred
         if (preferred>=0) buttons(preferred) match {

@@ -21,6 +21,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
   val book = Book()
   val Page = book.Page
 
+
   Page("Dialogues", "") {
     val briefing: Glyph = <p>Choose one of the buttons, or press the close button</p>
     val anchor = INVISIBLE()
@@ -183,7 +184,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
           _ =>
             val body = <p width="25em">This window should be  at the north-west edge of the target.</p>
             // Construct a dummy from the APPEARANCE of the intended Dialogue
-            val dummy: Glyph = styled.windowdialogues.Dialogue.OK(body, East(theTarget)).theRoot
+            val dummy: Glyph = styled.windowdialogues.Dialogue.OK(body, East(theTarget)).GUI
             styled.windowdialogues.Dialogue.OK(body, NorthWestFor(dummy)(theTarget)).start()
         }
       ), em)

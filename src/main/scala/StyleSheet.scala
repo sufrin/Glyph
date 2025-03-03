@@ -27,7 +27,8 @@ case class StyleSheet
  labelForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF), // blue
  textBackgroundBrush: Brush = Brush("transparent")(color=0X00FFFFFF), // transparent
  textForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF), // blue
- popupBackgroundBrush: Brush = Brush.ofString("lightgrey"),
+ popupBackgroundBrush: Brush = Brush("popupbackground") color 0xffeeeeee,
+ popupForegroundBrush: Brush = Brush("popupforeground") color 0xff000000 strokeWidth(1),
  backgroundBrush: Brush = Brush("background")(color=0XFFBBBBBB),
  foregroundBrush: Brush = Brush("foreground")(color=0XFFBBBBBB),
  // Paragraph layout properties
@@ -86,9 +87,9 @@ case class StyleSheet
 
   lazy val menuStyle: MenuStyle = MenuStyle(
     button = buttonStyle,
-    nestedButton = buttonStyle.copy(frame = Framed(fg = DefaultBrushes.black(width = 0), bg = buttonBackgroundBrush)),
-    reactive = buttonStyle.copy(frame = Framed(fg = DefaultBrushes.black(width = 0), bg = buttonBackgroundBrush)),
-    inactive = unDecorated,
+    nestedButton = buttonStyle.copy(frame = decoration.Edged(fg = DefaultBrushes.black(width = 0))),
+    reactive = buttonStyle.copy(frame = decoration.Edged(fg = DefaultBrushes.black(width = 0))),
+    inactive = decoration.Edged(fg = DefaultBrushes.black(width = 1)),
     bg = DefaultBrushes.lightGrey,
     fg = DefaultBrushes.lightGrey,
   )
@@ -100,8 +101,8 @@ case class StyleSheet
     val m = textFont.getMetrics
     m.getHeight+m.getDescent
   }
-  lazy val em: Glyph = new FixedSize.Space(emWidth, 1f, 0, 0)
-  lazy val ex: Glyph = new FixedSize.Space(1f, exHeight, 0, 0)
+  def em: Glyph = new FixedSize.Space(emWidth, 1f, 0, 0)
+  def ex: Glyph = new FixedSize.Space(1f, exHeight, 0, 0)
 
   def  hFill(ems: Int=1, stretch: Scalar=1): Glyph = new FixedSize.Space(ems*emWidth, exHeight, stretch, 0)
   def  vFill(exs: Int=1, stretch: Scalar=1): Glyph = new FixedSize.Space(emWidth, exs*exHeight, 0, stretch)
