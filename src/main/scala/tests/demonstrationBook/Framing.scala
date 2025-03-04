@@ -176,8 +176,8 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
 
   Page("Edged/Framed", "Glyph edging and framing") {
     val (x, y) = (150f, 100f)
-    def label = SimpleParagraphs(15, align=Center, font=FontFamily("Courier")(35))("""The rain in spain falls mainly in the plain""").edged()
-    def long = SimpleParagraphs(35, align=Center, font=FontFamily("Courier")(35))("""The rain in spain falls mainly in the plain""").edged()
+    def label = SimpleParagraphs(15, align=Center, font=FontFamily("Courier")(35))("""The rain in spain falls mainly in the plain""")
+    def long = SimpleParagraphs(35, align=Center, font=FontFamily("Courier")(35))("""The rain in spain falls mainly in the plain""")
     def star = PolygonLibrary.filledStargon(9, fg=blueLine).scaled(.5f).framed()
     def cross = Polygon(star.w, star.h, blue(width = 4))((0, 0), (star.w, star.h), (0, star.h), (star.w, 0), (0,0)) scaled 0.5f
 
@@ -188,27 +188,40 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       label.edged(fg=red(width = 10, cap = ROUND), bg=nothing),
       label.edged(fg=red(width = 20, cap = ROUND), bg=nothing),
       label.edged(fg=red(width = 30, cap = ROUND), bg=nothing),
-      label.edged(fg=blue(width = 40, cap = ROUND), bg=green),
-      label.edged(fg=blue(width = 50, cap = ROUND), bg=green),
+      label.edged(fg=red(width = 40, cap = ROUND), bg=nothing),
+      Label(s"Edged(fg<-red({10, 20, 30, 40})"),
+
+      label.edged(fg=red(width = 10, cap = ROUND), bg=green),
+      label.edged(fg=red(width = 20, cap = ROUND), bg=green),
+      label.edged(fg=red(width = 30, cap = ROUND), bg=green),
+      label.edged(fg=red(width = 40, cap = ROUND), bg=yellow.rounded(170)),
+      Label(s"Edged(fg<-red({10, 20, 30, 40}, bg=green)"),
+
+      label.edged(bg=red(cap = ROUND), fg=nothing),
+      label.edged(bg=red(cap = ROUND).rounded(20), fg=nothing),
+      label.edged(bg=red(cap = ROUND).rounded(30), fg=nothing),
+      label.edged(bg=red(cap = ROUND).rounded(40), fg=nothing),
+      Label(s"Edged(bg<-red.radius({0, 20, 30, 40}, fg=nothing)"),
 
       label.framed(fg=red(width = 10, cap = ROUND), bg=nothing),
       label.framed(fg=red(width = 20, cap = ROUND), bg=nothing),
       label.framed(fg=red(width = 30, cap = ROUND), bg=nothing),
-      label.framed(fg=blue(width = 40, cap = ROUND), bg=green),
-      label.framed(fg=blue(width = 50, cap = ROUND), bg=green),
+      label.framed(fg=red(width = 40, cap = ROUND), bg=nothing, radius=0),
+      Label(s"Framed(fg<-red({10, 20, 30, 40})"),
 
 
-      frame(bg=greenFrame, radius= .0f)(label),
       frame(bg=greenFrame, radius= .1f)(label),
       frame(bg=greenFrame, radius= .2f)(label),
       frame(bg=greenFrame, radius= .3f)(label),
       frame(bg=greenFrame, radius= .4f)(label),
+      Label(s"Framed(bg=greenFrame, radius<-{.1, .2, .3. .4})"),
 
-      frame(fg=redFrame(width=20), radius= .01f)(label),
       frame(fg=redFrame(width=20), radius= .1f)(label),
       frame(fg=redFrame(width=20), radius= .2f)(label),
       frame(fg=redFrame(width=20), radius= .3f)(label),
       frame(fg=redFrame(width=20), radius= .4f)(label),
+      Label(s"Framed(bg=redFrame(20), radius<-{.1, .2, .3. .4})"),
+
 
       rframe(fg=redFrame(width=20), radius= .01f)(label),
       rframe(fg=redFrame(width=20), radius= .1f)(label),

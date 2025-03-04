@@ -140,14 +140,13 @@ object GlyphTransforms {
   /**
    * A glyph that renders as `glyph` inside a surround painted with `fg`, and a mount painted with `bg`.
    * If `fg.strokeCap` is not `ROUND` then the surround/mount are painted as rectangles; otherwise they are
-   * painted as round rectangles. A `Framed` glyph can be extracted from its mount: usually done when
-   * a collection of glyphs is to be provided with uniform dimensions.
+   * painted as round rectangles.
    *
    * @see Mounted
    */
   object Framed extends DefaultPaints {
     def apply(fg: Brush=nothing,  bg: Brush=nothing, radius: Scalar = 0f)(glyph: Glyph): Glyph = {
-      val rad = if (radius<0f) 0 else {
+      val rad: Scalar = if (radius<0f) 0 else {
         if (radius==0f)   bg.strokeWidth max fg.strokeWidth max 1.0f
         if (radius<=1.0f) (glyph.h min glyph.w)*radius
         else radius
@@ -155,14 +154,14 @@ object GlyphTransforms {
 
       @inline def round(brush: Brush): Brush = if (rad==0) brush else brush(width=rad).rounded(rad)
 
-      lazy val frameOnly:  Glyph = Rect(glyph.w+rad*2, glyph.h+rad*2,   fg=round(fg))  // open rectangle (may be curved)
+      lazy val frameOnly:  Glyph = Rect(glyph.w+rad*6, glyph.h+rad*6,   fg=fg, bg=nothing) // open rectangle (may be curved)
       lazy val mountOnly:  Glyph = FilledRect(glyph.w+rad, glyph.h+rad, fg=round(bg))  // closed rectangle with (rounded) bg
       lazy val frameAfter: Glyph = FilledRect(mountOnly.w+rad*2, mountOnly.h+rad*2, fg=round(fg))
 
       Glyphs.Concentric(bg=round(bg))(
         (fg.getAlpha!=0, bg.getAlpha!=0) match {
           case (true, true)  => List(mountOnly, frameAfter, glyph)
-          case (true, false) => List(frameOnly, glyph)
+          case (true, false) => List(frameAfter, glyph)
           case (false, true) => List(mountOnly, glyph)
           case _ => List(glyph)
         }
@@ -290,32 +289,19 @@ object GlyphTransforms {
   }
   /**
    * A glyph that renders as `glyph` framed by a surround painted with `fg`, on a mount painted with `bg`.
-   *
-   * Unless `fg.cap` is `ROUND` or `radius` is `0` then the surround/mount are rectangles; otherwise they are
-   * round rectangles, with lateral/vertical radius factors both specified as `radius` (if it is nonzero), or
-   * `.25f` if it is zero.
-   *
-   * The size of the mounted glyph is always extended by a multiple, `K` of `fg.strokeWidth` in each direction.
-   * When `fg.strokeCap` is `ROUND`, `K` is 3; otherwise it is `2`. The former factor is usually enough for the
-   * bounding box of the original glyph to fit inside the rim of the frame; except when `fg.strokeWidth` is
-   * small.
-   *
-   * A `Framed` glyph can be extracted from its mount: usually done when
-   * a collection of glyphs is to be provided with uniform dimensions.
-   *
    */
-  class Framed(val glyph: Glyph, val fg: Brush, val bg: Brush, val radiusFactor: Scalar=0f) extends TransformedGlyph {
+  class XFramed(val glyph: Glyph, val fg: Brush, val bg: Brush, val radiusFactor: Scalar=0f) extends TransformedGlyph {
     import Glyphs.{FilledRect, Rect, RRect}
 
     override def toString: String = s"Mounted($fg, $bg)($glyph)"
     override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)
     override def glyphContaining(p: Vec): Option[Hit] = delegate.glyphContaining(p)
     override def contains(p: Vec): Boolean = delegate.contains(p)
-    override def copy(fg: Brush = fg, bg: Brush = bg): Framed = new Framed(glyph.copy(), fg, bg, radiusFactor)
+    override def copy(fg: Brush = fg, bg: Brush = bg): XFramed = new XFramed(glyph.copy(), fg, bg, radiusFactor)
 
 
     val delegate: Glyph = {
-      if (fg.strokeCap == Brush.ROUND || radiusFactor>0f) {
+      if (radiusFactor>0f) {
         val gw = glyph.w + fg.strokeWidth * 3 // Larger than for rectangular: the curvature bites otherwise
         val gh = glyph.h + fg.strokeWidth * 3
         // calculate sensible rounding radii
@@ -323,15 +309,15 @@ object GlyphTransforms {
           if (radiusFactor>0f) (radiusFactor, radiusFactor) else (.25f, .25f)
 
         Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
-          RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = bg, bg = nothing),
+          RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = if (bg.getAlpha==0f) fg else bg, bg = nothing),
           RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg, bg = nothing),
           glyph)
       } else {
         val gw = glyph.w + fg.strokeWidth * 2
         val gh = glyph.h + fg.strokeWidth * 2
         Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
-          FilledRect(gw, gh, fg = bg, bg = nothing),
-          Rect(gw, gh, fg = fg, bg = nothing),
+          FilledRect(gw, gh, fg = if (bg.getAlpha==0f) fg else bg, bg = nothing),
+          Rect(gw+ fg.strokeWidth * 4, gh+ fg.strokeWidth * 4, fg = fg, bg = nothing),
           glyph)
       }
     }
