@@ -736,8 +736,8 @@ class Translation(val primitives: Primitives=new Primitives) {
 
   def translateText(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, text: String): Seq[Target] = {
 
-    @inline def solidText(text: String): Target = SolidTextTarget(text, paragraph, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
-    @inline def hyphenatableText(text: String): Target = HyphenatableTextTarget(text, sheet.discretionaryWordBreak, sheet.textFont, sheet.textForegroundBrush, DefaultBrushes.nothing)
+    @inline def solidText(text: String): Target = SolidTextTarget(text, paragraph, sheet.textFont, sheet.textForegroundBrush, sheet.textBackgroundBrush)
+    @inline def hyphenatableText(text: String): Target = HyphenatableTextTarget(text, sheet.discretionaryWordBreak, sheet.textFont, sheet.textForegroundBrush, sheet.textBackgroundBrush)
 
     val interWordWidth = sheet.interWordWidth
 

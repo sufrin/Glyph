@@ -451,8 +451,11 @@ abstract class Composite(components: Seq[Glyph]) extends Glyph {
       case None    => None
       case here    =>
         var result: Option[Hit] = None
-        for {glyph  <- searchGlyphs if result.isEmpty}
-            result = glyph.glyphContaining(p - glyph.location)
+        val it = searchGlyphs.iterator
+        while (result.isEmpty && it.hasNext) {
+          val glyph = it.next()
+          result = glyph.glyphContaining(p - glyph.location)
+        }
         if (result.isEmpty) here else result
     }
 
