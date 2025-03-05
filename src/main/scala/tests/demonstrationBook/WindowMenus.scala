@@ -170,7 +170,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
               )
             }
             for {(label, locator) <- cardinals} {
-              windowdialogues.Menu.at(locator)(Label(label)).start()
+              styled.windowdialogues.Menu.at(locator)(Label(label)).start()
             }
         },
         ex scaled 10,

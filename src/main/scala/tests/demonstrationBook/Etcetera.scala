@@ -190,7 +190,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         TextButton("L<->R") {
           _ => static.exchange()
         }
-      ) enlarged 20f 
+      ) enlarged 20f
     }
 
     Page("Scroll", "Scrolling and Scaling with ViewPort"){

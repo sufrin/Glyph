@@ -4,6 +4,8 @@ package styled.windowdialogues
 import Location.Location
 import ReactiveGlyphs.{GenericButton, RawButton}
 
+import org.sufrin.glyph.DefaultBrushes.{lightGrey, yellow}
+
 /**
  *
  * NB: `overlaydialogues.Dialogue.Menu` is usually a more-effective way of constructing and popping-up menus. This
@@ -67,7 +69,7 @@ class Menu(entries: Seq[Glyph]) { thisPopup =>
       case _ => glyph
     }
     val col = Col(align=Left)(entries.map(afterReact))
-    Col(align=Left)(killButton, col)
+    Col(align=Left, bg=lightGrey)(killButton, col)
   })
 
   // TODO: Perhaps we need an "annular" reactiveGlyph into which menus can be nested.
