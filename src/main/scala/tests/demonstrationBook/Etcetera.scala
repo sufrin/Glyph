@@ -12,7 +12,7 @@ import NaturalSize.{Col, Grid, Row}
 import GlyphTypes.Scalar
 import Glyphs._
 
-import org.sufrin.glyph.styles.decoration.Framed
+import org.sufrin.glyph.styles.decoration.{Edged, Framed}
 
 class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: StyleSheet = style.pageSheet
@@ -141,13 +141,13 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           |This is a justified piece of text that may be quite small.
           |You'll see it on a split screen. When the text on the other
           |screen is not the same width we'll see what happens.
-          |""".stripMargin) above ReactiveGlyphs.TextButton("The Left Button") { _ => }.framed()
+          |""".stripMargin) above ReactiveGlyphs.TextButton("The Left Button") { _ => }.edged()
       val right = Paragraph(40, Left)(
         """
           |This is a left-justified piece of text that may be quite small.
           |You'll see it on a split screen. It'll be a bit wider
           |than the other thing on the screen.
-          |""".stripMargin) above ReactiveGlyphs.TextButton("The Right Button") { _ => }.framed()
+          |""".stripMargin) above ReactiveGlyphs.TextButton("The Right Button") { _ => }.edged()
       val dynamic = SplitScreen(left enlarged 30, right enlarged 30, dynamic=true, fg=darkGrey.strokeWidth(6f))
       def blob    = Glyphs.FilledRect(28f, 14f, fg=black.blurred(6f))
       val slider  = Slider.Horizontal(Glyphs.Rect(dynamic.w, 2f), blob, dynamic.proportion){
@@ -190,7 +190,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         TextButton("L<->R") {
           _ => static.exchange()
         }
-      ) enlarged 20f framed(blue)
+      ) enlarged 20f 
     }
 
     Page("Scroll", "Scrolling and Scaling with ViewPort"){
@@ -204,7 +204,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
       val describe: Glyph = <div width="50em" >
         <p align="justify">
-          The image is framed in RED when the mouse is on or over it. Moving the mouse with its
+          The image is edged in RED when the mouse is on or over it. Moving the mouse with its
           PRIMARY button pressed drags the image. The mousewheel can also be used to scale or scroll it.
         </p>
         <p hang="* ">The mousewheel alone scrolls vertically, scales when shifted, and scrolls horizontally while control is pressed.
@@ -248,7 +248,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         Label("Ctrl/Cmd V - insert from clipboard"),
         Label("Home/End/Left/Right/Backspace"),
         Label(" "),
-        theText.framed(blue),
+        theText.edged(blue),
         anchor
       )
     }
@@ -289,9 +289,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
             |
             |""".stripMargin), ex,
         Row(fg=nothing, bg=white)(next, em, em, sel0), ex, ex,
-        Col(align=Center)(Label(s"""oneOf=OneOf(bg=grey)(AAA,BBB,CCCCCC)"""), ex, oneOfBG scaled .7f).enlarged(40).framed(), ex, ex,
-        Col(align=Center)(Label(s"""oneOf=OneOf()(AAA,BBB,CCCCCC)"""), ex, oneOf scaled .7f).enlarged(40).framed(), ex, ex,
-        Col(align=Center)(Label(s"""oneOf=OneOf()(Ping, Poobah)"""), ex, oneOfPB scaled .7f).enlarged(40).framed(), ex, ex, ex,
+        Col(align=Center)(Label(s"""oneOf=OneOf(bg=grey)(AAA,BBB,CCCCCC)"""), ex, oneOfBG scaled .7f).enlarged(40).edged(), ex, ex,
+        Col(align=Center)(Label(s"""oneOf=OneOf()(AAA,BBB,CCCCCC)"""), ex, oneOf scaled .7f).enlarged(40).edged(), ex, ex,
+        Col(align=Center)(Label(s"""oneOf=OneOf()(Ping, Poobah)"""), ex, oneOfPB scaled .7f).enlarged(40).edged(), ex, ex, ex,
         Label("The OneOf component glyphs AAA, BBB, ... are:"), ex,
         Row(bg=nothing, fg=nothing, align=Mid)(aaa(), em, bbb(), em, ccc(), em, ddd(), em, eee()) scaled 0.8f
 
@@ -333,17 +333,18 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         Paragraph(50, Justify)(
           """
             |Several linked sliders subjected to a variety of
+
             |scalings, rotations, and skewings.
             |Hover over them for the details. Click
             |or slide or rotate the wheel to set.
             |""".stripMargin), ex,
         sh hint "",
-        shu hint " turned 5" turned 5f framed (black),
-        Row(align=Mid)(sv hint " scaled 1.5" scaled(1.5f) framed(black), em,
-          svu hint " rotated 2" rotated(2) framed(black), em,
-          svr hint " skewed (.2,0) turned 180" skewed(0.2f, 0f) turned(180f) framed(black), em,
+        shu hint " turned 5" turned 5f edged (black),
+        Row(align=Mid)(sv hint " scaled 1.5" scaled(1.5f) edged(black), em,
+          svu hint " rotated 2" rotated(2) edged(black), em,
+          svr hint " skewed (.2,0) turned 180" skewed(0.2f, 0f) turned(180f) edged(black), em,
           shr hint " scaled 0.5f rotated 3" scaled 0.5f rotated 3),
-        show.framed()
+        show.edged()
       )
     }
 
@@ -351,7 +352,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       import BooleanGlyphs._
       import DynamicGlyphs.OneOf
       import styled._
-      implicit val pageSheet=style.pageSheet.copy(buttonDecoration = Framed(fg=blue(width=6, cap=ROUND), enlarge=.25f, radius = .3f))
+      implicit val pageSheet=style.pageSheet.copy(buttonDecoration = Edged(fg=blue(width=6, cap=ROUND)))
 
 
       def Monitor(whenFalse: String, whenTrue: String, toggle: OnOffButton): OneOf = {
@@ -411,8 +412,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           NaturalSize.Grid(bg=lightGrey, padx=20, pady=20, height=2)(
             TextBut(false),  TextBut(true),
             RectBut(false),  RectBut(true)
-          ).framed(),
-        ).enlarged(20).framed()
+          ).edged(),
+        ).enlarged(20).edged()
       }
 
 
@@ -426,7 +427,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         NaturalSize.Grid(fg=black(width=0), padx=10f).table(width=3)(List(
           state1, state2,            state3,
           t1,     t2 scaled 1.7f,    t3.enlarged(15)
-        )).enlarged(40f).framed(black), ex, ex,
+        )).enlarged(40f).edged(black), ex, ex,
 
         NaturalSize.Grid.Width(1)(
           Col(align=Center)(
@@ -465,8 +466,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
             //import styled.text.Label
             val labels = group.map { name => styled.Label(name, Left) }
             val llength = labels.length / 2
-            Row(NaturalSize.Col(align=Left)(labels.take(llength)).enlarged(20).framed(), em, em,
-              NaturalSize.Col(align=Left)(labels.drop(llength)).enlarged(20).framed())
+            Row(NaturalSize.Col(align=Left)(labels.take(llength)).enlarged(20).edged(), em, em,
+              NaturalSize.Col(align=Left)(labels.drop(llength)).enlarged(20).edged())
           }
         }
       }
