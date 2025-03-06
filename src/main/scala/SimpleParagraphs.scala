@@ -2,7 +2,7 @@ package org.sufrin.glyph
 
 import DefaultBrushes.{blue, nothing}
 import GlyphTypes.Font
-import NaturalSize.Col
+import NaturalSize.{Col, Row}
 
 import scala.collection.mutable.ListBuffer
 
@@ -23,7 +23,7 @@ object SimpleParagraphs {
    * paragraph is right-aligned. [I] indents the rest of the paragrap. [*] indents and bulletpoints
    * the rest of the paragraph.
    */
-  def apply(ems: Int, font: Font = DefaultBrushes.buttonFont, fg: Brush = blue, align: Alignment=Left)(text: String): Glyph = {
+  def apply(ems: Int, font: Font = DefaultBrushes.buttonFont, fg: Brush = blue, bg: Brush = nothing, align: Alignment=Left)(text: String): Glyph = {
     val emWidth = Text("n", font).w
 
     def paragraphLines(ems: Int, text: String, align: Alignment): Seq[Glyph] = {
@@ -36,7 +36,7 @@ object SimpleParagraphs {
           line.append(words.element); line.append(' ')
           words.nextElement()
         }
-        val theText = Text(line.toString, font, fg)
+        val theText = Text(line.toString, font, fg, bg)
         alignment match {
           case Center =>
               result.addOne(FixedSize.Row(width=ems*emWidth)(FixedSize.Space(1,1,1), theText, FixedSize.Space(1,1,1)))
@@ -79,13 +79,13 @@ object SimpleParagraphs {
         count += 1
 
         if (indent!=0) {
-           result.addOne(Text(" "*indent, font, fg) beside justified)
+           result.addOne(Row(Text(" "*indent, font, fg), justified))
         } else {
           result.addOne(justified)
         }
 
     }
 
-    Col(align=Left, bg=nothing)(result.toSeq)
+    Col(align=Left, bg=bg)(result.toSeq)
   }
 }

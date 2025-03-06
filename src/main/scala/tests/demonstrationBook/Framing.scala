@@ -134,12 +134,12 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
     ).enlarged(40)
   }
 
-  Page("Edged #3", "Text.copy(bg=nothing).edged(fg, bg)\n(text needs bg=nothing for edged bg tp prevail)") {
-    def label = SimpleParagraphs(15, align=Center, font=FontFamily("Courier")(25))("""The rain in spain falls mainly in the plain""")
+  Page("Edged #3", "Text.copy(bg=nothing).edged(fg, bg)\n(text bg prevails over edged bg unless nothing)") {
+    def label(bg: Brush) = SimpleParagraphs(15, align=Center, font=FontFamily("Courier")(25), fg=darkGrey, bg=bg)("""The rain in spain falls mainly in the plain""")
 
     Grid(padx=10, pady=10, fg=nothing, width=5).rows(
-      for { cap<-List(SQUARE, ROUND); bg<-List(green, nothing); width<-List(2f, 4f, 10f, 20f, 40f)} yield
-        Label(s"fg=red($width,$cap)\nbg=$bg") above label.edged(fg=red(width = width, cap = cap), bg=bg) ,
+      for { cap<-List(ROUND); tbg<- List(yellow, nothing); bg<-List(green, nothing); width<-List(2f, 4f, 10f, 20f, 40f)} yield
+        Label(s"fg=red($width,$cap)\ntext bg=$tbg, bg=$bg") above label(tbg).edged(fg=red(width = width, cap = cap), bg=bg) ,
     )
   }
 
@@ -200,7 +200,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
           glyph.roundFramed(yellowHuge(width = 20, cap=ROUND), green, .5f), em,
           Label("Text(bg=lightGrey)").copy(bg=lightGrey(width=30)).roundFramed(yellow(width = 20), bg=green, .5f), em,
         )
-      ).scaled(0.98f).enlarged(40)
+      ).scaled(0.7f).enlarged(40)
     }
 
 
