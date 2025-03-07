@@ -169,13 +169,17 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
           star.roundFramed(fg=black(width=10), bg=yellow, radius = .3f),
           cross.roundFramed(fg=black(width=10), bg=yellow, radius = .3f),
         ), ex, ex, ex, ex,
-        Label(" radius=.9\n(glyphs may overlap frame at low curvature) "),
+        Label(" radius=.9\n(glyphs may extend beyond a narrow frame at low curvature) "),
         Row(skip=10, align=Mid)(
           star.roundFramed(fg=black(width=10), bg=yellow, radius = .9f),
           cross.roundFramed(fg=black(width=10), bg=yellow, radius = .9f),
           starbstar.roundFramed(fg=black(width=10), bg=yellow, radius = .9f),
           starastar.roundFramed(fg=black(width=10), bg=yellow, radius = .9f),
-          staracross.roundFramed(fg=black(width=10), bg=yellow, radius = .9f)
+          staracross.roundFramed(fg=black(width=10), bg=yellow, radius = .9f),
+          Label("  width=20"),
+          cross.roundFramed(fg=black(width=20), bg=yellow, radius = .9f),
+          staracross.roundFramed(fg=black(width=20), bg=yellow, radius = .9f),
+
         ), ex, ex, ex, ex,
         Label(" radius=.9\n(overlap remedy: .enlarged(30).roundFramed(...) "),
         Row(skip=10, align=Mid)(

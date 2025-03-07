@@ -367,7 +367,7 @@ object ReactiveGlyphs {
     /**
      * A button with up/down/hover glyphs specified by `up` but no offsets/alphas
      * that reflect its state. The down and hover colours are specified by the given paints.
-     * The exact shape of the glyph  used to
+     * The exact shape of the glyph  is used to
      * decide whether the mouse cursor is within the button.
      */
     def exact(up: Glyph, down: Brush, hover: Brush)(reaction: Reaction): RawButton =

@@ -49,41 +49,41 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   Page("Framed", "") {
     import styles.decoration.{Framed,unDecorated, Edged, Decorated}
     import styled.TextButton
-    def framed(fg: String, bg: String, radius: Scalar, buttonBG: String="lightGrey"): Glyph =
-        TextButton(s"Framed($fg, $bg, $radius)")
-        { showSourceCode(
-          <div align="left" width="75em" DEC="Undecorated">
-            <p>buttonBackgroundBrush={buttonBG}</p><p>buttonDecoration = Framed({fg}, {bg}, enlarge=0.9f, radius={radius.toString})</p>
-          </div>)
-        }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG), buttonDecoration = Framed(DefaultBrushes(fg), DefaultBrushes(bg), enlarge=0.9f, radius=radius)))
+    def roundframed(fg: String, bg: String, radius: Scalar, buttonBG: String="lightGrey"): Glyph =
+      TextButton(s"RoundFramed($fg, $bg, $radius)")
+      { showSourceCode(
+        <div align="left" width="75em" DEC="Undecorated">
+          <p>buttonBackgroundBrush={buttonBG}</p><p>buttonDecoration = RoundFramed({fg}, {bg}, enlarge=0.9f, radius={radius.toString})</p>
+        </div>)
+      }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG),
+        buttonDecoration = Decorated { glyph => glyph.roundFramed(DefaultBrushes(fg), DefaultBrushes(bg), radius=radius)}
+        // TODO: IMPLEMENT RoundFramed DECORATION + enlarged
+        ))
 
-    def edged(fg: String, bg: String, radius: Scalar, buttonBG: String="lightGrey"): Glyph =
-      TextButton(s"Edged($fg, $bg)")
+    def framed(fg: String, bg: String, radius: Scalar, buttonBG: String="lightGrey"): Glyph =
+      TextButton(s"Framed($fg, $bg)")
       { showSourceCode(
         <div align="Left" width="75em" DEC="Undecorated">
-          <p>buttonBackgroundBrush={buttonBG}</p><p>Edged({fg}, {bg}, enlarge=0.9f)</p>
+          <p>buttonBackgroundBrush={buttonBG}</p><p>Framed({fg}, {bg}, enlarge=2f)</p>
         </div>)
-      }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG), buttonDecoration = Edged(DefaultBrushes(fg), DefaultBrushes(bg), enlarge=.9f)))
+      }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG),
+                        buttonDecoration = Framed(DefaultBrushes(fg), DefaultBrushes(bg), enlarge=2f)))
 
     Col(align=Center)(
       <div width="60em" align="justify">
-        <p align="center">Button decoration with Framed and Edged.</p>
-        <p>Edged: the width/curvature of the edge depends only on the width/cap of <tt>fg</tt>, and the
-           <tt>bg</tt> is ignored.
-        </p>
-        <p>Framed: the width and curvature of the frame (if <tt>fg</tt> is not <b>nothing</b>) is determined by <tt>radius</tt> (if that is not zero), else by <tt>fg</tt>'s width;
-           the curvature of the background  (if <tt>bg</tt> is not <b>nothing</b>) is determined by <tt>radius</tt>.
-        </p>
+        <p align="center">Button decoration with Framed and RoundFramed.</p>
         <p>Click on any of the buttons to see the relevant parts of its style.</p>
       </div>,
       anchor,
       Grid(width=3, padx=10, pady=10).rows(
       framed("darkGrey/0/ROUND", "", 10), framed("darkGrey/0/ROUND", "", 20), framed("darkGrey/0/ROUND", "", 30),
-      edged("darkGrey/10/ROUND", "", 10) ,  edged("darkGrey/20/ROUND", "yellow", 20) ,  edged("darkGrey/30/ROUND", "", 30),
-      edged("darkGrey/10/SQUARE", "", 10) ,  edged("darkGrey/20/SQUARE", "yellow", 20) ,  edged("darkGrey/30/SQUARE", "", 30),
-      framed("", "lightGrey", 10) ,  framed("", "lightGrey", 20) ,  framed("", "lightGrey", 30),
-      framed("red/10", "", 10, "yellow") ,  framed("red/20", "", 20, "yellow") ,  framed("red/30", "", 30, "yellow"),
-      framed("darkGrey/10/ROUND", "nothing", 10) ,  framed("darkGrey/20/ROUND", "nothing", 20) ,  framed("darkGrey/30/ROUND", "nothing", 30)
+      framed("darkGrey/10/ROUND", "", 10) ,  framed("darkGrey/20/ROUND", "yellow", 20) ,  framed("darkGrey/30/ROUND", "", 30),
+      framed("darkGrey/10/SQUARE", "", 10) ,  framed("darkGrey/20/SQUARE", "yellow", 20) ,  framed("darkGrey/30/SQUARE", "", 30),
+        roundframed("nothing", "lightGrey", 10) ,  roundframed("nothing", "lightGrey", 20) ,  roundframed("nothing", "lightGrey", 30),
+        roundframed("red/10", "yellow", 0.1f, "yellow") ,  roundframed("red/20", "yellow", 0.1f, "yellow") ,  roundframed("red/30", "yellow", 0.1f, "yellow"),
+        roundframed("red/10", "green", 0.3f, "yellow") ,  roundframed("red/20", "green", 0.3f, "yellow") ,  roundframed("red/30", "green", 0.3f, "yellow"),
+        roundframed("red/10", "nothing", 0.6f, "nothing") ,  roundframed("red/20", "yellow", 0.6f, "yellow") ,  roundframed("red/30", "yellow", 0.6f, "yellow"),
+        roundframed("darkGrey/10/ROUND", "lightgrey", 0.8f) ,  roundframed("darkGrey/20/ROUND", "lightgrey", 0.8f) ,  roundframed("darkGrey/30/ROUND", "lightgrey", 0.8f)
       )
     )
   }

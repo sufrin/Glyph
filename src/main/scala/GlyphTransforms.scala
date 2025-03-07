@@ -73,25 +73,18 @@ trait GlyphTransforms {
     }
 
   /**
-   * A glyph that renders this glyph inside a surround painted with `fg`, and a mount painted with `bg`.
-   * If `fg.strokeCap` is not `ROUND` then the surround/mount are painted as rectangles; otherwise they are
-   * painted as round rectangles. A `Mounted` glyph can be extracted from its mount: usually done when
-   * a collection of glyphs is to be provided with uniform dimensions.
+   * Same as edged.
    *
-   * @see Framed
+   * @see edged
    */
   def framed(fg: Brush = GlyphTransforms.Framed.defaultFG,
              bg: Brush = GlyphTransforms.Framed.defaultBG,
-             radius: Scalar = 0f): Glyph =  Framed(fg = fg, bg = bg, radius)(thisGlyph)
+             radius: Scalar = 0f): Glyph =  Edged(fg = fg, bg = bg)(thisGlyph)
 
   def roundFramed(fg: Brush = GlyphTransforms.Framed.defaultFG,
              bg: Brush = GlyphTransforms.Framed.defaultBG,
              radius: Scalar = 0f): Glyph =  GlyphTransforms.RoundFramed(fg = fg, bg = bg, radius)(thisGlyph)
 
-  /** Same as `framed` */
-  def mounted(fg:     Brush = nothing,
-              bg:     Brush = nothing,
-              radius: Scalar = 0): Glyph = Framed(fg, bg, radius)(thisGlyph)
 
   /**
    * This `glyph` with a `fg`-coloured edge around it, and a background of `bg` (==`fg` if `bg` is unspecified).
@@ -181,7 +174,6 @@ object GlyphTransforms {
    * When `radiusFactor>0`  it specifies the lateral/vertical radius factors of the rounded rectangles.
    *
    * The size of the mounted glyph is always extended by a multiple, `K` of `fg.strokeWidth` in each direction.
-   * The size ofPaint the mounted glyph is always extended by a multiple, `K` ofPaint `fg.strokeWidth` in each direction.
    * When `fg.strokeCap` is `ROUND`, `K` is 3; otherwise it is `2`. The former factor is usually enough for the
    * bounding box of the original glyph to fit inside the rim of the frame; except when `fg.strokeWidth` is
    * small.
@@ -204,8 +196,8 @@ object GlyphTransforms {
 
     val delegate: Glyph = {
       if (radiusFactor>0f) {
-        val gw = glyph.w + fg.strokeWidth * 3 // Larger than for rectangular: the curvature bites otherwise
-        val gh = glyph.h + fg.strokeWidth * 3
+        val gw = glyph.w + fg.strokeWidth * 4 // Larger than for rectangular: the curvature bites otherwise
+        val gh = glyph.h + fg.strokeWidth * 4
         // calculate sensible rounding radii
         val (xrf, yrf) =
           if (radiusFactor>0f) (radiusFactor, radiusFactor) else (.25f, .25f)
