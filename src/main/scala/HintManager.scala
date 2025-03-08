@@ -1,33 +1,51 @@
 package org.sufrin.glyph
 import ReactiveGlyphs.Enterable
 
+import org.sufrin.glyph.Glyphs.{FilledRect, INVISIBLE}
+
 /**
  *
- * @param target a reactive glyph for which a popup hint is to be attached.
- * @param hint the glyph that will be popped-up when the mouse enters the reactive glyph
- * @param seconds the time for which the hint will remain popped-up
+ * A manager that arranges for a hint glyph to be computed and displayed "near" a reactive
+ * glyph whenever the mouse cursor enters the glyph.
+ *
+ * @param target a reactive (`Enterable`) glyph to which a popup hint is to be attached.
+ *
+ * @param hint a computation yielding the glyph that will be popped-up when the mouse enters the reactive glyph. This
+ *             can be computed *whenever* the hint is about to be shown, and this makes dynamic hints
+ *             (showing state) feasible.
+ *
+ * @param seconds the time for which the hint will remain popped-up if the mouse doesn't leave the glyph
+ *
+ * @param constant true if the hint computation always yields the same glyph
  */
-class HintManager(val target: Enterable, val hint: Glyph, val seconds: Double) {
+class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Double, constant: Boolean = true) {
   private var _allow: () => Boolean = ()=>true
 
   def onlyWhen(allow: => Boolean): this.type = { _allow = { ()=>allow }; this }
 
   val id = s"HintManager${this.hashCode()}"
-  /** The new layer is constructed lazily (in fact, at the point of first entry) because
-   * the target glyph will certainly have been rooted before it is entered,
-   * so `target.guiRoot` will by then be meaningful.
+
+  /**
+   * The new layer is constructed lazily (in fact, at the point of first entry as the target's
+   * `onGlyphEvent` method is invojed) because the target glyph will certainly have been rooted
+   * before it is entered,  so `target.guiRoot` will by then be meaningful. The glyph that the layer
+   * will show is computed only after it is determined that the layer is visible, and this makes
+   * it feasible to generate hints dynamically.
    */
   lazy val layer =
-    target.guiRoot.Overlay.newAnnotation(id, glyph=hint, isModal = false, visible = false, strictHiding = false, active = false)
+       target.guiRoot.Overlay.newAnnotation(id, glyph=INVISIBLE(), isModal = false, visible = false, strictHiding = false, active = false)
 
   lazy val schedule = new Schedule()
+
+  val hintCache: Option[Glyph] = if (constant) Some(hint()) else None
 
   locally {
     target.onGlyphEvent {
       case (true, where) =>
-        hint @@ where
         if (_allow() && !layer.visible && seconds>=0) {
           layer.visible = true
+          layer.glyph = hintCache.getOrElse(hint())
+          layer.glyph @@ where
           schedule.once((seconds * 1000L).toLong) {
             layer.visible = false
             target.reDraw()
@@ -51,22 +69,57 @@ class HintManager(val target: Enterable, val hint: Glyph, val seconds: Double) {
  * the cursor enters the target. The hint will be removed `seconds` later.
  *
  * If `h: HintManager` then `h.onlyWhen(allow: => Boolean)` is the same hint manager, except that the expression
- * `allow` is evaluated whenever `h`'s hint is about to be shown and (if false) the hinto is not shown. This
+ * `allow` is evaluated whenever `h`'s hint is about to be shown and (if false) the hint is not shown. This
  * allows the designer to provide ways of suppressing hints, and of avoiding "nagging".
  */
 object HintManager {
-  def apply(target: Enterable, seconds: Double, hint: Glyph): HintManager = new HintManager(target, hint, seconds)
-//  def apply(target: Enterable, seconds: Double, hint: String)(implicit style: StyleSheet): HintManager = {
-//    new HintManager(
-//           target,
-//           Glyphs.Label(hint, style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),
-//           seconds)
-//  }
-  def apply(target: Enterable, seconds: Double, hint: String)(implicit style: StyleSheet): HintManager = {
-    new HintManager(
+  def ofGlyph(target: Enterable, seconds: Double, hint: ()=>Glyph, constant: Boolean = true): HintManager =
+      new HintManager(target, hint, seconds, constant)
+
+  def apply(target: Enterable, seconds: Double, hint: ()=>String, constant: Boolean = true)(implicit style: StyleSheet): HintManager = {
+      new HintManager(
       target,
-      Glyphs.Label(hint, style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),
-      seconds)
+        ()=>Glyphs.Label(hint(), style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),
+      seconds,
+      constant)
   }
 }
+
+/**
+ * A hint to be applied to a reactive glyph as it is specified
+ */
+trait Hint {
+  def apply(reactive: Enterable): Unit
+}
+
+object NoHint extends Hint {
+  def apply(reactive: Enterable): Unit = {}
+}
+
+object Hint {
+  /** No hint is to be managed for `reactive` */
+  def apply(): Hint = NoHint
+
+  /**
+   * The `hint` is to be managed for `reactive`; generated once only if `constant`, otherwise whenever the hint
+   * becomes visible.
+   * */
+  def apply(seconds: Double, hint: =>String, constant: Boolean=true)(implicit style: StyleSheet): Hint = new Hint {
+    def apply(reactive: Enterable): Unit =
+      HintManager(reactive, seconds, ()=>hint, constant)
+  }
+
+  /**
+   * The `hint` is to be managed for `reactive`; generated once only if `constant`, otherwise whenever the hint
+   * becomes visible.
+   * */
+  def ofGlyph(seconds: Double, hint: =>Glyph, constant: Boolean=true)(implicit style: StyleSheet): Hint = new Hint {
+    def apply(reactive: Enterable): Unit =
+      HintManager.ofGlyph(reactive, seconds, ()=>hint, constant)
+  }
+
+
+}
+
+
 

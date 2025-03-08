@@ -241,6 +241,14 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
       layer
     }
 
+    /** Change the glyph used in the annotation (if any) with the given `id` */
+    def renewAnnotation(id: String, glyph: Glyph): Unit =  {
+      annotations.get(id) match {
+        case Some(layer) => layer.glyph = glyph
+        case None =>
+      }
+    }
+
     /**  Replace the topmost overlay on the stack. */
     def set(glyph: Glyph, isModal: Boolean = false, strictHiding: Boolean = true): Unit = {
       if (layers.nonEmpty) layers.pop()
@@ -582,4 +590,10 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
 
 }
 
-case class RootLayer(glyph: Glyph, isModal: Boolean, var strictHiding: Boolean, isMenu: Boolean = false, offMenuClick: () => Unit = { ()=> }, var visible: Boolean = true, active: Boolean=false)
+case class RootLayer(var glyph:         Glyph,
+                     isModal:           Boolean,
+                     var strictHiding:  Boolean,
+                     isMenu:            Boolean = false,
+                     offMenuClick:      () => Unit = { ()=> },
+                     var visible:       Boolean = true,
+                     active:            Boolean=false)

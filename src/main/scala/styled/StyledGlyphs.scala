@@ -5,7 +5,7 @@ package styled
 
 import DefaultBrushes.nothing
 import BooleanGlyphs._
-import ReactiveGlyphs.Reaction
+import ReactiveGlyphs.{Reaction,Enterable}
 import styles.GlyphStyle
 
 import org.sufrin.utility.TextAbbreviations
@@ -148,13 +148,14 @@ object DecorateWithDetail {
  *
  * The button's "sensitive" region does not include its decoration.
  */
-case class LightweightTextButton(text: String) extends styled.StyledButton {
+case class LightweightTextButton(text: String, hint: Hint=NoHint) extends styled.StyledButton {
   def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
     val detail = sheet.buttonStyle
     val up     = detail.up.toGlyph(text, fg=detail.up.fg, bg=detail.up.bg)
     val down   = detail.down.fg
     val hover  = detail.hover.fg
     val button = new ReactiveGlyphs.ColourButton(up, down, hover, react = action, background = false)
+    hint(button)
     Decorate(button)
   }
 }
@@ -167,23 +168,25 @@ case class LightweightTextButton(text: String) extends styled.StyledButton {
  *
  * The button's "sensitive" region includes its decoration.
  */
-case class TextButton(text: String) extends styled.StyledButton {
+case class TextButton(text: String, hint: Hint=NoHint) extends styled.StyledButton {
   def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
     val detail = sheet.buttonStyle
     val up     = Decorate(detail.up.toGlyph(text))
     val down   = Decorate(detail.down.toGlyph(text))
     val hover  = Decorate(detail.hover.toGlyph(text))
     val button = ReactiveGlyphs.RawButton(up, down, hover)(action)
-    button
+    hint(button)
+    (button)
   }
 }
 
-case class DetailedTextButton(text: String) extends styled.DetailedButton {
+case class DetailedTextButton(text: String, hint: Hint=NoHint) extends styled.DetailedButton {
   def apply(action: Reaction)(implicit detail: StyleSheet): Glyph = {
     val up     = DecorateWithDetail(detail.buttonStyle.up.toGlyph(text))
     val down   = DecorateWithDetail(detail.buttonStyle.down.toGlyph(text))
     val hover  = DecorateWithDetail(detail.buttonStyle.hover.toGlyph(text))
     val button = ReactiveGlyphs.RawButton(up, down, hover)(action)
+    hint(button)
     button
   }
 }
@@ -192,13 +195,14 @@ case class DetailedTextButton(text: String) extends styled.DetailedButton {
  * As `LightweightTextButton`, but allows the menu to defer decoration until all its buttons have
  * been constructed.
  */
-case class LightweightMenuButton(text: String) extends styled.StyledButton {
+case class LightweightMenuButton(text: String, hint: Hint=NoHint) extends styled.StyledButton {
   def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
     val detail = sheet.buttonStyle
     val up     = detail.up.toGlyph(text, fg=detail.up.fg, bg=detail.up.bg)
     val down   = detail.down.fg
     val hover  = detail.hover.fg
     val button = new ReactiveGlyphs.ColourButton(up, down, hover, react=action, background = false)
+    hint(button)
     (button)
   }
 }
@@ -207,13 +211,15 @@ case class LightweightMenuButton(text: String) extends styled.StyledButton {
  * As `TextButton`, but allows the menu to defer decoration until all its buttons have
  * been constructed.
  */
-case class MenuButton(text: String) extends styled.StyledButton {
+case class MenuButton(text: String, hint: Hint=NoHint) extends styled.StyledButton {
   def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
     val detail = sheet.buttonStyle
     val up = (detail.up.toGlyph(text))
     val down = (detail.down.toGlyph(text))
     val hover = (detail.hover.toGlyph(text))
-    ReactiveGlyphs.RawButton(up, down, hover)(action)
+    val button=ReactiveGlyphs.RawButton(up, down, hover)(action)
+    hint(button)
+    button
   }
 }
 
@@ -224,10 +230,12 @@ case class MenuButton(text: String) extends styled.StyledButton {
  * motivation for this was setting up the alignment of tab
  * buttons for notebooks.
  *
- * @see Notebook
+ * Individual buttons can be associated with hints in the usual way.
+ *
+ * @see Book
  */
 object UniformSize {
-  case class ButtonSpecification(text: String, action: Reaction)
+  case class ButtonSpecification(text: String, action: Reaction, hint: Hint = NoHint)
 
   def apply(text: String)(action: Reaction): ButtonSpecification = ButtonSpecification(text, action)
 
@@ -254,10 +262,16 @@ object UniformSize {
     }
 
     val buttons =
-      for {i <- buttonSpecs.indices} yield
-        ReactiveGlyphs.RawButton (frame (upGlyphs (i) ),
-          frame (downGlyphs (i) ),
-          frame (hoverGlyphs (i) ) ) (buttonSpecs (i).action)
+      for {i <- buttonSpecs.indices} yield {
+        val button =
+          ReactiveGlyphs.RawButton(
+            frame(upGlyphs(i)),
+            frame(downGlyphs(i)),
+            frame(hoverGlyphs(i)))(buttonSpecs(i).action)
+
+        buttonSpecs(i).hint(button)
+        button
+      }
 
     buttons
   }
@@ -300,7 +314,7 @@ object Label {
  * @param initially the initial boolean state
  */
 
-case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean) extends ToggleButton {
+case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean, hint: Hint=NoHint) extends ToggleButton {
   def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
     //import styled.text.Label
     val detail = sheet.buttonStyle
@@ -320,6 +334,7 @@ case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean) e
       initially = initially,
       fg = detail.toggle.off.fg,
       bg = detail.toggle.off.bg,
+      hint,
       reaction)
   }
 }
@@ -327,7 +342,7 @@ case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean) e
 /**
  *  As TextToggle but destined for am menu; hence defer decoration
  */
-case class MenuTextToggle(whenTrue: String, whenFalse: String, initially: Boolean) extends ToggleButton {
+case class MenuTextToggle(whenTrue: String, whenFalse: String, initially: Boolean, hint: Hint = NoHint) extends ToggleButton {
   def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
     //import styled.text.Label
     val detail = sheet.buttonStyle
@@ -347,11 +362,12 @@ case class MenuTextToggle(whenTrue: String, whenFalse: String, initially: Boolea
       initially = initially,
       fg = detail.toggle.off.fg,
       bg = detail.toggle.off.bg,
+      hint,
       reaction)
   }
 }
 
-case class GlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean) extends ToggleButton {
+case class GlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean, hint: Hint = NoHint) extends ToggleButton {
   import BooleanGlyphs._
 
   def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
@@ -365,12 +381,13 @@ case class GlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean) ex
       initially=initially,
       fg=detail.toggle.off.fg,
       bg=detail.toggle.off.bg,
+      hint,
       reaction)
   }
 }
 
 /** A glyphtoggle destined for a menu: defers decoration  */
-case class MenuGlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean) extends ToggleButton {
+case class MenuGlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean, hint: Hint = NoHint) extends ToggleButton {
   import BooleanGlyphs._
 
   def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
@@ -384,16 +401,17 @@ case class MenuGlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean
       initially=initially,
       fg=detail.toggle.off.fg,
       bg=detail.toggle.off.bg,
+      hint,
       reaction)
   }
 }
 
-case class CheckBox(initially: Boolean) extends ToggleButton {
+case class CheckBox(initially: Boolean, hint: Hint = NoHint) extends ToggleButton {
   def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
     val detail = sheet.buttonStyle
     val tick = detail.checkbox.tick
     val cross = detail.checkbox.cross
-    TextToggle(whenFalse=cross, whenTrue=tick, initially=initially)(reaction)
+    TextToggle(whenFalse=cross, whenTrue=tick, initially=initially, hint=hint)(reaction)
   }
 }
 

@@ -42,6 +42,14 @@ object BooleanGlyphs {
       }
     }
 
-    def apply(tickBox: OnOff, initially: Boolean, fg: Brush=DefaultBrushes.buttonForeground, bg: Brush=DefaultBrushes.buttonBackground, reaction: Boolean => Unit): OnOffButton =
-      new OnOffButton(tickBox: OnOff, initially: Boolean, fg, bg, reaction: Boolean => Unit)
+    def apply(tickBox:    OnOff,
+              initially:  Boolean,
+              fg:         Brush=DefaultBrushes.buttonForeground,
+              bg:         Brush=DefaultBrushes.buttonBackground,
+              hint:       Hint=NoHint,
+              reaction:   Boolean => Unit): OnOffButton = {
+       val button = new OnOffButton(tickBox: OnOff, initially: Boolean, fg, bg, reaction: Boolean => Unit)
+       hint(button)
+       button
+    }
 }

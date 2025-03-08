@@ -46,7 +46,7 @@ object Output
             }
         }
     }
-    if (hint ne null) HintManager(target=writeBar, 5.0, hint).onlyWhen(enabled)
+    if (hint ne null) HintManager.ofGlyph(target=writeBar, 5.0, ()=>hint, constant = true).onlyWhen(enabled)
     Col(align=Center)(
       writeBar.asInstanceOf[Glyph],
       gui

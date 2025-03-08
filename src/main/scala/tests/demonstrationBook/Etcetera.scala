@@ -32,7 +32,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       var lastDriver: List[Periodic[Int]] = Nil
 
       class Animation() {
-        lazy val button = ReactiveGlyphs.ColourButton(shape, green, red, background = true) {
+        lazy val button = ReactiveGlyphs.ColourButton(shape, green, red, background = true, NoHint) {
           _ =>
             if (driver.running) driver.stop() else driver.start()
             lastDriver = List(driver)
@@ -324,7 +324,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
       implicit class WithHint(g: Slider) {
         def hint(hint: String): Slider = {
-          HintManager(g, 5, s"$g: $hint")
+          HintManager(g, 5, ()=>s"$g: $hint", constant = true)
           g
         }
       }
@@ -355,28 +355,35 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       implicit val pageSheet=style.pageSheet.copy(buttonDecoration = Edged(fg=blue(width=6, cap=ROUND)))
 
 
+      /**
+       *    A `OneOf` showing one of two messages: initially indicated by the state of the toggle`.
+       *    The associated toggle must invoke `select` on the monitor when its state changes.
+       */
       def Monitor(whenFalse: String, whenTrue: String, toggle: OnOffButton): OneOf = {
         val oneOf = OneOf()(Label(whenFalse), Label(whenTrue))
         oneOf.select(if (toggle.get) 1 else 0)
         oneOf
       }
 
+      var t2Hits = 0
+
       val star  = PolygonLibrary.openStargon(7, C=64f, R=55f, fg=red(width=2))
-      val other = PolygonLibrary.filledRegularPolygon(7, C=64f, R=55f, fg=blue(width=2))
+      val other = PolygonLibrary.filledRegularPolygon(6, C=64f, R=55f, fg=blue(width=2))
+
 
       lazy val state1 = Monitor(whenFalse="The toggle is off", whenTrue="The toggle is on", t1)
-      lazy val state2 = Monitor(whenFalse="The tick is off", whenTrue="The tick is on", t2)
-      lazy val state3 = Monitor(whenFalse="The hexagon is showing", whenTrue="The star is showing", t3)
-
       lazy val t1:OnOffButton = TextToggle(whenFalse="Turn the toggle On", whenTrue="Turn the toggle Off", initially=true) {
         case true => state1.select(1)
         case false => state1.select(0)
       }
-      lazy val t2:OnOffButton = CheckBox(false) {
-        case true  => state2.select(1)
-        case false => state2.select(0)
+
+      lazy val state2 = Monitor(whenFalse="The checkbox shows false", whenTrue="The checkbox shows true", t2)
+      lazy val t2:OnOffButton = CheckBox(false, Hint(3, s"Clicked $t2Hits times!", false)) {
+        case true  => t2Hits+=1; state2.select(1)
+        case false => t2Hits+=1; state2.select(0)
       }
 
+      lazy val state3 = Monitor(whenFalse="The hexagon is showing", whenTrue="The star is showing", t3)
       lazy val t3:OnOffButton = GlyphToggle(
         whenFalse=other(fg=red),
         whenTrue=star(),
@@ -391,14 +398,15 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         val wh = white(width=10, cap=SQUARE)
         val gr = green(width=10)
         val re = red(width=10)
+
         def RectBut(background: Boolean): Glyph =
-          ReactiveGlyphs.ColourButton(Rect(40, 40, fg=wh, bg=bl), gr, re, background){
+          ReactiveGlyphs.ColourButton(Rect(40, 40, fg=wh, bg=bl), gr, re, background, Hint(5, if (background) "Background changes" else "Foreground changes")){
             _ => println(s"Rect($background)")
           }
 
         def TextBut(background: Boolean): Glyph = {
           val caption = if (background) "Background" else "Foreground"
-          ReactiveGlyphs.ColourButton(Glyphs.Label(s"$caption Changes", bg=bl, fg=wh), gr, re, background){
+          ReactiveGlyphs.ColourButton(Glyphs.Label(s"$caption Changes", bg=bl, fg=wh), gr, re, background, NoHint){
             _ => println(s"Text($background)")
           }
         }
@@ -407,7 +415,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           Paragraph(50, Justify)(
             """Four ColourButtons. In the top row, the foreground colour changes
               |as the mouse hovers or is pressed. In the bottom row, the background colour changes
-              |as the mouse hovers or is pressed.
+              |as the mouse hovers or is pressed. The square buttons are inside out: the foreground
+              |is the white square with wide edges; the background is blue; seen through the foreground.
               |""".stripMargin), ex,
           NaturalSize.Grid(bg=lightGrey, padx=20, pady=20, height=2)(
             TextBut(false),  TextBut(true),
@@ -419,11 +428,14 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
 
       locally {
-        HintManager(t1, 5.0, "Guess what this is for!")
-        HintManager(t3, 5.0, "Guess what this is for!")
+        HintManager(t1, 5.0, ()=>"Guess what this is for!")
+        HintManager(t3, 5.0, ()=>"Guess what this is for!")
       }
 
       Col(align=Center)(
+        <p width="60em" parSkip="2ex">The checkbox in the middle demonstrates dynamic hinting:
+           whenever it pops up, the hint shows the number of times the checkbox has already been
+           clicked.</p>,
         NaturalSize.Grid(fg=black(width=0), padx=10f).table(width=3)(List(
           state1, state2,            state3,
           t1,     t2 scaled 1.7f,    t3.enlarged(15)

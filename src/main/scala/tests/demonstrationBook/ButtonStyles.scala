@@ -1,18 +1,16 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import styled.TextButton
-import styled.Label
+import styled.{Book, BookSheet, Label, TextButton}
 import styled.windowdialogues.Dialogue
 
-import Dialogue.{POPUP, OK}
+import Dialogue.{OK, POPUP}
 import NaturalSize.{Col, Grid, Row}
-import styled.Book
-import styled.BookSheet
-import Glyphs.{INVISIBLE, Rect}
+import Glyphs.{FilledRect, INVISIBLE, Rect}
 
 import org.sufrin.glyph.DefaultBrushes.{nothing, redFrame, ROUND}
 import org.sufrin.glyph.GlyphTypes.Scalar
+import org.sufrin.glyph.HintManager
 import org.sufrin.glyph.ReactiveGlyphs.Reaction
 
 
@@ -47,97 +45,109 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   }
 
   Page("Framed", "") {
-    import styles.decoration.{Framed,unDecorated, Edged, Decorated}
+    import styles.decoration.{Framed,unDecorated, RoundFramed, Decorated}
     import styled.TextButton
-    def roundframed(fg: String, bg: String, radius: Scalar, buttonBG: String="lightGrey"): Glyph =
-      TextButton(s"RoundFramed($fg, $bg, $radius)")
+
+    def roundframed(fg: String, bg: String, radius: Scalar, buttonBG: String="lightGrey"): Glyph = {
+      val button = TextButton(s"RoundFramed($fg, $bg, $radius)", Hint(10.0, s"buttonBackgroundBrush=$buttonBG"))
       { showSourceCode(
         <div align="left" width="75em" DEC="Undecorated">
-          <p>buttonBackgroundBrush={buttonBG}</p><p>buttonDecoration = RoundFramed({fg}, {bg}, enlarge=0.9f, radius={radius.toString})</p>
+          <p>buttonBackgroundBrush={buttonBG}</p><p>buttonDecoration = RoundFramed({fg}, {bg}, enlarge=30f, radius={radius.toString})</p>
         </div>)
       }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG),
-        buttonDecoration = Decorated { glyph => glyph.roundFramed(DefaultBrushes(fg), DefaultBrushes(bg), radius=radius)}
-        // TODO: IMPLEMENT RoundFramed DECORATION + enlarged
-        ))
+        buttonDecoration = RoundFramed(DefaultBrushes(fg), DefaultBrushes(bg), radius=radius, enlarge=30f)))
+      button
+    }
 
-    def framed(fg: String, bg: String, radius: Scalar, buttonBG: String="lightGrey"): Glyph =
-      TextButton(s"Framed($fg, $bg)")
+    def framed(fg: String, bg: String, buttonBG: String="lightGrey"): Glyph =
+      TextButton(s"Framed($fg, $bg)", hint=Hint(10.0, s"buttonBackgroundBrush=$buttonBG"))
       { showSourceCode(
         <div align="Left" width="75em" DEC="Undecorated">
-          <p>buttonBackgroundBrush={buttonBG}</p><p>Framed({fg}, {bg}, enlarge=2f)</p>
+          <p>buttonBackgroundBrush={buttonBG}</p><p>Framed({fg}, {bg}, enlarge=35f)</p>
         </div>)
       }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG),
-                        buttonDecoration = Framed(DefaultBrushes(fg), DefaultBrushes(bg), enlarge=2f)))
+                        buttonDecoration = Framed(DefaultBrushes(fg), DefaultBrushes(bg), enlarge=35f)))
 
     Col(align=Center)(
-      <div width="60em" align="justify">
+      <div width="60em" align="justify" parSkip="3ex">
         <p align="center">Button decoration with Framed and RoundFramed.</p>
-        <p>Click on any of the buttons to see the relevant parts of its style.</p>
+        <p>Click or hover over any of the buttons to see detail, and to understand
+           the relationship between button backgrounds and frame backgrounds. Unless "nothing"
+           a button background has higher priority than the background of its frame.
+        </p>
+        <fill height="3ex"/>
       </div>,
       anchor,
-      Grid(width=3, padx=10, pady=10).rows(
-      framed("darkGrey/0/ROUND", "", 10), framed("darkGrey/0/ROUND", "", 20), framed("darkGrey/0/ROUND", "", 30),
-      framed("darkGrey/10/ROUND", "", 10) ,  framed("darkGrey/20/ROUND", "yellow", 20) ,  framed("darkGrey/30/ROUND", "", 30),
-      framed("darkGrey/10/SQUARE", "", 10) ,  framed("darkGrey/20/SQUARE", "yellow", 20) ,  framed("darkGrey/30/SQUARE", "", 30),
-        roundframed("nothing", "lightGrey", 10) ,  roundframed("nothing", "lightGrey", 20) ,  roundframed("nothing", "lightGrey", 30),
+      Grid(width=3, padx=10, pady=5).rows(
+        framed("darkGrey/2-10-10", "nothing", "nothing"), framed("darkGrey/2~5~2", "nothing", "nothing"), framed("darkGrey/3-10-10~5~3", "nothing", "yellow"),
+        framed("darkGrey/10/ROUND", "nothing") ,  framed("darkGrey/20/ROUND", "yellow") ,  framed("darkGrey/30/ROUND", "nothing"),
+        framed("darkGrey/10/SQUARE", "nothing") ,  framed("darkGrey/20/SQUARE", "yellow") ,  framed("darkGrey/30/SQUARE", "nothing"),
+
+        roundframed("nothing", "lightGrey", 10, "nothing") ,  roundframed("nothing", "lightGrey(10)", 20, "green") ,  roundframed("nothing", "lightGrey", 30, "green"),
         roundframed("red/10", "yellow", 0.1f, "yellow") ,  roundframed("red/20", "yellow", 0.1f, "yellow") ,  roundframed("red/30", "yellow", 0.1f, "yellow"),
         roundframed("red/10", "green", 0.3f, "yellow") ,  roundframed("red/20", "green", 0.3f, "yellow") ,  roundframed("red/30", "green", 0.3f, "yellow"),
-        roundframed("red/10", "nothing", 0.6f, "nothing") ,  roundframed("red/20", "yellow", 0.6f, "yellow") ,  roundframed("red/30", "yellow", 0.6f, "yellow"),
-        roundframed("darkGrey/10/ROUND", "lightgrey", 0.8f) ,  roundframed("darkGrey/20/ROUND", "lightgrey", 0.8f) ,  roundframed("darkGrey/30/ROUND", "lightgrey", 0.8f)
+        roundframed("red/10", "nothing", 0.6f, "nothing") ,  roundframed("red/20", "yellow", 0.6f, "yellow") ,  roundframed("red/30", "yellow", 0.9f, "yellow"),
       )
     )
   }
 
-  Page("Blurred"){
-    import styles.decoration.Blurred
-    def blurFrame(blur: Float, spread: Float) = Blurred(fg=red, blur=blur, spread=spread)
+  Page("Blurred/Shaded"){
+    import styles.decoration.{Blurred, Shaded}
+
+    def blurred(fg: String, bg: String, blur: Scalar, spread: Scalar, buttonBG: String="lightGrey", delta: Scalar=0f): Glyph =
+      TextButton(s"Blurred($fg, $bg, $blur, $spread)", hint=Hint(10.0, s"buttonBackgroundBrush=$buttonBG\ndelta=$delta"))
+      { showSourceCode(
+        <div align="Left" width="75em">
+          <p>decoration=Blurred({fg}, {bg}, blur={blur}, spread={spread}, delta={delta})</p>
+          <p>buttonBackgroundBrush={buttonBG}</p>
+        </div>)
+      }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG),
+        buttonDecoration = Blurred(DefaultBrushes(fg), DefaultBrushes(bg), blur, spread, delta=delta, enlarge=20)))
+
+    def shaded(fg: String, bg: String, down: Boolean, buttonBG: String="lightGrey", delta: Scalar=10f): Glyph =
+      TextButton(s"Shaded($fg, $bg, ∂=$delta, down=$down)", hint=Hint(10.0, s"buttonBackgroundBrush=$buttonBG\ndelta=$delta"))
+      { showSourceCode(
+        <div align="Left" width="75em">
+          <p>decoration=Shaded({fg}, {bg}, enlarge=25, delta={delta}, down={down})</p>
+          <p>buttonBackgroundBrush={buttonBG}</p>
+        </div>)
+      }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG),
+        buttonDecoration = Shaded(DefaultBrushes(fg), DefaultBrushes(bg), enlarge=20, delta=delta, down=down)))
+
     Col(align=Center)(
-    <div width="55em">
-      <p> These buttons are of the form:
-      </p>
-      <![CDATA[
-        TextButton("Blurred(blur=..., spread=...)") { _ => }(
-            styleSheet.copy(buttonBackgroundBrush=red,
-                            buttonFrame =
-                              Blurred(fg=red,
-                                      blur=..., spread=...)))]]>
-    </div>.enlarged(20), ex,
-      TextButton("Blurred(blur=10f, spread=5f)") { _ => }(styleSheet.copy(buttonBackgroundBrush=red, buttonDecoration=blurFrame(10f, 5f))), ex,
-      TextButton("Blurred(blur=10f, spread=10f)"){ _ => }(styleSheet.copy(buttonBackgroundBrush=red, buttonDecoration=blurFrame(10f, 10f))), ex,
-      TextButton("Blurred(blur=20f, spread=10f)"){ _ => }(styleSheet.copy(buttonBackgroundBrush=red, buttonDecoration=blurFrame(20f, 10f))), ex,
-      <p width="55em" align="center"><tt>styleSheet</tt> is the implicit style <tt>Sheet</tt> for this <tt>Book.Page</tt></p>
+        <div width="65em" enlarged="20">
+            <p>Click/hover over any of the buttons to see detail, and to understand
+              the relationship between button backgrounds and frame backgrounds. Unless "nothing"
+              a button background has higher priority than the background of its frame.
+            </p>
+        </div>,
+        Grid(width=3, padx=30, pady=5).rows(
+            blurred("red",    "nothing",  10f, 5f, "nothing"),
+            blurred("red",    "red",      20f, 5f, "nothing"),
+            blurred("red",    "red",      20f, 20f, "green"),
+
+            blurred("red",    "nothing",  10f, 5f, "nothing", 10),
+            blurred("red",    "red",      20f, 5f, "nothing", 12),
+            blurred("red",    "red",      20f, 20f, "green",  12),
+
+          shaded("black", "nothing", true, "lightgrey", 5),
+          shaded("black", "nothing", true, "lightgrey", 10),
+          shaded("black", "nothing", true, "lightgrey", 15),
+
+          shaded("black", "nothing", false, "lightgrey", 5),
+          shaded("black", "nothing", false, "lightgrey", 10),
+          shaded("black", "nothing", false, "lightgrey", 15),
+
+          shaded("blue", "lightgrey", false, "nothing", 5),
+          shaded("blue", "lightgrey", false, "green", 10),
+          shaded("blue", "lightgrey", false, "nothing", 15),
+        )
     )
   }
 
-  Page("Shaded", "") {
-    import styles.decoration.Shaded
-    Col(align=Center)(
-      <div width="55em">
-        <p> These buttons are of the form:</p>
-        <![CDATA[
-        TextButton("Shaded(delta=..., down=...)") { _ => }(
-            styleSheet.copy(buttonFrame =
-                              Shaded(fg=darkGrey,
-                                     bg=lightGrey, delta=..., down=...)))]]>
-      </div>.enlarged(20), ex,
-      TextButton("Shaded  (18, down=true)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 18f, down = true))), ex,
-      TextButton("Shaded  (8,  down=false)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 8f, down = false))), ex,
-      TextButton("Shaded  (12, down=false)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 12f, down = false))), ex,
-      TextButton("Shaded  (18, down=false)") { _ => }(styleSheet.copy(buttonDecoration = Shaded(delta = 18f, down = false))), ex, ex,
-      <p width="55em" align="center"><tt>styleSheet</tt> is the implicit style <tt>Sheet</tt> for this <tt>Book.Page</tt></p>, ex, ex,
-
-
-        <div width="55em" >
-        <p>These glyphs are of the form</p>
-          <![CDATA[
-          Label("Label (delta=..., enlarge=..., down=...)")
-             .shaded(delta = ..., enlarge=..., down = ...)]]>
-      </div>, ex, ex,
-      Label("Label (delta=8, enlarge=0f   down=false)").shaded(enlarge=0f, delta = 8f, down = false), ex,
-      Label("Label (delta=8, enlarge=10f   down=false)").shaded(enlarge=10f, delta = 8f, down = false), ex,
-      Label("Label (delta=8, enlarge=25f, down=false)").shaded(enlarge=25f, delta = 8f, down = false)
-    )
-  }
+  //Page("Hints", "") {
+  //  import styles.decoration.Shaded
+  //}
 
 
   val GUI: Glyph = book.Layout.leftCheckBoxes()

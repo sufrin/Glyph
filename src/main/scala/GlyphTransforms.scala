@@ -5,7 +5,7 @@ import GlyphTypes._
 import NaturalSize.{Col, Row}
 
 import org.sufrin.glyph.Glyphs.{FilledRect, Rect}
-import org.sufrin.glyph.GlyphTransforms.{Edged, Framed, WithBaseline}
+import org.sufrin.glyph.GlyphTransforms.{Framed, WithBaseline}
 
 /**
  *  As a notational convenience. `Glyphs` have intrinsic transforms that correspond to the external transformers implemented
@@ -73,29 +73,28 @@ trait GlyphTransforms {
     }
 
   /**
-   * Same as edged.
    *
-   * @see edged
+   * @see Framed
    */
-  def framed(fg: Brush = GlyphTransforms.Framed.defaultFG,
-             bg: Brush = GlyphTransforms.Framed.defaultBG,
-             radius: Scalar = 0f): Glyph =  Edged(fg = fg, bg = bg)(thisGlyph)
+  def framed(fg: Brush = DefaultBrushes.black,
+             bg: Brush = DefaultBrushes.nothing,
+             radius: Scalar = 0f): Glyph =  Framed(fg = fg, bg = bg)(thisGlyph)
 
-  def roundFramed(fg: Brush = GlyphTransforms.Framed.defaultFG,
-             bg: Brush = GlyphTransforms.Framed.defaultBG,
+  /**
+   *
+   * @see RoundFramed
+   */
+  def roundFramed(fg: Brush = DefaultBrushes.black,
+                  bg: Brush = DefaultBrushes.nothing,
              radius: Scalar = 0f): Glyph =  GlyphTransforms.RoundFramed(fg = fg, bg = bg, radius)(thisGlyph)
 
 
   /**
-   * This `glyph` with a `fg`-coloured edge around it, and a background of `bg` (==`fg` if `bg` is unspecified).
-   * The `fg` can have any `strokewidth`. The overall bounding diagonal is that of the glyph enlarged by
-   * twice `fg.strokeWidth`. The roundness, if any, of the edge depends on its stroke width; use `framed` if you
-   * need a more pronounced rounding.
-   *
+   * Same as `framed`
    * @see framed
    */
-  def edged(fg: Brush = GlyphTransforms.Framed.defaultFG,
-            bg: Brush = GlyphTransforms.Framed.defaultBG): Glyph = Edged(fg = fg, bg = bg)(thisGlyph)
+  def edged(fg: Brush = DefaultBrushes.black,
+            bg: Brush = DefaultBrushes.nothing): Glyph = Framed(fg = fg, bg = bg)(thisGlyph)
 
   /**  This glyph skewed by factors `skewX`, `skewY`. */
   def skewed(skewX: Scalar, skewY: Scalar, fg: Brush = thisGlyph.fg, bg: Brush = thisGlyph.bg): Glyph =
@@ -130,40 +129,6 @@ trait GlyphTransforms {
 }
 
 object GlyphTransforms {
-  /**
-   * A glyph that renders as `glyph` inside a surround painted with `fg`, and a mount painted with `bg`.
-   * If `fg.strokeCap` is not `ROUND` then the surround/mount are painted as rectangles; otherwise they are
-   * painted as round rectangles.
-   *
-   * @see Mounted
-   */
-  object Framed extends DefaultPaints {
-    def apply(fg: Brush=nothing,  bg: Brush=nothing, radius: Scalar = 0f)(glyph: Glyph): Glyph = {
-      val rad: Scalar = if (radius<=0f) 0 else {
-        if (radius<=1.0f) (glyph.h min glyph.w)*radius
-        else radius
-      }
-
-      @inline def round(brush: Brush): Brush = if (rad==0) brush else brush(width=rad).rounded(rad)
-
-      lazy val frameOnly:  Glyph = Rect(glyph.w+rad, glyph.h+rad,   fg=fg, bg=nothing) // open rectangle (may be curved)
-      lazy val mountOnly:  Glyph = FilledRect(glyph.w+rad, glyph.h+rad, fg=round(bg))  // closed rectangle with (rounded) bg
-      lazy val frameAfter: Glyph = FilledRect(mountOnly.w+rad*2, mountOnly.h+rad*2, fg=round(fg))
-
-      Glyphs.Concentric(bg=round(bg))(
-        (fg.getAlpha!=0, bg.getAlpha!=0) match {
-          case (true, true)  => List(mountOnly, frameAfter, glyph)
-          case (true, false) => List(frameAfter, glyph)
-          case (false, true) => List(mountOnly, glyph)
-          case _ => List(glyph)
-        }
-      )
-    }
-
-    //def apply(fg: Brush = defaultFG, bg: Brush = defaultBG, radius: Scalar=0f)(glyph: Glyph): Glyph =
-    //  new Framed(glyph, fg, bg, radius)
-  }
-
 
   /**
    * A glyph that renders as `glyph` framed by a surround painted with `fg`, on a mount painted with `bg`.
@@ -241,14 +206,6 @@ object GlyphTransforms {
     }
   }
 
-  /**
-   * Same as `Framed`
-   */
-  object Mounted extends DefaultPaints {
-    def apply(fg: Brush = defaultFG, bg: Brush = defaultBG, radius: Scalar=0)(glyph: Glyph): Glyph = Framed(fg, bg, radius)(glyph)
-  }
-
-
   /** The glyph displaced by `(dx,dy)` in a cavity of size `(w, h)` */
   private class InCavity(w: Scalar, h: Scalar, dx: Scalar, dy: Scalar, val glyph: Glyph, val fg: Brush, val bg: Brush) extends TransformedGlyph {
 
@@ -279,63 +236,19 @@ object GlyphTransforms {
     def copy(fg: Brush=this.fg, bg: Brush=this.bg): Glyph = new InCavity(w, h, dx, dy, glyph, fg, bg)
 
   }
-  /**
-   * A glyph that renders as `glyph` framed by a surround painted with `fg`, on a mount painted with `bg`.
-   */
-  class XFramed(val glyph: Glyph, val fg: Brush, val bg: Brush, val radiusFactor: Scalar=0f) extends TransformedGlyph {
-    import Glyphs.{FilledRect, Rect, RRect}
-
-    override def toString: String = s"Mounted($fg, $bg)($glyph)"
-    override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)
-    override def glyphContaining(p: Vec): Option[Hit] = delegate.glyphContaining(p)
-    override def contains(p: Vec): Boolean = delegate.contains(p)
-    override def copy(fg: Brush = fg, bg: Brush = bg): XFramed = new XFramed(glyph.copy(), fg, bg, radiusFactor)
 
 
-    val delegate: Glyph = {
-      if (radiusFactor>0f) {
-        val gw = glyph.w + fg.strokeWidth * 3 // Larger than for rectangular: the curvature bites otherwise
-        val gh = glyph.h + fg.strokeWidth * 3
-        // calculate sensible rounding radii
-        val (xrf, yrf) =
-          if (radiusFactor>0f) (radiusFactor, radiusFactor) else (.25f, .25f)
-
-        Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
-          RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = if (bg.getAlpha==0f) fg else bg, bg = nothing),
-          RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg, bg = nothing),
-          glyph)
-      } else {
-        val gw = glyph.w + fg.strokeWidth * 2
-        val gh = glyph.h + fg.strokeWidth * 2
-        Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
-          FilledRect(gw, gh, fg = if (bg.getAlpha==0f) fg else bg, bg = nothing),
-          Rect(gw+ fg.strokeWidth * 4, gh+ fg.strokeWidth * 4, fg = fg, bg = nothing),
-          glyph)
-      }
-    }
-
-    val diagonal: Vec = delegate.diagonal
-
-    override def draw(surface: Surface): Unit = {
-      delegate.draw(surface)
-    }
-
-    locally { delegate.parent = this }
-
-  }
-
-  object Edged {
+  object Framed {
     /**
      * The `glyph` with a `fg`-coloured edge around it, and a background of `bg` (==`fg` if `bg` is unspecified).
      * The `fg` can have any `strokewidth`. The overall bounding diagonal is that of the glyph enlarged by
-     * twice `fg.strokeWidth`. The roundness, if any, of the edge depends on its stroke width; use `Framed` if you
-     * need a more pronounced rounding.
+     * twice `fg.strokeWidth`. The roundness, if any, of the edge depends on its stroke width and cap.
      */
     def apply(fg: Brush=DefaultBrushes.black, bg: Brush=nothing)(glyph: Glyph): Glyph =
-      new Edged(glyph, fg, bg)
+      new Framed(glyph, fg, bg)
   }
 
-  class Edged(val glyph: Glyph, val fg: Brush, val bg: Brush) extends TransformedGlyph {
+  class Framed(val glyph: Glyph, val fg: Brush, val bg: Brush) extends TransformedGlyph {
 
     private val edgeWidth: Scalar = fg.strokeWidth
     private val inset: Vec = Vec(edgeWidth / 2f, edgeWidth / 2f)
@@ -348,7 +261,7 @@ object GlyphTransforms {
 
     def draw(surface: Surface): Unit = {
       // avoid the background spilling outside a rounded frame
-      if ((bg ne null) && bg.getAlpha !=0  && fg.strokeCap == Brush.ROUND) {
+      if ((bg ne null) && bg.getAlpha !=0) {
           surface.withOrigin(offset) {
             surface.fillRect(bg, glyph.diagonal)
           }
@@ -368,7 +281,7 @@ object GlyphTransforms {
 
 
     /** A copy of this glyph; perhaps with different foreground/background */
-    def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new Edged(glyph.copy(), fg, bg)
+    def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new Framed(glyph.copy(), fg, bg)
   }
 
 
@@ -813,7 +726,7 @@ object GlyphTransforms {
     override def toString: String = s"Shaded.Static($fg, $bg, delta=$delta, $down)\n  ($glyph)"
 
     private val offset    = Vec(delta, delta)
-    private val linePaint = Brush().setColor(0x99070707).setStrokeWidth(0f) //.setStrokeCap(PaintStrokeCap.SQUARE)
+    private val linePaint = fg //Brush().setColor(0x99070707).setStrokeWidth(0f) //.setStrokeCap(PaintStrokeCap.SQUARE)
     private val shading   = Glyphs.Shaded.shadingPaths(glyph.w, glyph.h, delta)
 
     val diagonal: Vec = glyph.diagonal + offset

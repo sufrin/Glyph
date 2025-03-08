@@ -50,9 +50,43 @@ trait Brushes {
  * Concrete definitions of a variety of brushes.
  */
 object DefaultBrushes extends Brushes {
+
   // TODO: better notation for brushes
-  def namedColour(name: String): Brush = {
-    def common(name: String): Brush = name.toLowerCase match {
+  def withName(name: String): Brush = {
+
+    def isFloat(s: String):Boolean = s.matches("[0-9]+([.][0-9]+)?")
+
+    def basicBrush(name: String): Brush =
+          name match {
+            case s"$name/$stroke/$cap" if  isFloat(stroke) =>
+              val capShape = cap.toUpperCase match {
+                case "ROUND" => ROUND
+                case "SQUARE" => SQUARE
+                case "BUTT" | "FLAT" => BUTT
+                case _ => BUTT
+              }
+              namedBrush(name)(width=stroke.toFloat, cap=capShape)
+            case s"$name/$stroke" if isFloat(stroke) =>
+              namedBrush(name)(width=stroke.toFloat, cap=SQUARE)
+            case _ =>
+              namedBrush(name)
+          }
+
+    def decoratedBrush(name: String): Brush = {
+      name match {
+        case s"$prefix($radius)" if isFloat(radius) =>
+          decoratedBrush(prefix).rounded(radius.toFloat)
+        case s"$prefix-$on-$off" if isFloat(on) && isFloat(off) =>
+          decoratedBrush(prefix).dashed(on.toFloat, off.toFloat)
+        case s"$prefix~$seg~$lim" if isFloat(seg) && isFloat(lim) =>
+          decoratedBrush(prefix).sliced(seg.toFloat, lim.toFloat)
+        case _ =>
+          basicBrush(name)
+      }
+    }
+
+
+    def namedBrush(name: String): Brush = name.toLowerCase match {
       case "red" => org.sufrin.glyph.Brush(s"red")(color = 0XFFFF0000)
       case "blue" => org.sufrin.glyph.Brush(s"blue")(color = 0XFF0000FF)
       case "green" => org.sufrin.glyph.Brush(s"green")(color = 0XFF00FF00)
@@ -73,23 +107,12 @@ object DefaultBrushes extends Brushes {
         org.sufrin.logging.Default.warn(s"$name is not the name of a colour")
         org.sufrin.glyph.Brush(s"red($name)")(color = 0XFFFF0000)
     }
-    name match {
-      case s"$name/$stroke/$cap" if stroke.matches("[0-9]+([.][0-9]+)?") =>
-        val capShape = cap.toUpperCase match {
-          case "ROUND" => ROUND
-          case "SQUARE" => SQUARE
-          case "BUTT" | "FLAT" => BUTT
-          case _ => BUTT
-        }
-        common(name)(width=stroke.toFloat, cap=capShape)
-      case s"$name/$stroke" if stroke.matches("[0-9]+([.][0-9]+)?") =>
-        common(name)(width=stroke.toFloat, cap=SQUARE)
-      case _ =>
-        common(name)
-    }
+
+    decoratedBrush(name)
+
   }
 
-  def apply(name: String): Brush = namedColour(name)
+  def apply(name: String): Brush = withName(name)
 
   // The following are used to set the default attributes of unstyled glyphs
   //

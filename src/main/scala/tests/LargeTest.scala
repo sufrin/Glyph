@@ -18,7 +18,7 @@ import scala.collection.mutable.ListBuffer
 trait LargeTestGUI {
 
   import DynamicGlyphs.OneOf
-  import GlyphTransforms.{Edged, Scaled}
+  import GlyphTransforms.{Framed, Scaled}
   import NaturalSize.{Col, Row}
   import ReactiveGlyphs.{FramedButton, RawButton, ShadedButton}
   import DefaultBrushes._
@@ -62,12 +62,12 @@ trait LargeTestGUI {
     import GlyphTransforms.{Rotated, Scaled}
     def abcd(fg: Brush) = Row(skip=15f, uniform = true)(Label("A")(fg), Label("B")(fg), Label("C")(fg))
 
-    def g(fg: Brush) = abcd(fg = fg).edged(fg)
+    def g(fg: Brush) = abcd(fg = fg).framed(fg)
 
     def b() = RawButton(g(blue), g(redFrame), g(greenFrame)) { _ => }
 
     Col(align=Center)(
-      textColumn(fg = blue)("(2) edged raw button b() transformed by Rotated, Turned, and Scaled\nIntrinsic and extrinsic transforms behave identically"),
+      textColumn(fg = blue)("(2) framed raw button b() transformed by Rotated, Turned, and Scaled\nIntrinsic and extrinsic transforms behave identically"),
       medex,
       medex,
       Row(align=Mid)(
@@ -110,7 +110,7 @@ trait LargeTestGUI {
 
     def g(fg: Brush) = abcd(fg = fg)
 
-    def b() = RawButton(g(blue), g(redFrame), g(greenFrame)) { _ => }.edged(redFrame)
+    def b() = RawButton(g(blue), g(redFrame), g(greenFrame)) { _ => }.framed(redFrame)
 
     Col(align=Center)(
       textColumn(fg = blue)("(3) Synthesised raw button b() transformed by \n.rotated(i), .turned(27f * i), and .scaled(1.5f) for i<-0 until 9"),
@@ -190,12 +190,12 @@ trait LargeTestGUI {
         textColumn(fg = blue)("(4a) Experiments with the .rounded(radius) and .dashed(onoffspecs) brush transforms\n(various strokewidths)"), medex,
       Glyphs.FilledRect(w=150,h=140, fg=blue.rounded(30f)) beside Glyphs.FilledRect(w=150,h=140, fg=red.rounded(50f)) beside Glyphs.FilledRect(w=150,h=140, fg=green.rounded(70f))
       , medex,
-      Glyphs.Polygon(w=150,h=50, fg=blue.dashed(15f, 15f).strokeWidth(15f))((0,25f), (150f,25f)).edged() beside
-      Glyphs.Polygon(w=150,h=50, fg=red.dashed(15f, 15f).strokeWidth(35f))((0,25f), (150f,25f)).edged() beside
-      Glyphs.Polygon(w=150,h=50, fg=green.dashed(40f, 15f).strokeWidth(40f))((0,25f), (150f,25f)).edged() beside
-      Glyphs.Polygon(w=250,h=50, fg=blue.dashed(40f, 40f).strokeWidth(40f).cap(ROUND))((0,25f), (250f,25f)).edged(), medex,
+      Glyphs.Polygon(w=150,h=50, fg=blue.dashed(15f, 15f).strokeWidth(15f))((0,25f), (150f,25f)).framed() beside
+      Glyphs.Polygon(w=150,h=50, fg=red.dashed(15f, 15f).strokeWidth(35f))((0,25f), (150f,25f)).framed() beside
+      Glyphs.Polygon(w=150,h=50, fg=green.dashed(40f, 15f).strokeWidth(40f))((0,25f), (150f,25f)).framed() beside
+      Glyphs.Polygon(w=250,h=50, fg=blue.dashed(40f, 40f).strokeWidth(40f).cap(ROUND))((0,25f), (250f,25f)).framed(), medex,
       medex,
-    ).edged().enlarged(30f)
+    ).framed().enlarged(30f)
   )
 
 
@@ -220,17 +220,17 @@ trait LargeTestGUI {
     }
 
     lazy val toggle1: OnOffButton =
-      onOff(initially = false, fg = red, bg = white) { _ =>
+      onOff(initially = false, fg = red, bg = white, NoHint) { _ =>
         toggle2.invert(); toggle3.invert(); toggle4.invert();
       }
 
     lazy val toggle2: OnOffButton =
-      onOff(initially = true, fg = red, bg = white) { _ =>
+      onOff(initially = true, fg = red, bg = white, NoHint) { _ =>
         toggle3.invert(); toggle4.invert();
       }
 
     lazy val toggle3: OnOffButton =
-      onOff(initially = false, fg = red, bg = white) { _ =>
+      onOff(initially = false, fg = red, bg = white, NoHint) { _ =>
         toggle4.invert();
       }
 
@@ -239,7 +239,8 @@ trait LargeTestGUI {
       trup(green)(bg = yellowHuge),
       initially = true,
       fg = red,
-      bg = white
+      bg = white,
+      NoHint
     ) { _ => toggle0.invert() }
 
     def t(name: String)(toggle: OnOffButton): Glyph =
@@ -295,7 +296,7 @@ trait LargeTestGUI {
           ),
         medex,
         Row(align=Mid)(allOff, allFlip, allOn)
-      ).enlarged(30f).edged(redFrame)
+      ).enlarged(30f).framed(redFrame)
   }
 
   import Location._
@@ -344,7 +345,7 @@ trait LargeTestGUI {
           |
           |
           |""".stripMargin), medex,
-      theText.edged(blackFrame),
+      theText.framed(blackFrame),
       Label(""),
       ShadedButton(
         "OS/X Symbols palette (double-click on a symbol to insert it)"
@@ -405,17 +406,17 @@ trait LargeTestGUI {
           """.stripMargin
       ),
       TextToggle(whenFalse="Enable baseline displays", whenTrue="Disable baseline displays", initially = true){ state => ShowingBaseline.enabled.set(state)}.shaded(),
-      medex, atTop.edged() beside  blob beside atMid.edged(),
-      medex, atBottom.edged() beside blob beside atBaseline.showingBaseline,
+      medex, atTop.framed() beside  blob beside atMid.framed(),
+      medex, atBottom.framed() beside blob beside atBaseline.showingBaseline,
       medex scaled 2,
       textColumn()("A Row(align=Baseline) of two Row(align=Baseline) with a huge dash between"),
       Row(Baseline)(atBaseline, Text("-", hugeFont).showingBaseline, Row(align=Baseline)(huge(),large(),med()).showingBaseline),
       medex, textColumn()("FixedSize.Row(align=Baseline)"),
-      FixedSize.Row(width=atBaseline.w*1.3f, align=Baseline)(blob::texts.map(_.copy())).edged().showingBaseline,
+      FixedSize.Row(width=atBaseline.w*1.3f, align=Baseline)(blob::texts.map(_.copy())).framed().showingBaseline,
       medex, medex,
       textColumn()("Stretchable spaces used as rules between glyphs"),
       { def rule = new FixedSize.Space(1, 0, 1, 0, nothing, black(width=2).dashed(5f, 5f), baseLine=large.baseLine)
-        FixedSize.Row(width = atBaseline.w * 1.3f, align = Baseline)(large(), rule, med(), rule, rule, small(), rule, huge()).edged()
+        FixedSize.Row(width = atBaseline.w * 1.3f, align = Baseline)(large(), rule, med(), rule, rule, small(), rule, huge()).framed()
       }
 
     )
@@ -429,12 +430,12 @@ trait LargeTestGUI {
     val glyph: Glyph = Text("RawButton", medFont)
 
     val b1 = RawButton(glyph(), red, green) { _ => }
-    val b2 = RawButton(glyph().enlarged(50f), red, green) { _ => }.edged()
-    val b3 = RawButton(glyph().edged(fatYellow), fatRed, fatGreen) { _ => }.edged()
-    val b4 = RawButton(glyph().edged(fatYellow), fatRed, fatGreen) { _ => }
+    val b2 = RawButton(glyph().enlarged(50f), red, green) { _ => }.framed()
+    val b3 = RawButton(glyph().framed(fatYellow), fatRed, fatGreen) { _ => }.framed()
+    val b4 = RawButton(glyph().framed(fatYellow), fatRed, fatGreen) { _ => }
       .enlarged(50f, bg = red)
-      .edged()
-    val b5 = RawButton(glyph().edged(fatYellow), fatRed, fatGreen) { _ => }
+      .framed()
+    val b5 = RawButton(glyph().framed(fatYellow), fatRed, fatGreen) { _ => }
 
     def sp = Label(" ")
 
@@ -445,24 +446,24 @@ trait LargeTestGUI {
       sp,
       Col(align=Center)(
         b2,
-        Label(" RawButton(glyph.enlarged(50f), red, green).edged()")
+        Label(" RawButton(glyph.enlarged(50f), red, green).framed()")
       ),
       sp,
       Col(align=Center)(
         b3,
-        Label(" RawButton(glyph.edged(fatyellow), fatred, fatgreen).edged()")
+        Label(" RawButton(glyph.framed(fatyellow), fatred, fatgreen).framed()")
       ),
       sp,
       Col(align=Center)(
         b4,
         Label(
-          " RawButton(glyph.edged(fatyellow), fatred, fatgreen).enlarged(50f, bg=red).edged()"
+          " RawButton(glyph.framed(fatyellow), fatred, fatgreen).enlarged(50f, bg=red).framed()"
         )
       ),
       sp,
       Col(align=Center)(
         b5,
-        Label(" RawButton(glyph.edged(fatyellow), fatred, fatgreen)")
+        Label(" RawButton(glyph.framed(fatyellow), fatred, fatgreen)")
       ),
       sp
     )
@@ -562,7 +563,7 @@ trait LargeTestGUI {
     val caption: Text = Text("Raw", medFont)
 
     def button(n: Int)(fg: Brush): Glyph =
-      caption.asGlyph(fg).rotated(n).edged(redFrame)
+      caption.asGlyph(fg).rotated(n).framed(redFrame)
 
     val raw = RawButton(button(1)(blue), button(3)(red), button(3)(green)) {
       _ =>
@@ -573,7 +574,7 @@ trait LargeTestGUI {
         """(10) Scaling/rotation when making buttons.
           |[Checking reactive tracking under geometry transforms]
           |
-          |Here BUT is a edged(red) RawButton with different
+          |Here BUT is a framed(red) RawButton with different
           |rotations/colours for its up/down/hover states""".stripMargin),
       space,
       space,
@@ -611,7 +612,7 @@ trait LargeTestGUI {
     def rawB(scale: Scalar) =
       RawButton(button(scale)(blue), button(scale)(red), button(scale)(green)) {
         _ =>
-      }.edged()
+      }.framed()
 
     def frameB(scale: Scalar)(fg: Brush) =
       ShadedButton(button(scale)(fg), fg=fg, bg=nothing, delta=6f){_ => }
@@ -677,19 +678,19 @@ trait LargeTestGUI {
     val rawbut: Glyph = RawButton(text, text(red), text(green)) { _ => println(s"$text pressed")}
 
     def rotOfBut(q: Int): Glyph =
-      Col(align=Center)(sliver, Label(s"But(Text).rotated($q).edged()") scaled 0.7f, sliver, (rawbut().rotated(q).edged()))
+      Col(align=Center)(sliver, Label(s"But(Text).rotated($q).framed()") scaled 0.7f, sliver, (rawbut().rotated(q).framed()))
 
     def turnOfBut(degrees: Scalar): Glyph =
-      Col(align=Center)(sliver, Label(s"But(Text).turned($degrees).edged()") scaled 0.7f, sliver, (rawbut().turned(degrees)).edged())
+      Col(align=Center)(sliver, Label(s"But(Text).turned($degrees).framed()") scaled 0.7f, sliver, (rawbut().turned(degrees)).framed())
 
     def butOfTurn(degrees: Scalar): Glyph =
-      Col(align=Center)(sliver, Label(s"But(Text.edged().turned($degrees))") scaled 0.7f, sliver, (rawbut().edged().turned(degrees)))
+      Col(align=Center)(sliver, Label(s"But(Text.framed().turned($degrees))") scaled 0.7f, sliver, (rawbut().framed().turned(degrees)))
 
     def butOfRot(q: Int): Glyph = Col(align=Center)(
-      Label(s"But(Text.rotated($q)).edged()") scaled 0.7f, sliver,
+      Label(s"But(Text.rotated($q)).framed()") scaled 0.7f, sliver,
       RawButton(text.rotated(q), text(red).rotated(q), text(green).rotated(q)) {
         _ =>
-      }.edged()
+      }.framed()
     )
 
     Col(align=Center)(
@@ -782,7 +783,7 @@ trait LargeTestGUI {
           t.diagonal.y,
           fg = green(width = 1, alpha = 0.35f)
         )((t.diagonal.x, 0f), (0f, t.diagonal.y))
-      ).edged() scaled 1.5f // multiple transforms to test contains under transformation
+      ).framed() scaled 1.5f // multiple transforms to test contains under transformation
     }
 
     val textA = Text("Á y", giantFont)
@@ -833,7 +834,7 @@ trait LargeTestGUI {
         (0, 240),
         (160, 120)
       )
-      Edged(black)(
+      Framed(black)(
         Envelope()(
           Col(
             FilledRect(450, 80, black),
@@ -860,7 +861,7 @@ trait LargeTestGUI {
     Col(align=Center)(
       textColumn(fg = blue)(
         "(16) Brushes with path effects\n(including .rounded, .dashed, .blurred, and .sliced)"
-      ).enlarged(35).edged(wibbly(redFrame(width = 16f))),
+      ).enlarged(35).framed(wibbly(redFrame(width = 16f))),
       medex,
       NaturalSize.Grid(width=4)(
         FilledRect(starSize.x, starSize.y, red),
@@ -929,32 +930,32 @@ trait LargeTestGUI {
     val scale=starSize.y / trup.h
 
     Col(align=Center)(
-      Label("(18) Some homebrewed simple buttons.\nAll are edged to show their extent."),
+      Label("(18) Some homebrewed simple buttons.\nAll are framed to show their extent."),
       ex, ex,
-      TextButton("This is a button that has been edged()") { state =>
+      TextButton("This is a button that has been framed()") { state =>
         println(s"TextButton $state")
-      } . edged(),
+      } . framed(),
       ex, ex,
       Label("These two GlyphButtons each show different shapes"),
       Label("when up, when hovering, and when pressed\n(responding to hovering/pressing requires the cursor to be within the showing shape)."),
       ex,ex,
       GlyphButton(trup.scaled(scale), trdown.scaled(scale), trhover.scaled(scale)) { state =>
         println(s"GlyphButton $state")
-      } .edged() beside ex beside
+      } .framed() beside ex beside
       GlyphButton(
         filledStar7(wobbly(blue)),
         filledStar7(red) rotated 2,
         filledStar7(wobbly(green)) rotated 1
       ) { state =>
         println(s"GlyphButton $state")
-      } .edged(),
+      } .framed(),
       ex, ex,
       Label("Three ColourButtons\nThe second changes background when the mouse is hovering/pressed"),
       ex, ex,
       Row(align=Mid)(
-        ReactiveGlyphs.ColourButton(filledStar7(wobbly(blue)), red, green, background = false){ _ => } . edged(), em,
-        ReactiveGlyphs.ColourButton(filledStar7(wobbly(blue)), red, green, background = true){ _ => } . edged(), em,
-        ReactiveGlyphs.ColourButton("A ColourButton with a wobbly Frame", blue(width=0), red, green, background = false){ _ => }.enlarged(4).edged(wobbly(blueFrame)),
+        ReactiveGlyphs.ColourButton(filledStar7(wobbly(blue)), red, green, background = false, NoHint){ _ => } . framed(), em,
+        ReactiveGlyphs.ColourButton(filledStar7(wobbly(blue)), red, green, background = true, NoHint){ _ => } . framed(), em,
+        ReactiveGlyphs.ColourButton("A ColourButton with a wobbly Frame", blue(width=0), red, green, background = false, hint=NoHint){ _ => }.enlarged(4).framed(wobbly(blueFrame)),
       )
     )
   }
@@ -999,7 +1000,7 @@ trait LargeTestGUI {
           tHover
         ),
         ex, ex,
-        Label("Glyphbutton made with polygonal glyphs, then edged\n(the cursor must enter filled part of the glyph)"),ex,
+        Label("Glyphbutton made with polygonal glyphs, then framed\n(the cursor must enter filled part of the glyph)"),ex,
         GlyphButton(
           filledStar7(upColor),
           filledStar7(downColor)  rotated 2,
@@ -1009,16 +1010,16 @@ trait LargeTestGUI {
             .OK(Label("You pressed the top button"))
             .InFront(tHover)
             .start()
-        }.edged().scaled(.75f),
+        }.framed().scaled(.75f),
         ex,
         Label(
-          "GlyphButton made with edged polygonal glyphs\n(the cursor need only enter the bounding box)"
+          "GlyphButton made with framed polygonal glyphs\n(the cursor need only enter the bounding box)"
         ),
         ex,
         GlyphButton(
-          filledStar7(upColor).enlarged(20).edged(),
-          filledStar7(downColor).rotated(2).enlarged(20).edged(),
-          filledStar7(hoverColor).rotated(1).enlarged(20).edged(),
+          filledStar7(upColor).enlarged(20).framed(),
+          filledStar7(downColor).rotated(2).enlarged(20).framed(),
+          filledStar7(hoverColor).rotated(1).enlarged(20).framed(),
           exact = false
         ) { _ =>
           overlaydialogues.Dialogue
@@ -1036,7 +1037,7 @@ trait LargeTestGUI {
     val fatGreen: Brush = fatYellow.copy col 0xff00ff00
     val fatRed: Brush = fatYellow.copy col 0xffff0000
 
-    val title = textColumn(smallFont, black)("(20) Reactive elements within transformed rows/columns.\nNote that framing by .edged never requires a .enlarge\nbut using .edged sometimes does")
+    val title = textColumn(smallFont, black)("(20) Reactive elements within transformed rows/columns.\nNote that framing by .framed never requires a .enlarge\nbut using .framed sometimes does")
 
     def Tb(title: String) = But(title) { _ => println(s"Button $title") }
 
@@ -1074,30 +1075,30 @@ trait LargeTestGUI {
         Row(frame = reddish, skip = 2f, uniform = true)(
           Col(frame = blueish)(b1, b2, b3, b4),
           Col(frame = blueish)(b2, b3),
-          Col(uniform = true, frame = blueish)(b1, b3).edged(blueish)).edged(reddish)
-          beside Label(".edged (reddish)") beside separator beside
+          Col(uniform = true, frame = blueish)(b1, b3).framed(blueish)).framed(reddish)
+          beside Label(".framed (reddish)") beside separator beside
           Row(frame = greenish, skip = 2f, uniform = true)(
             Col(frame = blueish)(b1, b2, b3, b4),
             Col(frame = blueish)(b2, b3),
-            Col(uniform = true, frame = blueish)(b1, b3).edged(blueish)).enlarged(20).edged(reddish)
-            beside Label(".enlarged(20).edged(reddish)"),
+            Col(uniform = true, frame = blueish)(b1, b3).framed(blueish)).enlarged(20).framed(reddish)
+            beside Label(".enlarged(20).framed(reddish)"),
         separator,
         Row(align=Mid)(
           Row(frame = reddish, skip = 50f, uniform = true, align=Top)(
             Col(uniform = true, frame = blueish, align=Center)(b1, b2, b3, b4),
             Col(uniform = true, frame = blueish, align=Center)(b2, b3),
-            Col(uniform = true, frame = blueish)(b1, b3).edged(blueish)).edged(reddish),
+            Col(uniform = true, frame = blueish)(b1, b3).framed(blueish)).framed(reddish),
           separator,
           Row(frame = reddish, align=Top)(
             Col(uniform = true, frame = blueish, align=Center)(b1, b2, b3, b4),
             Col(uniform = true, frame = blueish, align=Center)(b2, b3).rotated(3),
-            Col(uniform = true, frame = greenish)(b1, b3).edged(blueish).rotated(2),
-            Col(uniform = true, frame = greenish)(b1, b3).edged(blueish).rotated(3)
-          ).edged(reddish)
+            Col(uniform = true, frame = greenish)(b1, b3).framed(blueish).rotated(2),
+            Col(uniform = true, frame = greenish)(b1, b3).framed(blueish).rotated(3)
+          ).framed(reddish)
         ) beside separator beside
           Col(uniform = false, frame = reddish) (Row(frame = blueish, align=Mid)(b1, b2, b3, b4),
           Row(frame = blueish, align=Mid)(b2, b3),
-          Col(uniform = true, frame = blueish)(b1, b3).edged(blueish)).edged(reddish)
+          Col(uniform = true, frame = blueish)(b1, b3).framed(blueish)).framed(reddish)
       )
   }
 
@@ -1120,12 +1121,12 @@ trait LargeTestGUI {
 
     def Rb(w: Scalar, h: Scalar, brush1: Brush = fatYellow, brush2: Brush = fatGreen, brush3: Brush = fatRed) = {
       val r = FilledRect(w, h, brush1) // Row(FilledRect(w, h, brush1), FilledRect(w/20, h, brush2))
-      ReactiveGlyphs.RawButton(r, r(brush2), r(brush3)) { _ => println(s"Button ($w,$h)") }.edged(thinBlue)
+      ReactiveGlyphs.RawButton(r, r(brush2), r(brush3)) { _ => println(s"Button ($w,$h)") }.framed(thinBlue)
     }
 
     def Eb(w: Scalar, h: Scalar, brush1: Brush = fatYellow, brush2: Brush = fatGreen, brush3: Brush = fatRed) = {
       val r = FilledOval(w, h, brush1)
-      ReactiveGlyphs.RawButton.exact(r, r(brush2), r(brush3)) { _ => println(s"Button ($w,$h)") }.edged(thinBlue, bg = thinBlue)
+      ReactiveGlyphs.RawButton.exact(r, r(brush2), r(brush3)) { _ => println(s"Button ($w,$h)") }.framed(thinBlue, bg = thinBlue)
     }
 
     def b1 = Tb("b1")
@@ -1149,8 +1150,8 @@ trait LargeTestGUI {
 
     def table = NaturalSize.Grid(fg = black, padx = 5f, pady = 5f).table(width = 2)(buttons).enlarged(10f)
 
-    val column = Col(uniform = true, align=Center)(b1().enlargedTo(b1.w * 2, b1.h * 2), b2().rotated(1), b3().rotated(2)).edged(blueFrame)
-    val rho = Row(uniform = true, align=Mid)(b1().enlargedTo(b1.w * 2, b1.h * 2), b2().rotated(1), b3().rotated(2)).edged(blueFrame)
+    val column = Col(uniform = true, align=Center)(b1().enlargedTo(b1.w * 2, b1.h * 2), b2().rotated(1), b3().rotated(2)).framed(blueFrame)
+    val rho = Row(uniform = true, align=Mid)(b1().enlargedTo(b1.w * 2, b1.h * 2), b2().rotated(1), b3().rotated(2)).framed(blueFrame)
 
     def separator: Rect = {
       Rect(100, 50, nothing)
@@ -1162,12 +1163,12 @@ trait LargeTestGUI {
       separator,
       NaturalSize.Grid(padx = 30, pady = 30, fg = reddish, bg=lightGrey, width = 2).rows(
         textColumn(smallFont, black)("Turned 0.1,45,67.5,85.5"), textColumn(smallFont, black)("Rotated 0,1,2,3"),
-        Row()(t1().turned(0.1f, tT).edged(), t1().turned(45f, tT).edged(),
-          t1().turned(67.5f, tT).edged(), t1().turned(85.5f, tT).edged()),
-        Row()(t1().rotated(0).edged(), t1().rotated(1).edged(), t1.rotated(2).edged(), t1().rotated(3).edged()),
-        Row()(t2().turned(0.01f, tT).edged(), t2().turned(55f, tT).edged(),
-          t2().turned(67.5f, tT).edged(), t2().turned(85.5f, tT).edged()),
-        Row()(t2().rotated(0).edged(), t2().rotated(1).edged(), t2().rotated(2).edged(), t2().rotated(3).edged())) scaled .8f,
+        Row()(t1().turned(0.1f, tT).framed(), t1().turned(45f, tT).framed(),
+          t1().turned(67.5f, tT).framed(), t1().turned(85.5f, tT).framed()),
+        Row()(t1().rotated(0).framed(), t1().rotated(1).framed(), t1.rotated(2).framed(), t1().rotated(3).framed()),
+        Row()(t2().turned(0.01f, tT).framed(), t2().turned(55f, tT).framed(),
+          t2().turned(67.5f, tT).framed(), t2().turned(85.5f, tT).framed()),
+        Row()(t2().rotated(0).framed(), t2().rotated(1).framed(), t2().rotated(2).framed(), t2().rotated(3).framed())) scaled .8f,
       separator scaled 0.5f,
       NaturalSize.Grid(padx = 30, fg = reddish, width = 2).rows(
         NaturalSize.Grid(padx = 20, pady = 20, height = 4)(
@@ -1183,10 +1184,10 @@ trait LargeTestGUI {
         NaturalSize.Grid(pady = 15, width = 1)(
           Row(align=Mid)(rho().mirrored(true, false), rho().skewed(-0.2f, 0f), rho().skewed(0.5f, 0f)),
           Row()(column().rotated(3), column().rotated(1)),
-          Row(frame = reddish, uniform = true)(b1, b2, b3, b4).edged(reddish).skewed(0.2f, 0),
-          Row(frame = reddish, uniform = true)(b1, b2, b3, b4).edged(reddish).skewed(0.5f, 0),
-          Row(frame = reddish, uniform = true)(b1, b2, b3, b4).edged(reddish).skewed(-0.2f, 0),
-          Row(frame = reddish, uniform = true)(b1, b2, b3, b4).edged(reddish).skewed(-0.5f, 0),
+          Row(frame = reddish, uniform = true)(b1, b2, b3, b4).framed(reddish).skewed(0.2f, 0),
+          Row(frame = reddish, uniform = true)(b1, b2, b3, b4).framed(reddish).skewed(0.5f, 0),
+          Row(frame = reddish, uniform = true)(b1, b2, b3, b4).framed(reddish).skewed(-0.2f, 0),
+          Row(frame = reddish, uniform = true)(b1, b2, b3, b4).framed(reddish).skewed(-0.5f, 0),
         ),
         (column().skewed(-0.2f, 0f) beside column().skewed(0.2f, 0f)),
         (rho().skewed(0f, 0.2f) above rho().skewed(0f, -0.2f))
@@ -1196,14 +1197,14 @@ trait LargeTestGUI {
 
   object Resizing extends BooleanButton {
     lazy val enableButton: Glyph =
-      onOff(initially=false, fg=green, bg=red) {
+      onOff(initially=false, fg=green, bg=red, NoHint) {
         state =>
           enableButton.guiRoot.autoScale = state
-      }.edged(fg=redFrame)
+      }.framed(fg=redFrame)
   }
 
 
-  private val helpGUI = Edged(whiteFrame)(
+  private val helpGUI = Framed(whiteFrame)(
     Col(align=Center)(
     SimpleParagraphs(ems=70, smallFont, blue)(
       """[C] This is a test of some basic Glyph  components.
@@ -1272,7 +1273,7 @@ trait LargeTestGUI {
       case true => Col(align=Center)(scene0)
       case false =>
         Col(align=Center)(
-          Edged()(menu),
+          Framed()(menu),
           Polygon(screenWidth, 1f, fg = black)((0, 0), (screenWidth, 0)),
           oneOf,
           Label(" ")
@@ -1309,7 +1310,7 @@ trait LargeTestGUI {
   private def polyStar7(brush: Brush) = openStargon(7, fg = brush)
 
   private def sceneButton(i: Int): Glyph =
-    Edged()(ReactiveGlyphs.TextButton(s"$i", blue) { _ => oneOf.select(i) })
+    Framed()(ReactiveGlyphs.TextButton(s"$i", blue) { _ => oneOf.select(i) })
 
   private object Toggles extends BooleanButton {
     override val bg: Brush = yellowHuge

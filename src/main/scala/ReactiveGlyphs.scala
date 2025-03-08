@@ -1,7 +1,6 @@
 package org.sufrin.glyph
 
 import io.github.humbleui.jwm.{EventMouseScroll, Window}
-import org.sufrin.glyph.GlyphTransforms.Edged
 
 /**
  *  A collection of `Reactive` glyph types.
@@ -170,12 +169,16 @@ object ReactiveGlyphs {
     val down:  Brush = DefaultBrushes.buttonDown()
     val hover: Brush = DefaultBrushes.buttonHover()
     val bg:    Brush = DefaultBrushes.buttonBackground
-    def apply(text: String, up: Brush=up, down: Brush=down, hover: Brush=hover, bg: Brush = bg, background: Boolean = true)(react: Reaction): ReactiveGlyph = {
+    def apply(text: String, up: Brush=up, down: Brush=down, hover: Brush=hover, bg: Brush = bg, background: Boolean = true, hint: Hint=NoHint)(react: Reaction): ReactiveGlyph = {
         val glyph: Glyph = DefaultBrushes.buttonText(text).asGlyph(up, bg)
-        new ColourButton(glyph, down, hover, background, react)
+        val button = new ColourButton(glyph, down, hover, background, react)
+        hint(button)
+        button
     }
-    def apply(glyph: Glyph, down: Brush, hover: Brush, background: Boolean)(react: Reaction): ReactiveGlyph = {
-      new ColourButton(glyph, down, hover, background, react)
+    def apply(glyph: Glyph, down: Brush, hover: Brush, background: Boolean, hint: Hint)(react: Reaction): ReactiveGlyph = {
+      val button = new ColourButton(glyph, down, hover, background, react)
+      hint(button)
+      button
     }
   }
 
@@ -396,17 +399,17 @@ object ReactiveGlyphs {
     /** A framed button whose up, down, and hover glyphs look the same */
     def apply(up: Glyph)(reaction: Reaction): RawButton =
       new RawButton(
-        Edged(DefaultBrushes.upFrame)(up),
-        Edged(DefaultBrushes.downFrame)(up()),
-        Edged(DefaultBrushes.hoverFrame)(up()), up.fg, up.bg, reaction)
+        up.framed(DefaultBrushes.upFrame),
+        up().framed(DefaultBrushes.downFrame),
+        up().framed(DefaultBrushes.hoverFrame), up.fg, up.bg, reaction)
 
     /** A framed button whose up, down, and hover glyphs are all `text` */
     def apply(text: String, fg: Brush=DefaultBrushes.buttonForeground, bg: Brush=DefaultBrushes.buttonBackground)(reaction: Reaction): RawButton = {
       val up = DefaultBrushes.buttonText(text).asGlyph(fg, bg).enlarged(DefaultBrushes.upFrame.strokeWidth*4)
       new RawButton(
-        Edged(DefaultBrushes.upFrame)(up),
-        Edged(DefaultBrushes.downFrame)(up()),
-        Edged(DefaultBrushes.hoverFrame)(up()), up.fg, up.bg, reaction)
+        up.framed(DefaultBrushes.upFrame),
+        up().framed(DefaultBrushes.downFrame),
+        up().framed(DefaultBrushes.hoverFrame), up.fg, up.bg, reaction)
     }
 
     /**
@@ -414,9 +417,9 @@ object ReactiveGlyphs {
      *   independent of the state of the keyboard modifiers or the mouse button that was pressed.
      */
     def apply(up: Glyph)(action: => Unit): RawButton = new RawButton(
-      Edged(DefaultBrushes.upFrame)(up),
-      Edged(DefaultBrushes.downFrame)(up()),
-      Edged(DefaultBrushes.hoverFrame)(up()), up.fg, up.bg, { _ => action })
+      up.framed(DefaultBrushes.upFrame),
+      up().framed(DefaultBrushes.downFrame),
+      up().framed(DefaultBrushes.hoverFrame), up.fg, up.bg, { _ => action })
 
   }
 

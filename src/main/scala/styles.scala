@@ -84,6 +84,20 @@ package styles
         glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).framed(fg, bg, radius)
     }
 
+    /**
+     * Decorate the glyph with a (possibly-curved) frame
+     *
+     * @param fg           foreground of the frame
+     * @param bg           background of the frame
+     * @param enlarge      (if `<1`) multiple of the smaller of the two glyph dimensions to enlarge the glyph by; otherwise absolute value to enlarge the glyph by.
+     * @param radius (if `==0`) a rectangular frame; otherwise the `radius` of the corner curves
+     * @see GlyphTransforms.Framed
+     */
+    case class RoundFramed(fg: Brush=DefaultBrushes.black, bg: Brush=DefaultBrushes.nothing, enlarge: Scalar = 0.15f, radius: Scalar = 0f) extends Decoration {
+      def decorate(glyph: Glyph): Glyph =
+        glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).roundFramed(fg, bg, radius)
+    }
+
     /** Decorate the glyph with `.enlarge(enlargement).edged(fg, bg)`. The `enlargement` is enlarge` itself if `enlarge>1`,
      * otherwise `enlarge * (thisGlyph.w min thisGlyph.h)`
      */
