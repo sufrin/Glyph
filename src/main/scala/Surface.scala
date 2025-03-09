@@ -252,7 +252,7 @@ trait Surface {
   }
 
 
-  private var _scope: Vec = Vec.Zero
+  private var _scope: Scope = Scope(Vec.Origin, Vec.Zero)
 
   /**
    * Set the scope of reactive glyph gestures to be `scope`
@@ -265,14 +265,24 @@ trait Surface {
    *       to continue to respond to mouse movements over its clipped part. But this
    *       may be avoidable in many cases.
    */
-  def withScope(scope: Vec)(effect: => Unit): Unit = if (true) { effect } else {
+  def withScope(scope: Vec)(effect: => Unit): Unit = if (false) { effect } else {
     val s = _scope
-    val trans      = AffineTransform.from(canvas.getLocalToDeviceAsMatrix33)
-    val thisOrigin = AffineTransform.transform(trans, 0f, 0f)
-    _scope = scope + thisOrigin
+    val currentTransform = AffineTransform.from(canvas.getLocalToDeviceAsMatrix33)
+    val currentOrigin: Vec = AffineTransform.transform(currentTransform, 0f, 0f)
+    _scope = Scope(currentOrigin, scope)
+    println(s"scope=${_scope}")
+
+
+    // Debugging
+    withOrigin(Vec.Zero-currentOrigin) {
+      drawPoint(currentOrigin, DefaultBrushes.blue(width=10))
+      drawPoint(currentOrigin+_scope.extent, DefaultBrushes.red(width=10))
+    }
+
     try effect
     catch   { case err: Throwable => err.printStackTrace() }
     finally { _scope = s }
+
   }
 
   /**

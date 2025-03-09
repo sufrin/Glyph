@@ -20,7 +20,7 @@ trait Brushes {
   val redFrame   = Brush("redFrame").color(0xFFee0000).strokeWidth(5.0f).cap(ROUND)
   val blue       = Brush("blue").color(0xFF0000ff).strokeWidth(0f)
   val blueLine   = Brush("blueLine").color(0xFF0000ff).strokeWidth(2.0f).cap(SQUARE)
-  val blueFrame  = Brush("blueFrame").color(0xFF00ff00).strokeWidth(5.0f).cap(ROUND)
+  val blueFrame  = Brush("blueFrame").color(0xFF0000ff).strokeWidth(5.0f).cap(ROUND)
   val green      = Brush("green").color(0xFF00ff00).strokeWidth(0f)
   val greenLine  = Brush("greenLine").color(0xFF00ff00).strokeWidth(2.0f).cap(SQUARE)
   val greenFrame = Brush("greenFrame").color(0xFF00ff00).strokeWidth(5.0f).cap(ROUND)

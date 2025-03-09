@@ -130,3 +130,13 @@ object Vec {
   def scaleToPixels(scale: Scalar, x: Scalar, y: Scalar): (Int, Int) =
     ((x * scale).toInt, (y * scale).toInt)
 }
+
+case class Scope(origin: Vec, extent: Vec) {
+  @inline def isEmpty: Boolean  = (extent eq Vec.Zero) || extent.x==0 && extent.y==0
+  @inline def nonEmpty: Boolean = !isEmpty
+  def contains(v: Vec): Boolean = {
+    isEmpty || (
+       (origin.x <= v.x) && (v.x-origin.x < extent.x) &&
+       (origin.y <= v.y) && (v.y-origin.y < extent.y))
+  }
+}

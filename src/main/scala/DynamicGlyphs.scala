@@ -358,13 +358,19 @@ object DynamicGlyphs {
     override def draw(surface: Surface): Unit = {
       val leftScope  = Vec(_boundary, h)
       val rightScope = Vec((w-_boundary-sepWidth) max 0f, h)
-      surface.withClip(leftScope) {
-        surface.withScope(leftScope) { theLeft.draw(surface) }
+      surface.withScope(leftScope) {
+        surface.withClip(leftScope) {
+            theLeft.draw(surface)
+        }
       }
+
       surface.drawLines$(fg, _boundary+offset, 0, _boundary+offset, h)
-      surface.withOrigin(_boundary+sepWidth, 0) {
-        surface.withClip(rightScope) {
-          surface.withScope(rightScope) { theRight.draw(surface) }
+
+        surface.withOrigin(_boundary + sepWidth, 0) {
+          surface.withScope(rightScope) {
+            surface.withClip(rightScope) {
+              theRight.draw(surface)
+          }
         }
       }
     }
