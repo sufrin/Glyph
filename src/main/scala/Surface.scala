@@ -265,7 +265,7 @@ trait Surface {
    *       to continue to respond to mouse movements over its clipped part. But this
    *       may be avoidable in many cases.
    */
-  def withScope(scope: Vec)(effect: => Unit): Unit = {
+  def withScope(scope: Vec)(effect: => Unit): Unit = if (true) { effect } else {
     val s = _scope
     val trans      = AffineTransform.from(canvas.getLocalToDeviceAsMatrix33)
     val thisOrigin = AffineTransform.transform(trans, 0f, 0f)

@@ -141,33 +141,38 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           |This is a justified piece of text that may be quite small.
           |You'll see it on a split screen. When the text on the other
           |screen is not the same width we'll see what happens.
-          |""".stripMargin) above ReactiveGlyphs.TextButton("The Left Button") { _ => }.edged()
+          |""".stripMargin) above styled.TextButton("The Left Button") { _ => println("LEFT") }
       val right = Paragraph(40, Left)(
         """
           |This is a left-justified piece of text that may be quite small.
           |You'll see it on a split screen. It'll be a bit wider
           |than the other thing on the screen.
-          |""".stripMargin) above ReactiveGlyphs.TextButton("The Right Button") { _ => }.edged()
+          |""".stripMargin) above styled.TextButton("The Right Button") { _ =>  println("RIGHT") }
+
       val dynamic = SplitScreen(left enlarged 30, right enlarged 30, dynamic=true, fg=darkGrey.strokeWidth(6f))
       def blob    = Glyphs.FilledRect(28f, 14f, fg=black.blurred(6f))
       val slider  = Slider.Horizontal(Glyphs.Rect(dynamic.w, 2f), blob, dynamic.proportion){
         case proportion: Scalar => dynamic.setBoundary(proportion)
       }
+
       val static = SplitScreen(left() enlarged 30, right() enlarged 30, dynamic=false, fg=darkGrey.strokeWidth(6f))
+
       Col(align=Center)(
-        Paragraph(60, Justify)(
-          """
-            |This is a test of the SplitScreen glyph. The test shows a pair of glyphs side by
-            |side, each of which contains some text and a reactive glyph. Here we have coupled
-            |the SplitScreen dynamically with a
-            |Slider.Horizontal that sets the boundary between the left and right
-            |glyphs, accompanied by three buttons that respectively move the boundary to the left,
-            |exchange left and right, and move the boundary to the right.
-            |
-            | Notice how the reactives respond when the cursor hovers over
-            |parts of them that are not visible, namely by giving up the
-            |focus if they happened to have it.
-            |""".stripMargin), ex, ex,
+        <div width="65em" align="justify">
+          <p>This is a test of the SplitScreen glyph. The test shows a pair of glyphs side by
+            side, each of which contains some text and a reactive glyph. Here we have coupled
+            the SplitScreen dynamically with a
+            Slider.Horizontal that sets the boundary between the left and right
+            glyphs, accompanied by three buttons that respectively move the boundary to the left,
+            exchange left and right, and move the boundary to the right.
+          </p>
+          <p align="center" frame="red/4~2~2"><b>TODO:</b> refine scope of Reactive-tracking</p>
+          <p frame="red/4~2~2">
+            Reactives <b>should</b> respond, when the cursor hovers over
+            parts of them that are not visible, by giving up the
+            focus if they happened to have it.
+          </p>
+        </div>,ex,
         dynamic,
         slider,
         TextButton("<"){
