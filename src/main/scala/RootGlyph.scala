@@ -71,7 +71,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    *  When a window size changes, automatically scale its non-resizeable GUIs when they are not (programmatically)
    *  `resizeable`. This can be changed at any time.
    *
-   *  TODO: works on OS/X but not on X11, so shouldn't be anabled on X11
+   *  TODO: works on OS/X but not on X11, so shouldn't be enabled on X11
    */
   var autoScale: Boolean = false
 
@@ -428,6 +428,8 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   def softwareScale:  Scalar = eventHandler.softwareScale
   def currentScreen: Screen  = rootWindow.getScreen
   def hardwareScale: Scalar  = rootWindow.getScreen.getScale
+  /** Current mapping from logical units to screen pixels */
+  def ambientScale: Scalar   = eventHandler.softwareScale * rootWindow.getScreen.getScale
 
   /** Extra arguments -- usually provided from the command line via `Interaction` */
   val args: List[String] = Nil

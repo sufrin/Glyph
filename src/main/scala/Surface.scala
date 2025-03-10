@@ -252,11 +252,11 @@ trait Surface {
   }
 
 
-  private var _scope: Scope = Scope(Vec.Origin, Vec.Zero)
+  private var _extent: Extent = EmptyExtent
 
   /**
    * Set the scope of reactive glyph gestures to be `scope`
-   * during the computation of `effect`. When nonzero, `_scope` is the
+   * during the computation of `effect`. When nonzero, `_extent` is the
    * diagonal of the (absolute) bounding box within which a
    * reactive glyph can still be considered to contain the cursor.
    *
@@ -265,23 +265,22 @@ trait Surface {
    *       to continue to respond to mouse movements over its clipped part. But this
    *       may be avoidable in many cases.
    */
-  def withScope(scope: Vec)(effect: => Unit): Unit = if (false) { effect } else {
-    val s = _scope
+  def withScope(distanceScale: Scalar, diagonal: Vec)(effect: => Unit): Unit = if (false) { effect } else {
+    val savedExtent = _extent
     val currentTransform = AffineTransform.from(canvas.getLocalToDeviceAsMatrix33)
     val currentOrigin: Vec = AffineTransform.transform(currentTransform, 0f, 0f)
-    _scope = Scope(currentOrigin, scope)
-    println(s"scope=${_scope}")
-
+    _extent = ScaledExtent(distanceScale, currentOrigin, diagonal)
 
     // Debugging
+    if (false)
     withOrigin(Vec.Zero-currentOrigin) {
-      drawPoint(currentOrigin, DefaultBrushes.blue(width=10))
-      drawPoint(currentOrigin+_scope.extent, DefaultBrushes.red(width=10))
+      drawPoint(currentOrigin,           DefaultBrushes.blue(width=10))
+      drawPoint(currentOrigin+ diagonal, DefaultBrushes.red(width=10))
     }
 
     try effect
     catch   { case err: Throwable => err.printStackTrace() }
-    finally { _scope = s }
+    finally { _extent = savedExtent }
 
   }
 
@@ -293,7 +292,7 @@ trait Surface {
   def declareCurrentTransform(glyph: ReactiveGlyph) = {
       //println(s"$hardwareScale => $scaleT")
       val transform = canvas.getLocalToDeviceAsMatrix33
-      glyph.declareCurrentTransform(AffineTransform.from(transform), scale, _scope)
+      glyph.declareCurrentTransform(AffineTransform.from(transform), scale, _extent)
   }
 
   @inline def currentTransform: AffineTransform.Transform = AffineTransform.from(canvas.getLocalToDeviceAsMatrix33)

@@ -296,12 +296,6 @@ object DynamicGlyphs {
    * enough to accomodate them side-by-side. The boundary between the current left and right
    * is drawn as a vertical line with the brush `fg`.
    *
-   * TODO: the scope-setting code is wrong; and leads to breaks in focus when it shouldn't.
-   *       in fact the focus should be withdrawn from a reactive when it is outside the
-   *       specified _scope. What's happening is that if there is a declared tracking scope
-   *       the glyphContains method (indicating continuity of focus) yields false, even when
-   *       it shouldn't. The workaround has been to ignore the scope set by withScope.
-   *       WHERETOLOOKNEXT: details of what _scope is set to by withScope.
    *
    * @param left
    * @param right
@@ -356,18 +350,23 @@ object DynamicGlyphs {
           Vec(left.w + right.w + sepWidth, left.h max right.h)
 
     override def draw(surface: Surface): Unit = {
-      val leftScope  = Vec(_boundary, h)
-      val rightScope = Vec((w-_boundary-sepWidth) max 0f, h)
-      surface.withScope(leftScope) {
+      val leftScope    = Vec(_boundary, h)
+      val rightScope   = Vec((w-_boundary-sepWidth) max 0f, h)
+      val ambientScale = guiRoot.ambientScale
+
+      /* The left pane */
+      surface.withScope(ambientScale, leftScope) {
         surface.withClip(leftScope) {
             theLeft.draw(surface)
         }
       }
 
+      /* The divider */
       surface.drawLines$(fg, _boundary+offset, 0, _boundary+offset, h)
 
-        surface.withOrigin(_boundary + sepWidth, 0) {
-          surface.withScope(rightScope) {
+      /* The right pane */
+      surface.withOrigin(_boundary + sepWidth, 0) {
+          surface.withScope(ambientScale, rightScope) {
             surface.withClip(rightScope) {
               theRight.draw(surface)
           }

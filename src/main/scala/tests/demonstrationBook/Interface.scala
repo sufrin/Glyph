@@ -1,12 +1,13 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
-import GlyphTypes.Window
-import styled.{Book, BookSheet, CheckBox, Label}
+import GlyphTypes.{Scalar, Window}
+import styled.{Book, BookSheet, CheckBox, Label, Paragraph, TextButton}
 import NaturalSize.{Col, Row}
 import BooleanGlyphs.OnOffButton
 
 import org.sufrin.glyph.styles.decoration
 import org.sufrin.glyph.glyphXML.Macro
+import org.sufrin.glyph.DefaultBrushes.{black, darkGrey}
 
 class Interface(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   val book = Book()
@@ -120,6 +121,8 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
   Page("Etc*", "") (new Etcetera().GUI)
 
   Page("Splash Screen", "")(new SplashScreen().GUI)
+
+
 
   import utils.Output.withWriteBar
   import book.Layout

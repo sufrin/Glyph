@@ -14,6 +14,8 @@ import Glyphs._
 
 import org.sufrin.glyph.styles.decoration.{Edged, Framed}
 
+import java.util.Date
+
 class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: StyleSheet = style.pageSheet
   import translation._
@@ -25,7 +27,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
     Page("Animation", "") {
       import DynamicGlyphs.{Periodic, Transform, Transformable}
-      val shape = Glyphs.Concentric(rowAlign=Mid, colAlign=Center, bg=yellowHuge)(
+      val shape = Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
         FilledOval(40, 40, fg=blue),
         FilledRect(30, 10, fg=red) beside FilledRect(10, 10, fg=green))
 
@@ -133,70 +135,6 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       nested.Layout.leftCheckBoxes(buttonAlign=Right, pageAlign=Center)
     }
 
-    Page("Split", "") {
-      import DynamicGlyphs.SplitScreen
-      import ReactiveGlyphs.Slider
-      val left = Paragraph(30, Justify)(
-        """
-          |This is a justified piece of text that may be quite small.
-          |You'll see it on a split screen. When the text on the other
-          |screen is not the same width we'll see what happens.
-          |""".stripMargin) above styled.TextButton("The Left Button") { _ => println("LEFT") }
-      val right = Paragraph(40, Left)(
-        """
-          |This is a left-justified piece of text that may be quite small.
-          |You'll see it on a split screen. It'll be a bit wider
-          |than the other thing on the screen.
-          |""".stripMargin) above styled.TextButton("The Right Button") { _ =>  println("RIGHT") }
-
-      val dynamic = SplitScreen(left enlarged 30, right enlarged 30, dynamic=true, fg=darkGrey.strokeWidth(6f))
-      def blob    = Glyphs.FilledRect(28f, 14f, fg=black.blurred(6f))
-      val slider  = Slider.Horizontal(Glyphs.Rect(dynamic.w, 2f), blob, dynamic.proportion){
-        case proportion: Scalar => dynamic.setBoundary(proportion)
-      }
-
-      val static = SplitScreen(left() enlarged 30, right() enlarged 30, dynamic=false, fg=darkGrey.strokeWidth(6f))
-
-      Col(align=Center)(
-        <div width="65em" align="justify">
-          <p>This is a test of the SplitScreen glyph. The test shows a pair of glyphs side by
-            side, each of which contains some text and a reactive glyph. Here we have coupled
-            the SplitScreen dynamically with a
-            Slider.Horizontal that sets the boundary between the left and right
-            glyphs, accompanied by three buttons that respectively move the boundary to the left,
-            exchange left and right, and move the boundary to the right.
-          </p>
-          <p align="center" frame="red/4~2~2"><b>TODO:</b> refine scope of Reactive-tracking</p>
-          <p frame="red/4~2~2">
-            Reactives <b>should</b> respond, when the cursor hovers over
-            parts of them that are not visible, by giving up the
-            focus if they happened to have it.
-          </p>
-        </div>,ex,
-        dynamic,
-        slider,
-        TextButton("<"){
-          _ => dynamic.setBoundary(0.0f); slider.dragTo(0f)
-        } beside
-          TextButton("<>") {
-            _ => dynamic.exchange()
-          } beside
-          TextButton(">"){
-            _ => dynamic.setBoundary(1.0f); slider.dragTo(0.999f)
-          },
-        ex, ex, ex,
-        Paragraph(60, Justify)(
-          """
-            |Below we test the SplitScreen with a static size large enough to accomodate both glyphs.
-            |It was, incidentally, built from copies of the left and right glyphs that appear above;
-            |so also acts as a test for deep-copying of all the glyphs involved in their construction.
-            |""".stripMargin), ex,
-        static,
-        TextButton("L<->R") {
-          _ => static.exchange()
-        }
-      ) enlarged 20f
-    }
 
     Page("Scroll", "Scrolling and Scaling with ViewPort"){
 
@@ -370,7 +308,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         oneOf
       }
 
-      var t2Hits = 0
+      var t2Hit = new Date().toString
 
       val star  = PolygonLibrary.openStargon(7, C=64f, R=55f, fg=red(width=2))
       val other = PolygonLibrary.filledRegularPolygon(6, C=64f, R=55f, fg=blue(width=2))
@@ -383,9 +321,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       }
 
       lazy val state2 = Monitor(whenFalse="The checkbox shows false", whenTrue="The checkbox shows true", t2)
-      lazy val t2:OnOffButton = CheckBox(false, Hint(3, s"Clicked $t2Hits times!", false)) {
-        case true  => t2Hits+=1; state2.select(1)
-        case false => t2Hits+=1; state2.select(0)
+      lazy val t2:OnOffButton = CheckBox(false, Hint(3, s"Last clicked: $t2Hit", false)) {
+        case true  => t2Hit = new Date().toString; state2.select(1)
+        case false => t2Hit = new Date().toString; state2.select(0)
       }
 
       lazy val state3 = Monitor(whenFalse="The hexagon is showing", whenTrue="The star is showing", t3)
@@ -439,7 +377,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
       Col(align=Center)(
         <p width="60em" parSkip="2ex">The checkbox in the middle demonstrates dynamic hinting:
-           whenever it pops up, the hint shows the number of times the checkbox has already been
+           here the hint shows the last time at which the checkbox was
            clicked.</p>,
         NaturalSize.Grid(fg=black(width=0), padx=10f).table(width=3)(List(
           state1, state2,            state3,
@@ -492,6 +430,73 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       makePages()
       book.Layout.leftCheckBoxes(buttonAlign = Right, pageAlign=Center)
     }
+
+    Page("Split", "") {
+    import DynamicGlyphs.SplitScreen
+    import ReactiveGlyphs.Slider
+    import pageSheet.ex
+    val left = Paragraph(30, Justify)(
+      """
+        |This is a justified piece of text that may be quite small.
+        |You'll see it on a split screen. When the text on the other
+        |screen is not the same width we'll see what happens.
+        |""".stripMargin) above styled.TextButton("The Left Button") { _ => println("LEFT") }
+    val right = Paragraph(40, Left)(
+      """
+        |This is a left-justified piece of text that may be quite small.
+        |You'll see it on a split screen. It'll be a bit wider
+        |than the other thing on the screen.
+        |""".stripMargin) above styled.TextButton("The Right Button") { _ =>  println("RIGHT") }
+
+    val dynamic = SplitScreen(left enlarged 30, right enlarged 30, dynamic=true, fg=darkGrey.strokeWidth(6f))
+    def blob    = Glyphs.FilledRect(28f, 14f, fg=black.blurred(6f))
+    val slider  = Slider.Horizontal(Glyphs.Rect(dynamic.w, 2f), blob, dynamic.proportion){
+      case proportion: Scalar => dynamic.setBoundary(proportion)
+    }
+
+    val static = SplitScreen(left() enlarged 30, right() enlarged 30, dynamic=false, fg=darkGrey.strokeWidth(6f))
+
+    Col(align=Center)(
+//      <div width="65em" align="justify">
+//        <p>This is a test of the SplitScreen glyph. The test shows a pair of glyphs side by
+//          side, each of which contains some text and a reactive glyph. Here we have coupled
+//          the SplitScreen dynamically with a
+//          Slider.Horizontal that sets the boundary between the left and right
+//          glyphs, accompanied by three buttons that respectively move the boundary to the left,
+//          exchange left and right, and move the boundary to the right.
+//        </p>
+//        <p align="center" frame="red/4~2~2"><b>TODO:</b> refine scope of Reactive-tracking</p>
+//        <p frame="red/4~2~2">
+//          Reactives <b>should</b> respond, when the cursor hovers over
+//          parts of them that are not visible, by giving up the
+//          focus if they happened to have it.
+//        </p>
+//      </div>, ex,
+      dynamic,
+      slider,
+      TextButton("<"){
+        _ => dynamic.setBoundary(0.0f); slider.dragTo(0f)
+      } beside
+        TextButton("<>") {
+          _ => dynamic.exchange()
+        } beside
+        TextButton(">"){
+          _ => dynamic.setBoundary(1.0f); slider.dragTo(0.999f)
+        },
+      ex, ex, ex,
+      Paragraph(60, Justify)(
+        """
+          |Below we test the SplitScreen with a static size large enough to accomodate both glyphs.
+          |It was, incidentally, built from copies of the left and right glyphs that appear above;
+          |so also acts as a test for deep-copying of all the glyphs involved in their construction.
+          |""".stripMargin), ex,
+      //static, //**
+      TextButton("L<->R") {
+        _ => static.exchange()
+      }
+    ) enlarged 20f
+  }
+
 
   val GUI: Glyph = book.Layout.leftCheckBoxes(buttonAlign = Right, pageAlign = Center).enlarged(30)
 

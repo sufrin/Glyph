@@ -71,9 +71,9 @@ object AffineTransform {
   }
 
   /**
-   * `reverse(t, scale)(v) = reverse(t)(v scaled scale)`
+   * `reverse(t, ambientScale)(v) = reverse(t)(v scaled ambientScale)`
    */
-  def reverse(trans: Transform, scale: Scalar): Vec => Vec = {
+  def reverse(trans: Transform, ambientScale: Scalar): Vec => Vec = {
     val Array(a, b, c, d, e, f, g, h, i) = trans
     val A = e * i - f * h; val B = f * g - d * i; val C = d * h - e * g
     val D = c * h - b * i; val E = a * i - c * g; //val F = b * g - a * h
@@ -86,7 +86,7 @@ object AffineTransform {
        B / det, E / det, H / det)
 
     {
-      case v: Vec => Vec(aa * v.x*scale + bb * v.y*scale + cc, dd * v.x*scale + ee * v.y*scale + ff)
+      case v: Vec => Vec(aa * v.x*ambientScale + bb * v.y*ambientScale + cc, dd * v.x*ambientScale + ee * v.y*ambientScale + ff)
     }
   }
 
