@@ -1218,11 +1218,10 @@ trait LargeTestGUI {
         |
         |[C] ----------------
         |
-        |
-        |The scenes arose arose organically during development so some now appear redundant. We have nevertheless continued to
+        |[*] The scenes arose arose organically during development so some now appear redundant. We have nevertheless continued to
         |maintain the application because it is a good regression test for the most basic functions of the kit.
         |
-        |Elsewhere there are demonstrations of some of the derived GUI components, such as styled texts, menus, and popups.""".stripMargin
+        |[*] Elsewhere there are demonstrations of some of the derived GUI components, such as styled texts, menus, and popups.""".stripMargin
     )
   ))
 

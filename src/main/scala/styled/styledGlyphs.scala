@@ -376,7 +376,7 @@ case class GlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean, hi
     val detail = sheet.buttonStyle
     BooleanGlyphs(new OnOff(whenTrue=Decorate(whenTrue.enlargedTo(ww,hh)),
                             whenFalse=Decorate(whenFalse.enlargedTo(ww,hh)),
-                            initially=initially, fg=NOTHING, bg=NOTHING
+                            initially=initially, fg=DefaultBrushes.nothing, bg=DefaultBrushes.nothing
                            ),
       initially=initially,
       fg=detail.toggle.off.fg,
@@ -397,7 +397,7 @@ case class MenuGlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean
     BooleanGlyphs(new OnOff(
       whenTrue=(whenTrue.enlargedTo(ww,hh)),
       whenFalse=(whenFalse.enlargedTo(ww,hh)),
-      initially=initially, fg=NOTHING, bg=NOTHING),
+      initially=initially, fg=DefaultBrushes.nothing, bg=DefaultBrushes.nothing),
       initially=initially,
       fg=detail.toggle.off.fg,
       bg=detail.toggle.off.bg,
