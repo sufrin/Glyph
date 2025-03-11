@@ -406,8 +406,8 @@ class Dialogue[T](blurb: Glyph,
           overlayRoot.location =
             Vec(x min (overlayRoot.location.x+dx) max 0,
                 y min (overlayRoot.location.y+dy) max 0)
+          overlayRoot.reDraw()
         }
-        overlayRoot.reDraw()
       }
 
       override def accept(event: EventMouseScroll, location: Vec, window: Window): Unit = {
