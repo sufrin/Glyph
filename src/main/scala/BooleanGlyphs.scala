@@ -8,11 +8,10 @@ object BooleanGlyphs {
 
     import javax.swing.AbstractButton
 
-    val NOTHING = Brush("NOTHING")(color=0)
 
     /** A settable `OneOf`  showing `whenTrue` if on, and `whenFalse` if off */
     class OnOff(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean, fg: Brush, bg: Brush) extends Settable[Boolean]
-    { val oneOf = DynamicGlyphs.OneOf(bg=NOTHING, enableBG = false)(whenFalse, whenTrue)
+    { val oneOf = DynamicGlyphs.OneOf(bg=DefaultBrushes.nothing, enableBG = false)(whenFalse, whenTrue)
 
       /** Set the state */
       def set(state: Boolean): Unit = { oneOf.select(if (state) 1 else 0) }
