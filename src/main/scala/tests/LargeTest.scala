@@ -1209,8 +1209,6 @@ trait LargeTestGUI {
     SimpleParagraphs(ems=70, smallFont, blue)(
       """[C] This is a test of some basic Glyph  components.
         |
-        |[C]
-        |
         |If its window doesn't fit on your screen, or if you'd like it to be bigger, first click the window
         |resizing checkbox to enable dynamic resizing; then drag one of the window edges. While you are dragging,
         |the window will be continuously resized (keeping the same aspect ratio) and its content rescaled accordingly.
@@ -1220,11 +1218,10 @@ trait LargeTestGUI {
         |
         |[C] ----------------
         |
-        |
-        |The scenes arose arose organically during development so some now appear redundant. We have nevertheless continued to
+        |[*] The scenes arose arose organically during development so some now appear redundant. We have nevertheless continued to
         |maintain the application because it is a good regression test for the most basic functions of the kit.
         |
-        |Elsewhere there are demonstrations of some of the derived GUI components, such as styled texts, menus, and popups.""".stripMargin
+        |[*] Elsewhere there are demonstrations of some of the derived GUI components, such as styled texts, menus, and popups.""".stripMargin
     )
   ))
 
