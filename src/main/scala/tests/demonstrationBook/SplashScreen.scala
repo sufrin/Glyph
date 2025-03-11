@@ -81,7 +81,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
     val help: Glyph =
     <div width="65em" align="justify">
       <p>
-        The START button starts a completely new instance of the GUI.
+        The <b>Glyph Sampler</b> button starts a completely new instance of the GUI.
         The checkboxes determine what tab layout and scale the new instance will have; as well
         as what screen (if there are many) it will be shown on at first.
       </p>
@@ -109,7 +109,10 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
 
 
     val splashStyle: StyleSheet = sheet.buttonSheet.copy(
-        fontScale=1.1f
+        fontScale=3f,
+        buttonBackgroundBrush=DefaultBrushes.blue,
+        buttonForegroundBrush=DefaultBrushes.white,
+        buttonDecoration = decoration.RoundFramed(fg=DefaultBrushes.blue(width=10), bg=DefaultBrushes.blue, radius = .48f)
     )
 
     lazy val startButton = TextButton(" START ") {
@@ -118,19 +121,21 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
 
     lazy val helpButton: Glyph = TextButton("Help") {
       _ => styled.windowdialogues.Dialogue.OK(help, title="Help").SouthEast(helpButton).start()
-    }(splashStyle)
+    }(splashStyle.copy(fontScale=1))
 
 
     val styleDefinitionButtons: Glyph = Row(align=Top)(
       styleSelect.arrangedVertically(), em scaled 4,
       scaleSelect.arrangedVertically(), em scaled 4,
       screenSelect.arrangedVertically(),
-    ) . enlarged(15) . edged(splashStyle.buttonForegroundBrush(width=3).sliced(5, 2))
+    ) . enlarged(15) . edged(DefaultBrushes.blueFrame.sliced(5, 2))
 
-    val GUI: Glyph = Col(align=Left)(
-      FixedSize.Row(align=Top, width = styleDefinitionButtons.w*1.1f)(startButton, splashStyle.hFill(), helpButton),
-      ex scaled 2,
+    val GUI: Glyph = Col(align=Center)(
+      TextButton(" Glyph Sampler ") { _ => thisApplication.main(Array(scale, style, screen))} (splashStyle.copy(fontScale=3f)),
+      splashStyle.vFill(),
       styleDefinitionButtons,
+      splashStyle.vFill(),
+      FixedSize.Row(align=Top, width = styleDefinitionButtons.w)(splashStyle.hFill(), helpButton),
     ) enlarged 15
 
 }
