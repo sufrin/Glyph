@@ -31,6 +31,11 @@ object Dialogue extends Loggable {
   //  new Dialogue[T](blurb, bottomRow, position, title)
   //}
 
+  def FLASH(blurb: Glyph, position: Location=null, title: String="")(implicit sheet: StyleSheet): Dialogue[Unit] = {
+    val bg = sheet.popupBackgroundBrush
+    new Dialogue[Unit](blurb, Seq.empty, position, title, bg=bg, preferred = -1)
+  }
+
   def OK(blurb: Glyph, position: Location=null, title: String="")(implicit sheet: StyleSheet): Dialogue[Unit] = {
     val bg = sheet.popupBackgroundBrush
     // Mutual references ok<->popup
@@ -66,7 +71,7 @@ object Dialogue extends Loggable {
 }
 
 class Dialogue[T](blurb:        Glyph,
-                  buttons:    Seq[Glyph],
+                  buttons:      Seq[Glyph],
                   var location: Location,
                   theTitle:     String,
                   bg:            Brush,
@@ -90,8 +95,6 @@ class Dialogue[T](blurb:        Glyph,
 
   val navigation = new NavigationManager(buttons, preferred, nested=false, menu=false)(close())
 
-  // println(s"$windowRect, ${nearby.rootDistance}, ${theOffset}")
-
   /** Close this popup, setting `closeResult` to `Some(result)` */
   def close(result: T=null.asInstanceOf[T]): Unit =
     App.runOnUIThread
@@ -113,9 +116,9 @@ class Dialogue[T](blurb:        Glyph,
       }
     }
 
-  val theBottomRow = Row(align=Mid, bg=bg)(buttons)
+  @inline def theBottomRow = Row(align=Mid, bg=bg)(buttons)
 
-  val GUI = Col(align=Center, bg=bg)(blurb, theBottomRow)
+  val GUI = if (buttons.isEmpty) Col(align=Center, bg=bg)(blurb) else  Col(align=Center, bg=bg)(blurb, theBottomRow)
 
   var running: Option[Interaction] = None
 

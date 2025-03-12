@@ -61,25 +61,36 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
     val scales  = "-scale=1.2/-scale=1.0/-scale=0.9/-scale=0.8/-scale=0.75/-scale=0.7/-scale=0.6".split("/").toList.reverse
     val screens = "-screen=p/-screen=0/-screen=1/-screen=2".split("/").toList
 
+    val splashStyle: StyleSheet = sheet.buttonSheet.copy(
+      fontScale=3f,
+      buttonBackgroundBrush=DefaultBrushes.blue,
+      buttonForegroundBrush=DefaultBrushes.white,
+      buttonDecoration = decoration.RoundFramed(fg=DefaultBrushes.blue(width=10), bg=DefaultBrushes.blue, radius = .48f)
+    )
+
+    val selectButtonStyle: StyleSheet = sheet.buttonSheet.copy(
+      buttonDecoration = decoration.Framed(fg=DefaultBrushes.blue)
+    )
+
     lazy val styleSelect: RadioCheckBoxes = RadioCheckBoxes(styles, "-notebook") {
       case None => styleSelect.select(0); style = styles.head
       case Some(i) => style = styles(i)
-    }
+    }(selectButtonStyle)
 
     lazy val scaleSelect: RadioCheckBoxes = RadioCheckBoxes(scales, "-scale=0.8") {
       case None => scaleSelect.select(0); scale = scales.head
       case Some(i) => scale = scales(i)
-    }
+    }(selectButtonStyle)
 
     lazy val screenSelect: RadioCheckBoxes = RadioCheckBoxes(screens) {
       case None => screenSelect.select(0); screen = screens.head
       case Some(i) => screen = screens(i)
-    }
+    }(selectButtonStyle)
 
     import translator._
 
     val help: Glyph =
-    <div width="65em" align="justify">
+    <div width="65em" align="justify" background="nothing" textBackground="nothing" textForeground="black">
       <p>
         The <b>Glyph Sampler</b> button starts a completely new instance of the GUI.
         The checkboxes determine what tab layout and scale the new instance will have; as well
@@ -92,7 +103,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
       <fill/>
       <row width="1*width">
         <fill/>
-        <div width="0.95*width" textForeground="red" frame="nothing">
+        <div width="0.95*width" textForeground="darkGrey" frame="nothing">
           <p hang="-notebook "  parIndent="2em">buttons on the left</p>
           <p hang="-cnotebook"  parIndent="2em">checkboxes on the left</p>
           <p hang="-rnotebook"  parIndent="2em">buttons on the right</p>
@@ -105,30 +116,29 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
       <fill/>
       <p align="justify">There is no artificial limit to the number of instances that can be running at once within a single JVM,
         (though space constraints within the JVM will impose a natural limit).</p>
-    </div>.enlarged(15).framed(DefaultBrushes.black.sliced(10, 5)).enlarged(15)
+    </div>.enlarged(20).framed(DefaultBrushes.black.sliced(10, 5)).enlarged(25)
 
 
-    val splashStyle: StyleSheet = sheet.buttonSheet.copy(
-        fontScale=3f,
-        buttonBackgroundBrush=DefaultBrushes.blue,
-        buttonForegroundBrush=DefaultBrushes.white,
-        buttonDecoration = decoration.RoundFramed(fg=DefaultBrushes.blue(width=10), bg=DefaultBrushes.blue, radius = .48f)
-    )
+
 
     lazy val startButton = TextButton(" START ") {
       _ => thisApplication.main(Array(scale, style, screen))
     }(splashStyle)
 
     lazy val helpButton: Glyph = TextButton("Help") {
-      _ => styled.windowdialogues.Dialogue.OK(help, title="Help").SouthEast(helpButton).start()
+      _ => styled.windowdialogues.Dialogue.FLASH((help), title="Help").South(helpButton).start()
     }(splashStyle.copy(fontScale=1))
+
+    lazy val debug: Glyph = styled.CheckBox(initially=false){
+      state => debug.guiRoot.eventHandler.logEvents = state
+    }
 
 
     val styleDefinitionButtons: Glyph = Row(align=Top)(
       styleSelect.arrangedVertically(), em scaled 4,
       scaleSelect.arrangedVertically(), em scaled 4,
       screenSelect.arrangedVertically(),
-    ) . enlarged(15) . edged(DefaultBrushes.blueFrame.sliced(5, 2))
+    ) . enlarged(15) . edged(DefaultBrushes.blue)
 
     val GUI: Glyph = Col(align=Center)(
       TextButton(" Glyph Sampler ") { _ => thisApplication.main(Array(scale, style, screen))} (splashStyle.copy(fontScale=3f)),
