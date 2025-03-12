@@ -248,9 +248,9 @@ trait Book {
       Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
 
-    def popupMenu(sheet: BookSheet): Seq[Glyph] = {
+    def popupMenu(sheet: BookSheet, decorate: Glyph=>Glyph = { g=>g }): Seq[Glyph] = {
       implicit val style: StyleSheet = sheet.buttonSheet
-      val glyphs: Seq[Glyph] = pages.toList.map(_.root())
+      val glyphs: Seq[Glyph] = pages.toList.map(page => decorate(page.root()))
       val titles: Seq[String] = pages.toList.map(_.title)
       val uniformButtons: Seq[UniformSize.ButtonSpecification] =
         (titles zip glyphs).map{

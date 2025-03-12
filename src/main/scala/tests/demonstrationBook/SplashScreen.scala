@@ -97,13 +97,14 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
     <div width="65em" align="justify" background="nothing" textBackground="nothing" textForeground="black">
       <p>
         The <b>Glyph Sampler</b> button starts a completely new instance of the GUI.
-        The checkboxes determine what tab layout and scale the new instance will have; as well
+        The checkboxes below determine what tab layout and scale the new instance will have; as well
         as what screen (if there are many) it will be shown on at first.
       </p>
       <p>
          The digits denote the screens offered by the system window manager, and "p"
          denotes the screen preferred by the system.
       </p>
+      <p>All pages will change size and rescale themselves if their window is resized.</p>
       <fill/>
       <row width="1*width">
         <fill/>
@@ -114,6 +115,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
           <p hang="-snotebook"  parIndent="2em">buttons slanted along the top</p>
           <p hang="-vnotebook"  parIndent="2em">buttons vertically along the top</p>
           <p hang="-tnotebook"  parIndent="2em">buttons horizontally along the top</p>
+          <p hang="-menu"       parIndent="2em">individual pages are on a menu</p>
         </div>
         <fill/>
       </row>

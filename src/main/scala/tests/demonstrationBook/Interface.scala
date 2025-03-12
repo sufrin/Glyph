@@ -140,5 +140,5 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
   lazy val asVNotebook = withWriteBar(hint=hint, enabled = true)(Layout.rotatedButtons(3, pageAlign = Center))(writeBarStyle)
   lazy val asSNotebook = withWriteBar(hint=hint, enabled = true)(Layout.skewedButtons(0.2f, 0f, buttonAlign = Justify, pageAlign = Center))(writeBarStyle)
   lazy val asTNotebook = withWriteBar(hint=hint, enabled = true)(Layout.topButtons(pageAlign = Center))(writeBarStyle)
-  lazy val asMenu      = NaturalSize.Col(align=Left)(Layout.popupMenu(style))
+  lazy val asMenu      = NaturalSize.Col(align=Left)(Layout.popupMenu(style, withWriteBar(hint=hint, enabled = true)(_)(writeBarStyle)))
 }
