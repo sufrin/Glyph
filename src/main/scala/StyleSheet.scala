@@ -42,10 +42,13 @@ case class StyleSheet
  padY: Scalar = 0f,
  buttonDecoration: styles.decoration.Decoration = styles.decoration.unDecorated,
  // Container constraints
- containerDimension: Vec = Vec.Zero,
+ windowDiagonal: Vec = Vec.Zero,
  //
  discretionaryWordBreak: String = "_"
 ) {
+
+  val windowWidth: Scalar = windowDiagonal.x
+  val windowHeight: Scalar = windowDiagonal.y
 
   val toggleOn = new GlyphColours {
     val fg: Brush = toggleOnBrush;
@@ -82,8 +85,6 @@ case class StyleSheet
     checkbox = CheckboxStyle(tick = "✔", cross = "✖", on = toggleOn, off = toggleOff)
   )
 
-  /** A stylesheet derived from this one, but with button framing specified by `border`, and decor`. */
-  def withButtonFrame(frame: styles.decoration.Decoration = decoration.unDecorated): StyleSheet = copy(buttonDecoration=frame)
 
   lazy val menuStyle: MenuStyle = MenuStyle(
     button = buttonStyle,

@@ -40,27 +40,22 @@ trait Application {
       val key = s"Key ${Modifiers.toBitmap(event).toLongString} ${event.getKey}"
       logging.Default.warn(s"Keystroke unexpected: ${key}")
   }
+
   /**
-   * Invoked just after the GUI has been installed in a window.
-   * Default implementation is to install (in the rootGlyph of the window)
-   * the local handlers for window close requests and unfocussed keystroke events.
-   * {{{
-   *   handleWindowCloseRequest(window)
-   *   handleUnfocussedKey(keyEvent)
-   * }}}
+   * Invoked when the application's GUI has been placed on the screen. This is the right place
+   * to declare handlers for window close requests, etc.
    *
-   *
-   * @param rootGlyph
    */
-  protected def onStart(rootGlyph: RootGlyph): Unit = {
-    rootGlyph.onCloseRequest (handleWindowCloseRequest(_))
-    rootGlyph.handleUnfocussedKey (handleUnfocussedKey(_))
+  protected def whenStarted(): Unit = {
+    GUI.guiRoot.onCloseRequest  { window => window.close() }
+    GUI.guiRoot.onUnfocussedKey { event: EventKey => handleUnfocussedKey(event)}
   }
 
   val defaultIconPath: Option[String] = None
   val extraArgs = new ArrayBuffer[String]()
   var useScreen: Char = 'p'
   var scaleFactor = 1.0f
+
   def main(args: Array[String]): Unit = {
     import io.github.humbleui.jwm.Screen
     var icon: Option[String] = defaultIconPath
@@ -102,7 +97,7 @@ trait Application {
     println(s"$logPrefix")
 
     App.start(() => {
-      new Interaction(App.makeWindow(), GUI, scaleFactor) {
+      new Interaction(App.makeWindow(), GUI, scaleFactor, whenStarted()) {
 
         def getScreen(n: Int): Screen = {
           val screens = App.getScreens
@@ -114,8 +109,12 @@ trait Application {
         override def inset = (0, 0)
         override def iconPath = icon
 
+        def onCloseRequest(action: Window=>Unit): Unit = {
+          GUI.findRoot.onCloseRequest(action)
+        }
+
         override def onKeyboardUnfocussed(key: EventKey): Unit = {
-          GUI.findRoot.onKeyboardUnfocussed(key)
+          GUI.findRoot.handleUnfocusssedKey(key)
           window.requestFrame()
         }
 
@@ -129,9 +128,6 @@ trait Application {
           case _   => getScreen(useScreen-'0')
         }
       }.start()
-
-      onStart((GUI).findRoot)
-
     })
   }
 

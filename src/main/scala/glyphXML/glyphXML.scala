@@ -596,15 +596,17 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
           case (s"${s}ex") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.exHeight
           case (s"${s}px") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
           case (s"${s}pt") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
-          case (s"${m}*${dim}") if m.matches("[0-9]+(\\.([0-9]+)?)?") =>
-            val factor = m.toFloat
+          case (s"${m}*${dim}") if m.isEmpty || m.matches("[0-9]+(\\.([0-9]+)?)?") =>
+            val factor = if (m.isEmpty) 1f else m.toFloat
             dim.toLowerCase match {
               case "width" => factor*sheet.parWidth
               case "indent" => factor*sheet.parIndent
               case "leftmargin" => factor*sheet.leftMargin
               case "rightmargin" => factor*sheet.rightMargin
+              case "windowwidth" => factor*sheet.windowWidth
+              case "windowheight" => factor*sheet.windowHeight
               case other =>
-                warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt, or as a fractional multiple of width/indent/leftmargin/rightmargin/etc. ($at)" )
+                warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt, or as a <float>*(width/indent/leftmargin/rightmargin/windowwidth/windowheight). ($at)" )
                 alt
             }
           case (other) =>

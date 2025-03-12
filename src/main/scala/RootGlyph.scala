@@ -576,19 +576,34 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
 
   def giveupFocus(): Unit = eventHandler.giveupFocus()
 
-  var _handleUnfocussedKey: Option[EventKey=>Unit] = None
+  private var _handleUnfocussedKey: Option[EventKey=>Unit] = None
+  private var _handleUnfocussedTextInput: Option[EventTextInput=>Unit] = None
+  private var _handleUnfocussedTextInputMarked: Option[EventTextInputMarked=>Unit] = None
 
-  def handleUnfocussedKey(handler: EventKey=>Unit): Unit = _handleUnfocussedKey=Some(handler)
+  /** Assign a handler to be invoked when an event of this kind happens on a glyph without the focus */
+  def onUnfocussedKey(handler: EventKey=>Unit): Unit                          = _handleUnfocussedKey=Some(handler)
+  /** Assign a handler to be invoked when an event of this kind happens on a glyph without the focus */
+  def onUnfocussedTextInput(handler: EventTextInput=>Unit): Unit              = _handleUnfocussedTextInput=Some(handler)
+  /** Assign a handler to be invoked when an event of this kind happens on a glyph without the focus */
+  def onUnfocussedTextInputMarked(handler: EventTextInputMarked=>Unit): Unit  = _handleUnfocussedTextInputMarked=Some(handler)
 
-  def onKeyboardUnfocussed(event: EventKey): Unit =
+  def handleUnfocusssedKey(event: EventKey): Unit =
     _handleUnfocussedKey match {
       case Some(handler) => handler(event)
       case None =>
     }
 
-  /**  */
-  def onKeyboardUnfocussed(key: EventTextInput): Unit = {}
-  def onKeyboardUnfocussed(key: EventTextInputMarked): Unit = {}
+  def handleUnfocussedTextInput(event: EventTextInput): Unit =
+    _handleUnfocussedTextInput match {
+      case Some(handler) => handler(event)
+      case None =>
+    }
+
+  def handleUnfocussedTextInputMarked(event: EventTextInputMarked): Unit =
+    _handleUnfocussedTextInputMarked match {
+      case Some(handler) => handler(event)
+      case None =>
+  }
 
 }
 

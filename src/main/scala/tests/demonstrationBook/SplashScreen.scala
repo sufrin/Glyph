@@ -43,6 +43,11 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
       override
       def handleWindowCloseRequest(window: Window): Unit = confirmCloseOn(theRootGlyph)(window)
 
+      override def whenStarted(): Unit = {
+        super.whenStarted()
+        GUI.findRoot.onCloseRequest(handleWindowCloseRequest(_))
+      }
+
       def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
         import styled.windowdialogues.Dialogue.OKNO
         // TODO: windowdialogues need set software scale more carefully than now if autoScale
