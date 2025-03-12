@@ -266,6 +266,7 @@ trait EventHandler extends Consumer[Event] {
 
       case mouse: EventMouseButton =>
         val mouseLoc = mouseLocation(mouse.getX, mouse.getY)
+        root.asInstanceOf[RootGlyph].onMouseEvent(mouseLoc, mouse)
         mouseFocus match {
           case Some(glyph) =>
             if (glyph.contains(mouseLoc)) {
@@ -313,7 +314,7 @@ trait EventHandler extends Consumer[Event] {
       case mouse: EventMouseMove =>
         // MouseStateTracker.discover(root.asInstanceOf[RootGlyph], mouse, window) // obsolescent
         val mouseLoc = mouseLocation(mouse.getX, mouse.getY)
-        root.asInstanceOf[RootGlyph].onMotion(mouseLoc, mouse)
+        root.asInstanceOf[RootGlyph].onMouseEvent(mouseLoc, mouse)
         //println(s"$mouseLoc  $mouse")
         mouseFocus match {
           case Some(focussed) =>

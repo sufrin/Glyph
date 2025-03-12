@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import io.github.humbleui.jwm.{App, EventMouseMove, EventTextInput, EventTextInputMarked, Platform}
+import io.github.humbleui.jwm.{App, EventMouseButton, EventMouseMove, EventTextInput, EventTextInputMarked, Platform}
 import GlyphTypes._
 
 /**
@@ -118,7 +118,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
            RootGlyph.fine(s"=>$diagonal[force=$force]")
              if (force) { setContentSize(diagonal)  }
               // wait until the mouse moves
-               onNextMotion {
+               onNextMouseEvent {
                  syncWindowContentSize()
                }
            }
@@ -463,23 +463,32 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   var mouseInside: Option[Boolean] = None
 
 
-  var _onNextMotion: Option[()=>Unit] = None
+  var _onNextMouseEvent: Option[()=>Unit] = None
 
   /**
-   * The `action` will be evaluated when the
-   * mouse next moves.
+   * The `action` will be evaluated ONCE ONLY when the
+   * mouse next moves or a button changes state
    */
-  def onNextMotion(action: => Unit): Unit = {
-      _onNextMotion = Some {()=>action}
+  def onNextMouseEvent(action: => Unit): Unit = {
+      _onNextMouseEvent = Some { ()=>action}
   }
 
+  //
+  // A few features to support  low-level debugging in extremis
+  //
 
-  var _mouseLoc:              Vec = Vec.Zero
-  var _decodeMotionModifiers: Boolean = false
-  var _mouseModifiers:        Modifiers.Bitmap = 0
-  var _mouseStateTracker:     MouseStateTracker = null
+  private var _mouseLoc:              Vec = Vec.Zero
+  private var _decodeMotionModifiers: Boolean = false
+  private var _mouseModifiers:        Modifiers.Bitmap = 0
+  private var _mouseStateTracker:     MouseStateTracker = null
+
+  /** The last known position of the mouse */
   def mouse: (Vec, Modifiers.Bitmap) =  (_mouseLoc, _mouseModifiers)
+
+  /** Enable/disable decoding of modifiers during mouse movements (for debugging) */
   def decodeMotionModifiers(enable: Boolean): Unit = _decodeMotionModifiers=enable
+
+  /** Enable/disable detailed tracking of the mouse, including window entries and exits */
   def trackMouseState(enable: Boolean): Unit = {
     if (enable)
       _mouseStateTracker = new MouseStateTracker(thisRoot)
@@ -490,20 +499,41 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
 /**
  * Unconditionally invoked by the event handler when the mouse moves.
  * Tracks the current mouse location, and (when `_decodeMotionModifiers` is set)
- * the current state of the modifiers. It also evaluates the currently
- * declared `onNextMotion` action.
+ * the current state of the modifiers. It also runs the currently
+ * declared once-only `onNextMouseEvent` action.
  */
-  def onMotion(mouseLoc: Vec, event: EventMouseMove): Unit = {
+  def onMouseEvent(mouseLoc: Vec, event: EventMouseMove): Unit = {
     _mouseLoc = mouseLoc
     if (_decodeMotionModifiers) _mouseModifiers = Modifiers(event)
-    _onNextMotion match {
+    _onNextMouseEvent match {
       case None => ()
       case Some(action) =>
-        _onNextMotion = None
+        _onNextMouseEvent = None
         action()
     }
     if (_mouseStateTracker ne null) _mouseStateTracker.accept(event)
   }
+
+  /**
+   * Unconditionally invoked by the event handler when a mouse button changes state.
+   * Tracks the current mouse location, and runs the currently
+   * declared once-only `onNextMouseEvent` action.
+   *
+   * This is not useful to handle the end of a mouse drag.
+   */
+  def onMouseEvent(mouseLoc: Vec, event: EventMouseButton): Unit = {
+    _mouseLoc = mouseLoc
+    if (_decodeMotionModifiers) _mouseModifiers = Modifiers(event)
+    _onNextMouseEvent match {
+      case None => ()
+      case Some(action) =>
+        _onNextMouseEvent = None
+        action()
+    }
+    // if (_mouseStateTracker ne null) _mouseStateTracker.accept(event)
+  }
+
+
 
   def acceptRootGlyphEvent(event: RootGlyphEvent): Unit = {
     event match {
