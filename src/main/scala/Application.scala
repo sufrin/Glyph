@@ -1,6 +1,9 @@
 package org.sufrin.glyph
 
 import io.github.humbleui.jwm.{EventKey, Window}
+import org.sufrin.glyph.styled.Label
+import org.sufrin.glyph.GlyphTypes.Window
+import org.sufrin.glyph.NaturalSize.Row
 import org.sufrin.logging
 
 /**
@@ -131,4 +134,26 @@ trait Application {
     })
   }
 
+}
+
+object Application {
+
+  def confirmCloseRequestsFor(GUI: Glyph)(implicit sheet: StyleSheet): Unit = {
+    GUI.guiRoot.onCloseRequest{ window: Window => confirmCloseOn(GUI, window) }
+  }
+
+  def enableAutoScaleFor(GUI: Glyph): Unit = {
+    GUI.guiRoot.autoScale = true
+  }
+
+  private def confirmCloseOn(glyph: Glyph, window: Window)(implicit sheet: StyleSheet): Unit = {
+    import styled.windowdialogues.Dialogue.OKNO
+
+    // TODO: windowdialogues needs to set software scale more carefully than now if autoScale
+    val prompt = Row(align=Mid)(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
+      Label("Do you want to Exit?")(sheet) scaled 1.5f
+    ).enlarged(50)
+    OKNO(prompt,
+      title = "Exit Dialogue", ok = " Exit now ", no = " Continue ").InFront(glyph).andThen(close => if (close) window.close())
+  }
 }

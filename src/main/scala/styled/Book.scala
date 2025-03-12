@@ -102,6 +102,7 @@ trait Book {
     BookComponents(if (uniform) UniformSize.constrained(uniformButtons) else buttons, oneOf)
   }
 
+
   /**
    * Derive a `BookComponents` that corresponds to the declared pages of thus
    * notebook. In this case the  "buttons" as a whole will be checkboxes
@@ -215,7 +216,7 @@ trait Book {
       Row(align=Mid, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
 
-    def leftCheckBoxes(buttonAlign: Alignment=Justify, pageAlign: Alignment=Left)(implicit sheet: BookSheet): Glyph = {
+    def leftCheckBoxes(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet): Glyph = {
       val BookComponents(buttons, oneOf) = checkBoxedBook(buttonAlign, pageAlign)
       val lhs = Col(align=Right)(buttons)
       val rhs = oneOf
@@ -247,6 +248,26 @@ trait Book {
       Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
 
+    def popupMenu(sheet: BookSheet): Seq[Glyph] = {
+      implicit val style: StyleSheet = sheet.buttonSheet
+      val glyphs: Seq[Glyph] = pages.toList.map(_.root())
+      val titles: Seq[String] = pages.toList.map(_.title)
+      val uniformButtons: Seq[UniformSize.ButtonSpecification] =
+        (titles zip glyphs).map{
+          case (pageTitle, page) => UniformSize(pageTitle){
+            _ => new Application {
+              def GUI: Glyph = page
+              def title: String = pageTitle
+              override def whenStarted(): Unit = {
+                super.whenStarted()
+                Application.confirmCloseRequestsFor(GUI)
+                Application.enableAutoScaleFor(GUI)
+              }
+            }.main(Array())
+          }
+        }
+      UniformSize.constrained(uniformButtons)
+    }
   }
 }
 

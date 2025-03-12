@@ -80,9 +80,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
   Page("Welcome", "") {
     val anchor = Glyphs.INVISIBLE()
-    val checkBox = CheckBox(initially=false) { state => anchor.guiRoot.autoScale=state }(content.copy(buttonDecoration = styles.decoration.Framed(fg=DefaultBrushes.blue, bg=DefaultBrushes.nothing)))
     import translation._
-    translation("checkbox") = { _ => checkBox }
     Col(align=Center)(
     <body align="justify" width="65em">
       <p>
@@ -97,16 +95,13 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
         The notebook style is initially -notebook, and
         its scale is initially 1.00. These can  be changed when creating a
         new instance from the <b>Splash Screen</b>; and the scale can also be changed
-        when the window is resized by dragging an edge/corner: this works only when <glyph gid="checkbox"/>
-        is checked.
+        when the window is resized by dragging an edge/corner.
       </p>
     </body>, anchor
-    )
+    ).enlarged(20)
   }
 
   Page("Window Menu Support*", "") (new WindowMenus().GUI)
-
-  Page("Glyph Transforms*", "") (new Transforms().GUI)
 
   Page("Button styles*", "") (new ButtonStyles().GUI)
 
@@ -118,10 +113,11 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
   Page("Events/Windows*", "") (new EventsAndWindows().GUI)
 
+  Page("Glyph Transforms*", "") (new Transforms().GUI)
+
   Page("Etc*", "") (new Etcetera().GUI)
 
   Page("Splash Screen", "")(new SplashScreen().GUI)
-
 
 
   import utils.Output.withWriteBar
@@ -144,4 +140,5 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
   lazy val asVNotebook = withWriteBar(hint=hint, enabled = true)(Layout.rotatedButtons(3, pageAlign = Center))(writeBarStyle)
   lazy val asSNotebook = withWriteBar(hint=hint, enabled = true)(Layout.skewedButtons(0.2f, 0f, buttonAlign = Justify, pageAlign = Center))(writeBarStyle)
   lazy val asTNotebook = withWriteBar(hint=hint, enabled = true)(Layout.topButtons(pageAlign = Center))(writeBarStyle)
+  lazy val asMenu      = NaturalSize.Col(align=Left)(Layout.popupMenu(style))
 }

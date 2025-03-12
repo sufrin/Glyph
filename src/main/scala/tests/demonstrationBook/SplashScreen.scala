@@ -31,21 +31,20 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
         else if (extraArgs contains "-vnotebook")  asVNotebook
         else if (extraArgs contains "-tnotebook")  asTNotebook
         else if (extraArgs contains "-cnotebook")  asCheckBoxes
+        else if (extraArgs contains "-menu")       asMenu
         else asLNotebook
         theRootGlyph
       }
 
-      def title = s"""Demonstration Book -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
+      def title = s"""Sampler -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
 
       override
       val defaultIconPath: Option[String] = Some("./flag.png")
 
-      override
-      def handleWindowCloseRequest(window: Window): Unit = confirmCloseOn(theRootGlyph)(window)
-
       override def whenStarted(): Unit = {
         super.whenStarted()
-        GUI.findRoot.onCloseRequest(handleWindowCloseRequest(_))
+        Application.confirmCloseRequestsFor(GUI)(sheet.pageSheet)
+        Application.enableAutoScaleFor(GUI)
       }
 
       def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
@@ -62,7 +61,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
     var style: String = "-notebook"
     var scale: String = "-scale=0.8"
     var screen: String = "-screen=p"
-    val styles  = "-notebook/-cnotebook/-rnotebook/-snotebook/-vnotebook/-tnotebook".split("/").toList
+    val styles  = "-notebook/-cnotebook/-rnotebook/-snotebook/-vnotebook/-tnotebook/-menu".split("/").toList
     val scales  = "-scale=1.2/-scale=1.0/-scale=0.9/-scale=0.8/-scale=0.75/-scale=0.7/-scale=0.6".split("/").toList.reverse
     val screens = "-screen=p/-screen=0/-screen=1/-screen=2".split("/").toList
 
