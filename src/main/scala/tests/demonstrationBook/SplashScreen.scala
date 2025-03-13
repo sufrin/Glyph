@@ -5,6 +5,8 @@ import styled.{BookSheet, Label, RadioCheckBoxes, TextButton}
 import NaturalSize._
 import styles.decoration
 
+import org.sufrin.glyph.Location.South
+
 class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyphXML.Translation) {
   implicit val  buttons: StyleSheet =
                 sheet.pageSheet.copy(
@@ -94,34 +96,38 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
     import translator._
 
     val help: Glyph =
-    <div width="65em" align="justify" background="nothing" textBackground="nothing" textForeground="black">
-      <p>
+    <div width="65em" parSkip="1ex" align="justify" labelBackground="lightGrey" background="lightGrey" textBackground="lightGrey" textForeground="black">
+      <SCOPE>
+        <MACRO key="strut"><fill width="1*width" bg="lightGrey"/></MACRO>
+        <MACRO key="centered"><row width="1*width"><fill/>&BODY;<fill/></row></MACRO>
+        <p>
         The <b>Glyph Sampler</b> button starts a completely new instance of the GUI.
-        The checkboxes below determine what tab layout and scale the new instance will have; as well
+        The checkboxes below it determine what tab layout and scale the new instance will have; as well
         as what screen (if there are many) it will be shown on at first.
       </p>
       <p>
-         The digits denote the screens offered by the system window manager, and "p"
+         The digits denote the screens offered by the system window manager, and <tt textForeground="blue">"p"</tt>
          denotes the screen preferred by the system.
       </p>
       <p>All pages will change size and rescale themselves if their window is resized.</p>
-      <fill/>
-      <row width="1*width">
-        <fill/>
-        <div width="0.95*width" textForeground="darkGrey" frame="nothing">
-          <p hang="-notebook "  parIndent="2em">buttons on the left</p>
-          <p hang="-cnotebook"  parIndent="2em">checkboxes on the left</p>
-          <p hang="-rnotebook"  parIndent="2em">buttons on the right</p>
-          <p hang="-snotebook"  parIndent="2em">buttons slanted along the top</p>
-          <p hang="-vnotebook"  parIndent="2em">buttons vertically along the top</p>
-          <p hang="-tnotebook"  parIndent="2em">buttons horizontally along the top</p>
-          <p hang="-menu"       parIndent="2em">individual pages are on a menu</p>
+      <strut/>
+      <centered>
+        <div width="0.95*width" parSkip="0ex" parIndent="2em">
+          <p hang="-notebook ">buttons on the left</p>
+          <p hang="-cnotebook">checkboxes on the left</p>
+          <p hang="-rnotebook">buttons on the right</p>
+          <p hang="-snotebook">buttons slanted along the top</p>
+          <p hang="-vnotebook">buttons vertically along the top</p>
+          <p hang="-tnotebook">buttons horizontally along the top</p>
+          <p hang="-menu     ">individual pages are on a menu</p>
         </div>
-        <fill/>
-      </row>
-      <fill/>
-      <p align="justify">There is no artificial limit to the number of instances that can be running at once within a single JVM,
-        (though space constraints within the JVM will impose a natural limit).</p>
+      </centered>
+      <strut/>
+      <p align="justify">
+        There is no artificial limit to the number of instances that can be running at once within a single JVM,
+        (though space constraints within the JVM will impose a natural limit).
+      </p>
+      </SCOPE>
     </div>.enlarged(20).framed(DefaultBrushes.black.sliced(10, 5)).enlarged(25)
 
 
@@ -132,7 +138,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
     }(splashStyle)
 
     lazy val helpButton: Glyph = TextButton("Help") {
-      _ => styled.windowdialogues.Dialogue.FLASH((help), title="Help").South(helpButton).start()
+      _ => styled.windowdialogues.Dialogue.BORDERLESS((help), South(helpButton)).start()
     }(splashStyle.copy(fontScale=1))
 
     lazy val debug: Glyph = styled.CheckBox(initially=false){

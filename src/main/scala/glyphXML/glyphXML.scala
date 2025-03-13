@@ -831,7 +831,8 @@ class Translation(val primitives: Primitives=new Primitives) {
                    None
                  else
                    Some(generateGlyph(tags$, paragraph, attributes$, sheet$, hangRef))
-              else Some(styled.Label(hangString)(sheet$))
+              else
+                Some(styled.Label(hangString)(sheet$))
             val chunks = children.flatMap { source => translate(tags$, true, attributes$$, sheet$, source) }
             Decorated(ParaTarget(sheet$, chunks, hang))
 

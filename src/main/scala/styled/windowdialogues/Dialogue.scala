@@ -31,9 +31,15 @@ object Dialogue extends Loggable {
   //  new Dialogue[T](blurb, bottomRow, position, title)
   //}
 
-  def FLASH(blurb: Glyph, position: Location=null, title: String="")(implicit sheet: StyleSheet): Dialogue[Unit] = {
+
+  def FLASH(content: Glyph, position: Location=null, title: String="")(implicit sheet: StyleSheet): Dialogue[Unit] = {
     val bg = sheet.popupBackgroundBrush
-    new Dialogue[Unit](blurb, Seq.empty, position, title, bg=bg, preferred = -1)
+    new Dialogue[Unit](content, Seq.empty, position, title, bg=bg, preferred = -1)
+  }
+
+  def BORDERLESS(content: Glyph, position: Location=null, title: String="")(implicit sheet: StyleSheet): Menu = {
+    val bg = sheet.popupBackgroundBrush
+    styled.windowdialogues.Menu.at(position)(content)
   }
 
   def OK(blurb: Glyph, position: Location=null, title: String="")(implicit sheet: StyleSheet): Dialogue[Unit] = {

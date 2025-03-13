@@ -42,10 +42,10 @@ object FixedSize  {
   class Space(var _w: Scalar, var _h: Scalar, xS: Scalar, yS: Scalar, val fg: Brush = nothing, val bg: Brush = nothing, override val baseLine: Scalar=0) extends Glyph {
     override val xStretch: Scalar = xS
     override val yStretch: Scalar = yS
-
     override def toString: String = s"FixedSpace(${_w}±$xS, ${_h}±$yS)"
 
     def draw(surface: Surface): Unit = {
+      super.drawBackground(surface)
       if (baseLine != 0 && bg.getAlpha != 0) {surface.drawLines$(bg, 0f,baseLine,   w,baseLine) }
     }
 

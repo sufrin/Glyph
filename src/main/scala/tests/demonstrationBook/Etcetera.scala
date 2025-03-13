@@ -435,18 +435,19 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     import DynamicGlyphs.SplitScreen
     import ReactiveGlyphs.Slider
     import pageSheet.ex
-    val left = Paragraph(30, Justify)(
-      """
-        |This is a justified piece of text that may be quite small.
-        |You'll see it on a split screen. When the text on the other
-        |screen is not the same width we'll see what happens.
-        |""".stripMargin) above styled.TextButton("The Left Button") { _ => println("LEFT") }
-    val right = Paragraph(40, Left)(
-      """
-        |This is a left-justified piece of text that may be quite small.
-        |You'll see it on a split screen. It'll be a bit wider
-        |than the other thing on the screen.
-        |""".stripMargin) above styled.TextButton("The Right Button") { _ =>  println("RIGHT") }
+    implicit val pageSheet : StyleSheet = style.pageSheet.copy(buttonDecoration = Framed(DefaultBrushes.black(width=2)))
+    val left =
+      Row(<p width="25em" align="justify">
+        This is a justified piece of text that may be quite long, and which
+        you'll see on a split screen. The text is pointless in and of itself; but
+        will be useful for de_bugging the Split_Screen active glyph.
+      </p>)  above styled.TextButton("The Left Button") { _ => println("LEFT") }
+    val right =
+      Row(<p width="40em" align="left">
+        This is a filled piece of text that may be quite short, and which
+        you will see on a split screen. It'll be a bit wider
+        than the other thing on the screen.
+      </p>) above styled.TextButton("The Right Button") { _ =>  println("RIGHT") }
 
     val dynamic = SplitScreen(left enlarged 30, right enlarged 30, dynamic=true, fg=darkGrey.strokeWidth(6f))
     def blob    = Glyphs.FilledRect(28f, 14f, fg=black.blurred(6f))
@@ -457,30 +458,30 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     val static = SplitScreen(left() enlarged 30, right() enlarged 30, dynamic=false, fg=darkGrey.strokeWidth(6f))
 
     Col(align=Center)(
-//      <div width="65em" align="justify">
-//        <p>This is a test of the SplitScreen glyph. The test shows a pair of glyphs side by
-//          side, each of which contains some text and a reactive glyph. Here we have coupled
-//          the SplitScreen dynamically with a
-//          Slider.Horizontal that sets the boundary between the left and right
-//          glyphs, accompanied by three buttons that respectively move the boundary to the left,
-//          exchange left and right, and move the boundary to the right.
-//        </p>
-//        <p align="center" frame="red/4~2~2"><b>TODO:</b> refine scope of Reactive-tracking</p>
-//        <p frame="red/4~2~2">
-//          Reactives <b>should</b> respond, when the cursor hovers over
-//          parts of them that are not visible, by giving up the
-//          focus if they happened to have it.
-//        </p>
-//      </div>, ex,
+      <div width="65em" align="justify">
+        <p>
+          This is a test of the SplitScreen glyph. The test shows a pair of glyphs side by
+          side, each of which contains some text and a reactive glyph. Here we have coupled
+          the SplitScreen dynamically with a
+          Slider.Horizontal that sets the boundary between the left and right
+          glyphs, accompanied by three buttons that respectively move the boundary to the left,
+          exchange left and right, and move the boundary to the right.
+        </p>
+        <p>
+          Reactives <b>should</b> respond by giving up the
+          focus (if they happened to have it) when the cursor hovers over
+          parts of them that are not visible.
+        </p>
+      </div>, ex,
       dynamic,
       slider,
-      TextButton("<"){
+      TextButton("Divider to left"){
         _ => dynamic.setBoundary(0.0f); slider.dragTo(0f)
       } beside
-        TextButton("<>") {
+        TextButton("Swap left and right") {
           _ => dynamic.exchange()
         } beside
-        TextButton(">"){
+        TextButton("Divider to right"){
           _ => dynamic.setBoundary(1.0f); slider.dragTo(0.999f)
         },
       ex, ex, ex,
@@ -490,8 +491,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           |It was, incidentally, built from copies of the left and right glyphs that appear above;
           |so also acts as a test for deep-copying of all the glyphs involved in their construction.
           |""".stripMargin), ex,
-      //static, //**
-      TextButton("L<->R") {
+      static,
+      TextButton("Swap left and right") {
         _ => static.exchange()
       }
     ) enlarged 20f
