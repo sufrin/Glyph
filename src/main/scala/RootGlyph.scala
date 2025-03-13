@@ -118,9 +118,9 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
            RootGlyph.fine(s"=>$diagonal[force=$force]")
              if (force) { setContentSize(diagonal)  }
               // wait until the mouse moves
-               onNextMouseEvent {
+               //onNextMouseEvent {
                  syncWindowContentSize()
-               }
+               //}
            }
          }
        }
