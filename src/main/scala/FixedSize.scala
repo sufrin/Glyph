@@ -47,6 +47,7 @@ object FixedSize  {
     def draw(surface: Surface): Unit = {
       super.drawBackground(surface)
       if (baseLine != 0 && bg.getAlpha != 0) {surface.drawLines$(bg, 0f,baseLine,   w,baseLine) }
+      if (fg.getAlpha != 0) {surface.drawLines$(fg, 0f,h/2f,   w,h/2f) }
     }
 
     def w_=(x: Scalar): Unit = _w = x

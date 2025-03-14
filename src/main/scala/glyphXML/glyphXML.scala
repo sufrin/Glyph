@@ -863,8 +863,9 @@ class Translation(val primitives: Primitives=new Primitives) {
             val height = attributes$.Units("height", sheet$.exHeight)(attributes$, sheet$)
             val stretch = attributes$.Float("stretch", 1f)
             val background = attributes$.Brush("background", attributes$.Brush("bg", DefaultBrushes.nothing))
+            val foreground = attributes$.Brush("foreground", attributes$.Brush("fg", DefaultBrushes.nothing))
             //** DO NOT DECORATE: IT MESSES UP FIXEDSIZE STRETCHING **//
-            List((GlyphTarget(paragraph, sheet$, FixedSize.Space(width, height, stretch, fg=DefaultBrushes.nothing, bg=background))))
+            List((GlyphTarget(paragraph, sheet$, FixedSize.Space(width, height, stretch, fg=foreground, bg=background))))
 
           case "glyph" =>
             //println (s"<glyph ${attributes$.asString}/>")

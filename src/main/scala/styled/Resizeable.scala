@@ -22,19 +22,20 @@ import scala.xml.Node
 import glyphXML.Language._
 
 
-class Resizeable(glyph: StyleSheet=>Glyph, style: StyleSheet) extends Glyph with GlyphTransforms {
+class Resizeable(glyph: StyleSheet=>Glyph, initialStyle: StyleSheet) extends Glyph with GlyphTransforms {
   override def resizeable: Boolean = true
 
+  var currentStyle: StyleSheet = initialStyle
+
   var delegate: Glyph = {
-    val initial = glyph(style)
+    val initial = glyph(currentStyle)
     initial.parent = this
     initial
   }
 
   override def atSize(boundingBox: Vec): Glyph = {
-    println(s"atSize($boundingBox) with style=${style.windowDiagonal}")
-    delegate = glyph(style.copy(windowDiagonal = boundingBox))
-    println(s"delegate.diagonal=${delegate.diagonal} => $diagonal")
+    currentStyle = initialStyle.copy(windowDiagonal = boundingBox)
+    delegate = glyph(currentStyle)
     delegate.parent = this
     delegate
   }
