@@ -21,9 +21,9 @@ import org.sufrin.logging.Loggable
 import scala.xml.Node
 import glyphXML.Language._
 
-class Resizeable(glyph: StyleSheet=>Glyph)(implicit style: StyleSheet) extends Glyph with GlyphTransforms {
-  override def resizeable: Boolean = true
 
+class Resizeable(glyph: StyleSheet=>Glyph, style: StyleSheet) extends Glyph with GlyphTransforms {
+  override def resizeable: Boolean = true
 
   var delegate: Glyph = {
     val initial = glyph(style)
@@ -32,8 +32,8 @@ class Resizeable(glyph: StyleSheet=>Glyph)(implicit style: StyleSheet) extends G
   }
 
   override def atSize(boundingBox: Vec): Glyph = {
-    println(s"atSize($boundingBox) with scale=${guiRoot.softwareScale}")
-    delegate = glyph(style.copy(windowDiagonal = diagonal))
+    println(s"atSize($boundingBox) with style=${style.windowDiagonal}")
+    delegate = glyph(style.copy(windowDiagonal = boundingBox))
     println(s"delegate.diagonal=${delegate.diagonal} => $diagonal")
     delegate.parent = this
     delegate
@@ -63,5 +63,5 @@ class Resizeable(glyph: StyleSheet=>Glyph)(implicit style: StyleSheet) extends G
  *
  */
 object Resizeable extends Loggable {
-  def apply(generate: StyleSheet=>Glyph)(implicit style: StyleSheet): Resizeable = new Resizeable(generate)
+  def apply(generate: StyleSheet=>Glyph)(implicit style: StyleSheet): Resizeable = new Resizeable(generate, style)
 }
