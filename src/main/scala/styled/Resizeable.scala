@@ -16,7 +16,7 @@ package styled
  *
  */
 
-import org.sufrin.logging.Loggable
+import org.sufrin.logging.SourceLoggable
 
 import scala.xml.Node
 import glyphXML.Language._
@@ -27,6 +27,10 @@ class Resizeable(glyph: StyleSheet=>Glyph, initialStyle: StyleSheet) extends Gly
 
   var currentStyle: StyleSheet = initialStyle
 
+  def forceResize(): Unit = {
+    if (hasGuiRoot) guiRoot.setContentSize(currentStyle.containerDiagonal)
+  }
+
   var delegate: Glyph = {
     val initial = glyph(currentStyle)
     initial.parent = this
@@ -34,7 +38,13 @@ class Resizeable(glyph: StyleSheet=>Glyph, initialStyle: StyleSheet) extends Gly
   }
 
   override def atSize(boundingBox: Vec): Glyph = {
-    currentStyle = initialStyle.copy(windowDiagonal = boundingBox)
+    val screenDiagonal: Vec = if (hasGuiRoot) {
+      val wa = guiRoot.currentScreen.getWorkArea
+      Vec(wa.getWidth.toFloat, wa.getHeight.toFloat)
+    } else Vec.Zero
+    val windowDiagonal: Vec = if (hasGuiRoot) { guiRoot.diagonal } else Vec.Zero
+    Resizeable.fine(s"atSize$boundingBox with windowDiagonal$windowDiagonal; screenDiagonal$screenDiagonal")
+    currentStyle = currentStyle.copy(containerDiagonal = boundingBox, windowDiagonal = windowDiagonal, screenDiagonal = screenDiagonal)
     delegate = glyph(currentStyle)
     delegate.parent = this
     delegate
@@ -63,6 +73,6 @@ class Resizeable(glyph: StyleSheet=>Glyph, initialStyle: StyleSheet) extends Gly
  *   the current size.
  *
  */
-object Resizeable extends Loggable {
+object Resizeable extends SourceLoggable {
   def apply(generate: StyleSheet=>Glyph)(implicit style: StyleSheet): Resizeable = new Resizeable(generate, style)
 }

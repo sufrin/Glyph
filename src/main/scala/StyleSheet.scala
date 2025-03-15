@@ -41,14 +41,22 @@ case class StyleSheet
  padX: Scalar = 0f,
  padY: Scalar = 0f,
  buttonDecoration: styles.decoration.Decoration = styles.decoration.unDecorated,
- // Container constraints
- windowDiagonal: Vec = Vec.Zero,
+
+ // Dimensions that are sometimes provided by parent/root glyphs
+ containerDiagonal: Vec = Vec.Zero,
+ windowDiagonal:    Vec = Vec.Zero,
+ screenDiagonal:    Vec = Vec.Zero,
+
  //
  discretionaryWordBreak: String = "_"
 ) {
 
-  val windowWidth: Scalar = windowDiagonal.x
-  val windowHeight: Scalar = windowDiagonal.y
+  val containerWidth:   Scalar  = containerDiagonal.x
+  val containerHeight:  Scalar  = containerDiagonal.y
+  val windowWidth:      Scalar  = windowDiagonal.x
+  val windowHeight:     Scalar  = windowDiagonal.y
+  val screenWidth:      Scalar  = screenDiagonal.x
+  val screenHeight:     Scalar  = screenDiagonal.y
 
   val toggleOn = new GlyphColours {
     val fg: Brush = toggleOnBrush;

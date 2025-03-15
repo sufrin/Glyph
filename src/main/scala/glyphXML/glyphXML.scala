@@ -445,7 +445,7 @@ object Translation {
 
       val asGlyph: Glyph = {
         val source = org.sufrin.glyph.Text(text, font, fg, bg)
-        if (atBase) source.atBaseline() else source.asGlyph()
+        if (atBase) source.atBaseline() else source
       }
     }
 
@@ -466,7 +466,7 @@ object Translation {
         val hyphen =makeText("-", font, fg, bg).atBaseline()
         new BreakableGlyph(hyphen, glyphs)
       }
-      else makeText(text, font, fg, bg).atBaseline()
+      else makeText(text, font, fg, bg)
 
     }
 
@@ -603,8 +603,12 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
               case "indent" => factor*sheet.parIndent
               case "leftmargin" => factor*sheet.leftMargin
               case "rightmargin" => factor*sheet.rightMargin
-              case "windowwidth" => factor*sheet.windowWidth
-              case "windowheight" => factor*sheet.windowHeight
+              case "container.width" => factor*sheet.containerWidth
+              case "container.height" => factor*sheet.containerHeight
+              case "window.width" => factor*sheet.windowWidth
+              case "window.height" => factor*sheet.windowHeight
+              case "screen.width" => factor*sheet.screenWidth
+              case "screen.height" => factor*sheet.screenHeight
               case other =>
                 warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt, or as a <float>*(width/indent/leftmargin/rightmargin/windowwidth/windowheight). ($at)" )
                 alt
