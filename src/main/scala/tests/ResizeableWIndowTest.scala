@@ -12,7 +12,7 @@ import org.sufrin.glyph.Location.East
 
 import scala.xml.Elem
 
-object ResizeableTest extends Application {
+object ResizeableWIndowTest extends Application {
   import glyphXML.Language._
 
 

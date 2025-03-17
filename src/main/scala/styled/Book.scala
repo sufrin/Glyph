@@ -64,7 +64,7 @@ trait Book {
 //    pages.toList.map(button(_))
 //  }
 
-  import DynamicGlyphs.OneOf
+  import dynamic.OneOf
 
   /**
    * In principle `buttons(i)` has a reaction `oneOf.select(i)`. This
@@ -85,7 +85,7 @@ trait Book {
   def buttonedBook(buttonAlign: Alignment=Justify, pageAlign: Alignment)(implicit sheet: BookSheet): BookComponents = {
     implicit val style: StyleSheet = sheet.buttonSheet
     val glyphs: Seq[Glyph] = pages.toList.map(_.root())
-    val oneOf = DynamicGlyphs.OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
+    val oneOf = dynamic.OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
     val keyed = (0 until glyphs.length) zip pages
     val uniform = buttonAlign==Justify
 
@@ -129,7 +129,7 @@ trait Book {
   def checkBoxedBook(buttonAlign: Alignment=Left, pageAlign: Alignment=Center)(implicit sheet: BookSheet): BookComponents = {
     implicit val style: StyleSheet = sheet.buttonSheet
     val glyphs: Seq[Glyph] = pages.toList.map(_.root())
-    val oneOf = DynamicGlyphs.OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
+    val oneOf = dynamic.OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
 
     val radio = RadioCheckBoxes(pages.toList.map(_.title), prefer=pages.head.title){
       case Some(n) => oneOf.select(n)

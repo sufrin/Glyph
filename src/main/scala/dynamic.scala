@@ -1,11 +1,13 @@
 package org.sufrin.glyph
+package dynamic
 
 import io.github.humbleui.jwm.App
+import org.sufrin.glyph.Glyphs.Image
 
 /**
- * Glyph combinators that transform glyphs into glyphs with dynamically-determinable scales and origins.
+ * A collection of dynamic glyphs: glyphs some aspects of which can vary dynamically
  */
-object DynamicGlyphs {
+
 
   import GlyphTypes.{Font, Scale}
 
@@ -31,7 +33,7 @@ object DynamicGlyphs {
     /**
      * The diagonal size of the glyph
      */
-    val diagonal: Vec = glyph.diagonal
+    def diagonal: Vec = glyph.diagonal
 
     def copy(fg: Brush=fg, bg: Brush = bg): DynamicallyScaled = new DynamicallyScaled(theScale, glyph.copy(fg, bg))
 
@@ -53,7 +55,7 @@ object DynamicGlyphs {
       }
     }
 
-    val diagonal: Vec = glyph.diagonal
+    def diagonal: Vec = glyph.diagonal
 
     def copy(fg: Brush=fg, bg:Brush=bg): DynamicallyScrolled = new DynamicallyScrolled(tiltFactor, panFactor, glyph.copy(fg, bg))
 
@@ -79,7 +81,6 @@ object DynamicGlyphs {
    */
   class ViewPort(glyph: Glyph, val fg: Brush, val bg: Brush) extends ReactiveGlyph {
     import GlyphTypes.Scalar
-
     import io.github.humbleui.jwm.{EventKey, EventMouseScroll}
 
     val scale     = Variable(1f)
@@ -177,12 +178,12 @@ object DynamicGlyphs {
 
     def draw(surface: Surface): Unit = {
       drawBackground(surface)
-      surface.drawRect(if (selected) selectedColor else unselectedColor, Vec.Origin, diagonal)
       surface.withClip(diagonal) {
         surface.withOrigin(offset) {
           delegate.draw(surface)
         }
       }
+      surface.drawRect(if (selected) selectedColor else unselectedColor, Vec.Origin, diagonal)
       // Because this is a reactive glyph
       surface.declareCurrentTransform(this)
     }
@@ -456,7 +457,7 @@ object DynamicGlyphs {
   }
 
 
-  type Transform = Glyph => Glyph
+  trait Transform extends Function1[Glyph,Glyph]
 
   /**
    * An `ActiveGlyph[Int]` constructed from an original `glyph` by applying a sequence of transforms to it.
@@ -505,11 +506,11 @@ object DynamicGlyphs {
   }
 
   object Periodic {
-    def apply[T](glyph: DynamicGlyphs.ActiveGlyph[T], msPerFrame:    Long=40L): Periodic[T] = new Periodic[T](glyph, msPerFrame)
-    def apply[T](glyph: DynamicGlyphs.ActiveGlyph[T], fps: Double): Periodic[T]             = new Periodic[T](glyph, (1000.0/fps).toLong)
+    def apply[T](glyph: dynamic.ActiveGlyph[T], msPerFrame:    Long=40L): Periodic[T] = new Periodic[T](glyph, msPerFrame)
+    def apply[T](glyph: dynamic.ActiveGlyph[T], fps: Double): Periodic[T]             = new Periodic[T](glyph, (1000.0/fps).toLong)
   }
 
-  class Periodic[T](glyph: DynamicGlyphs.ActiveGlyph[T], private var _msPerFrame: Long) {
+  class Periodic[T](glyph: dynamic.ActiveGlyph[T], private var _msPerFrame: Long) {
     val schedule = Schedule(_msPerFrame){App.runOnUIThread(() => glyph.step())}
     def running = schedule.running
 
@@ -536,4 +537,4 @@ object DynamicGlyphs {
 
     def fps: Double = 1000.0/_msPerFrame
   }
-}
+

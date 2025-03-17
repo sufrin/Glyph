@@ -11,8 +11,8 @@ import org.sufrin.glyph.DefaultBrushes.{blueLine, lightGrey, redFrame}
  */
 object DocumentationDiagrams {
 
-  import DynamicGlyphs.OneOf
-  import GlyphTransforms.{Framed}
+  import dynamic.OneOf
+  import GlyphTransforms.Framed
   import NaturalSize.Col
   import PolygonLibrary._
   import DefaultBrushes.{ROUND,SQUARE,BUTT}

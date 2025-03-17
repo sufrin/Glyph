@@ -25,6 +25,8 @@ import glyphXML.Language._
 class Resizeable(glyph: StyleSheet=>Glyph, initialStyle: StyleSheet) extends Glyph with GlyphTransforms {
   override def resizeable: Boolean = true
 
+  override def toString: String = s"Resizeable($glyph)[${currentStyle.containerDiagonal} ${currentStyle.windowDiagonal}"
+
   var currentStyle: StyleSheet = initialStyle
 
   def forceResize(): Unit = {

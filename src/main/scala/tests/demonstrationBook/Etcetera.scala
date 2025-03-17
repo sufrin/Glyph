@@ -11,6 +11,8 @@ import styled.Paragraph
 import NaturalSize.{Col, Grid, Row}
 import GlyphTypes.Scalar
 import Glyphs._
+import dynamic.SplitScreen
+
 
 import org.sufrin.glyph.styles.decoration.{Edged, Framed}
 
@@ -26,7 +28,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
 
     Page("Animation", "") {
-      import DynamicGlyphs.{Periodic, Transform, Transformable}
+      import dynamic.{Periodic, Transform, Transformable}
       val shape = Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
         FilledOval(40, 40, fg=blue),
         FilledRect(30, 10, fg=red) beside FilledRect(10, 10, fg=green))
@@ -139,7 +141,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     Page("Scroll", "Scrolling and Scaling with ViewPort"){
 
       val image   = PolygonLibrary.PalestinianFlag scaled 0.5f
-      val viewPort = DynamicGlyphs.ViewPort(image scaled 2f, fg=redFrame(width=10))
+      val viewPort = dynamic.ViewPort(image scaled 2f, fg=redFrame(width=10))
 
       def ScaleButton(scale: Scalar) = TextButton(f"*${scale}%1.1f") {
         _ => viewPort.scaleBy(scale)
@@ -197,7 +199,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     }
 
     Page("OneOf", "OneOf backgrounds") {
-      import DynamicGlyphs.OneOf
+      import dynamic.OneOf
 
       val aaa = Label("AAA").copy(fg=blue).enlarged(90, bg=yellow)
       val bbb = Label("BBB").copy(fg=blue, bg=nothing).scaled(2f)
@@ -293,7 +295,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
     Page("CheckBox", "Toggles, Checkboxes, ColourButtons") {
       import BooleanGlyphs._
-      import DynamicGlyphs.OneOf
+      import dynamic.OneOf
       import styled._
       implicit val pageSheet=style.pageSheet.copy(buttonDecoration = Edged(fg=blue(width=6, cap=ROUND)))
 
@@ -432,7 +434,6 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     }
 
     Page("Split", "") {
-    import DynamicGlyphs.SplitScreen
     import ReactiveGlyphs.Slider
     import pageSheet.ex
     implicit val pageSheet : StyleSheet = style.pageSheet.copy(buttonDecoration = Framed(DefaultBrushes.black(width=2)))

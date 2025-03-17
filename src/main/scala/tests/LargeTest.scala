@@ -17,7 +17,7 @@ import scala.collection.mutable.ListBuffer
 
 trait LargeTestGUI {
 
-  import DynamicGlyphs.OneOf
+  import dynamic.OneOf
   import GlyphTransforms.{Framed, Scaled}
   import NaturalSize.{Col, Row}
   import ReactiveGlyphs.{FramedButton, RawButton, ShadedButton}

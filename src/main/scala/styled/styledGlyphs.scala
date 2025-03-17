@@ -415,7 +415,7 @@ case class CheckBox(initially: Boolean, hint: Hint = NoHint) extends ToggleButto
   }
 }
 
-case class ActiveString(initial: String)(implicit style: StyleSheet) extends DynamicGlyphs.ActiveString(style.labelStyle.font, style.labelStyle.fg, style.labelStyle.bg, initial)
+case class ActiveString(initial: String)(implicit style: StyleSheet) extends dynamic.ActiveString(style.labelStyle.font, style.labelStyle.fg, style.labelStyle.bg, initial)
 
 
 /** Checkbox destined for a menu; hence deferred decoration */

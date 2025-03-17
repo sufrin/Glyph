@@ -62,4 +62,5 @@ object External {
     glyph.draw(drawing)
     surface.makeImageSnapshot(new IRect(0, 0, w, h))
   }
+
 }

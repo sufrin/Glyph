@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package styled
 
 import GlyphTypes.{Font, Scalar}
-import DynamicGlyphs.ActiveGlyph
+import dynamic.ActiveGlyph
 
 import org.sufrin.glyph.DefaultBrushes.{blue, nothing}
 import org.sufrin.glyph.NaturalSize.Col

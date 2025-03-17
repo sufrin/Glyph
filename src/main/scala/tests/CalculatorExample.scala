@@ -20,7 +20,7 @@ class AdderGUI()(implicit sheet: StyleSheet)  {
   var `c⊕b`:   Double => Double => Double = _.-
   var opName: String = "+"
 
-  val opGlyph: DynamicGlyphs.ActiveString = ActiveString(opName)
+  val opGlyph: dynamic.ActiveString = ActiveString(opName)
   val helpGlyph: ActiveParagraph = ActiveParagraph(50, Justify)(helpText())
 
 

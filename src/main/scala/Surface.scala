@@ -15,6 +15,7 @@ trait Surface {
   val canvas: Canvas
   val scale: Scalar
 
+
   def drawPoint(loc: Vec, paint: Paint): Unit =
     canvas.drawPoint(loc.x, loc.y, paint)
 
