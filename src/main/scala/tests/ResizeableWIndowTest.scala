@@ -78,7 +78,7 @@ object ResizeableWIndowTest extends Application {
         The res_ult is yarns that are as soft and beau_tiful to knit with as they are to wear.
       </p>
       <p>
-        All De Rerum Natura bases are <row>mulesing<span textForeground="red" fontScale="0.5">(*)</span></row> free, and eth_ical_ly and sus_tain_ably produced.
+        All De Rerum Natura bases are mule_sing<row><span textForeground="red" fontScale="0.5">(*)</span></row> free, and eth_ical_ly and sus_tain_ably produced.
       </p>
       <fill width="1*container.width" foreground="red/1~5~5"  height="0.7ex"/>
       <p fontScale="0.7" labelForeground="red" textForeground="red" hang="* ">

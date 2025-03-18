@@ -30,6 +30,8 @@ import org.sufrin.glyph.Glyphs.Image
       }
     }
 
+    locally { glyph.parent = this }
+
     /**
      * The diagonal size of the glyph
      */
@@ -55,6 +57,8 @@ import org.sufrin.glyph.Glyphs.Image
       }
     }
 
+    locally { glyph.parent = this }
+
     def diagonal: Vec = glyph.diagonal
 
     def copy(fg: Brush=fg, bg:Brush=bg): DynamicallyScrolled = new DynamicallyScrolled(tiltFactor, panFactor, glyph.copy(fg, bg))
@@ -68,23 +72,34 @@ import org.sufrin.glyph.Glyphs.Image
 
 
   /**
-   * A reactive glyph, based on `glyph` that responds to mousewheel (and other scrolling)
-   * events, as well as mouse-dragging, by tilting, panning (if the wheel was ctrl-shifted) and scaling (if the wheel
-   * was shift-shifted). When control-shift are clicked in the glyph its scale and location are
-   * reset.
+   * A reactive glyph, based on `glyph` that responds to mousewheel and other scrolling
+   * events, by tilting, panning (if the wheel was ctrl-shifted) and scaling (if the wheel
+   * was shift-shifted). When the mouse is clicked in the glyph its scale and location are
+   * reset. "Dragging" can also be enabled in the glyph.
+   *
+   * The `glyph` may be dynamically sized (for example if it is constructed by `styled.Resizeable`) and
+   * the port behaves appropriately when this is the case.
+   *
+   * Unless it is set explicitly by `initialPortDiagonal` the port size is the size of the glyph
+   * when the `ViewPort` is first constructed.
    *
    * The buck stops here when it comes to locating the active glyph containing a given point.
-   * In short, one of these glyphs CANNOT USEFULLY contain any reactivess.
+   * In short, one of these glyphs CANNOT USEFULLY contain any reactives.
+   *
+   *
    * TODO: the above would require a new focussed within the top-level dispatcher; namely
    *       one to which all events are forwarded from the top level. This amounts to an
    *       internal virtual window. Probably straightforward to deliver eventuallly.
    */
-  class ViewPort(glyph: Glyph, val fg: Brush, val bg: Brush) extends ReactiveGlyph {
+  class ViewPort(glyph: Glyph, val fg: Brush, val bg: Brush, initialPortDiagonal: Vec = null) extends ReactiveGlyph {
+
     import GlyphTypes.Scalar
     import io.github.humbleui.jwm.{EventKey, EventMouseScroll}
 
     val scale     = Variable(1f)
     val pan, tilt = Variable(0f)
+
+    val portDiagonal: Vec = if (initialPortDiagonal eq null) glyph.diagonal else initialPortDiagonal
 
     override def kind: String = s"ViewPort($scale, $pan, $tilt)"
 
@@ -94,15 +109,33 @@ import org.sufrin.glyph.Glyphs.Image
       }
     }
 
-    def scrollBy(amount: Scalar): Unit = tilt.value += amount
-    def panBy(amount: Scalar): Unit    = pan.value += amount
-    def scaleBy(amount: Scalar): Unit  = scale.value *= amount
-    def reset(): Unit  = {
+    locally { delegate.parent = this }
+
+    def scrollBy(amount: Scalar): Unit = {
+      val newTilt = tilt.value+amount
+      if (newTilt.abs < 0.95f*glyph.h) tilt.value = newTilt
+    }
+
+    def panBy(amount: Scalar): Unit = {
+      val newPan = pan.value+amount
+      if (newPan.abs < 0.95f*glyph.h) pan.value = newPan
+    }
+
+    def scaleBy(amount: Scalar): Unit =
+      if (_enableScale) scale.value *= amount
+
+    def reset(): Unit = {
       scale.value = 1f
       pan.value = 0f
       tilt.value = 0f
       reDraw()
     }
+
+    private var _enableDrag: Boolean = false
+    def enableDrag(enable: Boolean): this.type = { _enableDrag = enable; this }
+
+    private var _enableScale: Boolean = false
+    def enableScale(enable: Boolean): this.type = { _enableScale = enable; this }
 
     import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, KeyModifier, Window}
 
@@ -119,7 +152,7 @@ import org.sufrin.glyph.Glyphs.Image
       var dx: Int = mouse.getMovementX
       if (Modifiers.toBitmap(mouse).any) {
         // Hack because Linux doesn't report movement magnitudes
-        if (dy==0 && dx==0) {
+        if (dy == 0 && dx == 0) {
           val thisX: Int = mouse.getX
           val thisY: Int = mouse.getY
           dx = (thisX - MousePosition.lastX)
@@ -127,49 +160,81 @@ import org.sufrin.glyph.Glyphs.Image
           MousePosition.lastX = thisX
           MousePosition.lastY = thisY
         }
-        panBy(dx.toFloat)
-        scrollBy(dy.toFloat)
-        reDraw() // window.requestFrame()
+        if (_enableDrag) {
+          panBy(dx.toFloat)
+          scrollBy(dy.toFloat)
+          reDraw() // window.requestFrame()
+        }
       }
     }
 
 
     override def accept(mouse: EventMouseButton, location: Vec, window: Window): Unit = {
-      if (mouse.isPressed) {
-        MousePosition.lastX = mouse.getX
-        MousePosition.lastY = mouse.getY
-      }
-      if (mouse.isPressed && mouse.isModifierDown(KeyModifier.SHIFT) && mouse.isModifierDown(KeyModifier.CONTROL)) {
-        scale.value = 1f
-        pan.value = 0f
-        tilt.value = 0f
-        reDraw() // window.requestFrame()
+      if (_enableDrag) {
+        if (mouse.isPressed) {
+          MousePosition.lastX = mouse.getX
+          MousePosition.lastY = mouse.getY
+        }
+        if (mouse.isPressed && mouse.isModifierDown(KeyModifier.SHIFT) && mouse.isModifierDown(KeyModifier.CONTROL)) {
+          reset()
+        }
+      } else {
+        reset()
       }
     }
 
     override def accept(scroll: EventMouseScroll, location: Vec, window: Window): Unit = {
       // OS/X encodes horizontal scroll on a uniwheel by a shift. Do others?
       if (scroll.isModifierDown(KeyModifier.SHIFT)) { // magnification
-        val delta = if (scroll._deltaY+scroll._deltaX > 0) 1.2f else 1 / 1.2f
-        scale.value *= delta
+        val delta = if (scroll._deltaY + scroll._deltaX > 0) 1.2f else 1 / 1.2f
+        scaleBy(delta)
       }
-      else
-        if (scroll.isModifierDown(KeyModifier.CONTROL)) { // panning
-          pan.value += scroll._deltaY
-        } else { // tilting
-          tilt.value += scroll._deltaY
-        }
+      else if (scroll.isModifierDown(KeyModifier.CONTROL)) { // panning
+        panBy(scroll._deltaY)
+      } else { // tilting
+        scrollBy(scroll._deltaY)
+      }
       reDraw() // window.requestFrame()
+    }
+
+    override def accept(key: EventKey, location: Vec, window: Window): Unit = {
+      import Modifiers._
+      import io.github.humbleui.jwm.Key._
+      val mods: Bitmap = toBitmap(key)
+
+      if (mods.include(Pressed)) key._key match {
+        case END        =>
+          tilt.value    = -glyph.h*0.9f
+          pan.value     = -glyph.w*0.9f
+        case HOME       => reset()
+        case UP         => scrollBy(glyph.h*0.12f)
+        case DOWN       => scrollBy(-glyph.h*0.12f)
+        case PAGE_UP    => scrollBy(portDiagonal.y*0.9f)
+        case PAGE_DOWN  => scrollBy(-portDiagonal.y*0.9f)
+        case RIGHT      => panBy(-glyph.w*0.12f)
+        case LEFT       => panBy(glyph.w*0.12f)
+        case other      =>
+      }
+      reDraw()
     }
 
     var selected: Boolean = false
 
     override def accept(event: GlyphEvent, location: Vec, window: Window): Unit = {
       event match {
-        case _: GlyphEnter => selected = true
-        case _: GlyphLeave => selected = false
+        case _: GlyphEnter =>
+          import io.github.humbleui.jwm.MouseCursor
+          guiRoot.grabKeyboard(this)
+          window.setMouseCursor(MouseCursor.CROSSHAIR)
+          selected = true
+          reDraw() // window.requestFrame()
+        case _: GlyphLeave =>
+          guiRoot.freeKeyboard()
+          selected = false
+          reDraw() // window.requestFrame()
       }
     }
+
 
     val offset = Vec(fg.strokeWidth/2, fg.strokeWidth/2)
 
@@ -188,14 +253,14 @@ import org.sufrin.glyph.Glyphs.Image
       surface.declareCurrentTransform(this)
     }
 
-    val diagonal: Vec = glyph.diagonal + (offset scaled 2f)
+    val diagonal: Vec = portDiagonal + (offset scaled 2f)
 
-    def copy(fg: Brush=fg, bg:Brush=bg): ViewPort = new ViewPort(glyph.copy(fg, bg), fg, bg)
+    def copy(fg: Brush=fg, bg:Brush=bg): ViewPort = new ViewPort(glyph.copy(fg, bg), fg, bg, initialPortDiagonal)
 
   }
 
   object ViewPort {
-    def apply(glyph: Glyph, fg: Brush=DefaultBrushes.black, bg: Brush = DefaultBrushes.white): ViewPort = new ViewPort(glyph, fg, bg)
+    def apply(glyph: Glyph, fg: Brush=DefaultBrushes.black, bg: Brush = DefaultBrushes.white, initialPortDiagonal: Vec=null): ViewPort = new ViewPort(glyph, fg, bg, initialPortDiagonal)
   }
 
   /**
