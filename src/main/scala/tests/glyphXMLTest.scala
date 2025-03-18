@@ -92,7 +92,7 @@ object glyphXMLTest extends Application {
       <body  width="60em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="nothing">
         <ENTITY key="filler" expansion="(this is some filler to make the paragraph longer)"/>
         <ATTRIBUTES key="tag:caption" textFontSize="25"/>
-        <caption logging="caption">
+        <caption logging="">
           This is a little tester for various glyphXML features, princ_ipally the mixing of pre_defined glyphs with para_graph text.
         </caption>
 

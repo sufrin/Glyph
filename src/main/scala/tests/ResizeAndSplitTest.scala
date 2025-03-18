@@ -178,5 +178,8 @@ object ResizeAndSplitTest extends Application {
 
   val GUI: Glyph = genGUI(style)
 
+  override val defaultIconPath: Option[String] = Some("cherub.png")
+
+
   override def handleUnfocussedKey(event: EventKey): Unit = {}
 }
