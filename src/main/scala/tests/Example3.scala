@@ -28,13 +28,15 @@ trait Example3Interface {
 
 }
 
-object Example3 extends Application  with Example3Interface {
-  val style: StyleSheet = StyleSheet(
-    labelBackgroundBrush  = green().rounded(18),
-    labelForegroundBrush  = white,
-    labelFontFamily       = FontFamily("Courier"),
-    labelFontSize         = 32,
-    buttonDecoration      = styles.decoration.Edged(blue(cap=ROUND, width=18))
-  )
-  override def title: String = "Example 3"
+object Example3 extends Application with Example3Interface  {
+
+    override def title: String = "Example 3"
+
+    implicit val style: StyleSheet = StyleSheet(
+      labelBackgroundBrush  = green().rounded(18),
+      labelForegroundBrush  = white,
+      labelFontFamily       = FontFamily("Courier"),
+      labelFontSize         = 32,
+      buttonDecoration      = styles.decoration.Edged(blue(cap=ROUND, width=18))
+    )
 }

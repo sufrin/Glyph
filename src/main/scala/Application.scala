@@ -45,8 +45,8 @@ trait Application {
    *
    */
   protected def whenStarted(): Unit = {
-    GUI.guiRoot.onCloseRequest  { window => window.close() }
-    GUI.guiRoot.onUnfocussedKey { event: EventKey => handleUnfocussedKey(event)}
+      GUI.guiRoot.onCloseRequest { window => window.close() }
+      GUI.guiRoot.onUnfocussedKey { event: EventKey => handleUnfocussedKey(event) }
   }
 
   val defaultIconPath: Option[String] = None
@@ -95,7 +95,7 @@ trait Application {
     println(s"$logPrefix")
 
     App.start(() => {
-      new Interaction(App.makeWindow(), GUI, scaleFactor, whenStarted()) {
+      new Interaction(App.makeWindow(), GUI, scaleFactor, { if (GUI.hasGuiRoot) whenStarted()}) {
 
         def getScreen(n: Int): Screen = {
           val screens = App.getScreens
@@ -108,11 +108,12 @@ trait Application {
         override def iconPath = icon
 
         def onCloseRequest(action: Window=>Unit): Unit = {
-          GUI.findRoot.onCloseRequest(action)
+          if (GUI.hasGuiRoot) GUI.findRoot.onCloseRequest(action)
+          window.requestFrame()
         }
 
         override def onKeyboardUnfocussed(key: EventKey): Unit = {
-          GUI.findRoot.handleUnfocusssedKey(key)
+          if (GUI.hasGuiRoot) GUI.findRoot.handleUnfocusssedKey(key)
           window.requestFrame()
         }
 

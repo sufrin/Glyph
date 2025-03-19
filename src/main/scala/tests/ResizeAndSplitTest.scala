@@ -1,17 +1,16 @@
 package org.sufrin.glyph
 package tests
 
-import styled.{Book, BookSheet, Paragraph, TextButton}
-import DefaultBrushes.{black, blackFrame, buttonPointSize, darkGrey, nothing, red, redFrame, white}
+import styled.{Book, BookSheet, TextButton}
+import DefaultBrushes._
 import GlyphTypes.Scalar
 import NaturalSize.{Col, Row}
+import styled.Label.Label
+import styles.decoration.Edged
 import unstyled.dynamic.SplitScreen
+import unstyled.static._
 
 import io.github.humbleui.jwm.EventKey
-import org.sufrin.glyph.styles.decoration.Edged
-import org.sufrin.glyph.unstyled.static.Image
-import org.sufrin.glyph.styled.Label.Label
-import org.sufrin.glyph.unstyled.static._
 
 /**
  * Demonstrates that a SplitScreen can function properly.
@@ -30,8 +29,9 @@ object ResizeAndSplitTest extends Application {
   )
   implicit val  style: StyleSheet = protoStyle.copy(containerDiagonal = Vec(70*protoStyle.emWidth, 0))
 
-  import style.ex
   import glyphXML.Language._
+
+  import style.ex
   val title: String = "Resize and Split Tests"
 
   val SplitTest: Glyph = {
@@ -181,6 +181,9 @@ object ResizeAndSplitTest extends Application {
 
   override val defaultIconPath: Option[String] = Some("cherub.png")
 
+  override def whenStarted(): Unit = {
+    Application.confirmCloseRequestsFor(GUI)
+  }
 
   override def handleUnfocussedKey(event: EventKey): Unit = {}
 }
