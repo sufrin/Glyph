@@ -31,7 +31,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
     translation("caption") =
       new Macro(<p align="center"><b>&BODY;</b></p>)
 
-    /**
+    /*
      *  A simple implementation of <itemize> blocks containing <item>s.
      *  {{{
      *    <itemize logging[=false]

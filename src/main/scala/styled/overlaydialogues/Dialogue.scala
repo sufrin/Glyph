@@ -292,7 +292,7 @@ class NavigationManager(buttons: Seq[Glyph], var preferred: Int, menu: Boolean, 
  *
  * @param isMenu When true this dialogue represents a popup menu
  *
- * @isNested if the dialogue/menu is nested
+ * @param isNested if the dialogue/menu is nested
  *
  * @tparam T the type of value passed to the continuation (if any) by invoking `close`
  *

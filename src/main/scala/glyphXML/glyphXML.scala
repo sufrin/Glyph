@@ -47,16 +47,16 @@ import scala.xml._
  *
  * Substitutions are also made to attributes of the elements in `body` whose values take one of the forms
  * {{{
- *  "$invAttrName"           by the value of the invocation attribute
+ *  "\$invAttrName"           by the value of the invocation attribute
  *                           (defaulting to "")
- *  "$invAttrName(default)"  as above, defaulting to default
+ *  "\$invAttrName(default)"  as above, defaulting to default
  * }}}
  *
  *
  * Example: with:
  * {{{
  *   <MACRO key="cj">
- *     <div width="$width(21em)">
+ *     <div width="\$width(21em)">
  *         <p align="center"><b>CJ in &width;</b></p>
  *         <p align="center">&BODY0;</p>
  *         <p align="right">&BODY1;</p>
@@ -92,7 +92,7 @@ import scala.xml._
  * Finally, with
  * {{{
  * <MACRO key="cj">
- *   <div width="$width">
+ *   <div width="\$width">
  *   <p after="0">&BODY0..;</p>
  *   <p after="1">&BODY1..;</p>
  *   <p after="2">&BODY2..;</p>

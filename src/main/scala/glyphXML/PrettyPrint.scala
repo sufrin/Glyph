@@ -100,10 +100,6 @@ object PrettyPrint {
    *
    * 3. as its vertically aligned elements, if it is an `Iterable`
    *
-   *    3.1 prefixed by `[#${seq.length}]` if it is a sequence
-   *
-   *    3.2 prefixed by `...` if it is not a sequence
-   *
    *
    * @param obj the object to be prettyprinted
    * @param lastInSeq is it being printed as the last element/field of a sequence or product

@@ -30,13 +30,19 @@ trait Vec {
 
   final def scaled(factor: Scale): Vec = Vec(x * factor, y * factor)
 
-  /** =`scaled(1/fx, 1/fy)` */
+  /**
+   *  `scaled(1/fx, 1/fy)`
+   */
   final def deScaled(fx: Scale, fy: Scale): Vec = Vec(x / fx, y / fy)
 
-  /** = `scaled(1/factor.x, 1/factor.y)` */
+  /**
+   * `scaled(1/factor.x, 1/factor.y)`
+   */
   final def deScaled(factor: Vec): Vec = Vec(x / factor.x, y / factor.y)
 
-  /** This `Vec` rotated about `c` */
+  /**
+   *  This `Vec` rotated about `c`
+   */
   final def turned(degrees: Scalar, c: Vec): Vec = {
     import Math.{PI, cos, sin}
     val dx = x - c.x
@@ -50,7 +56,9 @@ trait Vec {
     )
   }
 
-  /** This `Vec` skewed by `skewX, skewY` */
+  /**
+   * This `Vec` skewed by `skewX, skewY`
+   */
   final def skewed(skewX: Scalar, skewY: Scalar): Vec = {
     Vec(x + y * skewX, y + x * skewY)
   }
