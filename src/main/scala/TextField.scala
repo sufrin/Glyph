@@ -1,9 +1,10 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 import GlyphTypes.{Font, Scalar}
-
 import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked, Key}
-import org.sufrin.logging.FINER
+import unstyled.Text
+import logging.FINER
 
 
 /**
@@ -30,7 +31,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
                 var onCursorLeave: String => Unit,
                 size: Int,
                 initialText: String,
-                abbreviations: org.sufrin.utility.TextAbbreviations
+                abbreviations: utility.TextAbbreviations
                ) extends ReactiveGlyph
 {
 
@@ -176,8 +177,6 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
    * editing position.
    */
   def draw(surface: Surface): Unit = {
-    import TextField.{loggingLevel}
-    import org.sufrin.logging._
     drawBackground(surface)
     surface.declareCurrentTransform(this)
     surface.withClip(diagonal) {
@@ -199,7 +198,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
         val cursorBrush: Brush = if (focussed) focussedBrush else unfocussedBrush
 
         // show the text margins when logging
-        if (loggingLevel(FINER)) {
+        if (TextField.loggingLevel(FINER)) {
           surface.drawPolygon$(cursorBrush(color=0XFFFF0000), w-TextModel.margin, 0, w-TextModel.margin, diagonal.y)
           surface.drawPolygon$(cursorBrush(color=0XFFFF0000), TextModel.margin, 0, TextModel.margin, diagonal.y)
         }
@@ -487,14 +486,12 @@ def giveUpKeyboardFocus(): Unit = guiRoot.giveupFocus()
  *
  * @see styled.TextField
  */
-object TextField extends org.sufrin.logging.Loggable {
+object TextField extends logging.Loggable {
   import Location._
   def popupError(key: EventKey, glyph: Glyph): Unit = {
-    import Glyphs.Label
     import Modifiers._
-    import windowdialogues.Dialogue
     implicit object Style extends StyleSheet
-    styled.windowdialogues.Dialogue.OK(Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
+    styled.windowdialogues.Dialogue.OK(unstyled.static.Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
   }
 
   def apply(fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, font: Font=DefaultBrushes.buttonFont,
@@ -503,7 +500,7 @@ object TextField extends org.sufrin.logging.Loggable {
             onCursorLeave: String=>Unit        = { case text: String => },
             size: Int,
             initialText: String = "",
-            abbreviations: org.sufrin.utility.TextAbbreviations = null
+            abbreviations: utility.TextAbbreviations = null
            ): TextField =
       new TextField(fg, bg, font,
             onEnter=onEnter,

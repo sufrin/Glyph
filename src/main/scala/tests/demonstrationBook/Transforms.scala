@@ -8,7 +8,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
     implicit val pageSheet: StyleSheet = style.pageSheet
     import translation._
     import pageSheet.{ex, em}
-    import Glyphs._
+    import org.sufrin.glyph.unstyled.static._
     import GlyphTypes._
     import DefaultBrushes.{blueLine, red, redLine, redFrame, green, nothing,black, SQUARE, BUTT, blue, brown, lightGrey}
     import styled.Label

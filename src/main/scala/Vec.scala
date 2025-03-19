@@ -1,8 +1,9 @@
 package org.sufrin.glyph
 import GlyphTypes._
 
-/**  2D vectors and their arithmetic
-  */
+/**
+ * 2D vectors and their arithmetic
+ */
 trait Vec {
   val x: Scalar
   val y: Scalar
@@ -131,30 +132,3 @@ object Vec {
     ((x * scale).toInt, (y * scale).toInt)
 }
 
-/**
- * An extent represents a rectangular region of the screen.
- */
-
-trait Extent {
-  val isEmpty: Boolean
-  /**  */
-  def contains(point: Vec): Boolean
-}
-
-object EmptyExtent extends Extent {
-  override def toString: String = "EmptyExtent"
-  val isEmpty: Boolean = true
-  def contains(point: Vec): Boolean = true
-}
-
-case class ScaledExtent(scale: Scalar, origin: Vec, extent: Vec) extends Extent {
-  val isEmpty: Boolean  = (extent eq Vec.Zero) || extent.x==0 && extent.y==0
-  private val extentX = origin.x+extent.x*scale
-  private val extentY = origin.y+extent.y*scale
-  def contains(point: Vec): Boolean = {
-    val scaledPoint = point scaled scale
-    isEmpty || (
-       (origin.x <= scaledPoint.x) && (scaledPoint.x < extentX) &&
-       (origin.y <= scaledPoint.y) && (scaledPoint.y < extentY))
-  }
-}

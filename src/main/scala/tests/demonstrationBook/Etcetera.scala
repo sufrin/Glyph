@@ -10,11 +10,12 @@ import styled.TextToggle
 import styled.Paragraph
 import NaturalSize.{Col, Grid, Row}
 import GlyphTypes.Scalar
-import Glyphs._
-import dynamic.SplitScreen
 
+import unstyled.{static, reactive}
+import static._
+import unstyled.dynamic.SplitScreen
 
-import org.sufrin.glyph.styles.decoration.{Edged, Framed}
+import styles.decoration.{Edged, Framed}
 
 import java.util.Date
 
@@ -28,15 +29,15 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
 
     Page("Animation", "") {
-      import dynamic.{Periodic, Transform, Transformable}
-      val shape = Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
+      import unstyled.dynamic.{Periodic, Transform, Transformable}
+      val shape = static.Concentric(rowAlign=Mid, colAlign=Center)(
         FilledOval(40, 40, fg=blue),
         FilledRect(30, 10, fg=red) beside FilledRect(10, 10, fg=green))
 
       var lastDriver: List[Periodic[Int]] = Nil
 
       class Animation() {
-        lazy val button = ReactiveGlyphs.ColourButton(shape, green, red, background = true, NoHint) {
+        lazy val button = reactive.ColourButton(shape, green, red, background = true, NoHint) {
           _ =>
             if (driver.running) driver.stop() else driver.start()
             lastDriver = List(driver)
@@ -140,8 +141,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
     Page("Scroll", "Scrolling and Scaling with ViewPort"){
 
-      val image   = PolygonLibrary.PalestinianFlag scaled 0.5f
-      val viewPort = dynamic.ViewPort(image scaled 2f, fg=redFrame(width=10))
+      val image    = PolygonLibrary.PalestinianFlag scaled 0.5f
+      val viewPort = unstyled.dynamic.ViewPort(image scaled 2f, fg=redFrame(width=10)).enableDrag(true).enableScale(true)
 
       def ScaleButton(scale: Scalar) = TextButton(f"*${scale}%1.1f") {
         _ => viewPort.scaleBy(scale)
@@ -149,12 +150,13 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
       val describe: Glyph = <div width="50em" >
         <p align="justify">
-          The image is edged in RED when the mouse is on or over it. Moving the mouse with its
-          PRIMARY button pressed drags the image. The mousewheel can also be used to scale or scroll it.
+          The image is edged in RED when the mouse is on or over the viewport. Moving the mouse with its
+          primary button pressed drags the image. The <b>UP, DOWN, LEFT, RIGHT, END, PGUP,</b> and <b>PGDOWN</b> buttons move
+          the viewport an appropriate amount in the appropriate direction; the <b>HOME</b> button resets scale and position.
         </p>
-        <p hang="* ">The mousewheel alone scrolls vertically, scales when shifted, and scrolls horizontally while control is pressed.
+        <p hang="* ">The mousewheel alone scrolls vertically, scrolls horizontally with <b>CTRL</b> pressed, and scales with <b>SHIFT</b> pressed.
         </p>
-        <p hang="* ">Clicking the primary button when control+shift are pressed resets scale and position .</p>
+        <p hang="* ">Clicking the primary mouse button with <b>CTRL+SHIFT</b> pressed resets scale and position, as does the <b>Reset</b> button</p>
       </div>
 
       Col(align=Center)(
@@ -199,7 +201,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     }
 
     Page("OneOf", "OneOf backgrounds") {
-      import dynamic.OneOf
+      import unstyled.dynamic.OneOf
 
       val aaa = Label("AAA").copy(fg=blue).enlarged(90, bg=yellow)
       val bbb = Label("BBB").copy(fg=blue, bg=nothing).scaled(2f)
@@ -244,7 +246,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     }
 
     Page("Sliders", "") {
-      import ReactiveGlyphs.Slider
+      import org.sufrin.glyph.unstyled.reactive.Slider
 
       import Slider.{Horizontal, Vertical}
       val trackh = Rect(500f, 55f, bg=yellowHuge, fg=black)
@@ -294,8 +296,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     }
 
     Page("CheckBox", "Toggles, Checkboxes, ColourButtons") {
-      import BooleanGlyphs._
-      import dynamic.OneOf
+      import unstyled.BooleanGlyphs._
+      import unstyled.dynamic.OneOf
       import styled._
       implicit val pageSheet=style.pageSheet.copy(buttonDecoration = Edged(fg=blue(width=6, cap=ROUND)))
 
@@ -345,13 +347,13 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         val re = red(width=10)
 
         def RectBut(background: Boolean): Glyph =
-          ReactiveGlyphs.ColourButton(Rect(40, 40, fg=wh, bg=bl), gr, re, background, Hint(5, if (background) "Background changes" else "Foreground changes")){
+          reactive.ColourButton(Rect(40, 40, fg=wh, bg=bl), gr, re, background, Hint(5, if (background) "Background changes" else "Foreground changes")){
             _ => println(s"Rect($background)")
           }
 
         def TextBut(background: Boolean): Glyph = {
           val caption = if (background) "Background" else "Foreground"
-          ReactiveGlyphs.ColourButton(Glyphs.Label(s"$caption Changes", bg=bl, fg=wh), gr, re, background, NoHint){
+          reactive.ColourButton(static.Label(s"$caption Changes", bg=bl, fg=wh), gr, re, background, NoHint){
             _ => println(s"Text($background)")
           }
         }
@@ -434,7 +436,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     }
 
     Page("Split", "") {
-    import ReactiveGlyphs.Slider
+    import org.sufrin.glyph.unstyled.reactive.Slider
     import pageSheet.ex
     implicit val pageSheet : StyleSheet = style.pageSheet.copy(buttonDecoration = Framed(DefaultBrushes.black(width=2)))
     val left =
@@ -451,8 +453,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       </p>) above styled.TextButton("The Right Button") { _ =>  println("RIGHT") }
 
     val dynamic = SplitScreen(left enlarged 30, right enlarged 30, dynamic=true, fg=darkGrey.strokeWidth(6f))
-    def blob    = Glyphs.FilledRect(28f, 14f, fg=black.blurred(6f))
-    val slider  = Slider.Horizontal(Glyphs.Rect(dynamic.w, 2f), blob, dynamic.proportion){
+    def blob    = FilledRect(28f, 14f, fg=black.blurred(6f))
+    val slider  = Slider.Horizontal(Rect(dynamic.w, 2f), blob, dynamic.proportion){
       case proportion: Scalar => dynamic.setBoundary(proportion)
     }
 

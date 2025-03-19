@@ -1,10 +1,11 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 import GlyphTypes.{Font, FontManager, FontStyle, Scalar, Typeface}
 
-import org.sufrin.glyph.FontFamily.{fontDescription, styleNamed}
+import FontFamily.{fontDescription, styleNamed}
 
-object FontFamily extends org.sufrin.logging.Loggable {
+object FontFamily extends logging.Loggable {
   private val cache=collection.mutable.LinkedHashMap[(String, FontStyle, Scalar), Font]()
   def apply(name: String="Menlo"): FontFamily = new FontFamily(name)
   def fonts: Seq[String] = {

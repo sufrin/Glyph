@@ -10,10 +10,10 @@ import styled.StringLog
 import styled.CheckBox
 import NaturalSize.{Col, Grid, Row}
 import GlyphTypes.Scalar
-import Glyphs.{Concentric, FilledRect, Polygon, Rect, RRect}
+import org.sufrin.glyph.unstyled.static.{Concentric, FilledRect, Polygon, Rect, RRect}
 
 import io.github.humbleui.skija.PaintStrokeCap
-import org.sufrin.glyph.Glyphs
+import org.sufrin.glyph.unstyled.static
 
 class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: StyleSheet = style.buttonSheet.copy(fontScale = 0.8f)

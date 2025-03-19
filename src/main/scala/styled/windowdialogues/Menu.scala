@@ -2,9 +2,9 @@ package org.sufrin.glyph
 package styled.windowdialogues
 
 import Location.Location
-import ReactiveGlyphs.{GenericButton, RawButton}
+import unstyled.reactive.{GenericButton, RawButton}
 
-import org.sufrin.glyph.DefaultBrushes.{lightGrey, yellow}
+import DefaultBrushes.{lightGrey, yellow}
 
 /**
  *

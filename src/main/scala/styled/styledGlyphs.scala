@@ -1,14 +1,15 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 package styled
+import unstyled.{dynamic, reactive}
 
 /** Intermediate definitions refactored from `styled` by (more or less) substitution */
 
 import DefaultBrushes.nothing
-import BooleanGlyphs._
-import ReactiveGlyphs.{Reaction,Enterable}
+import unstyled.BooleanGlyphs._
+import unstyled.reactive.{Reaction,Enterable}
 import styles.GlyphStyle
-
-import org.sufrin.utility.TextAbbreviations
+import utility.TextAbbreviations
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -107,9 +108,9 @@ case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = tr
     @inline def enlarged(glyph: Glyph): Glyph = glyph.enlarged(detail.border, nothing, nothing)
     val button =
       if (exact)
-        Decorate(ReactiveGlyphs.RawButton.exact(enlarged(up), enlarged(down), enlarged(hover))(action))
+        Decorate(reactive.RawButton.exact(enlarged(up), enlarged(down), enlarged(hover))(action))
       else
-        Decorate(ReactiveGlyphs.RawButton(enlarged(up), enlarged(down), enlarged(hover))(action))
+        Decorate(reactive.RawButton(enlarged(up), enlarged(down), enlarged(hover))(action))
     button
   }
 }
@@ -121,9 +122,9 @@ case class MenuGlyphButton(up: Glyph, down: Glyph = null, hover: Glyph = null, e
     @inline def reify(glyph: Glyph): Glyph = (if (glyph eq null) up() else glyph).enlarged(detail.border, nothing, nothing)
     val button =
       if (exact)
-        (ReactiveGlyphs.RawButton.exact(reify(up), reify(down), reify(hover))(action))
+        (reactive.RawButton.exact(reify(up), reify(down), reify(hover))(action))
       else
-        (ReactiveGlyphs.RawButton(reify(up), reify(down), reify(hover))(action))
+        (reactive.RawButton(reify(up), reify(down), reify(hover))(action))
     button
   }
 }
@@ -154,7 +155,7 @@ case class LightweightTextButton(text: String, hint: Hint=NoHint) extends styled
     val up     = detail.up.toGlyph(text, fg=detail.up.fg, bg=detail.up.bg)
     val down   = detail.down.fg
     val hover  = detail.hover.fg
-    val button = new ReactiveGlyphs.ColourButton(up, down, hover, react = action, background = false)
+    val button = new reactive.ColourButton(up, down, hover, react = action, background = false)
     hint(button)
     Decorate(button)
   }
@@ -174,7 +175,7 @@ case class TextButton(text: String, hint: Hint=NoHint) extends styled.StyledButt
     val up     = Decorate(detail.up.toGlyph(text))
     val down   = Decorate(detail.down.toGlyph(text))
     val hover  = Decorate(detail.hover.toGlyph(text))
-    val button = ReactiveGlyphs.RawButton(up, down, hover)(action)
+    val button = reactive.RawButton(up, down, hover)(action)
     hint(button)
     (button)
   }
@@ -185,7 +186,7 @@ case class DetailedTextButton(text: String, hint: Hint=NoHint) extends styled.De
     val up     = DecorateWithDetail(detail.buttonStyle.up.toGlyph(text))
     val down   = DecorateWithDetail(detail.buttonStyle.down.toGlyph(text))
     val hover  = DecorateWithDetail(detail.buttonStyle.hover.toGlyph(text))
-    val button = ReactiveGlyphs.RawButton(up, down, hover)(action)
+    val button = reactive.RawButton(up, down, hover)(action)
     hint(button)
     button
   }
@@ -201,7 +202,7 @@ case class LightweightMenuButton(text: String, hint: Hint=NoHint) extends styled
     val up     = detail.up.toGlyph(text, fg=detail.up.fg, bg=detail.up.bg)
     val down   = detail.down.fg
     val hover  = detail.hover.fg
-    val button = new ReactiveGlyphs.ColourButton(up, down, hover, react=action, background = false)
+    val button = new reactive.ColourButton(up, down, hover, react=action, background = false)
     hint(button)
     (button)
   }
@@ -217,7 +218,7 @@ case class MenuButton(text: String, hint: Hint=NoHint) extends styled.StyledButt
     val up = (detail.up.toGlyph(text))
     val down = (detail.down.toGlyph(text))
     val hover = (detail.hover.toGlyph(text))
-    val button=ReactiveGlyphs.RawButton(up, down, hover)(action)
+    val button=reactive.RawButton(up, down, hover)(action)
     hint(button)
     button
   }
@@ -264,7 +265,7 @@ object UniformSize {
     val buttons =
       for {i <- buttonSpecs.indices} yield {
         val button =
-          ReactiveGlyphs.RawButton(
+          reactive.RawButton(
             frame(upGlyphs(i)),
             frame(downGlyphs(i)),
             frame(hoverGlyphs(i)))(buttonSpecs(i).action)
@@ -292,9 +293,9 @@ object Label {
     import NaturalSize.Col
     val lines = text.split('\n').toList
     lines.length match {
-      case 1 => Text(text, detail.font).asGlyph(detail.fg, detail.bg)
+      case 1 => unstyled.Text(text, detail.font, detail.fg, detail.bg)
       case _ => {
-        val texts = lines.map { line => Text(line, detail.font).asGlyph(detail.fg, detail.bg) }
+        val texts = lines.map { line => unstyled.Text(line, detail.font, detail.fg, detail.bg) }
         Col(align=align, bg = detail.bg)(texts)
       }
     }
@@ -327,7 +328,7 @@ case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean, h
     val whenFFalse: Glyph = Label(whenFalse, Center, detail.down)
     val Vec(w, h) = (whenTTrue.diagonal union whenFFalse.diagonal)
 
-    BooleanGlyphs(
+    unstyled.BooleanGlyphs(
       new OnOff(whenTrue  =
         Decorate(whenTTrue.enlargedTo(w, h)),
                  whenFalse = Decorate(whenFFalse.enlargedTo(w, h)), initially = initially, fg = offFG, bg = offBG),
@@ -355,7 +356,7 @@ case class MenuTextToggle(whenTrue: String, whenFalse: String, initially: Boolea
     val whenFFalse: Glyph = Label(whenFalse, Center, detail.down)
     val Vec(w, h) = (whenTTrue.diagonal union whenFFalse.diagonal)
 
-    BooleanGlyphs(
+    unstyled.BooleanGlyphs(
       new OnOff(
         whenTrue  = (whenTTrue.enlargedTo(w, h)),
         whenFalse = (whenFFalse.enlargedTo(w, h)), initially = initially, fg = offFG, bg = offBG),
@@ -368,13 +369,12 @@ case class MenuTextToggle(whenTrue: String, whenFalse: String, initially: Boolea
 }
 
 case class GlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean, hint: Hint = NoHint) extends ToggleButton {
-  import BooleanGlyphs._
 
   def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
     val ww=whenTrue.w max whenFalse.w
     val hh=whenTrue.h max whenFalse.h
     val detail = sheet.buttonStyle
-    BooleanGlyphs(new OnOff(whenTrue=Decorate(whenTrue.enlargedTo(ww,hh)),
+    unstyled.BooleanGlyphs(new OnOff(whenTrue=Decorate(whenTrue.enlargedTo(ww,hh)),
                             whenFalse=Decorate(whenFalse.enlargedTo(ww,hh)),
                             initially=initially, fg=DefaultBrushes.nothing, bg=DefaultBrushes.nothing
                            ),
@@ -388,13 +388,12 @@ case class GlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean, hi
 
 /** A glyphtoggle destined for a menu: defers decoration  */
 case class MenuGlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean, hint: Hint = NoHint) extends ToggleButton {
-  import BooleanGlyphs._
 
   def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
     val ww=whenTrue.w max whenFalse.w
     val hh=whenTrue.h max whenFalse.h
     val detail = sheet.buttonStyle
-    BooleanGlyphs(new OnOff(
+    unstyled.BooleanGlyphs(new OnOff(
       whenTrue=(whenTrue.enlargedTo(ww,hh)),
       whenFalse=(whenFalse.enlargedTo(ww,hh)),
       initially=initially, fg=DefaultBrushes.nothing, bg=DefaultBrushes.nothing),

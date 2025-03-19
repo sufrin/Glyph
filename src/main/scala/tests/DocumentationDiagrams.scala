@@ -1,9 +1,10 @@
 package org.sufrin.glyph
 package tests
-import Glyphs._
+import unstyled.static._
 import GlyphTypes._
 
-import org.sufrin.glyph.DefaultBrushes.{blueLine, lightGrey, redFrame}
+import DefaultBrushes.{blueLine, lightGrey, redFrame}
+import unstyled.Text
 
 
 /**
@@ -11,7 +12,7 @@ import org.sufrin.glyph.DefaultBrushes.{blueLine, lightGrey, redFrame}
  */
 object DocumentationDiagrams {
 
-  import dynamic.OneOf
+  import unstyled.dynamic.OneOf
   import GlyphTransforms.Framed
   import NaturalSize.Col
   import PolygonLibrary._
@@ -77,7 +78,7 @@ object DocumentationDiagrams {
     }
 
   def writeSample(path: String)(glyph: Glyph, caption: String): Unit = {
-    def text(line: String): Glyph = (theText(s" $line ").asLabel(black))
+    def text(line: String): Glyph = (theText(s" $line ").copy(black))
     lazy val label = Col.aligned(0.0f, caption.split("[\n]").toList.map(text))
     val dir = "PNG"
     External.renderBitmap(Col(align=Center)(label, Skip(5), Scaled(0.5f)(Label(s"${glyph.diagonal}", fg=black)), Skip(10), glyph), s"${dir}/$path", scale = 5.0f)
@@ -239,13 +240,13 @@ object DocumentationDiagrams {
     val text2 = text("A 12pt Text", 12.0f)
     def em    = Skip(font(18f).measureTextWidth("m"))
 
-    write("text1.png")(Framed(grey, nothing)(text1.asGlyph(blue)), "Framed(grey)(text1.asGlyph(blue))")
-    write("text1b.png")(Row(align=Bottom)(Skip(48), Framed(grey, nothing)(text1.atBaseline(blue))), "Row.Bottom(Skip(48), Framed(grey)(text1.atBaseline(blue)))")
-    write("text1a.png")(Framed(grey, nothing)(Row(text1.atBaseline(blue))), "Framed(grey)(Row(text1.atBaseline(blue))")
-    write("textrow1.png")(Framed(grey, nothing)(Row(text1.atBaseline(), em, text2.atBaseline())), """Framed(grey)(Row(text1.atBaseline, em, text2.atBaseline))""")
-    write("textrow2.png")(Framed(grey, nothing)(Row(text1.asGlyph(), em, text2.asGlyph())), """Framed(grey)(Row(text1.asGlyph(), em, text2.asGlyph()))""")
-    write("textrow3.png")(Framed(grey, nothing)(Row(align=Bottom)(text1.asGlyph(), em, text2.asGlyph())), """Framed(grey)(Row.Bottom(text1.asGlyph, em, text2.asGlyph)""")
-    write("textrow1a.png")(Framed(grey, nothing)(Row(align=Mid)(text1.atBaseline(), em, text2.atBaseline(blue))), """Framed(grey)(Row(align=Mid)(text1.atBaseline, em, text2.atBaseline)""")
+    write("text1.png")(Framed(grey, nothing)(text1.copy(blue)), "Framed(grey)(text1.asGlyph(blue))")
+    write("text1b.png")(Row(align=Bottom)(Skip(48), Framed(grey, nothing)(text1.copy(blue))), "Row.Bottom(Skip(48), Framed(grey)(text1.atBaseline(blue)))")
+    write("text1a.png")(Framed(grey, nothing)(Row(text1.copy(blue))), "Framed(grey)(Row(text1.atBaseline(blue))")
+    write("textrow1.png")(Framed(grey, nothing)(Row(text1.copy(), em, text2.copy())), """Framed(grey)(Row(text1.atBaseline, em, text2.atBaseline))""")
+    write("textrow2.png")(Framed(grey, nothing)(Row(text1.copy(), em, text2.copy())), """Framed(grey)(Row(text1.asGlyph(), em, text2.asGlyph()))""")
+    write("textrow3.png")(Framed(grey, nothing)(Row(align=Bottom)(text1.copy(), em, text2.copy())), """Framed(grey)(Row.Bottom(text1.asGlyph, em, text2.asGlyph)""")
+    write("textrow1a.png")(Framed(grey, nothing)(Row(align=Mid)(text1.copy(), em, text2.copy(blue))), """Framed(grey)(Row(align=Mid)(text1.atBaseline, em, text2.atBaseline)""")
 
     val down = Variable(false)
     write("dynamic.png")((Shaded.Dynamic(fg=blue, bg=nothing, delta=10f, down=down)(FilledRect(150, 150, red))))

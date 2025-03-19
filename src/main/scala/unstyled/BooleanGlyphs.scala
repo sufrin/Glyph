@@ -1,12 +1,9 @@
 package org.sufrin.glyph
+package unstyled
 
 import DefaultBrushes.nothing
 
 object BooleanGlyphs {
-
-    import ReactiveGlyphs.{GenericButton, RawButton}
-
-    import javax.swing.AbstractButton
 
 
     /** A settable `OneOf`  showing `whenTrue` if on, and `whenFalse` if off */
@@ -30,7 +27,7 @@ object BooleanGlyphs {
 
     /** A button used to "drive" a `OnOff` */
     class OnOffButton(tickBox: OnOff, initially: Boolean, fg: Brush, bg: Brush, reaction: Boolean => Unit)
-      extends RawButton(tickBox.oneOf, tickBox.oneOf, tickBox.oneOf, fg, bg=nothing,
+      extends unstyled.reactive.RawButton(tickBox.oneOf, tickBox.oneOf, tickBox.oneOf, fg, bg=nothing,
                         react = { _ => reaction(tickBox.invert()) })
       with Settable[Boolean] {
       def set(state: Boolean): Unit = tickBox.set(state)
@@ -51,4 +48,5 @@ object BooleanGlyphs {
        hint(button)
        button
     }
+
 }

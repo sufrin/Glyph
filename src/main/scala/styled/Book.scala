@@ -3,6 +3,8 @@ package styled
 
 import NaturalSize.nothing
 
+import unstyled.static
+
 
 case class BookSheet(buttonSheet:  StyleSheet, pageSheet: StyleSheet)
 
@@ -64,7 +66,7 @@ trait Book {
 //    pages.toList.map(button(_))
 //  }
 
-  import dynamic.OneOf
+  import unstyled.dynamic.OneOf
 
   /**
    * In principle `buttons(i)` has a reaction `oneOf.select(i)`. This
@@ -85,7 +87,7 @@ trait Book {
   def buttonedBook(buttonAlign: Alignment=Justify, pageAlign: Alignment)(implicit sheet: BookSheet): BookComponents = {
     implicit val style: StyleSheet = sheet.buttonSheet
     val glyphs: Seq[Glyph] = pages.toList.map(_.root())
-    val oneOf = dynamic.OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
+    val oneOf = OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
     val keyed = (0 until glyphs.length) zip pages
     val uniform = buttonAlign==Justify
 
@@ -129,7 +131,7 @@ trait Book {
   def checkBoxedBook(buttonAlign: Alignment=Left, pageAlign: Alignment=Center)(implicit sheet: BookSheet): BookComponents = {
     implicit val style: StyleSheet = sheet.buttonSheet
     val glyphs: Seq[Glyph] = pages.toList.map(_.root())
-    val oneOf = dynamic.OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
+    val oneOf = OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
 
     val radio = RadioCheckBoxes(pages.toList.map(_.title), prefer=pages.head.title){
       case Some(n) => oneOf.select(n)
@@ -175,7 +177,7 @@ trait Book {
     val dividerBlack = Brush("dividerblack")(color=0xFF770000, width=4)
 
     def blackLine(width: Scalar, height: Scalar): Glyph = {
-      Glyphs.Polygon(width, height, fg=dividerBlack)((0,0), (width,0), (width, height), (0, height), (0,0))
+      static.Polygon(width, height, fg=dividerBlack)((0,0), (width,0), (width, height), (0, height), (0,0))
     }
 
     /**

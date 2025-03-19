@@ -6,12 +6,12 @@ import styled.windowdialogues.Dialogue
 
 import Dialogue.{OK, POPUP}
 import NaturalSize.{Col, Grid, Row}
-import Glyphs.{FilledRect, INVISIBLE, Rect}
+import org.sufrin.glyph.unstyled.static.{FilledRect, INVISIBLE, Rect}
 
 import org.sufrin.glyph.DefaultBrushes.{nothing, redFrame, ROUND}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.HintManager
-import org.sufrin.glyph.ReactiveGlyphs.Reaction
+import org.sufrin.glyph.unstyled.reactive.Reaction
 
 
 class ButtonStyles (implicit val style: BookSheet, implicit val translation: glyphXML.Translation) {

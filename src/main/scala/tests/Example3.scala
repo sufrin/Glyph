@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 package tests
-import Glyphs.Rect
+import unstyled.static.Rect
 import NaturalSize.{Col, Row}
 import DefaultBrushes._
 

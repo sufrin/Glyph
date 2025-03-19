@@ -1,12 +1,11 @@
 package org.sufrin.glyph
+package unstyled
 
 import GlyphTypes.Scalar
 
-import org.sufrin.glyph.DefaultBrushes.nothing
+/** A collection of static `Glyph` constructors */
 
-/** A collection of `Glyph` constructors */
-
-object Glyphs  {
+object static  {
 
   class Image(glyph: Glyph) extends Glyph {
     val theImage = External.glyph2Image(glyph)
@@ -506,10 +505,6 @@ object Glyphs  {
 
   object Polygon extends DefaultPaints {
 
-    import Glyphs.FilledPolygon.{defaultBG, defaultFG}
-
-    import scala.collection.mutable
-
     val NOTHING = Brush("Nothing") col 0x00
 
     def diagonal(diagonal: Vec, fg: Brush = defaultFG, bg: Brush = defaultBG)(vertices: Iterable[Vec]): Glyph =
@@ -566,8 +561,6 @@ object Glyphs  {
 
   object FilledPolygon extends DefaultPaints {
 
-    import scala.collection.mutable
-
     val NOTHING = Brush("Nothing") col 0x00
 
     def diagonal(diagonal: Vec, fg: Brush = defaultFG, bg: Brush = defaultBG)(vertices: Iterable[Vec]): Glyph =
@@ -612,7 +605,7 @@ object Glyphs  {
     import io.github.humbleui.skija.Font
 
     def apply(text: String, font: Font = DefaultBrushes.buttonFont, fg: Brush = defaultFG, bg: Brush = defaultBG): Glyph =
-        Text(text, font).asLabel(fg, bg)
+        unstyled.Text(text, font, fg, bg)
   }
 
   /**

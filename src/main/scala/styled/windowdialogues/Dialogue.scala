@@ -1,9 +1,10 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 package styled.windowdialogues
 
 import io.github.humbleui.jwm.Screen
-import org.sufrin.glyph.ReactiveGlyphs.GenericButton
-import org.sufrin.logging.Loggable
+import unstyled.reactive.GenericButton
+import logging.Loggable
 
 import javax.annotation.processing.Generated
 
@@ -89,7 +90,7 @@ class Dialogue[T](blurb:        Glyph,
    * Make a primitive popup from `blurb` atop `bottomRow`; placing it at `location` on the screen.
    */
 
-  import Glyphs.Label
+  import unstyled.static.Label
   import GlyphTypes.Pixels
   import NaturalSize.{Col, Row}
 

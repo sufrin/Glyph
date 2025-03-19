@@ -1,7 +1,8 @@
 package org.sufrin.glyph
-import ReactiveGlyphs.Enterable
+import unstyled.reactive.Enterable
 
-import org.sufrin.glyph.Glyphs.{FilledRect, INVISIBLE}
+import unstyled.static
+import static.{FilledRect, INVISIBLE}
 
 /**
  *
@@ -79,7 +80,7 @@ object HintManager {
   def apply(target: Enterable, seconds: Double, hint: ()=>String, constant: Boolean = true)(implicit style: StyleSheet): HintManager = {
       new HintManager(
       target,
-        ()=>Glyphs.Label(hint(), style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),
+        ()=>static.Label(hint(), style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),
       seconds,
       constant)
   }

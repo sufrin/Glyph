@@ -1,4 +1,5 @@
 package org.sufrin.glyph
+package unstyled
 
 import GlyphTypes.{Font, Scalar}
 
@@ -13,7 +14,9 @@ object Text extends DefaultPaints {
    * @param fg
    * @param bg
    * @param transient true if there is no point in sharing this `(string,font)`'s IMPLEMENTATION with those of
-   *                  others. The space saving afforded by sharing can be considerable.
+   *                  others. The space saving afforded by sharing can be considerable when using `glyphXML` constructs or
+   *                  `SimpleParagraphs` constructs, because each "word" is represented by an individual `Text`, whose
+   *                  implementation is a `skija.TextLine`.
    * @return
    */
   def apply(string: String, font: Font, fg: Brush = defaultFG, bg: Brush = defaultBG, transient: Boolean=false) = new Text(string, font, fg, bg, transient)
@@ -22,34 +25,9 @@ object Text extends DefaultPaints {
 
 }
 
-  trait TextGlyph extends Glyph {
 
-    val implementation: io.github.humbleui.skija.TextLine
 
-    /**
-     * The index of the character (Unicode codepoint) whose visual representation is laterally offset by `distance` from the
-     * start of the displayed text.
-     */
-    def charIndexOf(distance: Scalar): Int = implementation.getOffsetAtCoord(distance)
-
-    /**
-     * The lateral offset from the start of the displayed text of the visual representation of the `index`th character
-     * of the string.
-     *
-     * {{{
-     *   charIndexOf(lateralOffsetOf(n)) = n (for 0<=n<string.length)
-     * }}}
-     */
-    def lateralOffsetOf(index: Int): Scalar = implementation.getCoordAtOffset(index)
-
-    /**
-     * Font-specific identifiers of the individual characters of the text. "These IDs
-     * help in rendering text efficiently".
-     */
-    def glyphIDs: Seq[Short] = implementation.getGlyphs.toSeq
-  }
-
-  class Text(val string: String, val font: Font, val fg: Brush, val bg: Brush, transient: Boolean) extends TextGlyph {
+class Text(val string: String, val font: Font, val fg: Brush, val bg: Brush, transient: Boolean) extends TextInterface {
     theText: Text =>
     import io.github.humbleui.skija.TextLine
 
@@ -87,13 +65,13 @@ object Text extends DefaultPaints {
     /**
      * OBSOLETE: same as this.copy(fg, bg)
      */
-    def atBaseline(fg: Brush = this.fg, bg: Brush = this.bg): Glyph = this.copy(fg, bg)
+    @deprecated("Obsolete") def atBaseline(fg: Brush = this.fg, bg: Brush = this.bg): Glyph = this.copy(fg, bg)
     /**
      * OBSOLETE: same as this.copy(fg, bg)
      */
-    def asGlyph(fg: Brush = this.fg, bg: Brush = this.bg): Glyph = this.copy(fg, bg)
+    @deprecated("Obsolete") def asGlyph(fg: Brush = this.fg, bg: Brush = this.bg): Glyph = this.copy(fg, bg)
     /**
      * OBSOLETE: same as this.copy(fg, bg)
      */
-    def asLabel(fg: Brush = this.fg, bg: Brush = this.fg): Glyph = this.copy(fg, bg)
-  }
+    @deprecated("Obsolete") def asLabel(fg: Brush = this.fg, bg: Brush = this.fg): Glyph = this.copy(fg, bg)
+}

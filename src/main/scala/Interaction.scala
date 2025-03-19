@@ -1,9 +1,9 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 import GlyphTypes.Scalar
 
 import io.github.humbleui.jwm.{App, Platform, Window}
-import org.sufrin.logging.Loggable
 
 /**
  * When started, an `Interaction` hosts the given GUI root glyph
@@ -154,7 +154,7 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
 
 }
 
-object Interaction extends Loggable {
+object Interaction extends logging.Loggable {
 
 }
 

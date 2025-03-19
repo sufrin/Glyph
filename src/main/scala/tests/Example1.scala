@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 package tests
 
-import Glyphs.Label
+import unstyled.static.Label
 
 object Example1 extends Application  {
   val font = FontFamily("Courier").makeFont(size=32)

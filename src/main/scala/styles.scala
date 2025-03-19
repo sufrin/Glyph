@@ -41,7 +41,7 @@ package styles
 
   /** Universal style for a glyph that has a foreground and a background (and may have a font) */
   case class GlyphStyle(font: Font, fg: Brush, bg: Brush) extends Spaces {
-    def toGlyph(string: String, fg: Brush = fg, bg: Brush = bg): Glyph = Text(string, font).asGlyph(fg, bg)
+    def toGlyph(string: String, fg: Brush = fg, bg: Brush = bg): Glyph = unstyled.Text(string, font, fg, bg)
 
     lazy val emWidth: Scalar = font.measureTextWidth("M")
     /** height of an X  in the button font */
@@ -65,6 +65,9 @@ package styles
    * other components as they are being constructed.
    */
   package decoration {
+
+    import unstyled.static
+
     /** The decoration applied to a glyph */
     trait Decoration {
       def decorate(glyph: Glyph): Glyph
@@ -134,7 +137,7 @@ package styles
 
       def decorate(glyph: Glyph): Glyph = {
         val enlargement = if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge
-        Glyphs.BlurredFrame(blur, spread, fg, bg, dx = delta, dy = delta)(glyph enlarged enlargement)
+        static.BlurredFrame(blur, spread, fg, bg, dx = delta, dy = delta)(glyph enlarged enlargement)
       }
     }
 

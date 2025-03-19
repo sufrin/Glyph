@@ -1,8 +1,9 @@
-package org.sufrin.glyph
-package windowdialogues
+package org.sufrin
+package glyph
+package unstyled.windowdialogues
 
 import io.github.humbleui.jwm.Screen
-import org.sufrin.logging.Loggable
+import logging.Loggable
 
 /**
  *   A running dialogue is a glyph-tree contained in its own top-level window, and
@@ -64,7 +65,7 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
    * Make a primitive popup from `blurb` atop `bottomRow`; placing it at `location` on the screen.
    */
 
-    import Glyphs.Label
+    import org.sufrin.glyph.unstyled.static.Label
     import GlyphTypes.Pixels
     import NaturalSize.{Col, Row}
 

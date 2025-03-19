@@ -9,7 +9,7 @@ import NaturalSize.{Col, Row}
 import styled.Book
 import styled.BookSheet
 import styled.{CheckBox, MenuButton, MenuGlyphButton}
-import Glyphs._
+import org.sufrin.glyph.unstyled.static._
 import DefaultBrushes.{blue, nothing, red, redLine, yellow}
 
 import org.sufrin.glyph.styles.decoration
@@ -276,7 +276,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
 
   Page("Annotation", "") {
 
-    import BooleanGlyphs.OnOffButton
+    import unstyled.BooleanGlyphs.OnOffButton
     val anchor = INVISIBLE()
 
     var gridAnnotation: Option[RootLayer] = None

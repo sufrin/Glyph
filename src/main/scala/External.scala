@@ -1,4 +1,5 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 /**
  *  Rendering on external media
@@ -33,7 +34,7 @@ object External {
 
   /** DOES NOT WORK */
   @deprecated("malfunctioning") def glyph2SVG(glyph: Glyph, path: java.nio.file.Path): Unit = {
-    import Glyphs.Label
+    import unstyled.static.Label
 
     import io.github.humbleui.skija.OutputWStream
     import io.github.humbleui.skija.svg.SVGCanvas

@@ -1,16 +1,17 @@
 package org.sufrin.glyph
+package unstyled
 
 import io.github.humbleui.jwm.{EventMouseScroll, Window}
 
 /**
  *  A collection of `Reactive` glyph types.
  */
-object ReactiveGlyphs {
+object reactive {
 
   type Reaction = Modifiers.Bitmap => Unit
 
-  import GlyphTypes.Scalar
   import DefaultBrushes._
+  import GlyphTypes.Scalar
 
   /**
    *  A mixin for reactive glyphs that can make nonstandard responses to
@@ -140,7 +141,6 @@ object ReactiveGlyphs {
       _hint = if (hint eq null) None else Some(hint)
 
     override def accept(event: GlyphEvent, location: Vec, window: Window): Unit = {
-      import Modifiers._
       modifiers = Modifiers(event)
       //println(s"$event ${modifiers.toLongString}")
       if (!disabled) {
@@ -170,7 +170,7 @@ object ReactiveGlyphs {
     val hover: Brush = DefaultBrushes.buttonHover()
     val bg:    Brush = DefaultBrushes.buttonBackground
     def apply(text: String, up: Brush=up, down: Brush=down, hover: Brush=hover, bg: Brush = bg, background: Boolean = true, hint: Hint=NoHint)(react: Reaction): ReactiveGlyph = {
-        val glyph: Glyph = DefaultBrushes.buttonText(text).asGlyph(up, bg)
+        val glyph: Glyph = DefaultBrushes.buttonText(text, up, bg)
         val button = new ColourButton(glyph, down, hover, background, react)
         hint(button)
         button
@@ -388,7 +388,7 @@ object ReactiveGlyphs {
 
     def apply(text: String, fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, background: Boolean = true)
              (reaction: Reaction): ColourButton = {
-         val up = DefaultBrushes.buttonText(text).asGlyph(fg, bg).enlarged(DefaultBrushes.upFrame.strokeWidth * 4)
+         val up = DefaultBrushes.buttonText(text, fg, bg).enlarged(DefaultBrushes.upFrame.strokeWidth * 4)
          //new RawButton(up, up(fg = red), up(fg = green), up.fg, up.bg, reaction)
          new ColourButton(up, red, green, background, reaction)
        }
@@ -405,7 +405,7 @@ object ReactiveGlyphs {
 
     /** A framed button whose up, down, and hover glyphs are all `text` */
     def apply(text: String, fg: Brush=DefaultBrushes.buttonForeground, bg: Brush=DefaultBrushes.buttonBackground)(reaction: Reaction): RawButton = {
-      val up = DefaultBrushes.buttonText(text).asGlyph(fg, bg).enlarged(DefaultBrushes.upFrame.strokeWidth*4)
+      val up = DefaultBrushes.buttonText(text, fg, bg).enlarged(DefaultBrushes.upFrame.strokeWidth*4)
       new RawButton(
         up.framed(DefaultBrushes.upFrame),
         up().framed(DefaultBrushes.downFrame),
@@ -425,12 +425,12 @@ object ReactiveGlyphs {
 
   object ShadedButton extends DefaultPaints {
 
-    import Glyphs.Shaded
+    import org.sufrin.glyph.unstyled.static.Shaded
 
     /** A button with a shaded presentation, and `text` as its caption */
     def apply(text: String, fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, delta: GlyphTypes.Scalar=6f)(reaction: Reaction): RawButton = {
-      val up    = Shaded.Static(fg, bg, delta, false)(DefaultBrushes.buttonText(text).asGlyph(fg, bg))
-      val down  = Shaded.Static(fg, bg, delta, true)(DefaultBrushes.buttonText(text).asGlyph(fg, bg))
+      val up    = Shaded.Static(fg, bg, delta, false)(DefaultBrushes.buttonText(text, fg, bg))
+      val down  = Shaded.Static(fg, bg, delta, true)(DefaultBrushes.buttonText(text, fg, bg))
       val hover = up.copy()
       RawButton(up, down, hover) (reaction)
     }
@@ -492,7 +492,6 @@ object ReactiveGlyphs {
     }
 
     override def accept(mouse: EventMouseButton, location: Vec, window: Window): Unit = {
-      import Modifiers._
       modifiers = Modifiers(mouse)
       //println(s"${modifiers.toLongString}")
       if (!disabled) {
@@ -509,7 +508,6 @@ object ReactiveGlyphs {
 
 
     override def accept(event: GlyphEvent, location: Vec, window: Window): Unit = {
-      import Modifiers._
       modifiers = Modifiers(event)
       //println(s"$event ${modifiers.toLongString}")
       if (!disabled) {

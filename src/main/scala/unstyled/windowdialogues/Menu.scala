@@ -1,8 +1,8 @@
-package org.sufrin.glyph.windowdialogues
+package org.sufrin.glyph.unstyled.windowdialogues
 
 import org.sufrin.glyph._
 import Location._
-import ReactiveGlyphs._
+import org.sufrin.glyph.unstyled.reactive._
 
 /**
  *

@@ -2,14 +2,14 @@ package org.sufrin.glyph
 package tests
 
 import glyphXML.Translation.AttributeMap
-import Glyphs.INVISIBLE
+import org.sufrin.glyph.unstyled.static.INVISIBLE
 import glyphXML.{Macro, Translation}
 import styled.windowdialogues.Dialogue
 
 import org.sufrin.glyph.styled.{Book, BookSheet, TextButton}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.Location.Location
-import org.sufrin.glyph.windowdialogues.Dialogue
+import org.sufrin.glyph.unstyled.windowdialogues.Dialogue
 
 object glyphXMLTest extends Application {
     import xml._

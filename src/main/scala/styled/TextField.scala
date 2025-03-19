@@ -1,7 +1,8 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 package styled
 
-import org.sufrin.utility.TextAbbreviations
+import utility.TextAbbreviations
 
 
 /**

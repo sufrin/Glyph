@@ -1,4 +1,5 @@
 package org.sufrin.glyph
+import unstyled.Text
 
 import DefaultBrushes.{blue, nothing}
 import GlyphTypes.{Font, Scalar}
@@ -34,7 +35,7 @@ object SimpleParagraphs {
    * }}}
    */
   def apply(ems: Int, font: Font = DefaultBrushes.buttonFont, fg: Brush = blue, bg: Brush = nothing, align: Alignment=Justify)(text: String): Glyph = {
-    val emWidth = Text("n", font).w
+    val emWidth = unstyled.Text("n", font).w
 
     def paragraphLines(ems: Int, text: String, align: Alignment): Seq[Glyph] = {
       val words = Stream[String](text.trim.split("""[ ]+"""))

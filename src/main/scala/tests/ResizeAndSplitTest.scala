@@ -5,12 +5,13 @@ import styled.{Book, BookSheet, Paragraph, TextButton}
 import DefaultBrushes.{black, blackFrame, buttonPointSize, darkGrey, nothing, red, redFrame, white}
 import GlyphTypes.Scalar
 import NaturalSize.{Col, Row}
-import dynamic.SplitScreen
+import unstyled.dynamic.SplitScreen
 
 import io.github.humbleui.jwm.EventKey
 import org.sufrin.glyph.styles.decoration.Edged
-import org.sufrin.glyph.Glyphs.Image
+import org.sufrin.glyph.unstyled.static.Image
 import org.sufrin.glyph.styled.Label.Label
+import org.sufrin.glyph.unstyled.static._
 
 /**
  * Demonstrates that a SplitScreen can function properly.
@@ -37,7 +38,7 @@ object ResizeAndSplitTest extends Application {
 
     val enlargement: Scalar = 30f
 
-    import ReactiveGlyphs.Slider
+    import org.sufrin.glyph.unstyled.reactive.Slider
 
     lazy val enableDynamic: Glyph = styled.CheckBox(initially=false) {
       state => enableDynamic.guiRoot.autoScale = state
@@ -67,8 +68,8 @@ object ResizeAndSplitTest extends Application {
       styled.TextButton("The Right Button") { _ =>  println("RIGHT") }
 
     val dynamic = SplitScreen(left enlarged 30, right enlarged 30, dynamic=true, fg=darkGrey.strokeWidth(6f))
-    def blob    = Glyphs.FilledRect(28f, 14f, fg=black.blurred(6f))
-    val slider  = Slider.Horizontal(Glyphs.Rect(dynamic.w, 2f), blob, dynamic.proportion){
+    def blob    = FilledRect(28f, 14f, fg=black.blurred(6f))
+    val slider  = Slider.Horizontal(Rect(dynamic.w, 2f), blob, dynamic.proportion){
       case proportion: Scalar => dynamic.setBoundary(proportion)
     }
 
@@ -128,7 +129,7 @@ object ResizeAndSplitTest extends Application {
         image enlarged 20 edged black(width=2).dashed(5,5)
     }
 
-    val viewPort = dynamic.ViewPort(resizeable, fg=redFrame, initialPortDiagonal = resizeable.diagonal)
+    val viewPort = unstyled.dynamic.ViewPort(resizeable, fg=redFrame, initialPortDiagonal = resizeable.diagonal)
 
     val widths = List(80, 70, 60, 50, 40, 30, 20)
     val radioWidths  = styled.RadioCheckBoxes(widths.map{ems => s"${ems}ems"}, prefer = "70ems"){

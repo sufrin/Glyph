@@ -4,11 +4,12 @@ package tests
 import NaturalSize.{Col, Row}
 
 import org.sufrin.glyph.DefaultBrushes.{black, blackFrame, redFrame}
-import org.sufrin.glyph.ReactiveGlyphs.TextButton
+import org.sufrin.glyph.unstyled.reactive.TextButton
 import org.sufrin.glyph.styled.{Label, Resizeable}
 import org.sufrin.glyph.styles.decoration.Edged
-import org.sufrin.glyph.Glyphs.{Concentric, FilledRect, Rect}
+import org.sufrin.glyph.unstyled.static.{Concentric, FilledRect, Rect}
 import org.sufrin.glyph.Location.East
+import org.sufrin.glyph.unstyled.static
 
 import scala.xml.Elem
 
@@ -66,7 +67,7 @@ object ResizeableWIndowTest extends Application {
       }
       Col(
         FixedSize.Row(w).Mid(wider, em, bigger, em, narrower, em, smaller, hFill(), Label(s"[$w]"), hFill(), about),
-        Glyphs.Rect(w, 2, fg=black)
+        static.Rect(w, 2, fg=black)
       )
     },
     <div width="1*container.width" align="justify">

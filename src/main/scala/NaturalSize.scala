@@ -3,6 +3,8 @@ package org.sufrin.glyph
 import scala.collection.mutable.ArrayBuffer
 import GlyphTypes.Scalar
 
+import unstyled.static
+
 /* The Row and Col APIs are designed so that most of the characteristics of the Row(Col) can
  * be pre-set, thereby making it possible to apply them either to an unbounded number of
  * actual glyphs, or to a sequence of glyphs computed elsewhere.
@@ -300,7 +302,7 @@ object NaturalSize {
           else
             (Math.sqrt(glyphs.length).ceil.toInt, false)
 
-      val pad: Glyph   = Glyphs.INVISIBLE()
+      val pad: Glyph   = static.INVISIBLE()
       val (rs, cs)     = GridUtils.asRows[Glyph](pad)(rowLength, glyphs)
       val (rows, cols) = if (transpose) (cs, rs) else (rs, cs)
       val colWidths    = cols.map(col=>padx+Measure.maxWidth(col))

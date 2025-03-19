@@ -6,6 +6,7 @@ import Location._
 import NaturalSize.{Col, Row}
 
 import io.github.humbleui.jwm.{App, EventMouseScroll}
+import unstyled.{static, reactive}
 
 
 /**
@@ -26,7 +27,7 @@ object Dialogue {
   def POPUP[T](guiRoot: Glyph, bottomRow: Seq[Glyph]): Dialogue[T] =
     new Dialogue[T](Col(align=Center)(guiRoot, Row(Top)(bottomRow)), closeGlyph = Some(defaultCloseGlyph))
 
-  import ReactiveGlyphs.GenericButton
+  import reactive.GenericButton
 
   /**
    * If `glyph` is an `AbstractButton` and glyph.isMenuButton` then make `continue` its continuation: that is,
@@ -91,7 +92,7 @@ object Dialogue {
       // Reactivate the button when the menu is popped down
       onClose{ _ =>
         button match {
-          case b: ReactiveGlyphs.GenericButton =>
+          case b: reactive.GenericButton =>
                     b.inactive = false
                     b.hovered = false
           case _ =>
@@ -99,12 +100,12 @@ object Dialogue {
       }
     }
 
-    lazy val reaction: ReactiveGlyphs.Reaction = {
+    lazy val reaction: reactive.Reaction = {
       _ =>
         //println(s"Popping up $name at ${button.location}")
         // Deactivate the button when the menu is popped up
         button match {
-          case b: ReactiveGlyphs.GenericButton =>
+          case b: reactive.GenericButton =>
             b.inactive = true
             b.hovered  = false
             b.guiRoot.giveupFocus()
@@ -214,7 +215,7 @@ object Dialogue {
    */
   def CHOICE[T](blurb: Glyph)(choices: (T, Glyph)*): Dialogue[T] = {
     lazy val buttons = choices.map {
-      case (t, g) => ReactiveGlyphs.RawButton(g(), g(), g()) { _ => popup.close(t) }.framed().enlarged(20)
+      case (t, g) => reactive.RawButton(g(), g(), g()) { _ => popup.close(t) }.framed().enlarged(20)
     }
     lazy val popup: Dialogue[T] = POPUP(blurb, buttons)
     popup
@@ -248,7 +249,7 @@ class Dialogue[T](guiRoot:        Glyph,
 
 
   import NaturalSize.{Col, Row}
-  import ReactiveGlyphs.RawButton
+  import reactive.RawButton
 
   /**
    * This will be the reactive glyph, if any, that also responds to ESCAPE/HOME/END and the mousewheel
@@ -278,12 +279,12 @@ class Dialogue[T](guiRoot:        Glyph,
 
  protected val closeButtonAppearance: Glyph = closeGlyph match {
     case Some(glyph) =>
-      Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
-         Glyphs.FilledRect(guiRoot.w, glyph.h*1.2f, fg=DefaultBrushes.lightGrey, bg=DefaultBrushes.lightGrey), // TODO: 5f is a magic number
+      static.Concentric(rowAlign=Mid, colAlign=Center)(
+         static.FilledRect(guiRoot.w, glyph.h*1.2f, fg=DefaultBrushes.lightGrey, bg=DefaultBrushes.lightGrey), // TODO: 5f is a magic number
         glyph,
       )
     case None        =>
-      Glyphs.FilledRect(guiRoot.w-2, 5f, fg=DefaultBrushes.lightGrey, bg=DefaultBrushes.lightGrey)
+      static.FilledRect(guiRoot.w-2, 5f, fg=DefaultBrushes.lightGrey, bg=DefaultBrushes.lightGrey)
   }
 
   /**

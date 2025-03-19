@@ -10,11 +10,12 @@ import scala.xml.Elem
 import styled._
 
 import com.sun.source.util.SourcePositions
+import org.sufrin.glyph.unstyled.static
 
 
 class TextTool(implicit style: StyleSheet)  {
   implicit val pageStyle: BookSheet = BookSheet(style, style)
-  val anchor = Glyphs.INVISIBLE()
+  val anchor = static.INVISIBLE()
   val abbrev = new TextAbbreviations(onLineTrigger = true)
   abbrev("(c)") = "\u00A9"
   abbrev("\u00A9") = "(c)"
@@ -48,7 +49,7 @@ class TextTool(implicit style: StyleSheet)  {
       state => abbrev.onLineTrigger=state
     }
 
-  val textField: TextField = styled.TextField(size = 40, onEnter = { _ =>  }, onCursorLeave = { _ => anchor.guiRoot.giveupFocus() }, abbreviations = abbrev)
+  val textField: TextField = styled.TextField(size = 40, onEnter = { _ =>  }, onCursorLeave = { _ => anchor.guiRoot.giveupFocus() }, abbreviations = abbrev)(style.copy(fontScale = 1.5f))
   defs("TEXTFIELD") = _=>textField.framed()
 
 

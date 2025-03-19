@@ -1,4 +1,5 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 object NumberUtils {
   private val alph: Seq[String] =  ('A' to 'Z').map(_.toString)
@@ -72,7 +73,7 @@ object NumberUtils {
     s.toLowerCase.toList.map("0123456789abcdef".indexOf(_)).reduce (_ * 16 + _) // { (l,d) => (l * 16 + d)}
   }
 
-  import org.sufrin.utility.CharSequenceOperations._
+  import utility.CharSequenceOperations._
 
   /**
    * @param s  \uxxxx (where the x are hex digits)

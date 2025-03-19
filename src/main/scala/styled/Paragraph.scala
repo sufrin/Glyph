@@ -2,10 +2,8 @@ package org.sufrin.glyph
 package styled
 
 import GlyphTypes.{Font, Scalar}
-import dynamic.ActiveGlyph
+import unstyled.dynamic.ActiveGlyph
 
-import org.sufrin.glyph.DefaultBrushes.{blue, nothing}
-import org.sufrin.glyph.NaturalSize.Col
 
 import scala.collection.mutable.ListBuffer
 
@@ -18,7 +16,7 @@ object Paragraph {
   def apply(ems: Scalar, align: Alignment)(text: String)(implicit style: StyleSheet): Glyph = {
     val localSheet = style.copy(parWidth = ems*style.emWidth, parAlign = align)
     val glyphs = text.split("[\n ]+").filter(_.nonEmpty).toList.flatMap{
-      w => List(Text(w, style.textFont, style.textForegroundBrush, style.textBackgroundBrush), new FixedSize.Space(style.interWordWidth, 1f, 1f, 0f))
+      w => List(unstyled.Text(w, style.textFont, style.textForegroundBrush, style.textBackgroundBrush), new FixedSize.Space(style.interWordWidth, 1f, 1f, 0f))
     }
     glyphXML.Paragraph.fromGlyphs(localSheet, glyphs, None)
   }

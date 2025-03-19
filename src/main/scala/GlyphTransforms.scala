@@ -4,8 +4,9 @@ import DefaultBrushes.nothing
 import GlyphTypes._
 import NaturalSize.{Col, Row}
 
-import org.sufrin.glyph.Glyphs.{FilledRect, Rect}
-import org.sufrin.glyph.GlyphTransforms.{Framed, WithBaseline}
+import unstyled.static
+import static.{FilledRect, Rect}
+import GlyphTransforms.{Framed, WithBaseline}
 
 /**
  *  As a notational convenience. `Glyphs` have intrinsic transforms that correspond to the external transformers implemented
@@ -150,7 +151,7 @@ object GlyphTransforms {
   }
 
   class RoundFramed(val glyph: Glyph, val fg: Brush, val bg: Brush, val radiusFactor: Scalar) extends TransformedGlyph {
-    import Glyphs.{FilledRect, Rect, RRect}
+    import static.{FilledRect, Rect, RRect}
 
     override def toString: String = s"RoundFramed($fg, $bg)($glyph)"
     override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)
@@ -167,7 +168,7 @@ object GlyphTransforms {
         val (xrf, yrf) =
           if (radiusFactor>0f) (radiusFactor, radiusFactor) else (.25f, .25f)
 
-        Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
+        static.Concentric(rowAlign=Mid, colAlign=Center)(
           RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = bg, bg = nothing),
           RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg, bg = nothing),
           glyph,
@@ -175,7 +176,7 @@ object GlyphTransforms {
       } else {
         val gw = glyph.w + fg.strokeWidth * 2
         val gh = glyph.h + fg.strokeWidth * 2
-        Glyphs.Concentric(rowAlign=Mid, colAlign=Center)(
+        static.Concentric(rowAlign=Mid, colAlign=Center)(
           FilledRect(gw, gh, fg = bg, bg = nothing),
           Rect(gw, gh, fg = fg, bg = nothing),
           glyph)
@@ -727,7 +728,7 @@ object GlyphTransforms {
 
     private val offset    = Vec(delta, delta)
     private val linePaint = fg //Brush().setColor(0x99070707).setStrokeWidth(0f) //.setStrokeCap(PaintStrokeCap.SQUARE)
-    private val shading   = Glyphs.Shaded.shadingPaths(glyph.w, glyph.h, delta)
+    private val shading   = static.Shaded.shadingPaths(glyph.w, glyph.h, delta)
 
     val diagonal: Vec = glyph.diagonal + offset
 

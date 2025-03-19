@@ -8,7 +8,7 @@ import Dialogue.{POPUP,OK}
 import NaturalSize.{Col, Row}
 import styled.Book
 import styled.BookSheet
-import Glyphs.{INVISIBLE, Rect}
+import org.sufrin.glyph.unstyled.static.{INVISIBLE, Rect}
 
 
 class WindowMenus(implicit val style: BookSheet, implicit val translation: glyphXML.Translation) {
@@ -59,7 +59,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
     import Location._
 
     val flag = styled.Label("×")
-    val X = windowdialogues.Menu.topBar(List(flag))
+    val X = styled.windowdialogues.Menu.topBar(List(flag))
 
     def startLocatorAt(position: Location) = {
       styled.windowdialogues.Menu.at(position)(flag).start()
@@ -69,7 +69,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
     /** Construct a menu with buttons that (may) bind to nested menus */
     def Menu(name: String, nested: Boolean = true)(glyphs: Glyph*): ReactiveGlyph = {
       lazy val but: ReactiveGlyph = TextButton(name) {
-        _ => windowdialogues.Menu(glyphs map (_.asMenuButton)).InFront(but).start()
+        _ => styled.windowdialogues.Menu(glyphs map (_.asMenuButton)).InFront(but).start()
       }.asInstanceOf[ReactiveGlyph] // TODO: CODE SMELL
       if (nested) but.asMenuButton else but
     }
@@ -134,7 +134,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
 
     def content: IRect = theTarget.guiRoot.eventHandler.window.getContentRect
 
-    def loc(text: String) = windowdialogues.Menu.topBar(List(Label(text)))
+    def loc(text: String) = styled.windowdialogues.Menu.topBar(List(Label(text)))
 
     import Location._
 

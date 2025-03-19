@@ -1,9 +1,9 @@
 package org.sufrin.glyph
 package tests
 
-import Glyphs._
+import unstyled.static._
 import NaturalSize.{Col, Row}
-import ReactiveGlyphs.TextButton
+import unstyled.reactive.TextButton
 import DefaultBrushes._
 
 /**

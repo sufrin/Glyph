@@ -2,7 +2,8 @@ package org.sufrin.glyph
 package utils
 import NaturalSize.Col
 
-import ReactiveGlyphs.{RawButton}
+import unstyled.reactive
+import reactive.RawButton
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -30,10 +31,10 @@ object Output
    */
 
   def withWriteBar(folder: String="SAVEDGUI", hint: Glyph=null, enabled: => Boolean)(gui: Glyph)(implicit style: StyleSheet): Glyph = {
-    import Glyphs._
+    import unstyled.static._
     implicit object Style extends StyleSheet
     val r = FilledRect(gui.w - 5, 6f, fg = DefaultBrushes.lightGrey)
-    lazy val writeBar: RawButton = ReactiveGlyphs.RawButton(r(), r(), r()) {
+    lazy val writeBar: RawButton = reactive.RawButton(r(), r(), r()) {
       _ =>
         val fileName = stringOfDate() + ".png"
         styled.windowdialogues.Dialogue.OKNO(styled.Label(s"Write image to ${folder}/${fileName}").enlarged(15)).InFront(writeBar).andThen {
@@ -42,7 +43,7 @@ object Output
             output(folder, fileName)(gui.guiRoot) match {
               case None => ()
               case Some(error) =>
-                windowdialogues.Dialogue.OK(Label(error).enlarged(20f)).InFront(writeBar).start()
+                styled.windowdialogues.Dialogue.OK(Label(error).enlarged(20f)).InFront(writeBar).start()
             }
         }
     }

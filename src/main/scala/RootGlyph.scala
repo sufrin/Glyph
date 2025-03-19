@@ -1,7 +1,9 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 import io.github.humbleui.jwm.{App, EventMouseButton, EventMouseMove, EventTextInput, EventTextInputMarked, Platform}
 import GlyphTypes._
+import logging.{Logger,Loggable}
 
 /**
  *
@@ -13,7 +15,7 @@ import GlyphTypes._
  * when the window is resized externally. There ought to be a better way.
  *
  */
-class NonReentrant(log: org.sufrin.logging.Logger = RootGlyph.log) {
+class NonReentrant(log: Logger = RootGlyph.log) {
 
   var count = 0
 
@@ -40,7 +42,7 @@ class NonReentrant(log: org.sufrin.logging.Logger = RootGlyph.log) {
   }
 }
 
-object RootGlyph extends org.sufrin.logging.Loggable {
+object RootGlyph extends Loggable {
 
 }
 

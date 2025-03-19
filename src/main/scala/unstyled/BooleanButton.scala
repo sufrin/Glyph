@@ -1,6 +1,8 @@
 package org.sufrin.glyph
+package unstyled
 
 import GlyphTypes.Font
+
 
 
 /**
@@ -18,9 +20,9 @@ trait BooleanButton  {
   def buttonFont: Font = DefaultBrushes.buttonFont
   def fg: Brush = DefaultBrushes.black
   def bg: Brush = DefaultBrushes.white
-  def toGlyph(string: String): Glyph = Text(string, buttonFont).asGlyph(fg, bg)
-  def cross: Glyph = Text("✖", buttonFont).asGlyph(fg, bg)
-  def tick: Glyph  = Text("✔", buttonFont).asGlyph(fg, bg)
+  def toGlyph(string: String): Glyph = Text(string, buttonFont, fg, bg)
+  def cross: Glyph = Text("✖", buttonFont, fg, bg)
+  def tick: Glyph  = Text("✔", buttonFont, fg, bg)
 
   import BooleanGlyphs._
 
@@ -53,9 +55,8 @@ trait BooleanButton  {
   /** A captioned on-off button associated with a `Variable[Boolean]` */
   def onOff(caption: String, variableState: Variable[Boolean], fg: Brush, bg: Brush, hint: Hint)
            (reaction: Boolean => Unit): Glyph = {
-      import Glyphs._
       NaturalSize.Row(
-          Label(caption),
+          unstyled.static.Label(caption),
           onOff(whenTrue = tick, whenFalse = cross, initially=variableState.value, fg, bg, hint){
                 state =>
                   variableState.value=state

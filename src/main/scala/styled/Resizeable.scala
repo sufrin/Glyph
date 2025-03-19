@@ -1,4 +1,5 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 package styled
 
 
@@ -16,10 +17,8 @@ package styled
  *
  */
 
-import org.sufrin.logging.SourceLoggable
+import logging.SourceLoggable
 
-import scala.xml.Node
-import glyphXML.Language._
 
 
 class Resizeable(glyph: StyleSheet=>Glyph, initialStyle: StyleSheet) extends Glyph with GlyphTransforms {
@@ -75,6 +74,6 @@ class Resizeable(glyph: StyleSheet=>Glyph, initialStyle: StyleSheet) extends Gly
  *   the current size.
  *
  */
-object Resizeable extends SourceLoggable {
+object Resizeable extends logging.Loggable {
   def apply(generate: StyleSheet=>Glyph)(implicit style: StyleSheet): Resizeable = new Resizeable(generate, style)
 }

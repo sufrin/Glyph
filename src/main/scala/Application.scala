@@ -1,10 +1,8 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 import io.github.humbleui.jwm.{EventKey, Window}
-import org.sufrin.glyph.styled.Label
-import org.sufrin.glyph.GlyphTypes.Window
-import org.sufrin.glyph.NaturalSize.Row
-import org.sufrin.logging
+import NaturalSize.Row
 
 /**
  * An application specified by a GUI, and a title. Some generic flags
@@ -37,9 +35,6 @@ trait Application {
    * @see onStart
    */
   def handleUnfocussedKey(event: EventKey): Unit =  {
-      // TODO: we really should beep!
-      // implicit val basic: StyleSheet = styles.Default
-      // overlaydialogues.Dialogue.OK(styled.text.Label(s"Unexpected $key")).OnRootOf(GUI).start()
       val key = s"Key ${Modifiers.toBitmap(event).toLongString} ${event.getKey}"
       logging.Default.warn(s"Keystroke unexpected: ${key}")
   }
@@ -70,12 +65,12 @@ trait Application {
       case s"-log($logprefix)" => logPrefix=logprefix
       case s"-log($logPaths)=$level" =>
            for { obj <- logPaths.split("[,:]").map(_.trim) }
-               org.sufrin.logging(s"$logPrefix.$obj")=level
+               logging(s"$logPrefix.$obj")=level
 
 
       case s"-log:$logPaths=$level" =>
         for { obj <- logPaths.split("[,:]").map(_.trim) }
-          org.sufrin.logging(s"$logPrefix.$obj")=level
+          logging(s"$logPrefix.$obj")=level
 
       case s"-log:$logprefix" => logPrefix=logprefix
 
@@ -151,7 +146,7 @@ object Application {
 
     // TODO: windowdialogues needs to set software scale more carefully than now if autoScale
     val prompt = Row(align=Mid)(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
-      Label("Do you want to Exit?")(sheet) scaled 1.5f
+      styled.Label("Do you want to Exit?")(sheet) scaled 1.5f
     ).enlarged(50)
     OKNO(prompt,
       title = "Exit Dialogue", ok = " Exit now ", no = " Continue ").InFront(glyph).andThen(close => if (close) window.close())

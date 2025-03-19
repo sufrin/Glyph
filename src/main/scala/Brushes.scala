@@ -1,6 +1,9 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 import NumberUtils.hexToInt
+
+import unstyled.Text
 
 /**
  * A convenience trait that defines several brushes.
@@ -87,25 +90,25 @@ object DefaultBrushes extends Brushes {
 
 
     def namedBrush(name: String): Brush = name.toLowerCase match {
-      case "red" => org.sufrin.glyph.Brush(s"red")(color = 0XFFFF0000)
-      case "blue" => org.sufrin.glyph.Brush(s"blue")(color = 0XFF0000FF)
-      case "green" => org.sufrin.glyph.Brush(s"green")(color = 0XFF00FF00)
-      case "white" => org.sufrin.glyph.Brush(s"white")(color = 0XFFFFFFFF)
-      case "grey1" => org.sufrin.glyph.Brush(s"grey1")(color = 0XFFBBBBBB)
-      case "grey2" => org.sufrin.glyph.Brush(s"grey2")(color = 0XFFCDCDCD)
-      case "grey3" => org.sufrin.glyph.Brush(s"grey3")(color = 0XFFC5C5C5)
-      case "grey4" => org.sufrin.glyph.Brush(s"grey4")(color = 0XFFC2C2C2)
-      case "lightgrey" => org.sufrin.glyph.Brush(s"lightgrey")(color = 0XFFBBBBBB)
-      case "darkgrey" => org.sufrin.glyph.Brush(s"darkgrey")(color = 0XFF777777)
-      case "black" => org.sufrin.glyph.Brush(s"black")(color = 0XFF000000)
-      case "yellow" => org.sufrin.glyph.Brush(s"yellow")(color = 0XFFFFDD00)
-      case "nothing" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000, alpha=0f)
-      case "" => org.sufrin.glyph.Brush(s"nothing")(color = 0X00000000, alpha=0f)
+      case "red" => Brush(s"red")(color = 0XFFFF0000)
+      case "blue" => Brush(s"blue")(color = 0XFF0000FF)
+      case "green" => Brush(s"green")(color = 0XFF00FF00)
+      case "white" => Brush(s"white")(color = 0XFFFFFFFF)
+      case "grey1" => Brush(s"grey1")(color = 0XFFBBBBBB)
+      case "grey2" => Brush(s"grey2")(color = 0XFFCDCDCD)
+      case "grey3" => Brush(s"grey3")(color = 0XFFC5C5C5)
+      case "grey4" => Brush(s"grey4")(color = 0XFFC2C2C2)
+      case "lightgrey" => Brush(s"lightgrey")(color = 0XFFBBBBBB)
+      case "darkgrey" => Brush(s"darkgrey")(color = 0XFF777777)
+      case "black" => Brush(s"black")(color = 0XFF000000)
+      case "yellow" => Brush(s"yellow")(color = 0XFFFFDD00)
+      case "nothing" => Brush(s"nothing")(color = 0X00000000, alpha=0f)
+      case "" => Brush(s"nothing")(color = 0X00000000, alpha=0f)
       case s"0x${hex}" if hex.matches("([0-9a-f])+") =>
-        org.sufrin.glyph.Brush(s"0X$hex")(color = hexToInt(hex))
+        Brush(s"0X$hex")(color = hexToInt(hex))
       case name =>
-        org.sufrin.logging.Default.warn(s"$name is not the name of a colour")
-        org.sufrin.glyph.Brush(s"red($name)")(color = 0XFFFF0000)
+        logging.Default.warn(s"$name is not the name of a colour")
+        Brush(s"red($name)")(color = 0XFFFF0000)
     }
 
     decoratedBrush(name)
@@ -124,7 +127,7 @@ object DefaultBrushes extends Brushes {
   var buttonPointSize: Float = 22.0f
   var buttonFace = buttonFamily.normalFace
   def buttonFont = buttonFamily.makeFont(GlyphTypes.FontStyle.NORMAL, buttonPointSize)
-  def buttonText(s: String): Text = Text(s, buttonFont)
+  def buttonText(s: String, fg: Brush=buttonForeground, bg: Brush=buttonBackground): Text = Text(s, buttonFont, fg, bg)
 
   var buttonForeground: Brush = Brush("Brushes.buttonForeground") color 0xFF000000 strokeWidth 1.0f
   var buttonBackground: Brush = Brush("Brushes.buttonBackground") color 0xFFFFFFFF strokeWidth 1.0f

@@ -1,4 +1,5 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 import GlyphTypes.{Font, FontStyle, Scalar}
 import styles.decoration.{Framed, unDecorated}
@@ -76,7 +77,7 @@ case class StyleSheet
   def parNarrow(left: Scalar, right: Scalar): StyleSheet = {
     val lm = leftMargin
     val rm = rightMargin
-    org.sufrin.logging.Default.info(s"parNarrow($left,$right) => ${(lm + left, rm+right)}")
+    logging.Default.info(s"parNarrow($left,$right) => ${(lm + left, rm+right)}")
     copy(leftMargin = lm + left, rightMargin = rm + right)
   }
 

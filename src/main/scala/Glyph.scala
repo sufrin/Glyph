@@ -1,4 +1,5 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 import GlyphTypes._
 
@@ -41,9 +42,7 @@ object CellFit {
   /**
    *  The given glyph: transformed according to its `cellFitMethod` to fit the given `(w,h)`
    */
-    import Glyphs.Empty
     import GlyphTransforms.Scaled
-    import NaturalSize.{Col, Row}
     /** method should be `glyph.cellFitMethod` */
     def fitToCell(method: Method, w: Scalar, h: Scalar, fg: Brush, bg: Brush)(glyph: Glyph): Glyph = {
       method match {

@@ -1,26 +1,27 @@
 package org.sufrin.glyph
 package tests
 
-import Glyphs._
+import unstyled.static._
 import GlyphTypes._
 import Location._
 import styles.GlyphStyle
-import windowdialogues.Dialogue.OK
+import unstyled.windowdialogues.Dialogue.OK
 import PolygonLibrary._
 
 import io.github.humbleui.jwm.EventKey
 import io.github.humbleui.skija.BlendMode
-import org.sufrin.glyph.GlyphTransforms.Turned
-import org.sufrin.glyph.styled.TextToggle
+import GlyphTransforms.Turned
+import styled.TextToggle
+import unstyled.{reactive, static, Text, BooleanButton}
 
 import scala.collection.mutable.ListBuffer
 
 trait LargeTestGUI {
 
-  import dynamic.OneOf
+  import unstyled.dynamic.OneOf
   import GlyphTransforms.{Framed, Scaled}
   import NaturalSize.{Col, Row}
-  import ReactiveGlyphs.{FramedButton, RawButton, ShadedButton}
+  import unstyled.reactive.{FramedButton, RawButton, ShadedButton}
   import DefaultBrushes._
 
   implicit val sheet: StyleSheet = StyleSheet()
@@ -34,7 +35,7 @@ trait LargeTestGUI {
   private val hugeFont: Font = new Font(face, 50)
   private val giantFont: Font = new Font(face, 75)
   private val buttonFont: Font = new Font(face, 28)
-  private val exg = Text(" ", medFont).asGlyph()
+  private val exg = Text(" ", medFont)
   private val trup =
     FilledPolygon(100, 100, fg = blue)((100, 0), (0, 0), (100, 100), (100, 0))
 
@@ -160,7 +161,7 @@ trait LargeTestGUI {
             .start()
         },
         ShadedButton("Press me [ShadedButton 2]") { _ =>
-          import windowdialogues.Dialogue
+          import org.sufrin.glyph.unstyled.windowdialogues.Dialogue
           Dialogue
             .OK(
               textColumn(smallFont)("You pressed shaded button 2"),
@@ -169,7 +170,7 @@ trait LargeTestGUI {
             .start()
         },
         ShadedButton("[ShadedButton 3]") { _ =>
-          import windowdialogues.Dialogue
+          import org.sufrin.glyph.unstyled.windowdialogues.Dialogue
           Dialogue
             .OK(
               textColumn(smallFont)("You pressed shaded button 3 in scene 4"),
@@ -178,7 +179,7 @@ trait LargeTestGUI {
             .start()
         },
         ShadedButton("[ShadedButton 4]") { _ =>
-          import windowdialogues.Dialogue
+          import org.sufrin.glyph.unstyled.windowdialogues.Dialogue
           Dialogue
             .OK(
               textColumn(smallFont)("You pressed shaded button 4 in scene 4"),
@@ -188,12 +189,12 @@ trait LargeTestGUI {
         }
       ) scaled 1.5f, medex scaled 3,
         textColumn(fg = blue)("(4a) Experiments with the .rounded(radius) and .dashed(onoffspecs) brush transforms\n(various strokewidths)"), medex,
-      Glyphs.FilledRect(w=150,h=140, fg=blue.rounded(30f)) beside Glyphs.FilledRect(w=150,h=140, fg=red.rounded(50f)) beside Glyphs.FilledRect(w=150,h=140, fg=green.rounded(70f))
+      static.FilledRect(w=150,h=140, fg=blue.rounded(30f)) beside static.FilledRect(w=150,h=140, fg=red.rounded(50f)) beside static.FilledRect(w=150,h=140, fg=green.rounded(70f))
       , medex,
-      Glyphs.Polygon(w=150,h=50, fg=blue.dashed(15f, 15f).strokeWidth(15f))((0,25f), (150f,25f)).framed() beside
-      Glyphs.Polygon(w=150,h=50, fg=red.dashed(15f, 15f).strokeWidth(35f))((0,25f), (150f,25f)).framed() beside
-      Glyphs.Polygon(w=150,h=50, fg=green.dashed(40f, 15f).strokeWidth(40f))((0,25f), (150f,25f)).framed() beside
-      Glyphs.Polygon(w=250,h=50, fg=blue.dashed(40f, 40f).strokeWidth(40f).cap(ROUND))((0,25f), (250f,25f)).framed(), medex,
+      static.Polygon(w=150,h=50, fg=blue.dashed(15f, 15f).strokeWidth(15f))((0,25f), (150f,25f)).framed() beside
+      static.Polygon(w=150,h=50, fg=red.dashed(15f, 15f).strokeWidth(35f))((0,25f), (150f,25f)).framed() beside
+      static.Polygon(w=150,h=50, fg=green.dashed(40f, 15f).strokeWidth(40f))((0,25f), (150f,25f)).framed() beside
+      static.Polygon(w=250,h=50, fg=blue.dashed(40f, 40f).strokeWidth(40f).cap(ROUND))((0,25f), (250f,25f)).framed(), medex,
       medex,
     ).framed().enlarged(30f)
   )
@@ -201,7 +202,7 @@ trait LargeTestGUI {
 
   private val scene5 = {
 
-    import BooleanGlyphs._
+    import unstyled.BooleanGlyphs._
 
     import Toggles._
 
@@ -246,7 +247,7 @@ trait LargeTestGUI {
     def t(name: String)(toggle: OnOffButton): Glyph =
       Row(align=Mid)(textColumn()(name), toggle.scaled(0.75f))
 
-    val allOn = ReactiveGlyphs.FramedButton("All on", fg = green) { _ =>
+    val allOn = reactive.FramedButton("All on", fg = green) { _ =>
       for {
         t: OnOffButton <- List(toggle0, toggle1, toggle2, toggle3, toggle4)
       } {
@@ -254,7 +255,7 @@ trait LargeTestGUI {
       }
     }
 
-    val allOff = ReactiveGlyphs.FramedButton("All off", fg = red) { _ =>
+    val allOff = reactive.FramedButton("All off", fg = red) { _ =>
       for {
         t: OnOffButton <- List(toggle0, toggle1, toggle2, toggle3, toggle4)
       } {
@@ -262,7 +263,7 @@ trait LargeTestGUI {
       }
     }
 
-    val allFlip = ReactiveGlyphs.FramedButton("Flip all", fg = blue) { _ =>
+    val allFlip = reactive.FramedButton("Flip all", fg = blue) { _ =>
       for {
         t: OnOffButton <- List(toggle0, toggle1, toggle2, toggle3, toggle4)
       } {
@@ -310,7 +311,7 @@ trait LargeTestGUI {
       buttonFont,
       size = 40,
       onEnter = { s =>
-        import windowdialogues.Dialogue
+        import org.sufrin.glyph.unstyled.windowdialogues.Dialogue
         Dialogue
           .OK(
             Label(s"You typed $s"),
@@ -472,10 +473,10 @@ trait LargeTestGUI {
     val sp = Text(" ", medFont)
     import GlyphTypes._
 
-    def space = sp.asGlyph()
+    def space = sp()
 
     val n = 0
-    val button: Glyph = Text("Raw", medFont).asGlyph(blue)
+    val button: Glyph = Text("Raw", medFont, blue)
     val raw = RawButton(
       button.rotated(n),
       button(red).rotated(n),
@@ -558,12 +559,12 @@ trait LargeTestGUI {
   private val scene10 = {
     val sp = Text(" ", hugeFont)
 
-    def space = sp.asGlyph()
+    def space = sp()
 
     val caption: Text = Text("Raw", medFont)
 
     def button(n: Int)(fg: Brush): Glyph =
-      caption.asGlyph(fg).rotated(n).framed(redFrame)
+      caption(fg).rotated(n).framed(redFrame)
 
     val raw = RawButton(button(1)(blue), button(3)(red), button(3)(green)) {
       _ =>
@@ -668,13 +669,13 @@ trait LargeTestGUI {
 
   private val scene12 = {
     import GlyphTransforms.Rotated
-    val space = Text(" ", medFont).asGlyph()
+    val space = Text(" ", medFont)
 
     def sp: Glyph = space()
 
     def sliver: Glyph = sp scaled 0.3f
 
-    val text = Text("Text", medFont).asGlyph(fg = blue)
+    val text = Text("Text", medFont, fg = blue)
     val rawbut: Glyph = RawButton(text, text(red), text(green)) { _ => println(s"$text pressed")}
 
     def rotOfBut(q: Int): Glyph =
@@ -788,8 +789,8 @@ trait LargeTestGUI {
 
     val textA = Text("Á y", giantFont)
     val textG = Text("g Å", giantFont)
-    val bodyA = textA.asGlyph(green)
-    val bodyG = textG.asGlyph(green)
+    val bodyA = textA(green)
+    val bodyG = textG(green)
 
     Col(align=Center)(
       textColumn(smallFont)(
@@ -849,7 +850,7 @@ trait LargeTestGUI {
     Col(align=Center)(
       Label("(15) An image synthesised as a glyph"),
       medex,
-      new Glyphs.Image(flag scaled 1.2f)
+      new static.Image(flag scaled 1.2f)
     )
   }
   val bb: Brush = Brush("blue")(color = 0xff0000ff, width = 1.0f, cap = ROUND)
@@ -953,9 +954,9 @@ trait LargeTestGUI {
       Label("Three ColourButtons\nThe second changes background when the mouse is hovering/pressed"),
       ex, ex,
       Row(align=Mid)(
-        ReactiveGlyphs.ColourButton(filledStar7(wobbly(blue)), red, green, background = false, NoHint){ _ => } . framed(), em,
-        ReactiveGlyphs.ColourButton(filledStar7(wobbly(blue)), red, green, background = true, NoHint){ _ => } . framed(), em,
-        ReactiveGlyphs.ColourButton("A ColourButton with a wobbly Frame", blue(width=0), red, green, background = false, hint=NoHint){ _ => }.enlarged(4).framed(wobbly(blueFrame)),
+        reactive.ColourButton(filledStar7(wobbly(blue)), red, green, background = false, NoHint){ _ => } . framed(), em,
+        reactive.ColourButton(filledStar7(wobbly(blue)), red, green, background = true, NoHint){ _ => } . framed(), em,
+        reactive.ColourButton("A ColourButton with a wobbly Frame", blue(width=0), red, green, background = false, hint=NoHint){ _ => }.enlarged(4).framed(wobbly(blueFrame)),
       )
     )
   }
@@ -1031,7 +1032,7 @@ trait LargeTestGUI {
     }
 
   private val scene20 = {
-    import ReactiveGlyphs.{TextButton => But}
+    import unstyled.reactive.{TextButton => But}
 
     val fatYellow: Brush = yellowHuge.copy strokeWidth 40
     val fatGreen: Brush = fatYellow.copy col 0xff00ff00
@@ -1103,7 +1104,7 @@ trait LargeTestGUI {
   }
 
   private val scene21 = {
-    import ReactiveGlyphs.{TextButton => But}
+    import org.sufrin.glyph.unstyled.reactive.{TextButton => But}
 
     val fatYellow: Brush = yellowHuge.copy strokeWidth 40
     val fatGreen: Brush = fatYellow.copy col 0xff00ff00
@@ -1121,12 +1122,12 @@ trait LargeTestGUI {
 
     def Rb(w: Scalar, h: Scalar, brush1: Brush = fatYellow, brush2: Brush = fatGreen, brush3: Brush = fatRed) = {
       val r = FilledRect(w, h, brush1) // Row(FilledRect(w, h, brush1), FilledRect(w/20, h, brush2))
-      ReactiveGlyphs.RawButton(r, r(brush2), r(brush3)) { _ => println(s"Button ($w,$h)") }.framed(thinBlue)
+      reactive.RawButton(r, r(brush2), r(brush3)) { _ => println(s"Button ($w,$h)") }.framed(thinBlue)
     }
 
     def Eb(w: Scalar, h: Scalar, brush1: Brush = fatYellow, brush2: Brush = fatGreen, brush3: Brush = fatRed) = {
       val r = FilledOval(w, h, brush1)
-      ReactiveGlyphs.RawButton.exact(r, r(brush2), r(brush3)) { _ => println(s"Button ($w,$h)") }.framed(thinBlue, bg = thinBlue)
+      reactive.RawButton.exact(r, r(brush2), r(brush3)) { _ => println(s"Button ($w,$h)") }.framed(thinBlue, bg = thinBlue)
     }
 
     def b1 = Tb("b1")
@@ -1309,7 +1310,7 @@ trait LargeTestGUI {
   private def polyStar7(brush: Brush) = openStargon(7, fg = brush)
 
   private def sceneButton(i: Int): Glyph =
-    Framed()(ReactiveGlyphs.TextButton(s"$i", blue) { _ => oneOf.select(i) })
+    Framed()(reactive.TextButton(s"$i", blue) { _ => oneOf.select(i) })
 
   private object Toggles extends BooleanButton {
     override val bg: Brush = yellowHuge

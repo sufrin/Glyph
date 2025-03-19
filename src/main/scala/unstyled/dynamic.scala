@@ -1,8 +1,9 @@
 package org.sufrin.glyph
+package unstyled
 package dynamic
 
 import io.github.humbleui.jwm.App
-import org.sufrin.glyph.Glyphs.Image
+import unstyled.{static, Text}
 
 /**
  * A collection of dynamic glyphs: glyphs some aspects of which can vary dynamically
@@ -511,8 +512,8 @@ import org.sufrin.glyph.Glyphs.Image
     override def glyphContaining(p: Vec): Option[Hit] = currentGlyph.glyphContaining(p-currentGlyph.location)
   }
 
-  class ActiveString(font: Font, fg: Brush, bg: Brush, initial: String) extends ActiveGlyph[String](initial, Text(initial, font).asGlyph(fg, bg)) {
-    def toGlyph(t: String): Glyph = Text(t, font).asGlyph(fg, bg)
+  class ActiveString(font: Font, fg: Brush, bg: Brush, initial: String) extends ActiveGlyph[String](initial, Text(initial, font, fg, bg)) {
+    def toGlyph(t: String): Glyph = Text(t, font, fg, bg)
     override def copy(fg: Brush, bg: Brush): Glyph = new ActiveString(font, fg, bg, initial)
   }
 
@@ -535,7 +536,7 @@ import org.sufrin.glyph.Glyphs.Image
    *
    * @see OneOf
    */
-  class Transformable(glyph: Glyph, transforms: Seq[Transform]) extends ActiveGlyph[Int](0, Glyphs.INVISIBLE()){
+  class Transformable(glyph: Glyph, transforms: Seq[Transform]) extends ActiveGlyph[Int](0, static.INVISIBLE()){
     val transformed: Seq[Glyph] = transforms.map{ transform => transform(glyph) }
     val maxW = Measure.maxHeight(transformed)
     val maxH = Measure.maxWidth(transformed)
@@ -561,7 +562,7 @@ import org.sufrin.glyph.Glyphs.Image
     locally { currentGlyph = toGlyph(current) }
 
     /** A copy of this glyph; perhaps with different foreground/background */
-    def copy(fg: Brush, bg: Brush): Glyph = Glyphs.INVISIBLE()
+    def copy(fg: Brush, bg: Brush): Glyph = static.INVISIBLE()
   }
 
   object Transformable {

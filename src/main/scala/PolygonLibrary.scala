@@ -1,9 +1,11 @@
 package org.sufrin.glyph
 
+import unstyled.static
+
 
 object PolygonLibrary {
   import GlyphTypes.Scalar
-  import Glyphs._
+  import static._
   import NaturalSize.{Col, Row}
 
   import scala.collection.mutable.ArrayBuffer
@@ -11,22 +13,22 @@ object PolygonLibrary {
 
 
   def closeButtonGlyph: Glyph = {
-    import Glyphs.Polygon
+    import static.Polygon
     val diam = 14f // entries.map(_.h).min / 2f
     val crossFG = white(width = diam / 8f)
-    Glyphs.Concentric(
-      Glyphs.FilledOval(diam, diam, fg = red()),
+    static.Concentric(
+      static.FilledOval(diam, diam, fg = red()),
       Polygon(diam, diam, fg = crossFG)((diam / 2f, 0), (diam / 2f, diam)),
       Polygon(diam, diam, fg = crossFG)((0, diam / 2f), (diam, diam / 2f))).turnedBoxed(diam, diam)(45)
   }
 
   def hideButtonGlyph: Glyph = {
-    import Glyphs.Polygon
+    import static.Polygon
     val diam = 14f // entries.map(_.h).min / 2f
     val dashFG = white(width = diam / 8f)
     val halfDiam = diam/2f
-    Glyphs.Concentric(
-      Glyphs.FilledOval(diam, diam, fg = brown),
+    static.Concentric(
+      static.FilledOval(diam, diam, fg = brown),
       Polygon(diam, diam, fg = dashFG)((0, halfDiam), (diam, halfDiam)))
   }
 
