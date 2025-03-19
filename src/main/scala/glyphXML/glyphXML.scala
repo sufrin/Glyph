@@ -52,9 +52,13 @@ import scala.xml._
  *  "\$invAttrName(default)"  as above, defaulting to default
  * }}}
  *
+ * Examples are garbled by  ScalaDoc, but are present as comments in the source text of `glyphXML`
  *
- * Example: with:
- * {{{
+ */
+
+class Macro(body: Node) {
+/*
+ *{{{
  *   <MACRO key="cj">
  *     <div width="\$width(21em)">
  *         <p align="center"><b>CJ in &width;</b></p>
@@ -62,31 +66,33 @@ import scala.xml._
  *         <p align="right">&BODY1;</p>
  *     </div>
  *   </MACRO>
- * }}}
+ *}}}
+ *
  * the invocation
- * {{{
+ *{{{
  *   <cj width="42"><b>Able</b><span>Baker</span></cj>
- * }}}
+ *```
  * should expand to
- * {{{
+ *```
  *   <div width="42em">
  *         <p align="center"><b>CJ in 42em</b></p>
  *         <p align="center"><b>Able</b></p>
  *         <p align="right"><span>Baker</span></p>
  *   </div>
- * }}}
+ *}}}
+ *
  * and the invocation
- * {{{
+ *{{{
  *    <cj><b>Able</b><span>Baker</span></cj>
- * }}}
+ *}}}
  * should expand to
- * {{{
+ *{{{
  *    <div width="21em">
  *          <p align="center"><b>CJ in 42em</b></p>
  *          <p align="center"><b>Able</b></p>
  *          <p align="right"><span>Baker</span></p>
  *    </div>
- * }}}
+ *}}}
  *
  *
  * Finally, with
@@ -116,7 +122,6 @@ import scala.xml._
  *
  * * @param body
  */
-class Macro(body: Node) {
 
   def expansion(invocationAttributes: AttributeMap, invocation: Node): Seq[Node] = {
 
@@ -576,18 +581,37 @@ object Translation {
   }
 }
 
+/**
+ *  Provides methods for interpreting the value parts of the `key="value"` pairs of the given `AttributeMap`
+ *  as (Scala-)typed values. Each accessor method supplies a `key` and an alternate value: its result
+ *  is the string value of `key` in the map (if there is one) interpreted as a (scala) value of the
+ *  appropriate type; or the alternative value if `key` is not in the map.
+ */
 class TypedAttributeMap(unNormalized: AttributeMap) {
   import SourceLocation._
   import logging.Default.{warn}
 
+  /** Show as a mapping with pairs in the form `k->d` */
+  override def toString: String = Visitor.toString(attributes)
+  /** Show as a mapping with pairs in the form `k->d` */
+  def asString: String = Visitor.toString(attributes)
+
+  /**
+   *  TODO: The attribute mapping (used to be "normalized", and may one day be so again)
+   */
   val attributes: AttributeMap = unNormalized // .map{ case (k,d) => (k.toLowerCase, d)}
+
   val at=attributes.getOrElse("source", "")
 
-  def asString: String = Visitor.toString(attributes)
-  override def toString: String = Visitor.toString(attributes)
 
+  /**
+   * Yields the string with key `key`, or `alt`
+   */
   def String(key: String, alt: String): String = attributes.getOrElse(key, alt)
 
+  /**
+   * Yields the Int with key `key` (if it looks like a number), or `alt`
+   */
   def Int(key: String, alt: Int): Int = attributes.get(key) match {
     case Some (s) if s.matches("-?[0-9]+") => s.toInt
     case Some(s)  =>
@@ -596,6 +620,9 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
     case None     => alt
   }
 
+  /**
+   * Yields Float Int with key `key` (if it looks like a floating point number), or `alt`
+   */
   def Float(key: String, alt: Float): Float = attributes.get(key) match {
     case Some (spec) =>
       try {
@@ -608,6 +635,35 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
     case None     => alt
   }
 
+  /**
+   * Yields the Float with key `key` if is expressed in one of the following forms:
+   *
+   * 1. A floating point number, `factor`, immediately followed by one of
+   * {{{
+   *  em => factor*sheet.emWidth
+   *  ex => factor*sheet.exHeight
+   * }}}
+   *
+   * {{{
+   *   px => factor
+   *   pt => factor
+   * }}}
+   *
+   * 2. a floating point factor, `factor`, immediately followed by `*` then by one of the following:
+   * {{{
+   *    width => factor*sheet.parWidth
+   *    indent => factor*sheet.parIndent
+   *    leftmargin => factor*sheet.leftMargin
+   *    rightmargin => factor*sheet.rightMargin
+   *    container.width => factor*sheet.containerWidth
+   *    container.height => factor*sheet.containerHeight
+   *    window.width => factor*sheet.windowWidth
+   *    window.height => factor*sheet.windowHeight
+   *    screen.width => factor*sheet.screenWidth
+   *    screen.height => factor*sheet.screenHeight
+   * }}}
+   *
+   */
   def Units(key: String, alt: Float)(attributes: AttributeMap, sheet: StyleSheet): Float = {
     attributes.get(key) match {
       case Some(spec) =>
@@ -642,6 +698,9 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
     }
   }
 
+  /**
+   * Yields the Boolean with key `key` (if it's t, f, true, false, on, or off), or `default`
+   */
   def Bool(key: String, default: Boolean): Boolean = attributes.get(key) match {
     case None => default
     case Some(boolean) =>
@@ -654,6 +713,9 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
       }
   }
 
+  /**
+   * Yields the lateral alignment with key `key` (if it's one of `{left, right, center, justify}`), or `default`
+   */
   def Align(key: String, default: Alignment): Alignment = attributes.get(key) match {
     case None => default
     case Some(alignment) => alignment.toLowerCase match {
@@ -662,11 +724,15 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
       case ("center") => Center
       case ("justify") => Justify
       case (other) =>
-        warn(s"$key=\"$other\" [not a horizontal alignment name: using \"center\"] ($at)")
+        warn(s"$key=\"$other\" [not a lateral alignment name: using \"center\"] ($at)")
         Center
     }
   }
 
+
+  /**
+   * Yields the vertical alignment with key `key` (if it's one of `{top, bottom, mid, center}`), or `default`
+   */
   def VAlign(key: String, default: VAlignment): VAlignment = attributes.get(key) match {
     case None => default
     case Some(alignment) => alignment.toLowerCase match {
@@ -682,15 +748,20 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
 
 
 
+  /**
+   *  Yields the brush whose `DefaultBrushes` specification has key `key`, or `alt`.
+   *
+   * @see DefaultBrushes
+   */
   def Brush(key: String, alt: Brush): Brush = attributes.get(key) match {
     case None       => alt
     case Some(name) => DefaultBrushes(name)
   }
 
   /**
-   * Context derived from `attributes` by declaring
-   * the universally-applicable attributes in
-   * for the `Node`.
+   * The `StyleSheet` derived from `sheet` by associating new values with
+   * the properties  specified  by the attribute mapping.
+   *
    */
   def declareAttributes(sheet: StyleSheet): StyleSheet = {
     val fontDetail: StyleSheet =
