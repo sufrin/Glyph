@@ -115,7 +115,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
         buttonDecoration = Shaded(DefaultBrushes(fg), DefaultBrushes(bg), enlarge=20, delta=delta, down=down)))
 
     Col(align=Center)(
-        <div width="65em" enlarged="20">
+        <div width="65em" enlarged="20px">
             <p>Click/hover over any of the buttons to see detail, and to understand
               the relationship between button backgrounds and frame backgrounds. Unless "nothing"
               a button background has higher priority than the background of its frame.
