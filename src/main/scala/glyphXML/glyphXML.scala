@@ -525,7 +525,7 @@ object Translation {
       val asGlyph: Glyph = glyph$
     }
 
-    case class DecorateTarget(tags: Seq[String], paragraph: Boolean, attributes: TypedAttributeMap, target: Target, ambientFont: Font) extends Target {
+    case class DecorateTarget(tags: Seq[String], paragraph: Boolean, attributes: TypedAttributeMap, target: Target, ambientFont: Font, ambientSheet: StyleSheet) extends Target {
       @inline def raiseBy(glyph: Glyph, by: Scalar): Glyph = glyph.withBaseline(by)
 
       def decorated(glyph: Glyph): Glyph = {
@@ -552,8 +552,18 @@ object Translation {
         def frame(glyph: Glyph): Glyph = {
           val brush = attributes.Brush("frame", DefaultBrushes.invisible)
           val framing = attributes.Bool("framed", brush.getAlpha != 0)
+          val rad: Scalar = attributes.Float("radius", 0)
           if (framing)
-            glyph.framed(fg = brush, bg = attributes.Brush("bg", glyph.bg))
+            glyph.roundFramed(radius=rad, fg = brush, bg = attributes.Brush("bg", glyph.bg))
+          else
+            glyph
+        }
+
+        def edge(glyph: Glyph): Glyph = {
+          val brush = attributes.Brush("edge", DefaultBrushes.invisible)
+          val framing = attributes.Bool("edged", brush.getAlpha != 0)
+          if (framing)
+            glyph.edged(fg = brush, bg = attributes.Brush("bg", glyph.bg))
           else
             glyph
         }
@@ -563,7 +573,27 @@ object Translation {
           if (scale!=1f) glyph.scaled(scale) else glyph
         }
 
-        scale(turn(frame(rotate(glyph))))
+        def enlarge(glyph: Glyph): Glyph = {
+          val points: Scalar = attributes.Units("enlarged", 0f)(ambientSheet)
+          if (points!=0f) glyph.enlarged(points) else glyph
+        }
+
+        // compile the decor program
+        val decor = attributes.String("decorate","rotate;edge;turn;scale;enlarge;frame").split(';').toSeq
+        var transformed = glyph
+        for { transform <- decor } {
+          transform match {
+            case "rotate"  => transformed = rotate(transformed)
+            case "edge"    => transformed = edge(transformed)
+            case "turn"    => transformed = turn(transformed)
+            case "scale"   => transformed = scale(transformed)
+            case "enlarge" => transformed = enlarge(transformed)
+            case "frame"   => transformed = frame(transformed)
+            case _ =>
+              logging.Default.warn(s"Bad decorate transformation: ($transform) in $attributes")
+          }
+        }
+        transformed
       }
 
       import ambientFont.getMetrics
@@ -664,7 +694,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
    * }}}
    *
    */
-  def Units(key: String, alt: Float)(attributes: AttributeMap, sheet: StyleSheet): Float = {
+  def Units(key: String, alt: Float)(sheet: StyleSheet): Float = {
     attributes.get(key) match {
       case Some(spec) =>
         spec.toLowerCase match {
@@ -784,13 +814,13 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
 
     // Units are computed relative to the font details, which may have been redeclared
     fontDetail.copy(
-      padX                  = Units("padX",           sheet.padX)         (attributes, fontDetail),
-      padY                  = Units("padY",           sheet.padY)         (attributes, fontDetail),
-      parWidth              = Units("width",          sheet.parWidth)     (attributes, fontDetail),
-      parSkip               = Units("parSkip",        sheet.parSkip)      (attributes, fontDetail),
-      parIndent             = Units("parIndent",      sheet.parIndent)    (attributes, fontDetail),
-      leftMargin            = Units("leftMargin",     sheet.leftMargin)   (attributes, fontDetail),
-      rightMargin           = Units("rightMargin",    sheet.rightMargin)  (attributes, fontDetail),
+      padX                  = Units("padX",           sheet.padX)         (fontDetail),
+      padY                  = Units("padY",           sheet.padY)         (fontDetail),
+      parWidth              = Units("width",          sheet.parWidth)     (fontDetail),
+      parSkip               = Units("parSkip",        sheet.parSkip)      (fontDetail),
+      parIndent             = Units("parIndent",      sheet.parIndent)    (fontDetail),
+      leftMargin            = Units("leftMargin",     sheet.leftMargin)   (fontDetail),
+      rightMargin           = Units("rightMargin",    sheet.rightMargin)  (fontDetail),
       parAlign              = Align("align",          sheet.parAlign),
       backgroundBrush       = Brush("background",     sheet.backgroundBrush),
       foregroundBrush       = Brush("foreground",     sheet.foregroundBrush),
@@ -944,7 +974,7 @@ class Translation(val primitives: Primitives=new Primitives) {
         val sheet$ = attributes$.declareAttributes(sheet)
         val tags$ = tag::tags
 
-        def Decorated(t: Target): Seq[Target] = List(DecorateTarget(tags$, paragraph, attributes$, t, sheet$.textFont))
+        def Decorated(t: Target): Seq[Target] = List(DecorateTarget(tags$, paragraph, attributes$, t, sheet$.textFont, sheet$))
 
         tag match {
           case "p" =>
@@ -964,6 +994,7 @@ class Translation(val primitives: Primitives=new Primitives) {
 
           case "div" | "body" =>
             val children$ = children.filterNot(Translation.isBlank(_))
+
             Decorated(ColTarget(sheet.backgroundBrush, chunks = translate(tags$, false, attributes$, sheet$, children$)))
 
           case "col" =>
@@ -974,19 +1005,20 @@ class Translation(val primitives: Primitives=new Primitives) {
 
           case "row" =>
             val inheritWidth = attributes$.Bool("inheritwidth", false)
+            val uniform = attributes$.Bool("uniform", false)
             val defaultWidth = if (inheritWidth) sheet$.parWidth else 0f
-            val width = attributes$.Units("width", defaultWidth)(attributes$, sheet$)
+            val width = attributes$.Units("width", defaultWidth)(sheet$)
             val glyphs = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, false, attributes$$, sheet$, source) }.map(_.asGlyph)
             val valign: VAlignment = attributes$.VAlign("valign", Top)
             val glyph = if (width==0f)
-                 NaturalSize.Row(align=valign, bg=sheet$.backgroundBrush)(glyphs)
+                 NaturalSize.Row(align=valign, uniform=uniform, bg=sheet$.backgroundBrush)(glyphs)
             else
                  FixedSize.Row(align=valign, width=width, bg=sheet$.backgroundBrush)(glyphs)
             Decorated(GlyphTarget(paragraph, sheet$, glyph))
 
           case "fill" =>
-            val width  = attributes$.Units("width", sheet$.emWidth)(attributes$, sheet$)
-            val height = attributes$.Units("height", sheet$.exHeight)(attributes$, sheet$)
+            val width  = attributes$.Units("width", sheet$.emWidth)(sheet$)
+            val height = attributes$.Units("height", sheet$.exHeight)(sheet$)
             val stretch = attributes$.Float("stretch", 1f)
             val background = attributes$.Brush("background", attributes$.Brush("bg", DefaultBrushes.nothing))
             val foreground = attributes$.Brush("foreground", attributes$.Brush("fg", DefaultBrushes.nothing))
@@ -1147,11 +1179,12 @@ class Translation(val primitives: Primitives=new Primitives) {
 
   protected def stripCommonIndentation(lines: Seq[String]): Seq[String] = {
     val lines$ = lines.dropWhile(_.isBlank)
-    val prefix = leadingSpaces(lines$.min(indentationOrdering))
-    if (lines$.last.isBlank)
-      lines$.init.map(_.substring(prefix))
+    val prefix = leadingSpaces(lines$.filterNot(_.isBlank).min(indentationOrdering))
+    def stripPrefix(line: String): String = if (line.length<prefix) line else line.substring(prefix)
+    if (lines$.nonEmpty && lines$.last.isBlank)
+      lines$.init.map(stripPrefix)
     else
-      lines$.map(_.substring(prefix))
+      lines$.map(stripPrefix)
   }
 
   /**
@@ -1162,11 +1195,12 @@ class Translation(val primitives: Primitives=new Primitives) {
    */
   def translatePCData(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, text: String): Seq[Target] = {
     import unstyled.{Text => makeText}
-    import sheet.{textFont, textBackgroundBrush => bg, textForegroundBrush => fg}
+    import sheet.{textFont, textBackgroundBrush => bg, textForegroundBrush => fg, backgroundBrush => colBG}
+    val textBG = if (bg.alpha == 0f) colBG else bg
     val rawLines = text.split('\n').toSeq
     val lines    = if (attributes.Bool("normalizePCData", true)) stripCommonIndentation(rawLines) else rawLines
-    val glyphs   = lines.map(makeText(_, textFont, fg, bg))
-    List(GlyphTarget(paragraph, sheet, NaturalSize.Col(align=Left, bg = bg)(glyphs)))
+    val glyphs   = lines.map(makeText(_, textFont, fg, textBG))
+    List(GlyphTarget(paragraph, sheet, NaturalSize.Col(align=Left, bg = colBG)(glyphs)))
   }
 
 
