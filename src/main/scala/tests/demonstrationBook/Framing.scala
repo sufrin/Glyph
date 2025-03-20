@@ -207,8 +207,71 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       ).scaled(0.7f).enlarged(40)
     }
 
+  Page("GlyphXML", "") {
+    translation("star") = { style => PolygonLibrary.filledStargon(9, fg=blue(width=4)).scaled(.5f) }
+    <div width="70em" >
+      <col align="center">
+      <p align="center">
+        Many glyphXML constructs can specify decorations. Below we show a few examples of
+        such specifications, and their outcomes; using a glyph defined in Scala by adding
+        a generator to the translation:
+      </p>
+      <fill/>
+      <div fontFamily="Courier" fontScale="0.9" textForeground="black" textBackground="nothing" background="lightGrey">
+      <![CDATA[
+             translation("star") = {
+               style => PolygonLibrary.filledStargon(9, fg=blue(width=4)).scaled(.55f)
+             }
+      ]]>
+      </div>
+      <fill height="3ex"/>
+      <rows foreground="darkGrey/3" padX="2em" padY="2em" cols="3">
+          <glyph gid="star"/>
+          <glyph gid="star" scaled="0.5"/>
+          <glyph gid="star" frame="red/1~5~5" />
+          <glyph gid="star" decorate="enlarge;edge;frame" frame="red/5~5~5" radius="0.1" enlarged="25px"/>
+          <glyph gid="star" decorate="edge;enlarge;frame" frame="red/20" radius="0.3" enlarged="25px" edge="black/3"/>
+          <div decorate="rotate;edge;frame" rotated="1" frame="red/25" radius="0.2" enlarged="25px" edge="black/3">
+            <glyph gid="star"/>
+            <glyph gid="star"/>
+          </div>
+          <glyph gid="star" decorate="enlarge;edge;frame" frame="red/5~5~5" radius="3" enlarged="25px"/>
+          <glyph gid="star" decorate="edge;enlarge;frame" frame="red/20" radius="3" enlarged="25px" edge="black/3"/>
+          <div decorate="rotate;edge;frame" rotated="1" frame="red/25" radius="3" enlarged="25px" edge="black/3">
+            <glyph gid="star"/>
+            <glyph gid="star"/>
+          </div>
+      </rows>
+      <fill height="3ex"/>
+      <div normalizePCData="true" fontFamily="Courier" fontScale="0.9" textForeground="black" textBackground="nothing" background="lightGrey">
+      <![CDATA[
+           <rows foreground="darkGrey/3" padX="2em" padY="2em" cols="3">
+                <glyph gid="star"/>
+                <glyph gid="star" scaled="0.5"/>
+                <glyph gid="star" frame="red/1~5~5" />
 
-    val GUI: Glyph = book.Layout.leftCheckBoxes().enlarged(40)
+                <glyph gid="star" decorate="enlarge;edge;frame" frame="red/5~5~5" radius="0.1" enlarged="25px"/>
+                <glyph gid="star" decorate="edge;enlarge;frame" frame="red/20" radius="0.3" enlarged="25px" edge="black/3"/>
+                <div decorate="rotate;edge;frame" rotated="1" frame="red/25" radius="3" enlarged="25px" edge="black/3">
+                  <glyph gid="star"/>
+                  <glyph gid="star"/>
+                </div>
+
+                <glyph gid="star" decorate="enlarge;edge;frame" frame="red/5~5~5" radius="3" enlarged="25px"/>
+                <glyph gid="star" decorate="edge;enlarge;frame" frame="red/20" radius="3" enlarged="25px" edge="black/3"/>
+                <div decorate="rotate;edge;frame" rotated="1" frame="red/25" radius="3" enlarged="25px" edge="black/3">
+                  <glyph gid="star"/>
+                  <glyph gid="star"/>
+                </div>
+          </rows>
+      ]]>
+      </div>
+      </col>
+    </div>
+  }
+
+
+  val GUI: Glyph = book.Layout.leftCheckBoxes().enlarged(40)
 
 
 }
