@@ -800,15 +800,15 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
           fontScale       = Float("fontScale", 1.0f),
 
           textFontStyle   = FontFamily.styleNamed(String("textStyle", "")),
-          textFontFamily  = FontFamily(String("fontFamily", String("textFontFamily", sheet.textFontFamily.name))),
+          textFontFamily  = FontFamily(String("fontFamily", String("textFontFamily", sheet.textFontFamily.family))),
           textFontSize    = Float("fontSize", Float("textFontSize", sheet.textFontSize)),
 
           labelFontStyle  = FontFamily.styleNamed(String("labelStyle", "")),
-          labelFontFamily = FontFamily(String("fontFamily", String("labelFontFamily", sheet.labelFontFamily.name))),
+          labelFontFamily = FontFamily(String("fontFamily", String("labelFontFamily", sheet.labelFontFamily.family))),
           labelFontSize   = Float("fontSize", Float("labelFontSize", sheet.labelFontSize)),
 
           buttonFontStyle  = FontFamily.styleNamed(String("buttonStyle", "")),
-          buttonFontFamily = FontFamily(String("fontFamily", String("buttonFontFamily", sheet.buttonFontFamily.name))),
+          buttonFontFamily = FontFamily(String("fontFamily", String("buttonFontFamily", sheet.buttonFontFamily.family))),
           buttonFontSize   = Float("fontSize", Float("buttonFontSize", sheet.buttonFontSize)),
         )
 

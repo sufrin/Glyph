@@ -1,6 +1,6 @@
 %xelatex
 \documentclass[12pt,a4paper]{article}
-\def\DRAFT{}% comment out to include all the saved images at the end
+%\def\DRAFT{}% comment out to include all the saved images at the end
 %%%%%%%%%%%%%%%%%%%%%
 %% \usepackage[]{Tex/ordinal}
 %% \usepackage{fontspec}
@@ -1034,7 +1034,7 @@ can shift the blurred outline relative to their origin (by $(dx, dy)$).
 
 Below we show the effects of painting a filled star with
 \Scala{blue.blurred(24f)} and with \Scala{blue.blurred(48f, 20f, 20f)}.
-Both ar \Scala{framed()}: notice that the latter is displaced by $(20, 20)$ within the
+Both are \Scala{framed()}: notice that the latter is displaced by $(20, 20)$ within the
 natural bounding box indicated by the frame.
 
 \begin{center}
@@ -1194,78 +1194,72 @@ this assumption.
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
 
-\S{Text}
-Here we discuss the low-level API for generating simple text glyphs. {The \textcolor{blue}{\textsf{Styled}}
-package provides more versatile methods for composing glyphs that consist
-of paragraphed text.}
+\S{Text Glyphs and Fonts}
+Here we discuss the API for generating simple text glyphs.
+{The \textcolor{blue}{\textsf{glyphXML}}
+package provides versatile methods for composing composite glyphs that
+may include paragraphed text.}
 
-A \SCALA{Text} is a glyph-builder, \textit{ie.} a \textit{factory}
-for text glyphs. The function \SCALA{text}, defined below, constructs
-a glyph-builder from the given string at the specified size in (the
-italic Courier) \SCALA{typeFace}.
-
-%\let\scalasize=\footnotesize
+The factory for simple text glyphs is:
+\let\scalasize=\footnotesize
 \begin{scala}
-    val typeFace: Typeface =
-          FontMgr.getDefault()
-                 .matchFamilyStyle("Courier", FontStyle.ITALIC)
-
-    def text(s: String, size: Float): Text =
-          Text(s, new Font(face, size))
+     Text(text:      String,
+          font:      Font,
+          fg:        Brush   = defaultFG,
+          bg:        Brush   = defaultBG,
+          transient: Boolean = false)
 \end{scala}
 
-The \SCALA{Text}s \SCALA{text1, text2} are glyph builders that will eventually
-yield glyphs. The function \SCALA{em} defines an \textit{em}-width space.
+It yields a glyph representing the string \Scala{text} in the font \Scala{font}. The
+foreground of the text is coloured with the brush \Scala{fg} brush, and
+its background with the brush \Scala{bg}.\footnote{The detailed
+implementations of non-transient texts are represented uniquely, and this
+can save a good deal of space.}
 
+The factory for fonts is \Scala{FontFamily}. It has several methods, but
+the one we shall use here is:
 \begin{scala}
-    val text1 = text("Á 24pt Text", 24.0f)
-    val text2 = text("A 12pt Text", 12.0f)
-    def em    = Skip(font(12f).measureTextWidth("m"))
+  FontFamily(family: String, style: String, size: Scalar): Font
 \end{scala}
+It yields a \Scala{Font} made from the given font family, in the named style, at
+the given (point) size.\footnote{The detailed implementations of fonts
+are represented uniquely; and although the \Scala{Font} type is
+opaque, a unique identifier indicating how a font that was
+constructed by \Scala{FontFamily} is available as:
+\Scala{FontFamily.fontID(font)}.}
 
-\SCALA{Text}s provide the following methods that build glyphs:
+In the examples that follow we have defined:
 \begin{scala}
-   .asGlyph:    Glyph
-   .atBaseline: Glyph
+    val Courier         = FontFamily("Courier", "normal", 24)
+    val CourierItalic   = FontFamily("Courier", "italic", 24)
+    val Menlo           = FontFamily("Menlo", "normal", 20)
+    val MenloBold       = FontFamily("Menlo", "bold", 16)
+    val MenloTiny       = FontFamily("Menlo", "normal", 12)
 \end{scala}
-
-Both yield glyphs with the same bounding box: but the second yields
-a glyph that is expected to be drawn only within top-aligned
-\SCALA{Row}'s.
 
 \cglyph[scale=0.6]{text1}
-\cglyph[scale=0.6]{text1a}
+\cglyph[scale=0.6]{text1b}
+\cglyph[scale=0.6]{text1i}
 
-Drawing a sequence of \SCALA{atBaseline}-generated glyphs in a \textit{top-aligned} row positions them so that their
-baselines coincide, and this is the intended effect.
+When texts are placed in a row whose alignment is \Scala{BaseLine}, their
+baselines will coincide.
+
 \cglyph[scale=0.6]{textrow1}
 
-%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%
-\SSS{Deprecated uses of \SCALA{asGlyph} and \SCALA{atBaseline} glyphs}
-Using \SCALA{asGlyph}-generated glyphs of different sizes in rows is a cheap and nasty way
-to simulate superscripts and subscripts and is not recommended for normal use.
+But they don't coincide in a row whose alignment is \Scala{Top} or \Scala{Mid},
+for example:
+
 \cglyph[scale=0.6]{textrow2}
-\cglyph[scale=0.6]{textrow3}
 
+%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\S{The glyphXML notation}
 
-When an \SCALA{atBaseline}-generated glyph does not have a \SCALA{Row} as parent, it
-is drawn so that its baseline coincides with the top of its bounding rectangle: the result
-is \textcolor{red}{never} useful. 
-\begin{center}
-\SCALA{text1.atBaseline(fg=blue).framed(grey)}
-
-\PNGfig[scale=0.6]{text1b}
-\end{center}
-Moreover, when \SCALA{atBaseline}-generated glyphs of different heights are used in a bottom- or centre-aligned row the
-results are \textcolor{red}{never} useful.
-\begin{center}
-\begin{scala}
-    Row.centered(text1.atBaseline(fg=black),
-                 text2.atBaseline(fg=blue)).framed(grey)}
-\end{scala}
-\PNGfig[scale=0.6]{textrow1a}
-\end{center}
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
@@ -1599,13 +1593,21 @@ object ColourButton {
 \clearpage
 \S{Examples}
 
-The best way of getting to grips with \textbf{Glyph} is to study
-the source of one or two of the medium-sized examples included with
-it: particularly \Scala{DemonstrationNotebook}, and
-\Scala{CalculatorExample}. The following few examples are considerably smaller,
-and not particularly useful save as a getting-started guide. The use of
-implicit style parameters in examples 3 and 4 means that the reader should be
-somewhat familiar with the notion of implicits in Scala 2.
+The very best way of getting to grips with \textbf{Glyph} is to
+study the source of one or two of the examples included in the
+\Scala{tests} package: particularly the glyph sampler code from
+\Scala{tests.demonstrationBook}, and the smaller
+\Scala{tests.CalculatorExample}.  Additional examples worth looking
+at are \Scala{ResizeableWindowTest} and \Scala{ResizeAndSplitTest}.
+They demonstrate sophisticated use of \Scala{glyphXML} 
+and the \Scala{Resizeable} container to build resizeable GUIs,
+
+The following few examples are considerably smaller, and not
+particularly useful save as a getting-started guide.  The use of
+implicit style parameters in examples 3 and 4 means that the reader
+should be somewhat familiar with the notion of implicits in Scala
+2.
+
 
 \SS{A Passive GUI}
 
@@ -1618,7 +1620,8 @@ the interface and the outside world, needing only a definition of
 \begin{scala}
 package org.sufrin.glyph
 package tests
-import  Glyphs.Label
+
+import unstyled.static.Label
 
 object Example1 extends Application  {
   val font = FontFamily("Courier").makeFont(size=32)
@@ -1661,10 +1664,11 @@ in the trait \Scala{Example2Interface} that is mixed-in with
 package org.sufrin.glyph
 package tests
 
-import Glyphs.Rect
+import unstyled.static._
 import NaturalSize.{Col, Row}
-import ReactiveGlyphs.TextButton
+import unstyled.reactive.TextButton
 import DefaultBrushes._
+import GlyphTypes.Font
 \end{scala}
 
 \begin{scala}
@@ -1689,25 +1693,28 @@ change its colour.
 
 \begin{scala}
 trait Example2Interface {
-  val buttonFrame:     Brush = blue(cap=ROUND, width=18)
-  val labelBackground: Brush = green().rounded(18)
-  val font = FontFamily("Courier").makeFont(size=32)
-  val spacer = Rect(0, 20, fg=nothing)
-
-  import Glyphs.TextButton
-  import Glyphs.Label
+  val buttonFrame: Brush =
+        blue(cap=ROUND, width=18)
+  val labelBackground: Brush =
+        green().rounded(18)
+  val font: Font  =
+        FontFamily("Courier").makeFont(size=32)
+  val spacer =
+      Rect(0, 20, fg=nothing)
 
   val GUI: Glyph = Col(align=Center, bg=lightGrey) (
-    Label("A simple label", font, fg=white, bg=labelBackground) enlarged(20),
+    Label("A simple label", font,
+          fg=white,
+          bg=labelBackground) enlarged(20),
     spacer,
     Row(skip=10)(
-        TextButton("make it blue") {
-           _ => labelBackground.color(blue.color)
-        }.edged(buttonFrame),
-        
-        TextButton("make it red")  {
-          _ => labelBackground.color(red.color)
-        }.edged(buttonFrame)
+        TextButton("make it blue")
+           { _ => labelBackground.color(blue.color) }
+           .edged(buttonFrame),
+           
+        TextButton("make it red")
+           { _ => labelBackground.color(red.color) }
+           .edged(buttonFrame)
     )
   ).enlarged(20)
 }
@@ -1747,28 +1754,31 @@ identical source code structure, except that the interface trait
 \begin{scala}
 package org.sufrin.glyph
 package tests
-import Glyphs.Rect
+import unstyled.static.Rect
 import NaturalSize.{Col, Row}
 import DefaultBrushes._
+import styled.TextButton
+import styled.Label
 \end{scala}
 
 \begin{scala}
 trait Example3Interface {
   implicit val style: StyleSheet
-  import styled.TextButton
-  import styled.Label
+
+  val spacer = Rect(0, 20, fg=nothing)
 
   def GUI: Glyph = Col(align=Center, bg=lightGrey) (
     Label("A simple label") enlarged(20),
-    Rect(0, 20, fg=nothing),
+    spacer,
     Row(skip=10)(
       TextButton("make it blue")
-          { _ => style.labelBackgroundBrush.color(blue.color) },
-      
+      { _ => style.labelBackgroundBrush.color(blue.color) },
+
       TextButton("make it red")
-          { _ => style.labelBackgroundBrush.color(red.color) }
+      { _ => style.labelBackgroundBrush.color(red.color) }
     )
   ).enlarged(20)
+
 }
 \end{scala}
 
@@ -1787,24 +1797,22 @@ a straightforward simple alternative to extending \Scala{Application} with
 an interface trait.}
 
 \begin{center}
-\pdffig[scale=0.35]{PNG/example3a}
+\pdffig[scale=0.29]{PNG/example3}
 \end{center}
 
 Our first main program defines \Scala{style} so that the
 interface looks exactly the same as that of \Scala{Example2}.
 This differs from the default style in only a few respects.
 \begin{scala}
-object Example3 extends Application with Example3Interface {
-
-  implicit val style: StyleSheet = StyleSheet(
-    labelBackgroundBrush  = labelBackground,
-    labelForegroundBrush  = white,
-    labelFontFamily       = FontFamily("Courier"),
-    labelFontSize         = 32,
-    buttonDecoration      = styles.decoration.Edged(buttonFrame)
-  )
-  
-  override def title: String = "Example 3"
+object Example3 extends Application with Example3Interface  {
+    override def title: String = "Example 3"
+    implicit val style: StyleSheet = StyleSheet(
+      labelBackgroundBrush  = green().rounded(18),
+      labelForegroundBrush  = white,
+      labelFontFamily       = FontFamily("Courier"),
+      labelFontSize         = 32,
+      buttonDecoration = styles.decoration.Edged(blue(cap=ROUND, width=18))
+    )
 }
 \end{scala}
 
@@ -1816,7 +1824,7 @@ The following appearances differ only insofar as their interfaces
 were built with styles specifying different button appearances. 
 
 \begin{center}
-\pdffig[scale=0.35]{PNG/example3a}
+\pdffig[scale=0.30]{PNG/example3a}
 \begin{scala}
     buttonBackgroundBrush = grey2,
     buttonForegroundBrush = black,
@@ -1826,16 +1834,18 @@ were built with styles specifying different button appearances.
                               , radiusFactor = 0.3f)
 \end{scala}
 
-\pdffig[scale=0.32]{PNG/example3b}
+\pdffig[scale=0.3]{PNG/example3b}
 \begin{scala}
   buttonForegroundBrush = red,
-  buttonDecoration = styles.decoration.Blurred(fg=yellow, bg=nothing, 16, 5)
+  buttonDecoration =
+    styles.decoration.Blurred(fg=yellow, bg=nothing, 16, 5)
 \end{scala}
 
 \pdffig[scale=0.35]{PNG/example3c}
 \begin{scala}
   buttonForegroundBrush = black,
-  buttonDecoration = styles.decoration.Shaded(fg=darkGrey, bg=nothing, 16, 5)
+  buttonDecoration =
+    styles.decoration.Shaded(fg=darkGrey, bg=nothing, 16, 5)
 \end{scala}
 \end{center}
 
@@ -1964,10 +1974,10 @@ something of a work in progress, but has been used throughout much
 of the code of \Scala{tests.demonstrationBook.Pages}.
 
 The goal of using  GUIs is to control useful applications,
-and, as well as the usual futures/promises machinery provided
-in Java and Scala we have designed new ways of using \Glyph interfaces to
+and as well as the usual futures/promises machinery provided
+in Java and Scala, we have designed new ways of using \Glyph interfaces to
 control applications that need not be running in the same thread or process
-or even virtual machine as the interface itself. These depend
+or even the same virtual machine as the interface itself. These depend
 on channel-based communication, as implemented in our
 \href{https://github.com/sufrin/microCSO}{microCSO}
 DSL and its (somewhat more extensive) predecessor
@@ -1976,7 +1986,7 @@ provides cross-network communication straightforwardly through its
 \Scala{.net} package.
 
 In due course we will provide examples of using \Glyph with these DSLs
-to build ``real'' application programs.
+to build larger-scale application programs.
 
 
 

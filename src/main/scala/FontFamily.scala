@@ -32,18 +32,22 @@ object FontFamily extends logging.Loggable {
   private val familyStore=collection.mutable.LinkedHashMap[String, FontFamily]()
 
   /** Build and cache a font family */
-  def apply(name: String="Menlo"): FontFamily =
-      familyStore.getOrElseUpdate(name, new FontFamily(name))
+  def apply(family: String="Menlo"): FontFamily =
+      familyStore.getOrElseUpdate(family, new FontFamily(family))
 
   /** Build and cache a Font with properties specified by the given `FontId` */
   def apply(fontID: FontID): Font = {
-    val FontID(name, style, size) = fontID
-    FontFamily.apply(name).makeFont(style, size)
+    val FontID(family, style, size) = fontID
+    FontFamily.apply(family).makeFont(style, size)
   }
 
   /** Build and cache a Font with the given properties */
-  def apply(name: String, style: FontStyle, size: Scalar): Font = {
-    FontFamily.apply(name).makeFont(style, size)
+  def apply(family: String, style: FontStyle, size: Scalar): Font = {
+    FontFamily.apply(family).makeFont(style, size)
+  }
+
+  def apply(family: String, style: String, size: Scalar): Font = {
+    FontFamily.apply(family).makeFont(styleNamed(style), size)
   }
 
   /** Names of all the font families in use */
@@ -138,12 +142,12 @@ object FontFamily extends logging.Loggable {
 /**
  * A font is from a family in a style at a size.
  */
-class FontFamily(val name: String) {
-  override def toString: String = s"FontFamily($name)"
-  lazy val normalFace:     Typeface = FontManager.default.matchFamilyStyle(name, FontStyle.NORMAL)
-  lazy val boldFace:       Typeface = FontManager.default.matchFamilyStyle(name, FontStyle.BOLD)
-  lazy val italicFace:     Typeface = FontManager.default.matchFamilyStyle(name, FontStyle.ITALIC)
-  lazy val boldItalicFace: Typeface = FontManager.default.matchFamilyStyle(name, FontStyle.BOLD_ITALIC)
+class FontFamily(val family: String) {
+  override def toString: String = s"FontFamily($family)"
+  lazy val normalFace:     Typeface = FontManager.default.matchFamilyStyle(family, FontStyle.NORMAL)
+  lazy val boldFace:       Typeface = FontManager.default.matchFamilyStyle(family, FontStyle.BOLD)
+  lazy val italicFace:     Typeface = FontManager.default.matchFamilyStyle(family, FontStyle.ITALIC)
+  lazy val boldItalicFace: Typeface = FontManager.default.matchFamilyStyle(family, FontStyle.BOLD_ITALIC)
 
   /**
    *  Yields the font specified by this family in `style` at `size`. A font is
@@ -152,7 +156,7 @@ class FontFamily(val name: String) {
    * @see FontFamily.apply
    */
   def  makeFont(style: GlyphTypes.FontStyle=FontStyle.NORMAL, size: Scalar): Font = {
-    val id=FontID(name, style, size)
+    val id=FontID(family, style, size)
     FontFamily.fontStore.get(id) match {
       case Some(font) =>
         font

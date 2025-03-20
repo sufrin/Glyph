@@ -233,20 +233,30 @@ object DocumentationDiagrams {
     write("oneofnext.png")(oneof, oneof.toString)
 
 
-    val face:              Typeface        = FontManager.default.matchFamilyStyle("Courier", FontStyle.ITALIC)
-    def font(size: Float): Font            = new Font(face, size)
-    def text(s: String, size: Float): Text = Text(s, font(size))
-    val text1 = text("Á 24pt Text", 24.0f)
-    val text2 = text("A 12pt Text", 12.0f)
-    def em    = Skip(font(18f).measureTextWidth("m"))
+    val Courier = FontFamily("Courier", "normal", 24)
+    val CourierItalic = FontFamily("Courier", "italic", 24)
+    val Menlo = FontFamily("Menlo", "normal", 20)
+    val MenloBold = FontFamily("Menlo", "bold", 16)
+    val MenloTiny = FontFamily("Menlo", "normal", 12)
 
-    write("text1.png")(Framed(grey, nothing)(text1.copy(blue)), "Framed(grey)(text1.asGlyph(blue))")
-    write("text1b.png")(Row(align=Bottom)(Skip(48), Framed(grey, nothing)(text1.copy(blue))), "Row.Bottom(Skip(48), Framed(grey)(text1.atBaseline(blue)))")
-    write("text1a.png")(Framed(grey, nothing)(Row(text1.copy(blue))), "Framed(grey)(Row(text1.atBaseline(blue))")
-    write("textrow1.png")(Framed(grey, nothing)(Row(text1.copy(), em, text2.copy())), """Framed(grey)(Row(text1.atBaseline, em, text2.atBaseline))""")
-    write("textrow2.png")(Framed(grey, nothing)(Row(text1.copy(), em, text2.copy())), """Framed(grey)(Row(text1.asGlyph(), em, text2.asGlyph()))""")
-    write("textrow3.png")(Framed(grey, nothing)(Row(align=Bottom)(text1.copy(), em, text2.copy())), """Framed(grey)(Row.Bottom(text1.asGlyph, em, text2.asGlyph)""")
-    write("textrow1a.png")(Framed(grey, nothing)(Row(align=Mid)(text1.copy(), em, text2.copy(blue))), """Framed(grey)(Row(align=Mid)(text1.atBaseline, em, text2.atBaseline)""")
+    write("text1.png")(Text("A text", Courier).framed(redFrame), "Text(\"A text\", Courier).framed(redFrame)")
+    write("text1b.png")(Text("A text", MenloBold).framed(redFrame), "Text(\"A text\", MenloBold).framed(redFrame)")
+    write("text1i.png")(Text("A text", CourierItalic).framed(redFrame), "Text(\"A text\", CourierItalic).framed(redFrame)")
+    write("textrow1.png")(
+      Row(align=Baseline)(
+        Text("As you can see ", CourierItalic),
+        Text("baselines coincide ", MenloBold),
+        Text("even in tiny fonts ", MenloTiny),
+      ), "Row(align=Baseline)(...)")
+    write("textrow2.png")(
+      Row(align=Top)(
+        Text("As you can see ", CourierItalic),
+        Text("baselines do not coincide ", MenloBold),
+        Text("especially in tiny fonts ", MenloTiny),
+      ), "Row(align=Top)(...)")
+
+
+
 
     val down = Variable(false)
     write("dynamic.png")((Shaded.Dynamic(fg=blue, bg=nothing, delta=10f, down=down)(FilledRect(150, 150, red))))
