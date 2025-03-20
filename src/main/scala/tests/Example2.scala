@@ -5,6 +5,9 @@ import unstyled.static._
 import NaturalSize.{Col, Row}
 import unstyled.reactive.TextButton
 import DefaultBrushes._
+import GlyphTypes.Font
+
+import org.sufrin.glyph.GlyphTypes.FontStyle.ITALIC
 
 /**
  * Interface using non-styled glyphs
@@ -13,7 +16,7 @@ import DefaultBrushes._
 trait Example2Interface {
   val buttonFrame:     Brush = blue(cap=ROUND, width=18)
   val labelBackground: Brush = green().rounded(18)
-  val font = FontFamily("Courier").makeFont(size=32)
+  val font:            Font  = FontFamily("Courier").makeFont(size=32)
   val spacer = Rect(0, 20, fg=nothing)
 
   val GUI: Glyph = Col(align=Center, bg=lightGrey) (
@@ -27,5 +30,5 @@ trait Example2Interface {
 }
 
 object Example2 extends Application  with Example2Interface {
-  override def title: String = "Example 2"
+  override def title: String = s"Example 2"
 }

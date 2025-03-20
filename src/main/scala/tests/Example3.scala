@@ -5,7 +5,8 @@ import NaturalSize.{Col, Row}
 import DefaultBrushes._
 
 /**
- * Interface using implicitly-styled glyphs
+ * Interface using implicitly-styled glyphs. The interface is a "mixin" trait that expects to
+ * be mixed with a class/trait that provides a definition for `style`.
  */
 
 trait Example3Interface {

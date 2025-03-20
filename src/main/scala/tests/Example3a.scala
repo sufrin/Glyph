@@ -59,6 +59,37 @@ object Example3d extends Application {
   implicit val style: StyleSheet = StyleSheet(
     labelBackgroundBrush  = roundGreen,
     labelForegroundBrush  = white,
+    labelFontFamily       = FontFamily("Menlo"),
+    labelFontSize         = 32,
+    buttonBackgroundBrush = nothing,
+    buttonForegroundBrush = black,
+    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=nothing, 16, 5)
+  )
+
+  val cloneButton: Glyph = styled.TextButton("Clone") {
+    _ =>
+      val clone = new Application {
+        override def title: String = "Example 3d clone"
+        val GUI: Glyph = new Example3dInterface(style.copy(labelBackgroundBrush = roundGreen)).GUI beside (cloneButton rotated 1)
+      }
+      clone.main(Array())
+  }
+
+  val GUI: Glyph = new Example3dInterface(style).GUI beside (cloneButton rotated 1)
+
+  override def title: String = "Example 3d"
+}
+
+
+/**
+ * As Example3d, but with a dialogue confirming close-window requests on the ORIGINAL window
+ */
+object Example3e extends Application {
+  def roundGreen: Brush = green().rounded(18)
+
+  implicit val style: StyleSheet = StyleSheet(
+    labelBackgroundBrush  = roundGreen,
+    labelForegroundBrush  = white,
     labelFontFamily       = FontFamily("Courier"),
     labelFontSize         = 32,
     buttonBackgroundBrush = nothing,
@@ -78,5 +109,46 @@ object Example3d extends Application {
   val GUI: Glyph = new Example3dInterface(style).GUI beside (cloneButton rotated 1)
 
   override def title: String = "Example 3d"
+
+  override def whenStarted(): Unit = {
+    Application.confirmCloseRequestsFor(GUI)
+  }
+}
+
+/**
+ * As example 3e, but all windows have close-window confirm dialogues.
+ */
+object Example3f extends Application {
+  def roundGreen: Brush = green().rounded(18)
+
+  implicit val style: StyleSheet = StyleSheet(
+    labelBackgroundBrush  = roundGreen,
+    labelForegroundBrush  = white,
+    labelFontFamily       = FontFamily("Courier"),
+    labelFontSize         = 32,
+    buttonBackgroundBrush = nothing,
+    buttonForegroundBrush = black,
+    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=nothing, 16, 5)
+  )
+
+  val cloneButton: Glyph = styled.TextButton("Clone") {
+    _ =>
+      val clone = new Application {
+        override def title: String = "Example 3d clone"
+        val GUI: Glyph = new Example3dInterface(style.copy(labelBackgroundBrush = roundGreen)).GUI beside (cloneButton rotated 1)
+        override def whenStarted(): Unit = {
+          Application.confirmCloseRequestsFor(GUI)
+        }
+      }
+      clone.main(Array())
+  }
+
+  val GUI: Glyph = new Example3dInterface(style).GUI beside (cloneButton rotated 1)
+
+  override def title: String = "Example 3d"
+
+  override def whenStarted(): Unit = {
+    Application.confirmCloseRequestsFor(GUI)
+  }
 }
 
