@@ -9,7 +9,7 @@ object PolygonLibrary {
   import NaturalSize.{Col, Row}
 
   import scala.collection.mutable.ArrayBuffer
-  import DefaultBrushes._
+  import Brushes._
 
 
   def closeButtonGlyph: Glyph = {

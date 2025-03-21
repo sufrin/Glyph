@@ -21,7 +21,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
   import pageSheet.{ex, em}
   val book = Book()
   val Page = book.Page
-  import DefaultBrushes._
+  import Brushes._
 
 
   Page("Edged Text #1", "Texts .edged(fg, yellow, rf)\n(showing effect of fg brush size/cap") {

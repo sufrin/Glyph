@@ -4,7 +4,7 @@ package tests
 import unstyled.static._
 import NaturalSize.{Col, Row}
 import unstyled.reactive.TextButton
-import DefaultBrushes._
+import Brushes._
 import GlyphTypes.Font
 
 import org.sufrin.glyph.GlyphTypes.FontStyle.ITALIC

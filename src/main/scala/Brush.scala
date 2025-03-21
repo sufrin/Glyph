@@ -32,7 +32,7 @@ object Brush {
 
   def apply(name: String=""): Brush = new Brush(name)
 
-  def ofString(descriptor: String): Brush = DefaultBrushes(descriptor)
+  def ofString(descriptor: String): Brush = Brushes(descriptor)
 
   val ROUND:  PaintStrokeCap  = PaintStrokeCap.ROUND
   val SQUARE: PaintStrokeCap  = PaintStrokeCap.SQUARE

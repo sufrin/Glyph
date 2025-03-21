@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package tests
 import unstyled.static.Rect
 import NaturalSize.{Col, Row}
-import DefaultBrushes._
+import Brushes._
 
 /**
  * Interface using implicitly-styled glyphs. The interface is a "mixin" trait that expects to

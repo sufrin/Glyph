@@ -384,6 +384,7 @@ Scala companion object of its class. For example
 
 
 \SS{Glyph Composition}
+\SSS{Natural Size}
 
 Composite glyphs are specialised instances of the \SCALA{Composite}
 extension of \SCALA{Glyph}, and are also usually constructed by
@@ -395,7 +396,7 @@ extension of \SCALA{Glyph}, and are also usually constructed by
         Concentric      OneOf
 \end{scala}
 
-The \Scala{Row} and \Scala{Col} compositions are (almost)
+The \Scala{NaturalSize.Row} and \Scala{NaturalSize.Col} compositions are (almost)
 explainable by their names. Each has variants that
 explain the exact way in which components are aligned. Here
 are three differently-aligned rows of a pair of rectangles:\footnote{
@@ -411,9 +412,6 @@ mean the same. We will later meet \Scala{Row(align=Baseline)(...)}.}
 \begin{scala}
    Row(align=Top)(b,r) Row(align=Mid)(b,r) Row(align=Bottom)(b,r)
 \end{scala}
-
-
-
 
 
 
@@ -434,10 +432,67 @@ Here are three differently-aligned columns of a pair of rectangles:\footnote{
 The row and column compositions described above yield glyphs that
 are ``naturally'' sized. Thus, for example, a row's width is the
 sum of its components' widths, and its height is the maximum of its
-components' heights. There are also fixed-size row (and column)
+components' heights. The complete API for these compositions is quite
+expressive:
+\begin{scala}
+   Col(align:   Alignment = Left,
+       fg:      Brush     = nothing,
+       bg:      Brush     = nothing,
+       uniform: Boolean   = false,
+       frame:   Brush     = nothing,
+       skip:    Scalar    = 0f)(glyphs)
+\end{scala}
+Constructs the vertical catenation of glyphs; its height is the sum of the
+glyphs' heights; its height is normally the sum of the glyphs' heights.
+The glyphs\footnote{glyphs is typed either as a \Scala{Seq[Glyph]}, or
+\Scala{Glyph, Glyph*} -- one or more
+glyphs.} are \textit{laterally} aligned as follows in the row, as specified
+by align:
+
+\begin{itemize}
+\item \Scala{Left}   --   left edges of the bounding boxes aligned
+\item \Scala{Right}  --   right edges of the bounding boxes aligned
+\item \Scala{Center}  --  centre\footnote{Yes, I know!
+Dr. Webster has a lot to answer for.} lines of the bounding boxes aligned
+\end{itemize}
+
+If \Scala{uniform}, then the glyphs are all treated as if their
+height was the same as the maximal height of all the glyphs; and
+each glyph is treated as if its height were \Scala{glyph.h+skip}, thereby
+leaving a little vertical space between them in the column.
+
+If \Scala{frame} is a nontrivial brush (ie with $alpha>0$), then horizontal lines
+with foreground frame are drawn between glyphs.
+
+The \Scala{Row} composition API is analogous.
+\begin{scala}
+   Row(align:   VAlignment = Top,
+       fg:      Brush      = nothing,
+       bg:      Brush      = nothing,
+       uniform: Boolean    = false,
+       frame:   Brush      = nothing,
+       skip:    Scalar     = 0f)(glyphs)
+\end{scala}
+
+Constructs the horizontal catenation of glyphs; its height is the
+largest of the glyphs' heights; its width is normally the sum of
+the glyphs' widths.
+
+The glyphs are \textit{vertically} aligned as follows in the row, as specified
+by align:
+
+\begin{itemize}
+\item \Scala{Top}   --     tops of the bounding boxes aligned
+\item \Scala{Bottom} --    bottoms of the bounding boxes aligned
+\item \Scala{Mid} --       vertical midlines of the bounding boxes aligned
+\item \Scala{Baseline} --  baselines are aligned when>0; otherwise as \Scala{Bottom}
+\end{itemize}
+
+\SSS{Fixed Size}
+There are also fixed-size row (and column)
 compositions, whose row width and column height can be declared in advance,
-and that allow ``expandable'' spaces as components. Here we see a couple of examples:\footnote{\Scala{tab} is
-an expandable space.}
+and that allow ``expandable'' spaces as components. Here we see a
+couple of examples:
 
 \begin{center}
 \pdffig[scale=0.45]{PNG/row-fixed}
@@ -447,9 +502,9 @@ an expandable space.}
 
 These were constructed by:
 \begin{scala}
-import FixedSize.Space.tab
-FixedSize.Row(350f, bg=grey)(tab, redR, blueR, redR)
-FixedSize.Row(350f, bg=grey)(redR, tab, blueR, tab, redR)
+import FixedSize.Space.fill
+FixedSize.Row(350f, bg=grey)(fill, redR, blueR, redR)
+FixedSize.Row(350f, bg=grey)(redR, fill, blueR, fill, redR)
 \end{scala}
 with
 \begin{scala}
@@ -457,7 +512,28 @@ def redR:  Glyph = FilledRect(50f, 25f, fg=red)
 def blueR: Glyph = FilledRect(100f, 25, fg=blue)
 \end{scala}
 
-Finally, below we show three of the possible \SCALA{Concentric} 
+The \Scala{fill} function is a horizontal/vertical ``stretchable''
+filler of nominal width $10$ units and stretchability $1.0$.
+
+The APIs for \Scala{FixedSize.Row} and \Scala{FixedSize.Col} are analogous.
+\begin{scala}
+        Row(width: Scalar,
+            align: VAlignment = Top,
+            fg:    Brush      = nothing,
+            bg:    Brush      = nothing)(glyphs)
+\end{scala}
+Constructs the horizontal catenation of glyphs, \textit{vertically} aligned
+in the row, as specified by align.  Its height is the largest of the
+glyphs' heights; its width is normally the larger of \Scala{width} and the
+sum of the glyphs' widths.  In the former case stretchable spaces are
+stretched (in proportion to their horizontal stretchability) so that
+the bounding box is filled.
+
+
+
+\SSS{Concentric Overlays}
+Below we show three of the possible \SCALA{Concentric}\footnote{Yes,
+Virginia, we probably should have called this \Scala{Overlay}!} 
 compositions of a point and a pair of rectangles; respectively:
 \begin{scala}
         Concentric(rowAlign=Mid, colAlign=Center)(p,b,r)
@@ -488,56 +564,59 @@ we could have written:
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\SSS{Grid and Table organization}
-It can also be helpful to organize glyph sequences in tabular
-form. Several methods for doing
-this are provided by \Scala{NaturalSize.Grid} --
-all invoked by first specifying various aspects of the table.
+\SSS{Grid/Table organization}
 
-
-\begin{alltt}\textcolor{blue}{Grid(fg: Brush=nothing, bg: Brush=nothing, padx: Scalar=0, pady: Scalar=0).\(method(...)\)}
-\end{alltt}
-
-The main $method$s of such a \Scala{Grid} are:
+It can also be helpful to organize glyph sequences in tabular form.
+Several methods for doing this are provided by \Scala{NaturalSize.Grid}
+-- all invoked by first specifying various aspects of the table.
 \begin{scala}
-  Grid(width:  Int=0, height: Int=0)(glyphs: Glyph*):      Composite
-  Table(width: Int=0, height: Int=0)(glyphs: Glyph*):      Composite
-  Rows(width:  Int=0)                (glyphs: Glyph*):     Composite 
-  Cols(height: Int=0)                (glyphs: Glyph*):     Composite 
-  grid(width:  Int=0, height: Int=0)(glyphs: Seq[Glyph]):  Composite
-  table(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]):  Composite
-  rows(width:  Int=0)                (glyphs: Seq[Glyph]): Composite
-  cols(height: Int=0)                (glyphs: Seq[Glyph]): Composite
+        Grid(fg:     Brush  = nothing,
+             bg:     Brush  = nothing,
+             padx:   Scalar = 0,
+             pady:   Scalar = 0,
+             width:  Scalar = 0,
+             height: Scalar = 0)
 \end{scala}
 
-Methods with \Scala{width}, \Scala{height}, and \Scala{glyphs} formal parameters interpret
-their \Scala{glyphs} actual parameter as follows:\footnote{In this section \Scala{width} means ``number of columns''; and \Scala{height} means
+The main $method$s of a \Scala{Grid} are:
+\begin{scala}
+  grid (glyphs: Seq[Glyph] or Glyph, Glyph*): Composite
+  table(glyphs: Seq[Glyph] or Glyph, Glyph*): Composite
+  rows (glyphs: Seq[Glyph] or Glyph, Glyph*): Composite
+  cols (glyphs: Seq[Glyph] or Glyph, Glyph*): Composite
+\end{scala}
+
+The parameters \Scala{width} and \Scala{height}  are used to interpret
+\Scala{glyphs} as follows:\footnote{In this section
+\Scala{width} means ``number of columns''; and \Scala{height} means
 ``number of rows.}
 \begin{enumerate}
      \item  if there's a \Scala{width} parameter then glyphs is interpreted as a catenation of rows of the given \Scala{width}
-     \item if there's a \Scala{height} parameter then glyphs is interpreted as a catenation of columns of the given \Scala{height}
-     \item if there are both \Scala{width} and \Scala{height} parameters, then:
-    \begin{enumerate}
-         \item if one argument is omitted,
-         \Scala{glyphs} is interpreted as if the method had only the other formal parameter (as above)
-         \item if  both arguments are omitted then \Scala{width} is taken to be \Scala{ceiling(sqrt(glyphs.length))}.
-    \end{enumerate}
+     \item  if there's a \Scala{height} parameter then glyphs is interpreted as a catenation of columns of the given \Scala{height}
+     \item  if there are neither \Scala{width} nor \Scala{height} parameters, then:
+            \Scala{glyphs} is interpreted as \Scala{width} were \Scala{ceiling(sqrt(glyphs.length))}
 \end{enumerate}
 
 
-The \Scala{grid/Grid} methods present a grid of
-\textit{identically-dimensioned} cells,
-each large enough for any of the glyphs.
+\begin{itemize}
+\item The \Scala{grid} method presents a grid of
+\textit{identically-dimensioned} cells, each large enough for any
+of the glyphs. As a shorthand for this \Scala{Grid(...)(data)} is
+equivalent to \Scala{Grid(...).grid(data)}
 
-The \Scala{table/Table} methods present a grid in which 
-all cells in each column have the same horizontal dimension, and all cells in each row
+\item The \Scala{table} method presents a grid in which all cells in each
+column have the same horizontal dimension, and all cells in each
 row have the same vertical dimension.
 
-The \Scala{rows/Rows} methods present a grid of row data with columns of uniform horizontal dimension, whilst
-analogously  \Scala{cols/Cols} presents a grid of column data with rows of uniform vertical dimension.
+\item The \Scala{rows} method presents a grid of row data with columns of uniform horizontal dimension, whilst
+analogously  \Scala{cols} presents a grid of column data with rows of uniform vertical dimension.
 
+\item The \Scala{grid} and \Scala{table} methods can also supply width, and/or height parameters
+      before their normal \Scala{glyphs} parameters: if they appear these take precedence over
+      the corresponding parameters to \Scala{Grid}
+\end{itemize}
 Figures \ref{gridorder}, \ref{gridtable} and  \ref{gridcellFit} illustrate several ways of using
-the \Scala{Grid} methods \Scala{grid}, and \Scala{table}.
+the \Scala{Grid} methods \Scala{grid}, and \Scala{table}. 
 
 
 
@@ -599,11 +678,11 @@ of why the label is defined as a function not just as a value.}
 \begin{scala}
   def bananas = Label("Bananas", fg=white, bg=blue)
   val oneof: OneOf =
-      OneOf(bg = Wide.red)( bananas.rotated(0)
-                          , bananas.rotated(1)
-                          , bananas.rotated(2)
-                          , bananas.rotated(3)
-                          )
+      OneOf(bg = red)( bananas.rotated(0)
+                     , bananas.rotated(1)
+                     , bananas.rotated(2)
+                     , bananas.rotated(3)
+                     )
  \end{scala}
 gives rise to the glyph that is initially drawn as:
 \begin{center}
@@ -699,8 +778,20 @@ denotes the glyph
 \PNGfig[scale=0.6]{eg1ex}
 \end{center}
 
+\SSS{DefaultBrushes}
+The \Scala{Brushes} module defines several predefined names for colours, as well as a
+constructor that supports their specification as strings. Some examples are:\footnote{See
+\ref{PaintEffects}~\textbf{Paint Effects} for explanation of ``wobbly'', ``dashed'' and ``dotted''.}
 
-
+\begin{scala}
+Brushes("0xFFFF0000/3/ROUND")    // red brush; width 3; round cap
+Brushes("0xFFFFDD00/3/SQUARE")   // yellow brush; width 3; square cap
+Brushes("red/3/ROUND")           // red brush; width 3; round cap
+Brushes("red/3/ROUND-5-15")      // as above, but dashed
+Brushes("red/3/ROUND-2-5")       // as above, but dotted
+Brushes("green/10~4~2")          // a wobbly green brush of width 10 
+Brushes("nothing")               // a transparent brush (no pigment)
+\end{scala} 
 
 \newpage
 \S{Glyph Transformers}
@@ -749,8 +840,10 @@ Intrinsic glyph transformers include:
 \begin{scala}
   def framed(fg: Brush = Glyphs.Framed.defaultFG,
              bg: Brush = Glyphs.Framed.defaultBG): Glyph
+  def roundFramed(fg: Brush = Glyphs.Framed.defaultFG,
+                  bg: Brush = Glyphs.Framed.defaultBG): Glyph
   def edged(fg: Brush = Glyphs.Framed.defaultFG,
-            bg: Brush = Glyphs.Framed.defaultBG): Glyph
+            bg: Brush = Glyphs.Framed.defaultBG): Glyph // same as framed
   def shaded(enlarge: Scalar = 0.25f,
              delta: Scalar = 8f,
              down: Boolean=false, ...): Glyph
@@ -865,7 +958,7 @@ The corresponding non-filled \SCALA{Polygon}s are:
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
 
-\SS{Paint Effects}
+\SS{Paint Effects}\label{PaintEffects}
 Interesting effects are possible when paints are equipped with
 path-effects, or are blurred.
 
@@ -879,18 +972,21 @@ couple of these, namely:
   brush.dashed(on_0, off_0, on_1, off_1, ...): Brush
 \end{scala}
 
-The former yields a brush whose paths are ``sliced'' into segments
-of the specified length; segment endpoints are displaced from the
-path by a random amount limited by the given maximum. If it appears,
-the third integer paramater is the seed for the
-generation of random numbers that determine the displacements.
+The former yields a brush whose paths are ``sliced'' into segments of the
+specified length; segment endpoints are displaced from the path by a random
+amount limited by the given maximum.  If it appears, the third integer
+parameter is the seed for the generation of random numbers that determine
+the displacements.
 
-The latter yields a brush that draws paths u
+The latter yields a brush that draws paths that are dotted/dashed with on
+(visible) segments of the given length(s), and off (transparent) segments
+of the given length.
 
-In the following sequence of examples we compute the
-vertices of a 7-pointed regular star (a ``stargon''), then construct
-a ``wobbly'' paintbrush (\SCALA{blueish}) that is used to render
-the star: first  as a filled polygon then as an open polygon.
+In the following sequence of examples we compute the vertices of a
+7-pointed regular star (a ``stargon''), then construct a ``wobbly''
+paintbrush (\SCALA{blueish}) that is used to render the star: first as a
+filled polygon then as an open polygon.
+
 
 
 First we define generators for filled and non-filled stargon glyphs
@@ -965,8 +1061,9 @@ here are  stars with $n=17, 11, 5, 3$:
 \pdffig[scale=0.3]{PNG/filledstarw3}
 \end{center}
 
+But for $n=4, 6, 8$, and other even numbers, the generator doesn't work.\footnote{Try them, then see if you can explain why.}
+
 \begin{comment}
-But for $n=4, 6, 8$, and other even numbers, the generator doesn't work:
 \begin{center}
 \pdffig[scale=0.3]{PNG/filledstarw4}
 \pdffig[scale=0.3]{PNG/filledstarw6}
@@ -983,12 +1080,12 @@ open one uses a brush without a path effect.
 \end{comment}
 
 
-
-For example:
+\SSS{Framing with sliced and dashed paints}
+The \Scala{sliced} modifier can also be used to yield exotic-looking frames. For example:
 
 \begin{scala}
   Label("...").enlarged(20)
-              .edged(fg = black(width = 2f).sliced(2.5f, 5f))
+              .framed(fg = black(width = 2f).sliced(2.5f, 5f))
               .enlarged(10))
 \end{scala}  
 \begin{center}
@@ -1007,21 +1104,19 @@ It's easier to see the effect of the displacement limit when the path is a strai
 \PNGfig[scale=0.5]{redpoly}
 \end{center}
 
-Another path effect leads to dashed/dotted lines. 
+The \Scala{dashed} modifier gives rise to dashed/dotted lines, for example: 
 \begin{scala}
   Label("...").enlarged(20)
-              .edged(fg = black(width = 2f).dashed(15f, 5f))
+              .framed(fg = black(width = 2f).dashed(15f, 5f))
               .enlarged(10))
 \end{scala}
 \begin{center}
 \PNGfig[scale=0.7]{dashframed}
 \end{center}
 
-Many other effects are available from
-\textbf{Skia} \textit{via} \textbf{Skija}. 
+Many other effects are available from \textbf{Skia} \textit{via} \textbf{Skija}. 
 
-\clearpage
-\SSS{Blurred Paint Effects}
+\SSS{Blurred Paint}
 The intrinsic \Scala{Brush}-transformer \Scala{blurred} yields a
 brush that blurs all the filled glyphs that it paints. When \Scala{brush: Brush}
 \begin{scala}
@@ -1042,24 +1137,6 @@ natural bounding box indicated by the frame.
 \quad\quad
 \pdffig[scale=0.5]{PNG/filledstarw5blur20}
 \end{center}
-
-
-
-\SSS{Blurred Frame Effects}
-Figure \ref{Etc-Blurred} shows the use of a blurred brush, as
-well as uses of the extrinsic glyph transformer
-
-\begin{scala}
-   BlurredFrame(blur:Scalar,spread:Scalar,dx:Scalar=0f,dy:Scalar=0f, ...)
-\end{scala}
-
-The styled blurred button-framing specification 
-
-\begin{scala}
-   Decoration.Blurred(blur:Scalar,spread:Scalar,dx:Scalar=0f,dy:Scalar=0f, ...)
-\end{scala}
-
-is illustrated in Figure \ref{Styles-Blurred}.
 
 \clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1133,8 +1210,8 @@ copy is needed.}
 
 In the present prototype implementation the attributes of brushes
 can be changed dynamically, and the effects of these changes
-\textit{apply retrospectively to every glyph that was ever drawn
-with them}. Although this feature is not intended to be used frequently, it can occasionally
+\textit{apply retrospectively to every glyph that ever incorporated them}.
+Although this feature is not intended to be used frequently, it can occasionally
 be useful: for example using a brush on part of a GUI that indicates
 state by changing its colour.
 
@@ -1259,6 +1336,68 @@ for example:
 %%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
 \S{The glyphXML notation}
+
+The \Scala{glyphXML} notation is a dialect of
+\textbf{xml}, whose elements  are translated to glyphs.  It was originally designed
+to support the composition of textual glyphs, but has developed beyond that
+in ways that will be seen from perusal of the many example programs in
+which it is used.\footnote{Its convenience in use
+depends largely on the fact that in Scala 2 programs \textbf{xml} syntax
+can be included directly; and to a lesser extent on the use of implicit
+functions to transform \textbf{glyphXML} elements to glyphs when such
+elements appear in a context requiring a glyph.  We have not
+yet introduced  \Scala{StyleSheet}s, so although style(sheet)
+specifications play an important role in the materialization of 
+\Scala{glyphXML} expressions as \Scala{Glyph}s, we will not explore
+that role in detail here.}
+
+The following straightforward example starts by declaring a common attribute for
+\Scala{<p>} elements, then defines three glyphs. 
+
+\begin{scala}
+ import glyphXML.Language._
+ implicit val style: StyleSheet = StyleSheet()
+ val declare: Glyph = <ATTRIBUTES key="tag:p" enlarged="20px"/>
+
+ val gxml1: Glyph =
+     <p width="20em" align="left" frame="red/2" rotated="2">
+       Hello world
+     </p>
+
+ val gxml2: Glyph =
+     <p width="20em" align="left" frame="black/3-5-5">
+        Hello world! Is this the very best you can do?
+     </p>
+
+ val gxml3: Glyph =
+   <div width="27em" align="justify">
+     <p>
+       The <b>brain</b> in <i>pain</i> feels with_out
+       ex_ception as if it is going
+       down an uninhibitedly con_vol_uted drain.
+     </p>
+     <p>
+       But when not in pain, it is some_what sensitive to <bi>rain.</bi>
+     </p>
+     <p textForeground="red">
+        Whatever else you do, try to remember that not_with_stand_ing that
+        <b>glyphXML</b> may some_what resemble HTML, it is a completely
+        different lang_uage.
+     </p>
+   </div>
+\end{scala}
+
+Notice the various forms of decoration/framing that are specified for these two
+examples.
+
+\cglyph[scale=0.6]{gxml1}
+
+\cglyph[scale=0.6]{gxml2}
+
+Notice that the hyphenation in this example appears at discretionary
+points: indicated by the presence of underscores.
+
+\cglyph[scale=0.6]{gxml3}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%
@@ -1393,7 +1532,7 @@ glyph tree with a few additional properties.
 The overlays  are organised as a stack of GUI ``layers''
 drawn topmost-last: each appearing  on top of its predecessor in
 the stack, and all appearing on top of the main GUI tree.
-There is also a collection of named ``decorations'' that , each defined
+There is also a collection of named ``decorations'', each defined
 by a glyph tree. These are drawn in no particular order after the
 main GUI and the overlay stack. 
 
@@ -1566,19 +1705,19 @@ As usual we define a companion object to deliver methods
 that support the convenient construction of useful \Scala{ColourButton}s.
 The first one we show here provides a text-labelled button
 using the various defaults provided by \Scala{Brushes}. The defaults
-can be overridden at construction time.
+can be overridden at construction time.\footnote{The \Scala{Brushes} defaults
+are all defined as variables, so can be changed as a program starts. This
+provides a very rudimentary alternative to the styling features  shown later.}
 
 \begin{scala}
 object ColourButton {
- val up:    Brush = Brushes.buttonForeground()
- val down:  Brush = Brushes.buttonDown()
- val hover: Brush = Brushes.buttonHover()
- val bg:    Brush = Brushes.buttonBackground
+ import Brushes.{buttonForeground=>up, ButtonDown  =>down,
+                 buttonBackground=>bg, buttonHover =>hover }
  def apply(text:  String,
            up: Brush=up, down: Brush=down, hover: Brush=hover,
            bg: Brush=bg, background: Boolean = true)
           (react: Reaction): ReactiveGlyph =
- { val glyph: Glyph = Brushes.buttonText(text).asGlyph(up, bg)
+ { val glyph: Glyph = Brushes.buttonText(text)
    new ColourButton(glyph, down, hover, background, react)
  }
 
@@ -1667,7 +1806,7 @@ package tests
 import unstyled.static._
 import NaturalSize.{Col, Row}
 import unstyled.reactive.TextButton
-import DefaultBrushes._
+import Brushes._
 import GlyphTypes.Font
 \end{scala}
 
@@ -1685,7 +1824,7 @@ object Example2 extends Application  with Example2Interface {
 
 The interface is a centered column on a light grey background on
 which there is a label separated by a transparent spacer
-from a row of two captioned buttons: each edged using a
+from a row of two captioned buttons: each framed using a
 rounded blue brush. Interglyph spacing on the row is
 10\ux.  The label's background is initially painted with
 a rounded green brush; and the buttons
@@ -1710,11 +1849,11 @@ trait Example2Interface {
     Row(skip=10)(
         TextButton("make it blue")
            { _ => labelBackground.color(blue.color) }
-           .edged(buttonFrame),
+           .framed(buttonFrame),
            
         TextButton("make it red")
            { _ => labelBackground.color(red.color) }
-           .edged(buttonFrame)
+           .framed(buttonFrame)
     )
   ).enlarged(20)
 }
@@ -1756,7 +1895,7 @@ package org.sufrin.glyph
 package tests
 import unstyled.static.Rect
 import NaturalSize.{Col, Row}
-import DefaultBrushes._
+import Brushes._
 import styled.TextButton
 import styled.Label
 \end{scala}

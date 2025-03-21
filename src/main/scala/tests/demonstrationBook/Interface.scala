@@ -7,7 +7,7 @@ import unstyled.BooleanGlyphs.OnOffButton
 
 import org.sufrin.glyph.styles.decoration
 import org.sufrin.glyph.glyphXML.Macro
-import org.sufrin.glyph.DefaultBrushes.{black, darkGrey}
+import org.sufrin.glyph.Brushes.{black, darkGrey}
 import org.sufrin.glyph.unstyled.static
 
 class Interface(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {

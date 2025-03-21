@@ -275,8 +275,8 @@ trait Surface {
     // Debugging
     if (false)
     withOrigin(Vec.Zero-currentOrigin) {
-      drawPoint(currentOrigin,           DefaultBrushes.blue(width=10))
-      drawPoint(currentOrigin+ diagonal, DefaultBrushes.red(width=10))
+      drawPoint(currentOrigin,           Brushes.blue(width=10))
+      drawPoint(currentOrigin+ diagonal, Brushes.red(width=10))
     }
 
     try effect

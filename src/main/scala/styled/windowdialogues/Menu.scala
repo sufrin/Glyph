@@ -4,7 +4,7 @@ package styled.windowdialogues
 import Location.Location
 import unstyled.reactive.{GenericButton, RawButton}
 
-import DefaultBrushes.{lightGrey, yellow}
+import Brushes.{lightGrey, yellow}
 
 /**
  *
@@ -62,7 +62,7 @@ class Menu(entries: Seq[Glyph]) { thisPopup =>
    *
    *  (The laziness of `root` is essential because root and `close()` are mutually recursive.)
    */
-  lazy val root: Glyph = Framed(fg=DefaultBrushes.red(width=0f))({
+  lazy val root: Glyph = Framed(fg=Brushes.red(width=0f))({
     def afterReact(glyph: Glyph): Glyph = glyph match  {
       case button: GenericButton =>
         if (button.isMenuButton) button  else button.afterReact{ _ => close() }

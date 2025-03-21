@@ -10,7 +10,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
     import pageSheet.{ex, em}
     import org.sufrin.glyph.unstyled.static._
     import GlyphTypes._
-    import DefaultBrushes.{blueLine, red, redLine, redFrame, green, nothing,black, SQUARE, BUTT, blue, brown, lightGrey}
+    import Brushes.{blueLine, red, redLine, redFrame, green, nothing,black, SQUARE, BUTT, blue, brown, lightGrey}
     import styled.Label
     val nested = Book()
     val Page = nested.Page

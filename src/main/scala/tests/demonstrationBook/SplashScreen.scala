@@ -69,13 +69,13 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
 
     val splashStyle: StyleSheet = sheet.buttonSheet.copy(
       fontScale=3f,
-      buttonBackgroundBrush=DefaultBrushes.blue,
-      buttonForegroundBrush=DefaultBrushes.white,
-      buttonDecoration = decoration.RoundFramed(fg=DefaultBrushes.blue(width=10), bg=DefaultBrushes.blue, radius = .48f)
+      buttonBackgroundBrush=Brushes.blue,
+      buttonForegroundBrush=Brushes.white,
+      buttonDecoration = decoration.RoundFramed(fg=Brushes.blue(width=10), bg=Brushes.blue, radius = .48f)
     )
 
     val selectButtonStyle: StyleSheet = sheet.buttonSheet.copy(
-      buttonDecoration = decoration.Framed(fg=DefaultBrushes.blue)
+      buttonDecoration = decoration.Framed(fg=Brushes.blue)
     )
 
     lazy val styleSelect: RadioCheckBoxes = RadioCheckBoxes(styles, "-notebook") {
@@ -128,7 +128,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
         (though space constraints within the JVM will impose a natural limit).
       </p>
       </SCOPE>
-    </div>.enlarged(20).framed(DefaultBrushes.black.sliced(10, 5)).enlarged(25)
+    </div>.enlarged(20).framed(Brushes.black.sliced(10, 5)).enlarged(25)
 
 
 
@@ -150,7 +150,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
       styleSelect.arrangedVertically(), em scaled 4,
       scaleSelect.arrangedVertically(), em scaled 4,
       screenSelect.arrangedVertically(),
-    ) . enlarged(15) . edged(DefaultBrushes.blue)
+    ) . enlarged(15) . edged(Brushes.blue)
 
     val GUI: Glyph = Col(align=Center)(
       TextButton(" Glyph Sampler ") { _ => thisApplication.main(Array(scale, style, screen))} (splashStyle.copy(fontScale=3f)),

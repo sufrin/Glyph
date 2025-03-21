@@ -16,7 +16,7 @@ case class StyleSheet
  buttonFontFamily: FontFamily  = FontFamily(),
  buttonFontStyle: FontStyle = FontStyle.NORMAL,
  buttonFontSize: Scalar  = 22f,
- buttonBorderBrush: Brush = Brush("buttonBorder")(color=0XFF777777, width=5f, cap=DefaultBrushes.ROUND),
+ buttonBorderBrush: Brush = Brush("buttonBorder")(color=0XFF777777, width=5f, cap=Brushes.ROUND),
  buttonBackgroundBrush: Brush = Brush("transparent")(color=0X00FFFFFF), // transparent
  buttonForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF), // blue
  buttonHoverBrush: Brush = Brush("green")(color=0xFF00FF00), // green
@@ -97,11 +97,11 @@ case class StyleSheet
 
   lazy val menuStyle: MenuStyle = MenuStyle(
     button = buttonStyle,
-    nestedButton = buttonStyle.copy(frame = decoration.Edged(fg = DefaultBrushes.black(width = 0))),
-    reactive = buttonStyle.copy(frame = decoration.Edged(fg = DefaultBrushes.black(width = 0))),
-    inactive = decoration.Edged(fg = DefaultBrushes.black(width = 1)),
-    bg = DefaultBrushes.lightGrey,
-    fg = DefaultBrushes.lightGrey,
+    nestedButton = buttonStyle.copy(frame = decoration.Edged(fg = Brushes.black(width = 0))),
+    reactive = buttonStyle.copy(frame = decoration.Edged(fg = Brushes.black(width = 0))),
+    inactive = decoration.Edged(fg = Brushes.black(width = 1)),
+    bg = Brushes.lightGrey,
+    fg = Brushes.lightGrey,
   )
 
   lazy val emWidth: Scalar = textFont.measureTextWidth("m") // textFont.getMetrics.getMaxCharWidth//

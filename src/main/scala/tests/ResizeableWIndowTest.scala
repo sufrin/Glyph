@@ -3,7 +3,7 @@ package tests
 
 import NaturalSize.{Col, Row}
 
-import org.sufrin.glyph.DefaultBrushes.{black, blackFrame, redFrame}
+import org.sufrin.glyph.Brushes.{black, blackFrame, redFrame}
 import org.sufrin.glyph.unstyled.reactive.TextButton
 import org.sufrin.glyph.styled.{Label, Resizeable}
 import org.sufrin.glyph.styles.decoration.Edged
@@ -89,7 +89,7 @@ object ResizeableWIndowTest extends Application {
     </div>
   ) enlarged 10 edged (black(width=2)) enlarged 20
 
-  import DefaultBrushes._
+  import Brushes._
 
   implicit val style: StyleSheet = StyleSheet(
     containerDiagonal     = Vec(400,150),

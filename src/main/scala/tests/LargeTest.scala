@@ -22,7 +22,7 @@ trait LargeTestGUI {
   import GlyphTransforms.{Framed, Scaled}
   import NaturalSize.{Col, Row}
   import unstyled.reactive.{FramedButton, RawButton, ShadedButton}
-  import DefaultBrushes._
+  import Brushes._
 
   implicit val sheet: StyleSheet = StyleSheet()
 
@@ -757,22 +757,22 @@ trait LargeTestGUI {
         Rect(
           2,
           t.height + t.descent,
-          fg = red(width = 2, cap = DefaultBrushes.SQUARE)
+          fg = red(width = 2, cap = Brushes.SQUARE)
         ) @@ Vec(x, 0),
         Rect(
           2,
           t.height,
-          fg = blue(width = 2, cap = DefaultBrushes.SQUARE)
+          fg = blue(width = 2, cap = Brushes.SQUARE)
         ) @@ Vec(x + 4, 0),
         Rect(
           2,
           t.descent,
-          fg = green(width = 2, cap = DefaultBrushes.SQUARE)
+          fg = green(width = 2, cap = Brushes.SQUARE)
         ) @@ Vec(x + 8, t.height),
         Rect(
           t.width,
           2,
-          fg = black(width = 1, cap = DefaultBrushes.SQUARE, alpha = 0.25f)
+          fg = black(width = 1, cap = Brushes.SQUARE, alpha = 0.25f)
         ) @@ Vec(0, t.height),
         Polygon(
           g.diagonal.x,
@@ -1116,7 +1116,7 @@ trait LargeTestGUI {
         |
         |""".stripMargin)
 
-    val thinBlue = DefaultBrushes.blue(width = 4)
+    val thinBlue = Brushes.blue(width = 4)
 
     def Tb(title: String) = But(title) { _ => println(s"Button $title") }
 

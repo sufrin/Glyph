@@ -17,9 +17,9 @@ import GlyphTypes.Font
  * @see EarlyMenuTest for a very simple example.
  */
 trait BooleanButton  {
-  def buttonFont: Font = DefaultBrushes.buttonFont
-  def fg: Brush = DefaultBrushes.black
-  def bg: Brush = DefaultBrushes.white
+  def buttonFont: Font = Brushes.buttonFont
+  def fg: Brush = Brushes.black
+  def bg: Brush = Brushes.white
   def toGlyph(string: String): Glyph = Text(string, buttonFont, fg, bg)
   def cross: Glyph = Text("✖", buttonFont, fg, bg)
   def tick: Glyph  = Text("✔", buttonFont, fg, bg)

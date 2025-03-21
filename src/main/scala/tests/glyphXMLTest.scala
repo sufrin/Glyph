@@ -70,15 +70,15 @@ object glyphXMLTest extends Application {
 
     // set up the interface
     val sheet: StyleSheet = StyleSheet().copy(
-        backgroundBrush       = DefaultBrushes.nothing,
-        buttonForegroundBrush = DefaultBrushes.red,
-        buttonDecoration           = styles.decoration.Blurred(fg=DefaultBrushes.red(width=10), bg=DefaultBrushes.nothing, blur=5f, spread=5f)
+        backgroundBrush       = Brushes.nothing,
+        buttonForegroundBrush = Brushes.red,
+        buttonDecoration           = styles.decoration.Blurred(fg=Brushes.red(width=10), bg=Brushes.nothing, blur=5f, spread=5f)
       )
     implicit val pageSheet: StyleSheet = StyleSheet().copy(
-        backgroundBrush       = DefaultBrushes.nothing,
+        backgroundBrush       = Brushes.nothing,
         buttonForegroundBrush = sheet.textForegroundBrush,
         buttonFontSize        = sheet.textFontSize*0.9f,
-        buttonDecoration           = styles.decoration.Framed(fg=DefaultBrushes.red(width=2), bg=DefaultBrushes.nothing)
+        buttonDecoration           = styles.decoration.Framed(fg=Brushes.red(width=2), bg=Brushes.nothing)
     )
     implicit val bookStyle: BookSheet = new BookSheet(buttonSheet = sheet, pageSheet = pageSheet)
 

@@ -10,7 +10,7 @@ import styled.Book
 import styled.BookSheet
 import styled.{CheckBox, MenuButton, MenuGlyphButton}
 import org.sufrin.glyph.unstyled.static._
-import DefaultBrushes.{blue, nothing, red, redLine, yellow}
+import Brushes.{blue, nothing, red, redLine, yellow}
 
 import org.sufrin.glyph.styles.decoration
 
@@ -161,12 +161,12 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
     }
 
     val smallStyle = style.pageSheet.copy(
-        buttonDecoration=decoration.Blurred(fg=DefaultBrushes.green, blur=5, spread=5),
-        buttonForegroundBrush = DefaultBrushes.black,
-        buttonHoverBrush = DefaultBrushes.darkGrey,
-        labelForegroundBrush = DefaultBrushes.green,
+        buttonDecoration=decoration.Blurred(fg=Brushes.green, blur=5, spread=5),
+        buttonForegroundBrush = Brushes.black,
+        buttonHoverBrush = Brushes.darkGrey,
+        labelForegroundBrush = Brushes.green,
         fontScale = 1.3f,
-        backgroundBrush = DefaultBrushes.white
+        backgroundBrush = Brushes.white
     )
 
     lazy val menuD =  {

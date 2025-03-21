@@ -80,7 +80,7 @@ object HintManager {
   def apply(target: Enterable, seconds: Double, hint: ()=>String, constant: Boolean = true)(implicit style: StyleSheet): HintManager = {
       new HintManager(
       target,
-        ()=>static.Label(hint(), style.labelStyle.font, fg=DefaultBrushes.red, bg=DefaultBrushes.white).enlarged(10).framed(),
+        ()=>static.Label(hint(), style.labelStyle.font, fg=Brushes.red, bg=Brushes.white).enlarged(10).framed(),
       seconds,
       constant)
   }

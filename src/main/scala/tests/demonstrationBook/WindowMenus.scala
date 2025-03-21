@@ -15,7 +15,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translation: glyph
   implicit val pageSheet: StyleSheet = style.buttonSheet
   import translation._
   import pageSheet.{ex, em}
-  import DefaultBrushes.{ red,blue}
+  import Brushes.{ red,blue}
 
 
   val book = Book()

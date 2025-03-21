@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package tests
 
 import styled.{Book, BookSheet, TextButton}
-import DefaultBrushes._
+import Brushes._
 import GlyphTypes.Scalar
 import NaturalSize.{Col, Row}
 import styled.Label.Label

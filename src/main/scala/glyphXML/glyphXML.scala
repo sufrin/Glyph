@@ -286,7 +286,7 @@ object Paragraph {
 
   def fromGlyphs(sheet: StyleSheet, glyphs: Seq[Glyph], parHang: Option[Glyph]): Glyph = {
     val glyphs$   =
-      (if (sheet.parIndent>0) List(static.Rect(sheet.parIndent, 1f, fg=DefaultBrushes.nothing)) else Nil) ++ glyphs
+      (if (sheet.parIndent>0) List(static.Rect(sheet.parIndent, 1f, fg=Brushes.nothing)) else Nil) ++ glyphs
 
     val (hangGlyph, hangWidth) = parHang match {
       case None    => (None, 0f)
@@ -413,9 +413,9 @@ object Paragraph {
           case breakableGlyph: BreakableGlyph if false  =>
             val glyphs = breakableGlyph.glyphs
             val breakPoint: Int = breakableGlyph.maximal(maxWidthfloor)
-            galley += NaturalSize.Row(Top)(glyphs.take(breakPoint)).framed(fg = DefaultBrushes.red(width=2))
+            galley += NaturalSize.Row(Top)(glyphs.take(breakPoint)).framed(fg = Brushes.red(width=2))
           case other =>
-            galley += NaturalSize.Row(static.FilledRect(maxWidthfloor, other.h, fg = DefaultBrushes.red(width=2)))
+            galley += NaturalSize.Row(static.FilledRect(maxWidthfloor, other.h, fg = Brushes.red(width=2)))
         }
         words.nextElement()
       } else {
@@ -550,7 +550,7 @@ object Translation {
           }
 
         def frame(glyph: Glyph): Glyph = {
-          val brush = attributes.Brush("frame", DefaultBrushes.invisible)
+          val brush = attributes.Brush("frame", Brushes.invisible)
           val framing = attributes.Bool("framed", brush.getAlpha != 0)
           val rad: Scalar = attributes.Float("radius", 0)
           if (framing)
@@ -560,7 +560,7 @@ object Translation {
         }
 
         def edge(glyph: Glyph): Glyph = {
-          val brush = attributes.Brush("edge", DefaultBrushes.invisible)
+          val brush = attributes.Brush("edge", Brushes.invisible)
           val framing = attributes.Bool("edged", brush.getAlpha != 0)
           if (framing)
             glyph.edged(fg = brush, bg = attributes.Brush("bg", glyph.bg))
@@ -779,13 +779,13 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
 
 
   /**
-   *  Yields the brush whose `DefaultBrushes` specification has key `key`, or `alt`.
+   *  Yields the brush whose `Brushes` specification has key `key`, or `alt`.
    *
-   * @see DefaultBrushes
+   * @see Brushes
    */
   def Brush(key: String, alt: Brush): Brush = attributes.get(key) match {
     case None       => alt
-    case Some(name) => DefaultBrushes(name)
+    case Some(name) => Brushes(name)
   }
 
   /**
@@ -1020,8 +1020,8 @@ class Translation(val primitives: Primitives=new Primitives) {
             val width  = attributes$.Units("width", sheet$.emWidth)(sheet$)
             val height = attributes$.Units("height", sheet$.exHeight)(sheet$)
             val stretch = attributes$.Float("stretch", 1f)
-            val background = attributes$.Brush("background", attributes$.Brush("bg", DefaultBrushes.nothing))
-            val foreground = attributes$.Brush("foreground", attributes$.Brush("fg", DefaultBrushes.nothing))
+            val background = attributes$.Brush("background", attributes$.Brush("bg", Brushes.nothing))
+            val foreground = attributes$.Brush("foreground", attributes$.Brush("fg", Brushes.nothing))
             //** DO NOT DECORATE: IT MESSES UP FIXEDSIZE STRETCHING **//
             List((GlyphTarget(paragraph, sheet$, FixedSize.Space(width, height, stretch, fg=foreground, bg=background))))
 
@@ -1034,7 +1034,7 @@ class Translation(val primitives: Primitives=new Primitives) {
                elementMap.get(id) match {
                  case None =>
                    logging.Default.warn (s"$tagString <glyph ${attributes.asString}/> UNDEFINED (no generator or element)")
-                   Decorated(GlyphTarget(paragraph, sheet$, styled.Label (s"UNDEFINED $id")(sheet$.copy(labelForegroundBrush = DefaultBrushes.red))))
+                   Decorated(GlyphTarget(paragraph, sheet$, styled.Label (s"UNDEFINED $id")(sheet$.copy(labelForegroundBrush = Brushes.red))))
                  case Some(element) =>
                    translate(tags, paragraph, attributes, sheet, element)
                }
@@ -1162,7 +1162,7 @@ class Translation(val primitives: Primitives=new Primitives) {
     styledMap.get(ref) match {
       case None =>
             logging.Default.warn (s"<glyph ${attributes.asString}/> UNDEFINED (no generator)")
-            styled.Label (s"UNDEFINED $ref") (sheet.copy (labelForegroundBrush = DefaultBrushes.red) )
+            styled.Label (s"UNDEFINED $ref") (sheet.copy (labelForegroundBrush = Brushes.red) )
       case Some(glyph) =>
         glyph(sheet)
     }

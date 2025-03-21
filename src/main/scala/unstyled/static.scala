@@ -35,7 +35,7 @@ object static  {
 
     import io.github.humbleui.skija.Path
 
-    def NOTHING: Brush = DefaultBrushes.invisible
+    def NOTHING: Brush = Brushes.invisible
 
     case class ShadingPaths(topLeft: Path, bottomRight: Path)
 
@@ -76,7 +76,7 @@ object static  {
      * Shown (when `down.value` is true)  as glyph, with shading of width zdelta` around the bottom-left corner of glyph.
      * Shown (when `down.value` is false) as glyph, in the bottom-left corner of the whole.
      */
-    def Dynamic(fg: Brush=DefaultBrushes.buttonForeground, bg: Brush=DefaultBrushes.buttonBackground, delta: Scalar, down: Variable[Boolean] = Variable(false))(glyph: Glyph) =
+    def Dynamic(fg: Brush=Brushes.buttonForeground, bg: Brush=Brushes.buttonBackground, delta: Scalar, down: Variable[Boolean] = Variable(false))(glyph: Glyph) =
       new Dynamic(glyph, fg, bg, delta, down)
 
     /**
@@ -85,7 +85,7 @@ object static  {
      * Shown (when `down` is true)  as glyph, with shading of width zdelta` around the bottom-left corner of glyph.
      * Shown (when `down` is false) as glyph, in the bottom-left corner of the whole.
      */
-    def Static(fg: Brush = DefaultBrushes.buttonForeground, bg: Brush = DefaultBrushes.buttonBackground, delta: Scalar, down: Boolean=false)(glyph: Glyph) =
+    def Static(fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, delta: Scalar, down: Boolean=false)(glyph: Glyph) =
         GlyphTransforms.Shaded(glyph, fg, bg, 0f, delta, down)
 
     class  Dynamic(glyph: Glyph, val fg: Brush, val bg: Brush, delta: Scalar, val down: Variable[Boolean]) extends Glyph {
@@ -209,7 +209,7 @@ object static  {
     def Right(theGlyphs: Seq[Glyph]): Composite = aligned(1f, 0.5f, theGlyphs, "Right")
 
 
-    def apply(rowAlign: VAlignment=rowAlign, colAlign: Alignment=colAlign, fg: Brush = DefaultBrushes.nothing, bg: Brush = DefaultBrushes.nothing): ConcentricGenerators = {
+    def apply(rowAlign: VAlignment=rowAlign, colAlign: Alignment=colAlign, fg: Brush = Brushes.nothing, bg: Brush = Brushes.nothing): ConcentricGenerators = {
       val (_fg, _bg, _r, _c) = (fg, bg, rowAlign, colAlign)
       new ConcentricGenerators {
         val fg: Brush = _fg
@@ -256,8 +256,8 @@ object static  {
   }
 
   object Concentric extends ConcentricGenerators {
-    val bg: Brush = DefaultBrushes.nothing
-    val fg: Brush = DefaultBrushes.nothing
+    val bg: Brush = Brushes.nothing
+    val fg: Brush = Brushes.nothing
     val rowAlign: VAlignment=org.sufrin.glyph.Mid
     val colAlign: Alignment=org.sufrin.glyph.Center
   }
@@ -265,8 +265,8 @@ object static  {
   /** An empty glyph with the given dimensions */
   class Skip(width: Scalar, height: Scalar) extends Glyph {
     val diagonal = Vec(width, height)
-    val fg = DefaultBrushes.invisible
-    val bg = DefaultBrushes.invisible
+    val fg = Brushes.invisible
+    val bg = Brushes.invisible
     override def draw(surface: Surface): Unit = ()
 
     override val toString: String = s"Skip($width, $height)"
@@ -296,7 +296,7 @@ object static  {
   }
 
   object INVISIBLE {
-    def apply(fg: Brush = DefaultBrushes.invisible, bg: Brush = DefaultBrushes.invisible): Glyph = new INVISIBLE(fg, bg)
+    def apply(fg: Brush = Brushes.invisible, bg: Brush = Brushes.invisible): Glyph = new INVISIBLE(fg, bg)
   }
 
   /**
@@ -304,7 +304,7 @@ object static  {
    */
   class Point(val fg: Brush) extends Glyph {
     val diagonal = Vec(paint.getStrokeWidth, paint.getStrokeWidth)
-    val bg = DefaultBrushes.nothing
+    val bg = Brushes.nothing
 
     def draw(surface: Surface): Unit =
       surface.drawPoints$(paint, diagonal.x/2, diagonal.y/2)
@@ -352,8 +352,8 @@ object static  {
   }
 
   object BlurredFrame  {
-    val defaultFG: Brush = DefaultBrushes.nothing
-    val defaultBG: Brush =DefaultBrushes.nothing
+    val defaultFG: Brush = Brushes.nothing
+    val defaultBG: Brush =Brushes.nothing
 
     def empty(diagonal: Vec, blur: Scalar, spread: Scalar, fg: Brush=defaultFG, bg: Brush=defaultBG, dx: Scalar=0f, dy: Scalar=0f, fudge: Scalar = 1.75f): Glyph =
         new BlurredFrame(None, diagonal, blur, spread, fg, bg, dx, dy).enlarged(fudge*(blur+spread))
@@ -604,7 +604,7 @@ object static  {
 
     import io.github.humbleui.skija.Font
 
-    def apply(text: String, font: Font = DefaultBrushes.buttonFont, fg: Brush = defaultFG, bg: Brush = defaultBG): Glyph =
+    def apply(text: String, font: Font = Brushes.buttonFont, fg: Brush = defaultFG, bg: Brush = defaultBG): Glyph =
         unstyled.Text(text, font, fg, bg)
   }
 
@@ -615,9 +615,9 @@ object static  {
     def apply(width: Scalar, height: Scalar): Glyph = new Glyph {
       def draw(surface: Surface): Unit = ()
       def diagonal: Vec = Vec(width, height)
-      def copy(fg: Brush=DefaultBrushes.nothing, bg: Brush=DefaultBrushes.nothing): Glyph = Empty(width, height)
-      val fg: Brush = DefaultBrushes.nothing
-      val bg: Brush = DefaultBrushes.nothing
+      def copy(fg: Brush=Brushes.nothing, bg: Brush=Brushes.nothing): Glyph = Empty(width, height)
+      val fg: Brush = Brushes.nothing
+      val bg: Brush = Brushes.nothing
     }
   }
 

@@ -8,7 +8,7 @@ import Dialogue.{OK, POPUP}
 import NaturalSize.{Col, Grid, Row}
 import org.sufrin.glyph.unstyled.static.{FilledRect, INVISIBLE, Rect}
 
-import org.sufrin.glyph.DefaultBrushes.{nothing, redFrame, ROUND}
+import org.sufrin.glyph.Brushes.{nothing, redFrame, ROUND}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.HintManager
 import org.sufrin.glyph.unstyled.reactive.Reaction
@@ -18,7 +18,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   implicit val styleSheet: StyleSheet = style.pageSheet
   import translation._
   import styleSheet.{ex, em, hSpace, vSpace}
-  import DefaultBrushes.{red,blue,lightGrey,darkGrey,green,yellowHuge}
+  import Brushes.{red,blue,lightGrey,darkGrey,green,yellowHuge}
   val book = Book()
   val Page = book.DefinePage
   val anchor = INVISIBLE()
@@ -54,8 +54,8 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
         <div align="left" width="75em" DEC="Undecorated">
           <p>buttonBackgroundBrush={buttonBG}</p><p>buttonDecoration = RoundFramed({fg}, {bg}, enlarge=30f, radius={radius.toString})</p>
         </div>)
-      }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG),
-        buttonDecoration = RoundFramed(DefaultBrushes(fg), DefaultBrushes(bg), radius=radius, enlarge=30f)))
+      }(styleSheet.copy(buttonBackgroundBrush=Brushes(buttonBG),
+        buttonDecoration = RoundFramed(Brushes(fg), Brushes(bg), radius=radius, enlarge=30f)))
       button
     }
 
@@ -65,8 +65,8 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
         <div align="Left" width="75em" DEC="Undecorated">
           <p>buttonBackgroundBrush={buttonBG}</p><p>Framed({fg}, {bg}, enlarge=35f)</p>
         </div>)
-      }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG),
-                        buttonDecoration = Framed(DefaultBrushes(fg), DefaultBrushes(bg), enlarge=35f)))
+      }(styleSheet.copy(buttonBackgroundBrush=Brushes(buttonBG),
+                        buttonDecoration = Framed(Brushes(fg), Brushes(bg), enlarge=35f)))
 
     Col(align=Center)(
       <div width="60em" align="justify" parSkip="3ex">
@@ -101,8 +101,8 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
           <p>decoration=Blurred({fg}, {bg}, blur={blur}, spread={spread}, delta={delta})</p>
           <p>buttonBackgroundBrush={buttonBG}</p>
         </div>)
-      }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG),
-        buttonDecoration = Blurred(DefaultBrushes(fg), DefaultBrushes(bg), blur, spread, delta=delta, enlarge=20)))
+      }(styleSheet.copy(buttonBackgroundBrush=Brushes(buttonBG),
+        buttonDecoration = Blurred(Brushes(fg), Brushes(bg), blur, spread, delta=delta, enlarge=20)))
 
     def shaded(fg: String, bg: String, down: Boolean, buttonBG: String="lightGrey", delta: Scalar=10f): Glyph =
       TextButton(s"Shaded($fg, $bg, ∂=$delta, down=$down)", hint=Hint(10.0, s"buttonBackgroundBrush=$buttonBG\ndelta=$delta"))
@@ -111,8 +111,8 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
           <p>decoration=Shaded({fg}, {bg}, enlarge=25, delta={delta}, down={down})</p>
           <p>buttonBackgroundBrush={buttonBG}</p>
         </div>)
-      }(styleSheet.copy(buttonBackgroundBrush=DefaultBrushes(buttonBG),
-        buttonDecoration = Shaded(DefaultBrushes(fg), DefaultBrushes(bg), enlarge=20, delta=delta, down=down)))
+      }(styleSheet.copy(buttonBackgroundBrush=Brushes(buttonBG),
+        buttonDecoration = Shaded(Brushes(fg), Brushes(bg), enlarge=20, delta=delta, down=down)))
 
     Col(align=Center)(
         <div width="65em" enlarged="20px">

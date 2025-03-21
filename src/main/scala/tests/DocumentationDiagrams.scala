@@ -3,7 +3,7 @@ package tests
 import unstyled.static._
 import GlyphTypes._
 
-import DefaultBrushes.{blueLine, lightGrey, redFrame}
+import Brushes.{blueLine, lightGrey, redFrame}
 import unstyled.Text
 
 
@@ -16,7 +16,7 @@ object DocumentationDiagrams {
   import GlyphTransforms.Framed
   import NaturalSize.Col
   import PolygonLibrary._
-  import DefaultBrushes.{ROUND,SQUARE,BUTT}
+  import Brushes.{ROUND,SQUARE,BUTT}
 
   val yellow   = Brush("yellow") color (0xFFffff00) strokeWidth (1.0f) strokeCap(ROUND)
   val green    = Brush("green") color (0xFF00ff00) strokeWidth (5.0f) strokeCap(ROUND)
@@ -119,7 +119,7 @@ object DocumentationDiagrams {
       Polygon(100, 100, fg = blue(width=3))((0,0), (20, 0), (20, 20), (40, 20), (40, 0), (60,0), (60, 60), (80, 60), (80, 0), (100,0)),
       FilledPolygon(200, 200, fg = red)((0, 0), (200, 200), (200, 0), (0, 200)),
       FilledPolygon(200, 200, fg = red)((200, 200), (0, 0), (200, 0), (0, 200)),
-      FilledPolygon(150, 150, fg = red.copy width 1 cap DefaultBrushes.ROUND)((100, 100), (0, 0), (200, 0), (0, 200), (200, 200)),
+      FilledPolygon(150, 150, fg = red.copy width 1 cap Brushes.ROUND)((100, 100), (0, 0), (200, 0), (0, 200), (200, 200)),
       FilledPolygon(100, 100, fg = blue(width=3))((0,0), (20, 0), (20, 20), (40, 20), (40, 0), (60,0), (60, 60), (80, 60), (80, 0), (100,0)),
       FilledPolygon(100, 100, fg = blue(width=3))((100,0), (100, 100), (0, 100), (0,0), (20, 0), (20, 20), (40, 20), (40, 0), (60,0), (60, 60), (80, 60), (80, 0), (100,0)),
       Polygon(100, 100, fg = blue(width=3))((0, 0), (20, 0), (20, 20), (40, 20), (40, 0), (60, 0), (60, 60), (80, 60), (80, 0), (100, 0)),
@@ -256,7 +256,30 @@ object DocumentationDiagrams {
       ), "Row(align=Top)(...)")
 
 
-
+    {
+      import glyphXML.Language._
+      implicit val style: StyleSheet = StyleSheet(fontScale=0.6f)
+      val declare: Glyph = <ATTRIBUTES key="tag:p" enlarged="20px"/>
+      val gxml1: Glyph= <p width="20em" align="left" frame="red/3" rotated="2">Hello world</p>
+      val gxml2: Glyph= <p width="20em" align="left" frame="black/3-5-5">Hello world! Is this the very best you can do?</p>
+      val gxml3: Glyph =
+        <div width="27em" align="justify">
+          <p>
+            The <b>brain</b> in <i>pain</i> feels with_out ex_ception as if it is going
+            down an uninhibitedly con_voluted drain.
+          </p>
+          <p>
+            But when not in pain, it is some_what sensitive to <bi>rain.</bi>
+          </p>
+          <p textForeground="red">
+            Whatever else you do, try to remember that not_with_stand_ing that <b>glyphXML</b> may
+            some_what resemble HTML, it is a completely different lang_uage.
+          </p>
+        </div>
+      write("gxml1.png")(gxml1, "gxml1: Glyph")
+      write("gxml2.png")(gxml2, "gxml2: Glyph")
+      write("gxml3.png")(gxml3, "gxml3: Glyph")
+    }
 
     val down = Variable(false)
     write("dynamic.png")((Shaded.Dynamic(fg=blue, bg=nothing, delta=10f, down=down)(FilledRect(150, 150, red))))

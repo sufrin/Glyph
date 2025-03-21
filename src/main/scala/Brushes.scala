@@ -52,7 +52,7 @@ trait Brushes {
 /**
  * Concrete definitions of a variety of brushes.
  */
-object DefaultBrushes extends Brushes {
+object Brushes extends Brushes {
 
   // TODO: better notation for brushes
   def withName(name: String): Brush = {

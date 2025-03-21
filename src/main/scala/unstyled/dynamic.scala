@@ -239,8 +239,8 @@ import unstyled.{static, Text}
 
     val offset = Vec(fg.strokeWidth/2, fg.strokeWidth/2)
 
-    val selectedColor   = fg(cap=DefaultBrushes.ROUND)
-    val unselectedColor = fg(width=fg.strokeWidth, cap=DefaultBrushes.ROUND, color=0XFF666666)
+    val selectedColor   = fg(cap=Brushes.ROUND)
+    val unselectedColor = fg(width=fg.strokeWidth, cap=Brushes.ROUND, color=0XFF666666)
 
     def draw(surface: Surface): Unit = {
       drawBackground(surface)
@@ -261,7 +261,7 @@ import unstyled.{static, Text}
   }
 
   object ViewPort {
-    def apply(glyph: Glyph, fg: Brush=DefaultBrushes.black, bg: Brush = DefaultBrushes.white, initialPortDiagonal: Vec=null): ViewPort = new ViewPort(glyph, fg, bg, initialPortDiagonal)
+    def apply(glyph: Glyph, fg: Brush=Brushes.black, bg: Brush = Brushes.white, initialPortDiagonal: Vec=null): ViewPort = new ViewPort(glyph, fg, bg, initialPortDiagonal)
   }
 
   /**
@@ -459,7 +459,7 @@ import unstyled.{static, Text}
   }
 
   object SplitScreen {
-    def apply(left: Glyph, right: Glyph, dynamic: Boolean, fg: Brush=DefaultBrushes.black, bg: Brush = DefaultBrushes.nothing): SplitScreen =
+    def apply(left: Glyph, right: Glyph, dynamic: Boolean, fg: Brush=Brushes.black, bg: Brush = Brushes.nothing): SplitScreen =
       new SplitScreen(left, right, dynamic, fg, bg)
   }
 

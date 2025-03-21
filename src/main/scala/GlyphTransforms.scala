@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import DefaultBrushes.nothing
+import Brushes.nothing
 import GlyphTypes._
 import NaturalSize.{Col, Row}
 
@@ -77,25 +77,25 @@ trait GlyphTransforms {
    *
    * @see Framed
    */
-  def framed(fg: Brush = DefaultBrushes.black,
-             bg: Brush = DefaultBrushes.nothing,
+  def framed(fg: Brush = Brushes.black,
+             bg: Brush = Brushes.nothing,
              radius: Scalar = 0f): Glyph =  Framed(fg = fg, bg = bg)(thisGlyph)
 
   /**
    *
    * @see RoundFramed
    */
-  def roundFramed(fg: Brush = DefaultBrushes.black,
-                  bg: Brush = DefaultBrushes.nothing,
-             radius: Scalar = 0f): Glyph =  GlyphTransforms.RoundFramed(fg = fg, bg = bg, radius)(thisGlyph)
+  def roundFramed(fg: Brush = Brushes.black,
+                  bg: Brush = Brushes.nothing,
+                  radius: Scalar = 0f): Glyph =  GlyphTransforms.RoundFramed(fg = fg, bg = bg, radius)(thisGlyph)
 
 
   /**
    * Same as `framed`
    * @see framed
    */
-  def edged(fg: Brush = DefaultBrushes.black,
-            bg: Brush = DefaultBrushes.nothing): Glyph = Framed(fg = fg, bg = bg)(thisGlyph)
+  def edged(fg: Brush = Brushes.black,
+            bg: Brush = Brushes.nothing): Glyph = Framed(fg = fg, bg = bg)(thisGlyph)
 
   /**  This glyph skewed by factors `skewX`, `skewY`. */
   def skewed(skewX: Scalar, skewY: Scalar, fg: Brush = thisGlyph.fg, bg: Brush = thisGlyph.bg): Glyph =
@@ -245,7 +245,7 @@ object GlyphTransforms {
      * The `fg` can have any `strokewidth`. The overall bounding diagonal is that of the glyph enlarged by
      * twice `fg.strokeWidth`. The roundness, if any, of the edge depends on its stroke width and cap.
      */
-    def apply(fg: Brush=DefaultBrushes.black, bg: Brush=nothing)(glyph: Glyph): Glyph =
+    def apply(fg: Brush=Brushes.black, bg: Brush=nothing)(glyph: Glyph): Glyph =
       new Framed(glyph, fg, bg)
   }
 

@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package tests
 
 import styled.overlaydialogues.Dialogue
-import DefaultBrushes._
+import Brushes._
 
 import styles.decoration
 import styled.BookSheet

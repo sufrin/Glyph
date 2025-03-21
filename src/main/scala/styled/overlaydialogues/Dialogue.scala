@@ -352,11 +352,11 @@ class Dialogue[T](blurb: Glyph,
   protected val closeButtonAppearance: Glyph = closeGlyph match {
     case Some(glyph) =>
       static.Concentric(rowAlign=Mid, colAlign=Center).Left(
-        static.FilledRect(GUI.w, glyph.h*1.2f, fg=DefaultBrushes.lightGrey, bg=DefaultBrushes.lightGrey), // TODO: 5f is a magic number
+        static.FilledRect(GUI.w, glyph.h*1.2f, fg=Brushes.lightGrey, bg=Brushes.lightGrey), // TODO: 5f is a magic number
         glyph,
       )
     case None        =>
-      static.FilledRect(GUI.w-2, 5f, fg=DefaultBrushes.lightGrey, bg=DefaultBrushes.lightGrey)
+      static.FilledRect(GUI.w-2, 5f, fg=Brushes.lightGrey, bg=Brushes.lightGrey)
   }
 
   /**
@@ -415,10 +415,10 @@ class Dialogue[T](blurb: Glyph,
 
     }
     theCloseButton = Some(closeButton)
-    Col(align=Left,bg = DefaultBrushes.nothing)(
+    Col(align=Left,bg = Brushes.nothing)(
       closeButton,
-      GUI//.enlargedTo(closeButton.w, guiRoot.h, bg = DefaultBrushes.white)
-    ).framed(bg = DefaultBrushes.white)
+      GUI//.enlargedTo(closeButton.w, guiRoot.h, bg = Brushes.white)
+    ).framed(bg = Brushes.white)
   }
 
   /** set the location of this dialogue relative to `glyph`  */

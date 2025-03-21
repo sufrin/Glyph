@@ -25,7 +25,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
   import pageSheet.{ex, em}
   val book = Book()
   val Page = book.Page
-  import DefaultBrushes._
+  import Brushes._
 
 
     Page("Animation", "") {
@@ -438,7 +438,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     Page("Split", "") {
     import org.sufrin.glyph.unstyled.reactive.Slider
     import pageSheet.ex
-    implicit val pageSheet : StyleSheet = style.pageSheet.copy(buttonDecoration = Framed(DefaultBrushes.black(width=2)))
+    implicit val pageSheet : StyleSheet = style.pageSheet.copy(buttonDecoration = Framed(Brushes.black(width=2)))
     val left =
       Row(<p width="25em" align="justify">
         This is a justified piece of text that may be quite long, and which
