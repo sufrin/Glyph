@@ -207,17 +207,14 @@ class Macro(body: Node) {
 /**
  * Implements (scoped, typed) mappings from  names to their properties used
  * during translation.
- *
  *  {{{<tag ...>}}} for an otherwise-unspecified `tag`, tries the translation scheme `extensionMap(tag)` if there is one;
  *  otherwise invokes the macro `macroMap(tag)` if there is one; otherwise treats the entire element as quoted data.
  *
  * The inherited attributes of an element with tag `label` are the catenation of the
  * globally-declared attributes for `tag:label`, then those of its declared "class",
  * then those of its specific "id".
- *
  * {{{<glyph gid="label" .../>}}} translates with  `styledMap("label")`, if one is defined;
  * otherwise translates to the element `elementMap("label")` if one exists.
- *
  * {{{&name;}}} translates to the literal string `entityMap(name)`
  */
 class Primitives {

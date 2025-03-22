@@ -119,11 +119,31 @@ case class StyleSheet
   def  hSpace(ems: Int=1): Glyph = new FixedSize.Space(ems*emWidth, exHeight, 0, 0)
   def  vSpace(exs: Int=1): Glyph = new FixedSize.Space(emWidth, exs*exHeight, 0, 0)
 
-  @inline private def styled(fontStyle: FontStyle): StyleSheet = copy(textFontStyle = fontStyle)
+  @inline private def styled(fontStyle: FontStyle): StyleSheet =
+    copy(
+      textFontStyle = fontStyle,
+      labelFontStyle  = fontStyle,
+      buttonFontStyle  = fontStyle
+    )
+
+  /** This `StyleSheet`, with text, label, and button font styles italic */
   def italicStyle: StyleSheet = styled(FontStyle.ITALIC)
+  /** This `StyleSheet`, with text, label, and button font styles bold */
   def boldStyle: StyleSheet = styled(FontStyle.BOLD)
+  /** This `StyleSheet`, with text, label, and button font styles bold italic */
   def boldItalicStyle: StyleSheet = styled(FontStyle.BOLD_ITALIC)
+  /** This `StyleSheet`, with text, label, and button font styles "normal" */
   def normalStyle: StyleSheet = styled(FontStyle.NORMAL)
+
+  /**
+   * Set all font sizes to `size`
+   */
+  def fontSizes(size: Scalar): StyleSheet =
+    copy(
+      textFontSize    = size,
+      labelFontSize   = size,
+      buttonFontSize  = size
+  )
 
 }
 

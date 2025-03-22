@@ -41,7 +41,8 @@ package styles
 
   /** Universal style for a glyph that has a foreground and a background (and may have a font) */
   case class GlyphStyle(font: Font, fg: Brush, bg: Brush) extends Spaces {
-    def toGlyph(string: String, fg: Brush = fg, bg: Brush = bg): Glyph = unstyled.Text(string, font, fg, bg)
+    def toGlyph(string: String, fg: Brush = fg, bg: Brush = bg): Glyph =
+      if (true) unstyled.Label(string, font, fg, bg, Center) else unstyled.Text(string, font, fg, bg)
 
     lazy val emWidth: Scalar = font.measureTextWidth("M")
     /** height of an X  in the button font */

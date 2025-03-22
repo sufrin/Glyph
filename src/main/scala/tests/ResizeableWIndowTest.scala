@@ -4,10 +4,8 @@ package tests
 import NaturalSize.{Col, Row}
 
 import org.sufrin.glyph.Brushes.{black, blackFrame, redFrame}
-import org.sufrin.glyph.unstyled.reactive.TextButton
 import org.sufrin.glyph.styled.{Label, Resizeable}
 import org.sufrin.glyph.styles.decoration.Edged
-import org.sufrin.glyph.unstyled.static.{Concentric, FilledRect, Rect}
 import org.sufrin.glyph.Location.East
 import org.sufrin.glyph.unstyled.static
 
@@ -16,15 +14,38 @@ import scala.xml.Elem
 object ResizeableWIndowTest extends Application {
   import glyphXML.Language._
 
-
+  /**
+   *  This is defined here, outwith the scope of the `guiSpec` function, because
+   *  the `about` button and its dialogue remain the same size, independently of
+   *  the size of the application's window.
+   */
+  lazy val about: Glyph = styled.TextButton("About") {
+    _ => styled.windowdialogues.Dialogue.OK(
+      <div width="50em" align="justify" fontScale="0.8" frame="white/16">
+        <p>
+          This application is designed to demonstrate the <b>Resizeable</b> glyph constructor
+          working together with <b>glyphXML</b>.
+          You can make its window wider (narrower) by pressing the appropriate buttons, or by
+          dragging the edge of the window. You can also change the font size to make it bigger or smaller
+          within the same window.
+        </p>
+        <p>
+          After the window width is changed and the text laid out again, the app gives up the mouse and terminal focus; so
+          if you want to press buttons again, just (leave and) re-enter the window.
+        </p>
+      </div>,
+      East(about) // this  MUST be here
+    ).start()
+  }
 
   def guiSpec(implicit style: StyleSheet): Glyph = Col(align=Center)(
     { import style.{hFill,em}
+
       val Vec(w, h) = style.containerDiagonal
-      lazy val wider: Glyph = styled.TextButton("Wider", Hint(1, "Make the window 10% wider")) {
+      lazy val wider: Glyph = styled.TextButton("10%\n⭅⭆", Hint(1, "column wider")) {
         _ => wider.guiRoot.setContentSize(Vec(w*1.1f, h))
       }
-      lazy val bigger = styled.TextButton("Bigger", Hint(1, "Make the font bigger")) {
+      lazy val bigger = styled.TextButton("+10%", Hint(1, "font size")) {
         _ =>
           wider.guiRoot.GUIroot match {
             case resizeable: Resizeable =>
@@ -35,7 +56,7 @@ object ResizeableWIndowTest extends Application {
             case other =>
           }
         }
-      lazy val smaller = styled.TextButton("Smaller", Hint(1, "Make the font smaller")) {
+      lazy val smaller = styled.TextButton("-10%", Hint(1, "font size")) {
         _ =>
           wider.guiRoot.GUIroot match {
             case resizeable: Resizeable =>
@@ -45,28 +66,12 @@ object ResizeableWIndowTest extends Application {
             case other =>
           }
       }
-      lazy val narrower: Glyph = styled.TextButton("Narrower", Hint(1, "Make the window 10% narrower")) {
+      lazy val narrower: Glyph = styled.TextButton("10%\n⭆⭅", Hint(1, "column narrower")) {
         _ => narrower.guiRoot.setContentSize(Vec(w*0.9f, h))
       }
-      lazy val about: Glyph = styled.TextButton("About") {
-        _ => styled.windowdialogues.Dialogue.OK(
-          <div width="50em" align="justify" fontScale="0.8" frame="white/16">
-            <p>
-              This application is designed to demonstrate the <b>Resizeable</b> glyph constructor.
-              You can make its window wider (narrower) by pressing the appropriate buttons, or by
-              dragging the edge of the window. You can also change the font size to make it bigger or smaller
-              within the same window.
-            </p>
-            <p>
-              After the window size is changed, the app gives up the mouse and terminal focus; so
-              if you want to press buttons again, just (leave and) re-enter the window.
-            </p>
-          </div>,
-          East(about) // this  MUST be here
-        ).start()
-      }
-      Col(
-        FixedSize.Row(w).Mid(wider, em, bigger, em, narrower, em, smaller, hFill(), Label(s"[$w]"), hFill(), about),
+      Col(align=Center)(
+        FixedSize.Row(w).Mid(wider, em, narrower,  hFill(), Label(s"[${(w/style.emWidth).toInt}ems]"), hFill(), bigger, em, smaller, em, about),
+        style.vSpace(),
         static.Rect(w, 2, fg=black)
       )
     },
@@ -104,17 +109,15 @@ object ResizeableWIndowTest extends Application {
    * The GUI is recalculated by the functional argument to `Resizeable` whenever the window size changes, or the
    * (text) font size changes. The function maps the current context (which
    * starts off as the original `style`) into the GUI Glyph.
-   *
-   * Here the function replaces the GUI by a single button if  the window gets too narrow.
+   * Here it replaces the GUI by a single button if the window gets too narrow.
    */
   val GUI: Glyph = styled.Resizeable {
-
-    // the window size is too small
+    // the window size is too small: replace its content with a functional button
     case context: StyleSheet if context.containerWidth < 25*context.emWidth =>
-      lazy val wider: Glyph = styled.TextButton("Wider") {
+      lazy val wider: Glyph = styled.TextButton(f"[${(context.containerWidth/context.emWidth).toInt}ems is too narrow]\nClick or drag to Widen") {
         _ =>
           Resizeable.fine(s"[Wider] pressed  ${context.containerDiagonal}")
-             wider.guiRoot.setContentSize(Vec(context.containerWidth*1.5f, context.containerHeight))
+          wider.guiRoot.setContentSize(Vec(1.2*25*context.emWidth, context.containerHeight))
       }
       Resizeable.fine(s"[Wider]-button-only GUI  ${context.windowDiagonal} (25em is ${25*context.emWidth})")
       Col(align=Center)(wider).edged(red(width=4))
