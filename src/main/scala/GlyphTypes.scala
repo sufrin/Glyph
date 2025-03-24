@@ -9,6 +9,7 @@ object GlyphTypes {
   type Typeface    = io.github.humbleui.skija.Typeface
   type PathEffect  = io.github.humbleui.skija.PathEffect
   type ImageFilter = io.github.humbleui.skija.ImageFilter
+  type Image       = io.github.humbleui.skija.Image
   type Window      = io.github.humbleui.jwm.Window
   type EventKey    = io.github.humbleui.jwm.EventKey
   type FontStyle   = io.github.humbleui.skija.FontStyle

@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter
 object Output
 {
   def output(dir: String, path: String)(glyph: Glyph): Option[String] = {
-    try { External.renderBitmap(glyph, s"${dir}/$path", scale = 0.5f); None }
+    try { External.writeGlyph(glyph, s"${dir}/$path", scale = 0.5f); None }
     catch {
       case exn: Exception => Some(s"Failed to write ${dir}/$path")
     }

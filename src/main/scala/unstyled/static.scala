@@ -8,7 +8,7 @@ import GlyphTypes.Scalar
 object static  {
 
   class Image(glyph: Glyph) extends Glyph {
-    val theImage = External.glyph2Image(glyph)
+    val theImage = External.toImage(glyph)
     override def toString: String = s"Image($diagonal)"
     val fg: Brush = glyph.fg
     val bg: Brush = glyph.bg

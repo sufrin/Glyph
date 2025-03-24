@@ -73,15 +73,15 @@ object DocumentationDiagrams {
       lazy val label = Col.aligned(0.0f, caption.split("[\n]").toList.map(text))
       val dir = "PNG"
       if (captioned)
-        External.renderBitmap(Col(align=Center)(label, Skip(10), glyph), s"${dir}/cap-$path", scale=5.0f)
-      External.renderBitmap(glyph, s"${dir}/$path", scale=0.5f)
+        External.writeGlyph(Col(align=Center)(label, Skip(10), glyph), s"${dir}/cap-$path", scale=5.0f)
+      External.writeGlyph(glyph, s"${dir}/$path", scale=0.5f)
     }
 
   def writeSample(path: String)(glyph: Glyph, caption: String): Unit = {
     def text(line: String): Glyph = (theText(s" $line ").copy(black))
     lazy val label = Col.aligned(0.0f, caption.split("[\n]").toList.map(text))
     val dir = "PNG"
-    External.renderBitmap(Col(align=Center)(label, Skip(5), Scaled(0.5f)(Label(s"${glyph.diagonal}", fg=black)), Skip(10), glyph), s"${dir}/$path", scale = 5.0f)
+    External.writeGlyph(Col(align=Center)(label, Skip(5), Scaled(0.5f)(Label(s"${glyph.diagonal}", fg=black)), Skip(10), glyph), s"${dir}/$path", scale = 5.0f)
   }
 
   def main(args: Array[String]): Unit = {

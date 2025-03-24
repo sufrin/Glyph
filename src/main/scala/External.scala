@@ -9,18 +9,17 @@ object External {
 
   import io.github.humbleui.skija.Image
 
-  def renderBitmap(glyph: Glyph, path: String, kind: String = "png", scale: Scale = 1.0f): Unit =
-       renderBitmap(glyph, java.nio.file.Path.of(path), kind, scale)
+  def writeGlyph(glyph: Glyph, path: String, kind: String = "png", scale: Scale = 1.0f): Unit =
+       writeGlyph(glyph, java.nio.file.Path.of(path), kind, scale)
 
-  def renderBitmap(glyph: Glyph, path: java.nio.file.Path, kind: String, scale: Scale): Unit = {
+  def writeGlyph(glyph: Glyph, path: java.nio.file.Path, kind: String, scale: Scale): Unit = {
      import io.github.humbleui.skija.{EncoderJPEG, EncoderPNG, Image, ImageInfo, Surface => SKSurface}
      import io.github.humbleui.types.IRect
      val w = glyph.w.toInt
      val h = glyph.h.toInt
-     val imageInfo = ImageInfo.makeN32Premul(w, h)
-     val surface = SKSurface.makeRaster(imageInfo)
+     val surface = SKSurface.makeRaster(ImageInfo.makeN32Premul(w, h))
      val canvas  = surface.getCanvas
-     val drawing = Surface(canvas, 1.0f)
+     val drawing = Surface(canvas, scale)
      drawing.clear(0xFFFFFFFF)
      glyph.draw(drawing)
      val snapshot: Image       = surface.makeImageSnapshot(new IRect(0, 0, w, h))
@@ -31,6 +30,29 @@ object External {
      }
      java.nio.file.Files.write(path, bytes)
    }
+
+  def toByteArray(glyph: Glyph, kind: String): Array[Byte] = {
+    import io.github.humbleui.skija.{EncoderJPEG, EncoderPNG}
+    val snapshot: Image       = toImage(glyph)
+    val bytes:    Array[Byte] = kind match {
+      case "png"          => EncoderPNG.encode(snapshot).getBytes
+      case "jpeg" | "jpg" => EncoderJPEG.encode(snapshot).getBytes
+    }
+    bytes
+  }
+
+  def toImage(glyph: Glyph): Image = {
+    import io.github.humbleui.skija.{ImageInfo, Surface => SKSurface}
+    import io.github.humbleui.types.IRect
+    val w = glyph.w.toInt
+    val h = glyph.h.toInt
+    val surface  = SKSurface.makeRaster(ImageInfo.makeN32Premul(w, h))
+    val canvas   = surface.getCanvas
+    val drawing  = Surface(canvas, 1f)
+    drawing.clear(0xFFFFFFFF)
+    glyph.draw(drawing)
+    surface.makeImageSnapshot(new IRect(0, 0, w, h))
+  }
 
   /** DOES NOT WORK */
   @deprecated("malfunctioning") def glyph2SVG(glyph: Glyph, path: java.nio.file.Path): Unit = {
@@ -50,18 +72,5 @@ object External {
     svgStream.close()
   }
 
-  def glyph2Image(glyph: Glyph): Image = {
-    import io.github.humbleui.skija.{EncoderJPEG, EncoderPNG, Image, ImageInfo, Surface => SKSurface}
-    import io.github.humbleui.types.IRect
-    val w = glyph.w.toInt
-    val h = glyph.h.toInt
-    val imageInfo = ImageInfo.makeN32Premul(w, h)
-    val surface = SKSurface.makeRaster(imageInfo)
-    val canvas = surface.getCanvas
-    val drawing = Surface(canvas, 1.0f)
-    drawing.clear(0xFFFFFFFF)
-    glyph.draw(drawing)
-    surface.makeImageSnapshot(new IRect(0, 0, w, h))
-  }
 
 }
