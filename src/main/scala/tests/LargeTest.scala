@@ -416,7 +416,7 @@ trait LargeTestGUI {
       FixedSize.Row(width=atBaseline.w*1.3f, align=Baseline)(blob::texts.map(_.copy())).framed().showingBaseline,
       medex, medex,
       textColumn()("Stretchable spaces used as rules between glyphs"),
-      { def rule = new FixedSize.Space(1, 0, 1, 0, nothing, black(width=2).dashed(5f, 5f), baseLine=large.baseLine)
+      { def rule = new FixedSize.Space(1, 0, 1, 0, transparent, black(width=2).dashed(5f, 5f), baseLine=large.baseLine)
         FixedSize.Row(width = atBaseline.w * 1.3f, align = Baseline)(large(), rule, med(), rule, rule, small(), rule, huge()).framed()
       }
 
@@ -616,7 +616,7 @@ trait LargeTestGUI {
       }.framed()
 
     def frameB(scale: Scalar)(fg: Brush) =
-      ShadedButton(button(scale)(fg), fg=fg, bg=nothing, delta=6f){_ => }
+      ShadedButton(button(scale)(fg), fg=fg, bg=transparent, delta=6f){ _ => }
 
     def rawR(scale: Scalar) =
       RawButton(rect(scale)(blue), rect(scale)(red), rect(scale)(green)) { _ =>
@@ -927,7 +927,7 @@ trait LargeTestGUI {
     implicit val sheet: StyleSheet = StyleSheet()
     import sheet.{ex,em}
 
-    val starSize=filledStar7(nothing).diagonal
+    val starSize=filledStar7(transparent).diagonal
     val scale=starSize.y / trup.h
 
     Col(align=Center)(
@@ -1057,7 +1057,7 @@ trait LargeTestGUI {
     val triv = false
 
     def separator: Rect = {
-      Rect(100, 20, nothing)
+      Rect(100, 20, transparent)
     }
 
     if (triv)
@@ -1155,7 +1155,7 @@ trait LargeTestGUI {
     val rho = Row(uniform = true, align=Mid)(b1().enlargedTo(b1.w * 2, b1.h * 2), b2().rotated(1), b3().rotated(2)).framed(blueFrame)
 
     def separator: Rect = {
-      Rect(100, 50, nothing)
+      Rect(100, 50, transparent)
     }
 
     val tT = false
@@ -1286,7 +1286,7 @@ trait LargeTestGUI {
   ): Glyph = {
     val rows = text.split('\n')
     val texts: Seq[Glyph] = (for {row <- rows} yield Text(row, font, fg = fg)).toSeq
-    Col(align=align, bg=nothing)(texts)
+    Col(align=align, bg=transparent)(texts)
   }
 
 

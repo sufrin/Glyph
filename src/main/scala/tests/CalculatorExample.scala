@@ -134,7 +134,7 @@ trait TopLevelGUI {
   val book: Book = Book()
   val Page = book.Page
 
-  implicit val pageStyle: StyleSheet = StyleSheet(backgroundBrush=white, buttonDecoration=decoration.Blurred(blue, nothing, 15f, 5f))
+  implicit val pageStyle: StyleSheet = StyleSheet(backgroundBrush=white, buttonDecoration=decoration.Blurred(blue, transparent, 15f, 5f))
   implicit val bookStyle: BookSheet = BookSheet(buttonSheet = pageStyle, pageSheet=pageStyle.copy(buttonDecoration = decoration.unDecorated))
 
 

@@ -122,8 +122,8 @@ object FixedSize  {
      * Row(
      *  width: Scalar,
      *  align: VAlignment=Top,
-     *  fg: Brush = nothing,
-     *  bg: Brush = nothing)(glyphs: ((Glyph, Glyph*) or (Seq[Glyph])
+     *  fg: Brush = transparent,
+     *  bg: Brush = transparent)(glyphs: ((Glyph, Glyph*) or (Seq[Glyph])
      * }}}
      *
      * Constructs the horizontal catenation of `glyphs`; its height is the largest of the glyphs' heights; its width is
@@ -171,8 +171,8 @@ object FixedSize  {
      * Col(
      *  height: Scalar,
      *  align:  Alignment  = Left,
-     *  fg: Brush = nothing,
-     *  bg: Brush = nothing)(glyphs: (Glyph, Glyph*) or (Seq[Glyph])
+     *  fg: Brush = transparent,
+     *  bg: Brush = transparent)(glyphs: (Glyph, Glyph*) or (Seq[Glyph])
      * }}}
      *
      * Constructs the vertical catenation of `glyphs`. Its height is

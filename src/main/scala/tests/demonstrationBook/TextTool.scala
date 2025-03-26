@@ -61,7 +61,7 @@ class TextTool(implicit style: StyleSheet)  {
         namely:
       </p>
       <fill/>
-      <p align="center" bg="nothing" fontFamily="Courier" source={SOURCE}>
+      <p align="center" bg="transparent" fontFamily="Courier" source={SOURCE}>
         <![CDATA[(c) (r) :) :O <3 :-| :|]]>
       </p>
       <fill/>

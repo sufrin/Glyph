@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 package styled
 
-import NaturalSize.nothing
+import NaturalSize.transparent
 
 import unstyled.static
 
@@ -228,7 +228,7 @@ trait Book {
 
     def rotatedButtons(quads: Int, buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet) = {
       val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
-      val lhs = Row(Bottom)(buttons.map { b => b.rotated(quads, bg=nothing) })
+      val lhs = Row(Bottom)(buttons.map { b => b.rotated(quads, bg=transparent) })
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
       Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
@@ -236,7 +236,7 @@ trait Book {
 
     def skewedButtons(skewX: Scalar, skewY: Scalar, buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet) = {
       val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
-      val lhs = Row(align=Bottom)(buttons.map { b => (b.rotated(3, bg=nothing)) })
+      val lhs = Row(align=Bottom)(buttons.map { b => (b.rotated(3, bg=transparent)) })
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
       Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs.skewed(-skewX, skewY), divider, rhs)
@@ -244,7 +244,7 @@ trait Book {
 
     def topButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet) = {
       val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
-      val lhs = Row(align=Bottom, bg=nothing)(buttons)
+      val lhs = Row(align=Bottom, bg=transparent)(buttons)
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
       Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)

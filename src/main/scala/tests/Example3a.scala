@@ -24,9 +24,9 @@ object Example3b extends Application  with Example3Interface {
     labelForegroundBrush  = white,
     labelFontFamily       = FontFamily("Courier"),
     labelFontSize         = 32,
-    buttonBackgroundBrush = nothing,
+    buttonBackgroundBrush = transparent,
     buttonForegroundBrush = red,
-    buttonDecoration      = styles.decoration.Blurred(fg=yellow, bg=nothing, 16, 5)
+    buttonDecoration      = styles.decoration.Blurred(fg=yellow, bg=transparent, 16, 5)
   )
   override def title: String = "Example 3b"
 }
@@ -37,9 +37,9 @@ object Example3c extends Application  with Example3Interface {
     labelForegroundBrush  = white,
     labelFontFamily       = FontFamily("Courier"),
     labelFontSize         = 32,
-    buttonBackgroundBrush = nothing,
+    buttonBackgroundBrush = transparent,
     buttonForegroundBrush = black,
-    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=nothing, 16, 5)
+    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=transparent, 16, 5)
   )
   override def title: String = "Example 3c"
 }
@@ -61,9 +61,9 @@ object Example3d extends Application {
     labelForegroundBrush  = white,
     labelFontFamily       = FontFamily("Menlo"),
     labelFontSize         = 32,
-    buttonBackgroundBrush = nothing,
+    buttonBackgroundBrush = transparent,
     buttonForegroundBrush = black,
-    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=nothing, 16, 5)
+    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=transparent, 16, 5)
   )
 
   val cloneButton: Glyph = styled.TextButton("Clone") {
@@ -92,9 +92,9 @@ object Example3e extends Application {
     labelForegroundBrush  = white,
     labelFontFamily       = FontFamily("Courier"),
     labelFontSize         = 32,
-    buttonBackgroundBrush = nothing,
+    buttonBackgroundBrush = transparent,
     buttonForegroundBrush = black,
-    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=nothing, 16, 5)
+    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=transparent, 16, 5)
   )
 
   val cloneButton: Glyph = styled.TextButton("Clone") {
@@ -126,9 +126,9 @@ object Example3f extends Application {
     labelForegroundBrush  = white,
     labelFontFamily       = FontFamily("Courier"),
     labelFontSize         = 32,
-    buttonBackgroundBrush = nothing,
+    buttonBackgroundBrush = transparent,
     buttonForegroundBrush = black,
-    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=nothing, 16, 5)
+    buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=transparent, 16, 5)
   )
 
   val cloneButton: Glyph = styled.TextButton("Clone") {

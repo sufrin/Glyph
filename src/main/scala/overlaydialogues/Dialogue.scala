@@ -337,7 +337,7 @@ class Dialogue[T](guiRoot:        Glyph,
 
         }
         theCloseButton = Some(closeButton)
-        Col(align=Left, bg = Brushes.nothing) (
+        Col(align=Left, bg = Brushes.transparent) (
             closeButton,
             guiRoot//.enlargedTo(closeButton.w, guiRoot.h, bg = Brushes.white)
         ).framed(bg = Brushes.white)

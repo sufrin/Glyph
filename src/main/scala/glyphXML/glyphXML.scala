@@ -283,7 +283,7 @@ object Paragraph {
 
   def fromGlyphs(sheet: StyleSheet, glyphs: Seq[Glyph], parHang: Option[Glyph]): Glyph = {
     val glyphs$   =
-      (if (sheet.parIndent>0) List(static.Rect(sheet.parIndent, 1f, fg=Brushes.nothing)) else Nil) ++ glyphs
+      (if (sheet.parIndent>0) List(static.Rect(sheet.parIndent, 1f, fg=Brushes.transparent)) else Nil) ++ glyphs
 
     val (hangGlyph, hangWidth) = parHang match {
       case None    => (None, 0f)
@@ -417,7 +417,7 @@ object Paragraph {
         words.nextElement()
       } else {
         val (width, glyphs) = setLine()
-        // the line had only its starting alignment glyph; nothing else to do
+        // the line had only its starting alignment glyph; transparent else to do
         if (glyphs.length == 1 && width == 0) {
           setting = false
         } else
@@ -1017,8 +1017,8 @@ class Translation(val primitives: Primitives=new Primitives) {
             val width  = attributes$.Units("width", sheet$.emWidth)(sheet$)
             val height = attributes$.Units("height", sheet$.exHeight)(sheet$)
             val stretch = attributes$.Float("stretch", 1f)
-            val background = attributes$.Brush("background", attributes$.Brush("bg", Brushes.nothing))
-            val foreground = attributes$.Brush("foreground", attributes$.Brush("fg", Brushes.nothing))
+            val background = attributes$.Brush("background", attributes$.Brush("bg", Brushes.transparent))
+            val foreground = attributes$.Brush("foreground", attributes$.Brush("fg", Brushes.transparent))
             //** DO NOT DECORATE: IT MESSES UP FIXEDSIZE STRETCHING **//
             List((GlyphTarget(paragraph, sheet$, FixedSize.Space(width, height, stretch, fg=foreground, bg=background))))
 
@@ -1201,7 +1201,7 @@ class Translation(val primitives: Primitives=new Primitives) {
   }
 
 
-  /** Translate a processing instruction `<?target text ?>` does nothing*/
+  /** Translate a processing instruction `<?target text ?>` does transparent*/
   def translateProcInstr(tags: List[String], target: String, text: String): Seq[Target] = Seq.empty
 
   /**

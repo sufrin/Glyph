@@ -25,7 +25,7 @@ object DocumentationDiagrams {
   val blue     = Brush("blue") color (0xFF0000ff) strokeWidth (1.0f) strokeCap(ROUND)
   val red      = Brush("red") color (0xFFff0000) strokeWidth (1.0f) strokeCap(ROUND)
   val white    = Brush("white") color (0xFFffffff) strokeWidth (1.0f) strokeCap(ROUND)
-  val nothing  = Brush("nothing") color (0)
+  val transparent  = Brush("transparent") color (0)
 
   object Wide {
     val blue  = Brush("Wide.blue") color (0xFF0000ff) strokeWidth (15.0f) strokeCap(SQUARE)
@@ -62,8 +62,8 @@ object DocumentationDiagrams {
   val units = 20f
   def a = FilledRect(5*units, 3*units, fg=yellow)
   def b = FilledRect(5*units, 1*units, fg=green)
-  def fa = Framed(fg=grey, bg=nothing)(a)
-  def fb = Framed(grey, bg=nothing)(b)
+  def fa = Framed(fg=grey, bg=transparent)(a)
+  def fb = Framed(grey, bg=transparent)(b)
 
 
 
@@ -87,24 +87,24 @@ object DocumentationDiagrams {
   def main(args: Array[String]): Unit = {
     import NaturalSize.{Col, Row}
 
-    def Blob(rad: Scalar, fg: Brush=nothing, bg: Brush=nothing): Glyph = FilledOval(rad, rad, fg, bg)
-    def Box(side: Scalar, fg: Brush=nothing, bg: Brush=nothing): Glyph = Rect(side, side, fg, bg)
+    def Blob(rad: Scalar, fg: Brush=transparent, bg: Brush=transparent): Glyph = FilledOval(rad, rad, fg, bg)
+    def Box(side: Scalar, fg: Brush=transparent, bg: Brush=transparent): Glyph = Rect(side, side, fg, bg)
 
     val samples = List[(String, Glyph)] (
       ("Rect(150f, 150f, red, blue)",        Rect(150f, 150f, red, blue)),
       ("Rect(150f, 150f, Wide.red, blue)",   Rect(150f, 150f, Wide.red, blue)),
-      ("Rect(150f, 150f, Wide.red, nothing))", Rect(150f, 150f, Wide.red, nothing)),
+      ("Rect(150f, 150f, Wide.red, transparent))", Rect(150f, 150f, Wide.red, transparent)),
       ("FilledRect(150f, 150f, Wide.red, blue))", FilledRect(150f, 150f, Wide.red, blue)),
       ("FilledOval(150f, 100f, Wide.red, blue))", FilledOval(150f, 100f, Wide.red, blue)),
-      ("FilledOval(150f, 100f, Wide.red, nothing))", FilledOval(150f, 100f, Wide.red, nothing)),
-      ("Concentric(\n FilledOval(150f, 100f, Wide.red, nothing),\n Blob(10, blue)))",
-          Concentric(FilledOval(150f, 100f, Wide.red, nothing), Blob(10, blue))),
+      ("FilledOval(150f, 100f, Wide.red, transparent))", FilledOval(150f, 100f, Wide.red, transparent)),
+      ("Concentric(\n FilledOval(150f, 100f, Wide.red, transparent),\n Blob(10, blue)))",
+          Concentric(FilledOval(150f, 100f, Wide.red, transparent), Blob(10, blue))),
       ("Concentric(\n FilledOval(150f, 100f, Wide.red),\n Box(10, blue)))",
         Concentric(FilledOval(150f, 100f, Wide.red), Box(10, blue))),
 
       ("Framed(fg=Wide.red)(Box(20, blue, green))",
         Framed(fg = Wide.red)(Box(20, blue, green))),
-      ("Framed(fg=Wide.red)(Box(20, blue, nothing))",
+      ("Framed(fg=Wide.red)(Box(20, blue, transparent))",
         Framed(fg = Wide.red)(Box(20, blue))),
 
       ("Framed(fg=Wide.red)(Box(20, blue, green))",
@@ -282,9 +282,9 @@ object DocumentationDiagrams {
     }
 
     val down = Variable(false)
-    write("dynamic.png")((Shaded.Dynamic(fg=blue, bg=nothing, delta=10f, down=down)(FilledRect(150, 150, red))))
+    write("dynamic.png")((Shaded.Dynamic(fg=blue, bg=transparent, delta=10f, down=down)(FilledRect(150, 150, red))))
     down.value=true
-    write("dynamicdown.png")((Shaded.Dynamic(fg=blue, bg=nothing, delta=10f, down=down)(FilledRect(150, 150, red))))
+    write("dynamicdown.png")((Shaded.Dynamic(fg=blue, bg=transparent, delta=10f, down=down)(FilledRect(150, 150, red))))
 
     write("staticdown.png")((Shaded.Static(delta=10f, down=true)(FilledRect(150, 100, green))),
                           """Shaded.Static(delta=10f, down=true)(FilledRect(150, 100, green))""")

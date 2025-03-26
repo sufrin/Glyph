@@ -459,7 +459,7 @@ import unstyled.{static, Text}
   }
 
   object SplitScreen {
-    def apply(left: Glyph, right: Glyph, dynamic: Boolean, fg: Brush=Brushes.black, bg: Brush = Brushes.nothing): SplitScreen =
+    def apply(left: Glyph, right: Glyph, dynamic: Boolean, fg: Brush=Brushes.black, bg: Brush = Brushes.transparent): SplitScreen =
       new SplitScreen(left, right, dynamic, fg, bg)
   }
 

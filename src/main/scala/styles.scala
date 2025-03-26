@@ -83,7 +83,7 @@ package styles
      * @param radius (if `==0`) a rectangular frame; otherwise the `radius` of the corner curves
      * @see GlyphTransforms.Framed
      */
-    case class Framed(fg: Brush=Brushes.black, bg: Brush=Brushes.nothing, enlarge: Scalar = 0.15f, radius: Scalar = 0f) extends Decoration {
+    case class Framed(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar = 0.15f, radius: Scalar = 0f) extends Decoration {
       def decorate(glyph: Glyph): Glyph =
         glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).framed(fg, bg, radius)
     }
@@ -97,7 +97,7 @@ package styles
      * @param radius (if `==0`) a rectangular frame; otherwise the `radius` of the corner curves
      * @see GlyphTransforms.Framed
      */
-    case class RoundFramed(fg: Brush=Brushes.black, bg: Brush=Brushes.nothing, enlarge: Scalar = 0.15f, radius: Scalar = 0f) extends Decoration {
+    case class RoundFramed(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar = 0.15f, radius: Scalar = 0f) extends Decoration {
       def decorate(glyph: Glyph): Glyph =
         glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).roundFramed(fg, bg, radius)
     }
@@ -105,7 +105,7 @@ package styles
     /** Decorate the glyph with `.enlarge(enlargement).edged(fg, bg)`. The `enlargement` is enlarge` itself if `enlarge>1`,
      * otherwise `enlarge * (thisGlyph.w min thisGlyph.h)`
      */
-    case class Edged(fg: Brush=Brushes.black, bg: Brush=Brushes.nothing, enlarge: Scalar = 0.15f, radiusFactor: Scalar = 0f) extends Decoration {
+    case class Edged(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar = 0.15f, radiusFactor: Scalar = 0f) extends Decoration {
       def decorate(glyph: Glyph): Glyph =
         glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).edged(fg, bg)
     }
@@ -122,7 +122,7 @@ package styles
      * @see Glyph.shaded
      * @see Glyphs.Shaded
      */
-    case class Shaded(fg: Brush=Brushes.black, bg: Brush=Brushes.nothing, enlarge: Scalar = 0.15f, delta: Scalar = 8f, down: Boolean = false) extends Decoration {
+    case class Shaded(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar = 0.15f, delta: Scalar = 8f, down: Boolean = false) extends Decoration {
       def decorate(glyph: Glyph): Glyph = glyph.shaded(fg, bg, enlarge, delta, down)
     }
 
@@ -134,7 +134,7 @@ package styles
      * {{{ enlarge>1 }}}
      * otherwise it is {{{enlarge * (the glyph's width min the glyph's height)}}}
      */
-    case class Blurred(fg: Brush=Brushes.black, bg: Brush = Brushes.nothing, blur: Scalar, spread: Scalar, delta: Scalar = 0f, enlarge: Scalar=0f) extends Decoration {
+    case class Blurred(fg: Brush=Brushes.black, bg: Brush = Brushes.transparent, blur: Scalar, spread: Scalar, delta: Scalar = 0f, enlarge: Scalar=0f) extends Decoration {
 
       def decorate(glyph: Glyph): Glyph = {
         val enlargement = if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge

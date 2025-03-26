@@ -384,7 +384,7 @@ object reactive {
   }
 
   /** Simply-constructed simple buttons */
-  object TextButton extends DefaultPaints {
+  object TextButton  {
 
     def apply(text: String, fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, background: Boolean = true)
              (reaction: Reaction): ColourButton = {
@@ -394,7 +394,7 @@ object reactive {
        }
     }
 
-  object FramedButton extends DefaultPaints {
+  object FramedButton  {
 
     /** A framed button whose up, down, and hover glyphs look the same */
     def apply(up: Glyph)(reaction: Reaction): RawButton =
@@ -423,7 +423,7 @@ object reactive {
 
   }
 
-  object ShadedButton extends DefaultPaints {
+  object ShadedButton  {
 
     import org.sufrin.glyph.unstyled.static.Shaded
 
@@ -659,10 +659,10 @@ object reactive {
   }
 
   object Slider {
-    def Horizontal(track: Glyph, image: Glyph, initialProportion: Scalar = 0f, fg: Brush = nothing, bg: Brush = nothing)(reaction: Scalar => Unit): HorizontalSlider =
+    def Horizontal(track: Glyph, image: Glyph, initialProportion: Scalar = 0f, fg: Brush = transparent, bg: Brush = transparent)(reaction: Scalar => Unit): HorizontalSlider =
         new HorizontalSlider(track, image, initialProportion, fg, bg, reaction)
 
-    def Vertical(track: Glyph, image: Glyph, initialProportion: Scalar = 0f, fg: Brush = nothing, bg: Brush = nothing)(reaction: Scalar => Unit): VerticalSlider =
+    def Vertical(track: Glyph, image: Glyph, initialProportion: Scalar = 0f, fg: Brush = transparent, bg: Brush = transparent)(reaction: Scalar => Unit): VerticalSlider =
       new VerticalSlider(track, image, initialProportion, fg, bg, reaction)
   }
 

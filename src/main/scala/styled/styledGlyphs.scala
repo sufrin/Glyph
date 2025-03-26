@@ -5,7 +5,7 @@ import unstyled.{dynamic, reactive}
 
 /** Intermediate definitions refactored from `styled` by (more or less) substitution */
 
-import Brushes.nothing
+import Brushes.transparent
 import unstyled.BooleanGlyphs._
 import unstyled.reactive.{Reaction,Enterable}
 import styles.GlyphStyle
@@ -105,7 +105,7 @@ trait ToggleButton { thisToggle =>
 case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = true) extends styled.StyledButton {
   def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
     val detail = sheet.buttonStyle
-    @inline def enlarged(glyph: Glyph): Glyph = glyph.enlarged(detail.border, nothing, nothing)
+    @inline def enlarged(glyph: Glyph): Glyph = glyph.enlarged(detail.border, transparent, transparent)
     val button =
       if (exact)
         Decorate(reactive.RawButton.exact(enlarged(up), enlarged(down), enlarged(hover))(action))
@@ -119,7 +119,7 @@ case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = tr
 case class MenuGlyphButton(up: Glyph, down: Glyph = null, hover: Glyph = null, exact: Boolean = true) extends styled.StyledButton {
   def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
     val detail = sheet.buttonStyle
-    @inline def reify(glyph: Glyph): Glyph = (if (glyph eq null) up() else glyph).enlarged(detail.border, nothing, nothing)
+    @inline def reify(glyph: Glyph): Glyph = (if (glyph eq null) up() else glyph).enlarged(detail.border, transparent, transparent)
     val button =
       if (exact)
         (reactive.RawButton.exact(reify(up), reify(down), reify(hover))(action))
@@ -376,7 +376,7 @@ case class GlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean, hi
     val detail = sheet.buttonStyle
     unstyled.BooleanGlyphs(new OnOff(whenTrue=Decorate(whenTrue.enlargedTo(ww,hh)),
                             whenFalse=Decorate(whenFalse.enlargedTo(ww,hh)),
-                            initially=initially, fg=Brushes.nothing, bg=Brushes.nothing
+                            initially=initially, fg=Brushes.transparent, bg=Brushes.transparent
                            ),
       initially=initially,
       fg=detail.toggle.off.fg,
@@ -396,7 +396,7 @@ case class MenuGlyphToggle(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean
     unstyled.BooleanGlyphs(new OnOff(
       whenTrue=(whenTrue.enlargedTo(ww,hh)),
       whenFalse=(whenFalse.enlargedTo(ww,hh)),
-      initially=initially, fg=Brushes.nothing, bg=Brushes.nothing),
+      initially=initially, fg=Brushes.transparent, bg=Brushes.transparent),
       initially=initially,
       fg=detail.toggle.off.fg,
       bg=detail.toggle.off.bg,

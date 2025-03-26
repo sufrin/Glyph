@@ -70,15 +70,15 @@ object glyphXMLTest extends Application {
 
     // set up the interface
     val sheet: StyleSheet = StyleSheet().copy(
-        backgroundBrush       = Brushes.nothing,
+        backgroundBrush       = Brushes.transparent,
         buttonForegroundBrush = Brushes.red,
-        buttonDecoration           = styles.decoration.Blurred(fg=Brushes.red(width=10), bg=Brushes.nothing, blur=5f, spread=5f)
+        buttonDecoration           = styles.decoration.Blurred(fg=Brushes.red(width=10), bg=Brushes.transparent, blur=5f, spread=5f)
       )
     implicit val pageSheet: StyleSheet = StyleSheet().copy(
-        backgroundBrush       = Brushes.nothing,
+        backgroundBrush       = Brushes.transparent,
         buttonForegroundBrush = sheet.textForegroundBrush,
         buttonFontSize        = sheet.textFontSize*0.9f,
-        buttonDecoration           = styles.decoration.Framed(fg=Brushes.red(width=2), bg=Brushes.nothing)
+        buttonDecoration           = styles.decoration.Framed(fg=Brushes.red(width=2), bg=Brushes.transparent)
     )
     implicit val bookStyle: BookSheet = new BookSheet(buttonSheet = sheet, pageSheet = pageSheet)
 
@@ -89,7 +89,7 @@ object glyphXMLTest extends Application {
 
     val p1 = Page("Paragraphs") {
 
-      <body  width="60em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="nothing">
+      <body  width="60em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="20" background="transparent">
         <ENTITY key="filler" expansion="(this is some filler to make the paragraph longer)"/>
         <ATTRIBUTES key="tag:caption" textFontSize="25"/>
         <caption logging="">
@@ -230,7 +230,7 @@ object glyphXMLTest extends Application {
 
 
 
-    <body width="55em" background="nothing" parSkip="1.7ex">
+    <body width="55em" background="transparent" parSkip="1.7ex">
      <SCOPE>
       <ELEMENT key="hyphenated">
         <span>

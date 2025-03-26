@@ -74,7 +74,7 @@ object PolygonLibrary {
       vertices += Vec(x, 0)
       x += step
     }
-    val lines = Polygon(diagonal, fg = fg, bg = nothing)(vertices)
+    val lines = Polygon(diagonal, fg = fg, bg = transparent)(vertices)
     lines // Concentric(lines, lines().rotated(1))
   }
 
@@ -115,18 +115,18 @@ object PolygonLibrary {
     star.toSeq
   }
 
-  def regularPolygon(n: Int, C: Scalar = 128.0f, R: Scalar = 115f, fg: Brush = blue, bg: Brush = nothing): Glyph =
+  def regularPolygon(n: Int, C: Scalar = 128.0f, R: Scalar = 115f, fg: Brush = blue, bg: Brush = transparent): Glyph =
     Polygon.apply(2*C, 2*C, fg, bg)(regularPolygonPath(n, C, R))
 
-  def filledRegularPolygon(n: Int, C: Scalar = 128.0f, R: Scalar = 115f, fg: Brush = blue, bg: Brush = nothing): Glyph =
+  def filledRegularPolygon(n: Int, C: Scalar = 128.0f, R: Scalar = 115f, fg: Brush = blue, bg: Brush = transparent): Glyph =
     FilledPolygon(2*C, 2*C, fg, bg)(regularPolygonPath(n, C, R))
 
-  def star7(fg: Brush = blue, bg: Brush = nothing, C: Scalar = 128.0f, R: Scalar = 115f): Glyph = openStargon(7, fg, bg, C, R)
+  def star7(fg: Brush = blue, bg: Brush = transparent, C: Scalar = 128.0f, R: Scalar = 115f): Glyph = openStargon(7, fg, bg, C, R)
 
-  def filledStargon(n: Int, fg: Brush = blue, bg: Brush = nothing, C: Scalar = 128.0f, R: Scalar = 115f): Glyph =
+  def filledStargon(n: Int, fg: Brush = blue, bg: Brush = transparent, C: Scalar = 128.0f, R: Scalar = 115f): Glyph =
     FilledPolygon(2*C, 2*C, fg, bg)(regularStarPath(n, C, R))
 
-  def openStargon(n: Int, fg: Brush = blue, bg: Brush = nothing, C: Scalar = 128.0f, R: Scalar = 115f): Glyph =
+  def openStargon(n: Int, fg: Brush = blue, bg: Brush = transparent, C: Scalar = 128.0f, R: Scalar = 115f): Glyph =
     Polygon(2*C, 2*C, fg, bg)(regularStarPath(n, C, R))
 
 }

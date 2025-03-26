@@ -6,7 +6,7 @@ import GlyphTypes.{Font, Scalar}
 import scala.collection.mutable
 
 
-object Text extends DefaultPaints {
+object Text  {
   /**
    * A glyph representing the given string in the given font.
    * @param string
@@ -19,7 +19,7 @@ object Text extends DefaultPaints {
    *                  implementation is a `skija.TextLine`.
    * @return
    */
-  def apply(string: String, font: Font, fg: Brush = defaultFG, bg: Brush = defaultBG, transient: Boolean=false) = new Text(string, font, fg, bg, transient)
+  def apply(string: String, font: Font, fg: Brush = Brushes.black, bg: Brush = Brushes.transparent, transient: Boolean=false) = new Text(string, font, fg, bg, transient)
 
   val fontCache = new mutable.HashMap[(String,Font), io.github.humbleui.skija.TextLine](1024, 2.0)
 

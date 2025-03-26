@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import Brushes.nothing
+import Brushes.transparent
 import GlyphTypes._
 import NaturalSize.{Col, Row}
 
@@ -78,7 +78,7 @@ trait GlyphTransforms {
    * @see Framed
    */
   def framed(fg: Brush = Brushes.black,
-             bg: Brush = Brushes.nothing,
+             bg: Brush = Brushes.transparent,
              radius: Scalar = 0f): Glyph =  Framed(fg = fg, bg = bg)(thisGlyph)
 
   /**
@@ -86,7 +86,7 @@ trait GlyphTransforms {
    * @see RoundFramed
    */
   def roundFramed(fg: Brush = Brushes.black,
-                  bg: Brush = Brushes.nothing,
+                  bg: Brush = Brushes.transparent,
                   radius: Scalar = 0f): Glyph =  GlyphTransforms.RoundFramed(fg = fg, bg = bg, radius)(thisGlyph)
 
 
@@ -95,7 +95,7 @@ trait GlyphTransforms {
    * @see framed
    */
   def edged(fg: Brush = Brushes.black,
-            bg: Brush = Brushes.nothing): Glyph = Framed(fg = fg, bg = bg)(thisGlyph)
+            bg: Brush = Brushes.transparent): Glyph = Framed(fg = fg, bg = bg)(thisGlyph)
 
   /**  This glyph skewed by factors `skewX`, `skewY`. */
   def skewed(skewX: Scalar, skewY: Scalar, fg: Brush = thisGlyph.fg, bg: Brush = thisGlyph.bg): Glyph =
@@ -169,16 +169,16 @@ object GlyphTransforms {
           if (radiusFactor>0f) (radiusFactor, radiusFactor) else (.25f, .25f)
 
         static.Concentric(rowAlign=Mid, colAlign=Center)(
-          RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = bg, bg = nothing),
-          RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg, bg = nothing),
+          RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = bg, bg = transparent),
+          RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg, bg = transparent),
           glyph,
           )
       } else {
         val gw = glyph.w + fg.strokeWidth * 2
         val gh = glyph.h + fg.strokeWidth * 2
         static.Concentric(rowAlign=Mid, colAlign=Center)(
-          FilledRect(gw, gh, fg = bg, bg = nothing),
-          Rect(gw, gh, fg = fg, bg = nothing),
+          FilledRect(gw, gh, fg = bg, bg = transparent),
+          Rect(gw, gh, fg = fg, bg = transparent),
           glyph)
       }
     }
@@ -245,7 +245,7 @@ object GlyphTransforms {
      * The `fg` can have any `strokewidth`. The overall bounding diagonal is that of the glyph enlarged by
      * twice `fg.strokeWidth`. The roundness, if any, of the edge depends on its stroke width and cap.
      */
-    def apply(fg: Brush=Brushes.black, bg: Brush=nothing)(glyph: Glyph): Glyph =
+    def apply(fg: Brush=Brushes.black, bg: Brush=transparent)(glyph: Glyph): Glyph =
       new Framed(glyph, fg, bg)
   }
 
@@ -414,7 +414,7 @@ object GlyphTransforms {
       new Rotated(glyph.copy(), quadrants, fg, bg)
   }
 
-  object Rotated extends DefaultPaints {
+  object Rotated {
 
     import scala.annotation.tailrec
 
@@ -537,7 +537,7 @@ object GlyphTransforms {
       new Turned(glyph.copy(), degrees, tight, fg, bg)
   }
 
-  object Turned extends DefaultPaints {
+  object Turned  {
 
     /**
      * @see Turned
@@ -596,7 +596,7 @@ object GlyphTransforms {
       new Skewed(glyph.copy(), skewX, skewY, fg, bg)
   }
 
-  object Skewed extends DefaultPaints {
+  object Skewed  {
     /**
      * Yields a glyph whose image is skewed (aka sheared) using factors `skewX, skewY`. When `skewX` is non-negative, the skew
      * is "rightwards from top to bottom"; when negative the skew is "leftwards from top to bottom". Analogously, when `skewY`
@@ -652,7 +652,9 @@ object GlyphTransforms {
       new Mirrored(glyph.copy(), leftRight, topBottom, fg, bg)
   }
 
-  object Mirrored extends DefaultPaints {
+  object Mirrored {
+    import Brushes.{black=>defaultFG, transparent=>defaultBG}
+
     def apply(leftRight: Boolean, topBottom: Boolean, fg: Brush = defaultFG, bg: Brush = defaultBG)(glyph: Glyph): Mirrored =
       new Mirrored(glyph, leftRight, topBottom, fg, bg)
 
@@ -709,7 +711,9 @@ object GlyphTransforms {
     def copy(fg: Brush = fg, bg: Brush = bg): Scaled = new Scaled(glyph.copy(), scale, fg, bg)
   }
 
-  object Scaled extends DefaultPaints {
+  object Scaled  {
+    import Brushes.{black=>defaultFG, transparent=>defaultBG}
+
     def apply(scale: Scale, fg: Brush = defaultFG, bg: Brush = defaultBG)(glyph: Glyph): Glyph =
       if (scale == 1f) glyph else new Scaled(glyph, Vec(scale, scale), fg, bg)
 

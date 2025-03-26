@@ -12,7 +12,7 @@ import unstyled.static
 
 object NaturalSize {
 
-  val nothing: Brush = Brush("nothing") color 0
+  val transparent: Brush = Brush("transparent") color 0
 
   trait RowGenerators {
     theseGenerators =>
@@ -30,7 +30,7 @@ object NaturalSize {
     def apply(theGlyphs: Seq[Glyph]): Composite =
       aligned(valign.proportion, theGlyphs, valign.atBaseline)
 
-    def apply(align: VAlignment=Top, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f): RowGenerators = {
+    def apply(align: VAlignment=Top, fg: Brush = transparent, bg: Brush = transparent, uniform: Boolean=false, frame: Brush = transparent, skip: Scalar=0f): RowGenerators = {
       val (_valign, _fg, _bg, _un, _fr, _sk) = (align, fg, bg, uniform, frame, skip)
       new RowGenerators {
         val valign = _valign
@@ -114,7 +114,7 @@ object NaturalSize {
     def apply(theGlyphs: Seq[Glyph]): Composite = aligned(halign.proportion, theGlyphs)
 
 
-    def apply(fg: Brush = nothing, bg: Brush = nothing, align: Alignment = Left, uniform: Boolean=false, frame: Brush=nothing, skip: Scalar=0f): ColumnGenerators = {
+    def apply(fg: Brush = transparent, bg: Brush = transparent, align: Alignment = Left, uniform: Boolean=false, frame: Brush=transparent, skip: Scalar=0f): ColumnGenerators = {
       val (_fg, _bg, _un, _fr, _sk) = (fg, bg, uniform, frame, skip)
       new ColumnGenerators {
         val fg: Brush = _fg
@@ -178,7 +178,7 @@ object NaturalSize {
   }
 
   /**
-   * {{{ Row(align: VAlignment=Top, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f)(glyphs) }}}
+   * {{{ Row(align: VAlignment=Top, fg: Brush = transparent, bg: Brush = transparent, uniform: Boolean=false, frame: Brush = transparent, skip: Scalar=0f)(glyphs) }}}
    *
    * Constructs the horizontal catenation of `glyphs`; its height is the largest of the glyphs' heights; its width is
    * normally the sum of the glyphs' widths.
@@ -200,17 +200,17 @@ object NaturalSize {
    *
    */
   object Row extends RowGenerators {
-    val bg: Brush = nothing
-    val fg: Brush = nothing
+    val bg: Brush = transparent
+    val fg: Brush = transparent
     val uniform: Boolean = false
-    val frame: Brush = nothing
+    val frame: Brush = transparent
     val skip: Scalar = 0f
     val valign: VAlignment = Top
   }
 
   /**
    *
-   * {{{ Col(align: Alignment=Left, fg: Brush = nothing, bg: Brush = nothing, uniform: Boolean=false, frame: Brush = nothing, skip: Scalar=0f)(glyphs) }}}
+   * {{{ Col(align: Alignment=Left, fg: Brush = transparent, bg: Brush = transparent, uniform: Boolean=false, frame: Brush = transparent, skip: Scalar=0f)(glyphs) }}}
    *
    * Constructs the vertical catenation of `glyphs`; its height is the sum of the glyphs' heights; its height is
    * normally the sum of the glyphs' heights.
@@ -231,10 +231,10 @@ object NaturalSize {
    *
    */
   object Col extends ColumnGenerators {
-    val fg: Brush = nothing
-    val bg: Brush = nothing
+    val fg: Brush = transparent
+    val bg: Brush = transparent
     val uniform: Boolean = false
-    val frame: Brush = nothing
+    val frame: Brush = transparent
     val skip: Scalar = 0f
     val halign: Alignment = Left
   }
@@ -442,8 +442,8 @@ object NaturalSize {
   }
 
   object Grid extends GridGenerators {
-    val fg: Brush = nothing
-    val bg: Brush = nothing
+    val fg: Brush = transparent
+    val bg: Brush = transparent
     val padx: Scalar = 0
     val pady: Scalar = 0
     val width: Int = 0

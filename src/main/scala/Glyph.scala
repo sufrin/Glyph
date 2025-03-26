@@ -3,18 +3,6 @@ package glyph
 
 import GlyphTypes._
 
-/**
- *   Glyph factories inherit this interface.
- *   The definitions can be overridden on a per-factory basis.
- *
- */
-trait DefaultPaints {
-  /** By default the default background doesn't render */
-  def defaultBG: Brush = new Brush("BG") color 0
-  /** By default the default foreground is a thin black stroke*/
-  def defaultFG: Brush = new Brush("FG") color 0 width 1 alpha 1.0
-}
-
 trait GlyphColours {
   val fg : Brush
   val bg : Brush
@@ -37,7 +25,7 @@ object CellFit {
   case object Stretch extends Method
   case object Enlarge extends Method
 
-  val nothing: Brush = Brush("nothing")
+  val transparent: Brush = Brush("transparent")
 
   /**
    *  The given glyph: transformed according to its `cellFitMethod` to fit the given `(w,h)`
@@ -178,7 +166,7 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    * @param bg background used if any expansion happens
    * @return this glyph padded (etc) to fit `(w, h)` using its current `cellFitMethod`
    */
-   def fitToCell(w: Scalar, h: Scalar, fg: Brush = CellFit.nothing, bg: Brush=CellFit.nothing): Glyph =
+   def fitToCell(w: Scalar, h: Scalar, fg: Brush = CellFit.transparent, bg: Brush=CellFit.transparent): Glyph =
        CellFit.fitToCell(thisGlyph.cellFitMethod, w, h, fg, bg)(thisGlyph)
 
   /**

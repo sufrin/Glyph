@@ -32,7 +32,7 @@ trait Brushes {
   val black      = Brush("black")         col 0xFF000000 width 0
   val blackLine  = Brush("blackLine")     col 0xFF000000 width 2f cap SQUARE
   val blackFrame = Brush("blackFrame")    col 0xFF000000 width 5f cap ROUND
-  val nothing    = Brush("nothing")   col 0 alpha(0f)
+  val transparent= Brush("transparent") col 0 alpha(0f)
   val invisible  = Brush("invisible") col 0 width 1 alpha(0f)
   val lightGrey  = Brush("lightGrey") col 0xFFbbbbbb width 1
   val darkGrey   = Brush("darkGrey")  col 0xFF777777 width 1
@@ -102,8 +102,8 @@ object Brushes extends Brushes {
       case "darkgrey" => Brush(s"darkgrey")(color = 0XFF777777)
       case "black" => Brush(s"black")(color = 0XFF000000)
       case "yellow" => Brush(s"yellow")(color = 0XFFFFDD00)
-      case "nothing" => Brush(s"nothing")(color = 0X00000000, alpha=0f)
-      case "" => Brush(s"nothing")(color = 0X00000000, alpha=0f)
+      case "transparent" => Brush(s"transparent")(color = 0X00000000, alpha=0f)
+      case "" => Brush(s"transparent")(color = 0X00000000, alpha=0f)
       case s"0x${hex}" if hex.matches("([0-9a-f])+") =>
         Brush(s"0X$hex")(color = hexToInt(hex))
       case name =>

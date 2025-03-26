@@ -12,7 +12,7 @@ import Brushes._
 trait Example3Interface {
   implicit val style: StyleSheet
 
-  val spacer = Rect(0, 20, fg=nothing)
+  val spacer = Rect(0, 20, fg=transparent)
 
   import styled.TextButton
   import styled.Label

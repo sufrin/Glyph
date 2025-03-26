@@ -134,18 +134,18 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
     ).enlarged(40)
   }
 
-  Page("Edged #3", "Text.copy(bg=nothing).edged(fg, bg)\n(text bg prevails over edged bg unless nothing)") {
+  Page("Edged #3", "Text.copy(bg=transparent).edged(fg, bg)\n(text bg prevails over edged bg unless transparent)") {
     def label(bg: Brush) = SimpleParagraphs(15, align=Center, font=FontFamily("Courier")(25), fg=darkGrey, bg=bg)("""The rain in spain falls mainly in the plain""")
 
-    Grid(padx=10, pady=10, fg=nothing, width=5).rows(
-      for { cap<-List(ROUND); tbg<- List(yellow, nothing); bg<-List(green, nothing); width<-List(2f, 4f, 10f, 20f, 40f)} yield
+    Grid(padx=10, pady=10, fg=transparent, width=5).rows(
+      for {cap<-List(ROUND); tbg<- List(yellow, transparent); bg<-List(green, transparent); width<-List(2f, 4f, 10f, 20f, 40f)} yield
         Label(s"fg=red($width,$cap)\ntext bg=$tbg, bg=$bg") above label(tbg).edged(fg=red(width = width, cap = cap), bg=bg) ,
     )
   }
 
   Page("Miscellaneous", "") {
       val (x, y) = (150f, 100f)
-      def glyph = Label(" Text(bg=nothing) ").copy(bg=nothing)
+      def glyph = Label(" Text(bg=transparent) ").copy(bg=transparent)
       def star = PolygonLibrary.filledStargon(9, fg=blue(width=4)).scaled(.55f)
       def cross = Polygon(star.w, star.h, blue(width=4))((0, 0), (star.w, star.h), (0, star.h), (star.w, 0), (0,0) )
       def starbstar: Glyph = star beside star
@@ -153,14 +153,14 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       def staracross: Glyph = star above cross
 
       Col(align=Center)(
-        Label(".edged (fg=black(width=2, bg<-{red, yellow, nothing})"), ex,
+        Label(".edged (fg=black(width=2, bg<-{red, yellow, transparent})"), ex,
         Row(skip=10, align=Mid)(
           star.edged(fg=black(width=2), bg=red),
           cross.edged(fg=black(width=2), bg=red),
           star.edged(fg=black(width=2), bg=yellow),
           cross.edged(fg=black(width=2), bg=yellow),
-          star.edged(fg=black(width=2), bg=nothing),
-          cross.edged(fg=black(width=2), bg=nothing),
+          star.edged(fg=black(width=2), bg=transparent),
+          cross.edged(fg=black(width=2), bg=transparent),
         ), ex, ex, ex, ex,
         Label(".roundFramed (fg=black(width=10, bg=yellow, radius<-{0.1, 0.3})"), ex,
         Row(skip=10, align=Mid)(
@@ -189,18 +189,18 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
           starastar.enlarged(30).roundFramed(fg=black(width=10), bg=yellow, radius = .9f),
           staracross.enlarged(30).roundFramed(fg=black(width=10), bg=yellow, radius = .9f)
         ), ex scaled 4,
-        Label(".roundFramed text [text's bg must be nothing if frame bg is always to prevail]"),
+        Label(".roundFramed text [text's bg must be transparent if frame bg is always to prevail]"),
         Row(skip=10, align=Mid)(
-          glyph.roundFramed(yellowHuge(width = 10, cap=ROUND), nothing, .35f), em,
+          glyph.roundFramed(yellowHuge(width = 10, cap=ROUND), transparent, .35f), em,
           glyph.roundFramed(yellowHuge(width = 10, cap=ROUND), green, .35f), em,
-          glyph.roundFramed(yellowHuge(width = 20, cap=ROUND), nothing, .5f), em,
+          glyph.roundFramed(yellowHuge(width = 20, cap=ROUND), transparent, .5f), em,
           glyph.roundFramed(yellowHuge(width = 20, cap=ROUND), green, .5f), em,
           Label("Text(bg=lightGrey)").copy(bg=lightGrey).roundFramed(yellow(width = 10), bg=green, 0f), em,
         ), ex, ex,
           Row(skip=10, align=Mid)(
-          glyph.roundFramed(yellowHuge(width = 10, cap=ROUND), nothing, .35f), em,
+          glyph.roundFramed(yellowHuge(width = 10, cap=ROUND), transparent, .35f), em,
           glyph.roundFramed(yellowHuge(width = 10, cap=ROUND), green, .35f), em,
-          glyph.roundFramed(yellowHuge(width = 20, cap=ROUND), nothing, .5f), em,
+          glyph.roundFramed(yellowHuge(width = 20, cap=ROUND), transparent, .5f), em,
           glyph.roundFramed(yellowHuge(width = 20, cap=ROUND), green, .5f), em,
           Label("Text(bg=lightGrey)").copy(bg=lightGrey(width=30)).roundFramed(yellow(width = 20), bg=green, .5f), em,
         )
@@ -217,7 +217,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
         a generator to the translation:
       </p>
       <fill/>
-      <div fontFamily="Courier" fontScale="0.9" textForeground="black" textBackground="nothing" background="lightGrey">
+      <div fontFamily="Courier" fontScale="0.9" textForeground="black" textBackground="transparent" background="lightGrey">
       <![CDATA[
              translation("star") = {
                style => PolygonLibrary.filledStargon(9, fg=blue(width=4)).scaled(.55f)
@@ -243,7 +243,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
           </div>
       </rows>
       <fill height="3ex"/>
-      <div normalizePCData="true" fontFamily="Courier" fontScale="0.9" textForeground="black" textBackground="nothing" background="lightGrey">
+      <div normalizePCData="true" fontFamily="Courier" fontScale="0.9" textForeground="black" textBackground="transparent" background="lightGrey">
       <![CDATA[
            <rows foreground="darkGrey/3" padX="2em" padY="2em" cols="3">
                 <glyph gid="star"/>

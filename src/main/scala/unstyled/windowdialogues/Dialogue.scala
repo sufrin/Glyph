@@ -60,7 +60,7 @@ object Dialogue extends Loggable {
 
 }
 
-class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, theTitle: String, bg: Brush=Brushes.nothing) { thisPopup =>
+class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, theTitle: String, bg: Brush=Brushes.transparent) { thisPopup =>
   /**
    * Make a primitive popup from `blurb` atop `bottomRow`; placing it at `location` on the screen.
    */

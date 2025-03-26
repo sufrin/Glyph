@@ -30,6 +30,6 @@ object Pages extends Application  {
   def title = s"""Demonstration Book"""
 
   override
-  val defaultIconPath: Option[String] = Some ("./flag.png")
+  val defaultIconPath: Option[String] = Some ("./cherub.png")
 
 }

@@ -3,7 +3,7 @@ package unstyled
 import GlyphTypes._
 
 object Label {
-  def apply(text: String, font: Font=Brushes.buttonFont, fg: Brush=Brushes.black, bg: Brush=Brushes.nothing, align: Alignment=Center): Glyph = {
+  def apply(text: String, font: Font=Brushes.buttonFont, fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, align: Alignment=Center): Glyph = {
     import NaturalSize.Col
     val lines = text.split('\n').toList
     lines.length match {

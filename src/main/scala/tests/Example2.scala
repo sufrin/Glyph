@@ -17,7 +17,7 @@ trait Example2Interface {
   val buttonFrame:     Brush = blue(cap=ROUND, width=18)
   val labelBackground: Brush = green().rounded(18)
   val font:            Font  = FontFamily("Courier").makeFont(size=32)
-  val spacer = Rect(0, 20, fg=nothing)
+  val spacer = Rect(0, 20, fg=transparent)
 
   val GUI: Glyph = Col(align=Center, bg=lightGrey) (
     Label("A simple label", font, fg=white, bg=labelBackground) enlarged(20),

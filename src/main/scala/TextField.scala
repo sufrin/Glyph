@@ -84,7 +84,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
   /** 
    * The last shift-key that was pressed alone.  
    * Two successive presses of the same shift key
-   * (with nothing else pressed) triggers an abbreviation hunt. 
+   * (with transparent else pressed) triggers an abbreviation hunt.
    */
   private var abbreviationTrigger = Key.UNDEFINED
   private def resetAbbreviationTrigger(): Unit = abbreviationTrigger = Key.UNDEFINED

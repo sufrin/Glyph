@@ -10,7 +10,7 @@ import styled.Book
 import styled.BookSheet
 import styled.{CheckBox, MenuButton, MenuGlyphButton}
 import org.sufrin.glyph.unstyled.static._
-import Brushes.{blue, nothing, red, redLine, yellow}
+import Brushes.{blue, transparent, red, redLine, yellow}
 
 import org.sufrin.glyph.styles.decoration
 

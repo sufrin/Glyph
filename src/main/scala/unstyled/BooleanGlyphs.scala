@@ -1,14 +1,14 @@
 package org.sufrin.glyph
 package unstyled
 
-import Brushes.nothing
+import Brushes.transparent
 
 object BooleanGlyphs {
 
 
     /** A settable `OneOf`  showing `whenTrue` if on, and `whenFalse` if off */
     class OnOff(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean, fg: Brush, bg: Brush) extends Settable[Boolean]
-    { val oneOf = dynamic.OneOf(bg=Brushes.nothing, enableBG = false)(whenFalse, whenTrue)
+    { val oneOf = dynamic.OneOf(bg=Brushes.transparent, enableBG = false)(whenFalse, whenTrue)
 
       /** Set the state */
       def set(state: Boolean): Unit = { oneOf.select(if (state) 1 else 0) }
@@ -27,7 +27,7 @@ object BooleanGlyphs {
 
     /** A button used to "drive" a `OnOff` */
     class OnOffButton(tickBox: OnOff, initially: Boolean, fg: Brush, bg: Brush, reaction: Boolean => Unit)
-      extends unstyled.reactive.RawButton(tickBox.oneOf, tickBox.oneOf, tickBox.oneOf, fg, bg=nothing,
+      extends unstyled.reactive.RawButton(tickBox.oneOf, tickBox.oneOf, tickBox.oneOf, fg, bg=transparent,
                         react = { _ => reaction(tickBox.invert()) })
       with Settable[Boolean] {
       def set(state: Boolean): Unit = tickBox.set(state)

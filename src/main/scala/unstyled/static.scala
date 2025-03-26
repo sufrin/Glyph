@@ -31,11 +31,10 @@ object static  {
   }
 
   /** Shaded glyphs suitable for use in making buttons */
-  object Shaded extends DefaultPaints {
+  object Shaded  {
 
     import io.github.humbleui.skija.Path
 
-    def NOTHING: Brush = Brushes.invisible
 
     case class ShadingPaths(topLeft: Path, bottomRight: Path)
 
@@ -127,9 +126,9 @@ object static  {
    *
    * @see Concentric
    */
-  object Envelope extends DefaultPaints {
+  object Envelope  {
 
-    def apply(fg: Brush = defaultFG, bg: Brush = defaultBG)(located: Glyph*): Glyph = new Envelope(located, fg, bg)
+    def apply(fg: Brush = Brushes.transparent, bg: Brush = Brushes.transparent)(located: Glyph*): Glyph = new Envelope(located, fg, bg)
 
     class Envelope(located: Seq[Glyph], val fg: Brush, val bg: Brush) extends Composite(located) {
       override val kind: String = "Envelope"
@@ -209,7 +208,7 @@ object static  {
     def Right(theGlyphs: Seq[Glyph]): Composite = aligned(1f, 0.5f, theGlyphs, "Right")
 
 
-    def apply(rowAlign: VAlignment=rowAlign, colAlign: Alignment=colAlign, fg: Brush = Brushes.nothing, bg: Brush = Brushes.nothing): ConcentricGenerators = {
+    def apply(rowAlign: VAlignment=rowAlign, colAlign: Alignment=colAlign, fg: Brush = Brushes.transparent, bg: Brush = Brushes.transparent): ConcentricGenerators = {
       val (_fg, _bg, _r, _c) = (fg, bg, rowAlign, colAlign)
       new ConcentricGenerators {
         val fg: Brush = _fg
@@ -256,8 +255,8 @@ object static  {
   }
 
   object Concentric extends ConcentricGenerators {
-    val bg: Brush = Brushes.nothing
-    val fg: Brush = Brushes.nothing
+    val bg: Brush = Brushes.transparent
+    val fg: Brush = Brushes.transparent
     val rowAlign: VAlignment=org.sufrin.glyph.Mid
     val colAlign: Alignment=org.sufrin.glyph.Center
   }
@@ -304,7 +303,7 @@ object static  {
    */
   class Point(val fg: Brush) extends Glyph {
     val diagonal = Vec(paint.getStrokeWidth, paint.getStrokeWidth)
-    val bg = Brushes.nothing
+    val bg = Brushes.transparent
 
     def draw(surface: Surface): Unit =
       surface.drawPoints$(paint, diagonal.x/2, diagonal.y/2)
@@ -314,8 +313,8 @@ object static  {
     def copy(fg: Brush=fg, bg: Brush=bg): Point = new Point(fg)
   }
 
-  object Point extends DefaultPaints {
-    def apply(fg: Brush = defaultFG): Point = new Point(fg)
+  object Point  {
+    def apply(fg: Brush = Brushes.black): Point = new Point(fg)
   }
 
 
@@ -346,16 +345,13 @@ object static  {
     def copy(fg: Brush=fg, bg: Brush=bg): Rect = new Rect(diagonal, fg, bg)
   }
 
-  object Rect extends DefaultPaints {
-    def apply(w: Scalar, h: Scalar, fg: Brush = defaultFG, bg: Brush = defaultBG): Rect = new Rect(Vec(w, h), fg, bg)
+  object Rect  {
+    def apply(w: Scalar, h: Scalar, fg: Brush = Brushes.blackLine, bg: Brush = Brushes.transparent): Rect = new Rect(Vec(w, h), fg, bg)
   }
 
   object BlurredFrame  {
-    val defaultFG: Brush = Brushes.nothing
-    val defaultBG: Brush =Brushes.nothing
-
-    def apply(blur: Scalar, spread: Scalar, fg: Brush=defaultFG, bg: Brush=defaultBG, dx: Scalar=0f, dy: Scalar=0f, fudge: Scalar=1.75f)(glyph: Glyph): Glyph =
-      new BlurredFrame(Some(glyph), glyph.diagonal, blur, spread, fg, bg, dx, dy).enlarged(fudge*(blur+spread), bg=defaultBG)
+    def apply(blur: Scalar, spread: Scalar, fg: Brush=Brushes.blackLine, bg: Brush=Brushes.transparent, dx: Scalar=0f, dy: Scalar=0f, fudge: Scalar=1.75f)(glyph: Glyph): Glyph =
+      new BlurredFrame(Some(glyph), glyph.diagonal, blur, spread, fg, bg, dx, dy).enlarged(fudge*(blur+spread), bg=Brushes.transparent)
   }
 
   /**
@@ -431,8 +427,9 @@ object static  {
    * multiples of `s` -- the smaller of `diagonal.x, diagonal.y`. The arc that ends laterals has radius `s*xrf`, and the arc
    * that ends verticals has radius `s*yrf`. The smaller the multiple, the tighter-looking are the corners.
    */
-  object RRect extends DefaultPaints {
-    def apply(w: Scalar, h: Scalar, solid: Boolean = true, xrf: Scalar = .25f, yrf: Scalar = .25f, fg: Brush = defaultFG, bg: Brush = defaultBG): RRect =
+  object RRect {
+
+    def apply(w: Scalar, h: Scalar, solid: Boolean = true, xrf: Scalar = .25f, yrf: Scalar = .25f, fg: Brush = Brushes.black, bg: Brush = Brushes.transparent): RRect =
       new RRect(solid, xrf, yrf, Vec(w, h), fg, bg)
   }
 
@@ -454,7 +451,7 @@ object static  {
   }
 
   object FilledRect  {
-    def apply(w: Scalar, h: Scalar, fg: Brush = Brushes.nothing, bg: Brush = Brushes.nothing): FilledRect = new FilledRect(Vec(w, h), fg, bg)
+    def apply(w: Scalar, h: Scalar, fg: Brush = Brushes.transparent, bg: Brush = Brushes.transparent): FilledRect = new FilledRect(Vec(w, h), fg, bg)
   }
 
   /**
@@ -472,8 +469,8 @@ object static  {
     def copy(fg: Brush=fg, bg: Brush=bg): FilledOval = new FilledOval(diagonal, fg, bg)
   }
 
-  object FilledOval extends DefaultPaints {
-    def apply(w: Scalar, h: Scalar, fg: Brush = defaultFG, bg: Brush = defaultBG): FilledOval = new FilledOval(Vec(w, h), fg, bg)
+  object FilledOval  {
+    def apply(w: Scalar, h: Scalar, fg: Brush = Brushes.black, bg: Brush = Brushes.transparent): FilledOval = new FilledOval(Vec(w, h), fg, bg)
   }
 
   /**
@@ -514,7 +511,7 @@ object static  {
   object Polygon {
 
     def apply(diagonal: Vec, fg: Brush, bg: Brush): Constructor = Constructor(diagonal, fg, bg)
-    def apply(w: Scalar, h: Scalar, fg: Brush = Brushes.black, bg: Brush = Brushes.nothing): Constructor = Constructor(Vec(w, h), fg, bg)
+    def apply(w: Scalar, h: Scalar, fg: Brush = Brushes.black, bg: Brush = Brushes.transparent): Constructor = Constructor(Vec(w, h), fg, bg)
 
     case class Constructor(diagonal: Vec, fg: Brush, bg: Brush) {
       def apply(vertices: Iterable[Vec]): Glyph =
@@ -566,7 +563,7 @@ object static  {
   }
 
   object FilledPolygon  {
-    import Brushes.{nothing, black}
+    import Brushes.{transparent, black}
 
     case class Constructor(diagonal: Vec, fg: Brush, bg: Brush) {
       def apply(vertices: Iterable[Vec]): Glyph =
@@ -577,7 +574,7 @@ object static  {
         new FilledPolygon(diagonal, vertices, fg, bg)
     }
 
-    def apply(w: Scalar, h: Scalar, fg: Brush = black, bg: Brush = nothing): Constructor = Constructor(Vec(w, h), fg, bg)
+    def apply(w: Scalar, h: Scalar, fg: Brush = black, bg: Brush = transparent): Constructor = Constructor(Vec(w, h), fg, bg)
   }
 
 
@@ -603,10 +600,11 @@ object static  {
     }
   }
 
-  object Label extends DefaultPaints
+  object Label
   {
 
     import io.github.humbleui.skija.Font
+    import Brushes.{black=>defaultFG, transparent=>defaultBG}
 
     def apply(text: String, font: Font = Brushes.buttonFont, fg: Brush = defaultFG, bg: Brush = defaultBG): Glyph =
         unstyled.Text(text, font, fg, bg)
@@ -619,9 +617,9 @@ object static  {
     def apply(width: Scalar, height: Scalar): Glyph = new Glyph {
       def draw(surface: Surface): Unit = ()
       def diagonal: Vec = Vec(width, height)
-      def copy(fg: Brush=Brushes.nothing, bg: Brush=Brushes.nothing): Glyph = Empty(width, height)
-      val fg: Brush = Brushes.nothing
-      val bg: Brush = Brushes.nothing
+      def copy(fg: Brush=Brushes.transparent, bg: Brush=Brushes.transparent): Glyph = Empty(width, height)
+      val fg: Brush = Brushes.transparent
+      val bg: Brush = Brushes.transparent
     }
   }
 

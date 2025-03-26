@@ -204,9 +204,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       import unstyled.dynamic.OneOf
 
       val aaa = Label("AAA").copy(fg=blue).enlarged(90, bg=yellow)
-      val bbb = Label("BBB").copy(fg=blue, bg=nothing).scaled(2f)
+      val bbb = Label("BBB").copy(fg=blue, bg=transparent).scaled(2f)
       val ccc = Label("CCCCCC").copy(fg=blue, bg=red(width=2f)).scaled(2f).enlarged(10f)
-      val ddd = Label("Ping").copy(bg=nothing, fg=black).scaled(1.5f).enlarged(10f)
+      val ddd = Label("Ping").copy(bg=transparent, fg=black).scaled(1.5f).enlarged(10f)
       val eee = Label("Poobah is longer").copy(bg=green, fg=black).scaled(1.5f).enlarged(10f)
 
       val oneOf   = OneOf()(aaa(), bbb(), ccc())
@@ -224,7 +224,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       }(buttonSheet)
 
 
-      Col(fg=nothing, bg=white, align=Center)(
+      Col(fg=transparent, bg=white, align=Center)(
         Paragraph(60, Left)(
           """
             |The background of a OneOf can be specified. If left unspecified it
@@ -235,12 +235,12 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
             |states of the OneOfs.
             |
             |""".stripMargin), ex,
-        Row(fg=nothing, bg=white)(next, em, em, sel0), ex, ex,
+        Row(fg=transparent, bg=white)(next, em, em, sel0), ex, ex,
         Col(align=Center)(Label(s"""oneOf=OneOf(bg=grey)(AAA,BBB,CCCCCC)"""), ex, oneOfBG scaled .7f).enlarged(40).edged(), ex, ex,
         Col(align=Center)(Label(s"""oneOf=OneOf()(AAA,BBB,CCCCCC)"""), ex, oneOf scaled .7f).enlarged(40).edged(), ex, ex,
         Col(align=Center)(Label(s"""oneOf=OneOf()(Ping, Poobah)"""), ex, oneOfPB scaled .7f).enlarged(40).edged(), ex, ex, ex,
         Label("The OneOf component glyphs AAA, BBB, ... are:"), ex,
-        Row(bg=nothing, fg=nothing, align=Mid)(aaa(), em, bbb(), em, ccc(), em, ddd(), em, eee()) scaled 0.8f
+        Row(bg=transparent, fg=transparent, align=Mid)(aaa(), em, bbb(), em, ccc(), em, ddd(), em, eee()) scaled 0.8f
 
       ).enlarged(40)
     }
@@ -503,8 +503,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
     Page("Polygon", "") {
 
-      def p1 = Polygon(Vec.Origin, blackFrame(width=40, cap=ROUND), nothing)((-100, -100), (-100, +100), (+100, +100), (+100, -100), (-100, -100))
-      def p2 = Polygon(200, 200, red(width=40, cap=ROUND), nothing)((0, 200), (200, 200), (200, 0), (0, 0), (0, 200))
+      def p1 = Polygon(Vec.Origin, blackFrame(width=40, cap=ROUND), transparent)((-100, -100), (-100, +100), (+100, +100), (+100, -100), (-100, -100))
+      def p2 = Polygon(200, 200, red(width=40, cap=ROUND), transparent)((0, 200), (200, 200), (200, 0), (0, 0), (0, 200))
       def p3 =  Concentric.Center(p1, p2)
       val explain = <div width="80em" align="justify">
         <p>Connected lines specified by vertices, with diagonal specified by <tt>box</tt>, unless
@@ -516,12 +516,12 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           The example below shows:
           </p>
           <![CDATA[
-                  Polygon(Vec.Zero, blackFrame(width=40, cap=ROUND), nothing)
+                  Polygon(Vec.Zero, blackFrame(width=40, cap=ROUND), transparent)
                           ((-100, -100), (-100, +100),
                            (+100, +100), (+100, -100), (-100, -100))]]>
           <p>above:</p>
           <![CDATA[
-                  Polygon(200, 200, red(width=40, cap=ROUND), nothing)
+                  Polygon(200, 200, red(width=40, cap=ROUND), transparent)
                           ((0, 200), (200, 200),
                            (200, 0), (0, 0), (0, 200))]]>
         <p>and then concentric, with it. Notice the abovementioned clipping of the latter.</p>

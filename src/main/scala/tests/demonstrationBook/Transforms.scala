@@ -10,7 +10,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
     import pageSheet.{ex, em}
     import org.sufrin.glyph.unstyled.static._
     import GlyphTypes._
-    import Brushes.{blueLine, red, redLine, redFrame, green, nothing,black, SQUARE, BUTT, blue, brown, lightGrey}
+    import Brushes.{blueLine, red, redLine, redFrame, green, transparent,black, SQUARE, BUTT, blue, brown, lightGrey}
     import styled.Label
     val nested = Book()
     val Page = nested.Page
@@ -36,10 +36,10 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
       val (tightBox, nontightBox) = (redLine(width=2), redLine(color=green.color, width=2))
 
       def L(text: String, rot: Scalar, g: Glyph): Glyph =
-        styled.Label(f" $text%1s $rot%2.2f ").above(g.turned(rot).framed(nontightBox).enlarged(8f)).framed(fg = nothing).enlarged(8f)
+        styled.Label(f" $text%1s $rot%2.2f ").above(g.turned(rot).framed(nontightBox).enlarged(8f)).framed(fg = transparent).enlarged(8f)
 
       def T(text: String, rot: Scalar, g: Glyph): Glyph =
-        styled.Label(f" $text%1s $rot%2.2f ").above(g.turned(rot, tight=true).framed(tightBox).enlarged(8f)).framed(fg = nothing).enlarged(8f)
+        styled.Label(f" $text%1s $rot%2.2f ").above(g.turned(rot, tight=true).framed(tightBox).enlarged(8f)).framed(fg = transparent).enlarged(8f)
 
       def B(text: String, rot: Scalar, w: Scalar, h: Scalar): Glyph =
         styled.Label(f" ($w%2.2f, $h%2.2f)\n($rot%2.2f)").scaled(0.8f).above(rect.turnedBoxed(w, h)(rot)).framed(tightBox).enlarged(8f)

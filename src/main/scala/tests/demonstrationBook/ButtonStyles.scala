@@ -8,7 +8,7 @@ import Dialogue.{OK, POPUP}
 import NaturalSize.{Col, Grid, Row}
 import org.sufrin.glyph.unstyled.static.{FilledRect, INVISIBLE, Rect}
 
-import org.sufrin.glyph.Brushes.{nothing, redFrame, ROUND}
+import org.sufrin.glyph.Brushes.{transparent, redFrame, ROUND}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.HintManager
 import org.sufrin.glyph.unstyled.reactive.Reaction
@@ -72,21 +72,21 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
       <div width="60em" align="justify" parSkip="3ex">
         <p align="center">Button decoration with Framed and RoundFramed.</p>
         <p>Click or hover over any of the buttons to see detail, and to understand
-           the relationship between button backgrounds and frame backgrounds. Unless "nothing"
+           the relationship between button backgrounds and frame backgrounds. Unless "transparent"
            a button background has higher priority than the background of its frame.
         </p>
         <fill height="3ex"/>
       </div>,
       anchor,
       Grid(width=3, padx=10, pady=5).rows(
-        framed("darkGrey/2-10-10", "nothing", "nothing"), framed("darkGrey/2~5~2", "nothing", "nothing"), framed("darkGrey/3-10-10~5~3", "nothing", "yellow"),
-        framed("darkGrey/10/ROUND", "nothing") ,  framed("darkGrey/20/ROUND", "yellow") ,  framed("darkGrey/30/ROUND", "nothing"),
-        framed("darkGrey/10/SQUARE", "nothing") ,  framed("darkGrey/20/SQUARE", "yellow") ,  framed("darkGrey/30/SQUARE", "nothing"),
+        framed("darkGrey/2-10-10", "transparent", "transparent"), framed("darkGrey/2~5~2", "transparent", "transparent"), framed("darkGrey/3-10-10~5~3", "transparent", "yellow"),
+        framed("darkGrey/10/ROUND", "transparent") ,  framed("darkGrey/20/ROUND", "yellow") ,  framed("darkGrey/30/ROUND", "transparent"),
+        framed("darkGrey/10/SQUARE", "transparent") ,  framed("darkGrey/20/SQUARE", "yellow") ,  framed("darkGrey/30/SQUARE", "transparent"),
 
-        roundframed("nothing", "lightGrey", 10, "nothing") ,  roundframed("nothing", "lightGrey(10)", 20, "green") ,  roundframed("nothing", "lightGrey", 30, "green"),
+        roundframed("transparent", "lightGrey", 10, "transparent") ,  roundframed("transparent", "lightGrey(10)", 20, "green") ,  roundframed("transparent", "lightGrey", 30, "green"),
         roundframed("red/10", "yellow", 0.1f, "yellow") ,  roundframed("red/20", "yellow", 0.1f, "yellow") ,  roundframed("red/30", "yellow", 0.1f, "yellow"),
         roundframed("red/10", "green", 0.3f, "yellow") ,  roundframed("red/20", "green", 0.3f, "yellow") ,  roundframed("red/30", "green", 0.3f, "yellow"),
-        roundframed("red/10", "nothing", 0.6f, "nothing") ,  roundframed("red/20", "yellow", 0.6f, "yellow") ,  roundframed("red/30", "yellow", 0.9f, "yellow"),
+        roundframed("red/10", "transparent", 0.6f, "transparent") ,  roundframed("red/20", "yellow", 0.6f, "yellow") ,  roundframed("red/30", "yellow", 0.9f, "yellow"),
       )
     )
   }
@@ -117,30 +117,30 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
     Col(align=Center)(
         <div width="65em" enlarged="20px">
             <p>Click/hover over any of the buttons to see detail, and to understand
-              the relationship between button backgrounds and frame backgrounds. Unless "nothing"
+              the relationship between button backgrounds and frame backgrounds. Unless "transparent"
               a button background has higher priority than the background of its frame.
             </p>
         </div>,
         Grid(width=3, padx=30, pady=5).rows(
-            blurred("red",    "nothing",  10f, 5f, "nothing"),
-            blurred("red",    "red",      20f, 5f, "nothing"),
+            blurred("red",    "transparent",  10f, 5f, "transparent"),
+            blurred("red",    "red",      20f, 5f, "transparent"),
             blurred("red",    "red",      20f, 20f, "green"),
 
-            blurred("red",    "nothing",  10f, 5f, "nothing", 10),
-            blurred("red",    "red",      20f, 5f, "nothing", 12),
+            blurred("red",    "transparent",  10f, 5f, "transparent", 10),
+            blurred("red",    "red",      20f, 5f, "transparent", 12),
             blurred("red",    "red",      20f, 20f, "green",  12),
 
-          shaded("black", "nothing", true, "lightgrey", 5),
-          shaded("black", "nothing", true, "lightgrey", 10),
-          shaded("black", "nothing", true, "lightgrey", 15),
+          shaded("black", "transparent", true, "lightgrey", 5),
+          shaded("black", "transparent", true, "lightgrey", 10),
+          shaded("black", "transparent", true, "lightgrey", 15),
 
-          shaded("black", "nothing", false, "lightgrey", 5),
-          shaded("black", "nothing", false, "lightgrey", 10),
-          shaded("black", "nothing", false, "lightgrey", 15),
+          shaded("black", "transparent", false, "lightgrey", 5),
+          shaded("black", "transparent", false, "lightgrey", 10),
+          shaded("black", "transparent", false, "lightgrey", 15),
 
-          shaded("blue", "lightgrey", false, "nothing", 5),
+          shaded("blue", "lightgrey", false, "transparent", 5),
           shaded("blue", "lightgrey", false, "green", 10),
-          shaded("blue", "lightgrey", false, "nothing", 15),
+          shaded("blue", "lightgrey", false, "transparent", 15),
         )
     )
   }
