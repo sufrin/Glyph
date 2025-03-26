@@ -501,6 +501,36 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     ) enlarged 20f
   }
 
+    Page("Polygon", "") {
+
+      def p1 = Polygon(Vec.Origin, blackFrame(width=40, cap=ROUND), nothing)((-100, -100), (-100, +100), (+100, +100), (+100, -100), (-100, -100))
+      def p2 = Polygon(200, 200, red(width=40, cap=ROUND), nothing)((0, 200), (200, 200), (200, 0), (0, 0), (0, 200))
+      def p3 =  Concentric.Center(p1, p2)
+      val explain = <div width="80em" align="justify">
+        <p>Connected lines specified by vertices, with diagonal specified by <tt>box</tt>, unless
+           box is <tt>Vec.Zero</tt>. In that case the diagonal is calculated ``naturally'' from the positions the vertices normalized (to the
+           positive quadrant), with allowance made for the strokewidth of <tt>fg</tt>, so that the entire drawn polygon
+          is within the diagonal. In the former case the drawn polygon may be clipped by the declared size of <tt>box.</tt>
+        </p>
+        <p>
+          The example below shows:
+          </p>
+          <![CDATA[
+                  Polygon(Vec.Zero, blackFrame(width=40, cap=ROUND), nothing)
+                          ((-100, -100), (-100, +100),
+                           (+100, +100), (+100, -100), (-100, -100))]]>
+          <p>above:</p>
+          <![CDATA[
+                  Polygon(200, 200, red(width=40, cap=ROUND), nothing)
+                          ((0, 200), (200, 200),
+                           (200, 0), (0, 0), (0, 200))]]>
+        <p>and then concentric, with it. Notice the abovementioned clipping of the latter.</p>
+      </div>
+
+      NaturalSize.Col(align=Center)(explain, pageSheet.vSpace(2), p1, pageSheet.vSpace(), p2, pageSheet.vSpace(), p3, pageSheet.vSpace())
+
+    }
+
 
   val GUI: Glyph = book.Layout.leftCheckBoxes(buttonAlign = Right, pageAlign = Center).enlarged(30)
 

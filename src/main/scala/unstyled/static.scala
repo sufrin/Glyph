@@ -347,16 +347,12 @@ object static  {
   }
 
   object Rect extends DefaultPaints {
-    def diagonal(diagonal: Vec, fg: Brush = defaultFG, bg: Brush = defaultBG): Rect = new Rect(diagonal, fg, bg)
     def apply(w: Scalar, h: Scalar, fg: Brush = defaultFG, bg: Brush = defaultBG): Rect = new Rect(Vec(w, h), fg, bg)
   }
 
   object BlurredFrame  {
     val defaultFG: Brush = Brushes.nothing
     val defaultBG: Brush =Brushes.nothing
-
-    def empty(diagonal: Vec, blur: Scalar, spread: Scalar, fg: Brush=defaultFG, bg: Brush=defaultBG, dx: Scalar=0f, dy: Scalar=0f, fudge: Scalar = 1.75f): Glyph =
-        new BlurredFrame(None, diagonal, blur, spread, fg, bg, dx, dy).enlarged(fudge*(blur+spread))
 
     def apply(blur: Scalar, spread: Scalar, fg: Brush=defaultFG, bg: Brush=defaultBG, dx: Scalar=0f, dy: Scalar=0f, fudge: Scalar=1.75f)(glyph: Glyph): Glyph =
       new BlurredFrame(Some(glyph), glyph.diagonal, blur, spread, fg, bg, dx, dy).enlarged(fudge*(blur+spread), bg=defaultBG)
@@ -380,7 +376,7 @@ object static  {
    * @param dx the horizontal offset of the shadow from the origin of the drawn shadow box
    * @param dy the vertical  offset of the shadow from the origin of the drawn shadow box
    */
-  private class BlurredFrame(val inside: Option[Glyph], val diagonal: Vec, blur: Scalar, spread: Scalar, val fg: Brush, val bg: Brush, val dx: Scalar, dy: Scalar) extends Glyph {
+  class BlurredFrame(val inside: Option[Glyph], val diagonal: Vec, blur: Scalar, spread: Scalar, val fg: Brush, val bg: Brush, val dx: Scalar, dy: Scalar) extends Glyph {
     override val kind: String = "BlurredFrame"
     override def toString: String = s"BlurredFrame($diagonal, $blur, $spread dx=$dx, dy=$dy fg=$fg, bg=$bg)"
 
@@ -436,9 +432,6 @@ object static  {
    * that ends verticals has radius `s*yrf`. The smaller the multiple, the tighter-looking are the corners.
    */
   object RRect extends DefaultPaints {
-    def diagonal(diagonal: Vec, solid: Boolean = true, xrf: Scalar = .25f, yrf: Scalar = .25f, fg: Brush = defaultFG, bg: Brush = defaultBG): RRect =
-      new RRect(solid, xrf, yrf, diagonal, fg, bg)
-
     def apply(w: Scalar, h: Scalar, solid: Boolean = true, xrf: Scalar = .25f, yrf: Scalar = .25f, fg: Brush = defaultFG, bg: Brush = defaultBG): RRect =
       new RRect(solid, xrf, yrf, Vec(w, h), fg, bg)
   }
@@ -460,10 +453,8 @@ object static  {
     def copy(fg: Brush=fg, bg: Brush=bg): FilledRect = new FilledRect(diagonal, fg, bg)
   }
 
-  object FilledRect extends DefaultPaints {
-    def diagonal(diagonal: Vec, fg: Brush = defaultFG, bg: Brush = defaultBG): FilledRect = new FilledRect(diagonal, fg, bg)
-
-    def apply(w: Scalar, h: Scalar, fg: Brush = defaultFG, bg: Brush = defaultBG): FilledRect = new FilledRect(Vec(w, h), fg, bg)
+  object FilledRect  {
+    def apply(w: Scalar, h: Scalar, fg: Brush = Brushes.nothing, bg: Brush = Brushes.nothing): FilledRect = new FilledRect(Vec(w, h), fg, bg)
   }
 
   /**
@@ -482,18 +473,35 @@ object static  {
   }
 
   object FilledOval extends DefaultPaints {
-    def diagonal(diagonal: Vec, fg: Brush = defaultFG, bg: Brush = defaultBG): FilledOval = new FilledOval(diagonal, fg, bg)
-
     def apply(w: Scalar, h: Scalar, fg: Brush = defaultFG, bg: Brush = defaultBG): FilledOval = new FilledOval(Vec(w, h), fg, bg)
   }
 
   /**
-   * Connected lines specified by vertices.
+   * Connected lines specified by vertices. Bounding box as specified by `box`, unless
+   * box is `Vec.Zero`; in that case the box is calculated from the normalized (to the
+   * positive quadrant) vertices, with allowance made for the strokewidth of `fg`.
    */
-  class Polygon(val diagonal: Vec, vertices: Iterable[(Scalar, Scalar)], val fg: Brush, val bg: Brush) extends Glyph {
+  class Polygon(box: Vec, vertices: Iterable[(Scalar, Scalar)], val fg: Brush, val bg: Brush) extends Glyph {
     override val kind: String = "Polygon"
     override def toString: String = s"Polygon($diagonal, fg=$fg, bg=$bg)(\n     ${vertices.mkString(",")}\n)"
     val compiled: Array[Scalar] = Surface.arrayOfPairs(vertices)
+    val diagonal: Vec =
+      if (box != Vec.Zero) box else {
+        val xs = vertices.map{ case (x, _) => x }
+        val ys = vertices.map{ case (y, _) => y }
+        val minx = xs.min
+        val maxx = xs.max
+        val miny = ys.min
+        val maxy = ys.max
+        // normalize the Polygon
+        if (minx<0 || miny<0) {
+          for { ix <- 0 until compiled.length } {
+            if (ix%2==0) compiled(ix) -= minx else compiled(ix) -= miny
+            compiled(ix) += fg.strokeWidth/2
+          }
+        }
+        Vec(maxx-minx+fg.strokeWidth, maxy-miny+fg.strokeWidth)
+      }
 
     def draw(surface: Surface): Unit = {
       drawBackground(surface)
@@ -503,21 +511,19 @@ object static  {
     def copy(fg: Brush=fg, bg: Brush=bg): Polygon = new Polygon(diagonal, vertices, fg, bg)
   }
 
-  object Polygon extends DefaultPaints {
+  object Polygon {
 
-    val NOTHING = Brush("Nothing") col 0x00
+    def apply(diagonal: Vec, fg: Brush, bg: Brush): Constructor = Constructor(diagonal, fg, bg)
+    def apply(w: Scalar, h: Scalar, fg: Brush = Brushes.black, bg: Brush = Brushes.nothing): Constructor = Constructor(Vec(w, h), fg, bg)
 
-    def diagonal(diagonal: Vec, fg: Brush = defaultFG, bg: Brush = defaultBG)(vertices: Iterable[Vec]): Glyph =
-        new Polygon(diagonal, vertices.map { v => (v.x, v.y) }, fg, bg)
-
-    //def diagonal(diagonal: Vec, fg: Brush = defaultFG, bg: Brush = defaultBG)(vertices: mutable.Buffer[Vec]): Glyph =
-    //  new Polygon(diagonal, vertices.toSeq.map { v => (v.x, v.y) }, fg, bg)
-
-    def apply(w: Scalar, h: Scalar, fg: Brush = defaultFG, bg: Brush = defaultBG)(vertices: (Scalar, Scalar)*): Glyph =
-      new Polygon(Vec(w, h), vertices, fg, bg)
-
-    def $(w: Scalar, h: Scalar, fg: Brush = defaultFG, bg: Brush = defaultBG)(vertices: Seq[(Scalar, Scalar)]): Glyph =
-      new Polygon(Vec(w, h), vertices, fg, bg)
+    case class Constructor(diagonal: Vec, fg: Brush, bg: Brush) {
+      def apply(vertices: Iterable[Vec]): Glyph =
+          new Polygon(diagonal, vertices.map { v => (v.x, v.y) }, fg, bg)
+      def apply(vertex: (Scalar, Scalar), vertices: (Scalar, Scalar)*): Glyph =
+          new Polygon(diagonal, vertex::vertices.toList, fg, bg)
+      def apply(vertices: Seq[(Scalar, Scalar)]): Glyph =
+        new Polygon(diagonal, vertices, fg, bg)
+    }
   }
 
   /**
@@ -559,21 +565,19 @@ object static  {
     def copy(fg: Brush = fg, bg: Brush = bg): FilledPolygon = new FilledPolygon(diagonal, vertices, fg, bg)
   }
 
-  object FilledPolygon extends DefaultPaints {
+  object FilledPolygon  {
+    import Brushes.{nothing, black}
 
-    val NOTHING = Brush("Nothing") col 0x00
+    case class Constructor(diagonal: Vec, fg: Brush, bg: Brush) {
+      def apply(vertices: Iterable[Vec]): Glyph =
+        new FilledPolygon(diagonal, vertices.map { v => (v.x, v.y) }, fg, bg)
+      def apply(vertex: (Scalar, Scalar), vertices: (Scalar, Scalar)*): Glyph =
+        new FilledPolygon(diagonal, vertex::vertices.toList, fg, bg)
+      def apply(vertices: Seq[(Scalar, Scalar)]): Glyph =
+        new FilledPolygon(diagonal, vertices, fg, bg)
+    }
 
-    def diagonal(diagonal: Vec, fg: Brush = defaultFG, bg: Brush = defaultBG)(vertices: Iterable[Vec]): Glyph =
-      new FilledPolygon(diagonal, vertices.map { v => (v.x, v.y) }, fg, bg)
-
-    //def diagonal(diagonal: Vec, fg: Brush = defaultFG, bg: Brush = defaultBG)(vertices: mutable.Buffer[Vec]): Glyph =
-    //  new FilledPolygon(diagonal, vertices.toSeq.map { v => (v.x, v.y) }, fg, bg)
-
-    def apply(w: Scalar, h: Scalar, fg: Brush = defaultFG, bg: Brush = defaultBG)(vertices: (Scalar, Scalar)*): Glyph =
-        new FilledPolygon(Vec(w, h), vertices, fg, bg)
-
-    def $(w: Scalar, h: Scalar, fg: Brush = defaultFG, bg: Brush = defaultBG)(vertices: Seq[(Scalar, Scalar)]): Glyph =
-        new FilledPolygon(Vec(w, h), vertices, fg, bg)
+    def apply(w: Scalar, h: Scalar, fg: Brush = black, bg: Brush = nothing): Constructor = Constructor(Vec(w, h), fg, bg)
   }
 
 

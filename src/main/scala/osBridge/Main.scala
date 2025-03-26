@@ -64,7 +64,7 @@ object SwingMain extends Bridge with SourceLoggable {
   import java.awt
 
   def main(args: Array[String]): Unit = withDesktop {
-    level = org.sufrin.logging.ALL
+    org.sufrin.logging("org.sufrin.glyph.osBridge.SwingMain") = "ALL"
     val frame: JFrame = new JFrame("Glyph Bridge")
     frame.setLayout(new awt.FlowLayout)
     frame.setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE)

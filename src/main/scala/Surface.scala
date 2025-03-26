@@ -351,4 +351,13 @@ object Surface {
     floats
   }
 
+  def offsetArrayOfPairs(dx: Scalar, dy: Scalar, locs: Iterable[(Scalar, Scalar)]): Array[Float] = {
+    val floats = Array.ofDim[Float](2 * locs.size)
+    var n = 0
+    for {(x, y) <- locs.iterator } {
+      floats(n) = x+dx; floats(n + 1) = y+dy; n += 2
+    }
+    floats
+  }
+
 }
