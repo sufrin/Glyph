@@ -1,11 +1,12 @@
 package org.sufrin.glyph
 package unstyled
+package static
 
 import GlyphTypes.Scalar
 
 /** A collection of static `Glyph` constructors */
 
-object static  {
+
 
   class Image(glyph: Glyph) extends Glyph {
     val theImage = External.toImage(glyph)
@@ -623,4 +624,3 @@ object static  {
     }
   }
 
-}
