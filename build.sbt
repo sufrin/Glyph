@@ -1,8 +1,17 @@
-ThisBuild / version := "0.9.0"
 
 ThisBuild / scalaVersion := "2.13.12"
-
 ThisBuild / fork := true
+
+
+
+ThisBuild / crossPaths := false
+ThisBuild / organization := "org.sufrin"
+ThisBuild / name := "glyph"
+ThisBuild / version := "0.9.0"
+ThisBuild / artifactName := {
+  (sv: ScalaVersion, mod: ModuleID, artifact: Artifact) =>
+  "glyph-" + mod.revision + "." + artifact.extension
+}
 
 
 scalacOptions ++= Seq(
@@ -23,3 +32,10 @@ lazy val root = (project in file("."))
 // XML GlyphML for paragraphs
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.2.0"
+
+
+//publishTo := Some(Resolver.file("file", new File(Path.userHome.absolutePath + "/.m2/repository")))
+
+
+resolvers += Resolver.file("local-ivy", new File(Path.userHome.absolutePath + "/.ivy2/repository"))(Resolver.ivyStylePatterns)
+
