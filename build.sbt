@@ -1,3 +1,4 @@
+// BUILD AND PUBLISH THE ARTEFACT BY: rm -rf ~/.ivy2/local/org.sufrin/glyph; sbt clean update publishLocal
 
 ThisBuild / scalaVersion := "2.13.12"
 ThisBuild / fork := true
