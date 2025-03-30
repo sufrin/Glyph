@@ -93,7 +93,7 @@ trait EventHandler extends Consumer[Event] {
   /**
    *  When `keyboardFocus.isDefined` this handler is directing all keystrokes to that glyph.
    *
-   *  Otherwise this handler handles `EventKey`s (and no others) with its own `onKeyboardUnfocussed`
+   *  Otherwise this handler handles `EventKey`s (and no others) with its own `handleUnfocusssedKey`
    */
   var keyboardFocus:  Option[ReactiveGlyph] = None
 
@@ -131,28 +131,28 @@ trait EventHandler extends Consumer[Event] {
   }
 
   /** Invoked on an `EventKey` when there's no `keyboardFocus` */
-  def onKeyboardUnfocussed(key: EventKey): Unit = {
+  def handleKeyboardUnfocussed(key: EventKey): Unit = {
     root match {
       case root: RootGlyph =>
-        root.onKeyboardUnfocussed(key)
+        root.handleUnfocusssedKey(key)
         root.reDraw()
       case _ =>
     }
   }
   /** Invoked on an `EventTextInput` when there's no `keyboardFocus` */
-  def onKeyboardUnfocussed(key: EventTextInput): Unit = {
+  def handleUnfocussedTextInput(key: EventTextInput): Unit = {
     root match {
       case root: RootGlyph =>
-        root.onKeyboardUnfocussed(key)
+        root.handleUnfocussedTextInput(key)
         root.reDraw()
       case _ =>
     }
   }
   /** Invoked on an `EventTextInputMarked` when there's no `keyboardFocus` */
-  def onKeyboardUnfocussed(key: EventTextInputMarked): Unit = {
+  def handleUnfocussedTextInputMarked(key: EventTextInputMarked): Unit = {
     root match {
       case root: RootGlyph =>
-        root.onKeyboardUnfocussed(key)
+        root.handleUnfocussedTextInputMarked(key)
         root.reDraw()
       case _ =>
     }
@@ -224,7 +224,7 @@ trait EventHandler extends Consumer[Event] {
           case None =>
               recentKeyboardFocus match {
                 case None =>
-                  onKeyboardUnfocussed(key)
+                  handleKeyboardUnfocussed(key)
                 case Some(glyph) =>
                   glyph.accept(key, Vec.Origin, window)
               }
@@ -236,7 +236,7 @@ trait EventHandler extends Consumer[Event] {
         keyboardFocus match {
           case None =>
                recentKeyboardFocus match {
-                 case None => onKeyboardUnfocussed(key)
+                 case None => handleUnfocussedTextInput(key)
                  case Some(glyph) =>
                       glyph.accept(key, Vec.Origin, window)
                }
@@ -246,7 +246,7 @@ trait EventHandler extends Consumer[Event] {
       case key: EventTextInputMarked =>   // Diacritical pressed
         keyboardFocus match {
           case None => recentKeyboardFocus match {
-            case None => onKeyboardUnfocussed(key)
+            case None => handleUnfocussedTextInputMarked(key)
             case Some(glyph) =>
               glyph.accept(key, Vec.Origin, window)
           }
@@ -266,6 +266,7 @@ trait EventHandler extends Consumer[Event] {
 
       case mouse: EventMouseButton =>
         val mouseLoc = mouseLocation(mouse.getX, mouse.getY)
+        root.asInstanceOf[RootGlyph].onMouseEvent(mouseLoc, mouse)
         mouseFocus match {
           case Some(glyph) =>
             if (glyph.contains(mouseLoc)) {
@@ -313,8 +314,8 @@ trait EventHandler extends Consumer[Event] {
       case mouse: EventMouseMove =>
         // MouseStateTracker.discover(root.asInstanceOf[RootGlyph], mouse, window) // obsolescent
         val mouseLoc = mouseLocation(mouse.getX, mouse.getY)
-        root.asInstanceOf[RootGlyph].onMotion(mouseLoc, mouse)
-        // println(s"$mouseLoc (scaled $scaleFactor) #grid{screen.getScale} $mouse")
+        root.asInstanceOf[RootGlyph].onMouseEvent(mouseLoc, mouse)
+        //println(s"$mouseLoc  $mouse")
         mouseFocus match {
           case Some(focussed) =>
             if (focussed.contains(mouseLoc)) {

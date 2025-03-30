@@ -1,27 +1,34 @@
 package org.sufrin.glyph
 package tests
 
-import Glyphs._
+import unstyled.static._
 import NaturalSize.{Col, Row}
-import ReactiveGlyphs.TextButton
+import unstyled.reactive.TextButton
+import Brushes._
+import GlyphTypes.Font
+
+import org.sufrin.glyph.GlyphTypes.FontStyle.ITALIC
 
 /**
  * Interface using non-styled glyphs
  */
 
 trait Example2Interface {
-  val blueish: Brush = blue(cap=ROUND, width=8)
-  val labelColor: Brush = green()
-  // val courier = Font(FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL), 30f)
+  val buttonFrame:     Brush = blue(cap=ROUND, width=18)
+  val labelBackground: Brush = green().rounded(18)
+  val font:            Font  = FontFamily("Courier").makeFont(size=32)
+  val spacer = Rect(0, 20, fg=transparent)
 
-  val GUI: Glyph = Col(bg=lightGrey).centered(
-    Label("A simple label", fg=white) enlarged(20, bg=labelColor),
-    Row(TextButton("make it blue") { _ => labelColor color blue.color }.framed(fg=blueish, bg=blueish),
-        TextButton("make it red")  { _ => labelColor color red.color }.framed(fg=blueish, bg=blueish))
-  ).enlarged(40f).enlarged(20f, bg=yellow)
-
+  val GUI: Glyph = Col(align=Center, bg=lightGrey) (
+    Label("A simple label", font, fg=white, bg=labelBackground) enlarged(20),
+    spacer,
+    Row(skip=10)(
+        TextButton("make it blue") { _ => labelBackground.color(blue.color) }.edged(buttonFrame),
+        TextButton("make it red")  { _ => labelBackground.color(red.color) }.edged(buttonFrame)
+    )
+  ).enlarged(20)
 }
 
 object Example2 extends Application  with Example2Interface {
-  override def title: String = "Example 2"
+  override def title: String = s"Example 2"
 }

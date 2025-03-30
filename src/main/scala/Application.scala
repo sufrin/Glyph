@@ -1,7 +1,8 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 import io.github.humbleui.jwm.{EventKey, Window}
-import org.sufrin.logging
+import NaturalSize.Row
 
 /**
  * An application specified by a GUI, and a title. Some generic flags
@@ -18,17 +19,40 @@ trait Application {
   def title: String
 
   /**
-   * Invoked on requests to close
+   * Invoked on requests to close the window directly associated with
+   * this application. May be overridden
    * @param window
+   * @see onStart
    */
-  def onClose(window: Window): Unit = window.close()
+  def handleWindowCloseRequest(window: Window): Unit = window.close()
+
+  /**
+   * Invoked when a keystroke is made in the window directly associated with
+   * this application and that window has no glyph with the keyboard focus.
+   * May be overridden.
+   *
+   * @param event
+   * @see onStart
+   */
+  def handleUnfocussedKey(event: EventKey): Unit =  {
+      val key = s"Key ${Modifiers.toBitmap(event).toLongString} ${event.getKey}"
+      logging.Default.warn(s"Keystroke unexpected: ${key}")
+  }
+
+  /**
+   * Invoked when the application's GUI has been placed on the screen. This is the right place
+   * to declare handlers for window close requests, etc.
+   *
+   */
+  protected def whenStarted(): Unit = {
+      GUI.guiRoot.onCloseRequest { window => window.close() }
+      GUI.guiRoot.onUnfocussedKey { event: EventKey => handleUnfocussedKey(event) }
+  }
 
   val defaultIconPath: Option[String] = None
   val extraArgs = new ArrayBuffer[String]()
   var useScreen: Char = 'p'
   var scaleFactor = 1.0f
-
-  val installRootHandlers: Boolean = false
 
   def main(args: Array[String]): Unit = {
     import io.github.humbleui.jwm.Screen
@@ -41,12 +65,12 @@ trait Application {
       case s"-log($logprefix)" => logPrefix=logprefix
       case s"-log($logPaths)=$level" =>
            for { obj <- logPaths.split("[,:]").map(_.trim) }
-               org.sufrin.logging(s"$logPrefix.$obj")=level
+               logging(s"$logPrefix.$obj")=level
 
 
       case s"-log:$logPaths=$level" =>
         for { obj <- logPaths.split("[,:]").map(_.trim) }
-          org.sufrin.logging(s"$logPrefix.$obj")=level
+          logging(s"$logPrefix.$obj")=level
 
       case s"-log:$logprefix" => logPrefix=logprefix
 
@@ -71,11 +95,11 @@ trait Application {
     println(s"$logPrefix")
 
     App.start(() => {
-      new Interaction(App.makeWindow(), GUI, scaleFactor) {
+      new Interaction(App.makeWindow(), GUI, scaleFactor, { if (GUI.hasGuiRoot) whenStarted()}) {
 
         def getScreen(n: Int): Screen = {
           val screens = App.getScreens
-          screens(n min screens.length)
+          screens(n min screens.length-1)
         }
 
         override def args: List[String] = extraArgs.toList
@@ -83,8 +107,13 @@ trait Application {
         override def inset = (0, 0)
         override def iconPath = icon
 
+        def onCloseRequest(action: Window=>Unit): Unit = {
+          if (GUI.hasGuiRoot) GUI.findRoot.onCloseRequest(action)
+          window.requestFrame()
+        }
+
         override def onKeyboardUnfocussed(key: EventKey): Unit = {
-          GUI.findRoot.onKeyboardUnfocussed(key)
+          if (GUI.hasGuiRoot) GUI.findRoot.handleUnfocusssedKey(key)
           window.requestFrame()
         }
 
@@ -98,17 +127,29 @@ trait Application {
           case _   => getScreen(useScreen-'0')
         }
       }.start()
-      if (installRootHandlers) GUI.findRoot.onCloseRequest(onClose(_))
-      // default handler for all unexpected keys
-      if (installRootHandlers) GUI.findRoot.handleUnfocussedKey {
-        case event: EventKey =>
-          // TODO: we really should beep!
-          // implicit val basic: StyleSheet = Styles.Default
-          // overlaydialogues.Dialogue.OK(styled.text.Label(s"Unexpected $key")).OnRootOf(GUI).start()
-          val key = s"Key ${Modifiers.toBitmap(event).toLongString} ${event.getKey}"
-          logging.Default.warn(s"Key unexpected: ${key}")
-      }
     })
   }
 
+}
+
+object Application {
+
+  def confirmCloseRequestsFor(GUI: Glyph)(implicit sheet: StyleSheet): Unit = {
+    GUI.guiRoot.onCloseRequest{ window: Window => confirmCloseOn(GUI, window) }
+  }
+
+  def enableAutoScaleFor(GUI: Glyph): Unit = {
+    GUI.guiRoot.autoScale = true
+  }
+
+  private def confirmCloseOn(glyph: Glyph, window: Window)(implicit sheet: StyleSheet): Unit = {
+    import styled.windowdialogues.Dialogue.OKNO
+
+    // TODO: windowdialogues needs to set software scale more carefully than now if autoScale
+    val prompt = Row(align=Mid)(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
+      styled.Label("Do you want to Exit?")(sheet) scaled 1.5f
+    ).enlarged(50)
+    OKNO(prompt,
+      title = "Exit Dialogue", ok = " Exit now ", no = " Continue ").InFront(glyph).andThen(close => if (close) window.close())
+  }
 }

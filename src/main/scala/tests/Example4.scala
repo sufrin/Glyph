@@ -1,31 +1,32 @@
 package org.sufrin.glyph
 package tests
-
 import NaturalSize.{Col, Row}
-import styled.text._
+import styled.overlaydialogues.Dialogue.OK
+import styled._
 
+class Example4Interface(sheet: StyleSheet) {
+  implicit val style: StyleSheet = sheet
 
-trait Example4Interface {
-  implicit object Style extends Styles.DefaultSheet
+  import glyphXML.Language._
 
+  val help: Glyph =
+    <div width="45em" align="justify">
+    <p>
+    This app solves the equation <i>c = a + b</i> if at least two of <i>a, b, c</i>
+    are well-formed numbers: possibly floating-point.
+    </p>
+    <p>
+      Typing <tt>↩</tt> (<i>ie. the enter key</i>) in any of the text fields, causes the
+      equation to be re-solved.
+    </p>
+    </div>
 
-  lazy val fields = List(a, b, c)
+  val a, b, c = textField()
+  val fields = List(a, b, c)
 
-  import overlaydialogues.Dialogue.OK
-  val help = Paragraphs(50, Justify)(
-    """This app solves c = a + b if at least two of a,b,c
-      |are well-formed (possibly floating point) numbers.
-      |
-      | Typing ↩ in
-      |any of the text fields, causes the
-      |calculation to be done again.
-      |
-      |""".stripMargin
-  )
-  val a, b, c = field()
-  val GUI: Glyph = Col.centered(
-    help enlarged 25,
-    Row.centered(
+  val GUI: Glyph = Col(align=Center)(
+    help,
+    Row(align=Mid)(
       c.framed(),
       Label(" = "),
       a.framed(),
@@ -34,19 +35,12 @@ trait Example4Interface {
     )
   ) enlarged 25
 
-  def field(): TextField = TextField(
+  def textField(): TextField = TextField(
     size = 8,
     onEnter = {
       case s: String if s.toDoubleOption.isDefined => calculemus()
       case s: String =>
-        OK(
-          Label(
-            s"""\"$s\" doesn't look much like a number.
-           |Correct it or re-enter it please.
-           |You can clear any field by typing ctrl-U.""".stripMargin,
-            Left
-          ).enlarged(20)
-        ).InFront(help).start()
+        OK( <p align="justify" width="20em">The text {s"'$s'"} doesn't look much like a num_ber. Enter it again please.</p> ).InFront(help).start()
     }
   )
 
@@ -71,6 +65,8 @@ trait Example4Interface {
   }
 }
 
-object Example4 extends Application with Example4Interface {
+object Example4 extends Application {
+  val sheet: StyleSheet = StyleSheet()
+  val GUI: Glyph = new Example4Interface(sheet).GUI
   override def title: String = "Example4"
 }

@@ -32,16 +32,14 @@ abstract class ReactiveGlyph extends Glyph {
   var reverseTransform: Vec    => Vec = { v => v }
 
   /**
-   *  When nonzero, `_scope` is the diagonal of the (absolute) bounding box within which a
+   *  When nonEmpty, `_extent` represents the (absolute) bounding box within which a
    *  reactive glyph can still be considered to contain the cursor.
    */
-  var _scope = Vec.Zero
+  var _extent: Extent = EmptyExtent
 
-  def declareCurrentTransform(transform: AffineTransform.Transform, ambientScaling: Scalar, scope: Vec): Unit = {
+  def declareCurrentTransform(transform: AffineTransform.Transform, ambientScaling: Scalar, extent: Extent): Unit = {
       reverseTransform = AffineTransform.reverse(transform, ambientScaling)
-      if (scope ne Vec.Zero) {
-        _scope = scope
-      }
+      _extent = extent
   }
 
   /**
@@ -50,24 +48,22 @@ abstract class ReactiveGlyph extends Glyph {
    * (or one of its ancestors) may have been scaled rotated
    * or translated.
    *
-   * The drawing method of each reactive glyph MUST save the
-   * affine transform in place when it is drawn.
+   * For this to work effectively, the drawing method of each reactive glyph MUST save the
+   * affine transform in place when it is drawn, using `declareCurrentTransform`
    *
    */
   override def contains(screenLocation: Vec): Boolean = {
     val relativeLocation = reverseTransform(screenLocation)
-    super.contains(rootDistance+relativeLocation) && ((_scope eq Vec.Zero) || (screenLocation within _scope))
+    super.contains(rootDistance + relativeLocation) && ((_extent eq EmptyExtent) || _extent.contains(screenLocation))
   }
 
   def glyphContains(glyph: Glyph, screenLocation: Vec): Boolean = {
     val relativeLocation = reverseTransform(screenLocation)
-    glyph.contains(rootDistance + relativeLocation) && ((_scope eq Vec.Zero) || (screenLocation within _scope))
+    glyph.contains(rootDistance + relativeLocation) && ((_extent eq EmptyExtent) || _extent.contains(screenLocation))
   }
 
   /** The glyph-relative position of the given screen location  */
   def glyphLocation(screenLocation: Vec): Vec = reverseTransform(screenLocation)
-
-
 
   var _changedState: Boolean = false
 

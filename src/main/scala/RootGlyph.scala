@@ -1,7 +1,9 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
-import io.github.humbleui.jwm.{App, EventMouseMove, EventTextInput, EventTextInputMarked, Platform}
+import io.github.humbleui.jwm.{App, EventMouseButton, EventMouseMove, EventTextInput, EventTextInputMarked, Platform}
 import GlyphTypes._
+import logging.{Logger,Loggable}
 
 /**
  *
@@ -13,7 +15,7 @@ import GlyphTypes._
  * when the window is resized externally. There ought to be a better way.
  *
  */
-class NonReentrant(log: org.sufrin.logging.Logger = RootGlyph.log) {
+class NonReentrant(log: Logger = RootGlyph.log) {
 
   var count = 0
 
@@ -40,7 +42,7 @@ class NonReentrant(log: org.sufrin.logging.Logger = RootGlyph.log) {
   }
 }
 
-object RootGlyph extends org.sufrin.logging.Loggable {
+object RootGlyph extends Loggable {
 
 }
 
@@ -71,7 +73,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
    *  When a window size changes, automatically scale its non-resizeable GUIs when they are not (programmatically)
    *  `resizeable`. This can be changed at any time.
    *
-   *  TODO: works on OS/X but not on X11, so shouldn't be anabled on X11
+   *  TODO: works on OS/X but not on X11, so shouldn't be enabled on X11
    */
   var autoScale: Boolean = false
 
@@ -118,9 +120,9 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
            RootGlyph.fine(s"=>$diagonal[force=$force]")
              if (force) { setContentSize(diagonal)  }
               // wait until the mouse moves
-               onNextMotion {
+               //onNextMouseEvent {
                  syncWindowContentSize()
-               }
+               //}
            }
          }
        }
@@ -183,8 +185,8 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
     App.runOnUIThread{()=>rootWindow.setContentSize(diag.x.floor.toInt, diag.y.floor.toInt)}
   }
 
-  val fg: Brush = DefaultBrushes.invisible
-  val bg: Brush = DefaultBrushes.invisible
+  val fg: Brush = Brushes.invisible
+  val bg: Brush = Brushes.invisible
   var diagonal: Vec = GUIroot.diagonal
   locally { GUIroot.parent = this }
   override def toString: String = s"RootGlyph\n\tdelegate = $GUIroot"
@@ -239,6 +241,14 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
       glyph.parent = thisRoot
       annotations(id) = layer
       layer
+    }
+
+    /** Change the glyph used in the annotation (if any) with the given `id` */
+    def renewAnnotation(id: String, glyph: Glyph): Unit =  {
+      annotations.get(id) match {
+        case Some(layer) => layer.glyph = glyph
+        case None =>
+      }
     }
 
     /**  Replace the topmost overlay on the stack. */
@@ -420,6 +430,8 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   def softwareScale:  Scalar = eventHandler.softwareScale
   def currentScreen: Screen  = rootWindow.getScreen
   def hardwareScale: Scalar  = rootWindow.getScreen.getScale
+  /** Current mapping from logical units to screen pixels */
+  def ambientScale: Scalar   = eventHandler.softwareScale * rootWindow.getScreen.getScale
 
   /** Extra arguments -- usually provided from the command line via `Interaction` */
   val args: List[String] = Nil
@@ -453,23 +465,32 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   var mouseInside: Option[Boolean] = None
 
 
-  var _onNextMotion: Option[()=>Unit] = None
+  var _onNextMouseEvent: Option[()=>Unit] = None
 
   /**
-   * The `action` will be evaluated when the
-   * mouse next moves.
+   * The `action` will be evaluated ONCE ONLY when the
+   * mouse next moves or a button changes state
    */
-  def onNextMotion(action: => Unit): Unit = {
-      _onNextMotion = Some {()=>action}
+  def onNextMouseEvent(action: => Unit): Unit = {
+      _onNextMouseEvent = Some { ()=>action}
   }
 
+  //
+  // A few features to support  low-level debugging in extremis
+  //
 
-  var _mouseLoc:              Vec = Vec.Zero
-  var _decodeMotionModifiers: Boolean = false
-  var _mouseModifiers:        Modifiers.Bitmap = 0
-  var _mouseStateTracker:     MouseStateTracker = null
+  private var _mouseLoc:              Vec = Vec.Zero
+  private var _decodeMotionModifiers: Boolean = false
+  private var _mouseModifiers:        Modifiers.Bitmap = 0
+  private var _mouseStateTracker:     MouseStateTracker = null
+
+  /** The last known position of the mouse */
   def mouse: (Vec, Modifiers.Bitmap) =  (_mouseLoc, _mouseModifiers)
+
+  /** Enable/disable decoding of modifiers during mouse movements (for debugging) */
   def decodeMotionModifiers(enable: Boolean): Unit = _decodeMotionModifiers=enable
+
+  /** Enable/disable detailed tracking of the mouse, including window entries and exits */
   def trackMouseState(enable: Boolean): Unit = {
     if (enable)
       _mouseStateTracker = new MouseStateTracker(thisRoot)
@@ -480,20 +501,41 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
 /**
  * Unconditionally invoked by the event handler when the mouse moves.
  * Tracks the current mouse location, and (when `_decodeMotionModifiers` is set)
- * the current state of the modifiers. It also evaluates the currently
- * declared `onNextMotion` action.
+ * the current state of the modifiers. It also runs the currently
+ * declared once-only `onNextMouseEvent` action.
  */
-  def onMotion(mouseLoc: Vec, event: EventMouseMove): Unit = {
+  def onMouseEvent(mouseLoc: Vec, event: EventMouseMove): Unit = {
     _mouseLoc = mouseLoc
     if (_decodeMotionModifiers) _mouseModifiers = Modifiers(event)
-    _onNextMotion match {
+    _onNextMouseEvent match {
       case None => ()
       case Some(action) =>
-        _onNextMotion = None
+        _onNextMouseEvent = None
         action()
     }
     if (_mouseStateTracker ne null) _mouseStateTracker.accept(event)
   }
+
+  /**
+   * Unconditionally invoked by the event handler when a mouse button changes state.
+   * Tracks the current mouse location, and runs the currently
+   * declared once-only `onNextMouseEvent` action.
+   *
+   * This is not useful to handle the end of a mouse drag.
+   */
+  def onMouseEvent(mouseLoc: Vec, event: EventMouseButton): Unit = {
+    _mouseLoc = mouseLoc
+    if (_decodeMotionModifiers) _mouseModifiers = Modifiers(event)
+    _onNextMouseEvent match {
+      case None => ()
+      case Some(action) =>
+        _onNextMouseEvent = None
+        action()
+    }
+    // if (_mouseStateTracker ne null) _mouseStateTracker.accept(event)
+  }
+
+
 
   def acceptRootGlyphEvent(event: RootGlyphEvent): Unit = {
     event match {
@@ -566,20 +608,41 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
 
   def giveupFocus(): Unit = eventHandler.giveupFocus()
 
-  var _handleUnfocussedKey: Option[EventKey=>Unit] = None
+  private var _handleUnfocussedKey: Option[EventKey=>Unit] = None
+  private var _handleUnfocussedTextInput: Option[EventTextInput=>Unit] = None
+  private var _handleUnfocussedTextInputMarked: Option[EventTextInputMarked=>Unit] = None
 
-  def handleUnfocussedKey(handler: EventKey=>Unit): Unit = _handleUnfocussedKey=Some(handler)
+  /** Assign a handler to be invoked when an event of this kind happens on a glyph without the focus */
+  def onUnfocussedKey(handler: EventKey=>Unit): Unit                          = _handleUnfocussedKey=Some(handler)
+  /** Assign a handler to be invoked when an event of this kind happens on a glyph without the focus */
+  def onUnfocussedTextInput(handler: EventTextInput=>Unit): Unit              = _handleUnfocussedTextInput=Some(handler)
+  /** Assign a handler to be invoked when an event of this kind happens on a glyph without the focus */
+  def onUnfocussedTextInputMarked(handler: EventTextInputMarked=>Unit): Unit  = _handleUnfocussedTextInputMarked=Some(handler)
 
-  def onKeyboardUnfocussed(event: EventKey): Unit =
+  def handleUnfocusssedKey(event: EventKey): Unit =
     _handleUnfocussedKey match {
       case Some(handler) => handler(event)
       case None =>
     }
 
-  /**  */
-  def onKeyboardUnfocussed(key: EventTextInput): Unit = {}
-  def onKeyboardUnfocussed(key: EventTextInputMarked): Unit = {}
+  def handleUnfocussedTextInput(event: EventTextInput): Unit =
+    _handleUnfocussedTextInput match {
+      case Some(handler) => handler(event)
+      case None =>
+    }
+
+  def handleUnfocussedTextInputMarked(event: EventTextInputMarked): Unit =
+    _handleUnfocussedTextInputMarked match {
+      case Some(handler) => handler(event)
+      case None =>
+  }
 
 }
 
-case class RootLayer(glyph: Glyph, isModal: Boolean, var strictHiding: Boolean, isMenu: Boolean = false, offMenuClick: () => Unit = { ()=> }, var visible: Boolean = true, active: Boolean=false)
+case class RootLayer(var glyph:         Glyph,
+                     isModal:           Boolean,
+                     var strictHiding:  Boolean,
+                     isMenu:            Boolean = false,
+                     offMenuClick:      () => Unit = { ()=> },
+                     var visible:       Boolean = true,
+                     active:            Boolean=false)

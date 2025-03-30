@@ -1,7 +1,10 @@
 package org.sufrin.glyph
 package tests
-import Glyphs._
+import unstyled.static._
 import GlyphTypes._
+
+import Brushes.{blueLine, lightGrey, redFrame}
+import unstyled.Text
 
 
 /**
@@ -9,10 +12,11 @@ import GlyphTypes._
  */
 object DocumentationDiagrams {
 
-  import DynamicGlyphs.OneOf
-  import GlyphTransforms.{Edged => Framed}
+  import unstyled.dynamic.OneOf
+  import GlyphTransforms.Framed
   import NaturalSize.Col
   import PolygonLibrary._
+  import Brushes.{ROUND,SQUARE,BUTT}
 
   val yellow   = Brush("yellow") color (0xFFffff00) strokeWidth (1.0f) strokeCap(ROUND)
   val green    = Brush("green") color (0xFF00ff00) strokeWidth (5.0f) strokeCap(ROUND)
@@ -21,7 +25,7 @@ object DocumentationDiagrams {
   val blue     = Brush("blue") color (0xFF0000ff) strokeWidth (1.0f) strokeCap(ROUND)
   val red      = Brush("red") color (0xFFff0000) strokeWidth (1.0f) strokeCap(ROUND)
   val white    = Brush("white") color (0xFFffffff) strokeWidth (1.0f) strokeCap(ROUND)
-  val nothing  = Brush("nothing") color (0)
+  val transparent  = Brush("transparent") color (0)
 
   object Wide {
     val blue  = Brush("Wide.blue") color (0xFF0000ff) strokeWidth (15.0f) strokeCap(SQUARE)
@@ -53,54 +57,54 @@ object DocumentationDiagrams {
   var theFace: Typeface = FontManager.default.matchFamilyStyle("Courier", FontStyle.NORMAL)
   var thePointSize: Float = 14.0f
   val theFont:      Font = new Font(theFace, thePointSize)
-  def theText(s: String): Text = Text(s, theFont)
+  def theText(s: String): Text = Text(s, theFont, fg=black)
 
   val units = 20f
   def a = FilledRect(5*units, 3*units, fg=yellow)
   def b = FilledRect(5*units, 1*units, fg=green)
-  def fa = Framed(fg=grey, bg=nothing)(a)
-  def fb = Framed(grey, bg=nothing)(b)
+  def fa = Framed(fg=grey, bg=transparent)(a)
+  def fb = Framed(grey, bg=transparent)(b)
 
 
 
   def write(path: String, captioned: Boolean=true)(glyph: Glyph, _caption: String=""): Unit = {
       val caption = if (_caption.isEmpty) glyph.toString else _caption
-      def text(line: String): Glyph = (theText(s" $line ").asLabel(black))
+      def text(line: String): Glyph = theText(s" $line ")
       lazy val label = Col.aligned(0.0f, caption.split("[\n]").toList.map(text))
       val dir = "PNG"
       if (captioned)
-        External.renderBitmap(Col.centered(label, Skip(10), glyph), s"${dir}/cap-$path", scale=5.0f)
-      External.renderBitmap(glyph, s"${dir}/$path", scale=0.5f)
+        External.writeGlyph(Col(align=Center)(label, Skip(10), glyph), s"${dir}/cap-$path", scale=5.0f)
+      External.writeGlyph(glyph, s"${dir}/$path", scale=0.5f)
     }
 
   def writeSample(path: String)(glyph: Glyph, caption: String): Unit = {
-    def text(line: String): Glyph = (theText(s" $line ").asLabel(black))
+    def text(line: String): Glyph = (theText(s" $line ").copy(black))
     lazy val label = Col.aligned(0.0f, caption.split("[\n]").toList.map(text))
     val dir = "PNG"
-    External.renderBitmap(Col.centered(label, Skip(5), Scaled(0.5f)(Label(s"${glyph.diagonal}", fg=black)), Skip(10), glyph), s"${dir}/$path", scale = 5.0f)
+    External.writeGlyph(Col(align=Center)(label, Skip(5), Scaled(0.5f)(Label(s"${glyph.diagonal}", fg=black)), Skip(10), glyph), s"${dir}/$path", scale = 5.0f)
   }
 
   def main(args: Array[String]): Unit = {
     import NaturalSize.{Col, Row}
 
-    def Blob(rad: Scalar, fg: Brush=nothing, bg: Brush=nothing): Glyph = FilledOval(rad, rad, fg, bg)
-    def Box(side: Scalar, fg: Brush=nothing, bg: Brush=nothing): Glyph = Rect(side, side, fg, bg)
+    def Blob(rad: Scalar, fg: Brush=transparent, bg: Brush=transparent): Glyph = FilledOval(rad, rad, fg, bg)
+    def Box(side: Scalar, fg: Brush=transparent, bg: Brush=transparent): Glyph = Rect(side, side, fg, bg)
 
     val samples = List[(String, Glyph)] (
       ("Rect(150f, 150f, red, blue)",        Rect(150f, 150f, red, blue)),
       ("Rect(150f, 150f, Wide.red, blue)",   Rect(150f, 150f, Wide.red, blue)),
-      ("Rect(150f, 150f, Wide.red, nothing))", Rect(150f, 150f, Wide.red, nothing)),
+      ("Rect(150f, 150f, Wide.red, transparent))", Rect(150f, 150f, Wide.red, transparent)),
       ("FilledRect(150f, 150f, Wide.red, blue))", FilledRect(150f, 150f, Wide.red, blue)),
       ("FilledOval(150f, 100f, Wide.red, blue))", FilledOval(150f, 100f, Wide.red, blue)),
-      ("FilledOval(150f, 100f, Wide.red, nothing))", FilledOval(150f, 100f, Wide.red, nothing)),
-      ("Concentric(\n FilledOval(150f, 100f, Wide.red, nothing),\n Blob(10, blue)))",
-          Concentric(FilledOval(150f, 100f, Wide.red, nothing), Blob(10, blue))),
+      ("FilledOval(150f, 100f, Wide.red, transparent))", FilledOval(150f, 100f, Wide.red, transparent)),
+      ("Concentric(\n FilledOval(150f, 100f, Wide.red, transparent),\n Blob(10, blue)))",
+          Concentric(FilledOval(150f, 100f, Wide.red, transparent), Blob(10, blue))),
       ("Concentric(\n FilledOval(150f, 100f, Wide.red),\n Box(10, blue)))",
         Concentric(FilledOval(150f, 100f, Wide.red), Box(10, blue))),
 
       ("Framed(fg=Wide.red)(Box(20, blue, green))",
         Framed(fg = Wide.red)(Box(20, blue, green))),
-      ("Framed(fg=Wide.red)(Box(20, blue, nothing))",
+      ("Framed(fg=Wide.red)(Box(20, blue, transparent))",
         Framed(fg = Wide.red)(Box(20, blue))),
 
       ("Framed(fg=Wide.red)(Box(20, blue, green))",
@@ -115,7 +119,7 @@ object DocumentationDiagrams {
       Polygon(100, 100, fg = blue(width=3))((0,0), (20, 0), (20, 20), (40, 20), (40, 0), (60,0), (60, 60), (80, 60), (80, 0), (100,0)),
       FilledPolygon(200, 200, fg = red)((0, 0), (200, 200), (200, 0), (0, 200)),
       FilledPolygon(200, 200, fg = red)((200, 200), (0, 0), (200, 0), (0, 200)),
-      FilledPolygon(150, 150, fg = red.copy width 1 cap DefaultBrushes.ROUND)((100, 100), (0, 0), (200, 0), (0, 200), (200, 200)),
+      FilledPolygon(150, 150, fg = red.copy width 1 cap Brushes.ROUND)((100, 100), (0, 0), (200, 0), (0, 200), (200, 200)),
       FilledPolygon(100, 100, fg = blue(width=3))((0,0), (20, 0), (20, 20), (40, 20), (40, 0), (60,0), (60, 60), (80, 60), (80, 0), (100,0)),
       FilledPolygon(100, 100, fg = blue(width=3))((100,0), (100, 100), (0, 100), (0,0), (20, 0), (20, 20), (40, 20), (40, 0), (60,0), (60, 60), (80, 60), (80, 0), (100,0)),
       Polygon(100, 100, fg = blue(width=3))((0, 0), (20, 0), (20, 20), (40, 20), (40, 0), (60, 0), (60, 60), (80, 60), (80, 0), (100, 0)),
@@ -139,44 +143,43 @@ object DocumentationDiagrams {
     write("eg1.png")(Col(fa, fb))
     write("eg1a.png")(Row(Col(fa, fb), Col(fa,fb)), "Row(Col(a, b), Col(a,b)")
     write("eg1b.png")(Col(Row(a,b), Row(a,b)), "Col(Row(a,b), Row(a,b)")
-    write("eg1c.png")(Row.centered(a, b), "Row.centered(a,b)")
-    write("eg1d.png")(Row.centered(Point(Wide.blue(cap=ROUND)), Skip(Wide.blue.strokeWidth), Rect(150f, 100f, Wide.blue(cap=ROUND))),
-    """|Row.centered(Point(Wide.blue(cap=ROUND)),
+    write("eg1c.png")(Row(align=Mid)(a, b), "Row(align=Mid)(a,b)")
+    write("eg1d.png")(Row(align=Mid)(Point(Wide.blue(cap=ROUND)), Skip(Wide.blue.strokeWidth), Rect(150f, 100f, Wide.blue(cap=ROUND))),
+    """|Row(align=Mid)(Point(Wide.blue(cap=ROUND)),
        |             Skip(Wide.blue.strokeWidth),
        |             Rect(150f, 100f, Wide.blue(cap=ROUND)))
        |""".stripMargin)
 
-    def eg1e = Row.centered(Point(Wide.blue),
+    def eg1e = Row(align=Mid)(Point(Wide.blue),
                             Skip(Wide.blue.strokeWidth),
                             Point(Wide.green), Rect(150f, 100f, Wide.blue))
 
     write("eg1e.png")(eg1e,
-      """Row.centered(Point(Wide.blue),
+      """Row(align=Mid)(Point(Wide.blue),
         |             Skip(Wide.blue.strokeWidth),
         |             Point(Wide.green), Rect(150f, 100f, Wide.blue)
         |""".stripMargin)
 
-    def eg1ex = Row.centered(Point(Wide.blue(width=2*Wide.blue.strokeWidth, cap=BUTT)),
+    def eg1ex = Row(align=Mid)(Point(Wide.blue(width=2*Wide.blue.strokeWidth, cap=BUTT)),
       Skip(2*Wide.blue.strokeWidth),
       Rect(150f, 100f, Brush("")(color=red.color, width=Wide.blue.strokeWidth, cap=SQUARE)))
 
     write("eg1ex.png")(eg1ex,
-      """Row.centered(
+      """Row(align=Mid)(
         |    Point(Wide.blue(width=2*Wide.blue.strokeWidth, cap=BUTT)),
         |    Skip(2*Wide.blue.strokeWidth),
         |    Rect(150f, 100f,
         |         Brush("")(color=red.color, width=Wide.blue.strokeWidth, cap=SQUARE)))
         |""".stripMargin)
 
-    write("eg1f.png")(Framed(Wide.red)(eg1e), """Framed(Wide.red)(eg1e)""")
+    write("eg1f.png")(eg1e.framed(Wide.red), """eg1e.framed(Wide.red)""")
 
-    val eg1g = Framed(fg=Wide.red)(Framed(Wide.blue, bg=Wide.blue)(Concentric(FilledOval(120f, 80f, green), Point(Wide.red))))
+    val eg1g = Concentric(FilledOval(120f, 80f, green), Point(Wide.red)).framed(fg=Wide.blue, bg=Wide.blue).framed(fg=Wide.red)
 
     write("eg1g.png")(eg1g,
-      """Framed(Wide.red)(
-        |  Framed(Wide.blue)(
-        |    Concentric(
-        |      FilledOval(120f, 80f, green), Point(Wide.red))))""".stripMargin)
+      """Concentric(FilledOval(120f, 80f, green), Point(Wide.red))
+        |           .framed(fg=Wide.blue, bg=Wide.blue)
+        |           .framed(fg=Wide.red)""".stripMargin)
 
     write("eg1gskew.png")(eg1g.skewed(0.5f, 0.0f).framed())
 
@@ -199,7 +202,7 @@ object DocumentationDiagrams {
     val egc = eg1e
 
     write("egc.png")(egc,
-      """Row.centered(Point(Wide.blue),
+      """Row(align=Mid)(Point(Wide.blue),
         |             Skip(Wide.blue.strokeWidth),
         |             Point(Wide.green), Rect(150f, 100f, Wide.blue)
         |""".stripMargin)
@@ -214,14 +217,14 @@ object DocumentationDiagrams {
 
 
     write("eg3.png")(
-          Col.centered(a, Rotated(1)(b), Row(a, b, a)),
-          "Col.centered(a,\n Rotated(1)(b), \n Row.atBottom(a, b, a))"
+          Col(align=Center)(a, Rotated(1)(b), Row(a, b, a)),
+          "Col(align=Center)(a,\n Rotated(1)(b), \n Row.Bottom(a, b, a))"
     )
     write("eg3a.png")(Row(a, b, a), "Row(a, b, a)")
-    write("eg3b.png")(Row.atTop(a, b, a), "Row.atTop(a, b, a)")
-    write("eg3c.png")(Row.centered(a, b, a), "Row.centered(a, b, a)")
-    write("eg3d.png")(Framed(Wide.blue)(Row.centered(a, b, a)), "Framed(Wide.blue)(\n Row.centered(a, b, a))")
-    write("eg3d.png")(Framed(Wide.blue)(Row.centered(a, b, a)), "Framed(Wide.blue)(\n Row.centered(a, b, a))")
+    write("eg3b.png")(Row(align=Top)(a, b, a), "Row(align=Top)(a, b, a)")
+    write("eg3c.png")(Row(align=Mid)(a, b, a), "Row(align=Mid)(a, b, a)")
+    write("eg3d.png")(Framed(Wide.blue)(Row(align=Mid)(a, b, a)), "Framed(Wide.blue)(\n Row(align=Mid)(a, b, a))")
+    write("eg3d.png")(Framed(Wide.blue)(Row(align=Mid)(a, b, a)), "Framed(Wide.blue)(\n Row(align=Mid)(a, b, a))")
 
 
     write("oneof.png")(oneof, oneof.toString)
@@ -230,25 +233,58 @@ object DocumentationDiagrams {
     write("oneofnext.png")(oneof, oneof.toString)
 
 
-    val face:              Typeface        = FontManager.default.matchFamilyStyle("Courier", FontStyle.ITALIC)
-    def font(size: Float): Font            = new Font(face, size)
-    def text(s: String, size: Float): Text = Text(s, font(size))
-    val text1 = text("Á 24pt Text", 24.0f)
-    val text2 = text("A 12pt Text", 12.0f)
-    def em    = Skip(font(18f).measureTextWidth("m"))
+    val Courier = FontFamily("Courier", "normal", 24)
+    val CourierItalic = FontFamily("Courier", "italic", 24)
+    val Menlo = FontFamily("Menlo", "normal", 20)
+    val MenloBold = FontFamily("Menlo", "bold", 16)
+    val MenloTiny = FontFamily("Menlo", "normal", 12)
 
-    write("text1.png")(Framed(grey, nothing)(text1.asGlyph(blue)), "Framed(grey)(text1.asGlyph(blue))")
-    write("text1b.png")(Row.atBottom(Skip(48), Framed(grey, nothing)(text1.atBaseline(blue))), "Row.atBottom(Skip(48), Framed(grey)(text1.atBaseline(blue)))")
-    write("text1a.png")(Framed(grey, nothing)(Row(text1.atBaseline(blue))), "Framed(grey)(Row(text1.atBaseline(blue))")
-    write("textrow1.png")(Framed(grey, nothing)(Row(text1.atBaseline(), em, text2.atBaseline())), """Framed(grey)(Row(text1.atBaseline, em, text2.atBaseline))""")
-    write("textrow2.png")(Framed(grey, nothing)(Row(text1.asGlyph(), em, text2.asGlyph())), """Framed(grey)(Row(text1.asGlyph(), em, text2.asGlyph()))""")
-    write("textrow3.png")(Framed(grey, nothing)(Row.atBottom(text1.asGlyph(), em, text2.asGlyph())), """Framed(grey)(Row.atBottom(text1.asGlyph, em, text2.asGlyph)""")
-    write("textrow1a.png")(Framed(grey, nothing)(Row.centered(text1.atBaseline(), em, text2.atBaseline(blue))), """Framed(grey)(Row.centered(text1.atBaseline, em, text2.atBaseline)""")
+    write("text1.png")(Text("A text", Courier).framed(redFrame), "Text(\"A text\", Courier).framed(redFrame)")
+    write("text1b.png")(Text("A text", MenloBold).framed(redFrame), "Text(\"A text\", MenloBold).framed(redFrame)")
+    write("text1i.png")(Text("A text", CourierItalic).framed(redFrame), "Text(\"A text\", CourierItalic).framed(redFrame)")
+    write("textrow1.png")(
+      Row(align=Baseline)(
+        Text("As you can see ", CourierItalic),
+        Text("baselines coincide ", MenloBold),
+        Text("even in tiny fonts ", MenloTiny),
+      ), "Row(align=Baseline)(...)")
+    write("textrow2.png")(
+      Row(align=Top)(
+        Text("As you can see ", CourierItalic),
+        Text("baselines do not coincide ", MenloBold),
+        Text("especially in tiny fonts ", MenloTiny),
+      ), "Row(align=Top)(...)")
+
+
+    {
+      import glyphXML.Language._
+      implicit val style: StyleSheet = StyleSheet(fontScale=0.6f)
+      val declare: Glyph = <ATTRIBUTES key="tag:p" enlarged="20px"/>
+      val gxml1: Glyph= <p width="20em" align="left" frame="red/3" rotated="2">Hello world</p>
+      val gxml2: Glyph= <p width="20em" align="left" frame="black/3-5-5">Hello world! Is this the very best you can do?</p>
+      val gxml3: Glyph =
+        <div width="27em" align="justify">
+          <p>
+            The <b>brain</b> in <i>pain</i> feels with_out ex_ception as if it is going
+            down an uninhibitedly con_voluted drain.
+          </p>
+          <p>
+            But when not in pain, it is some_what sensitive to <bi>rain.</bi>
+          </p>
+          <p textForeground="red">
+            Whatever else you do, try to remember that not_with_stand_ing that <b>glyphXML</b> may
+            some_what resemble HTML, it is a completely different lang_uage.
+          </p>
+        </div>
+      write("gxml1.png")(gxml1, "gxml1: Glyph")
+      write("gxml2.png")(gxml2, "gxml2: Glyph")
+      write("gxml3.png")(gxml3, "gxml3: Glyph")
+    }
 
     val down = Variable(false)
-    write("dynamic.png")((Shaded.Dynamic(fg=blue, bg=nothing, delta=10f, down=down)(FilledRect(150, 150, red))))
+    write("dynamic.png")((Shaded.Dynamic(fg=blue, bg=transparent, delta=10f, down=down)(FilledRect(150, 150, red))))
     down.value=true
-    write("dynamicdown.png")((Shaded.Dynamic(fg=blue, bg=nothing, delta=10f, down=down)(FilledRect(150, 150, red))))
+    write("dynamicdown.png")((Shaded.Dynamic(fg=blue, bg=transparent, delta=10f, down=down)(FilledRect(150, 150, red))))
 
     write("staticdown.png")((Shaded.Static(delta=10f, down=true)(FilledRect(150, 100, green))),
                           """Shaded.Static(delta=10f, down=true)(FilledRect(150, 100, green))""")
@@ -267,22 +303,24 @@ object DocumentationDiagrams {
     val greenish = blueish(color=0xFF009900)
     def wibbly(brush: Brush) = brush().pathEffect(PathEffect.makeDiscrete(4.0f, 5.5f, 18))
 
-    write("row-c.png", true)(Row.centered(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
-    write("row-t.png", true)(Row.atTop(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
-    write("row-b.png", true)(Row.atBottom(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
-    import FixedSize.Space.tab
-    write("row-fixed.png", true)(FixedSize.Row(350f, bg=lightGrey)(tab, FilledRect(50f, 25f, fg=red), FilledRect(100f, 25, fg=blue), FilledRect(50f, 25f, fg=red)).framed(black))
-    write("row-fixed-j.png", true)(FixedSize.Row(350f, bg=lightGrey)(FilledRect(50f, 25f, fg=red), tab, FilledRect(100f, 25, fg=blue),
-                                   tab, FilledRect(50f, 25f, fg=red)).framed(black))
+    write("row-c.png", true)(Row(align=Mid)(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
+    write("row-t.png", true)(Row(align=Top)(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
+    write("row-b.png", true)(Row(align=Bottom)(Rect(100f, 50, fg=blue), Rect(50f, 25f, fg=red)))
+    import FixedSize.Space.fill
+    write("row-fixed.png", true)(FixedSize.Row(350f, bg=lightGrey)(fill, FilledRect(50f, 25f, fg=red), FilledRect(100f, 25, fg=blue), FilledRect(50f, 25f, fg=red)).framed(black))
+    write("row-fixed-j.png", true)(FixedSize.Row(350f, bg=lightGrey)(
+      FilledRect(50f, 25f, fg=red), fill,
+      FilledRect(100f, 25, fg=blue), fill,
+      FilledRect(50f, 25f, fg=red)).framed(black))
 
 
-    write("col-c.png", true)(Col.centered(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
-    write("col-l.png", true)(Col.atLeft(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
-    write("col-r.png", true)(Col.atRight(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
+    write("col-c.png", true)(Col(align=Center)(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
+    write("col-l.png", true)(Col(align=Left)(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
+    write("col-r.png", true)(Col(align=Right)(Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
 
     write("conc.png", true)(Concentric(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
-    write("conc-t.png", true)(Concentric.atTop(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
-    write("conc-r.png", true)(Concentric.atRight(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
+    write("conc-t.png", true)(Concentric.Top(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
+    write("conc-r.png", true)(Concentric.Right(Point(Wide.green), Rect(50f, 25f, fg = blue), Rect(150f, 45f, fg = red)))
 
 
 
@@ -305,34 +343,36 @@ object DocumentationDiagrams {
 
     val wibRed = Brush("wibRed")(color=0x77ff0000, width=16f, pathEffect=PathEffect.makeDiscrete(4.0f, 15.5f, 3))
     val wibRedder = red(width=12f, pathEffect=PathEffect.makeDiscrete(4.0f, 15.5f, 3), cap=BUTT)
+
+    val para=Label("""This is text with a special edging.""")
     write("redframed.png", false)(
-      Label("Hello!", font(32)).enlarged(40).framed(fg=red(width=12f, pathEffect=PathEffect.makeDiscrete(3f, 12.5f, 15), cap=BUTT)))
-    write("redframed.png", false)(
-      Label("Hello!", font(32)).enlarged(40).framed(fg = red(width = 4f, pathEffect = PathEffect.makeDiscrete(7f, 12.5f, 15), cap = BUTT)))
+      para.enlarged(20).edged(fg = black(width = 2f).sliced(2.5f, 5f)).enlarged(10))
+
+    write("dashframed.png", false)(
+      para.enlarged(20).edged(fg = black(width = 2f).dashed(15f, 5f)).enlarged(10))
 
     write("redpoly.png", false)(
       Polygon(200, 200, fg = red(width = 4f, pathEffect = PathEffect.makeDiscrete(5f, 100f, 15), cap = ROUND)
       )((0, 100), (200, 100)).enlarged(4).framed())
 
     val gridTables = {
-      import styled.text._
-      implicit object Style extends Styles.DefaultSheet{}
-      import Style.Spaces
-      import Spaces._
+      import styled._
+      implicit object Style extends StyleSheet{}
+      import Style.{ex,em}
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
 
-      Col.centered(
-        Col.atLeft(
+      Col(align=Center)(
+        Col(align=Left)(
           Label(".grid(width=3)(data) -- row data as uniform size cells"),
-          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex,
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10, width=3)(data), ex,
           Label(".grid(height=3)(data) -- col data as uniform size cells"),
-          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(height = 3)(data), ex, ex, ex,
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10, height = 3)(data), ex, ex, ex,
           Label(".rows(width=3)(data) -- row data in uniform width columns"),
-          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).rows(width = 3)(data), ex,
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10, width = 3).rows(data), ex,
           Label(".cols(height=3)(data) -- col data in uniform height rows"),
-          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).cols(height = 3)(data), ex, ex, ex,
+          NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10, height = 3)(data), ex, ex, ex,
           Label(".table(width=3)(data) -- row data as minimal width/height cols/rows"),
           NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).table(width=3)(data), ex,
           Label(".table(height=3)(data) -- col data as minimal width/height cols/rows"),
@@ -340,29 +380,27 @@ object DocumentationDiagrams {
         ) scaled 0.8f enlarged (50))
     }
 
-    val gridOrder = {
-      implicit object Style extends Styles.DefaultSheet{}
-      import Style.Spaces
-      import Spaces._
+    val gridOrder: Glyph = {
+      implicit object Style extends StyleSheet
+      import Style.{ex,em}
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
 
-      Col.centered(
+      Col(align=Center)(
         // NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(height = 1)(data), ex,
-        NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(width = 1)(data).enlarged(10f), ex, ex,
-        NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).rows(width = 1)(data).enlarged(10f), ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 1)(data).enlarged(10f), ex, ex,
+        NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10, width=1).rows(data).enlarged(10f), ex,
        // NaturalSize.Grid(fg = blue(width = 0), padx = 10, pady = 10).grid(width = 0,  height=0)(Label("XYZZY") :: data.toList)
       )
 
     }
 
     val gridCellFit =  {
-      import styled.text._
-      implicit object Style extends Styles.DefaultSheet{}
+      import styled._
+      implicit object Style extends StyleSheet{}
       import CellFit._
-
-      import Style.Spaces._
+      import Style.{ex,em}
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
@@ -372,7 +410,7 @@ object DocumentationDiagrams {
         data.updated(4, lab)
       }
 
-      Col.centered(
+      Col(align=Center)(
         //Label("grid with data(4).fitToCell(...) [Enlarge/ShiftNorth/ShiftWest/ShiftSouth/ShiftEast/Stretch]"),
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(data), ex, ex,
         NaturalSize.Grid(fg = red(width = 0), padx = 10, pady = 10).grid(width = 3)(expanded(Stretch)), ex, ex,

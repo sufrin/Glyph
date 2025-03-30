@@ -1,9 +1,9 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 import GlyphTypes.Scalar
 
 import io.github.humbleui.jwm.{App, Platform, Window}
-import org.sufrin.logging.Loggable
 
 /**
  * When started, an `Interaction` hosts the given GUI root glyph
@@ -34,7 +34,7 @@ import org.sufrin.logging.Loggable
  * }
  * }}}
  */
-class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar = 1.0f) {
+class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar = 1.0f, informRoot: => Unit = {}) {
   thisInteraction =>
 
   import GlyphTypes.{Scalar, Pixels}
@@ -86,12 +86,12 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
 
   val handler = new EventHandler { thisHandler =>
 
-    /** Delegates `onKeyboardUnfocussed` to this `Interaction`  */
-    override def onKeyboardUnfocussed(key: EventKey): Unit = thisInteraction.onKeyboardUnfocussed(key)
-    /** Delegates `onKeyboardUnfocussed` to this `Interaction`  */
-    override def onKeyboardUnfocussed(key: EventTextInput): Unit = thisInteraction.onKeyboardUnfocussed(key)
-    /** Delegates `onKeyboardUnfocussed` to this `Interaction`  */
-    override def onKeyboardUnfocussed(key: EventTextInputMarked): Unit = thisInteraction.onKeyboardUnfocussed(key)
+    /** Delegates `handleUnfocusssedKey` to this `Interaction`  */
+    override def handleKeyboardUnfocussed(key: EventKey): Unit = thisInteraction.onKeyboardUnfocussed(key)
+    /** Delegates `handleUnfocusssedKey` to this `Interaction`  */
+    override def handleUnfocussedTextInput(key: EventTextInput): Unit = thisInteraction.onKeyboardUnfocussed(key)
+    /** Delegates `handleUnfocusssedKey` to this `Interaction`  */
+    override def handleUnfocussedTextInputMarked(key: EventTextInputMarked): Unit = thisInteraction.onKeyboardUnfocussed(key)
 
     import io.github.humbleui.jwm.Screen
 
@@ -147,11 +147,14 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
     // Set the event Listener, and make the window visible
     window.setEventListener(handler)
     window.setVisible(true)
+
+    // Inform the GUI
+    informRoot
   }
 
 }
 
-object Interaction extends Loggable {
+object Interaction extends logging.Loggable {
 
 }
 

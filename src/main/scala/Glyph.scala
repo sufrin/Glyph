@@ -1,18 +1,7 @@
-package org.sufrin.glyph
+package org.sufrin
+package glyph
 
 import GlyphTypes._
-
-/**
- *   Glyph factories inherit this interface.
- *   The definitions can be overridden on a per-factory basis.
- *
- */
-trait DefaultPaints {
-  /** By default the default background doesn't render */
-  def defaultBG: Brush = new Brush("BG") color 0
-  /** By default the default foreground is a thin black stroke*/
-  def defaultFG: Brush = new Brush("FG") color 0 width 1 alpha 1.0
-}
 
 trait GlyphColours {
   val fg : Brush
@@ -36,14 +25,12 @@ object CellFit {
   case object Stretch extends Method
   case object Enlarge extends Method
 
-  val nothing: Brush = Brush("nothing")
+  val transparent: Brush = Brush("transparent")
 
   /**
    *  The given glyph: transformed according to its `cellFitMethod` to fit the given `(w,h)`
    */
-    import Glyphs.Empty
     import GlyphTransforms.Scaled
-    import NaturalSize.{Col, Row}
     /** method should be `glyph.cellFitMethod` */
     def fitToCell(method: Method, w: Scalar, h: Scalar, fg: Brush, bg: Brush)(glyph: Glyph): Glyph = {
       method match {
@@ -76,7 +63,7 @@ object CellFit {
  *  The origin of the drawing surface is translated by this amount
  *  before each glyph is drawn.
  */
-abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
+trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
   import scala.annotation.tailrec
 
@@ -111,7 +98,7 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
 
   def reactiveContaining(p: Vec): Option[ReactiveGlyph]  =
     glyphContaining(p) match {
-      case None                    => None
+      case None                => None
       case Some(Hit(glyph, _)) =>
         glyph.reactiveParent
         /*match { //TODO: relativise the hit
@@ -179,7 +166,7 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    * @param bg background used if any expansion happens
    * @return this glyph padded (etc) to fit `(w, h)` using its current `cellFitMethod`
    */
-   def fitToCell(w: Scalar, h: Scalar, fg: Brush = CellFit.nothing, bg: Brush=CellFit.nothing): Glyph =
+   def fitToCell(w: Scalar, h: Scalar, fg: Brush = CellFit.transparent, bg: Brush=CellFit.transparent): Glyph =
        CellFit.fitToCell(thisGlyph.cellFitMethod, w, h, fg, bg)(thisGlyph)
 
   /**
@@ -211,9 +198,6 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    */
   def baseLine: Scalar = 0f
 
-  ////////////// TODO: Layout everything up to the root
-  def reLayout(): Unit = {}
-
   ////////////// TODO: invoke an efficient redrawing
   /**
    *  Request a redraw of the (entire) associated window
@@ -226,6 +210,7 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    */
   def reDraw(): Unit = guiRoot.reDraw()
 
+  /** Is this an enabled reactive glyph */
   def enabled(state: Boolean): Boolean = {
     false
   }
@@ -402,13 +387,9 @@ abstract class Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
    /** False unless `atSize` will generate a distinct glyph */
    def resizeable: Boolean = false
 
-  /**
-   *  A glyph derived from this glyph, and intended to be used for visual checks of geometry.
-   *
-   * @see DebugGeometry
-   */
-  def $$$$(enable: Variable[Boolean]=DebugGeometry.enableFrame, fg: Brush = DebugGeometry.frameColor): Glyph =
-           new DebugGeometry(this, enable, fg, true)
+   /** yield a glyph that draws bounding box and baseline of this glyph around it */
+   def showingBaseline(fg: Brush): Glyph = ShowingBaseline(fg, thisGlyph)
+   def showingBaseline: Glyph            = ShowingBaseline(ShowingBaseline.fg, thisGlyph)
 }
 
 /**
@@ -429,7 +410,7 @@ abstract class Composite(components: Seq[Glyph]) extends Glyph {
 
   def draw(surface: Surface): Unit = {
     drawBackground(surface)
-    val delta: Vec = Vec(0, baseLine)
+    val delta: Vec = Vec.Zero//Vec(0, baseLine)
     for { glyph <- components} {
           surface.withOrigin(glyph.location+delta){
           glyph.draw(surface)
@@ -457,8 +438,11 @@ abstract class Composite(components: Seq[Glyph]) extends Glyph {
       case None    => None
       case here    =>
         var result: Option[Hit] = None
-        for {glyph  <- searchGlyphs if result.isEmpty}
-            result = glyph.glyphContaining(p - glyph.location)
+        val it = searchGlyphs.iterator
+        while (result.isEmpty && it.hasNext) {
+          val glyph = it.next()
+          result = glyph.glyphContaining(p - glyph.location)
+        }
         if (result.isEmpty) here else result
     }
 

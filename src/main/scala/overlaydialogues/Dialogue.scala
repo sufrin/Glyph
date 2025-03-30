@@ -6,6 +6,7 @@ import Location._
 import NaturalSize.{Col, Row}
 
 import io.github.humbleui.jwm.{App, EventMouseScroll}
+import unstyled.{static, reactive}
 
 
 /**
@@ -14,17 +15,19 @@ import io.github.humbleui.jwm.{App, EventMouseScroll}
 object Dialogue {
 
   import PolygonLibrary.{closeButtonGlyph => defaultCloseGlyph}
-  import Styles.{ButtonStyle, MenuStyle}
+  import styles.{ButtonStyle, MenuStyle}
 
 
   /**
    *  A generic overlaydialogues "choice" popup, located at the given `position`. It can be popped down without using
    *  any of the buttons on its bottom row, by hitting the kill button placed on its top row.
+   *
+   *  TODO: unbundle first Dialogue parameter
    */
-  def CLOSEABLE[T](guiRoot: Glyph, bottomRow: Seq[Glyph]): Dialogue[T] =
-    new Dialogue[T](Col.centered(guiRoot, Row.atTop$(bottomRow)), closeGlyph = Some(defaultCloseGlyph))
+  def POPUP[T](guiRoot: Glyph, bottomRow: Seq[Glyph]): Dialogue[T] =
+    new Dialogue[T](Col(align=Center)(guiRoot, Row(Top)(bottomRow)), closeGlyph = Some(defaultCloseGlyph))
 
-  import ReactiveGlyphs.GenericButton
+  import reactive.GenericButton
 
   /**
    * If `glyph` is an `AbstractButton` and glyph.isMenuButton` then make `continue` its continuation: that is,
@@ -85,11 +88,11 @@ object Dialogue {
     }
 
     lazy val popup: Dialogue[Unit] =
-      new Dialogue[Unit](Col(bg=sheet.menuStyle.bg).centered$(uniform), East(button), Some(defaultCloseGlyph), isMenu = true) {
+      new Dialogue[Unit](Col(align=Center, bg=sheet.menuStyle.bg)(uniform), East(button), Some(defaultCloseGlyph), isMenu = true) {
       // Reactivate the button when the menu is popped down
       onClose{ _ =>
         button match {
-          case b: ReactiveGlyphs.GenericButton =>
+          case b: reactive.GenericButton =>
                     b.inactive = false
                     b.hovered = false
           case _ =>
@@ -97,12 +100,12 @@ object Dialogue {
       }
     }
 
-    lazy val reaction: ReactiveGlyphs.Reaction = {
+    lazy val reaction: reactive.Reaction = {
       _ =>
         //println(s"Popping up $name at ${button.location}")
         // Deactivate the button when the menu is popped up
         button match {
-          case b: ReactiveGlyphs.GenericButton =>
+          case b: reactive.GenericButton =>
             b.inactive = true
             b.hovered  = false
             b.guiRoot.giveupFocus()
@@ -114,7 +117,7 @@ object Dialogue {
 
     lazy val button: Glyph =
       if (nested)
-        styled.MenuButton(name) (reaction) (sheet.unFramed)
+        styled.MenuButton(name) (reaction) (sheet.copy(buttonDecoration=styles.decoration.unDecorated))
       else
         styled.TextButton(name) (reaction) (sheet)
 
@@ -138,7 +141,7 @@ object Dialogue {
     lazy val okButton: Glyph = styled.TextButton(ok) {
       _ => popup.close(())
     }
-    lazy val popup: Dialogue[Unit] = CLOSEABLE[Unit](blurb, List(okButton))
+    lazy val popup: Dialogue[Unit] = POPUP[Unit](blurb, List(okButton))
     popup
   }
 
@@ -168,7 +171,7 @@ object Dialogue {
     lazy val noButton: Glyph = styled.TextButton(no) {
       _ => popup.close(false)
     }
-    lazy val popup: Dialogue[Boolean] = CLOSEABLE[Boolean](blurb, List(okButton, noButton))
+    lazy val popup: Dialogue[Boolean] = POPUP[Boolean](blurb, List(okButton, noButton))
     popup
   }
 
@@ -194,7 +197,7 @@ object Dialogue {
     lazy val buttons = choices.map {
       choice => styled.TextButton(choice) { _ => popup.close(choice) }
     }
-    lazy val popup: Dialogue[String] = CLOSEABLE(blurb, buttons)
+    lazy val popup: Dialogue[String] = POPUP(blurb, buttons)
     popup
   }
 
@@ -212,9 +215,9 @@ object Dialogue {
    */
   def CHOICE[T](blurb: Glyph)(choices: (T, Glyph)*): Dialogue[T] = {
     lazy val buttons = choices.map {
-      case (t, g) => ReactiveGlyphs.RawButton(g(), g(), g()) { _ => popup.close(t) }.framed().enlarged(20)
+      case (t, g) => reactive.RawButton(g(), g(), g()) { _ => popup.close(t) }.framed().enlarged(20)
     }
-    lazy val popup: Dialogue[T] = CLOSEABLE(blurb, buttons)
+    lazy val popup: Dialogue[T] = POPUP(blurb, buttons)
     popup
   }
 }
@@ -236,13 +239,17 @@ object Dialogue {
  * @tparam T the type of value passed to the continuation (if any) by invoking `close`
  *
  */
-class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyph: Option[Glyph] = None, var isModal: Boolean = true, var isMenu: Boolean = false)
+class Dialogue[T](guiRoot:        Glyph,
+                  var location:   RelativeTo = null,
+                  val closeGlyph: Option[Glyph] = None,
+                  var isModal:    Boolean = true,
+                  var isMenu:     Boolean = false)
 {
   thisPopup =>
 
 
   import NaturalSize.{Col, Row}
-  import ReactiveGlyphs.RawButton
+  import reactive.RawButton
 
   /**
    * This will be the reactive glyph, if any, that also responds to ESCAPE/HOME/END and the mousewheel
@@ -272,12 +279,12 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
 
  protected val closeButtonAppearance: Glyph = closeGlyph match {
     case Some(glyph) =>
-      Glyphs.Concentric(bg=DefaultBrushes.nothing).atLeft(
-         Glyphs.FilledRect(guiRoot.w, glyph.h*1.2f, fg=DefaultBrushes.lightGrey, bg=DefaultBrushes.lightGrey), // TODO: 5f is a magic number
+      static.Concentric(rowAlign=Mid, colAlign=Center)(
+         static.FilledRect(guiRoot.w, glyph.h*1.2f, fg=Brushes.lightGrey, bg=Brushes.lightGrey), // TODO: 5f is a magic number
         glyph,
       )
     case None        =>
-      Glyphs.FilledRect(guiRoot.w-2, 5f, fg=DefaultBrushes.lightGrey, bg=DefaultBrushes.lightGrey)
+      static.FilledRect(guiRoot.w-2, 5f, fg=Brushes.lightGrey, bg=Brushes.lightGrey)
   }
 
   /**
@@ -300,12 +307,20 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
             //println(s"closeButton $key")
              key.getKey match {
                case ESCAPE  if isModal && !key.isPressed => close()
-               //case UP      if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (0f, -15f); overlayRoot.reDraw()
-               //case DOWN    if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (0f, 15f); overlayRoot.reDraw()
-               //case RIGHT   if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (15f, 0f); overlayRoot.reDraw()
-               //case LEFT    if isModal && !key.isPressed => overlayRoot.location = overlayRoot.location + (-15f, 0f); overlayRoot.reDraw()
+               case UP      if isModal && !key.isPressed =>
+                 overlayRoot.location = overlayRoot.location + (0f, -15f)
+                 overlayRoot.reDraw()
+               case DOWN    if isModal && !key.isPressed =>
+                 overlayRoot.location = overlayRoot.location + (0f, 15f)
+                 overlayRoot.reDraw()
+               case RIGHT   if isModal && !key.isPressed =>
+                 overlayRoot.location = overlayRoot.location + (15f, 0f)
+                 overlayRoot.reDraw()
+               case LEFT    if isModal && !key.isPressed =>
+                 overlayRoot.location = overlayRoot.location + (-15f, 0f)
+                 overlayRoot.reDraw()
                case HOME    if isModal && !key.isPressed =>
-                 overlayRoot.location = overlayRoot.location - overlayRoot.diagonal
+                 overlayRoot.location = Vec.Zero // overlayRoot.location - overlayRoot.diagonal
                  overlayRoot.reDraw()
                case END     if isModal && !key.isPressed =>
                  overlayRoot.location = overlayRoot.location + overlayRoot.diagonal
@@ -322,10 +337,10 @@ class Dialogue[T](guiRoot: Glyph, var location: RelativeTo = null, val closeGlyp
 
         }
         theCloseButton = Some(closeButton)
-        Col(bg = DefaultBrushes.nothing).atLeft (
+        Col(align=Left, bg = Brushes.transparent) (
             closeButton,
-            guiRoot//.enlargedTo(closeButton.w, guiRoot.h, bg = DefaultBrushes.white)
-        ).framed(bg = DefaultBrushes.white)
+            guiRoot//.enlargedTo(closeButton.w, guiRoot.h, bg = Brushes.white)
+        ).framed(bg = Brushes.white)
     }
 
   /** set the location of this dialogue relative to `glyph`  */

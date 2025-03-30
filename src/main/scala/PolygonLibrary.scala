@@ -1,32 +1,34 @@
 package org.sufrin.glyph
 
+import unstyled.static
 
-object PolygonLibrary extends Brushes {
+
+object PolygonLibrary {
   import GlyphTypes.Scalar
-  import Glyphs._
+  import static._
   import NaturalSize.{Col, Row}
 
   import scala.collection.mutable.ArrayBuffer
+  import Brushes._
 
-  val brown: Brush = Brush("brown")(color=0xFF964b00)
 
   def closeButtonGlyph: Glyph = {
-    import Glyphs.Polygon
+    import static.Polygon
     val diam = 14f // entries.map(_.h).min / 2f
     val crossFG = white(width = diam / 8f)
-    Glyphs.Concentric(
-      Glyphs.FilledOval(diam, diam, fg = red()),
+    static.Concentric(
+      static.FilledOval(diam, diam, fg = red()),
       Polygon(diam, diam, fg = crossFG)((diam / 2f, 0), (diam / 2f, diam)),
       Polygon(diam, diam, fg = crossFG)((0, diam / 2f), (diam, diam / 2f))).turnedBoxed(diam, diam)(45)
   }
 
   def hideButtonGlyph: Glyph = {
-    import Glyphs.Polygon
+    import static.Polygon
     val diam = 14f // entries.map(_.h).min / 2f
     val dashFG = white(width = diam / 8f)
     val halfDiam = diam/2f
-    Glyphs.Concentric(
-      Glyphs.FilledOval(diam, diam, fg = brown),
+    static.Concentric(
+      static.FilledOval(diam, diam, fg = brown),
       Polygon(diam, diam, fg = dashFG)((0, halfDiam), (diam, halfDiam)))
   }
 
@@ -72,7 +74,7 @@ object PolygonLibrary extends Brushes {
       vertices += Vec(x, 0)
       x += step
     }
-    val lines = Polygon.diagonal(diagonal, fg = fg, bg = nothing)(vertices)
+    val lines = Polygon(diagonal, fg = fg, bg = transparent)(vertices)
     lines // Concentric(lines, lines().rotated(1))
   }
 
@@ -113,18 +115,18 @@ object PolygonLibrary extends Brushes {
     star.toSeq
   }
 
-  def regularPolygon(n: Int, C: Scalar = 128.0f, R: Scalar = 115f, fg: Brush = blue, bg: Brush = nothing): Glyph =
-    Polygon.$(2*C, 2*C, fg, bg)(regularPolygonPath(n, C, R))
+  def regularPolygon(n: Int, C: Scalar = 128.0f, R: Scalar = 115f, fg: Brush = blue, bg: Brush = transparent): Glyph =
+    Polygon.apply(2*C, 2*C, fg, bg)(regularPolygonPath(n, C, R))
 
-  def filledRegularPolygon(n: Int, C: Scalar = 128.0f, R: Scalar = 115f, fg: Brush = blue, bg: Brush = nothing): Glyph =
-    FilledPolygon.$(2*C, 2*C, fg, bg)(regularPolygonPath(n, C, R))
+  def filledRegularPolygon(n: Int, C: Scalar = 128.0f, R: Scalar = 115f, fg: Brush = blue, bg: Brush = transparent): Glyph =
+    FilledPolygon(2*C, 2*C, fg, bg)(regularPolygonPath(n, C, R))
 
-  def star7(fg: Brush = blue, bg: Brush = nothing, C: Scalar = 128.0f, R: Scalar = 115f): Glyph = openStargon(7, fg, bg, C, R)
+  def star7(fg: Brush = blue, bg: Brush = transparent, C: Scalar = 128.0f, R: Scalar = 115f): Glyph = openStargon(7, fg, bg, C, R)
 
-  def filledStargon(n: Int, fg: Brush = blue, bg: Brush = nothing, C: Scalar = 128.0f, R: Scalar = 115f): Glyph =
-    FilledPolygon.$(2*C, 2*C, fg, bg)(regularStarPath(n, C, R))
+  def filledStargon(n: Int, fg: Brush = blue, bg: Brush = transparent, C: Scalar = 128.0f, R: Scalar = 115f): Glyph =
+    FilledPolygon(2*C, 2*C, fg, bg)(regularStarPath(n, C, R))
 
-  def openStargon(n: Int, fg: Brush = blue, bg: Brush = nothing, C: Scalar = 128.0f, R: Scalar = 115f): Glyph =
-    Polygon.$(2*C, 2*C, fg, bg)(regularStarPath(n, C, R))
+  def openStargon(n: Int, fg: Brush = blue, bg: Brush = transparent, C: Scalar = 128.0f, R: Scalar = 115f): Glyph =
+    Polygon(2*C, 2*C, fg, bg)(regularStarPath(n, C, R))
 
 }

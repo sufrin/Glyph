@@ -15,6 +15,7 @@ trait Surface {
   val canvas: Canvas
   val scale: Scalar
 
+
   def drawPoint(loc: Vec, paint: Paint): Unit =
     canvas.drawPoint(loc.x, loc.y, paint)
 
@@ -252,11 +253,11 @@ trait Surface {
   }
 
 
-  private var _scope: Vec = Vec.Zero
+  private var _extent: Extent = EmptyExtent
 
   /**
    * Set the scope of reactive glyph gestures to be `scope`
-   * during the computation of `effect`. When nonzero, `_scope` is the
+   * during the computation of `effect`. When nonzero, `_extent` is the
    * diagonal of the (absolute) bounding box within which a
    * reactive glyph can still be considered to contain the cursor.
    *
@@ -265,14 +266,23 @@ trait Surface {
    *       to continue to respond to mouse movements over its clipped part. But this
    *       may be avoidable in many cases.
    */
-  def withScope(scope: Vec)(effect: => Unit): Unit = {
-    val s = _scope
-    val trans      = AffineTransform.from(canvas.getLocalToDeviceAsMatrix33)
-    val thisOrigin = AffineTransform.transform(trans, 0f, 0f)
-    _scope = scope + thisOrigin
+  def withScope(distanceScale: Scalar, diagonal: Vec)(effect: => Unit): Unit = if (false) { effect } else {
+    val savedExtent = _extent
+    val currentTransform = AffineTransform.from(canvas.getLocalToDeviceAsMatrix33)
+    val currentOrigin: Vec = AffineTransform.transform(currentTransform, 0f, 0f)
+    _extent = ScaledExtent(distanceScale, currentOrigin, diagonal)
+
+    // Debugging
+    if (false)
+    withOrigin(Vec.Zero-currentOrigin) {
+      drawPoint(currentOrigin,           Brushes.blue(width=10))
+      drawPoint(currentOrigin+ diagonal, Brushes.red(width=10))
+    }
+
     try effect
     catch   { case err: Throwable => err.printStackTrace() }
-    finally { _scope = s }
+    finally { _extent = savedExtent }
+
   }
 
   /**
@@ -283,7 +293,15 @@ trait Surface {
   def declareCurrentTransform(glyph: ReactiveGlyph) = {
       //println(s"$hardwareScale => $scaleT")
       val transform = canvas.getLocalToDeviceAsMatrix33
-      glyph.declareCurrentTransform(AffineTransform.from(transform), scale, _scope)
+      glyph.declareCurrentTransform(AffineTransform.from(transform), scale, _extent)
+  }
+
+  @inline def currentTransform: AffineTransform.Transform = AffineTransform.from(canvas.getLocalToDeviceAsMatrix33)
+
+  def currentReverseTransform: Vec => Vec = AffineTransform.reverse(currentTransform)
+  def currentForwardTransform: Vec => Vec = {
+    val current = currentTransform
+    return { case v: Vec => AffineTransform.transform(current, v.x, v.y) }
   }
 
 }
@@ -329,6 +347,15 @@ object Surface {
     var n = 0
     for {(x, y) <- locs.iterator } {
       floats(n) = x; floats(n + 1) = y; n += 2
+    }
+    floats
+  }
+
+  def offsetArrayOfPairs(dx: Scalar, dy: Scalar, locs: Iterable[(Scalar, Scalar)]): Array[Float] = {
+    val floats = Array.ofDim[Float](2 * locs.size)
+    var n = 0
+    for {(x, y) <- locs.iterator } {
+      floats(n) = x+dx; floats(n + 1) = y+dy; n += 2
     }
     floats
   }

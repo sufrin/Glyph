@@ -4,13 +4,15 @@ package org.sufrin.glyph
  * A `Brush` delivers `Paint` with a more convenient API
  */
 
-import GlyphTypes.Paint
+import GlyphTypes.{Paint, PathEffect}
+
+import io.github.humbleui.skija.BlendMode
 
 object Brush {
 
   import io.github.humbleui.skija.PaintStrokeCap
 
-  def of(p: Paint): Brush = {
+  def ofPaint(p: Paint): Brush = {
     p match {
       case b: Brush => b
       case _        =>
@@ -26,10 +28,11 @@ object Brush {
         .pathEffect (p.getPathEffect)
         .shader (p.getShader)
     }
-
   }
 
   def apply(name: String=""): Brush = new Brush(name)
+
+  def ofString(descriptor: String): Brush = Brushes(descriptor)
 
   val ROUND:  PaintStrokeCap  = PaintStrokeCap.ROUND
   val SQUARE: PaintStrokeCap  = PaintStrokeCap.SQUARE
@@ -99,8 +102,9 @@ class Brush(var name: String) extends Paint {
             alpha: Float        = this.alpha,
             miter: Float        = this.strokeMiter,
             pathEffect: PathEffect = this.pathEffect,
-            filter: ImageFilter = this.getImageFilter,
-            shader: Shader      = this.shader
+            filter: ImageFilter    = this.getImageFilter,
+            shader: Shader         = this.shader,
+            blendMode: BlendMode   = this.getBlendMode
            ): Brush =
     Brush(name)
       . col(color)
@@ -113,6 +117,7 @@ class Brush(var name: String) extends Paint {
       . strokeMiter(miter)
       . pathEffect(pathEffect)
       . shader(shader)
+      . blendMode(blendMode)
 
   /** A copy of this brush with the same name. */
   def copy: Brush =
@@ -128,11 +133,18 @@ class Brush(var name: String) extends Paint {
       .pathEffect(getPathEffect)
       .filter(getImageFilter)
       .shader(getShader)
+      .blendMode(getBlendMode)
 
   /** Mutation */
   @inline def color(i: Int): Brush = {
     super.setColor(i); this
   }
+
+  @inline def blendMode(blendMode: BlendMode): Brush = {
+    super.setBlendMode(blendMode); this
+  }
+
+  @inline def blendMode: BlendMode = getBlendMode
 
   /** Mutation */
   @inline def name(newName: String): Brush = {
@@ -265,6 +277,33 @@ class Brush(var name: String) extends Paint {
     result.filter(ImageFilter.makeDropShadow(dx, dy, blur, color)).col(color)
     result
   }
+
+  /**
+   * Paths drawn with the resulting brush are sliced into pieces and their endpoints are displaced at random.
+   * @param sliceLength
+   * @param displacementLimit
+   * @param seed
+   *
+   * @see PathEffect.makeDiscrete
+   */
+  def sliced(sliceLength: Scalar, displacementLimit: Scalar, seed: Int=42): Brush = {
+    val effect = GlyphTypes.PathEffect.makeDiscrete(sliceLength, displacementLimit, seed)
+    val result = this.copy(name=s"$this.chopped($sliceLength,$displacementLimit, $seed)", pathEffect=effect)
+    result
+  }
+
+  /** A new brush painted with dashes. */
+  def dashed(onOff: Scalar*): Brush = {
+    val result: Brush = this.copy(name=s"$this.dashed(${onOff.mkString(", ")})", pathEffect=GlyphTypes.PathEffect.makeDash(onOff))
+    result
+  }
+
+  /** A new brush that rounds sharp corners. */
+  def rounded(radius: Scalar): Brush = {
+    val result: Brush = copy(name=s"$this.rounded(${radius})", pathEffect=GlyphTypes.PathEffect.makeRoundedCorners(radius))
+    result
+  }
+
 
 }
 
