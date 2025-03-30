@@ -40,3 +40,14 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.2.0"
 
 resolvers += Resolver.file("local-ivy", new File(Path.userHome.absolutePath + "/.ivy2/repository"))(Resolver.ivyStylePatterns)
 
+
+val skijaVersion = "0.116.2"
+val jwmVersion = "0.4.17"
+libraryDependencies ++= Seq(
+  "io.github.humbleui" % "skija-linux-x64" % skijaVersion,
+  "io.github.humbleui" % "skija-macos-x64" % skijaVersion,
+  "io.github.humbleui" % "skija-macos-arm64" % skijaVersion,
+  "io.github.humbleui" % "skija-shared" % skijaVersion,
+  "io.github.humbleui" % "jwm" % jwmVersion,
+)
+
