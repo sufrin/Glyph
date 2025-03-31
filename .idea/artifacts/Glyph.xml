@@ -1,9 +1,18 @@
 <component name="ArtifactManager">
-  <artifact type="jar" build-on-make="true" name="Glyph">
+  <artifact type="jar" name="Glyph">
     <output-path>$PROJECT_DIR$/out/artifacts/Glyph</output-path>
     <root id="archive" name="Glyph.jar">
       <element id="module-output" name="Glyph" />
+      <element id="library" level="project" name="sbt: io.github.humbleui:jwm:0.4.17:jar" />
+      <element id="library" level="project" name="sbt: io.github.humbleui:skija-linux-x64:0.116.2:jar" />
+      <element id="library" level="project" name="sbt: io.github.humbleui:skija-macos-arm64:0.116.2:jar" />
+      <element id="library" level="project" name="sbt: io.github.humbleui:skija-macos-x64:0.116.2:jar" />
+      <element id="library" level="project" name="sbt: io.github.humbleui:skija-shared:0.116.2:jar" />
+      <element id="library" level="project" name="sbt: io.github.humbleui:types:0.1.1:jar" />
+      <element id="library" level="project" name="sbt: org.scala-lang.modules:scala-xml_2.13:2.2.0:jar" />
+      <element id="library" level="project" name="sbt: org.scala-lang:scala-library:2.13.12:jar" />
       <element id="library" level="project" name="sbt: scala-sdk-2.13.12" />
+      <element id="file-copy" path="$PROJECT_DIR$/../Logging/out/Logging/Logging.jar" />
     </root>
   </artifact>
 </component>

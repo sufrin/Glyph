@@ -156,7 +156,7 @@ trait TopLevelGUI {
 object CalculatorExample extends Application {
     val GUI: Glyph = new TopLevelGUI {} . root
     override def title: String = "CalculatorExample"
-    override val defaultIconPath: Option[String] = Some("./flag.png")
+    override val defaultIconPath: Option[String] = Some("./PNG/redpoly.png")
 }
 
 

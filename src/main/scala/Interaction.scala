@@ -133,7 +133,13 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
     platform match {
       case Platform.MACOS | Platform.X11 =>
         import java.io.File
-        if (iconPath.isDefined) window.setIcon(new File(iconPath.get))
+        iconPath match {
+          case None       =>
+          case Some(path) =>
+            if (java.nio.file.Path.of(path).toFile.exists)
+              window.setIcon(new File(iconPath.get))
+        }
+
       case _ =>
     }
 
