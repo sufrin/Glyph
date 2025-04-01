@@ -1,18 +1,36 @@
-// BUILD AND PUBLISH THE ARTEFACT BY: rm -rf ~/.ivy2/local/org.sufrin/glyph; sbt clean update publishLocal
+// BUILD AND PUBLISH THE ARTEFACT BY:
+//
+// OR BUILD AS AN UBER-JAR BY:
+//    sbt clean assembly
+// THE UBER-JAR includes all the skija dependencies
 
 ThisBuild / scalaVersion := "2.13.12"
 ThisBuild / fork := true
-
-
 
 ThisBuild / crossPaths := false
 ThisBuild / organization := "org.sufrin"
 ThisBuild / name := "glyph"
 ThisBuild / version := "0.9.0"
-// ThisBuild / artifactName := {
-//   (sv: ScalaVersion, mod: ModuleID, artifact: Artifact) =>
-//   "glyph-" + mod.revision + "." + artifact.extension
-// }
+
+// This is essential to avoid problems with pre java9 Cleanable class not being found
+// Skija itself is multi-release (see the shared skija jar manifest)
+Compile / packageOptions += Package.ManifestAttributes("Multi-Release" -> "true")
+
+// Fat jar assembly 
+enablePlugins(AssemblyPlugin)
+
+assembly / assemblyJarName := "glyph+skija.jar"
+assembly / mainClass := Some("org.sufrin.glyph.tests.Example4")
+assembly / assemblyMergeStrategy := {
+  case PathList("io", "github", "humbleui", "skija", "impl", "Cleanable.class") =>
+        MergeStrategy.discard       // the pre version 9 variant
+  case PathList("META-INF", "versions", "9", xs @ _*) =>
+        MergeStrategy.first         // include the version 9+ variant(s)
+  case PathList("META-INF", xs @ _*) =>
+        MergeStrategy.discard       // remove unnecessary META-INF files
+  case _ =>
+        MergeStrategy.first
+}
 
 
 scalacOptions ++= Seq(
