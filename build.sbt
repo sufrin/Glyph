@@ -1,8 +1,15 @@
-// BUILD AND PUBLISH THE ARTEFACT BY:
-//
+// BUILD THE CURRENT PACKAGE JAR BY:
+//    sbt clean package
+// BUILD AND PUBLISH THE ARTEFACT LOCALLY BY:
+//    sbt clean publishLocal
 // OR BUILD AS AN UBER-JAR BY:
 //    sbt clean assembly
-// THE UBER-JAR includes all the skija dependencies
+// THE UBER-JAR includes all the dependencies needed to run
+// as a java target: it's huge
+//
+// The file: lib/Logging.jar (also in SkijaLib) is the only unmanaged
+// component needed to use the glyph library.
+//
 
 ThisBuild / scalaVersion := "2.13.12"
 ThisBuild / fork := true
