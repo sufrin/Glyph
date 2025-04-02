@@ -1,9 +1,8 @@
 package org.sufrin.glyph
 package tests
 import unstyled.static._
-import GlyphTypes._
-
 import Brushes.{blueLine, lightGrey, redFrame}
+import GlyphTypes._
 import unstyled.Text
 
 
@@ -13,10 +12,10 @@ import unstyled.Text
 object DocumentationDiagrams {
 
   import unstyled.dynamic.OneOf
+  import Brushes.{BUTT, ROUND, SQUARE}
   import GlyphTransforms.Framed
   import NaturalSize.Col
   import PolygonLibrary._
-  import Brushes.{ROUND,SQUARE,BUTT}
 
   val yellow   = Brush("yellow") color (0xFFffff00) strokeWidth (1.0f) strokeCap(ROUND)
   val green    = Brush("green") color (0xFF00ff00) strokeWidth (5.0f) strokeCap(ROUND)
@@ -358,7 +357,7 @@ object DocumentationDiagrams {
     val gridTables = {
       import styled._
       implicit object Style extends StyleSheet{}
-      import Style.{ex,em}
+      import Style.ex
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
@@ -382,7 +381,7 @@ object DocumentationDiagrams {
 
     val gridOrder: Glyph = {
       implicit object Style extends StyleSheet
-      import Style.{ex,em}
+      import Style.ex
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)
@@ -400,7 +399,8 @@ object DocumentationDiagrams {
       import styled._
       implicit object Style extends StyleSheet{}
       import CellFit._
-      import Style.{ex,em}
+
+      import Style.ex
       val data =
         for {scale <- List(0.75f, 1f, 1.5f); i <- List(1, 1000, 1000000)} yield
           Label(f"$i.scaled($scale%1.1f)").scaled(scale)

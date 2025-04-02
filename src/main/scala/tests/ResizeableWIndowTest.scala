@@ -1,15 +1,12 @@
 package org.sufrin.glyph
 package tests
 
-import NaturalSize.{Col, Row}
-
-import org.sufrin.glyph.Brushes.{black, blackFrame, redFrame}
-import org.sufrin.glyph.styled.{Label, Resizeable}
-import org.sufrin.glyph.styles.decoration.Edged
-import org.sufrin.glyph.Location.East
-import org.sufrin.glyph.unstyled.static
-
-import scala.xml.Elem
+import Brushes.black
+import NaturalSize.Col
+import styled.{Label, Resizeable}
+import styles.decoration.Edged
+import Location.East
+import unstyled.static
 
 object ResizeableWIndowTest extends Application {
   import glyphXML.Language._
@@ -39,7 +36,7 @@ object ResizeableWIndowTest extends Application {
   }
 
   def guiSpec(implicit style: StyleSheet): Glyph = Col(align=Center)(
-    { import style.{hFill,em}
+    { import style.{em, hFill}
 
       val Vec(w, h) = style.containerDiagonal
       lazy val wider: Glyph = styled.TextButton("10%\n⭅⭆", Hint(1, "column wider")) {

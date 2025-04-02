@@ -1,7 +1,7 @@
 
 package org.sufrin.glyph
 package tests
-import  Brushes._
+import Brushes._
 
 object Example3a extends Application  with Example3Interface {
   val style: StyleSheet = StyleSheet(

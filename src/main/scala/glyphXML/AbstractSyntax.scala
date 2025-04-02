@@ -17,8 +17,6 @@ object AbstractSyntax {
   case class Entity(name: String) extends Tree
 
   case class Comment(target: String, text: String) extends Tree
-
-  import scala.xml
   def fromXML(source: xml.Node): Tree = {
     source match {
       case xml.EntityRef(name)                            => Entity(name)

@@ -1,8 +1,6 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
-import org.sufrin.glyph.styled.{BookSheet, Label}
-import org.sufrin.glyph.GlyphTypes.Window
-import org.sufrin.glyph.NaturalSize.Row
+import styled.BookSheet
 
 object Pages extends Application  {
   import styles._

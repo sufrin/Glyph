@@ -1,7 +1,8 @@
 package org.sufrin.utility
 
+import org.sufrin.utility.CharSequenceOperations._
+
 import scala.collection._
-import CharSequenceOperations._
 
 /**
  *   Represents a mutable finite mapping, {{{map: [Char] -> T}}}

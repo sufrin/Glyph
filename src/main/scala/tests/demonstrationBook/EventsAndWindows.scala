@@ -1,21 +1,16 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import styled.TextButton
-import styled.Label
 import styled.windowdialogues.Dialogue
-import styled.Book
-import styled.BookSheet
-import styled.StringLog
-import styled.CheckBox
+import styled._
 import NaturalSize.{Col, Row}
 
 
 class EventsAndWindows(implicit val style: BookSheet, implicit val translation: glyphXML.Translation){
 
   implicit val pageSheet: StyleSheet = style.buttonSheet
+  import pageSheet.{em, ex}
   import translation._
-  import pageSheet.{ex, em}
     val nested = Book()
     val Page = nested.Page
 

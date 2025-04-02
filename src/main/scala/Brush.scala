@@ -4,7 +4,7 @@ package org.sufrin.glyph
  * A `Brush` delivers `Paint` with a more convenient API
  */
 
-import GlyphTypes.{Paint, PathEffect}
+import GlyphTypes.Paint
 
 import io.github.humbleui.skija.BlendMode
 
@@ -76,8 +76,9 @@ object Brush {
  */
 class Brush(var name: String) extends Paint {
 
-  import io.github.humbleui.skija.{PaintMode, PaintStrokeCap, PathEffect, Shader}
   import GlyphTypes.ImageFilter
+
+  import io.github.humbleui.skija.{PaintMode, PaintStrokeCap, PathEffect, Shader}
 
   override def toString: String = {
     import Brush.{ROUND, SQUARE}

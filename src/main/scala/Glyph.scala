@@ -1,7 +1,7 @@
 package org.sufrin
 package glyph
 
-import GlyphTypes._
+import org.sufrin.glyph.GlyphTypes._
 
 trait GlyphColours {
   val fg : Brush

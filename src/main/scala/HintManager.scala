@@ -1,8 +1,7 @@
 package org.sufrin.glyph
 import unstyled.reactive.Enterable
-
 import unstyled.static
-import static.{FilledRect, INVISIBLE}
+import unstyled.static.INVISIBLE
 
 /**
  *

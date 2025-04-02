@@ -1,24 +1,19 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import styled.{MenuCheckBox, TextButton}
-import styled.Label
 import styled.overlaydialogues.Dialogue
-import styled.overlaydialogues.Dialogue.{CHOOSE, Menu, NestedMenu, OK, OKNO}
+import styled.overlaydialogues.Dialogue.{Menu, NestedMenu, OK}
 import NaturalSize.{Col, Row}
-import styled.Book
-import styled.BookSheet
-import styled.{CheckBox, MenuButton, MenuGlyphButton}
-import org.sufrin.glyph.unstyled.static._
-import Brushes.{blue, transparent, red, redLine, yellow}
-
-import org.sufrin.glyph.styles.decoration
+import styled.{Label, _}
+import unstyled.static._
+import Brushes.{blue, red, redLine, yellow}
+import styles.decoration
 
 class OverlayUses(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   private val noteBook = Book()
   private val Page = noteBook.DefinePage
   implicit val pageStyle: StyleSheet = style.buttonSheet
-  import pageStyle.{ex, em}
+  import pageStyle.{em, ex}
   import translation._
 
   // Each subpage of this page declares its own style,

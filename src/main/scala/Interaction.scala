@@ -1,9 +1,8 @@
 package org.sufrin
 package glyph
 
-import GlyphTypes.Scalar
-
 import io.github.humbleui.jwm.{App, Platform, Window}
+import org.sufrin.glyph.GlyphTypes.Scalar
 
 /**
  * When started, an `Interaction` hosts the given GUI root glyph
@@ -37,8 +36,7 @@ import io.github.humbleui.jwm.{App, Platform, Window}
 class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar = 1.0f, informRoot: => Unit = {}) {
   thisInteraction =>
 
-  import GlyphTypes.{Scalar, Pixels}
-
+  import GlyphTypes.{Pixels, Scalar}
   import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked, Screen}
 
   /**

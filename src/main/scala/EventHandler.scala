@@ -30,7 +30,7 @@ trait EventHandler extends Consumer[Event] {
 
   import GlyphTypes.Pixels
 
-  import io.github.humbleui.jwm.{EventKey, EventMouseMove, EventMouseScroll, EventTextInput, EventTextInputMarked, Screen}
+  import io.github.humbleui.jwm.{EventKey, EventMouseScroll, EventTextInput, EventTextInputMarked, Screen}
 
   /** the window for which this handler is handling events */
   val window: Window

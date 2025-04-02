@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import io.github.humbleui.skija.{Canvas, Paint, shaper => Shaper}
+import io.github.humbleui.skija.{Canvas, Paint}
 import io.github.humbleui.types.Rect
 
 /**
@@ -167,7 +167,6 @@ trait Surface {
   }
 
   def withTransform(m: Array[Float])(effect: => Unit): Unit = {
-    import Matrix33._
     val l = canvas.saveLayer(null, null)
     val current = canvas.getLocalToDeviceAsMatrix33
     canvas.setMatrix(current.makeConcat(new Matrix33(m(0), m(1),  m(2),  m(3), m(4), m(5),  m(6), m(7), m(8))))
@@ -312,8 +311,6 @@ object Surface {
     val canvas = skijaCanvas
     val scale = _scale
   }
-
-  import GlyphTypes.Scalar
 
   /**
    * Flattens a sequence of 'Vec'tors

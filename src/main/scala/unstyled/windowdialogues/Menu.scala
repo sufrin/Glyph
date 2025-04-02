@@ -1,7 +1,7 @@
 package org.sufrin.glyph.unstyled.windowdialogues
 
 import org.sufrin.glyph._
-import Location._
+import org.sufrin.glyph.Location._
 import org.sufrin.glyph.unstyled.reactive._
 
 /**
@@ -34,7 +34,6 @@ class Menu(entries: Seq[Glyph]) { thisPopup =>
    import GlyphTransforms.Framed
    import GlyphTypes.Pixels
    import NaturalSize.Col
-
    import io.github.humbleui.jwm.App
 
     var running: Boolean = false

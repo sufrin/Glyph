@@ -1,14 +1,11 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
-import GlyphTypes.{Scalar, Window}
-import styled.{Book, BookSheet, CheckBox, Label, Paragraph, TextButton}
-import NaturalSize.{Col, Row}
+import styled.{Book, BookSheet, CheckBox}
+import NaturalSize.Col
+import glyphXML.Macro
+import styles.decoration
 import unstyled.BooleanGlyphs.OnOffButton
-
-import org.sufrin.glyph.styles.decoration
-import org.sufrin.glyph.glyphXML.Macro
-import org.sufrin.glyph.Brushes.{black, darkGrey}
-import org.sufrin.glyph.unstyled.static
+import unstyled.static
 
 class Interface(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   val book = Book()
@@ -80,8 +77,8 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
   }
 
   Page("Welcome", "") {
+    import glyphXML.Language._
     val anchor = static.INVISIBLE()
-    import translation._
     Col(align=Center)(
     <body align="justify" width="65em">
       <p>
@@ -122,6 +119,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
 
   import utils.Output.withWriteBar
+
   import book.Layout
   import translation._
 

@@ -3,7 +3,7 @@ package glyph
 package unstyled.windowdialogues
 
 import io.github.humbleui.jwm.Screen
-import logging.Loggable
+import org.sufrin.logging.Loggable
 
 /**
  *   A running dialogue is a glyph-tree contained in its own top-level window, and
@@ -20,7 +20,7 @@ import logging.Loggable
  *
  */
 
-import Location._
+import org.sufrin.glyph.Location._
 
 object Dialogue extends Loggable {
 
@@ -68,7 +68,6 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
     import org.sufrin.glyph.unstyled.static.Label
     import GlyphTypes.Pixels
     import NaturalSize.{Col, Row}
-
     import io.github.humbleui.jwm.App
 
     val closeResult = Variable[Option[T]](None)
@@ -149,8 +148,6 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
     location = Location.OnRootOf(glyph)(loc.x + (glyph.w - theRoot.diagonal.x) / 2f, loc.y + (glyph.h - theRoot.diagonal.y) / 2f)
     thisPopup
   }
-
-  import GlyphTypes.Scalar
   def OnRootOf(glyph: Glyph, loc: Vec=Vec.Zero): this.type = {
     location = Location.OnRootOf(glyph)(loc.x, loc.y)
     thisPopup
@@ -162,7 +159,7 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
           () =>
             val theInteraction = new Interaction(App.makeWindow(), theRoot, location.softwareScale) {
 
-              import io.github.humbleui.jwm.{EventKey, Window}
+              import io.github.humbleui.jwm.Window
 
               override def inset: Pixels = (0, 0)
 

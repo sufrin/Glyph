@@ -59,7 +59,6 @@ class MouseStateTracker(val root: RootGlyph) {
 
 
   def accept(event: EventMouseMove): Unit = {
-    import Math.abs
     val x = event._x.toInt
     val y = event._y.toInt
     //org.sufrin.logging.Default.info(s"($x,$y) -> (${event._movementX}, ${event._movementY})")

@@ -1,8 +1,8 @@
 package org.sufrin
 package glyph
 
-import io.github.humbleui.jwm.{EventKey, Window}
-import NaturalSize.Row
+import GlyphTypes.{EventKey, Window}
+import org.sufrin.glyph.NaturalSize.Row
 
 /**
  * An application specified by a GUI, and a title. Some generic flags

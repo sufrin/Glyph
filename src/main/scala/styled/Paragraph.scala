@@ -1,11 +1,8 @@
 package org.sufrin.glyph
 package styled
 
-import GlyphTypes.{Font, Scalar}
+import GlyphTypes.Scalar
 import unstyled.dynamic.ActiveGlyph
-
-
-import scala.collection.mutable.ListBuffer
 
 
 /**

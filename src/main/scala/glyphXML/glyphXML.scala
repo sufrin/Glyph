@@ -4,17 +4,14 @@ package org.sufrin
 package glyph
 package glyphXML
 
-import logging.Default
-import SourceLocation._
-
 import io.github.humbleui.skija.Font
-import Translation.AttributeMap
-import unstyled.static
-import static.{BreakableGlyph, INVISIBLE}
-import GlyphTypes.Scalar
-import Translation.isBlank
+import org.sufrin.glyph.unstyled.static
+import org.sufrin.glyph.unstyled.static.BreakableGlyph
+import org.sufrin.glyph.GlyphTypes.Scalar
+import org.sufrin.glyph.glyphXML.Translation.{isBlank, AttributeMap}
+import org.sufrin.logging.Default
 
-import scala.collection.{immutable, mutable}
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.xml._
 
@@ -615,8 +612,7 @@ object Translation {
  *  appropriate type; or the alternative value if `key` is not in the map.
  */
 class TypedAttributeMap(unNormalized: AttributeMap) {
-  import SourceLocation._
-  import logging.Default.{warn}
+  import logging.Default.warn
 
   /** Show as a mapping with pairs in the form `k->d` */
   override def toString: String = Visitor.toString(attributes)
@@ -836,8 +832,8 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
  * @param primitives
  */
 class Translation(val primitives: Primitives=new Primitives) {
-  import Visitor.AttributeMap
   import Translation.Target._
+  import Visitor.AttributeMap
   import primitives._
   implicit class TypedMap(attributes: AttributeMap) extends TypedAttributeMap(attributes)
   val meaning: Translation = this
@@ -1191,8 +1187,8 @@ class Translation(val primitives: Primitives=new Primitives) {
    *
    */
   def translatePCData(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, text: String): Seq[Target] = {
+    import sheet.{textFont, backgroundBrush => colBG, textBackgroundBrush => bg, textForegroundBrush => fg}
     import unstyled.{Text => makeText}
-    import sheet.{textFont, textBackgroundBrush => bg, textForegroundBrush => fg, backgroundBrush => colBG}
     val textBG = if (bg.alpha == 0f) colBG else bg
     val rawLines = text.split('\n').toSeq
     val lines    = if (attributes.Bool("normalizePCData", true)) stripCommonIndentation(rawLines) else rawLines

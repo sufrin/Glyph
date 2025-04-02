@@ -4,8 +4,7 @@ package tests.demonstrationBook
 import styled.{BookSheet, Label, RadioCheckBoxes, TextButton}
 import NaturalSize._
 import styles.decoration
-
-import org.sufrin.glyph.Location.South
+import Location.South
 
 class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyphXML.Translation) {
   implicit val  buttons: StyleSheet =
@@ -14,9 +13,9 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
                     decoration.Edged(sheet.pageSheet.buttonForegroundBrush(width=3).sliced(5,2),
                                      sheet.pageSheet.buttonBackgroundBrush)
                 )
-  import buttons.{em,ex}
-
   import GlyphTypes.Window
+
+  import buttons.em
 
 
   lazy val thisApplication: Application = new Interface with Application {

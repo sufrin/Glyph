@@ -13,8 +13,9 @@ package org.sufrin.glyph
  *
  */
 abstract class ReactiveGlyph extends Glyph {
-  import io.github.humbleui.jwm._
   import GlyphTypes.Scalar
+
+  import io.github.humbleui.jwm._
 
   override def isReactive: Boolean = true
 

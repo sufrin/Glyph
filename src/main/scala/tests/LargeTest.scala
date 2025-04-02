@@ -4,22 +4,18 @@ package tests
 import unstyled.static._
 import GlyphTypes._
 import Location._
-import styles.GlyphStyle
 import unstyled.windowdialogues.Dialogue.OK
 import PolygonLibrary._
+import styled.TextToggle
+import unstyled.{reactive, static, BooleanButton, Text}
 
 import io.github.humbleui.jwm.EventKey
 import io.github.humbleui.skija.BlendMode
-import GlyphTransforms.Turned
-import styled.TextToggle
-import unstyled.{reactive, static, Text, BooleanButton}
-
-import scala.collection.mutable.ListBuffer
 
 trait LargeTestGUI {
 
   import unstyled.dynamic.OneOf
-  import GlyphTransforms.{Framed, Scaled}
+  import GlyphTransforms.Framed
   import NaturalSize.{Col, Row}
   import unstyled.reactive.{FramedButton, RawButton, ShadedButton}
   import Brushes._
@@ -105,7 +101,6 @@ trait LargeTestGUI {
   }
 
   private val scene3 = {
-    import GlyphTransforms.Rotated
     def abcd(fg: Brush) =
       Row(align=Mid)(Label("A ")(fg), Label("B ")(fg), Label("C")(fg))
 
@@ -668,7 +663,6 @@ trait LargeTestGUI {
   }
 
   private val scene12 = {
-    import GlyphTransforms.Rotated
     val space = Text(" ", medFont)
 
     def sp: Glyph = space()
@@ -925,7 +919,7 @@ trait LargeTestGUI {
   private val scene18 = {
     import styled._
     implicit val sheet: StyleSheet = StyleSheet()
-    import sheet.{ex,em}
+    import sheet.{em, ex}
 
     val starSize=filledStar7(transparent).diagonal
     val scale=starSize.y / trup.h
@@ -965,7 +959,7 @@ trait LargeTestGUI {
     private val scene19 = {
       import styled._
       implicit val sheet: StyleSheet = StyleSheet()
-      import sheet.{ex,em}
+      import sheet.ex
 
       val upColor     = yellowHuge(name = "yellow", width = 0)
       val downColor   = red(name = "red", width = 0)

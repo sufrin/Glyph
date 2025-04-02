@@ -17,8 +17,6 @@ package styled
  *
  */
 
-import logging.SourceLoggable
-
 
 
 class Resizeable(glyph: StyleSheet=>Glyph, initialStyle: StyleSheet) extends Glyph with GlyphTransforms {

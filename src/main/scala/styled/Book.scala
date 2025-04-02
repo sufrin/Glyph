@@ -2,7 +2,6 @@ package org.sufrin.glyph
 package styled
 
 import NaturalSize.transparent
-
 import unstyled.static
 
 
@@ -24,7 +23,7 @@ trait Book {
    */
   class Page(val title: String, val gloss: String)(val glyph: Glyph)(implicit sheet: StyleSheet) {
     val detail: GlyphStyle = sheet.labelStyle
-    import detail.{em, ex}
+    import detail.ex
 
     override val toString: String = s"Page($title, $gloss){$glyph}"
     def root(): Glyph =

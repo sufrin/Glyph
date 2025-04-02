@@ -1,9 +1,9 @@
 package org.sufrin.glyph
 
-import scala.collection.mutable.ArrayBuffer
 import GlyphTypes.Scalar
-
 import unstyled.static
+
+import scala.collection.mutable.ArrayBuffer
 
 /* The Row and Col APIs are designed so that most of the characteristics of the Row(Col) can
  * be pre-set, thereby making it possible to apply them either to an unbounded number of

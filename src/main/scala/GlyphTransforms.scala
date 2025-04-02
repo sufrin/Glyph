@@ -3,9 +3,7 @@ package org.sufrin.glyph
 import Brushes.transparent
 import GlyphTypes._
 import NaturalSize.{Col, Row}
-
 import unstyled.static
-import static.{FilledRect, Rect}
 import GlyphTransforms.{Framed, WithBaseline}
 
 /**
@@ -653,7 +651,7 @@ object GlyphTransforms {
   }
 
   object Mirrored {
-    import Brushes.{black=>defaultFG, transparent=>defaultBG}
+    import Brushes.{black => defaultFG, transparent => defaultBG}
 
     def apply(leftRight: Boolean, topBottom: Boolean, fg: Brush = defaultFG, bg: Brush = defaultBG)(glyph: Glyph): Mirrored =
       new Mirrored(glyph, leftRight, topBottom, fg, bg)
@@ -712,7 +710,7 @@ object GlyphTransforms {
   }
 
   object Scaled  {
-    import Brushes.{black=>defaultFG, transparent=>defaultBG}
+    import Brushes.{black => defaultFG, transparent => defaultBG}
 
     def apply(scale: Scale, fg: Brush = defaultFG, bg: Brush = defaultBG)(glyph: Glyph): Glyph =
       if (scale == 1f) glyph else new Scaled(glyph, Vec(scale, scale), fg, bg)

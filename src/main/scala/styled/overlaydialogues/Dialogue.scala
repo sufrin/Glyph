@@ -5,11 +5,11 @@ package overlaydialogues
 
 import Location._
 import NaturalSize.{Col, Row}
+import unstyled.{reactive, static}
+import unstyled.reactive.GenericButton
+import unstyled.static.INVISIBLE
 
 import io.github.humbleui.jwm.{App, EventMouseScroll}
-import unstyled.static.INVISIBLE
-import unstyled.reactive.GenericButton
-import unstyled.{static, reactive}
 
 
 /**
@@ -18,7 +18,6 @@ import unstyled.{static, reactive}
 object Dialogue {
 
   import PolygonLibrary.{closeButtonGlyph => defaultCloseGlyph}
-  import styles.{ButtonStyle, MenuStyle}
 
 
   /**
@@ -320,7 +319,7 @@ class Dialogue[T](blurb: Glyph,
 
   val navigation = new NavigationManager(buttons, preferred, nested=isNested, menu=isMenu)(close())
 
-  import NaturalSize.{Col, Row}
+  import NaturalSize.Col
   import unstyled.reactive.RawButton
 
   /**

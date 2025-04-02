@@ -564,7 +564,7 @@ import GlyphTypes.Scalar
   }
 
   object FilledPolygon  {
-    import Brushes.{transparent, black}
+    import Brushes.{black, transparent}
 
     case class Constructor(diagonal: Vec, fg: Brush, bg: Brush) {
       def apply(vertices: Iterable[Vec]): Glyph =
@@ -604,8 +604,9 @@ import GlyphTypes.Scalar
   object Label
   {
 
+    import Brushes.{black => defaultFG, transparent => defaultBG}
+
     import io.github.humbleui.skija.Font
-    import Brushes.{black=>defaultFG, transparent=>defaultBG}
 
     def apply(text: String, font: Font = Brushes.buttonFont, fg: Brush = defaultFG, bg: Brush = defaultBG): Glyph =
         unstyled.Text(text, font, fg, bg)

@@ -5,15 +5,13 @@ package glyph
  *  Rendering on external media
  */
 object External {
-  import GlyphTypes.Scale
-
-  import io.github.humbleui.skija.Image
+  import GlyphTypes.{Scale,Image}
 
   def writeGlyph(glyph: Glyph, path: String, kind: String = "png", scale: Scale = 1.0f): Unit =
        writeGlyph(glyph, java.nio.file.Path.of(path), kind, scale)
 
   def writeGlyph(glyph: Glyph, path: java.nio.file.Path, kind: String, scale: Scale): Unit = {
-     import io.github.humbleui.skija.{EncoderJPEG, EncoderPNG, Image, ImageInfo, Surface => SKSurface}
+     import io.github.humbleui.skija.{EncoderJPEG, EncoderPNG, ImageInfo, Surface => SKSurface}
      import io.github.humbleui.types.IRect
      val w = glyph.w.toInt
      val h = glyph.h.toInt
@@ -56,11 +54,10 @@ object External {
 
   /** DOES NOT WORK */
   @deprecated("malfunctioning") def glyph2SVG(glyph: Glyph, path: java.nio.file.Path): Unit = {
-    import unstyled.static.Label
-
     import io.github.humbleui.skija.OutputWStream
     import io.github.humbleui.skija.svg.SVGCanvas
     import io.github.humbleui.types.Rect
+    import unstyled.static.Label
     val svgStream = new OutputWStream(new java.io.FileOutputStream(path.toFile))
     val bounds = new Rect(0f, 0f, glyph.w, glyph.h)
     val canvas = SVGCanvas.make(bounds, svgStream, true, true)

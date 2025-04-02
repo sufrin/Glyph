@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import GlyphTypes.{Scalar}
+import GlyphTypes.Scalar
 
 /**
  * `FixedSize` glyphs are Rows / Columns whose widths/heights are preset, and that contain

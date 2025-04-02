@@ -44,7 +44,7 @@ trait Vec {
    *  This `Vec` rotated about `c`
    */
   final def turned(degrees: Scalar, c: Vec): Vec = {
-    import Math.{PI, cos, sin}
+    import Math.{cos, sin, PI}
     val dx = x - c.x
     val dy = y - c.y
     val theta = degrees * (PI / 180)

@@ -1,9 +1,8 @@
 package org.sufrin
 package glyph
 
-import NumberUtils.hexToInt
-
-import unstyled.Text
+import org.sufrin.glyph.NumberUtils.hexToInt
+import org.sufrin.glyph.unstyled.Text
 
 /**
  * A convenience trait that defines several brushes.

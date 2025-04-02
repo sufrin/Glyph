@@ -1,10 +1,10 @@
 package org.sufrin
 package glyph
 
-import GlyphTypes.{Font, Scalar}
 import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked, Key}
-import unstyled.Text
-import logging.FINER
+import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
+import org.sufrin.glyph.unstyled.Text
+import org.sufrin.logging.FINER
 
 
 /**
@@ -244,7 +244,7 @@ def giveUpKeyboardFocus(): Unit = guiRoot.giveupFocus()
 
   override def accept(mouse: EventMouseButton, location: Vec, window: Window): Unit = {
     import Modifiers._
-    import TextModel.{markTo,moveTo}
+    import TextModel.{markTo, moveTo}
     val mods = toBitmap(mouse)
     val ctrl = Control|Command
     if (mouse.isPressed)

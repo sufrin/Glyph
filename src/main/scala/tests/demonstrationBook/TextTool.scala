@@ -2,15 +2,11 @@ package org.sufrin.glyph
 package tests.demonstrationBook
 
 
+import styled._
+import unstyled.static
+
 import org.sufrin.utility.TextAbbreviations
 import org.sufrin.SourceLocation.SourceLocation
-import org.sufrin.glyph.styled._
-
-import scala.xml.Elem
-import styled._
-
-import com.sun.source.util.SourcePositions
-import org.sufrin.glyph.unstyled.static
 
 
 class TextTool(implicit style: StyleSheet)  {
@@ -35,9 +31,8 @@ class TextTool(implicit style: StyleSheet)  {
   abbrev("\uD83D\uDE2E") = ":O"
 
 
-  import styled._
   import glyphXML.Language._
-  import org.sufrin.SourceLocation.{sourcePath=>source}
+  import styled._
   def SOURCE(implicit source: SourceLocation): String = source.toString()
 
   val defs = translation.meaning

@@ -1,8 +1,8 @@
 package org.sufrin
 package glyph
 
-import GlyphTypes.{Font, FontManager, FontStyle, Scalar, Typeface}
-import FontFamily.{styleNamed, styleString}
+import org.sufrin.glyph.FontFamily.{styleNamed, styleString}
+import org.sufrin.glyph.GlyphTypes.{Font, FontManager, FontStyle, Scalar, Typeface}
 
 /**
  *  Unique identifier for a font

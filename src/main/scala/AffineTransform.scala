@@ -6,8 +6,9 @@ package org.sufrin.glyph
 
 object AffineTransform {
 
-  import io.github.humbleui.skija.Matrix33
   import GlyphTypes.Scalar
+
+  import io.github.humbleui.skija.Matrix33
   /*
    * Transforms are arganised as 3 rows of 3, and represented as `Array[Scalar](9)`
    *

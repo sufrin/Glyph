@@ -7,8 +7,6 @@ import unstyled.reactive.TextButton
 import Brushes._
 import GlyphTypes.Font
 
-import org.sufrin.glyph.GlyphTypes.FontStyle.ITALIC
-
 /**
  * Interface using non-styled glyphs
  */

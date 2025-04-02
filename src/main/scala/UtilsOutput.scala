@@ -1,9 +1,8 @@
 package org.sufrin.glyph
 package utils
 import NaturalSize.Col
-
 import unstyled.reactive
-import reactive.RawButton
+import unstyled.reactive.RawButton
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

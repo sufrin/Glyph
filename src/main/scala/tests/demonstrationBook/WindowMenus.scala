@@ -1,21 +1,19 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import styled.TextButton
-import styled.Label
 import styled.windowdialogues.Dialogue
-import Dialogue.{POPUP,OK}
+import styled.windowdialogues.Dialogue.{OK, POPUP}
 import NaturalSize.{Col, Row}
-import styled.Book
-import styled.BookSheet
-import org.sufrin.glyph.unstyled.static.{INVISIBLE, Rect}
+import styled.{Book, BookSheet, Label, TextButton}
+import unstyled.static.{INVISIBLE, Rect}
 
 
 class WindowMenus(implicit val style: BookSheet, implicit val translation: glyphXML.Translation) {
   implicit val pageSheet: StyleSheet = style.buttonSheet
+  import Brushes.{blue, red}
+
+  import pageSheet.{em, ex}
   import translation._
-  import pageSheet.{ex, em}
-  import Brushes.{ red,blue}
 
 
   val book = Book()

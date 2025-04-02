@@ -3,8 +3,7 @@ package styled.windowdialogues
 
 import Location.Location
 import unstyled.reactive.{GenericButton, RawButton}
-
-import Brushes.{lightGrey, yellow}
+import Brushes.lightGrey
 
 /**
  *

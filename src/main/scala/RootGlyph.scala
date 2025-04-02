@@ -1,9 +1,9 @@
 package org.sufrin
 package glyph
 
-import io.github.humbleui.jwm.{App, EventMouseButton, EventMouseMove, EventTextInput, EventTextInputMarked, Platform}
-import GlyphTypes._
-import logging.{Logger,Loggable}
+import io.github.humbleui.jwm.{EventKey, Window, _}
+import org.sufrin.glyph.GlyphTypes._
+import org.sufrin.logging.{Loggable, Logger}
 
 /**
  *

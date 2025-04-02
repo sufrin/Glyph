@@ -2,16 +2,13 @@ package org.sufrin
 package glyph
 package osBridge
 
-import io.github.humbleui.skija.{ColorAlphaType, ColorType, Image, ImageInfo, Pixmap}
-import logging.{SourceLoggable, update => setLevel}
+import org.sufrin.logging.SourceLoggable
 
 import java.awt.desktop._
 import java.awt.Desktop
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.{DnDConstants, DropTarget, DropTargetAdapter, DropTargetDropEvent}
-import java.awt.image.DataBufferInt
 import java.io.ByteArrayInputStream
-import java.nio.{ByteBuffer, IntBuffer}
 import javax.swing.{Icon, ImageIcon}
 
 
@@ -60,8 +57,8 @@ trait Bridge {
 object SwingMain extends Bridge with SourceLoggable {
 
 
-  import javax.swing._
   import java.awt
+  import javax.swing._
 
   def main(args: Array[String]): Unit = withDesktop {
     org.sufrin.logging("org.sufrin.glyph.osBridge.SwingMain") = "ALL"

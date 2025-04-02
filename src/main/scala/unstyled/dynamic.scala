@@ -2,8 +2,9 @@ package org.sufrin.glyph
 package unstyled
 package dynamic
 
-import io.github.humbleui.jwm.App
 import unstyled.{static, Text}
+
+import io.github.humbleui.jwm.App
 
 /**
  * A collection of dynamic glyphs: glyphs some aspects of which can vary dynamically
@@ -95,6 +96,7 @@ import unstyled.{static, Text}
   class ViewPort(glyph: Glyph, val fg: Brush, val bg: Brush, initialPortDiagonal: Vec = null) extends ReactiveGlyph {
 
     import GlyphTypes.Scalar
+
     import io.github.humbleui.jwm.{EventKey, EventMouseScroll}
 
     val scale     = Variable(1f)
@@ -148,7 +150,6 @@ import unstyled.{static, Text}
     }
 
     override def accept(mouse: EventMouseMove, location: Vec, window: Window): Unit = {
-      import Modifiers.Primary
       var dy: Int = mouse.getMovementY
       var dx: Int = mouse.getMovementX
       if (Modifiers.toBitmap(mouse).any) {
@@ -200,6 +201,7 @@ import unstyled.{static, Text}
 
     override def accept(key: EventKey, location: Vec, window: Window): Unit = {
       import Modifiers._
+
       import io.github.humbleui.jwm.Key._
       val mods: Bitmap = toBitmap(key)
 

@@ -1,28 +1,20 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import styled.TextButton
-import styled.Label
-import styled.windowdialogues.Dialogue
-import styled.Book
-import styled.BookSheet
-import styled.TextToggle
-import styled.Paragraph
-import NaturalSize.{Col, Grid, Row}
+import styled.{Label, _}
 import GlyphTypes.Scalar
-
-import unstyled.{static, reactive}
-import static._
-import unstyled.dynamic.SplitScreen
-
+import NaturalSize.{Col, Row}
 import styles.decoration.{Edged, Framed}
+import unstyled.{reactive, static}
+import unstyled.dynamic.SplitScreen
+import unstyled.static._
 
 import java.util.Date
 
 class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: StyleSheet = style.pageSheet
+  import pageSheet.{em, ex}
   import translation._
-  import pageSheet.{ex, em}
   val book = Book()
   val Page = book.Page
   import Brushes._
@@ -247,7 +239,6 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
     Page("Sliders", "") {
       import org.sufrin.glyph.unstyled.reactive.Slider
-
       import Slider.{Horizontal, Vertical}
       val trackh = Rect(500f, 55f, bg=yellowHuge, fg=black)
       val trackv = Rect(15f, 250f, bg=yellowHuge, fg=black)
@@ -296,9 +287,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     }
 
     Page("CheckBox", "Toggles, Checkboxes, ColourButtons") {
+      import styled._
       import unstyled.BooleanGlyphs._
       import unstyled.dynamic.OneOf
-      import styled._
       implicit val pageSheet=style.pageSheet.copy(buttonDecoration = Edged(fg=blue(width=6, cap=ROUND)))
 
 

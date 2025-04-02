@@ -3,16 +3,15 @@ package tests
 
 import styled.overlaydialogues.Dialogue
 import Brushes._
-
-import styles.decoration
 import styled.BookSheet
+import styles.decoration
 
 
 class AdderGUI()(implicit sheet: StyleSheet)  {
   import NaturalSize.{Col, Row}
-  import styled.TextButton
-  import styled._
-  import sheet.{ex,em}
+  import styled.{TextButton, _}
+
+  import sheet.ex
 
 
   var `a⊕b`:   Double => Double => Double = _.+
@@ -107,7 +106,8 @@ class CalculatorGUI()(implicit sheet: StyleSheet) extends AdderGUI()(sheet) {
 
   import NaturalSize._
   import styled.RadioCheckBoxes
-  import sheet.{em, ex}
+
+  import sheet.ex
 
   def flip[S,T,U](op: S=>T=>U):T=>S=>U = { t:T => s:S => op(s)(t) }
 

@@ -1,24 +1,17 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import styled.TextButton
-import styled.Label
-import styled.windowdialogues.Dialogue
-import styled.Book
-import styled.BookSheet
-import styled.StringLog
-import styled.CheckBox
-import NaturalSize.{Col, Grid, Row}
+import styled.{Book, BookSheet, Label}
 import GlyphTypes.Scalar
-import org.sufrin.glyph.unstyled.static.{Concentric, FilledRect, Polygon, Rect, RRect}
+import NaturalSize.{Col, Grid, Row}
+import unstyled.static.Polygon
 
 import io.github.humbleui.skija.PaintStrokeCap
-import org.sufrin.glyph.unstyled.static
 
 class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: StyleSheet = style.buttonSheet.copy(fontScale = 0.8f)
+  import pageSheet.{em, ex}
   import translation._
-  import pageSheet.{ex, em}
   val book = Book()
   val Page = book.Page
   import Brushes._

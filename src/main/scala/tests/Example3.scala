@@ -1,8 +1,8 @@
 package org.sufrin.glyph
 package tests
 import unstyled.static.Rect
-import NaturalSize.{Col, Row}
 import Brushes._
+import NaturalSize.{Col, Row}
 
 /**
  * Interface using implicitly-styled glyphs. The interface is a "mixin" trait that expects to
@@ -14,8 +14,7 @@ trait Example3Interface {
 
   val spacer = Rect(0, 20, fg=transparent)
 
-  import styled.TextButton
-  import styled.Label
+  import styled.{Label, TextButton}
 
 
   def GUI: Glyph = Col(align=Center, bg=lightGrey) (

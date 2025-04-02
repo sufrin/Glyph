@@ -1,8 +1,8 @@
 package org.sufrin.glyph
 package tests
 import NaturalSize.{Col, Row}
-import styled.overlaydialogues.Dialogue.OK
 import styled._
+import styled.overlaydialogues.Dialogue.OK
 
 class Example4Interface(sheet: StyleSheet) {
   implicit val style: StyleSheet = sheet

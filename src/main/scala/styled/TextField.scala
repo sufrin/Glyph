@@ -2,7 +2,7 @@ package org.sufrin
 package glyph
 package styled
 
-import utility.TextAbbreviations
+import org.sufrin.utility.TextAbbreviations
 
 
 /**
@@ -29,7 +29,6 @@ import utility.TextAbbreviations
 object TextField {
 
   import GlyphTypes.Font
-
   import io.github.humbleui.jwm.EventKey
 
   def apply(onEnter: String => Unit            = { case text: String => },

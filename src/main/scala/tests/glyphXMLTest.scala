@@ -1,19 +1,16 @@
 package org.sufrin.glyph
 package tests
 
-import glyphXML.Translation.AttributeMap
-import org.sufrin.glyph.unstyled.static.INVISIBLE
 import glyphXML.{Macro, Translation}
-import styled.windowdialogues.Dialogue
-
-import org.sufrin.glyph.styled.{Book, BookSheet, TextButton}
-import org.sufrin.glyph.GlyphTypes.Scalar
-import org.sufrin.glyph.Location.Location
-import org.sufrin.glyph.unstyled.windowdialogues.Dialogue
+import glyphXML.Translation.AttributeMap
+import styled.{BookSheet, TextButton}
+import GlyphTypes.Scalar
+import Location.Location
 
 object glyphXMLTest extends Application {
-    import xml._
     import Translation.Target._
+
+    import xml._
 
 
     val translator: Translation = new Translation {

@@ -3,10 +3,8 @@ package glyph
 package styled.windowdialogues
 
 import io.github.humbleui.jwm.Screen
-import unstyled.reactive.GenericButton
-import logging.Loggable
-
-import javax.annotation.processing.Generated
+import org.sufrin.glyph.unstyled.reactive.GenericButton
+import org.sufrin.logging.Loggable
 
 /**
  *   A running dialogue is a glyph-tree contained in its own top-level window, and
@@ -23,7 +21,7 @@ import javax.annotation.processing.Generated
  *
  */
 
-import Location._
+import org.sufrin.glyph.Location._
 
 object Dialogue extends Loggable {
 
@@ -90,10 +88,8 @@ class Dialogue[T](blurb:        Glyph,
    * Make a primitive popup from `blurb` atop `bottomRow`; placing it at `location` on the screen.
    */
 
-  import unstyled.static.Label
   import GlyphTypes.Pixels
   import NaturalSize.{Col, Row}
-
   import io.github.humbleui.jwm.App
 
   val closeResult = Variable[Option[T]](None)
@@ -174,8 +170,6 @@ class Dialogue[T](blurb:        Glyph,
     location = Location.OnRootOf(glyph)(loc.x + (glyph.w - GUI.diagonal.x) / 2f, loc.y + (glyph.h - GUI.diagonal.y) / 2f)
     thisPopup
   }
-
-  import GlyphTypes.Scalar
   def OnRootOf(glyph: Glyph, loc: Vec=Vec.Zero): this.type = {
     location = Location.OnRootOf(glyph)(loc.x, loc.y)
     thisPopup

@@ -4,12 +4,13 @@ import unstyled.static
 
 
 object PolygonLibrary {
+  import Brushes._
   import GlyphTypes.Scalar
+  import NaturalSize.Col
+
   import static._
-  import NaturalSize.{Col, Row}
 
   import scala.collection.mutable.ArrayBuffer
-  import Brushes._
 
 
   def closeButtonGlyph: Glyph = {

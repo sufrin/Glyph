@@ -1,6 +1,5 @@
 package org.sufrin.glyph
 import unstyled.Text
-
 import Brushes.{blue, transparent}
 import GlyphTypes.{Font, Scalar}
 import NaturalSize.{Col, Row}

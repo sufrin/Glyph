@@ -1,9 +1,8 @@
 package org.sufrin
 package glyph
 
-import GlyphTypes.{Font, FontStyle, Scalar}
-import styles.decoration.{Framed, unDecorated}
-import styles.{ButtonStyle, CheckboxStyle, decoration, GlyphStyle, MenuStyle, ToggleStyle}
+import org.sufrin.glyph.GlyphTypes.{Font, FontStyle, Scalar}
+import org.sufrin.glyph.styles._
 
 case class StyleSheet
 (fontScale: Scalar = 1.0f,

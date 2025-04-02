@@ -1,15 +1,13 @@
 package org.sufrin
 package glyph
 package styled
-import unstyled.{dynamic, reactive}
+import org.sufrin.glyph.unstyled.{dynamic, reactive}
 
 /** Intermediate definitions refactored from `styled` by (more or less) substitution */
 
-import Brushes.transparent
-import unstyled.BooleanGlyphs._
-import unstyled.reactive.{Reaction,Enterable}
-import styles.GlyphStyle
-import utility.TextAbbreviations
+import org.sufrin.glyph.Brushes.transparent
+import org.sufrin.glyph.unstyled.BooleanGlyphs._
+import org.sufrin.glyph.unstyled.reactive.Reaction
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -487,8 +485,6 @@ class StringLog (size: Int, lines: Int, keepLines: Int)(implicit style: StyleShe
 }
 
 object StringLog {
-
-  import styles.GlyphStyle
 
   def apply(size: Int, lines: Int, keepLines: Int=0)(implicit style: StyleSheet): StringLog =
     new StringLog(size, lines, keepLines)

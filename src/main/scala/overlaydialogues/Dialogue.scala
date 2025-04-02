@@ -4,9 +4,9 @@ package overlaydialogues
 
 import Location._
 import NaturalSize.{Col, Row}
+import unstyled.{reactive, static}
 
 import io.github.humbleui.jwm.{App, EventMouseScroll}
-import unstyled.{static, reactive}
 
 
 /**
@@ -15,7 +15,6 @@ import unstyled.{static, reactive}
 object Dialogue {
 
   import PolygonLibrary.{closeButtonGlyph => defaultCloseGlyph}
-  import styles.{ButtonStyle, MenuStyle}
 
 
   /**
@@ -248,7 +247,8 @@ class Dialogue[T](guiRoot:        Glyph,
   thisPopup =>
 
 
-  import NaturalSize.{Col, Row}
+  import NaturalSize.Col
+
   import reactive.RawButton
 
   /**
