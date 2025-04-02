@@ -118,7 +118,7 @@ adapt these scripts.
 
 Here's a little example taken from the documentation.
 
-![Example4](PNG/Example4.png)
+![Example4](PNG/example4.png)
 
 ````
 package org.sufrin.glyph
