@@ -125,8 +125,9 @@ object ResizeAndSplitTest extends Application {
 
     lazy val resizeable = styled.Resizeable {
       case context: StyleSheet =>
-        val image = new Image(theText(context))
-        image enlarged 20 edged black(width=2).dashed(5,5)
+        //val image = new Image(theText(context))
+        //image enlarged 20 edged black(width=2).dashed(5,5)
+        Col(theText(context), TextButton("BUTTON"){ _ => })
     }
 
     val viewPort = unstyled.dynamic.ViewPort(resizeable, fg=redFrame, initialPortDiagonal = resizeable.diagonal)
