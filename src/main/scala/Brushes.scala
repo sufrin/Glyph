@@ -49,33 +49,57 @@ trait Brushes {
 }
 
 /**
- * Concrete definitions of a variety of brushes.
+ * Concrete definitions of a variety of brushes, and implementation of
+ * a tiny language for specifying brushes.
+ *
+ * {{{
+ *   Brushes(specification): Brush yields a brush as specified
+ * }}}
+ *
+ * {{{
+ *   specification ::= basic
+ *                 |   specification(radius)                // rounded
+ *                 |   specification-on-off                 // dashed
+ *                 |   specification~segmentSize~variation  // sliced
+ *
+ *   basic         ::= named
+ *                 |   named/strokewidth
+ *                 |   named/strokewidth/strokeCap
+ *
+ *   strokeCap     ::= ROUND | SQUARE | BUTT | FLAT
+ *
+ *   named         ::= 0Xaarrggbb   // 4 hex bytes: alpha, red, blue, green
+ *                 |   red   | blue  | green | white
+ *                 |   grey1 | grey2 | grey3 | grey4
+ *                 |   lightgrey | darkgrey | yellow
+ *                 |   black     | transparent
+ * }}}
  */
 object Brushes extends Brushes {
 
-  // TODO: better notation for brushes
-  def withName(name: String): Brush = {
+
+  def withName(specification: String): Brush = {
 
     def isFloat(s: String):Boolean = s.matches("[0-9]+([.][0-9]+)?")
 
-    def basicBrush(name: String): Brush =
-          name match {
-            case s"$name/$stroke/$cap" if  isFloat(stroke) =>
+    def basicBrush(specification: String): Brush =
+          specification match {
+            case s"$specification/$stroke/$cap" if  isFloat(stroke) =>
               val capShape = cap.toUpperCase match {
                 case "ROUND" => ROUND
                 case "SQUARE" => SQUARE
                 case "BUTT" | "FLAT" => BUTT
                 case _ => BUTT
               }
-              namedBrush(name)(width=stroke.toFloat, cap=capShape)
-            case s"$name/$stroke" if isFloat(stroke) =>
-              namedBrush(name)(width=stroke.toFloat, cap=SQUARE)
+              namedBrush(specification)(width=stroke.toFloat, cap=capShape)
+            case s"$specification/$stroke" if isFloat(stroke) =>
+              namedBrush(specification)(width=stroke.toFloat, cap=SQUARE)
             case _ =>
-              namedBrush(name)
+              namedBrush(specification)
           }
 
-    def decoratedBrush(name: String): Brush = {
-      name match {
+    def decoratedBrush(specification: String): Brush = {
+      specification match {
         case s"$prefix($radius)" if isFloat(radius) =>
           decoratedBrush(prefix).rounded(radius.toFloat)
         case s"$prefix-$on-$off" if isFloat(on) && isFloat(off) =>
@@ -83,12 +107,11 @@ object Brushes extends Brushes {
         case s"$prefix~$seg~$lim" if isFloat(seg) && isFloat(lim) =>
           decoratedBrush(prefix).sliced(seg.toFloat, lim.toFloat)
         case _ =>
-          basicBrush(name)
+          basicBrush(specification)
       }
     }
 
-
-    def namedBrush(name: String): Brush = name.toLowerCase match {
+    def namedBrush(specification: String): Brush = specification.toLowerCase match {
       case "red" => Brush(s"red")(color = 0XFFFF0000)
       case "blue" => Brush(s"blue")(color = 0XFF0000FF)
       case "green" => Brush(s"green")(color = 0XFF00FF00)
@@ -105,16 +128,16 @@ object Brushes extends Brushes {
       case "" => Brush(s"transparent")(color = 0X00000000, alpha=0f)
       case s"0x${hex}" if hex.matches("([0-9a-f])+") =>
         Brush(s"0X$hex")(color = hexToInt(hex))
-      case name =>
-        logging.Default.warn(s"$name is not the name of a colour")
-        Brush(s"red($name)")(color = 0XFFFF0000)
+      case specification =>
+        logging.Default.warn(s"$specification is not the specification of a colour")
+        Brush(s"red($specification)")(color = 0XFFFF0000)
     }
 
-    decoratedBrush(name)
+    decoratedBrush(specification)
 
   }
 
-  def apply(name: String): Brush = withName(name)
+  def apply(specification: String): Brush = withName(specification)
 
   // The following are used to set the default attributes of unstyled glyphs
   //

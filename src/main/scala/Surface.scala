@@ -4,7 +4,8 @@ import io.github.humbleui.skija.{Canvas, Paint}
 import io.github.humbleui.types.Rect
 
 /**
- *  Glyphs are drawn on drawing surfaces.
+ *  Glyphs are drawn on `Surface`s. The methods here implement the bridge between
+ *  Java and Scala notions.
  */
 trait Surface {
   import GlyphTypes.{Degrees, Scalar, Scale}
@@ -99,6 +100,9 @@ trait Surface {
 
   def clipRect(origin: Vec, diagonal: Vec): Unit =
       canvas.clipRect(Rect.makeXYWH(origin.x, origin.y, diagonal.x, diagonal.y))
+
+  def drawParagraph(paragraph: io.github.humbleui.skija.paragraph.Paragraph): Unit =
+      paragraph.paint(canvas, 0f, 0f)
 
   /**
    * Run the given effect with the canvas translated to the offset
@@ -226,18 +230,28 @@ trait Surface {
    * Run the given effect with the canvas translated to (x, y)
    * TODO: optimise the origin case
    */
-  def withOrigin[T](x: Scalar, y: Scalar)(effect: => T): T = {
-    val l = canvas.saveLayer(null, null)
-    canvas.translate(x, y)
+  def withOrigin[T](x: Scalar, y: Scalar)(effect: => T): T =
+  if (x==0f &&y==0f) {
     try   effect
     catch {
       // TODO: log the error in a logging stream
       case err: Throwable => err.printStackTrace()
         null.asInstanceOf[T]
-    } finally {
-      canvas.restoreToCount(l)
     }
-  }
+    } else
+    {
+      val l = canvas.saveLayer(null, null)
+      canvas.translate(x, y)
+      try   effect
+      catch {
+        // TODO: log the error in a logging stream
+        case err: Throwable => err.printStackTrace()
+          null.asInstanceOf[T]
+      } finally {
+        canvas.restoreToCount(l)
+      }
+    }
+
 
   def withClip(diagonal: Vec)(effect: => Unit): Unit = {
     val l = canvas.saveLayer(null, null)

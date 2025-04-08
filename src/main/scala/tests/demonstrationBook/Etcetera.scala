@@ -2,12 +2,14 @@ package org.sufrin.glyph
 package tests.demonstrationBook
 
 import styled.{Label, _}
-import GlyphTypes.Scalar
+import GlyphTypes.{FontStyle, Scalar}
 import NaturalSize.{Col, Row}
 import styles.decoration.{Edged, Framed}
 import unstyled.{reactive, static}
 import unstyled.dynamic.SplitScreen
 import unstyled.static._
+
+import io.github.humbleui.skija.PaintMode
 
 import java.util.Date
 
@@ -20,63 +22,117 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
   import Brushes._
 
 
+//    Page("Animation", "") {
+//      import unstyled.dynamic.{Periodic, Transform, Transformable,ActiveGlyph}
+//      val hue = {
+//        import Brushes._
+//        List(red, blue, green, yellow, brown, black)
+//      }
+//      def shape(decor: Int) = FilledOval(60, 60, fg=hue(decor))
+//
+//      var lastDriver: List[Periodic[Int]] = Nil
+//
+//      class Ball(glyph: Glyph) extends ActiveGlyph[Scalar] {
+//
+//        def toGlyph(t: Scalar): Glyph = ???
+//
+//        /** A copy of this glyph; perhaps with different foreground/background */
+//        def copy(fg: Brush, bg: Brush): Glyph = ???
+//      }
+//      class Animation(id: Int) {
+//        val ball = shape(id)
+//        val
+//
+//
+//        lazy val animated: ActiveGlyph = new Ball(id)
+//        lazy val driver:   Periodic[Int] = Periodic[Int](animated, 2)
+//      }
+//
+//      val animations: Seq[Animation] = for { id<-0 to 5 } yield new Animation(id)
+//
+//      Col(align=Center)(
+//
+//        Paragraph(50, Center)(
+//          """Squishy stuff
+//            |""".stripMargin), ex,
+//        Row(
+//          TextToggle(whenFalse="Start all", whenTrue="Stop all", initially = false){
+//            case true  =>
+//              lastDriver = animations.map(_.driver).toList
+//              for { animation <- animations } animation.driver.start()
+//            case false =>
+//              lastDriver = animations.map(_.driver).toList
+//              for { animation <- animations } animation.driver.stop()
+//          }, em,
+//          TextButton("Faster"){
+//            _ => for { driver <- lastDriver  } if (driver.msPerFrame>4) driver.msPerFrame /= 2
+//          }, em,
+//          TextButton("Slower"){
+//            _ => for { driver <- lastDriver  } driver.msPerFrame *= 2
+//          }
+//        ), ex, ex,
+//        NaturalSize.Row(bg=lightGrey)(animations.map(_.animated)), ex, ex, ex,
+//      )
+//    }
+
     Page("Animation", "") {
-      import unstyled.dynamic.{Periodic, Transform, Transformable}
-      val shape = static.Concentric(rowAlign=Mid, colAlign=Center)(
-        FilledOval(40, 40, fg=blue),
-        FilledRect(30, 10, fg=red) beside FilledRect(10, 10, fg=green))
+    import unstyled.dynamic.{Periodic, Transform, Transformable}
+    val shape = static.Concentric(rowAlign=Mid, colAlign=Center)(
+      FilledOval(40, 40, fg=blue),
+      FilledRect(30, 10, fg=red) beside FilledRect(10, 10, fg=green))
 
-      var lastDriver: List[Periodic[Int]] = Nil
+    var lastDriver: List[Periodic[Int]] = Nil
 
-      class Animation() {
-        lazy val button = reactive.ColourButton(shape, green, red, background = true, NoHint) {
-          _ =>
-            if (driver.running) driver.stop() else driver.start()
-            lastDriver = List(driver)
-        }
-
-        val transforms: Seq[Transform] = {
-          val steps = (5 to 10).map{ i => i.toFloat / 5 }
-          val sizes = steps ++ steps.reverse
-          for { s <- sizes; r <- 0 to 15  }
-            yield { glyph: Glyph => glyph.scaled(s).turned(r*22.5f, tight = true) }
-        }
-
-        lazy val animated: Transformable = Transformable(button, transforms)
-        lazy val driver:   Periodic[Int] = Periodic[Int](animated, 2.0)
+    class Animation() {
+      lazy val button = reactive.ColourButton(shape, green, red, background = true, NoHint) {
+        _ =>
+          if (driver.running) driver.stop() else driver.start()
+          lastDriver = List(driver)
       }
 
-      val animations: Seq[Animation] = for { i<-1 to 12 } yield new Animation()
+      val transforms: Seq[Transform] = {
+        val steps = (5 to 10).map{ i => i.toFloat / 5 }
+        val sizes = steps ++ steps.reverse
+        for { s <- sizes; r <- 0 to 15  }
+          yield { glyph: Glyph => glyph.scaled(s).turned(r*22.5f, tight = true) }
+      }
 
-      Col(align=Center)(
-
-        Paragraph(50, Justify)(
-          """A grid of rotating buttons. Individual buttons are started/stopped
-            |by clicking on them; and can be started or stopped together with
-            |the Start all / Stop all toggle button. The speed of the last
-            |started/stopped button(s) can be adjusted with the Faster/Slower
-            |buttons.
-            |
-            |""".stripMargin), ex,
-        Row(
-          TextToggle(whenFalse="Start all", whenTrue="Stop all", initially = false){
-            case true  =>
-              lastDriver = animations.map(_.driver).toList
-              for { animation <- animations } animation.driver.start()
-            case false =>
-              lastDriver = animations.map(_.driver).toList
-              for { animation <- animations } animation.driver.stop()
-          }, em,
-          TextButton("Faster"){
-            _ => for { driver <- lastDriver  } if (driver.msPerFrame>4) driver.msPerFrame /= 2
-          }, em,
-          TextButton("Slower"){
-            _ => for { driver <- lastDriver  } driver.msPerFrame *= 2
-          }
-        ), ex, ex,
-        NaturalSize.Grid(bg=lightGrey).grid(width=4)(animations.map(_.animated)), ex, ex, ex,
-      )
+      lazy val animated: Transformable = Transformable(button, transforms)
+      lazy val driver:   Periodic[Int] = Periodic[Int](animated, 2.0)
     }
+
+    val animations: Seq[Animation] = for { i<-1 to 12 } yield new Animation()
+
+    Col(align=Center)(
+
+      Paragraph(50, Justify)(
+        """A grid of rotating buttons. Individual buttons are started/stopped
+          |by clicking on them; and can be started or stopped together with
+          |the Start all / Stop all toggle button. The speed of the last
+          |started/stopped button(s) can be adjusted with the Faster/Slower
+          |buttons.
+          |
+          |""".stripMargin), ex,
+      Row(
+        TextToggle(whenFalse="Start all", whenTrue="Stop all", initially = false){
+          case true  =>
+            lastDriver = animations.map(_.driver).toList
+            for { animation <- animations } animation.driver.start()
+          case false =>
+            lastDriver = animations.map(_.driver).toList
+            for { animation <- animations } animation.driver.stop()
+        }, em,
+        TextButton("Faster"){
+          _ => for { driver <- lastDriver  } if (driver.msPerFrame>4) driver.msPerFrame /= 2
+        }, em,
+        TextButton("Slower"){
+          _ => for { driver <- lastDriver  } driver.msPerFrame *= 2
+        }
+      ), ex, ex,
+      NaturalSize.Grid(bg=lightGrey).grid(width=4)(animations.map(_.animated)), ex, ex, ex,
+    )
+  }
+
 
     Page("Grid", "") {
       val nested = Book()
@@ -520,6 +576,65 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
       NaturalSize.Col(align=Center)(explain, pageSheet.vSpace(2), p1, pageSheet.vSpace(), p2, pageSheet.vSpace(), p3, pageSheet.vSpace())
 
+    }
+
+    if (false) Page("TextShape", "") {
+      import textshape._
+      val font = FontFamily("Courier").makeFont(FontStyle.NORMAL, 32.0f)
+      val text = new TextShape(font, 100, Brushes.black, Brushes.yellow)
+      val emWidth = pageSheet.emWidth
+      text.addText(
+        """Hitherto we have asked not what we could do for our
+          |country, but what our country could do for us. At
+          |this point, however, we beg to differ from our previous practice.
+          |
+          |The astounding matter is just that this is working
+          |at all.
+          |
+          |""".stripMargin)
+      val glyph = text.toGlyph(40*emWidth)
+      Col(align=Center)(
+        glyph.scaled(0.8f).edged()
+      )
+    }
+
+    Page("GlyphShape", "") {
+      import GlyphShape._
+      var cr = rect(30, 30)(Brushes.redLine(width=15, mode=PaintMode.STROKE))
+      var cb = circle(30)(Brushes.blue(width=15, mode=PaintMode.STROKE))
+      var cg = circle(60)(Brushes.green(width=20, mode=PaintMode.STROKE))
+      def poly1 = polygon((-50, -50), (-50, +50), (+50, +50), (+50, -50), (-50, -50))
+      def poly2 = polygon((0,0), (50, 50), (50, 0), (0, 50))
+      def poly3 = polygon((150, 0), (150,150), (100, 150), (150,0))
+      val redStroke = red(width=20, cap=ROUND, mode=PaintMode.STROKE)
+      val redFill   = red(width=20, cap=ROUND, mode=PaintMode.FILL)
+      val em = pageSheet.em
+
+      val shapes: List[GlyphShape] =
+        List( cr, cb, cg, cg.bg(yellow),
+        (cr ~~~ cb),  (cr~~~cb).bg(yellow),   (cr~~~cb.bg(yellow)),                 (cr.bg(yellow)~~~cb),
+        (cr --- cg),  (cr --- cg).bg(yellow), (cr---cb.bg(yellow)),                 (cr.bg(yellow)---cb),
+        (cr---cb.bg(yellow)).bg(green).turned(45), (cr---cb.bg(yellow)).bg(green).turned(45).bg(red),                     (cr---cb.bg(yellow)).bg(green),       (cr.bg(yellow)---cb).bg(green),
+        poly3(redStroke), poly3(redStroke).bg(yellow), poly3(redStroke).bg(yellow).bg(blue), poly3(redStroke).bg(yellow).bg(green),
+        poly1(blue(width=25, cap=SQUARE, mode=PaintMode.STROKE)),
+        poly2(blue(width=5, cap=ROUND, mode=PaintMode.STROKE)),
+        poly2(blue(width=5, cap=ROUND, mode=PaintMode.STROKE)).bg(green), poly2(redFill).turned(45f, true).bg(yellow),
+        )
+
+      Col(align=Center)(
+          <p width="70em" align="justify">
+            A cursory test of <b>GlyphShape</b>: a precursor type to <b>Glyph</b>. Shapes have a <b>draw(Surface)</b> method, and a bounding box <b>diagonal:Vec.</b>
+            They can be composed laterally <span><b>(left|||right)</b></span> and vertically <b>(top---bottom)</b>, and superimposed <b>(l~~~r)</b>. In the latter case, the shape
+            with the smaller area (<b>l</b> when they have the same area) is drawn centred on the other shape.
+          </p>, ex,
+        NaturalSize.Grid(fg=black, padx=10, pady=10).table(width=4)(shapes.map(GlyphShape.toGlyph(_))), ex, ( <p  width="70em" align="justify">
+          Shapes also have intrinsic methods <b>scale(factor:Scalar),</b> and <b>turn(degrees:Scalar)</b> with much the same
+          interpretation as those present in ordinary glyphs. The method <b>bg(Brush): GlyphShape</b> constructs a new
+          shape <i>as far as possible like the original shape</i> with the given brush as its background colour. Shapes derived by
+          intrinsics are treated as rectangles for the purposes of <b>bg</b> and this
+          can yield an interesting colour scheme (as seen on the last three rows).
+        </p>)
+      )
     }
 
 

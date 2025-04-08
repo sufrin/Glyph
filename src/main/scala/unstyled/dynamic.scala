@@ -89,9 +89,9 @@ import io.github.humbleui.jwm.App
    * In short, one of these glyphs CANNOT USEFULLY contain any reactives.
    *
    *
-   * TODO: the above would require a new focussed within the top-level dispatcher; namely
+   * TODO: the above would require a new focus within the top-level dispatcher; namely
    *       one to which all events are forwarded from the top level. This amounts to an
-   *       internal virtual window. Probably straightforward to deliver eventuallly.
+   *       internal virtual window. Perhaps straightforward to deliver eventually.....
    */
   class ViewPort(glyph: Glyph, val fg: Brush, val bg: Brush, initialPortDiagonal: Vec = null) extends ReactiveGlyph {
 

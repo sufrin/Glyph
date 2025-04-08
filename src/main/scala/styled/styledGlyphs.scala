@@ -436,6 +436,7 @@ class EventLog[Event](size: Int, lines: Int, keepLines: Int=0)(implicit style: S
   import scala.collection.mutable
   override def toString: String = s"EventLog($size, $lines, $keepLines)"
 
+
   val maxQueue = if (keepLines==0) lines else keepLines
   val queue = new mutable.Queue[Event](maxQueue)
   def canElide(ev: Event): Boolean = false
@@ -469,7 +470,7 @@ class EventLog[Event](size: Int, lines: Int, keepLines: Int=0)(implicit style: S
    * The diagonal size of the glyph
    */
   def diagonal: Vec = {
-    val em = Label("M") // Text("M", style.font).asGlyph()
+    val em = Label("M")
     Vec(size * em.w, maxQueue * em.h)
   }
 

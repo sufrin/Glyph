@@ -51,19 +51,24 @@ object CellFit {
     }
 }
 
+
 /**
- *  A `Glyph` is the unit of graphical construction.
+ *  A `Glyph` is the unit of interface construction.
  *
  *  `Glyph`s are not "aware" of the absolute location on the screen
  *  surface at which they will be drawn. Instead, all glyphs are
  *  drawn on drawing surfaces as if they were placed at the origin.
  *
+ *  TODO: The present signature has a few too many auxiliary methods, many of which have
+ *        only very rarely been used (for example, the various cellFit, and
+ *        shift methods). These should probably migrate or be removed.
+ *
  *  Composite `Glyph`s are composed of sequences of glyphs, each of
  *  which has a location relative to the origin of the composite.
  *  The origin of the drawing surface is translated by this amount
- *  before each glyph is drawn.
+ *  before each component is drawn.
  */
-trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
+trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyph =>
 
   import scala.annotation.tailrec
 
@@ -125,21 +130,7 @@ trait Glyph extends GlyphColours with GlyphTransforms { thisGlyph =>
     if ((bg ne null) && bg.getAlpha != 0) surface.fillRect(bg, diagonal)
   }
 
-  /**
-   * Draw the glyph on the surface at its given size (as if at the origin).
-   */
-  def draw(surface: Surface): Unit
 
-  /**
-   * The diagonal size of the glyph
-   */
-  def diagonal: Vec
-
-  /*
-   * Derived geometric attributes: width and height, right edge and bottom edge
-   */
-  @inline def w: Scalar  = diagonal.x
-  @inline def h: Scalar = diagonal.y
   @inline def bottom: Scalar = h + location.y
   @inline def right: Scalar  = w + location.x
 
