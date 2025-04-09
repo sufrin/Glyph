@@ -22,58 +22,58 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
   import Brushes._
 
 
-//    Page("Animation", "") {
-//      import unstyled.dynamic.{Periodic, Transform, Transformable,ActiveGlyph}
-//      val hue = {
-//        import Brushes._
-//        List(red, blue, green, yellow, brown, black)
-//      }
-//      def shape(decor: Int) = FilledOval(60, 60, fg=hue(decor))
-//
-//      var lastDriver: List[Periodic[Int]] = Nil
-//
-//      class Ball(glyph: Glyph) extends ActiveGlyph[Scalar] {
-//
-//        def toGlyph(t: Scalar): Glyph = ???
-//
-//        /** A copy of this glyph; perhaps with different foreground/background */
-//        def copy(fg: Brush, bg: Brush): Glyph = ???
-//      }
-//      class Animation(id: Int) {
-//        val ball = shape(id)
-//        val
-//
-//
-//        lazy val animated: ActiveGlyph = new Ball(id)
-//        lazy val driver:   Periodic[Int] = Periodic[Int](animated, 2)
-//      }
-//
-//      val animations: Seq[Animation] = for { id<-0 to 5 } yield new Animation(id)
-//
-//      Col(align=Center)(
-//
-//        Paragraph(50, Center)(
-//          """Squishy stuff
-//            |""".stripMargin), ex,
-//        Row(
-//          TextToggle(whenFalse="Start all", whenTrue="Stop all", initially = false){
-//            case true  =>
-//              lastDriver = animations.map(_.driver).toList
-//              for { animation <- animations } animation.driver.start()
-//            case false =>
-//              lastDriver = animations.map(_.driver).toList
-//              for { animation <- animations } animation.driver.stop()
-//          }, em,
-//          TextButton("Faster"){
-//            _ => for { driver <- lastDriver  } if (driver.msPerFrame>4) driver.msPerFrame /= 2
-//          }, em,
-//          TextButton("Slower"){
-//            _ => for { driver <- lastDriver  } driver.msPerFrame *= 2
-//          }
-//        ), ex, ex,
-//        NaturalSize.Row(bg=lightGrey)(animations.map(_.animated)), ex, ex, ex,
-//      )
-//    }
+    Page("Balls", "") {
+      import unstyled.dynamic.{Periodic, Transform, Transformable,ActiveGlyph}
+      val hue = {
+        import Brushes._
+        List(red, blue, green, yellow, brown, black)
+      }
+      def shape(decor: Int) = FilledOval(70, 70, fg=hue(decor))
+
+
+      class Ball(glyph: Glyph) extends ActiveGlyph[Int] (0, Rect(glyph.w*1.5f, glyph.h*10f)){
+
+
+        override def step(): Unit = set((current + 1))
+        override def stop(): Unit = glyph@@(glyph.w*.25f, h/2)
+
+        def toGlyph(t: Int): Glyph = {
+          val y = glyph.location.y
+          glyph@@(glyph.w*.25f, ((h-glyph.h) min (y+(0.65-Math.random()).sign.toFloat)) max 0 )
+        }
+
+        /** A copy of this glyph; perhaps with different foreground/background */
+        def copy(fg: Brush, bg: Brush): Glyph = null
+      }
+
+
+      class Animation(id: Int) {
+        val ball = shape(id)
+        lazy val animated: Ball = new Ball(shape(id))
+        lazy val driver:   Periodic[Int] = Periodic[Int](animated, 5.0)
+      }
+
+      val animations: Seq[Animation] = for { id<-0 to 4 } yield new Animation(id)
+      val drivers = animations.map(_.driver)
+
+      Col(align=Center)(
+        Row(
+          TextToggle(whenFalse="Start all", whenTrue="Stop all", initially = false){
+            case true  =>
+              for { driver <- drivers } driver.start()
+            case false =>
+              for { driver <- drivers } driver.stop()
+          }, em,
+          TextButton("Faster"){
+            _ => for { driver <- drivers  } if (driver.msPerFrame>4) driver.msPerFrame /= 2
+          }, em,
+          TextButton("Slower"){
+            _ => for { driver <- drivers  } driver.msPerFrame *= 2
+          })
+        , ex, ex,
+        NaturalSize.Row(bg=white)(animations.map(_.animated)).framed(), ex, ex, ex,
+      )
+    }
 
     Page("Animation", "") {
     import unstyled.dynamic.{Periodic, Transform, Transformable}
