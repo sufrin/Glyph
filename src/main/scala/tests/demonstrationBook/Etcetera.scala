@@ -22,24 +22,66 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
   import Brushes._
 
 
-    Page("Balls", "") {
-      import unstyled.dynamic.{Periodic, Transform, Transformable,ActiveGlyph}
-      val hue = {
-        import Brushes._
-        List(red, blue, green, yellow, brown, black)
+    Page("Animation 1", "") {
+      import unstyled.dynamic.{Periodic, ActiveGlyph}
+
+      // Ratio of the size if the mobile to the stage
+      val ratio: Scalar = 1.25f
+
+      // An arbitrarily-shaped and intricate mobile
+      val mobile: GlyphShape = {
+        import GlyphShape._
+        (circle(25)(red)---
+         rect(150,450)(blueFrame(mode=PaintMode.STROKE))---
+         circle(25)(red)) ~~~ ((circle(95)(red)~~~circle(10)(white)) ||| rect(100, 50)(yellow))
       }
-      def shape(decor: Int) = FilledOval(70, 70, fg=hue(decor))
 
+      // The scenery: a grey rectangle on a thick circle
+      val scenery: GlyphShape = {
+        import GlyphShape._
+        val d = mobile.w max mobile.h
+        rect(ratio*d, ratio*d)(lightGrey) ~~~ (circle(150)(red(width=12, mode=PaintMode.STROKE)))
+      }
 
-      class Ball(glyph: Glyph) extends ActiveGlyph[Int] (0, Rect(glyph.w*1.5f, glyph.h*10f)){
+      // actors that will also appear on the stage
+      val spot = GlyphShape.rect(12,12)(red).turn(45)
+      val blob = GlyphShape.rect(12,12)(white)
+      val spotdelta = 6f
 
+      val blueString  = blueLine.sliced(5f, 3f)
+      val whiteString = white(width=2).sliced(5f, 3f)
 
-        override def step(): Unit = set((current + 1))
-        override def stop(): Unit = glyph@@(glyph.w*.25f, h/2)
+      // An active glyph whose initial image is formed by the mobile and ancillary actors
+      // Its state is the current angle of rotation of the mobile
+      class Stage extends ActiveGlyph[Double] (0.0){
+        val orbit = scenery.w / 3f
 
-        def toGlyph(t: Int): Glyph = {
-          val y = glyph.location.y
-          glyph@@(glyph.w*.25f, ((h-glyph.h) min (y+(0.65-Math.random()).sign.toFloat)) max 0 )
+        private val D2R: Double = Math.PI/180.0
+        private val oneDegree: Double = 1.0
+
+        // each step turns the mobile by a degree
+        override def step(): Unit = set((current + oneDegree))
+
+        /**
+         * Generate the next frame: the scenery, the mobile, and
+         * various blobs and spots connected by pieces of string.
+         */
+        def toGlyph(degrees: Double): Glyph = {
+          import GlyphShape._
+          val theta = degrees * D2R
+          val dx = orbit*Math.cos(theta).toFloat
+          val ddy = orbit*Math.cos(4f*theta).toFloat
+          val dy = orbit*Math.sin(theta).toFloat
+          superimposed(
+            scenery,
+            mobile.turn(degrees.toFloat),
+            // coordinates are relative to the centre of the superposition
+            blob.at(-orbit,       ddy),
+            line(-orbit,          ddy,           dx+spotdelta, orbit+spotdelta)(whiteString),
+            spot.at(orbit,        dy),
+            line(orbit+spotdelta, dy+spotdelta,  dx+spotdelta, orbit+spotdelta)(blueString),
+                                                 spot.at(dx,   orbit)
+          )
         }
 
         /** A copy of this glyph; perhaps with different foreground/background */
@@ -47,35 +89,53 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       }
 
 
-      class Animation(id: Int) {
-        val ball = shape(id)
-        lazy val animated: Ball = new Ball(shape(id))
-        lazy val driver:   Periodic[Int] = Periodic[Int](animated, 5.0)
+      object Animation  {
+        lazy val animated: Stage = new Stage
+        lazy val driver:   Periodic[Double] = Periodic[Double](animated, 15.0)
       }
 
-      val animations: Seq[Animation] = for { id<-0 to 4 } yield new Animation(id)
-      val drivers = animations.map(_.driver)
+      val FPS = styled.ActiveString(f"${1000.0/Animation.driver.msPerFrame}%3.2f FPS")
+      def setFPS(): Unit = FPS.set(f"${1000.0/Animation.driver.msPerFrame}%3.2f FPS")
 
       Col(align=Center)(
+        <div width="60em" align="justify">
+          <p>
+            This is an animation test case that uses <b>GlyphShape</b>s
+            to form the image(s) being animated as well as the stage on which the shapes -- which
+            are not intended to mean anything -- are
+            shown.
+          </p>
+          <p>
+            Each frame of the animation is computed from scratch as it is shown;
+            and the coherence of the resulting animation seems satisfactory -- even
+            when the frame rate is quite high.
+          </p>
+        </div>, ex,
+        FPS, ex,
         Row(
-          TextToggle(whenFalse="Start all", whenTrue="Stop all", initially = false){
+          TextToggle(whenFalse="Start", whenTrue="Stop", initially = false){
             case true  =>
-              for { driver <- drivers } driver.start()
+              Animation.driver.start()
+              setFPS()
             case false =>
-              for { driver <- drivers } driver.stop()
+              Animation.driver.stop()
           }, em,
           TextButton("Faster"){
-            _ => for { driver <- drivers  } if (driver.msPerFrame>4) driver.msPerFrame /= 2
+            _ =>
+              if (Animation.driver.msPerFrame>2) Animation.driver.msPerFrame /= 2
+              setFPS()
           }, em,
           TextButton("Slower"){
-            _ => for { driver <- drivers  } driver.msPerFrame *= 2
-          })
-        , ex, ex,
-        NaturalSize.Row(bg=white)(animations.map(_.animated)).framed(), ex, ex, ex,
+            _ =>
+              Animation.driver.msPerFrame *= 2
+              setFPS()
+          }
+        ), ex, ex,
+          Animation.animated, ex, ex
       )
     }
 
-    Page("Animation", "") {
+    Page("Animation 2", "") {
     import unstyled.dynamic.{Periodic, Transform, Transformable}
     val shape = static.Concentric(rowAlign=Mid, colAlign=Center)(
       FilledOval(40, 40, fg=blue),
@@ -627,7 +687,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
             They can be composed laterally <span><b>(left|||right)</b></span> and vertically <b>(top---bottom)</b>, and superimposed <b>(l~~~r)</b>. In the latter case, the shape
             with the smaller area (<b>l</b> when they have the same area) is drawn centred on the other shape.
           </p>, ex,
-        NaturalSize.Grid(fg=black, padx=10, pady=10).table(width=4)(shapes.map(GlyphShape.toGlyph(_))), ex, ( <p  width="70em" align="justify">
+        NaturalSize.Grid(fg=black, padx=10, pady=10).table(width=4)(shapes.map(GlyphShape.asGlyph(_))), ex, ( <p width="70em" align="justify">
           Shapes also have intrinsic methods <b>scale(factor:Scalar),</b> and <b>turn(degrees:Scalar)</b> with much the same
           interpretation as those present in ordinary glyphs. The method <b>bg(Brush): GlyphShape</b> constructs a new
           shape <i>as far as possible like the original shape</i> with the given brush as its background colour. Shapes derived by

@@ -6,7 +6,7 @@ import io.github.humbleui.skija.{PaintMode, Path}
 
 /**
  *  Lightweight precursor to `Glyph`. This type arrived in Glyph 0.9 and may eventually
- *  be the basis for simplifying the construction of heavier-weight passive glyphs.
+ *  be the basis for simplifying the construction of some heavier-weight passive glyphs.
  */
 trait GlyphShape { thisShape =>
   def draw(surface: Surface): Unit    // draw on the given surface
@@ -25,7 +25,7 @@ trait GlyphShape { thisShape =>
    * diagonal is made tighter (but only for nearly-rotationally-symmetric drawables)
    * if `symmetric` is true.
    */
-  def turn(degrees: Scalar, symmetric: Boolean=false): GlyphShape = GlyphShape.toGlyph(thisShape).turned(degrees, symmetric)
+  def turn(degrees: Scalar, symmetric: Boolean=false): GlyphShape = GlyphShape.asGlyph(thisShape).turned(degrees, symmetric)
 
   /** left '''beside''' right */
   def ||| (thatShape: GlyphShape): GlyphShape = new GlyphShape {
@@ -63,6 +63,19 @@ trait GlyphShape { thisShape =>
   }
 
   /**
+   *  A shape like `thisShape`, but with an empty bounding box, and drawn
+   *  at the given `(dx, dy)`.
+   *
+   * @see line
+   */
+  def at(dx: Scalar, dy: Scalar): GlyphShape = new GlyphShape {
+    def draw(surface: Surface): Unit =
+      surface.withOrigin(dx, dy) { thisShape.draw(surface) }
+
+    def diagonal: Vec = Vec.Zero
+  }
+
+  /**
    * This shape, with a background (as far as possible of the same shape) coloured by `brush`.
    */
   def bg(brush: Brush): GlyphShape = thisShape ~~~ GlyphShape.rect(thisShape.w, thisShape.h)(brush)
@@ -86,24 +99,80 @@ object GlyphShape {
   }
 
   /**
+   * An oval bounded by a `(width x height)` rectangle, occupying a `(width+delta x height+delta)` rectangle
+   * (where delta=`fg.strokeWidth`).
+   * Unless `fg.mode=PaintMode.STROKE` the oval is filled.
+   */
+  def oval(width: Scalar, height: Scalar)(fg: Brush): GlyphShape = new GlyphShape {
+    val delta=Vec(fg.strokeWidth/2, fg.strokeWidth/2)
+    def draw(surface: Surface): Unit = surface.withOrigin(delta){
+      surface.drawOval(fg, Vec.Zero, diag)
+    }
+
+    val diag: Vec = Vec(w, h)
+    val diagonal: Vec = diag+(delta scaled 2)
+
+    override def bg(brush: Brush): GlyphShape = oval(w, h)(brush(mode=PaintMode.FILL)) ~~~ this
+  }
+
+  /**
+   *  A line that has no bounding box. Used for drawing lines to be superimposed
+   *  on an existing drawing.
+   *
+   *  For example, the following is the shape of a couple of `spot`s joined by a black line.
+   *  It has an empty bounding box, but can be superimposed on another shape (which
+   *  should be large enough to contain the spots and the line at their given positions).
+   *  {{{
+   *    spot.at(p, dy) ~~~
+   *    spot.at(dx, p) ~~~
+   *    line(Vec(p, dy), Vec(dx, p))(black)
+   *  }}}
+   *
+   * @see at
+   */
+  def line(start: Vec, end: Vec)(brush: Brush): GlyphShape = new GlyphShape {
+    def draw(surface: Surface): Unit =  surface.drawLines(brush, List(start, end))
+    def diagonal: Vec = Vec.Zero
+  }
+
+  /**
+   *
+   * @param startx
+   * @param starty
+   * @param endx
+   * @param endy
+   * @param brush
+   * @return
+   */
+  def line(startx: Scalar, starty: Scalar, endx: Scalar, endy: Scalar)(brush: Brush): GlyphShape = new GlyphShape {
+    def draw(surface: Surface): Unit = surface.drawLines$(brush, startx, starty, endx, endy)
+    def diagonal: Vec = Vec.Zero
+  }
+
+  /**
    * A `(width, height)` rectangle, occupying a `(width+fg.strokeWidth, height+fg.strokeWidth)` rectangle.
    * Unless `fg.mode=PaintMode.STROKE` the rectangle is filled.
    */
   def rect(width: Scalar, height: Scalar)(fg: Brush): GlyphShape = new GlyphShape {
     val delta=Vec(fg.strokeWidth/2, fg.strokeWidth/2)
     def draw(surface: Surface): Unit = surface.withOrigin(delta){
-      if (fg.mode!=PaintMode.STROKE) surface.fillRect(fg, diag)
+      if (fg.mode!=STROKE) surface.fillRect(fg, diag)
       surface.drawRect(fg, diag)
     }
     val diag: Vec = Vec(width, height)
     val diagonal: Vec = diag+(delta scaled 2)
 
-    override def bg(brush: Brush): GlyphShape = this ~~~ rect(w, h)(brush(mode=PaintMode.FILL))
-
+    override def bg(brush: Brush): GlyphShape = this ~~~ rect(w, h)(brush(mode=FILL))
   }
 
-  def polygon(vertices: (Scalar, Scalar)*): Brush=>GlyphShape = polygon(vertices)
+  /**
+   * A polygon made of `vertext::vertices`, and with the natural bounding box.
+   */
+  def polygon(vertex: (Scalar, Scalar), vertices: (Scalar, Scalar)*): Brush=>GlyphShape = polygon(vertex::vertices.toList)
 
+  /**
+   * A polygon made of the given `vertices`, and with the natural bounding box.
+   */
   def polygon(vertices: Iterable[(Scalar, Scalar)])(fg: Brush): GlyphShape = new GlyphShape {
     val kind: String = "Polygon"
     override def toString: String = s"Polygon($diagonal, fg=$fg)(\n     ${vertices.mkString(",")}\n)"
@@ -128,20 +197,47 @@ object GlyphShape {
       Vec(bounds._right-bounds._left+fg.strokeWidth, bounds._bottom-bounds._top+fg.strokeWidth)
     }
 
-    def draw(surface: Surface): Unit = {
-      /*surface.withClip(diagonal)*/  { surface.withOrigin(-offsetL, -offsetT) { surface.drawPath(fg, path) } }
-    }
+    def draw(surface: Surface): Unit = surface.withOrigin(-offsetL, -offsetT) { surface.drawPath(fg, path) }
 
-    override def bg(brush: Brush): GlyphShape = this ~~~ polygon(vertices)(brush(mode=PaintMode.FILL))
+    override def bg(brush: Brush): GlyphShape = this ~~~ polygon(vertices)(brush(mode=FILL))
 
   }
 
+  /**
+   * A shape that is drawn as the superimposition of the given shapes, with the later layers
+   * in the sequence appearing on top of the earlier layers regardless of their
+   * area. Note that this is not always a `~~~`-reduction: for in that case
+   * the smallest area shape percolates to the top.
+   *
+   * @see ~~~
+   */
+  def superimposed(shapes: Seq[GlyphShape]): GlyphShape = new GlyphShape {
+    val tw = Measure.maxWidth(shapes)
+    val th = Measure.maxHeight(shapes)
 
-  implicit def toGlyph(drawable: GlyphShape): Glyph = new Glyph { wrapped =>
+    def draw(surface: Surface): Unit =
+      for { shape <- shapes }
+        surface.withOrigin((tw-shape.w)/2, (th-shape.h)/2) { shape.draw(surface)}
+
+    def diagonal: Vec = Vec(tw, th)
+  }
+
+  /** @see superimposed */
+  def superimposed(shape: GlyphShape, shapes: GlyphShape*): GlyphShape = superimposed(shape::shapes.toList)
+
+
+  /**
+   *  A standard glyph drawn as the given `shape`.
+   */
+  implicit def asGlyph(shape: GlyphShape): Glyph = new Glyph { wrapped =>
     def copy(fg: Brush, bg: Brush): Glyph = wrapped.copy(fg, bg)
-    def draw(surface: Surface): Unit = drawable.draw(surface)
-    val diagonal: Vec = drawable.diagonal
+    def draw(surface: Surface): Unit = shape.draw(surface)
+    val diagonal: Vec = shape.diagonal
     val fg: Brush = Brushes.transparent
     val bg: Brush = Brushes.transparent
   }
+
+  val STROKE:          PaintMode = PaintMode.STROKE
+  val FILL:            PaintMode = PaintMode.FILL
+  val STROKE_AND_FILL: PaintMode = PaintMode.STROKE_AND_FILL
 }

@@ -473,15 +473,19 @@ import io.github.humbleui.jwm.App
   }
 
   /**
-   * An active glyph whose bounding box is that of `background` and that initially shows `background`.
+   * An active glyph whose bounding box is that of its initial glyph: which is `background` unless that is `null`, otherwise
+   * `toGlyph(initial)`
+   *
    * Thereafter it always shows `toGlyph(current)` (clipped to the bounding box of `background`)
    * after the first and subsequent assignments  to `current`. Although this is unenforceable,
    * it makes sense for `background` to be `toGlyph(initial)`.
    */
-  abstract class ActiveGlyph[T](initial: T, val background: Glyph) extends Glyph with Settable [T] with Steppable {
+  abstract class ActiveGlyph[T](initial: T, val background: Glyph=null) extends Glyph with Settable [T] with Steppable {
     def toGlyph(t: T): Glyph
 
-    protected var currentGlyph: Glyph = background
+    val initialGlyph = if (background eq null) toGlyph(initial) else background
+
+    protected var currentGlyph: Glyph = initialGlyph
     protected var current: T          = initial
 
     /**
@@ -506,10 +510,10 @@ import io.github.humbleui.jwm.App
         }
       }
 
-    override def diagonal: Vec = background.diagonal
+    override def diagonal: Vec = initialGlyph.diagonal
 
-    override val fg: Brush = background.fg
-    override val bg: Brush = background.bg
+    override val fg: Brush = initialGlyph.fg
+    override val bg: Brush = initialGlyph.bg
 
     override def glyphContaining(p: Vec): Option[Hit] = currentGlyph.glyphContaining(p-currentGlyph.location)
   }
