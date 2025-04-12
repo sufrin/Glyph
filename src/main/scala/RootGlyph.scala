@@ -587,9 +587,9 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
     if (eventHandler ne null) eventHandler.keyboardFocus = Some(component)
   }
 
-  def freeKeyboard(): Unit = {
+  def freeKeyboard(completely: Boolean=false): Unit = {
     if (eventHandler ne null) {
-      eventHandler.recentKeyboardFocus = eventHandler.keyboardFocus
+      eventHandler.recentKeyboardFocus = if (completely) None else eventHandler.keyboardFocus
       eventHandler.keyboardFocus = None
     }
   }

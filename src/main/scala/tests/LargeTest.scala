@@ -231,8 +231,8 @@ trait LargeTestGUI {
       }
 
     lazy val toggle4: OnOffButton = onOff(
-      trdown(red)(bg = yellowHuge),
-      trup(green)(bg = yellowHuge),
+      trdown(red),
+      trup(green),
       initially = true,
       fg = red,
       bg = white,

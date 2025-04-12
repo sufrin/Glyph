@@ -7,6 +7,9 @@ import io.github.humbleui.skija.{PaintMode, Path}
 /**
  *  Lightweight precursor to `Glyph`. This type arrived in Glyph 0.9 and may eventually
  *  be the basis for simplifying the construction of some heavier-weight passive glyphs.
+ *
+ *  Atomic glyph shapes are coloured by a brush, and they are filled (or not) depending
+ *  on the `mode` of the brush: `FILL` or `STROKE`.
  */
 trait GlyphShape { thisShape =>
   def draw(surface: Surface): Unit    // draw on the given surface
@@ -64,21 +67,28 @@ trait GlyphShape { thisShape =>
 
   /**
    *  A shape like `thisShape`, but with an empty bounding box, and drawn
-   *  at the given `(dx, dy)`.
+   *  centered at the given `(dx, dy)`.
    *
    * @see line
    */
-  def at(dx: Scalar, dy: Scalar): GlyphShape = new GlyphShape {
-    def draw(surface: Surface): Unit =
-      surface.withOrigin(dx, dy) { thisShape.draw(surface) }
-
-    def diagonal: Vec = Vec.Zero
-  }
+  def at(dx: Scalar, dy: Scalar): GlyphAt = GlyphAt(dx, dy, thisShape)
 
   /**
    * This shape, with a background (as far as possible of the same shape) coloured by `brush`.
    */
   def bg(brush: Brush): GlyphShape = thisShape ~~~ GlyphShape.rect(thisShape.w, thisShape.h)(brush)
+
+  /**
+   * This shape, with a foreground (as far as possible of the same shape) coloured by `brush`.
+   */
+  def apply(brush: Brush): GlyphShape = thisShape
+}
+
+case class GlyphAt(var dx: Scalar, var dy: Scalar, shape: GlyphShape) extends GlyphShape {
+   def draw(surface: Surface): Unit =
+       surface.withOrigin(dx-(shape.w/2), dy-(shape.h/2)) { shape.draw(surface) }
+
+  def diagonal: Vec = shape.diagonal
 }
 
 object GlyphShape {
@@ -95,7 +105,11 @@ object GlyphShape {
     val diag: Vec = Vec(2*r, 2*r)
     val diagonal: Vec = diag+(delta scaled 2)
 
+    /**
+     * This circle superimposed on a circle of the same radius filled with `brush`
+     */
     override def bg(brush: Brush): GlyphShape = circle(r)(brush(mode=PaintMode.FILL)) ~~~ this
+    override def apply(brush: Brush): GlyphShape = circle(r)(brush)
   }
 
   /**
@@ -109,11 +123,54 @@ object GlyphShape {
       surface.drawOval(fg, Vec.Zero, diag)
     }
 
-    val diag: Vec = Vec(w, h)
+    val diag: Vec = Vec(width, height)
     val diagonal: Vec = diag+(delta scaled 2)
 
+    /**
+     * This oval superimposed on an oval of the same dimension filled with `brush`
+     */
     override def bg(brush: Brush): GlyphShape = oval(w, h)(brush(mode=PaintMode.FILL)) ~~~ this
+
+    override def apply(brush: Brush): GlyphShape = oval(w, h)(brush)
+
   }
+
+  /**
+   * An arc/sector of a (width x height) oval occupying a `(width+delta x height+delta)` rectangle. The
+   * path of the arc starts in direction `startAngle` and extends for `sweepAngle`. The centre is included in
+   * the path if `incCentre` is true.
+   */
+  def arc(width: Scalar, height: Scalar, startAngle: Scalar, sweepAngle: Scalar, incCentre: Boolean)(fg: Brush): GlyphShape = new GlyphShape {
+    val delta=Vec(fg.strokeWidth/2, fg.strokeWidth/2)
+    def draw(surface: Surface): Unit = surface.withOrigin(delta){
+      surface.canvas.drawArc(0, 0, width, height, startAngle, sweepAngle, incCentre, fg)
+    }
+
+    val diag: Vec = Vec(width, height)
+    val diagonal: Vec = diag+(delta scaled 2)
+
+    /**
+     * This arc superimposed on an arc with the same characteristics filled with `brush`
+     */
+    override def bg(brush: Brush): GlyphShape = arc(width, height, startAngle, sweepAngle, incCentre)(brush(mode=PaintMode.FILL)) ~~~ this
+
+    override def apply(brush: Brush): GlyphShape = arc(width, height, startAngle, sweepAngle, incCentre)(brush)
+
+  }
+
+  /**
+   * A circular pie with the given radius, with slices painted by brushes.
+   * {{{ requires brushes.length>0 }}}
+   */
+  def pie(radius: Scalar)(brushes: Brush*): GlyphShape = {
+    require(brushes.length>0, "A pie must have a positive number of brushes")
+    val sector = 360.0f / brushes.length
+    var rot = 0.0f
+    superimposed(
+      brushes.map { brush => rot += sector; arc(2*radius, 2*radius, rot, sector, true)(brush) }
+    )
+  }
+
 
   /**
    *  A line that has no bounding box. Used for drawing lines to be superimposed
@@ -136,13 +193,7 @@ object GlyphShape {
   }
 
   /**
-   *
-   * @param startx
-   * @param starty
-   * @param endx
-   * @param endy
-   * @param brush
-   * @return
+   * @see line
    */
   def line(startx: Scalar, starty: Scalar, endx: Scalar, endy: Scalar)(brush: Brush): GlyphShape = new GlyphShape {
     def draw(surface: Surface): Unit = surface.drawLines$(brush, startx, starty, endx, endy)
@@ -162,7 +213,13 @@ object GlyphShape {
     val diag: Vec = Vec(width, height)
     val diagonal: Vec = diag+(delta scaled 2)
 
+    /**
+     * This rectangle superimposed on a rectangle with the same dimensions filled with `brush`
+     */
     override def bg(brush: Brush): GlyphShape = this ~~~ rect(w, h)(brush(mode=FILL))
+
+    override def apply(brush: Brush): GlyphShape = rect(width, height)(brush)
+
   }
 
   /**
@@ -199,6 +256,9 @@ object GlyphShape {
 
     def draw(surface: Surface): Unit = surface.withOrigin(-offsetL, -offsetT) { surface.drawPath(fg, path) }
 
+    /**
+     * This polygon superimposed on a polygon with the same vertices filled with `brush`
+     */
     override def bg(brush: Brush): GlyphShape = this ~~~ polygon(vertices)(brush(mode=FILL))
 
   }

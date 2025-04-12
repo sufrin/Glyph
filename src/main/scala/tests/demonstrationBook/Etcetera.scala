@@ -10,6 +10,7 @@ import unstyled.dynamic.SplitScreen
 import unstyled.static._
 
 import io.github.humbleui.skija.PaintMode
+import org.sufrin.glyph.GlyphShape.{arc, STROKE}
 
 import java.util.Date
 
@@ -25,6 +26,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     Page("Animation 1", "") {
       import unstyled.dynamic.{Periodic, ActiveGlyph}
 
+
       // Ratio of the size if the mobile to the stage
       val ratio: Scalar = 1.25f
 
@@ -33,23 +35,30 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         import GlyphShape._
         (circle(25)(red)---
          rect(150,450)(blueFrame(mode=PaintMode.STROKE))---
-         circle(25)(red)) ~~~ ((circle(95)(red)~~~circle(10)(white)) ||| rect(100, 50)(yellow))
+         circle(25)(red)) ~~~ ((pie(95)(red,blue,transparent,green,yellow)~~~circle(10)(white)) ||| rect(100, 50)(yellow))
       }
 
-      // The scenery: a grey rectangle on a thick circle
+
+
+      // other elements
+      import GlyphShape._
+      val spot = GlyphShape.rect(12,12)(red)
+      val blob = GlyphShape.rect(12,12)(white)
+      val spotdelta = 0f
+      val diam      = mobile.w max mobile.h
+      val track     = arc(diam, diam, 0, 90.0f, true)(green(width=4, mode=STROKE))
+      val track2    = arc(300, 300, 90f, 90.0f, true)(red(width=12, mode=STROKE))
+      val track3    = arc(300, 300, 180f, 90.0f, false)(blue(width=12, mode=STROKE))
+
+      // The scenery
       val scenery: GlyphShape = {
         import GlyphShape._
-        val d = mobile.w max mobile.h
-        rect(ratio*d, ratio*d)(lightGrey) ~~~ (circle(150)(red(width=12, mode=PaintMode.STROKE)))
+        track ~~~ track.turn(180) ~~~ rect(ratio*diam, ratio*diam)(lightGrey) ~~~ track2 ~~~ track2.turn(180) ~~~ track3 ~~~ track3.turn(180)
       }
 
-      // actors that will also appear on the stage
-      val spot = GlyphShape.rect(12,12)(red).turn(45)
-      val blob = GlyphShape.rect(12,12)(white)
-      val spotdelta = 6f
-
       val blueString  = blueLine.sliced(5f, 3f)
-      val whiteString = white(width=2).sliced(5f, 3f)
+      val whiteString = white(width=2).sliced(6f, 4f)
+      val redString   = red(width=4).sliced(5f, 4f)
 
       // An active glyph whose initial image is formed by the mobile and ancillary actors
       // Its state is the current angle of rotation of the mobile
@@ -68,19 +77,19 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
          */
         def toGlyph(degrees: Double): Glyph = {
           import GlyphShape._
-          val theta = degrees * D2R
-          val dx = orbit*Math.cos(theta).toFloat
+          val theta = (degrees%360.0) * D2R
+          val dx = orbit*Math.cos(3f*theta).toFloat
           val ddy = orbit*Math.cos(4f*theta).toFloat
           val dy = orbit*Math.sin(theta).toFloat
           superimposed(
             scenery,
             mobile.turn(degrees.toFloat),
             // coordinates are relative to the centre of the superposition
-            blob.at(-orbit,       ddy),
-            line(-orbit,          ddy,           dx+spotdelta, orbit+spotdelta)(whiteString),
-            spot.at(orbit,        dy),
-            line(orbit+spotdelta, dy+spotdelta,  dx+spotdelta, orbit+spotdelta)(blueString),
-                                                 spot.at(dx,   orbit)
+            blob.at(-orbit,  ddy), spot.at(dx, orbit), spot.at(orbit,  dy),
+
+            line(-orbit, ddy,              dx, orbit)(whiteString),
+            line(dx, orbit,  orbit, dy)(redString),
+            line(orbit, dy,  -orbit, ddy)(blueString),
           )
         }
 
@@ -143,7 +152,13 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
     var lastDriver: List[Periodic[Int]] = Nil
 
-    class Animation() {
+    /**
+     *
+     *  A button that appears at distinct rotations and scales in successive frames.
+     *  Appearances are precomputed before the animation starts. Each button is "driven"
+     *  by its own lightweight thread.
+     */
+    class AnimatedButton() {
       lazy val button = reactive.ColourButton(shape, green, red, background = true, NoHint) {
         _ =>
           if (driver.running) driver.stop() else driver.start()
@@ -153,26 +168,33 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       val transforms: Seq[Transform] = {
         val steps = (5 to 10).map{ i => i.toFloat / 5 }
         val sizes = steps ++ steps.reverse
-        for { s <- sizes; r <- 0 to 15  }
-          yield { glyph: Glyph => glyph.scaled(s).turned(r*22.5f, tight = true) }
+        for {scale <- sizes; rotation <- 0 to 15}
+          yield { glyph: Glyph => glyph.scaled(scale).turned(rotation*22.5f, tight = true) }
       }
 
+      /** This glyph's appearance as a sequence of  transforms applied to `button` */
       lazy val animated: Transformable = Transformable(button, transforms)
+      /** The thread that selects successive transformed appearances at each frame. */
       lazy val driver:   Periodic[Int] = Periodic[Int](animated, 2.0)
     }
 
-    val animations: Seq[Animation] = for { i<-1 to 12 } yield new Animation()
+    val animations: Seq[AnimatedButton] = for { i<-1 to 12 } yield new AnimatedButton()
 
     Col(align=Center)(
-
-      Paragraph(50, Justify)(
-        """A grid of rotating buttons. Individual buttons are started/stopped
-          |by clicking on them; and can be started or stopped together with
-          |the Start all / Stop all toggle button. The speed of the last
-          |started/stopped button(s) can be adjusted with the Faster/Slower
-          |buttons.
-          |
-          |""".stripMargin), ex,
+      <div width="60em" align="justify">
+        <p>
+          A grid of rotating buttons. Individual buttons are started/stopped
+          by clicking on them; and can be started or stopped together with
+          the Start all / Stop all toggle button. The speed of the last
+          started/stopped button(s) can be adjusted with the Faster/Slower
+          buttons.
+        </p>
+        <p>
+          Each button is animated by its own lightweight <b>Periodic</b> driver.
+          Its appearance in each frame is computed in advance of the anim_ation, so
+          that potentially in_efficient "online" calc_ulations are not necessary.
+        </p>
+      </div>, ex,
       Row(
         TextToggle(whenFalse="Start all", whenTrue="Stop all", initially = false){
           case true  =>
