@@ -71,6 +71,14 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         // each step turns the mobile by a degree
         override def step(): Unit = set((current + oneDegree))
 
+        object Blobs {
+          val blob1, blob2, blob3: GlyphAt = blob.at(0, 0)
+          val connect12 = lineBetween(blob1, blob2)(blueString)
+          val connect23 = lineBetween(blob2, blob3)(whiteString)
+          val connect31 = lineBetween(blob3, blob1)(redString)
+          val diagram = superimposed(blob1, blob2, blob3, connect12, connect23, connect31)
+        }
+
         /**
          * Generate the next frame: the scenery, the mobile, and
          * various blobs and spots connected by pieces of string.
@@ -81,15 +89,18 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           val dx = orbit*Math.cos(3f*theta).toFloat
           val ddy = orbit*Math.cos(4f*theta).toFloat
           val dy = orbit*Math.sin(theta).toFloat
+
+          { import Blobs._
+            blob1.moveTo(-orbit,  ddy)
+            blob2.moveTo(dx, orbit)
+            blob3.moveTo(orbit, dy)
+          }
+
+
           superimposed(
             scenery,
             mobile.turn(degrees.toFloat),
-            // coordinates are relative to the centre of the superposition
-            blob.at(-orbit,  ddy), spot.at(dx, orbit), spot.at(orbit,  dy),
-
-            line(-orbit, ddy,              dx, orbit)(whiteString),
-            line(dx, orbit,  orbit, dy)(redString),
-            line(orbit, dy,  -orbit, ddy)(blueString),
+            Blobs.diagram
           )
         }
 
