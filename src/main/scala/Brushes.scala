@@ -3,6 +3,7 @@ package glyph
 
 import org.sufrin.glyph.NumberUtils.hexToInt
 import org.sufrin.glyph.unstyled.Text
+import org.sufrin.glyph.GlyphShape.{FILL, STROKE}
 
 /**
  * A convenience trait that defines several brushes.
@@ -106,6 +107,10 @@ object Brushes extends Brushes {
           decoratedBrush(prefix).dashed(on.toFloat, off.toFloat)
         case s"$prefix~$seg~$lim" if isFloat(seg) && isFloat(lim) =>
           decoratedBrush(prefix).sliced(seg.toFloat, lim.toFloat)
+        case s"$prefix.stroke" =>
+          decoratedBrush(prefix)(mode=STROKE)
+        case s"$prefix.fill" =>
+          decoratedBrush(prefix)(mode=FILL)
         case _ =>
           basicBrush(specification)
       }

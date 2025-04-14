@@ -117,6 +117,7 @@ class Brush(var name: String) extends Paint {
       . alpha(alpha)
       . strokeMiter(miter)
       . pathEffect(pathEffect)
+      . filter(filter)
       . shader(shader)
       . blendMode(blendMode)
 
