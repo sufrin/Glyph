@@ -3,8 +3,11 @@ package tests
 
 import styled.BookSheet
 
-import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove}
-import GlyphTypes.{EventKey, Window}
+import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, MouseButton}
+import GlyphTypes.{EventKey, Scalar, Window}
+
+import org.sufrin.glyph.Brushes.blue
+import org.sufrin.glyph.tests.DocumentationDiagrams.white
 
 import scala.collection.mutable
 
@@ -35,16 +38,25 @@ class Arena(background: Glyph) extends ReactiveGlyph {
 
   val displayList: mutable.Queue[GlyphAt] = new mutable.Queue[GlyphAt]()
 
+  def selected(location: Vec): Seq[GlyphAt] = displayList.toSeq.filter(_.contains(location))
+
+  var selection: Seq[GlyphAt] = Seq.empty
+
   override def accept(key: EventKey, location: Vec, window: Window): Unit = {
-    if (key.isPressed) {
-      for { g <- displayList } { g.dx += 20; g.dy+=30 }
-    }
     reDraw()
   }
 
-  override def accept(event: EventMouseButton, location: Vec, window: Window): Unit = super.accept(event, location, window)
+  override def accept(event: EventMouseMove, location: Vec, window: Window): Unit = {
+    import Modifiers._
+    if (event.include(Primary|Pressed) && selection.length==1) selection(0).moveTo(location.x-selection(0).w/2, location.y-selection(0).h/2)
+    reDraw()
+  }
 
-  override def accept(event: EventMouseMove, location: Vec, window: Window): Unit = super.accept(event, location, window)
+  override def accept(event: EventMouseButton, location: Vec, window: Window): Unit = {
+    import Modifiers._
+    if (event.include(Primary|Pressed)) selection=selected(location) else selection = Seq.empty
+    reDraw()
+  }
 
 
   def copy(fg: Brush=fg, bg: Brush=bg): Arena = new Arena(background)
@@ -54,9 +66,10 @@ class Arena(background: Glyph) extends ReactiveGlyph {
 
   def diagonal: Vec = background.diagonal
 
-  import GlyphShape.{FILL,STROKE}
-  val aliveBrush: Brush = Brushes.red(width=4, mode=STROKE)
+  val aliveBrush: Brush = Brushes.red(width=4, mode=GlyphShape.STROKE)
   val alive: GlyphShape = GlyphShape.rect(background.w-4, background.h-4)(aliveBrush)
+
+  val selectString: Brush = Brushes("white/5/ROUND~5~4")
 
   override def accept(event: GlyphEvent, location: Vec, window: Window): Unit = event match {
     case _: GlyphEnter =>
@@ -67,12 +80,14 @@ class Arena(background: Glyph) extends ReactiveGlyph {
       reDraw()
   }
 
+  val blob = GlyphShape.circle(6)(Brushes("blue/2.stroke"))
 
   def draw(surface: Surface): Unit = surface.withClip(diagonal) {
     surface.declareCurrentTransform(this)
     drawBackground(surface)
     background.draw(surface)
     for { shape <- displayList } shape.draw(surface)
+    for { shape <- selection } GlyphShape.line(Vec(0,h), Vec(shape.x, shape.y)+(shape.diagonal scaled 0.5f))(selectString).draw(surface)
     if (guiRoot.hasKeyboardFocus(this)) alive.draw(surface)
   }
 
@@ -85,16 +100,24 @@ class Game1(sheet: StyleSheet) {
   import Brushes._
   import style.{ex,em}
 
+  def thing(r: Scalar, brusha: Brush, brushb: Brush): GlyphShape = {
+    import GlyphShape._
+    rect(10, 10)(brusha(mode=FILL,cap=ROUND)) ~~~ circle(r)(brushb(mode=STROKE))
+  }
+
   val arena = new Arena(rect(600, 500)(grey1))
+  def randx = Math.random.toFloat*(arena.w-50)
+  def randy = Math.random.toFloat*(arena.h-50)
+
   val shapes = arena.displayList
   locally {
-    for { i<-1 to 6 } shapes.enqueue(circle(i*20f)(red(width=6f*i, mode=STROKE)).at(i*55f, i*55f))
-  }
+    for { i<-1 to 15 } shapes.enqueue(thing(50, red(width=5), blue(width=5)).at(randx, randy))
+    }
 
 
   val GUI: Glyph = NaturalSize.Col(align=Center)(
     <div width="70em" align="justify">
-      <p align="center">This is a little experimental game.</p>
+      <p align="center">This is utterly inconsequential for the moment.</p>
     </div>,
     ex,
     arena.framed(),
