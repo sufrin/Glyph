@@ -34,7 +34,7 @@ trait GlyphShape { thisShape =>
   def ||| (thatShape: GlyphShape): GlyphShape = new GlyphShape {
 
     def draw(surface: Surface): Unit = {
-      surface.withOrigin(0,      (h - thisShape.h)*0.5f) { thisShape.draw(surface) }
+      surface.withOrigin(0,           (h - thisShape.h)*0.5f) { thisShape.draw(surface) }
       surface.withOrigin(thisShape.w, (h - thatShape.h)*0.5f) { thatShape.draw(surface) }
     }
 
@@ -84,12 +84,7 @@ trait GlyphShape { thisShape =>
   def apply(brush: Brush): GlyphShape = thisShape
 }
 
-case class GlyphAt(var dx: Scalar, var dy: Scalar, shape: GlyphShape) extends GlyphShape {
-   def draw(surface: Surface): Unit =
-       surface.withOrigin(dx-(shape.w/2), dy-(shape.h/2)) { shape.draw(surface) }
 
-  def diagonal: Vec = shape.diagonal
-}
 
 object GlyphShape {
   /**
@@ -200,6 +195,14 @@ object GlyphShape {
     def diagonal: Vec = Vec.Zero
   }
 
+  def lineBetween(l: GlyphAt, r: GlyphAt)(brush: Brush): GlyphShape = new GlyphShape {
+      val diagonal: Vec = Vec.Zero
+
+      def draw(surface: Surface): Unit =
+        surface.drawLines$(brush, l.x, l.y, r.x, r.y)
+  }
+
+
   /**
    * A `(width, height)` rectangle, occupying a `(width+fg.strokeWidth, height+fg.strokeWidth)` rectangle.
    * Unless `fg.mode=PaintMode.STROKE` the rectangle is filled.
@@ -263,6 +266,7 @@ object GlyphShape {
 
   }
 
+
   /**
    * A shape that is drawn as the superimposition of the given shapes, with the later layers
    * in the sequence appearing on top of the earlier layers regardless of their
@@ -300,4 +304,18 @@ object GlyphShape {
   val STROKE:          PaintMode = PaintMode.STROKE
   val FILL:            PaintMode = PaintMode.FILL
   val STROKE_AND_FILL: PaintMode = PaintMode.STROKE_AND_FILL
+}
+
+case class GlyphAt(var x: Scalar, var y: Scalar, shape: GlyphShape) extends GlyphShape {
+  def draw(surface: Surface): Unit =  surface.withOrigin(x, y) { shape.draw(surface) }
+
+  def diagonal: Vec = shape.diagonal
+
+  def contains(p: Vec): Boolean = {
+    val (r, b) = (x+w, y+h)
+    x <=p.x&&p.x<r && y<=p.y&&p.y<b
+  }
+
+  def moveTo(x$: Scalar, y$: Scalar): Unit = { x=x$; y=y$}
+  def moveBy(x$: Scalar, y$: Scalar): Unit = { x += x$; y += y$}
 }

@@ -137,6 +137,23 @@ class Brush(var name: String) extends Paint {
       .shader(getShader)
       .blendMode(getBlendMode)
 
+  /** Copy the properties of `that: Brush` to `this: Brush` */
+  def copy(that: Brush): Brush = {
+      color(that.color)
+      strokeWidth(that.strokeWidth)
+      strokeCap(that.strokeCap)
+      antiAlias(that.antiAliased)
+      dither(that.dithered)
+      mode(that.mode)
+      alpha(that.alpha)
+      strokeMiter(that.strokeMiter)
+      pathEffect(that.getPathEffect)
+      filter(that.getImageFilter)
+      shader(that.getShader)
+      blendMode(that.getBlendMode)
+      this
+  }
+
   /** Mutation */
   @inline def color(i: Int): Brush = {
     super.setColor(i); this
