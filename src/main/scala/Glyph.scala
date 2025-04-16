@@ -167,21 +167,6 @@ trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyp
   val xStretch: Scalar = 0.0f
   val yStretch: Scalar = 0.0f
 
-  private type Shifter = (Scalar, Scalar, Scalar)=>Scalar
-  /**
-   *  Expandability of this glyph when it is being set
-   *  in a row or a column.
-   */
-  var hStretch, vStretch: Shifter =  { case (space: Scalar, proportion: Scalar, size: Scalar) => (space - size) * proportion}
-  def shiftable(h: Shifter = hStretch, v: Shifter = vStretch): this.type = {
-    hStretch = h
-    vStretch = v
-    this
-  }
-  def leftShifted:   this.type = shiftable { case (space: Scalar, proportion: Scalar, size: Scalar) => 0 }
-  def rightShifted:  this.type = shiftable { case (space: Scalar, proportion: Scalar, size: Scalar)  => space-size }
-  def centerShifted: this.type = shiftable { case (space: Scalar, proportion: Scalar, size: Scalar)  => 0.5f*(space-size) }
-
 
   /**
    *  Vertical drop from a given location to the baseline. Usually
@@ -401,7 +386,7 @@ abstract class Composite(components: Seq[Glyph]) extends Glyph {
 
   def draw(surface: Surface): Unit = {
     drawBackground(surface)
-    val delta: Vec = Vec.Zero//Vec(0, baseLine)
+    val delta: Vec = Vec.Zero
     for { glyph <- components} {
           surface.withOrigin(glyph.location+delta){
           glyph.draw(surface)
@@ -441,6 +426,18 @@ abstract class Composite(components: Seq[Glyph]) extends Glyph {
     if (sat(this)) effect(this)
     for { glyph <- glyphs} glyph.forEach(sat)(effect)
   }
+
+}
+
+object Glyph {
+  @inline def logicalLocation(glyph: Glyph, offset: Vec): (Int, Int) = logicalLocation(glyph.rootDistance+offset)
+  @inline def logicalLocation(offset: Vec): (Int, Int)               = (offset.x.toInt, offset.y.toInt)
+  /**  Consistent displacement to align (by proportion) a glyph of a given size in the given space */
+  @inline def displaceToFit (space: Scalar, proportion: Scalar, size: Scalar): Scalar =  (space - size) * proportion
+
+}
+
+trait AlignableGlyph extends Glyph {
 
 }
 

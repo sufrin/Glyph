@@ -703,8 +703,11 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       val redFill   = red(width=20, cap=ROUND, mode=PaintMode.FILL)
       val em = pageSheet.em
 
+
       val shapes: List[GlyphShape] =
-        List( cr, cb, cg, cg.bg(yellow),
+        List(
+          arrow(red), arrow(red(width=3,mode=STROKE)), arrow(blue), arrow(blue(mode=STROKE)),
+        cr,           cb,                     cg,                                   cg.bg(yellow),
         (cr ~~~ cb),  (cr~~~cb).bg(yellow),   (cr~~~cb.bg(yellow)),                 (cr.bg(yellow)~~~cb),
         (cr --- cg),  (cr --- cg).bg(yellow), (cr---cb.bg(yellow)),                 (cr.bg(yellow)---cb),
         (cr---cb.bg(yellow)).bg(green).turned(45), (cr---cb.bg(yellow)).bg(green).turned(45).bg(red),                     (cr---cb.bg(yellow)).bg(green),       (cr.bg(yellow)---cb).bg(green),
@@ -729,6 +732,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         </p>)
       )
     }
+
+
 
 
   val GUI: Glyph = book.Layout.leftCheckBoxes(buttonAlign = Right, pageAlign = Center).enlarged(30)

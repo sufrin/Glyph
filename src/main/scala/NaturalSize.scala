@@ -64,7 +64,7 @@ object NaturalSize {
           if (atBaseline && glyph.baseLine>0)
             base-glyph.baseLine//((height-glyph.h)+(glyph.h-glyph.baseLine))-(height-base)
           else
-            glyph.vStretch(height, proportion, glyph.h)
+            Glyph.displaceToFit(height, proportion, glyph.h)
         glyph @@ Vec(x, extra + y)
         x += glyph.w + skip
       }
@@ -143,7 +143,7 @@ object NaturalSize {
       val theUniformGlyphs = if (uniform) theGlyphs.map(_.enlargedTo(width, maxHeight, bg=bg)) else theGlyphs
       var x, y = 0f
       for {glyph <- theUniformGlyphs} {
-        val extra = glyph.hStretch(width, proportion, glyph.w)
+        val extra = Glyph.displaceToFit(width, proportion, glyph.w)
         glyph @@ Vec(x + extra, y)
         y += glyph.h + skip
       }

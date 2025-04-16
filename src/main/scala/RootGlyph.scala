@@ -416,13 +416,10 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
     (x,y)
   }
 
-  def onScreenSize(g: Glyph): (Int, Int) = eventHandler.onScreenSize(g)
+  def onScreenDiagonal(g: Glyph): (Int, Int) = eventHandler.onScreenDiagonal(g)
 
   def contentLocation: (Int, Int) = eventHandler.contentLocation
 
-  def logicalLocation(glyph: Glyph, offset: Vec): (Int, Int) = eventHandler.logicalLocation(glyph.rootDistance+offset)
-
-  def logicalLocation(offset: Vec): (Int, Int)               = eventHandler.logicalLocation(offset)
 
 /** The EventHandler (if any) managing this Interaction */
   var  eventHandler: EventHandler = null

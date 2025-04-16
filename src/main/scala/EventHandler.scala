@@ -42,10 +42,13 @@ trait EventHandler extends Consumer[Event] {
   /**
    *   Implement mousewheel scrolling/scaling for the whole GUI if
    *   overridden as true.
+   *
+   *   OBSOLETE
    */
   val scrollWholeWindow: Boolean = false
-  /** The current hardwareScale factor for the whole window */
+  /** The current scale factor for the whole window */
   var softwareScale = 1.0f
+
   /** The current pan- and tilt- factors for the whole window. */
   var panFactor, tiltFactor = 0.0f
 
@@ -62,8 +65,10 @@ trait EventHandler extends Consumer[Event] {
   /**
    *   Scroll/hardwareScale the entire window
    *
-   *   This is method is intended largely to be used when
+   *   This method is intended largely to be used when
    *   debugging glyph layouts that might be incorrect, or too large.
+   *
+   *   OBSOLETE
    */
   def scrollWindow(scroll: EventMouseScroll): Unit = {
      import io.github.humbleui.jwm.KeyModifier
@@ -160,7 +165,11 @@ trait EventHandler extends Consumer[Event] {
 
   import GlyphTypes.Scalar
   /*
-   * The screen-resolution-dependent hardwareScale factor: larger for higher-resolution screens
+   * The screen-resolution-dependent scale factor (units=>pixels): larger for higher-resolution screens
+   *
+   * Mouse events are reported in pixels and need de-scaling to GUI units to mean anything useful.
+   *
+   * @see mouseLocation
    */
   def hardwareScale: Scalar = screen.getScale
 
@@ -169,18 +178,30 @@ trait EventHandler extends Consumer[Event] {
    */
   @inline def mouseLocation(mouseX: Int, mouseY: Int): Vec = Vec((mouseX / hardwareScale) / softwareScale - panFactor, (mouseY /hardwareScale) / softwareScale - tiltFactor)
 
+  /** Absolute location on the physical screen of this window's top left corner. */
   def contentLocation: (Int, Int) = {
     val ca = window.getContentRectAbsolute
     (ca.getLeft, ca.getTop)
   }
 
+  /**
+   *
+   * @return the effective scale factor: screen units => pixels
+   */
   def effectiveScale: Scalar = hardwareScale*softwareScale
 
-  def onScreenSize(size: Vec): Pixels = ((size.x*effectiveScale).toInt, (size.y*effectiveScale).toInt)
-  def onScreenSize(g: Glyph): Pixels   = onScreenSize(g.diagonal)
+  /**
+   *
+   * @param diagonal  -- in screen units
+   * @return (px, py) -- in integral pixels
+   */
+  def onScreenDiagonal(diagonal: Vec): Pixels = ((diagonal.x*effectiveScale).toInt, (diagonal.y*effectiveScale).toInt)
 
-  def logicalLocation(x: Scalar, y: Scalar): (Int, Int) = (x.toInt, y.toInt)
-  def logicalLocation(loc: Vec): (Int, Int) = logicalLocation(loc.x, loc.y)
+  /**
+   * Diagonal of the given glyph in integral pixels.
+   */
+  def onScreenDiagonal(g: Glyph): Pixels   = onScreenDiagonal(g.diagonal)
+
 
 
   def accept(e: Event): Unit = {

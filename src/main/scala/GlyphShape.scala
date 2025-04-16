@@ -202,6 +202,13 @@ object GlyphShape {
         surface.drawLines$(brush, l.x, l.y, r.x, r.y)
   }
 
+  def arrow(fg: Brush): GlyphShape = {
+    val a = 3.5f
+    val b = 3f*a
+    val c = 20f
+    val d = 30f
+    polygon((0,a), (0, b), (c, b), (c, a+b), (d, (a+b)/2), (c, 0), (c, a), (0, a))(fg)
+  }
 
   /**
    * A `(width, height)` rectangle, occupying a `(width+fg.strokeWidth, height+fg.strokeWidth)` rectangle.

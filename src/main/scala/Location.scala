@@ -51,7 +51,7 @@ object Location {
     def reDraw(): Unit = glyph.guiRoot.reDraw()
 
     def logicalLocation: (Int, Int) = {
-      val result = glyph.guiRoot.logicalLocation(glyph, offset)
+      val result = Glyph.logicalLocation(glyph, offset)
       result
     }
 
@@ -68,7 +68,7 @@ object Location {
    */
   case class OnScreen(showing: Glyph)(x: Scalar, y: Scalar, val hardwareScale: Scalar = showing.guiRoot.hardwareScale) extends Location {
     def reDraw(): Unit              = showing.guiRoot.reDraw()
-    def logicalLocation: Pixels     = showing.guiRoot.logicalLocation(Vec(x, y))
+    def logicalLocation: Pixels     = Glyph.logicalLocation(Vec(x, y))
     def screen: Screen              = showing.guiRoot.eventHandler.screen
     def softwareScale: Scalar       = showing.guiRoot.softwareScale
     def contentLocation: Pixels     = (0,0)

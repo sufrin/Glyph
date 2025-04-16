@@ -54,6 +54,13 @@ trait Application {
   var useScreen: Char = 'p'
   var scaleFactor = 1.0f
 
+  /**
+   * @param args "command-line" arguments that were passed to the application
+   *
+   * Parse the standard `Application` arguments (listed on the terminal in response to
+   * a flag of "-h"), then establish and startan `Interaction` accordingly. Its `args` will
+   * be the non-standard arguments that were passed to `main`.
+   */
   def main(args: Array[String]): Unit = {
     import io.github.humbleui.jwm.Screen
     var icon: Option[String] = defaultIconPath
@@ -87,12 +94,13 @@ trait Application {
           |-scale=d.dd     => scale the initial display
           |-screen=[0123p] => use the numbered screen (012) or the primary screen (p) for the initial display
           |-icon=$$path    => set the icon path to $$path
+          |-logevents      => log (on the terminal) every event. Usually provides far too much detail.
+          |-noresize       => forbid window resizing
           |""".stripMargin)
       }
       case _ =>  extraArgs += arg
     }
 
-    println(s"$logPrefix")
 
     App.start(() => {
       new Interaction(App.makeWindow(), GUI, scaleFactor, { if (GUI.hasGuiRoot) whenStarted()}) {

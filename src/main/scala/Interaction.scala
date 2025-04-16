@@ -17,6 +17,8 @@ import org.sufrin.glyph.GlyphTypes.Scalar
  *
  * @param window the (main) interaction window
  * @param guiRoot the root glyph of the GUI for this app/window
+ * @param initialScaleFactor the interface is scaled on the screen by this factor * the screen's intrinsic units=>pixels factor
+ * @param informRoot invoked just after the interface has become live: window size established and window visible (see Application.whenStarted)
  *
  * Here's an example main programthat creates a window, associates it with
  * a root GUI glyph, and starts the GUI
