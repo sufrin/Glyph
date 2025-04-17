@@ -2,7 +2,8 @@ package org.sufrin.glyph
 
 import GlyphTypes.Scalar
 
-import io.github.humbleui.skija.{PaintMode, Path}
+import io.github.humbleui.skija.{PaintMode, Path, PathFillMode}
+import io.github.humbleui.types.Rect
 
 /**
  *  Lightweight precursor to `Glyph`. This type arrived in Glyph 0.9 and may eventually
@@ -255,10 +256,11 @@ object GlyphShape {
       }
     }
 
-    var offsetL, offsetT = 0f
+    private var offsetL, offsetT = 0f
 
     val diagonal = {
       val bounds = path.getBounds()
+      path.updateBoundsCache()
       offsetL = bounds._left -fg.strokeWidth/2
       offsetT = bounds._top  -fg.strokeWidth/2
       Vec(bounds._right-bounds._left+fg.strokeWidth, bounds._bottom-bounds._top+fg.strokeWidth)
@@ -270,6 +272,35 @@ object GlyphShape {
      * This polygon superimposed on a polygon with the same vertices filled with `brush`
      */
     override def bg(brush: Brush): GlyphShape = this ~~~ polygon(vertices)(brush(mode=FILL))
+
+  }
+
+  /** Experimental mutable shape. */
+  class PathShape(fg: Brush) extends GlyphShape {
+    val path = new Path
+
+    def draw(surface: Surface): Unit = {
+      val bounds = path.getBounds()
+      val offsetL = bounds._left -fg.strokeWidth/2
+      val offsetT = bounds._top  -fg.strokeWidth/2
+      surface.withOrigin(-offsetL, -offsetT) { surface.drawPath(fg, path) }
+    }
+
+    def diagonal: Vec =  {
+      val bounds = path.getBounds()
+      Vec(bounds._right-bounds._left+fg.strokeWidth, bounds._bottom-bounds._top+fg.strokeWidth)
+    }
+
+    def fillMode: PathFillMode = path.getFillMode
+    def fillMode(mode: PathFillMode) = path.setFillMode(mode)
+
+    def moveTo(x: Scalar, y: Scalar):PathShape = { path.moveTo(x, y); this }
+    def lineTo(x: Scalar, y: Scalar):PathShape = { path.lineTo(x, y); this }
+    def closePath: PathShape = { path.closePath(); this }
+    def addRect(x: Scalar, y: Scalar, w: Scalar, h: Scalar):PathShape =
+        { path.addRect(Rect.makeXYWH(x, y, w, h)); this }
+
+
 
   }
 

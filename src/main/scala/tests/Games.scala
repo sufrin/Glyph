@@ -6,6 +6,7 @@ import styled.BookSheet
 import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, MouseButton}
 import GlyphTypes.{EventKey, Scalar, Window}
 
+import io.github.humbleui.skija.PathFillMode
 import org.sufrin.glyph.Brushes.blue
 import org.sufrin.glyph.tests.DocumentationDiagrams.white
 
@@ -109,10 +110,21 @@ class Game1(sheet: StyleSheet) {
   def randx = Math.random.toFloat*(arena.w-50)
   def randy = Math.random.toFloat*(arena.h-50)
 
-  val shapes = arena.displayList
+  val path: PathShape = new PathShape(red(width=3, mode=STROKE))
+
+  val shapes: mutable.Queue[GlyphAt] = arena.displayList
+
   locally {
+    shapes.enqueue(path.at(0, 0))
     for { i<-1 to 15 } shapes.enqueue(thing(50, red(width=5), blue(width=5)).at(randx, randy))
+
+    path.fillMode(PathFillMode.EVEN_ODD)
+    path.moveTo(100, 100)
+    path.lineTo(150, 150)
+    path.addRect(150, 150, 50, 60)
+    path.addRect(200, 210, 50, 60)
     }
+
 
 
   val GUI: Glyph = NaturalSize.Col(align=Center)(
