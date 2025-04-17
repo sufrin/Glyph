@@ -69,6 +69,7 @@
 \end{center}
 }
 
+\def\figscale{0.25}
 \def\SAVEDFIGURE#1#2{
 \ifdefined\DRAFT
 \begin{figure}
@@ -76,9 +77,9 @@
 \label{#1}
 \end{figure}
 \else
-\begin{figure}[h]
+\begin{figure}[hbt]
 \begin{center}
-\pdffig[scale=0.36]{SAVED/#1}
+\pdffig[scale=\figscale]{SAVED/#1}
 \caption{#2}
 \label{#1}
 \end{center}
@@ -2091,6 +2092,133 @@ def calculemus(): Unit =
 def  format(d: Double): String = f"$d%.5g"
 \end{scala}
 
+\clearpage
+%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+\S{Images of GUIs}
+
+Figures \ref{Splash} to \ref{EtcCheckBox} show images of a few pages
+of the \texttt{tests.demonstrationBook.Pages} example. They 
+illustrate some of the available tools in use, and their source
+code shows how the tools can be used. Figures \ref{DynamicResizing1} and
+\ref{DynamicResizing2} show a dynamically configurable GUI.
+
+
+\SAVEDFIG Splash/the Splash page with checkboxes to select stylistic features/
+\bgroup\def\figscale{0.23}
+\SAVEDFIG SplashHelp/Help for the Splash page/
+\SAVEDFIG Welcome/Notebook style welcome page, with sidebar page-selector/
+\egroup
+\SAVEDFIG SNotebookStyle/a different notebook style page-selector /
+\SAVEDFIG MenuStyle/the Menu style page-selector /
+\SAVEDFIG TransformsTurns/Turn transformations /
+\SAVEDFIG OverlaysAnnotation/Annotations  page/
+\SAVEDFIG OverlaysAnnotation2/Annotations page with grid and corner enabled/
+\SAVEDFIG TransformsMirror/Mirror transformations /
+\SAVEDFIG EtcGlyphShape/Exploration of the GlyphShape API /
+\SAVEDFIG EtcAnimation1/An animation in progress /
+\SAVEDFIG EtcCheckBox/Varieties of checkbox/
+\SAVEDFIG DynamicResizing1/Viewport onto a dynamically configurable glyph/
+\SAVEDFIG DynamicResizing2/Viewport onto a dynamically configurable glyph (different configuration)/
+
+\clearpage
+\SS{Source that gave rise to Figures \ref{DynamicResizing1} and \ref{DynamicResizing2}}
+\begin{scala}
+val ResizeTest: Glyph = {
+  // A textual glyph whose dimensions and style are both specified by context.
+  // Its width is 0.95 * the width of the container it will occupy.
+  def theText(implicit context: StyleSheet): Glyph =
+   <div width="0.5*container.width" align="justify">
+    // time the glyph was last constructed
+    <p align="center" fontScale="0.7">{s"${new java.util.Date()}"}</p>
+    // title
+    <p align="center" fontScale="2">De Rerum Natura</p>
+    <p>
+      De Rerum Natura is a beau_tiful small yarn producer in France. The
+      wool used is a blend of French and Euro_pean merino raised with
+      con_cern for the well_being of an_imals and the rec_ov_ery of their
+      wool.  All man_ufact_uring is carr_ied out in France with small
+      flour_ishing mills and the ut_most care and con_cern for the
+      env_iron_ment.  The res_ult is yarns that are as soft and beau_tiful
+      to knit with as they are to wear.
+    </p>
+    <p>
+      All De Rerum Natura bases are mule_sing<row><span
+      textForeground="red" fontScale="0.5">(*)</span></row> free, and
+      eth_ical_ly and sus_tain_ably produced.
+    </p>
+    <fill width="1*container.width" foreground="red/1~5~5"  height="0.7ex"/>
+    <p fontScale="0.7" labelForeground="red" textForeground="red" hang="* ">
+      Mulesing is the removal of strips of wool-bearing skin from around
+      the breech of a sheep to prevent the parasitic infection flystrike.
+      The wool around the buttocks can retain feces and urine, which
+      attracts flies.
+    </p>
+    <fill width="1*container.width" foreground="red/1~5~5"  height="0.7ex"/>
+    <div align="center" fontSkip="0ex">
+    <p fontScale="0.4" >{s"container: ${context.containerDiagonal}"}</p>
+    <p fontScale="0.4" >{s"window: ${context.windowDiagonal}"}</p>
+    <p fontScale="0.4" >{s"screen: ${context.screenDiagonal}"}</p>
+    </div>
+  </div>
+
+
+\end{scala}
+\clearpage
+\begin{scala}
+  // resizeable glyph whose content is a function of a stylesheet
+  lazy val resizeable =
+      styled.Resizeable { case context: StyleSheet => theText(context) }
+
+  val viewPort =
+      unstyled.dynamic.ViewPort(resizeable,
+                                fg=redFrame,
+                                initialPortDiagonal=resizeable.diagonal)
+
+  val widths = List(80, 70, 60, 50, 40, 30, 20)
+  val radioWidths =
+    styled.RadioCheckBoxes(widths.map{ems => s"${ems}ems"}, prefer = "70ems"){
+      case None =>
+      case Some(widthIndex)  => // index of the selected checkbox
+        viewPort.reset()
+        // Choose a column width in ems, then rebuild resizeable
+        resizeable.atSize(Vec(widths(widthIndex)*style.emWidth, 0f))
+    }
+
+  val scales = List(0.3f, 0.5f, 0.8f, 1.0f, 1.2f, 1.5f, 1.7f)
+  val radioScales =
+    styled.RadioCheckBoxes(scales.map{ scale => s"*$scale"}, prefer="*1.0") {
+      case None =>
+      case Some(scaleIndex) => // index of the selected checkbox
+        viewPort.reset()
+        // Choose a scaled text font, then rebuild resizeable
+        resizeable.currentStyle =
+           resizeable.currentStyle.copy(
+              textFontSize=protoStyle.textFontSize*scales(scaleIndex))
+        resizeable.atSize(resizeable.currentStyle.containerDiagonal)
+    }
+
+  Col(align=Center)(
+      FixedSize.Row(width=80ems, align=Mid)(
+        Col(align=Center)(radioWidths.glyphButtons()),
+        style.hFill(), viewPort, style.hFill(),
+        Col(align=Center)(radioScales.glyphButtons(align=Left)),
+      ),
+      style.vFill(3),
+      <p width="80ems" align="justify">
+        This page demonstrates the interaction between a viewport and a
+        dynamically resizeable glyph.  The subject matter of the text is
+        rendered afresh whenever a width checkbox is selected, or a multiple
+        of the original font size is clicked.  The viewport can be navigated
+        by using the mousewheel or directional arrows. (Widths are expressed
+        in ems in the original font size).
+      </p> enlarged 20 framed(red(width=1).sliced(5,5)) enlarged 10
+  )
+}
+\end{scala}
+
+\clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
@@ -2143,148 +2271,6 @@ of the focus protocol.
 
 Dominic Catizone\Footnotemark{$*$} made a remark that helped me solve a
 problem with designing the geometry of (non-quadrant) rotations of bounding boxes.
-\end{document}
-
-\clearpage
-\S{Pages from {DemonstrationNotebook}}
-
-Figures \ref{Help} to \ref{Etc-Split} show some of the pages
-of the \texttt{DemonstrationNotebook} example. They are intended to
-illustrate some of the available tools in use, and their source
-code shows how the tools can be used.
-
-The  (top-level) notebook is structured as
-a sequence of pages with titles. Pages may themselves
-have nested notebooks, as exemplified by the
-\Scala{"Etc*"} page below.
-
-The \Scala{Layout} feature of a notebook supports methods, such as
-\Scala{rightButtons}, \Scala{leftButtons}, ... whose invocation
-yields a GUI with buttons juxtaposed to a \Scala{OneOf} that has
-a glyph for each defined page.
-
-
-\begin{scala}
-trait DemonstrationPages
-     ...
-     
-     val noteBook = new NoteBook
-     val Page = noteBook.DefinePage
-     
-       Page("Help", "Help for the Demonstration Notebook") {...}
-       Page("New", "Make a new or cloned GUI ") {...} 
-       Page("Menus*", "Window menus and dialogues") {...}
-       Page("Transforms*", "") {...}
-       Page("Overlays*", "Features implemented as ...") {...}
-       Page("Framing*", "") {...}
-       Page("Styles*", "") {...}
-       Page("Events*", "") {...}
-       Page("Fonts*", "..") {...} (HelpStyle.labelStyle)
-       Page("Etc*", "") {
-        val nested = new Notebook {}
-        val Page = nested.DefinePage
-        Page("Animation", "") {...}
-        Page("Grid", "buts = 8 ... ") {...}
-        Page("Blurred", "") {...}
-        Page("Split", "") {...}
-        Page("Scroll", "Scrolling and Scaling with ViewPort") {...}
-        Page("OneOf", "OneOf backgrounds") {...}
-        Page("Sliders", "") {...}
-        Page("CheckBox", "Toggles and Checkboxes") {...}
-        Page("Fonts", "") {...}
-        nested.Layout.rightButtons()
-      }
-      
-      ...
-\end{scala}
-
-\clearpage
-Each of the lazy values defined
-below is bound to one particular notebook layout; and the
-top-level application logic chooses one of them as the GUI
-for the application. Figure \ref{Framing-Text1 |Skewed Tabs|} illustrates
-the ``skewed buttons'' presentation style.
-\begin{scala}
-     ...
-     lazy val asRNotebook = noteBook.Layout.rightButtons()
-     lazy val asLNotebook = noteBook.Layout.leftButtons()
-     lazy val asVNotebook = noteBook.Layout.rotatedButtons(3)
-     lazy val asSNotebook = noteBook.Layout.skewedButtons(0.2f, 0f)
-     lazy val asTNotebook =noteBook.Layout.topButtons()
-     
-} // end DemonstrationPages
-\end{scala}
-
-The application as a whole is an instance of the Glyph \Scala{Application} trait --
-that provides definitions of \Scala{GUI}, \Scala{Title}, \textit{etc.}
-Importantly the standard \Scala{onClose} method invokes a method that
-pops up a dialogue that asks for confirmation when the application window is closed.
-
-\begin{scala}
-object DemonstrationNotebook extends DemonstrationPages with Application {
-  lazy val GUI =
-       if (extraArgs contains "-notebook")   asRNotebook else
-       if (extraArgs contains "-rnotebook")  asRNotebook else
-       if (extraArgs contains "-lnotebook")  asLNotebook else
-       if (extraArgs contains "-snotebook")  asSNotebook else
-       if (extraArgs contains "-vnotebook")  asVNotebook else
-       if (extraArgs contains "-tnotebook")  asTNotebook else
-       if (extraArgs contains "-menu") asMenu else asRNotebook
-
-  def title =
-      s"""SmallTest -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
-
-  override
-  val defaultIconPath: Option[String] = Some ("./flag.png")
-
-  override
-  def onClose(window: Window): Unit = confirmCloseOn(GUI)(window)
-}
-\end{scala}
-
-
-\begin{comment}
-\begin{scala}
-  def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
-    import windowdialogues.Dialogue.OKNO
-    val prompt =
-      Row.centered(PolygonLibrary.closeButtonGlyph scaled 5 enlarged(50),
-                   TextLabel("Do you want to Exit?")(HugeLabelStyle) scaled 0.7f
-                ).enlarged(50)
-    OKNO(prompt,
-         title="Exit Dialogue", ok=" Exit now ", no=" Continue ").InFront(glyph).andThen{
-            case close => if (close) window.close()
-         }
-  }
-\end{scala}
-\end{comment}
-\newpage
-\clearpage
-\SAVEDFIG Help/the Help page/
-\SAVEDFIG New/the New page/
-\SAVEDFIG Menus-Dialogues/the Dialogues subpage of Menus* /
-\SAVEDFIG Transforms-Turn/the Turn subpage of Transforms* /
-\SAVEDFIG Transforms-Tight/the Tight subpage of Transforms* /
-\SAVEDFIG Transforms-Skew/the Skew subpage of Transforms* /
-\SAVEDFIG Transforms-Mirror/the Mirror subpage of Transforms* /
-\SAVEDFIG Overlays-Annotation/the Annotation subpage of Overlays* /
-\SAVEDFIG Overlays-Dialogues/the Dialogues subpage of Overlays* (vertical tabs notebook)/
-\SAVEDFIG Overlays-Dialogues-PoppedUp/a Popped-up dialogue (vertical tabs notebook) /
-\SAVEDFIG Framing-Text1 |Skewed Tabs|/the Text1 subpage of Framing* (skewed tabs notebook) /
-\SAVEDFIG Framing-Text2/the Text2 subpage of Framing* /
-\SAVEDFIG Framing-Framed/the Framed subpage of Framing* /
-\SAVEDFIG Framing-Edged/the Edged subpage of Framing* /
-\SAVEDFIG Styles-Framed/the Framed subpage of Styles* /
-\SAVEDFIG Styles-Blurred/the Blurred subpage of Styles* /
-\SAVEDFIG Events-Events/the Events subpage of Events* /
-\SAVEDFIG Etc-Animation/the Animation subpage of Etc* (mid-animation) /
-\SAVEDFIG Etc-Grid-RowsCols/the Rows{/}Cols subpage of Etc*.Grid /
-\SAVEDFIG Etc-Grid-CellSizes/the Cell Sizes subpage of Etc*.Grid /
-\SAVEDFIG Etc-Grid-GlyphPlacement/the Glyph Placement subpage of Etc*.Grid /
-\SAVEDFIG Etc-Blurred/the Blurred subpage of Etc* /
-\SAVEDFIG Etc-Split/the Split subpage of Etc* /
-\clearpage
-
 
 \end{document}
 

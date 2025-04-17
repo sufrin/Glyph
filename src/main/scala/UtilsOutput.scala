@@ -29,7 +29,7 @@ object Output
    *  Useful for generating documentation images.
    */
 
-  def withWriteBar(folder: String="SAVEDGUI", hint: Glyph=null, enabled: => Boolean)(gui: Glyph)(implicit style: StyleSheet): Glyph = {
+  def withWriteBar(folder: String="SAVED", hint: Glyph=null, enabled: => Boolean)(gui: Glyph)(implicit style: StyleSheet): Glyph = {
     import unstyled.static._
     implicit object Style extends StyleSheet
     val r = FilledRect(gui.w - 5, 6f, fg = Brushes.lightGrey)
