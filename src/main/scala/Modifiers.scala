@@ -52,6 +52,7 @@ object Modifiers {
       if ((mouse._buttons & MIDDLE._mask)    !=0) buttons |= Middle
       if ((mouse._buttons & BACK._mask)      !=0) buttons |= Back
       if ((mouse._buttons & FORWARD._mask)   !=0) buttons |= Forward
+      if (buttons!=0) buttons |= Pressed
       mouse._modifiers | buttons
     case mouse: EventMouseScroll =>
          mouse._modifiers
@@ -101,10 +102,11 @@ object Modifiers {
         }
 
 
-    def include(mask: Int): Boolean = 0 != (modifiers & mask)
-    def exclude(mask: Int): Boolean = 0 == (modifiers & mask)
-    def are(mask: Int): Boolean = mask == (modifiers & mask)
-    def any: Boolean = modifiers  != 0
+    @inline def includeAll(mask: Int): Boolean = mask == (modifiers & mask)
+    @inline def includeSome(mask: Int): Boolean = 0 != (modifiers & mask)
+    @inline def exclude(mask: Int): Boolean = 0 == (modifiers & mask)
+    @inline def are(mask: Int): Boolean = modifiers == mask
+    @inline def any: Boolean = modifiers  != 0
   }
 
     def toBitmap(event: Event): Bitmap = Modifiers.apply(event)

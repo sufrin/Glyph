@@ -98,24 +98,24 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
     val ANYSHIFT    = ANYCONTROL | Alt
     val mods: Bitmap = toBitmap(key)
 
-    if (mods.include(Pressed)) key._key match {
+    if (mods.includeSome(Pressed)) key._key match {
       case END        => TextModel.end()
-      case LEFT if mods.include(ANYCONTROL) => TextModel.end()
+      case LEFT if mods.includeSome(ANYCONTROL) => TextModel.end()
       case LEFT       => TextModel.mvLeft()
       case HOME       => TextModel.home()
-      case RIGHT if mods.include(ANYCONTROL) => TextModel.home()
+      case RIGHT if mods.includeSome(ANYCONTROL) => TextModel.home()
       case RIGHT      => TextModel.mvRight()
       case BACKSPACE  => TextModel.del()
       case DELETE     => TextModel.mvRight(); TextModel.del()
       case ENTER      => onEnter(text)
-      case C if mods.include(ANYCONTROL) =>
+      case C if mods.includeSome(ANYCONTROL) =>
         Clipboard.set(new ClipboardEntry(ClipboardFormat.TEXT, text.getBytes()))
 
-      case X | U if mods.include(ANYCONTROL) =>
+      case X | U if mods.includeSome(ANYCONTROL) =>
         Clipboard.set(new ClipboardEntry(ClipboardFormat.TEXT, text.getBytes()))
         TextModel.clear()
 
-      case V if mods.include(ANYCONTROL) =>
+      case V if mods.includeSome(ANYCONTROL) =>
         val entry = Clipboard.get(ClipboardFormat.TEXT).getString
         if (entry ne null) TextModel.ins(entry)
 
@@ -131,12 +131,12 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
         }
 
       // to support pan testing
-      case S if mods.include(ANYSHIFT) && TextField.loggingLevel(FINER) =>
+      case S if mods.includeSome(ANYSHIFT) && TextField.loggingLevel(FINER) =>
            for (i<-0 until 3*size) {
              TextModel.ins(f"$i%03d ")
            }
       case other  =>
-        if (mods.include(ANYSHIFT)) onError(key, this)
+        if (mods.includeSome(ANYSHIFT)) onError(key, this)
     }
     reDraw()
   }
@@ -248,7 +248,7 @@ def giveUpKeyboardFocus(): Unit = guiRoot.giveupFocus()
     val mods = toBitmap(mouse)
     val ctrl = Control|Command
     if (mouse.isPressed)
-      if (mods.include(ctrl)) markTo(location.x) else moveTo(location.x)
+      if (mods.includeSome(ctrl)) markTo(location.x) else moveTo(location.x)
     reDraw() // window.requestFrame()
   }
 

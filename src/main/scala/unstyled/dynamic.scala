@@ -205,7 +205,7 @@ import io.github.humbleui.jwm.App
       import io.github.humbleui.jwm.Key._
       val mods: Bitmap = toBitmap(key)
 
-      if (mods.include(Pressed)) key._key match {
+      if (mods.includeSome(Pressed)) key._key match {
         case END        =>
           tilt.value    = -glyph.h*0.9f
           pan.value     = -glyph.w*0.9f

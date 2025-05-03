@@ -72,7 +72,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         override def step(): Unit = set((current + oneDegree))
 
         object Blobs {
-          val blob1, blob2, blob3: GlyphAt = blob.at(0, 0)
+          val blob1, blob2, blob3: GlyphVariable = blob.variable(0, 0)
           val connect12 = lineBetween(blob1, blob2)(blueString)
           val connect23 = lineBetween(blob2, blob3)(whiteString)
           val connect31 = lineBetween(blob3, blob1)(redString)

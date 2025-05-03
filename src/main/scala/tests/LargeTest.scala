@@ -347,7 +347,7 @@ trait LargeTestGUI {
         "OS/X Symbols palette (double-click on a symbol to insert it)"
       ) { mods: Modifiers.Bitmap =>
         import Modifiers.{Middle, Secondary}
-        if (mods.include(Secondary | Middle))
+        if (mods.includeSome(Secondary | Middle))
           OK(
             Col(align=Center)(
               Label("Symbols palette not available (simulated error)")
