@@ -14,6 +14,6 @@
         <parameter value="-Xfatal-warnings" />
       </parameters>
     </profile>
-    <profile name="sbt 2" modules="Glyph.microCSO,Logging,logging_9563,microCSO,microcso" />
+    <profile name="sbt 2" modules="Glyph.microCSO,Logging,Utilities,logging_9563,microCSO,microcso" />
   </component>
 </project>

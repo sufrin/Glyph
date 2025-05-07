@@ -5,10 +5,10 @@ package tests
 import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, Key, MouseButton}
 import GlyphTypes.{EventKey, Scalar, Window}
 
-import io.github.humbleui.skija.PathFillMode
-import org.sufrin.glyph.Modifiers.{Bitmap, Command, Control, Pressed, Released, Shift}
+import io.github.humbleui.skija.{PaintMode, PathFillMode}
+import org.sufrin.glyph.Modifiers.{Alt, Bitmap, Command, Control, Pressed, Primary, Released, Secondary, Shift}
 
-import java.awt.DisplayMode
+import gesture._
 import scala.collection.mutable
 
 /**
@@ -37,68 +37,105 @@ object Play extends Application {
 
 }
 
+
 /**
  * Container/editor for a displayList
  */
-class Arena(background: Glyph) extends ReactiveGlyph {
+class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
+
+  var lastMouse: Vec = Vec(-1,-1)
 
   val displayList: mutable.Queue[GlyphVariable] = new mutable.Queue[GlyphVariable]()
 
-  def selected(location: Vec): Seq[GlyphVariable] = displayList.toSeq.filter(_.contains(location))
+  def selected(location: Vec): Seq[GlyphVariable] = displayList.toSeq.filter(_.handles(location))
+
+  def hovered(location: Vec): Seq[GlyphVariable] = displayList.toSeq.filter(_.beneath(location))
 
   var selection: Seq[GlyphVariable] = Seq.empty
 
-  override def accept(key: EventKey, location: Vec, window: Window): Unit = {
-    val mods: Bitmap  = key
-    val ACT = mods.includeAll(Pressed)
-    val CTL = mods.includeSome(Command|Control)
-    key.getKey match {
-      case Key.LEFT   if ACT => for { shape <- selection } shape.turnBy(-90)
-      case Key.RIGHT  if ACT => for { shape <- selection } shape.turnBy(90)
-      case Key.UP     if ACT => for { shape <- selection } shape.turnBy(-5)
-      case Key.DOWN   if ACT => for { shape <- selection } shape.turnBy(5)
+  var deletion: Seq[GlyphVariable] = Seq.empty
 
-      case Key.A      if ACT && CTL => selection=displayList.toSeq
+  def handle(gesture: Gesture, location: Vec, delta: Vec): Unit = {
+    // println(gesture, location, delta)
+    val mods: Bitmap  = gesture.modifiers
+    val ACT        = mods.includeAll(Pressed)
+    val CTL        = mods.includeSome(Command|Control|Secondary)
+    val PRIMARY    = mods.are(Primary | Pressed)
+    val COMPLEMENT = mods.includeSome(Shift)
+    gesture match {
+      case _: MouseEnters => guiRoot.grabKeyboard(this)
+      case _: MouseLeaves =>  guiRoot.freeKeyboard(completely = true)
 
-      case Key.HOME   if ACT && CTL =>
-           for { shape <- displayList } shape.turnTo(0)
-           selection = Seq.empty
+      case _: MouseScroll if CTL => for { shape <- selection } shape.turnBy(delta.y/10)
+      case _: MouseScroll  => for { shape <- selection } shape.moveBy(delta.x, delta.y)
 
-      case Key.HOME   if ACT =>
-           for { shape <- selection } shape.turnTo(0)
-           selection = Seq.empty
+      case Keystroke(key, _) =>
+        key match {
+          case Key.LEFT if ACT => for {shape <- selection} shape.turnBy(-90)
+          case Key.RIGHT if ACT => for {shape <- selection} shape.turnBy(90)
 
-      case Key.DELETE | Key.BACKSPACE if ACT =>
-           displayList.dequeueAll { shape => selection contains shape }
-           selection = Seq.empty
+          case Key.PERIOD if ACT && COMPLEMENT => for {shape <- selection} shape.turnBy(-5)
+          case Key.PERIOD if ACT => for {shape <- selection} shape.turnBy(5)
 
-      case _ =>
+          case Key.Z if ACT =>
+              for { shape <- deletion } displayList.enqueue(shape)
+              deletion = Seq.empty
+
+          case Key.A if ACT && CTL =>
+              if (COMPLEMENT)
+                selection = displayList.toSeq.filter(_.notIn(selection))
+              else
+                selection = displayList.toSeq
+
+
+          case Key.HOME   if ACT && CTL =>
+            for { shape <- displayList } shape.turnTo(0)
+            selection = Seq.empty
+
+          case Key.HOME   if ACT =>
+            for { shape <- selection } shape.turnTo(0)
+            selection = Seq.empty
+
+          case Key.DELETE | Key.BACKSPACE if ACT =>
+              if (COMPLEMENT) {
+                deletion = displayList.toSeq.filter(_.notIn(selection))
+                displayList.dequeueAll(_.notIn(selection))
+              } else {
+                displayList.dequeueAll(_.isIn(selection))
+                deletion = selection
+              }
+            selection = Seq.empty
+
+
+          case Key.SPACE =>
+            if (ACT) println(deletion)
+
+          case _ =>
+        }
+
+      case MouseMove(_) =>
+        if (ACT) {
+          for { shape <- selection } shape.moveBy(delta.x, delta.y)
+        }
+        lastMouse = location
+
+      case MouseClick(_) =>
+       if (PRIMARY)
+          selection = selected(location)
+        else {
+        if (ACT && CTL)  {
+          val touched = selected(location)
+          for {shape <- touched}
+            if (selection contains shape)
+              selection = selection.filterNot {
+                _.eq(shape)
+              }
+            else
+              selection = selection ++ List(shape)
+        }
+        lastMouse = location
+      }
     }
-    reDraw()
-  }
-
-  override def accept(event: EventMouseMove, location: Vec, window: Window): Unit = {
-    import Modifiers._
-    val mods: Bitmap = event
-    if (mods.includeAll(Primary|Pressed)) {
-      for { shape <- selected(location) } shape.moveTo(location.x-shape.w/2, location.y-shape.h/2)
-    }
-    reDraw()
-  }
-
-  override def accept(event: EventMouseButton, location: Vec, window: Window): Unit = {
-    import Modifiers._
-    val mods: Bitmap = event
-    if  (mods.includeAll(Pressed) && (mods.includeSome(Control|Command) || mods.includeSome(Secondary))) {
-      val touched = selected(location)
-      for { shape <- touched }
-        if (selection contains shape)
-          selection = selection.filterNot{ s=>s==shape}
-        else
-          selection = selection++List(shape)
-    }
-    else
-    if  (mods.are(Primary|Pressed)) selection=selected(location)
     reDraw()
   }
 
@@ -109,36 +146,42 @@ class Arena(background: Glyph) extends ReactiveGlyph {
 
   def diagonal: Vec = background.diagonal
 
-  val aliveBrush: Brush = Brushes.red(width=4, mode=GlyphShape.STROKE)
-  val alive: GlyphShape = GlyphShape.rect(background.w-4, background.h-4)(aliveBrush)
+  val focussedBrush: Brush      = Brushes.red(width=4, mode=GlyphShape.STROKE)
+  val focussedFrame: GlyphShape = GlyphShape.rect(background.w-4, background.h-4)(focussedBrush)
 
-  val selectString: Brush = Brushes("white/2/ROUND~8~2")
+  val selectBrush: Brush = Brushes("white/2/ROUND")(mode=PaintMode.STROKE)
 
-  override def accept(event: GlyphEvent, location: Vec, window: Window): Unit = event match {
-    case _: GlyphEnter =>
-      guiRoot.grabKeyboard(this)
-      reDraw()
-    case _: GlyphLeave =>
-      guiRoot.freeKeyboard(completely = true)
-      reDraw()
-  }
-  
+
   def draw(surface: Surface): Unit = surface.withClip(diagonal) {
     surface.declareCurrentTransform(this)
     drawBackground(surface)
     background.draw(surface)
-    for { shape <- displayList } shape.draw(surface)
-    linkShapes(surface)
-    if (guiRoot.hasKeyboardFocus(this)) alive.draw(surface)
+    for { shape <- displayList } {
+      shape.setHovering(shape.beneath(lastMouse))
+      shape.setSelected(selection.length==1 && (shape eq selection.head))
+      shape.draw(surface)
+    }
+    showShapes(surface)
+    if (guiRoot.hasKeyboardFocus(this)) focussedFrame.draw(surface)
   }
 
-  def linkShapes(surface: Surface): Unit = {
-    var loc = Vec(0, h)
+  def linkShapes(surface: Surface): Unit = if (selection.length>1) {
+    val path = new GlyphShape.PathShape(selectBrush)
+    //path.moveTo(0,0) // force the origin
+    for { shape <- selection.take(1) } path.moveTo(shape.x+shape.w/2, shape.y+shape.h/2)
+    for { shape <- selection.drop(1) } path.lineTo(shape.x+shape.w/2, shape.y+shape.h/2)
+    for { shape <- selection.take(1) } path.lineTo(shape.x+shape.w/2, shape.y+shape.h/2) // close the path
+    path.draw(surface)
+  }
+
+  def showShapes(surface: Surface): Unit =  {
+    val path = new GlyphShape.PathShape(selectBrush)
+    //for { shape <- selection } path.addRect(shape.x, shape.y, shape.w, shape.h)
     for { shape <- selection } {
-      val nextLoc = Vec(shape.x, shape.y)+(shape.diagonal scaled 0.5f)
-      GlyphShape.line(loc, nextLoc)(selectString).draw(surface)
-      loc = nextLoc
+      val d=shape.diagonal
+      path.path.addCircle(shape.x+d.x/2, shape.y+d.y/2, 10)
     }
+    path.draw(surface)
   }
 
 }
@@ -150,40 +193,37 @@ class Game1(sheet: StyleSheet) {
   import Brushes._
   import style.{ex,em}
 
-  def blob = GlyphShape.arrow(Brushes("green/2"))
+  val pye = GlyphShape.pie(arrow(red).w/2)(red,green,blue)
 
   def thing(r: Scalar, brusha: Brush, brushb: Brush): GlyphShape = {
     import GlyphShape._
-    rect(10, 10)(brusha(mode = FILL, cap = ROUND)) ~~~ circle(r)(brushb(mode = STROKE)) ~~~ blob.scale(1.3f)
+    rect(10, 10)(brusha(mode = FILL, cap = ROUND)) ~~~ circle(r)(brushb(mode = STROKE)) ~~~ arrow(red).scale(1.3f)
   }
 
-  val arena = new Arena(rect(800, 500)(grey1))
+
+  val arena = new Arena(rect(1200, 800)(lightGrey))
   def randx = Math.random.toFloat*(arena.w-50)
   def randy = Math.random.toFloat*(arena.h-50)
   def randDegrees = Math.random.toFloat*(360f)
   def randScale = Math.random.toFloat*(2.5f)
 
-  val path: PathShape = new PathShape(red(width=3, mode=STROKE))
   locally {
-    path.fillMode(PathFillMode.EVEN_ODD)
-    path.moveTo(100, 100)
-    path.lineTo(150, 150)
-    path.addRect(150, 150, 50, 60)
-    path.addRect(200, 210, 50, 60)
-  }
-
-  val shapes: mutable.Queue[GlyphVariable] = arena.displayList
-
-  locally {
-    //shapes.enqueue(path.at(0, 0))
-    val stroke = red(mode=STROKE)
-    val rct: GlyphShape = arrow(red) ~~~ circle(arrow(red).w/1.7f)(stroke)
+    val shapes: mutable.Queue[GlyphVariable] = arena.displayList
+    val arrow = {
+      val a = GlyphShape.arrow(blue(width=4, mode=STROKE, cap=ROUND))
+      a~~~circle((a.w max a.h)/2)(invisible)
+    }
+    val boxed = {
+      val a = GlyphShape.arrow(red(width=4, mode=STROKE, cap=ROUND))
+      (a~~~a.turned(90)).scale(3)
+    }
     for { i<-1 to 15 } shapes.enqueue(thing(50, red(width=5), blue(width=5)).variable(randx, randy))
-    for { loc <- 1 to 5} shapes.enqueue(GlyphVariable(randx, randy, randDegrees, rct.scale(randScale)))
-    shapes.enqueue(GlyphVariable(randx, randy, 0, blob.scale(3)))
-    shapes.enqueue(GlyphVariable(randx, randy, 90, blob.scale(3)))
+    for { loc <- 1 to 5} shapes.enqueue(GlyphVariable(randx, randy, randDegrees, pye))
+    shapes.enqueue(GlyphVariable(randx, randy, 0, arrow))
+    shapes.enqueue(GlyphVariable(randx, randy, 90, arrow.scale(4)))
+    shapes.enqueue(GlyphVariable(randx, randy, 0,  boxed))
+    println(GlyphVariable(randx, randy, 0,  boxed))
   }
-
 
 
   val GUI: Glyph = NaturalSize.Col(align=Center)(
@@ -192,6 +232,6 @@ class Game1(sheet: StyleSheet) {
     </div>,
     ex,
     arena.framed(),
-    ex
+    ex,
   )
 }
