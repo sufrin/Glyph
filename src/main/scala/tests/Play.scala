@@ -188,12 +188,11 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
 
 class Game1(sheet: StyleSheet) {
   implicit val style: StyleSheet=sheet
-  import glyphXML.Language.translation._
   import GlyphShape._
   import Brushes._
   import style.{ex,em}
 
-  val pye = GlyphShape.pie(arrow(red).w/2)(red,green,blue)
+  val pie = GlyphShape.pie(arrow(red).w/2)(red,green,blue)
 
   def thing(r: Scalar, brusha: Brush, brushb: Brush): GlyphShape = {
     import GlyphShape._
@@ -202,13 +201,17 @@ class Game1(sheet: StyleSheet) {
 
 
   val arena = new Arena(rect(1200, 800)(lightGrey))
-  def randx = Math.random.toFloat*(arena.w-50)
-  def randy = Math.random.toFloat*(arena.h-50)
+  def randx = Math.random.toFloat*(arena.w-56)
+  def randy = Math.random.toFloat*(arena.h-56)
   def randDegrees = Math.random.toFloat*(360f)
   def randScale = Math.random.toFloat*(2.5f)
 
   locally {
     val shapes: mutable.Queue[GlyphVariable] = arena.displayList
+    def add(g: GlyphShape): Unit = {
+      val v = g.variable(randx min (arena.w - g.w), randy min (arena.h - g.h), randDegrees)
+      shapes.enqueue(v)
+    }
     val arrow = {
       val a = GlyphShape.arrow(blue(width=4, mode=STROKE, cap=ROUND))
       a~~~circle((a.w max a.h)/2)(invisible)
@@ -217,21 +220,28 @@ class Game1(sheet: StyleSheet) {
       val a = GlyphShape.arrow(red(width=4, mode=STROKE, cap=ROUND))
       (a~~~a.turned(90)).scale(3)
     }
-    for { i<-1 to 15 } shapes.enqueue(thing(50, red(width=5), blue(width=5)).variable(randx, randy))
-    for { loc <- 1 to 5} shapes.enqueue(GlyphVariable(randx, randy, randDegrees, pye))
-    shapes.enqueue(GlyphVariable(randx, randy, 0, arrow))
-    shapes.enqueue(GlyphVariable(randx, randy, 90, arrow.scale(4)))
-    shapes.enqueue(GlyphVariable(randx, randy, 0,  boxed))
-    println(GlyphVariable(randx, randy, 0,  boxed))
+    if (true) {
+      for {i <- 1 to 15} add(thing(50, red(width = 5), blue(width = 5)))
+      for {loc <- 1 to 5} add(pie)
+      add(arrow)
+      add(arrow.scale(4))
+      add(boxed)
+    } else {
+      shapes.enqueue((rect(50,50)(red)|||rect(50,50)(blue)).variable(0, 0))
+      shapes.enqueue((rect(50,50)(red)|||rect(50,50)(blue)).variable(100, 100))
+    }
   }
 
 
-  val GUI: Glyph = NaturalSize.Col(align=Center)(
-    <div width="70em" align="justify">
-      <p align="center">This is utterly inconsequential for the moment.</p>
-    </div>,
-    ex,
-    arena.framed(),
-    ex,
-  )
+  val GUI: Glyph = {
+    import glyphXML.Language.translation._
+    NaturalSize.Col(align = Center)(
+      <div width="70em" align="justify">
+        <p align="center">This is utterly inconsequential for the moment.</p>
+      </div>,
+      ex,
+      arena.framed(),
+      ex,
+    )
+  }
 }
