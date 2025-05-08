@@ -7,8 +7,11 @@ import GlyphTypes.{EventKey, Scalar, Window}
 
 import io.github.humbleui.skija.{PaintMode, PathFillMode}
 import org.sufrin.glyph.Modifiers.{Alt, Bitmap, Command, Control, Pressed, Primary, Released, Secondary, Shift}
-
 import gesture._
+
+import org.sufrin.glyph.Brushes.blue
+import org.sufrin.glyph.GlyphShape.{FILL, STROKE}
+
 import scala.collection.mutable
 
 /**
@@ -162,6 +165,7 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
       shape.draw(surface)
     }
     showShapes(surface)
+    //linkShapes(surface)
     if (guiRoot.hasKeyboardFocus(this)) focussedFrame.draw(surface)
   }
 
@@ -174,12 +178,12 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
     path.draw(surface)
   }
 
-  def showShapes(surface: Surface): Unit =  {
-    val path = new GlyphShape.PathShape(selectBrush)
-    //for { shape <- selection } path.addRect(shape.x, shape.y, shape.w, shape.h)
+  def showShapes(surface: Surface): Unit =  if (selection.nonEmpty) {
+    val path = new GlyphShape.PathShape(selection.head.handleBrush0(mode=FILL))
+    path.moveTo(0, 0)
     for { shape <- selection } {
       val d=shape.diagonal
-      path.path.addCircle(shape.x+d.x/2, shape.y+d.y/2, 10)
+      path.path.addPath(shape.handle.path, shape.x+d.x/2, shape.y+d.y/2)
     }
     path.draw(surface)
   }
@@ -218,17 +222,19 @@ class Game1(sheet: StyleSheet) {
     }
     val boxed = {
       val a = GlyphShape.arrow(red(width=4, mode=STROKE, cap=ROUND))
-      (a~~~a.turned(90)).scale(3)
+      (a~~~a.turned(90)).scale(4)
     }
     if (true) {
-      for {i <- 1 to 15} add(thing(50, red(width = 5), blue(width = 5)))
+      for {i <- 1 to 5} add(thing(30, red(width = 5), blue(width = 5)))
       for {loc <- 1 to 5} add(pie)
       add(arrow)
-      add(arrow.scale(4))
+      add(arrow)
+      add(arrow)
       add(boxed)
     } else {
-      shapes.enqueue((rect(50,50)(red)|||rect(50,50)(blue)).variable(0, 0))
+      shapes.enqueue((rect(50,50)(red)|||rect(50,50)(blue)).variable(150, 100))
       shapes.enqueue((rect(50,50)(red)|||rect(50,50)(blue)).variable(100, 100))
+      shapes.enqueue(arrow(blue).variable(0,0))
     }
   }
 

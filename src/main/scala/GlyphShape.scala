@@ -5,7 +5,7 @@ import GlyphTypes.Scalar
 import io.github.humbleui.skija.{PaintMode, Path, PathFillMode}
 import io.github.humbleui.types.Rect
 import org.sufrin.glyph.Brush.ROUND
-import org.sufrin.glyph.Brushes.{black, green}
+import org.sufrin.glyph.Brushes.{black, green, invisible, lightGrey}
 import org.sufrin.glyph.GlyphShape.{asGlyph, circle, rect, superimposed, FILL, STROKE}
 
 /**
@@ -26,6 +26,7 @@ trait GlyphShape { thisShape =>
     def draw(surface: Surface): Unit = surface.withScale(factor) { thisShape.draw(surface) }
     def diagonal: Vec = thisShape.diagonal scaled factor
     override def toString: String = s"$thisShape.scale($factor)"
+    override def enclosing(point: Vec): Option[GlyphShape] = thisShape.enclosing(point.deScaled(factor, factor))
   }
 
   /** Is the given point within the shape: default is within the bounding box */
@@ -268,10 +269,11 @@ object GlyphShape {
   }
 
   def arrow(fg: Brush): GlyphShape = {
-    val a = 3.5f
+    val f = 4f
+    val a = f*3.5f
     val b = 3f*a
-    val c = 20f
-    val d = 30f
+    val c = f*20f
+    val d = f*30f
     polygon((0,a), (0, b), (c, b), (c, a+b), (d, (a+b)/2), (c, 0), (c, a), (0, a))(fg)//~~~rect(d,a+b)(black(mode=STROKE))
   }
 
@@ -351,13 +353,16 @@ object GlyphShape {
   /** Experimental mutable shape. */
   class PathShape(fg: Brush, absolute: Boolean=true) extends GlyphShape {
     val path = new Path
+    locally {
+      if (absolute) path.moveTo(0,0)
+    }
 
     def draw(surface: Surface): Unit = if (absolute) {
       surface.drawPath(fg, path)
     } else {
         val bounds = path.getBounds()
-        val offsetL = bounds._left -fg.strokeWidth/2
-        val offsetT = bounds._top  -fg.strokeWidth/2
+        val offsetL = bounds._left - fg.strokeWidth/2
+        val offsetT = bounds._top  - fg.strokeWidth/2
         surface.withOrigin(-offsetL, -offsetT) { surface.drawPath(fg, path) }
     }
 
@@ -377,10 +382,25 @@ object GlyphShape {
     def moveTo(x: Scalar, y: Scalar):PathShape = { path.moveTo(x, y); this }
     def lineTo(x: Scalar, y: Scalar):PathShape = { path.lineTo(x, y); this }
     def closePath: PathShape = { path.closePath(); this }
+
     def addRect(x: Scalar, y: Scalar, w: Scalar, h: Scalar): PathShape =
-        { path.addRect(Rect.makeXYWH(x, y, w, h)); this }
+    { path.addRect(Rect.makeXYWH(x, y, w, h)); this }
+
+    def addOval(x: Scalar, y: Scalar, w: Scalar, h: Scalar): PathShape =
+    { path.addOval(Rect.makeXYWH(x, y, w, h)); this }
+
+    def addCircle(x: Scalar, y: Scalar, r: Scalar): PathShape =
+    { path.addCircle(x, y, r); this }
 
     override def toString: String = s"PathShape($fg)(${path.getVerbs.toSeq.mkString(",")})"
+
+    /*override def enclosing(point: Vec): Option[GlyphShape] = {
+      val r = if (path.contains(point.x, point.y)) Some(this) else None
+      println(s"\n$this\n .enclosing($point)\n =$r")
+      r
+    }
+
+     */
 
   }
 
@@ -449,26 +469,58 @@ object GlyphShape {
  * Shown with a "handle" whose appearance can be changed when hovering or selected.
  */
 case class GlyphVariable(var x: Scalar, var y: Scalar, private var degrees: Scalar, shape: GlyphShape) extends GlyphShape {
-  val brush      = Brushes.yellow(width=2.5f, mode=STROKE, cap=ROUND)
-  val radius     = (shape.w max shape.h)/8
-  val handle     = rect(radius*2, radius*2)(brush)//circle(radius)(brush)
-  var shapeCache = shape.turn(degrees)
+  import GlyphShape.PathShape
+  val handleBrush0 = Brushes.yellow(width=2f, mode=STROKE, cap=ROUND, alpha=0.7f)
+  val handleBrush  = handleBrush0.copy()
+  val hoverBrush0  = Brushes.red(width=2, mode=STROKE, cap=ROUND, alpha=0.7f).sliced(2,1)
+  val hoverBrush   = hoverBrush0.copy()
+  val radius       = (shape.w max shape.h)/9
 
-  def centre = (diagonal-handle.diagonal) scaled 0.5f
+  val handle = {
+    val p: PathShape = new PathShape(handleBrush, false)
+    p.addCircle(0,0, radius)
+    p
+  }
 
-  def setHovering(state: Boolean): Unit =
-    if (state) brush.width(4f) else brush.width(2.5f)
+  val hover     = {
+    val p: PathShape = new PathShape(hoverBrush, false)
+    //p.addCircle(0,0, radius+(handleBrush0.strokeWidth+hoverBrush0.strokeWidth))
+    p.addRect(0,0, 2*radius, 2*radius)
+    p
+  }
+
+  def shapeCache = shape.turn(degrees)
+
+  @inline private def centred(g: GlyphShape): Vec =  Vec(x,y) + ((diagonal-g.diagonal) scaled 0.5f)
+
+  def setHovering(state: Boolean): Unit = {
+    if (state) {
+      hoverBrush.strokeWidth(hoverBrush0.strokeWidth*2)
+      hoverBrush.alpha(1.0)
+      handleBrush.alpha(1f)
+    } else {
+      hoverBrush.strokeWidth(hoverBrush0.strokeWidth)
+      hoverBrush.alpha(hoverBrush0.alpha)
+      hoverBrush.alpha(handleBrush0.alpha)
+    }
+  }
 
   def setSelected(state: Boolean): Unit = {
-    brush.mode(if (state) FILL else STROKE)
-    brush.color(if (state) green.color else Brushes.yellow.color)
+    if (state) {
+      handleBrush.mode(FILL)
+      handleBrush.alpha(1.0)
+    } else {
+      handleBrush.mode(STROKE)
+      handleBrush.alpha(hoverBrush0.alpha)
+    }
   }
 
   def draw(surface: Surface): Unit = {
     surface.withOrigin(x, y) {
       shapeCache.draw(surface)
-      surface.withOrigin(centre) { handle.draw(surface) }
     }
+    surface.withOrigin(centred(hover)) { hover.draw(surface) }
+    surface.withOrigin(centred(handle)){ handle.draw(surface) }
   }
 
   def copyState: GlyphVariable = GlyphVariable(x, y, degrees, shape)
@@ -478,10 +530,11 @@ case class GlyphVariable(var x: Scalar, var y: Scalar, private var degrees: Scal
   override def toString: String = s"GlyphVariable(${(x,y)}, $degrees, $shapeCache)"
 
   /** the glyph's handle contains the mouse */
-  def handles(p: Vec): Boolean = handle.encloses(p-(x,y)-centre)//Math.abs(x+w/2-p.x)<radius && Math.abs(y+h/2-p.y)<radius
+  def handles(p: Vec): Boolean = handle.encloses((p-centred(handle)))
 
   /** the glyph's bounding box contains the mouse */
-  def beneath(p: Vec): Boolean = shapeCache.encloses(p-(x,y))
+  def beneath(p: Vec): Boolean = handle.encloses((p-centred(hover)))
+
 
   def isIn(set: Seq[GlyphVariable]): Boolean = set contains this
 
@@ -494,12 +547,10 @@ case class GlyphVariable(var x: Scalar, var y: Scalar, private var degrees: Scal
   def turnBy(degrees: Scalar): Unit =
     if (degrees != 0) {
       this.degrees += degrees
-      shapeCache=shape.turn(this.degrees)
     }
 
   def turnTo(degrees: Scalar): Unit = {
     this.degrees = degrees
-    shapeCache=shape.turn(this.degrees)
   }
 }
 
