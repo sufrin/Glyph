@@ -69,7 +69,13 @@ trait Vec {
   final def distanceTo(other: Vec): Scalar = {
     val dx = x - other.x
     val dy = y - other.y
-    root(dx * dx + dy + dy)
+    root(dx * dx + dy * dy)
+  }
+
+  final def distanceWithin(other: Vec, r: Scalar): Boolean = {
+    val dx = x - other.x
+    val dy = y - other.y
+    (dx * dx + dy * dy) < r * r
   }
 
   final def union(other: Vec): Vec = Vec(this.x max other.x, this.y max other.y)
