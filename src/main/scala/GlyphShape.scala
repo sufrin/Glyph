@@ -4,7 +4,7 @@ import GlyphTypes.Scalar
 
 import io.github.humbleui.skija.{PaintMode, Path, PathFillMode}
 import io.github.humbleui.types.Rect
-import org.sufrin.glyph.Brush.ROUND
+import org.sufrin.glyph.Brush.{ROUND, SQUARE}
 import org.sufrin.glyph.Brushes.{black, green, invisible, lightGrey}
 import org.sufrin.glyph.GlyphShape.{asGlyph, circle, rect, superimposed, FILL, STROKE}
 
@@ -52,13 +52,23 @@ trait GlyphShape { thisShape =>
    * with an additional transform), the glyph resulting from a sequence of `turn` contains a sequence of transformed glyphs that embody
    * the entire sequence. The method here just aggregates successive rotations.
    */
-  def turn(degrees: Scalar, tight: Boolean=true): GlyphShape = if (degrees==0f) thisShape else new Turned(thisShape, degrees)
+  def turn(degrees: Scalar, tight: Boolean=false): GlyphShape = if (degrees==0f) thisShape else new Turned(thisShape, degrees, tight)
 
-  private class Turned(original: GlyphShape, degrees: Scalar) extends GlyphShape {
+  private class Turned(shape: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphTransforms.Turned(shape, degrees, tight, invisible, invisible) {
+    override def turn(degrees: Scalar, tight: Boolean=true): GlyphShape =
+      if (degrees==0f) shape else new Turned(shape, this.degrees+degrees, tight)
+
+    override def originals: Seq[GlyphShape] = List(shape)
+
+  }
+
+  def originals: Seq[GlyphShape] = List(thisShape)
+
+  private class XTurned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphShape {
     override def toString: String = s"$original.turn($degrees)"
 
     override def turn(degrees: Scalar, tight: Boolean=true): GlyphShape =
-      if (degrees==0f) original else new Turned(original, this.degrees+degrees)
+      if (degrees==0f) original else new Turned(original, this.degrees+degrees, tight)
 
     // Bounding box of the transformed shape -- pessimistic (see `GlyphTransforms.Turned`)
     def diagonal: Vec = {
@@ -116,6 +126,8 @@ trait GlyphShape { thisShape =>
 
     override def toString: String = s"$thisShape|||$thatShape"
 
+    override def originals: Seq[GlyphShape] = List(thisShape, thatShape)
+
   }
 
   /** left '''above''' right */
@@ -134,6 +146,9 @@ trait GlyphShape { thisShape =>
       thisShape.enclosing(point-dThis) orElse thatShape.enclosing(point-dThat)
 
     override def toString: String = s"$thisShape---$thatShape"
+
+    override def originals: Seq[GlyphShape] = List(thisShape, thatShape)
+
 
   }
 
@@ -309,12 +324,13 @@ object GlyphShape {
 
   }
 
-  def arrow(fg: Brush): GlyphShape = {
+  def arrow(brush: Brush): GlyphShape = {
     val f = 4f
     val a = f*3.5f
     val b = 3f*a
     val c = f*20f
     val d = f*30f
+    val fg = if (brush.cap==SQUARE) brush else brush(cap=SQUARE)
     polygon((0,a), (0, b), (c, b), (c, a+b), (d, (a+b)/2), (c, 0), (c, a), (0, a))(fg)//~~~rect(d,a+b)(black(mode=STROKE))
   }
 
@@ -465,6 +481,8 @@ object GlyphShape {
         surface.withOrigin(delta) { shape.next().draw(surface)}
     }
 
+    override def originals: Seq[GlyphShape] = shapes
+
     def diagonal: Vec = Vec(tw, th)
 
     override def enclosing(point: Vec): Option[GlyphShape] = {
@@ -599,6 +617,8 @@ case class GlyphVariable(var x: Scalar, var y: Scalar, shape: GlyphShape) extend
   def moveBy(x: Scalar, y: Scalar): Unit = {
     this.x += x; this.y += y
   }
+
+  def center: Vec = (diagonal scaled 0.5f) + (x, y)
 }
 
 

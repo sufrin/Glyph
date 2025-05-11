@@ -187,6 +187,7 @@ class Brush(var name: String) extends Paint {
   }
 
   @inline def strokeCap: PaintStrokeCap = getStrokeCap
+  @inline def cap: PaintStrokeCap = getStrokeCap
 
   /** Mutation */
   @inline def strokeMiter(miter: Float): Brush = {

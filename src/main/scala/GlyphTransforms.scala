@@ -445,7 +445,7 @@ object GlyphTransforms {
     override val kind = "Turned"
     override def toString: String = s"Turned($degrees, fg=$fg, bg=$bg)(${glyph.toString})"
 
-    private val d = glyph.diagonal
+    private def d = glyph.diagonal
 
     // degrees mod 360 as radians
     private val Theta: Scalar = {
@@ -487,12 +487,12 @@ object GlyphTransforms {
     def diagonal: Vec = box
 
     // Centre of the glyph's bounding box
-    private val glyphCentre = d scaled 0.5f
+    private def glyphCentre = d scaled 0.5f
     // Centre of this bounding box
-    private val thisCentre = diagonal scaled 0.5f
+    private def thisCentre = diagonal scaled 0.5f
 
     // Distance of the new centre from the old centre
-    private val delta  = thisCentre - glyphCentre
+    private def delta  = thisCentre - glyphCentre
 
 
     def draw(surface: Surface): Unit = {
