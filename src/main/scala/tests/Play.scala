@@ -27,17 +27,41 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
 
   val displayList: mutable.Queue[GlyphVariable] = new mutable.Queue[GlyphVariable]()
 
-  def selected(location: Vec): Seq[GlyphVariable] = displayList.toSeq.filter(_.handles(location))
-
-  def hovered(location: Vec): Seq[GlyphVariable] = displayList.toSeq.filter(_.beneath(location))
-
   var selection: Seq[GlyphVariable] = Seq.empty
 
+  case class State (
+    lastMouse:      Vec,
+    lastMouseDown:  Vec,
+    displayList:    Seq[GlyphVariable],
+    selection:      Seq[GlyphVariable]
+  )
+
+  def copyState: State = State(lastMouse, lastMouseDown, displayList.toSeq.map(_.copyState), selection.map(_.copyState))
+
+  def restoreState(state: State): Unit = {
+    this.lastMouse=state.lastMouse
+    this.lastMouseDown=state.lastMouseDown
+    this.displayList.clear(); this.displayList.enqueueAll(state.displayList)
+    this.selection=state.selection
+  }
+
+  var states, unstates: mutable.Stack[State] = new mutable.Stack[State]
+
+  def withState(action: => Unit): Unit = {
+    states.push(copyState)
+    unstates.clear()
+    action
+  }
+
+  def selected(location: Vec): Seq[GlyphVariable] = displayList.toSeq.filter(_.canHandle(location))
+
+  def hovered(location: Vec): Seq[GlyphVariable] = displayList.toSeq.filter(_.isBeneath(location))
+
   def forUnselected(action: GlyphVariable => Unit): Unit =
-    for { shape <- displayList if !selection.contains(shape) } action(shape)
+    withState { for { shape <- displayList if !selection.contains(shape) } action(shape) }
 
   /** Apply the transform, as if about the current centre  */
-  def transformSelected(transform: GlyphShape => GlyphShape): Unit = {
+  def transformSelected(transform: GlyphShape => GlyphShape): Unit = withState {
     deletion = selection
     val mapped = selection.map {
       case v: GlyphVariable =>
@@ -52,7 +76,7 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
   }
 
   /** compose the selected elements in their order of selection  */
-  def composeSelected(compose: GlyphShape => GlyphShape => GlyphShape): Unit = {
+  def composeSelected(compose: GlyphShape => GlyphShape => GlyphShape): Unit = withState {
     var composed: GlyphShape = selection.head.shape
     for { v <- selection.tail } composed = compose(composed)(v.shape)
     val (x, y) = (selection.head.x, selection.head.y)
@@ -65,18 +89,18 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
 
   var deletion, components: Seq[GlyphVariable] = Seq.empty
 
-
   def handle(gesture: Gesture, location: Vec, delta: Vec): Unit = {
     // println(gesture, location, delta)
     val mods: Bitmap  = gesture.modifiers
     val ACT        = mods.includeAll(Pressed)
+    val REL        = mods.includeAll(Released)
     val CTL        = mods.includeSome(Command|Control|Secondary)
     val PRIMARY    = mods.are(Primary   | Pressed)
     val SECONDARY  = mods.are(Secondary | Pressed)
     val COMPLEMENT = mods.includeSome(Shift)
     gesture match {
       case _: MouseEnters => guiRoot.grabKeyboard(this)
-      case _: MouseLeaves =>  guiRoot.freeKeyboard(completely = true)
+      case _: MouseLeaves => guiRoot.freeKeyboard(completely = true)
 
       case _: MouseScroll if CTL => transformSelected(_.scale(if (delta.x+delta.y>0) 1/1.05f else 1.05f))
       case _: MouseScroll => transformSelected(_.turn((delta.x+delta.y).sign*5, COMPLEMENT))
@@ -90,27 +114,35 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
           case Key.SLASH     if ACT => transformSelected(_.scale(1/1.05f))
 
           case Key.PERIOD if ACT => transformSelected(_.turn(5, COMPLEMENT))
+          
+          case Key.Z if CTL && REL && mods.includeSome(Shift)=>
+              if (unstates.nonEmpty) {
+                val state = unstates.pop()
+                states.push(state)
+                restoreState(state)
+              }
 
-          case Key.Z if CTL && ACT =>
-              for { shape <- deletion } displayList.enqueue(shape)
-              deletion = Seq.empty
+          case Key.Z if CTL && REL =>
+            if (states.nonEmpty) {
+              val state = states.pop()
+              unstates.push(state)
+              restoreState(state)
+            }
 
           case Key.A if ACT && CTL =>
+            withState {
               if (COMPLEMENT)
                 selection = displayList.toSeq.filter(_.notIn(selection))
               else
                 selection = displayList.toSeq
+            }
 
+          case Key.HOME   if ACT  =>
+            withState { selection = Seq.empty }
 
-          case Key.HOME   if ACT && CTL =>
-            //for { shape <- displayList } shape.turnTo(0)
-            selection = Seq.empty
-
-          case Key.HOME   if ACT =>
-            //for { shape <- selection } shape.turnTo(0)
-            selection = Seq.empty
 
           case Key.DELETE | Key.BACKSPACE if ACT =>
+            withState {
               if (COMPLEMENT) {
                 deletion = displayList.toSeq.filter(_.notIn(selection))
                 displayList.dequeueAll(_.notIn(selection))
@@ -118,17 +150,20 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
                 displayList.dequeueAll(_.isIn(selection))
                 deletion = selection
               }
-            selection = Seq.empty
+              selection = Seq.empty
+            }
 
           case Key.H  if selection.length > 1 => composeSelected( _.||| )
           case Key.V  if selection.length > 1 => composeSelected( _.--- )
           case Key.S  if selection.length > 1 => composeSelected( _.~~~ )
           case Key.D  if components.nonEmpty =>
-            displayList.dequeueAll(_.isIn(selection))
-            deletion = selection
-            displayList.enqueueAll(components)
-            selection = components
-            components = Seq.empty
+            withState {
+              displayList.dequeueAll(_.isIn(selection))
+              deletion = selection
+              displayList.enqueueAll(components)
+              selection = components
+              components = Seq.empty
+            }
 
           case Key.SPACE =>
             if (ACT) println(deletion)
@@ -143,21 +178,24 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
         lastMouse = location
 
       case MouseClick(_) =>
-       if (ACT) lastMouseDown=location
-       if (PRIMARY)
-          selection = selected(location)
-        else {
-        if (SECONDARY || (ACT && CTL))  {
-          val touched = selected(location)
-          for {shape <- touched}
-            if (selection contains shape)
-              selection = selection.filterNot(_.eq(shape))
-            else
-              selection = selection ++ List(shape)
-        }
-        lastMouse = location
+        withState {
+           if (ACT) lastMouseDown=location
+           if (SECONDARY)
+              selection = selected(location)
+            else {
+              if (PRIMARY) {
+                val touched = selected(location)
+                for {shape <- touched}
+                  if (selection contains shape)
+                    selection = selection.filterNot(_.eq(shape))
+                  else
+                    selection = selection ++ List(shape)
+              }
+              lastMouse = location
+            }
       }
     }
+    print(s"<${states.length}, ${unstates.length}>\r")
     reDraw()
   }
 
@@ -180,27 +218,34 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
     background.draw(surface)
 
     for { shape <- displayList } {
-      shape.setHovering(shape.beneath(lastMouse))
+      shape.setHovering(shape.isBeneath(lastMouse)||shape.canHandle(lastMouse))
       shape.setSelected(selection contains shape)
       shape.draw(surface)
     }
 
-    linkShapes(surface)
+    indicateSelection(surface)
     if (guiRoot.hasKeyboardFocus(this)) focussedFrame.draw(surface)
   }
 
-  def linkShapes(surface: Surface): Unit = {
+  val selectionPath = new GlyphShape.PathShape(selectBrush)
+
+  def indicateSelection(surface: Surface): Unit = {
+    selectionPath.reset()
     selection.length match
     { case 0 =>
       case 1 =>
-          //for { shape <- selection } shape.setSelected(true)
+        for { shape <- selection.take(1) } {
+          selectionPath.addCircle(shape.x+shape.w/2, shape.y+shape.h/2, 10)
+        }
       case _ =>
-        val path = new GlyphShape.PathShape(selectBrush)
-        for { shape <- selection.take(1) } path.moveTo(shape.x+shape.w/2, shape.y+shape.h/2)
-        for { shape <- selection.drop(1) } path.lineTo(shape.x+shape.w/2, shape.y+shape.h/2)
-        for { shape <- selection.take(1) } path.lineTo(shape.x+shape.w/2, shape.y+shape.h/2)
-        path.draw(surface)
+        val path =
+        for { shape <- selection.take(1) } selectionPath.moveTo(shape.x+shape.w/2, shape.y+shape.h/2)
+        for { shape <- selection.drop(1) } selectionPath.lineTo(shape.x+shape.w/2, shape.y+shape.h/2)
+        for { shape <- selection.take(1) } {
+          selectionPath.addCircle(shape.x+shape.w/2, shape.y+shape.h/2, 10)
+        }
     }
+    selectionPath.draw(surface)
   }
 
 }
