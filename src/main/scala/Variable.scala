@@ -33,6 +33,7 @@ class Variable[T](
     _theValue = value
   }
 
+  def apply(changeTo: T => Unit): Variable[T] = new Variable(initially, onChange = { case (from, to) => changeTo(to) })
 }
 
 /**

@@ -10,18 +10,20 @@ import org.sufrin.glyph.Modifiers.{Alt, Bitmap, Command, Control, Pressed, Prima
 import gesture._
 
 import org.sufrin.glyph
-import org.sufrin.glyph.Brushes.blue
-import org.sufrin.glyph.GlyphShape.{FILL, STROKE}
-import org.sufrin.glyph.styled.{Book, BookSheet}
+import org.sufrin.glyph.Brushes.{black, blue, green, lightGrey, red, white, yellow}
+import org.sufrin.glyph.GlyphShape.{arrow, circle, rect, FILL, STROKE}
+import org.sufrin.glyph.styled.{Book, BookSheet, GlyphButton}
 
+import java.io.File
 import scala.collection.mutable
+
 
 
 
 /**
  * Container/editor for a displayList
  */
-class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
+class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extends  GestureBasedReactiveGlyph {
 
   var lastMouse, lastMouseDown: Vec = Vec(-1,-1)
 
@@ -30,11 +32,12 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
   var selection: Seq[GlyphVariable] = Seq.empty
 
   case class State (
-    lastMouse:      Vec,
-    lastMouseDown:  Vec,
-    displayList:    Seq[GlyphVariable],
-    selection:      Seq[GlyphVariable]
-  )
+                     lastMouse:      Vec,
+                     lastMouseDown:  Vec,
+                     displayList:    Seq[GlyphVariable],
+                     selection:      Seq[GlyphVariable]
+                   )
+
 
   def copyState: State = State(lastMouse, lastMouseDown, displayList.toSeq.map(_.copyState), selection.map(_.copyState))
 
@@ -53,9 +56,21 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
     action
   }
 
+  def feedback(): Unit = {
+    left.set(states.length)
+    right.set(unstates.length)
+  }
+
   def selected(location: Vec): Seq[GlyphVariable] = displayList.toSeq.filter(_.canHandle(location))
 
   def hovered(location: Vec): Seq[GlyphVariable] = displayList.toSeq.filter(_.isBeneath(location))
+
+  def restart(): Unit = {
+    states.clear()
+    unstates.clear()
+    displayList.clear()
+    selection = Seq.empty
+  }
 
   def forUnselected(action: GlyphVariable => Unit): Unit =
     withState { for { shape <- displayList if !selection.contains(shape) } action(shape) }
@@ -75,7 +90,7 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
     selection = mapped
   }
 
-  /** compose the selected elements in their order of selection  */
+  /** compose the selected elements in the order of selection  */
   def composeSelected(compose: GlyphShape => GlyphShape => GlyphShape): Unit = withState {
     var composed: GlyphShape = selection.head.shape
     for { v <- selection.tail } composed = compose(composed)(v.shape)
@@ -88,6 +103,8 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
   }
 
   var deletion, components: Seq[GlyphVariable] = Seq.empty
+
+  val bell = Sound.Clip("WAV/glass.wav")
 
   def handle(gesture: Gesture, location: Vec, delta: Vec): Unit = {
     // println(gesture, location, delta)
@@ -103,7 +120,7 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
       case _: MouseLeaves => guiRoot.freeKeyboard(completely = true)
 
       case _: MouseScroll if CTL => transformSelected(_.scale(if (delta.x+delta.y>0) 1/1.05f else 1.05f))
-      case _: MouseScroll => transformSelected(_.turn((delta.x+delta.y).sign*5, COMPLEMENT))
+      case _: MouseScroll        => transformSelected(_.turn((delta.x+delta.y).sign*5, COMPLEMENT))
 
       case Keystroke(key, _) =>
         key match {
@@ -115,14 +132,14 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
 
           case Key.PERIOD if ACT => transformSelected(_.turn(5, COMPLEMENT))
 
-          case Key.Z if CTL && REL && mods.includeSome(Shift)=>
+          case Key.Z if ACT && CTL && mods.includeSome(Shift)=>
               if (unstates.nonEmpty) {
                 val state = unstates.pop()
                 states.push(state)
                 restoreState(state)
               }
 
-          case Key.Z if CTL && REL =>
+          case Key.Z if ACT && CTL =>
             if (states.nonEmpty) {
               val state = states.pop()
               unstates.push(state)
@@ -165,10 +182,12 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
               components = Seq.empty
             }
 
-          case Key.SPACE =>
-            if (ACT) println(deletion)
+          // ignore shift buttons
+          case Key.SHIFT | Key.CONTROL | Key.CAPS_LOCK | Key.ALT | Key.MAC_COMMAND | Key.MAC_FN | Key.MAC_OPTION =>
 
           case _ =>
+            if (mods.includeSome(Pressed)) bell.play()
+
         }
 
       case MouseMove(_) =>
@@ -177,29 +196,28 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
         }
         lastMouse = location
 
+      case MouseClick(_) if (SECONDARY) => withState { selection = selected(location) }
+
+      case MouseClick(_) if (PRIMARY)   =>
+        withState  {
+          val touched = selected(location)
+          for {shape <- touched}
+            if (selection contains shape)
+              selection = selection.filterNot(_.eq(shape))
+            else
+              selection = selection ++ List(shape)
+
+        }
+
       case MouseClick(_) =>
-        withState {
-           if (ACT) lastMouseDown=location
-           if (SECONDARY)
-              selection = selected(location)
-            else {
-              if (PRIMARY) {
-                val touched = selected(location)
-                for {shape <- touched}
-                  if (selection contains shape)
-                    selection = selection.filterNot(_.eq(shape))
-                  else
-                    selection = selection ++ List(shape)
-              }
-              lastMouse = location
-            }
-      }
+        if (COMPLEMENT) lastMouseDown=location else lastMouseDown=Vec.Origin
+
     }
-    print(s"<${states.length}, ${unstates.length}>\r")
+    feedback()
     reDraw()
   }
 
-  def copy(fg: Brush=fg, bg: Brush=bg): Arena = new Arena(background)
+  def copy(fg: Brush=fg, bg: Brush=bg): Arena = new Arena(background)(left, right)
 
   val fg: Brush = background.fg
   val bg: Brush = background.bg
@@ -224,6 +242,7 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
     }
 
     indicateSelection(surface)
+
     if (guiRoot.hasKeyboardFocus(this)) focussedFrame.draw(surface)
   }
 
@@ -245,20 +264,29 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
           selectionPath.addCircle(shape.x+shape.w/2, shape.y+shape.h/2, 10)
         }
     }
+    selectionPath.addCircle(lastMouseDown.x, lastMouseDown.y, 5)
     selectionPath.draw(surface)
   }
 
+  def addShape(x:Scalar, y:Scalar)(shape: GlyphShape) : Unit = withState {
+    val v = shape.variable(x min (w - shape.w), y min (h - shape.h))
+    displayList.enqueue(v)
+    lastMouseDown=Vec.Zero
+    feedback()
+  }
+
+  def addShape(shape: GlyphShape) : Unit = addShape(lastMouseDown.x, lastMouseDown.y)(shape)
 }
 
 
-object Play extends Application {
 
+object Play extends Application {
   /**
    * Default sheet
    */
   val LocalSheet: StyleSheet = StyleSheet()
   val interfaceStyle: StyleSheet = LocalSheet.copy(
-    buttonDecoration=styles.decoration.Blurred(fg=Brushes.blue, blur=5, spread=5, delta=5),
+    buttonDecoration=styles.decoration.Framed(fg=blue(width=2), enlarge=0.7f, radius=0.5f),
     buttonFontSize = 20,
     labelFontSize = 20,
     textFontSize = 20,
@@ -274,28 +302,87 @@ object Play extends Application {
   implicit val bookSheet: BookSheet = BookSheet(sheet, sheet)
 
   Page("Interact", ""){
-    val arena = new ArenaWithShapes {
-        import Brushes._
-        import GlyphShape._
-        def shapes(): Unit = {
-          val blackArrow =  arrow(black)
-          shape(100, 100)(rect(50,50)(red)|||rect(50,50)(blue))
-          shape(300, 100)(superimposed(rect(blackArrow.w, blackArrow.h)(red), blackArrow))
-          shape(300, 100)(PolygonLibrary.star7())
-          shape(500, 100)(superimposed(rect(blackArrow.w, blackArrow.h)(red).scale(2), blackArrow|||blackArrow.turn(180)))
-          shape(600, 600)(circle(50)(blue))
-          shape(600, 300)(arrow(red))
-          shape(600, 400)(arrow(blue(width=6, mode=STROKE)))
-        }
+    import sheet.ex
+    val left, right = styled.ActiveString("------------")
+    val done: Variable[Int]   = Variable(0){ case n => left.set(f" $n%03d done") }
+    val undone: Variable[Int] = Variable(0){ case n => right.set(f" $n%03d undone") }
+
+
+    val arena = new Arena(rect(1200, 800)(lightGrey))(done, undone)
+
+    def but(name: String)(shape: =>GlyphShape): Glyph = {
+      styled.TextButton(name){ _ => arena.addShape(shape) }
     }
+
+    val blackArrow =  arrow(black)
+
+    var newBrush: Brush = Brushes.blue()
+
+    val shapes = List(
+      but("Sq")(rect(150,150)(newBrush.copy)),
+      but("Circ")(circle(75)(newBrush.copy)),
+      but("Arrow")(arrow(newBrush.copy)),
+      but("Star")(PolygonLibrary.star7(fg=newBrush.copy))
+    )
+
+    val colours = styled.RadioCheckBoxes(List("R","G","B", "Y", "Wh", "Bl"), "Bl") {
+      case None =>
+      case Some(n) => n match {
+            case 0 => newBrush.setColor(red.color)
+            case 1 => newBrush.setColor(green.color)
+            case 2 => newBrush.setColor(blue.color)
+            case 3 => newBrush.setColor(yellow.color)
+            case 4 => newBrush.setColor(white.color)
+            case 5 => newBrush.setColor(black.color)
+          }
+    }
+
+    val widths = styled.RadioCheckBoxes(List("0","1","2", "4", "8", "16"), "0") {
+      case None    =>
+      case Some(i) =>
+        var w = 1
+        for { _ <- 0 until i } w=w*2
+        newBrush.strokeWidth(w.toFloat)
+    }
+
+    val modes = styled.RadioCheckBoxes(List("Fill", "Stroke")){
+      case Some(0) =>  newBrush.setMode(FILL)
+      case Some(1) =>  newBrush.setMode(STROKE)
+      case _ =>
+    }
+
+    val decor = styled.RadioCheckBoxes(List("--", "~~")){
+      case Some(0) =>  newBrush.setPathEffect(Brushes.white.pathEffect)
+      case Some(1) =>  newBrush.setPathEffect(Brush.ofString("white~3~3").pathEffect)
+      case _ =>
+    }
+
+    def setNewBrush(spec: String): Unit = {
+      newBrush = Brush.ofString(spec)
+      println(newBrush)
+    }
+
+    val brushField = styled.TextField(onEnter=setNewBrush, onCursorLeave=setNewBrush, size=50)
+
     NaturalSize.Col(align=Center)(
-      arena.GUI,
-      FixedSize.Row(width=arena.GUI.w, align=Mid)(
-        // styled.TextButton("Unrotate selection"){ _ => arena.resetSelected() },
-        styled.TextButton("Restart"){ _ => arena.resetShapes() },
+      arena,
+      ex,
+      FixedSize.Row(width=arena.w, align=Mid)(
+        styled.TextButton("Restart"){ _ => arena.restart() },
         sheet.hFill(),
+        left.framed(), right.framed(),
         styled.TextButton("Help"){ _ =>}
-      )
+      ),
+      ex,
+      FixedSize.Row(width=arena.w, align=Mid)(shapes),
+      ex,
+      brushField.framed(),
+//      FixedSize.Row(width=arena.w, align=Mid)(
+//        colours.arrangedHorizontally(),
+//        widths.arrangedHorizontally(),
+//        modes.arrangedVertically(),
+//        decor.arrangedVertically()
+//      )
     ).enlarged(20)
   }
   //Page("Test", "")(new Page1(sheet).GUI)
@@ -313,43 +400,4 @@ object Play extends Application {
     )
   }
 
-}
-
-abstract class ArenaWithShapes(implicit val sheet: StyleSheet) {
-  import GlyphShape._
-  import Brushes._
-
-  def shapes(): Unit
-
-  val pie = GlyphShape.pie(arrow(red).w/2)(red,green,blue)
-
-  def thing(r: Scalar, brusha: Brush, brushb: Brush): GlyphShape = {
-    import GlyphShape._
-    rect(10, 10)(brusha(mode = FILL, cap = ROUND)) ~~~ circle(r)(brushb(mode = STROKE)) ~~~ arrow(red).scale(1.3f)
-  }
-
-  val arena = new Arena(rect(1200, 800)(lightGrey))
-
-  def shape(shape: GlyphShape): Unit = {
-      val v = shape.variable(randx min (arena.w - shape.w), randy min (arena.h - shape.h))
-      arena.displayList.enqueue(v)
-  }
-
-  def shape(x:Scalar, y:Scalar)(shape: GlyphShape) : Unit = {
-    val v = shape.variable(x min (arena.w - shape.w), y min (arena.h - shape.h))
-    arena.displayList.enqueue(v)
-  }
-
-  def randx = Math.random.toFloat*(arena.w-56)
-  def randy = Math.random.toFloat*(arena.h-56)
-  def randDegrees = Math.random.toFloat*(360f)
-  def randScale = Math.random.toFloat*(2.5f)
-
-  locally {
-    shapes()
-  }
-
-  def resetShapes(): Unit   = { arena.displayList.clear(); shapes() }
-
-  val GUI: Glyph = arena.framed()
 }

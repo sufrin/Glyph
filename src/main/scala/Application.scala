@@ -4,6 +4,8 @@ package glyph
 import GlyphTypes.{EventKey, Window}
 import org.sufrin.glyph.NaturalSize.Row
 
+import java.io.File
+
 /**
  * An application specified by a GUI, and a title. Some generic flags
  * may be given.
@@ -26,6 +28,8 @@ trait Application {
    */
   def handleWindowCloseRequest(window: Window): Unit = window.close()
 
+  val bell = Sound.Clip("WAV/tonk.wav")
+
   /**
    * Invoked when a keystroke is made in the window directly associated with
    * this application and that window has no glyph with the keyboard focus.
@@ -35,6 +39,7 @@ trait Application {
    * @see onStart
    */
   def handleUnfocussedKey(event: EventKey): Unit =  {
+      if (event.isPressed) bell.play()
       val key = s"Key ${Modifiers.toBitmap(event).toLongString} ${event.getKey}"
       logging.Default.warn(s"Keystroke unexpected: ${key}")
   }

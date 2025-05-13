@@ -334,7 +334,7 @@ object GlyphShape {
     val c = f* 20f
     val d = f * 30f
     val fg = if (brush.cap == SQUARE) brush else brush(cap = SQUARE)
-    polygon((0, a), (0, b), (c, b), (c, a + b), (d, (a + b) / 2), (c, 0), (c, a), (0, a))(fg) //~~~rect(d,a+b)(black(mode=STROKE))
+    polygon((0, a), (0, b), (c, b), (c, a + b), (d, (a + b) / 2), (c, 0), (c, a))(fg) //~~~rect(d,a+b)(black(mode=STROKE))
   }
 
   /**
@@ -386,6 +386,7 @@ object GlyphShape {
         val (vx, vy) = v.next()
         path.lineTo(vx, vy)
       }
+      path.closePath()
     }
 
     private var offsetL, offsetT = 0f
