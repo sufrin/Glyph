@@ -114,7 +114,7 @@ class Arena(background: Glyph) extends  GestureBasedReactiveGlyph {
           case Key.SLASH     if ACT => transformSelected(_.scale(1/1.05f))
 
           case Key.PERIOD if ACT => transformSelected(_.turn(5, COMPLEMENT))
-          
+
           case Key.Z if CTL && REL && mods.includeSome(Shift)=>
               if (unstates.nonEmpty) {
                 val state = unstates.pop()

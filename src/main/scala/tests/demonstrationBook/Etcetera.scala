@@ -4,7 +4,7 @@ package tests.demonstrationBook
 import styled.{Label, _}
 import GlyphTypes.{FontStyle, Scalar}
 import NaturalSize.{Col, Row}
-import styles.decoration.{Edged, Framed}
+import styles.decoration.{Edged, Framed, RoundFramed}
 import unstyled.{reactive, static}
 import unstyled.dynamic.SplitScreen
 import unstyled.static._
@@ -731,6 +731,22 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           can yield an interesting colour scheme (as seen on the last three rows).
         </p>)
       )
+    }
+
+    Page ("Sound", "Buttons bound to sounds"){
+      import java.io.File
+      import Sound._
+      def filesInDir(path: String): Seq[File] = {
+        val dir = new File(path)
+        if (dir.exists && dir.isDirectory) {
+          dir.listFiles.toSeq.filter(_.isFile).sortWith { (f1, f2) =>f1.getName.toLowerCase<f2.getName.toLowerCase }
+        } else {
+          Seq.empty
+        }
+      }
+      val clips = filesInDir("WAV").map(Clip) ++ List(Clip(new File("BOGUS")))
+      val buttons = clips.map { clip => styled.TextButton(clip.file.toString) { _ => clip.play() }(pageSheet.copy(buttonDecoration = RoundFramed(fg=black(width=3),radius=0.25f))) }
+      NaturalSize.Col(align=Left)(buttons)
     }
 
 
