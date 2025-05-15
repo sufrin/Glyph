@@ -9,10 +9,11 @@ import io.github.humbleui.skija.{PaintMode, PathFillMode}
 import org.sufrin.glyph.Modifiers.{Alt, Bitmap, Command, Control, Pressed, Primary, Released, Secondary, Shift}
 import gesture._
 
-import org.sufrin.glyph
+import org.sufrin.{glyph, logging}
 import org.sufrin.glyph.Brushes.{black, blue, green, lightGrey, red, white, yellow}
-import org.sufrin.glyph.GlyphShape.{arrow, circle, rect, FILL, STROKE}
+import org.sufrin.glyph.GlyphShape.{arrow, circle, polygon, rect, FILL, STROKE}
 import org.sufrin.glyph.styled.{Book, BookSheet, GlyphButton}
+import org.sufrin.glyph.unstyled.static.FilledPolygon
 
 import java.io.File
 import scala.collection.mutable
@@ -25,25 +26,29 @@ import scala.collection.mutable
  */
 class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extends  GestureBasedReactiveGlyph {
 
-  var lastMouse, lastMouseDown: Vec = Vec(-1,-1)
+  var lastMouse, lastMouseDown: Vec = background.diagonal scaled 0.5f
 
-  val displayList: mutable.Queue[GlyphVariable] = new mutable.Queue[GlyphVariable]()
+  val displayList: mutable.Queue[TargetShape] = new mutable.Queue[TargetShape]()
 
-  var selection: Seq[GlyphVariable] = Seq.empty
+  var selection: Seq[TargetShape] = Seq.empty
+
+  var vertices: Seq[Vec] = Seq.empty
 
   case class State (
                      lastMouse:      Vec,
                      lastMouseDown:  Vec,
-                     displayList:    Seq[GlyphVariable],
-                     selection:      Seq[GlyphVariable]
+                     vertices:       Seq[Vec],
+                     displayList:    Seq[TargetShape],
+                     selection:      Seq[TargetShape]
                    )
 
 
-  def copyState: State = State(lastMouse, lastMouseDown, displayList.toSeq.map(_.copyState), selection.map(_.copyState))
+  def copyState: State = State(lastMouse, lastMouseDown, vertices, displayList.toSeq.map(_.copyState), selection.map(_.copyState))
 
   def restoreState(state: State): Unit = {
     this.lastMouse=state.lastMouse
     this.lastMouseDown=state.lastMouseDown
+    this.vertices=state.vertices
     this.displayList.clear(); this.displayList.enqueueAll(state.displayList)
     this.selection=state.selection
   }
@@ -61,28 +66,30 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
     right.set(unstates.length)
   }
 
-  def selected(location: Vec): Seq[GlyphVariable] = displayList.toSeq.filter(_.canHandle(location))
+  def selected(location: Vec): Seq[TargetShape] = displayList.toSeq.filter(_.isBeneath(location))
 
-  def hovered(location: Vec): Seq[GlyphVariable] = displayList.toSeq.filter(_.isBeneath(location))
+  def hovered(location: Vec): Seq[TargetShape] = displayList.toSeq.filter(_.isBeneath(location))
 
   def restart(): Unit = {
     states.clear()
     unstates.clear()
     displayList.clear()
     selection = Seq.empty
+    vertices=Seq.empty
+    feedback()
   }
 
-  def forUnselected(action: GlyphVariable => Unit): Unit =
+  def forUnselected(action: TargetShape => Unit): Unit =
     withState { for { shape <- displayList if !selection.contains(shape) } action(shape) }
 
   /** Apply the transform, as if about the current centre  */
   def transformSelected(transform: GlyphShape => GlyphShape): Unit = withState {
     deletion = selection
     val mapped = selection.map {
-      case v: GlyphVariable =>
+      case v: TargetShape =>
         val v$ = transform(v.shape)
         val delta = v.diagonal - v$.diagonal
-        v$.variable(v.x+delta.x/2, v.y+delta.y/2)
+        v$.targetLocatedAt(v.x+delta.x/2, v.y+delta.y/2)
     }
     displayList.dequeueAll(_.isIn(selection))
     deletion = selection
@@ -90,63 +97,95 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
     selection = mapped
   }
 
-  /** compose the selected elements in the order of selection  */
-  def composeSelected(compose: GlyphShape => GlyphShape => GlyphShape): Unit = withState {
-    var composed: GlyphShape = selection.head.shape
-    for { v <- selection.tail } composed = compose(composed)(v.shape)
-    val (x, y) = (selection.head.x, selection.head.y)
-    displayList.dequeueAll(_.isIn(selection))
-    components = selection
-    val composite = (composed.variable(x, y))
-    displayList.enqueue(composite)
-    selection = List(composite)
-  }
+  class Composition(x : Scalar, y : Scalar, shape : GlyphShape, val components: Seq[TargetShape]) extends TargetShape(x, y, shape)
 
-  var deletion, components: Seq[GlyphVariable] = Seq.empty
+  /** compose the selected elements in the order of selection  */
+  def composeSelected(compose: GlyphShape => GlyphShape => GlyphShape): Unit =
+    if (selection.length>1) withState {
+    var composed: GlyphShape = selection.head.shape
+        for { v <- selection.tail } composed = compose(composed)(v.shape)
+        val (x, y) = (selection.head.x, selection.head.y)
+        displayList.dequeueAll(_.isIn(selection))
+        val composite = new Composition(x, y, composed, selection)
+        displayList.enqueue(composite)
+        selection = List(composite)
+      }
+    else bell.play()
+
+  def decomposeSelected(): Unit =
+    if (selection.length == 1)
+    selection.head match {
+      case composition: Composition =>
+        withState {
+          displayList.dequeueAll(_.equals(selection.head))
+          selection = composition.components
+          displayList.enqueueAll(selection)
+        }
+      case _ => bell.play()
+    } else bell.play()
+
+  var deletion: Seq[TargetShape] = Seq.empty
 
   val bell = Sound.Clip("WAV/glass.wav")
+
+  def redo() = {
+    if (unstates.nonEmpty) {
+      val state = unstates.pop()
+      println(state)
+      states.push(state)
+      restoreState(state)
+    } else bell.play()
+  }
+
+  def undo() = {
+    if (states.nonEmpty) {
+      val state = states.pop()
+      unstates.push(state)
+      restoreState(state)
+    } else bell.play()
+  }
+
+  /** For external invocation of an action that requires feedback and redrawing */
+  def fromButton(recordState: Boolean)(action: => Unit): Unit =
+    { if (recordState) withState { action} else action
+      feedback()
+      reDraw()
+    }
 
   def handle(gesture: Gesture, location: Vec, delta: Vec): Unit = {
     // println(gesture, location, delta)
     val mods: Bitmap  = gesture.modifiers
-    val ACT        = mods.includeAll(Pressed)
-    val REL        = mods.includeAll(Released)
-    val CTL        = mods.includeSome(Command|Control|Secondary)
-    val PRIMARY    = mods.are(Primary   | Pressed)
-    val SECONDARY  = mods.are(Secondary | Pressed)
-    val COMPLEMENT = mods.includeSome(Shift)
+    val PRESSED       = mods.includeAll(Pressed)
+    val CONTROL       = mods.includeSome(Command|Control)
+    val PRIMARY       = mods.includeAll(Primary   | Pressed)
+    val SECONDARY     = mods.includeAll(Secondary | Pressed) || (PRIMARY && CONTROL)
+    val COMPLEMENT    = mods.includeSome(Shift)
+    val SHIFT         = mods.includeSome(Shift)
     gesture match {
       case _: MouseEnters => guiRoot.grabKeyboard(this)
       case _: MouseLeaves => guiRoot.freeKeyboard(completely = true)
 
-      case _: MouseScroll if CTL => transformSelected(_.scale(if (delta.x+delta.y>0) 1/1.05f else 1.05f))
-      case _: MouseScroll        => transformSelected(_.turn((delta.x+delta.y).sign*5, COMPLEMENT))
+      case _: MouseScroll if CONTROL => transformSelected(_.scale(if (delta.x+delta.y>0) 1/1.05f else 1.05f))
+      case _: MouseScroll            => transformSelected(_.turn((delta.x+delta.y).sign*5, COMPLEMENT))
 
-      case Keystroke(key, _) =>
+      case Keystroke(key, _) if !PRESSED =>
+
+      case Keystroke(key, _) if PRESSED =>
         key match {
-          case Key.LEFT  if ACT => transformSelected(_.turn(-90, COMPLEMENT))
-          case Key.RIGHT if ACT => transformSelected(_.turn(90, COMPLEMENT))
+          case Key.LEFT  =>  transformSelected(_.turn(-90, COMPLEMENT))
+          case Key.RIGHT =>  transformSelected(_.turn(90, COMPLEMENT))
 
-          case Key.MULTIPLY  if ACT => transformSelected(_.scale(1.05f))
-          case Key.SLASH     if ACT => transformSelected(_.scale(1/1.05f))
+          case Key.MULTIPLY  =>  transformSelected(_.scale(1.05f))
+          case Key.SLASH     =>  transformSelected(_.scale(1/1.05f))
 
-          case Key.PERIOD if ACT => transformSelected(_.turn(5, COMPLEMENT))
+          case Key.PERIOD =>  transformSelected(_.turn(5, COMPLEMENT))
 
-          case Key.Z if ACT && CTL && mods.includeSome(Shift)=>
-              if (unstates.nonEmpty) {
-                val state = unstates.pop()
-                states.push(state)
-                restoreState(state)
-              }
+          case Key.Z if CONTROL && SHIFT=> redo()
 
-          case Key.Z if ACT && CTL =>
-            if (states.nonEmpty) {
-              val state = states.pop()
-              unstates.push(state)
-              restoreState(state)
-            }
 
-          case Key.A if ACT && CTL =>
+          case Key.Z if CONTROL => undo()
+
+          case Key.A if CONTROL =>
             withState {
               if (COMPLEMENT)
                 selection = displayList.toSeq.filter(_.notIn(selection))
@@ -154,11 +193,12 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
                 selection = displayList.toSeq
             }
 
-          case Key.HOME   if ACT  =>
-            withState { selection = Seq.empty }
+          case Key.HOME  => withState { selection = Seq.empty }
 
+          case Key.X | Key.V =>
+            addVertex(lastMouseDown)
 
-          case Key.DELETE | Key.BACKSPACE if ACT =>
+          case Key.DELETE | Key.BACKSPACE =>
             withState {
               if (COMPLEMENT) {
                 deletion = displayList.toSeq.filter(_.notIn(selection))
@@ -170,36 +210,27 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
               selection = Seq.empty
             }
 
-          case Key.H  if selection.length > 1 => composeSelected( _.||| )
-          case Key.V  if selection.length > 1 => composeSelected( _.--- )
-          case Key.S  if selection.length > 1 => composeSelected( _.~~~ )
-          case Key.D  if components.nonEmpty =>
-            withState {
-              displayList.dequeueAll(_.isIn(selection))
-              deletion = selection
-              displayList.enqueueAll(components)
-              selection = components
-              components = Seq.empty
-            }
 
           // ignore shift buttons
           case Key.SHIFT | Key.CONTROL | Key.CAPS_LOCK | Key.ALT | Key.MAC_COMMAND | Key.MAC_FN | Key.MAC_OPTION =>
 
           case _ =>
-            if (mods.includeSome(Pressed)) bell.play()
-
+            bell.play()
         }
 
       case MouseMove(_) =>
-        if (ACT) {
+        if (PRESSED) {
           for { shape <- selection } shape.moveBy(delta.x, delta.y)
         }
         lastMouse = location
 
-      case MouseClick(_) if (SECONDARY) => withState { selection = selected(location) }
+      case MouseClick(_) if (PRIMARY) => withState {
+        selection = selected(location)
+        lastMouseDown = location
+        lastMouse = Vec.Origin
+      }
 
-      case MouseClick(_) if (PRIMARY)   =>
-        withState  {
+      case MouseClick(_) if (SECONDARY) => withState  {
           val touched = selected(location)
           for {shape <- touched}
             if (selection contains shape)
@@ -207,10 +238,15 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
             else
               selection = selection ++ List(shape)
 
-        }
+        lastMouse = Vec.Origin
+      }
+
+      case MouseClick(_)  if (PRESSED && COMPLEMENT) => withState {
+          lastMouseDown = location
+          addVertex(location)
+      }
 
       case MouseClick(_) =>
-        if (COMPLEMENT) lastMouseDown=location else lastMouseDown=Vec.Origin
 
     }
     feedback()
@@ -242,11 +278,25 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
     }
 
     indicateSelection(surface)
+    indicateVertices(surface)
 
     if (guiRoot.hasKeyboardFocus(this)) focussedFrame.draw(surface)
   }
 
   val selectionPath = new GlyphShape.PathShape(selectBrush)
+  val vertexPath = new GlyphShape.PathShape(Brushes("black/3.stroke-2-2"))
+
+  def indicateVertices(surface: Surface): Unit = if (vertices.nonEmpty) {
+    vertexPath.reset()
+    for { Vec(x,y) <- vertices.take(1) } vertexPath.moveTo(x,y)
+    for { Vec(x,y) <- vertices.drop(1) } vertexPath.lineTo(x,y)
+    for { Vec(x,y) <- vertices.take(1) } {
+      vertexPath.lineTo(x,y)
+      vertexPath.addCircle(x, y, 10)
+    }
+    vertexPath.draw(surface)
+  }
+
 
   def indicateSelection(surface: Surface): Unit = {
     selectionPath.reset()
@@ -257,7 +307,6 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
           selectionPath.addCircle(shape.x+shape.w/2, shape.y+shape.h/2, 10)
         }
       case _ =>
-        val path =
         for { shape <- selection.take(1) } selectionPath.moveTo(shape.x+shape.w/2, shape.y+shape.h/2)
         for { shape <- selection.drop(1) } selectionPath.lineTo(shape.x+shape.w/2, shape.y+shape.h/2)
         for { shape <- selection.take(1) } {
@@ -269,13 +318,23 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
   }
 
   def addShape(x:Scalar, y:Scalar)(shape: GlyphShape) : Unit = withState {
-    val v = shape.variable(x min (w - shape.w), y min (h - shape.h))
-    displayList.enqueue(v)
-    lastMouseDown=Vec.Zero
-    feedback()
+    val target = shape.targetLocatedAt(x min (w - shape.w), y min (h - shape.h))
+    displayList.enqueue(target)
+    selection = List(target)
   }
 
   def addShape(shape: GlyphShape) : Unit = addShape(lastMouseDown.x, lastMouseDown.y)(shape)
+
+  def addVertex(location: Vec): Unit = {
+    vertices = vertices++List(location)
+    println(vertices.mkString(", "))
+  }
+
+  def addPoly(fg: Brush) : Unit = if (vertices.nonEmpty) withState {
+    println(vertices)
+    addShape(polygon(vertices)(fg))
+    vertices = Seq.empty
+  }
 }
 
 
@@ -302,59 +361,61 @@ object Play extends Application {
   implicit val bookSheet: BookSheet = BookSheet(sheet, sheet)
 
   Page("Interact", ""){
-    import sheet.ex
-    val left, right = styled.ActiveString("------------")
-    val done: Variable[Int]   = Variable(0){ case n => left.set(f" $n%03d done") }
-    val undone: Variable[Int] = Variable(0){ case n => right.set(f" $n%03d undone") }
+    import sheet.{ex,em}
+    val left, right = styled.ActiveString("   ")
+    val done: Variable[Int]   = Variable(0){ case n => left.set(f"$n%03d") }
+    val undone: Variable[Int] = Variable(0){ case n => right.set(f"$n%03d") }
 
 
     val arena = new Arena(rect(1200, 800)(lightGrey))(done, undone)
 
-    def but(name: String)(shape: =>GlyphShape): Glyph = {
-      styled.TextButton(name){ _ => arena.addShape(shape) }
+    def but(name: String)(shape: => GlyphShape): Glyph = {
+      styled.TextButton(name){ _ => arena.fromButton(true) { arena.addShape(shape) } }
     }
 
     val blackArrow =  arrow(black)
 
     var newBrush: Brush = Brushes.blue()
 
-    val shapes = List(
-      but("Sq")(rect(150,150)(newBrush.copy)),
-      but("Circ")(circle(75)(newBrush.copy)),
-      but("Arrow")(arrow(newBrush.copy)),
-      but("Star")(PolygonLibrary.star7(fg=newBrush.copy))
+    var width, height, radius: Scalar = 150
+    var scale: Scalar = 1.0f
+    var vertices: Int = 3
+
+    val shapes: List[Glyph] = List(
+      but("Rect")(rect(width,height)(newBrush.copy).scale(scale max 1)),
+      but("Circ")(circle(radius)(newBrush.copy).scale(scale max 1)),
+      but("Arrow")(arrow(newBrush.copy).scale(scale max 0.3f)),
+      but("Star")(GlyphShape.polygon(PolygonLibrary.regularStarPath(vertices))(fg=newBrush.copy).scale(scale max 0.3f)),
+      but("Poly")(GlyphShape.polygon(PolygonLibrary.regularPolygonPath(vertices))(fg=newBrush.copy).scale(scale max 0.3f)),
+
     )
 
-    val colours = styled.RadioCheckBoxes(List("R","G","B", "Y", "Wh", "Bl"), "Bl") {
-      case None =>
-      case Some(n) => n match {
-            case 0 => newBrush.setColor(red.color)
-            case 1 => newBrush.setColor(green.color)
-            case 2 => newBrush.setColor(blue.color)
-            case 3 => newBrush.setColor(yellow.color)
-            case 4 => newBrush.setColor(white.color)
-            case 5 => newBrush.setColor(black.color)
-          }
-    }
 
-    val widths = styled.RadioCheckBoxes(List("0","1","2", "4", "8", "16"), "0") {
-      case None    =>
-      case Some(i) =>
-        var w = 1
-        for { _ <- 0 until i } w=w*2
-        newBrush.strokeWidth(w.toFloat)
-    }
+    lazy val dimField: TextField = styled.TextField(onEnter = setDims, onCursorLeave = setDims, size = 50)
 
-    val modes = styled.RadioCheckBoxes(List("Fill", "Stroke")){
-      case Some(0) =>  newBrush.setMode(FILL)
-      case Some(1) =>  newBrush.setMode(STROKE)
-      case _ =>
-    }
 
-    val decor = styled.RadioCheckBoxes(List("--", "~~")){
-      case Some(0) =>  newBrush.setPathEffect(Brushes.white.pathEffect)
-      case Some(1) =>  newBrush.setPathEffect(Brush.ofString("white~3~3").pathEffect)
-      case _ =>
+    def setDims(spec: String): Unit = {
+      @inline def isFloat(s: String):Boolean = s.matches("[0-9]+([.][0-9]+)?")
+      val specs = spec.toLowerCase.split("[ ]+|,[ ]*").toSeq
+      for  { spec <- specs }
+           spec match {
+             case s"$v=$d" if v.nonEmpty && isFloat(d) =>
+               val dim = d.toFloat
+               v.head match {
+                 case 'w' => width = dim
+                 case 'h' => height = dim
+                 case 'r' => radius = dim
+                 case 's' => scale = dim
+                 case 'v' => vertices = dim.toInt
+                 case _ =>
+                   logging.Default.warn(s"$spec does not specify w=, h=, r=, s=, v=")
+               }
+
+             case _ =>
+               logging.Default.warn(s"$spec does not specify dimensions properly")
+           }
+
+      dimField.text=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices"
     }
 
     def setNewBrush(spec: String): Unit = {
@@ -362,27 +423,35 @@ object Play extends Application {
       println(newBrush)
     }
 
-    val brushField = styled.TextField(onEnter=setNewBrush, onCursorLeave=setNewBrush, size=50)
+    val brushField = styled.TextField(onEnter=setNewBrush, onCursorLeave=setNewBrush, size=25)
 
     NaturalSize.Col(align=Center)(
       arena,
       ex,
       FixedSize.Row(width=arena.w, align=Mid)(
-        styled.TextButton("Restart"){ _ => arena.restart() },
+        styled.TextButton("Clear"){ _ => arena.restart() },
         sheet.hFill(),
-        left.framed(), right.framed(),
+
+        styled.TextButton("|")   { _ => arena.fromButton(true){arena.composeSelected(_.|||)}},
+        styled.TextButton("-")   { _ => arena.fromButton(true){arena.composeSelected(_.---)}},
+        styled.TextButton("~")   { _ => arena.fromButton(true){arena.composeSelected(_.~~~)}},
+        styled.TextButton("↯")   { _ => arena.fromButton(false){arena.decomposeSelected()}},
+        sheet.hFill(),
+        styled.TextButton("xxx") { _ => arena.fromButton(true){ arena.vertices=Seq.empty} },
+        styled.TextButton("Path"){ _ => arena.fromButton(true) { arena.addPoly(newBrush.copy) }},
+        sheet.hFill(),
+        styled.TextButton("Recolour"){ _ => arena.fromButton(true) { arena.transformSelected{ shape => shape.withForeground(newBrush.copy)}}},
+        sheet.hFill(1, 2f),
+        styled.TextButton("<"){ _ =>  arena.fromButton(false){arena.undo() } },
+        left.framed(),
+        styled.Label(" "),
+        right.framed(), styled.TextButton(">"){_ => arena.fromButton(false){arena.redo() } },
         styled.TextButton("Help"){ _ =>}
       ),
       ex,
       FixedSize.Row(width=arena.w, align=Mid)(shapes),
       ex,
-      brushField.framed(),
-//      FixedSize.Row(width=arena.w, align=Mid)(
-//        colours.arrangedHorizontally(),
-//        widths.arrangedHorizontally(),
-//        modes.arrangedVertically(),
-//        decor.arrangedVertically()
-//      )
+      styled.Label("Brush: ") beside brushField.framed() beside styled.Label(" ")  beside dimField.framed()
     ).enlarged(20)
   }
   //Page("Test", "")(new Page1(sheet).GUI)

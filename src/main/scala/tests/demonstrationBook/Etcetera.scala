@@ -33,9 +33,11 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       // An arbitrarily-shaped and intricate mobile
       val mobile: GlyphShape = {
         import GlyphShape._
+        val shape =
         (circle(25)(red)---
          rect(150,450)(blueFrame(mode=PaintMode.STROKE))---
          circle(25)(red)) ~~~ ((pie(95)(red,blue,transparent,green,yellow)~~~circle(10)(white)) ||| rect(100, 50)(yellow))
+         shape
       }
 
 
@@ -71,36 +73,48 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
         // each step turns the mobile by a degree
         override def step(): Unit = set((current + oneDegree))
 
-        object Blobs {
-          val blob1, blob2, blob3: GlyphVariable = blob.variable(0, 0)
-          val connect12 = lineBetween(blob1, blob2)(blueString)
-          val connect23 = lineBetween(blob2, blob3)(whiteString)
-          val connect31 = lineBetween(blob3, blob1)(redString)
-          val diagram = superimposed(blob1, blob2, blob3, connect12, connect23, connect31)
+        private def lineConnecting(v1: TargetShape, v2: TargetShape)(fg: Brush): TargetShape  =  lineBetween(v1, v2)(fg).targetLocatedAt(0,0)
+
+        /**
+         * Vertices that will be placed whenever a frame is generated (see `toGlyph`) and
+         * superimposed dynamically by "elastic" strings.
+         *
+         */
+        object Linked {
+          val blob = circle(6)(red)
+          val vertex1, vertex2, vertex3: TargetShape = blob.targetLocatedAt(0, 0)
+          val elasticStrings =
+              superimposed(
+                vertex1, lineConnecting(vertex1, vertex2)(blueString),
+                vertex2, lineConnecting(vertex2, vertex3)(whiteString),
+                vertex3, lineConnecting(vertex3, vertex1)(redString))
         }
 
         /**
-         * Generate the next frame: the scenery, the mobile, and
-         * various blobs and spots connected by pieces of string.
+         * Generate the glyph showing the next frame, by
+         * placing the linked vertices then forming a glyph superimposing
+         * the scenery, the turned mobile, and the placed vertices.
          */
         def toGlyph(degrees: Double): Glyph = {
-          import GlyphShape._
-          val theta = (degrees%360.0) * D2R
-          val dx = orbit*Math.cos(3f*theta).toFloat
-          val ddy = orbit*Math.cos(4f*theta).toFloat
-          val dy = orbit*Math.sin(theta).toFloat
+          import Linked._
+          locally // Place the linked vertices
+          { val θ   = (degrees % 360.0) * D2R
+            val dx  = orbit * Math.cos(3f * θ).toFloat
+            val ddy = orbit * Math.cos(6f * θ).toFloat
+            val dy  = orbit * Math.sin(θ).toFloat
 
-          { import Blobs._
-            blob1.moveTo(-orbit,  ddy)
-            blob2.moveTo(dx, orbit)
-            blob3.moveTo(orbit, dy)
+            vertex1.placeAt(-orbit, ddy)
+            vertex2.placeAt(dx, orbit)
+            vertex3.placeAt(orbit, dy)
           }
 
 
-          superimposed(
-            scenery,
-            mobile.turn(degrees.toFloat),
-            Blobs.diagram
+          asGlyph(
+            superimposed(
+              scenery,
+              mobile.turn(degrees.toFloat),
+              elasticStrings
+            )
           )
         }
 

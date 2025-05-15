@@ -16,8 +16,9 @@ import org.sufrin.glyph.GlyphShape.{asGlyph, circle, rect, superimposed, FILL, S
  *  on the `mode` of the brush: `FILL` or `STROKE`.
  */
 trait GlyphShape { thisShape =>
-  def draw(surface: Surface): Unit        // draw on the given surface
-  def diagonal:               Vec         // a bounding box
+  def draw(surface: Surface): Unit            // draw on the given surface
+  def diagonal:               Vec             // a bounding box
+  def withForeground(brush: Brush): GlyphShape // a copy, with a new foreground brush
   @inline def w: Scalar  = diagonal.x
   @inline def h: Scalar  = diagonal.y
 
@@ -42,6 +43,7 @@ trait GlyphShape { thisShape =>
     override def toString: String = s"$thisShape.scale(${factor})"
     override def enclosing(point: Vec): Option[GlyphShape] = thisShape.enclosing(point.deScaled(factor, factor))
     override def scale(factor: Scalar): GlyphShape = if (factor==1) original else new Scaled(original, this.factor*factor)
+    def withForeground(brush: Brush): GlyphShape = original.withForeground(brush).scale(factor)
   }
 
   /**
@@ -60,54 +62,56 @@ trait GlyphShape { thisShape =>
 
     override def originals: Seq[GlyphShape] = List(shape)
 
+    override def withForeground(brush: Brush): GlyphShape = shape.withForeground(brush).turn(degrees, tight)
+
   }
 
   def originals: Seq[GlyphShape] = List(thisShape)
 
-  private class XTurned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphShape {
-    override def toString: String = s"$original.turn($degrees)"
-
-    override def turn(degrees: Scalar, tight: Boolean=true): GlyphShape =
-      if (degrees==0f) original else new Turned(original, this.degrees+degrees, tight)
-
-    // Bounding box of the transformed shape -- pessimistic (see `GlyphTransforms.Turned`)
-    def diagonal: Vec = {
-      val side = original.diagonal.x max original.diagonal.y
-      Vec(side, side)
-    }
-
-    // Centre of the original shape's bounding box
-    private val originalCentre = original.diagonal scaled 0.5f
-
-    // Distance of the new centre from the host centre
-    private val delta = (diagonal scaled 0.5f) - originalCentre
-
-    def draw(surface: Surface): Unit =
-      surface.withOrigin(delta) {
-        surface.withRot(degrees, originalCentre) {
-          original.draw(surface)
-        }
-      }
-
-    private val thisCentre: Vec = diagonal scaled 0.5f
-
-    @inline private def relativeLocation(glyphPos: Vec): Vec = {
-      import Math.{cos, sin, PI}
-      val theta = degrees * (PI / 180)
-      val cosTheta = cos(theta).toFloat
-      val sinTheta = sin(theta).toFloat
-      val Vec(x, y) = glyphPos - thisCentre  // vector to the centre of this glyph
-      val xr = x*cosTheta + y*sinTheta       // rotated by theta
-      val yr = y*cosTheta - x*sinTheta
-      originalCentre+Vec(xr, yr)
-    }
-
-    override def enclosing(p: Vec): Option[GlyphShape] = {
-      val res = original.enclosing(relativeLocation(p))
-      res
-    }
-
-  }
+//  private class XTurned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphShape {
+//    override def toString: String = s"$original.turn($degrees)"
+//
+//    override def turn(degrees: Scalar, tight: Boolean=true): GlyphShape =
+//      if (degrees==0f) original else new Turned(original, this.degrees+degrees, tight)
+//
+//    // Bounding box of the transformed shape -- pessimistic (see `GlyphTransforms.Turned`)
+//    def diagonal: Vec = {
+//      val side = original.diagonal.x max original.diagonal.y
+//      Vec(side, side)
+//    }
+//
+//    // Centre of the original shape's bounding box
+//    private val originalCentre = original.diagonal scaled 0.5f
+//
+//    // Distance of the new centre from the host centre
+//    private val delta = (diagonal scaled 0.5f) - originalCentre
+//
+//    def draw(surface: Surface): Unit =
+//      surface.withOrigin(delta) {
+//        surface.withRot(degrees, originalCentre) {
+//          original.draw(surface)
+//        }
+//      }
+//
+//    private val thisCentre: Vec = diagonal scaled 0.5f
+//
+//    @inline private def relativeLocation(glyphPos: Vec): Vec = {
+//      import Math.{cos, sin, PI}
+//      val theta = degrees * (PI / 180)
+//      val cosTheta = cos(theta).toFloat
+//      val sinTheta = sin(theta).toFloat
+//      val Vec(x, y) = glyphPos - thisCentre  // vector to the centre of this glyph
+//      val xr = x*cosTheta + y*sinTheta       // rotated by theta
+//      val yr = y*cosTheta - x*sinTheta
+//      originalCentre+Vec(xr, yr)
+//    }
+//
+//    override def enclosing(p: Vec): Option[GlyphShape] = {
+//      val res = original.enclosing(relativeLocation(p))
+//      res
+//    }
+//
+//  }
 
 
   /** left '''beside''' right */
@@ -127,6 +131,11 @@ trait GlyphShape { thisShape =>
     override def toString: String = s"$thisShape|||$thatShape"
 
     override def originals: Seq[GlyphShape] = List(thisShape, thatShape)
+
+    override def scale(factor: Scalar): GlyphShape = if (factor==1) this else thisShape ||| thatShape
+
+    def withForeground(brush: Brush): GlyphShape =  this
+
 
   }
 
@@ -149,6 +158,10 @@ trait GlyphShape { thisShape =>
 
     override def originals: Seq[GlyphShape] = List(thisShape, thatShape)
 
+    override def scale(factor: Scalar): GlyphShape = if (factor==1) this else thisShape ||| thatShape
+
+    def withForeground(brush: Brush): GlyphShape =  this
+
 
   }
 
@@ -162,18 +175,18 @@ trait GlyphShape { thisShape =>
   }
 
   /**
-   *  A `GlyphVariable` shaped like `thisShape`, initially drawn at `(x,y)`.
+   *  A `LocatedShape` shaped like `thisShape`, initially drawn at `(x,y)`.
    *
-   * @see GlyphVariable
    */
-  def variable(x: Scalar, y: Scalar): GlyphVariable = GlyphVariable(x, y, thisShape)
+  def locatedAt(x: Scalar, y: Scalar): LocatedShape = LocatedShape(x, y, thisShape)
 
   /**
-   *  A `GlyphLocated` shaped like `thisShape` always drawn at (x,y)`.
+   *  A `TargetShape` shaped like `thisShape`, initially drawn at `(x,y)`.
    *
-   * @see GlyphLocated
+   * @see TargetShape
    */
-  def located(x: Scalar, y: Scalar): GlyphLocated = GlyphLocated(x, y,thisShape)
+  def targetLocatedAt(x: Scalar, y: Scalar): TargetShape = TargetShape(x, y, thisShape)
+
 
   /**
    * This shape, with a background (as far as possible of the same shape) coloured by `brush`.
@@ -211,12 +224,18 @@ object GlyphShape {
       res
     }
 
+
     /**
      * This circle superimposed on a circle of the same radius filled with `brush`
      */
     override def bg(brush: Brush): GlyphShape = circle(r)(brush(mode = PaintMode.FILL)) ~~~ this
 
     override def apply(brush: Brush): GlyphShape = circle(r)(brush)
+
+    override def scale(factor: Scalar): GlyphShape = if (factor == 1) this else circle(factor * r)(fg)
+
+    def withForeground(brush: Brush): GlyphShape = circle(r)(brush)
+
   }
 
   /**
@@ -244,6 +263,9 @@ object GlyphShape {
 
     override def apply(brush: Brush): GlyphShape = oval(w, h)(brush)
 
+    override def scale(factor: Scalar): GlyphShape = if (factor == 1) this else oval(factor * width, factor * height)(fg)
+
+    def withForeground(brush: Brush): GlyphShape = oval(width, height)(brush)
   }
 
   /**
@@ -263,6 +285,8 @@ object GlyphShape {
 
     override def toString: String = s"arc($width,$height,$startAngle,$sweepAngle,$incCentre)($fg)"
 
+    def withForeground(brush: Brush): GlyphShape = arc(width, height, startAngle, sweepAngle, incCentre)(brush)
+
 
     /**
      * This arc superimposed on an arc with the same characteristics filled with `brush`
@@ -270,6 +294,8 @@ object GlyphShape {
     override def bg(brush: Brush): GlyphShape = arc(width, height, startAngle, sweepAngle, incCentre)(brush(mode = PaintMode.FILL)) ~~~ this
 
     override def apply(brush: Brush): GlyphShape = arc(width, height, startAngle, sweepAngle, incCentre)(brush)
+
+    override def scale(factor: Scalar): GlyphShape = if (factor == 1) this else oval(factor * width, factor * height)(fg)
 
   }
 
@@ -298,7 +324,7 @@ object GlyphShape {
    *    spot.located(p, dy) ~~~
    *    spot.located(dx, p) ~~~
    *    line(Vec(p, dy), Vec(dx, p))(black)
-   *   }}}
+   *    }}}
    *
    * @see located
    */
@@ -306,6 +332,7 @@ object GlyphShape {
     def draw(surface: Surface): Unit =  surface.drawLines(fg, List(start, end))
     def diagonal: Vec = Vec.Zero
     override def toString: String = s"line($start,$end)($fg)"
+    def withForeground(brush: Brush): GlyphShape = line(start, end)(brush)
   }
 
   /**
@@ -315,9 +342,11 @@ object GlyphShape {
     def draw(surface: Surface): Unit = surface.drawLines$(fg, startx, starty, endx, endy)
     def diagonal: Vec = Vec.Zero
     override def toString: String = s"line(($startx,$starty), ($endx,$endy))($fg)"
+    def withForeground(brush: Brush): GlyphShape = line(startx, starty, endx, endy)(brush)
+
   }
 
-  def lineBetween(l: GlyphVariable, r: GlyphVariable)(fg: Brush): GlyphShape = new GlyphShape {
+  def lineBetween(l: LocatedShape, r: LocatedShape)(fg: Brush): GlyphShape = new GlyphShape {
       val diagonal: Vec = Vec.Zero
 
       def draw(surface: Surface): Unit =
@@ -325,6 +354,7 @@ object GlyphShape {
 
       override def toString: String = s"lineBetween($l,$r)($fg)"
 
+      def withForeground(brush: Brush): GlyphShape = lineBetween(l, r)(brush)
   }
 
   def arrow(brush: Brush): GlyphShape = {
@@ -342,6 +372,8 @@ object GlyphShape {
    * Unless `fg.mode=PaintMode.STROKE` the rectangle is filled.
    */
   def rect(width: Scalar, height: Scalar)(fg: Brush): GlyphShape = new GlyphShape {
+    def withForeground(brush: Brush): GlyphShape = rect(width, height)(brush)
+
     val delta = Vec(fg.strokeWidth / 2, fg.strokeWidth / 2)
 
     def draw(surface: Surface): Unit = surface.withOrigin(delta) {
@@ -362,20 +394,29 @@ object GlyphShape {
 
     override def apply(brush: Brush): GlyphShape = rect(width, height)(brush)
 
+    override def scale(factor: Scalar): GlyphShape = if (factor ==1) this else rect(factor * width, factor * height)(fg)
+
   }
 
   /**
-   * A polygon made of `vertex::vertices`, and with the natural bounding box.
+   * A closed polygon made of `vertex::vertices`, and with the natural bounding box.
    */
   def polygon(vertex: (Scalar, Scalar), vertices: (Scalar, Scalar)*): Brush => GlyphShape = polygon(vertex :: vertices.toList)
 
   /**
-   * A polygon made of the given `vertices`, and with the natural bounding box.
+   * A closed polygon made of `vertices`, and with the natural bounding box.
+   */
+  def polygon(vertices: Seq[Vec]): Brush =>GlyphShape = polygon(vertices.map {v =>(v.x, v. y)})
+
+  /**
+   * A closed polygon made of the given `vertices`, and with the natural bounding box.
    */
   def polygon(vertices: Iterable[(Scalar, Scalar)])(fg: Brush): GlyphShape = new GlyphShape {
     val kind: String = "Polygon"
 
     override def toString: String = s"Polygon(...)[$diagonal](fg=$fg)"
+
+    def withForeground(brush: Brush): GlyphShape =  polygon(vertices)(brush)
 
     val path = new Path()
     locally {
@@ -414,6 +455,11 @@ object GlyphShape {
      */
     override def bg(brush: Brush): GlyphShape = this ~~~ polygon(vertices)(brush(mode = FILL))
 
+    override def scale(factor: Scalar): GlyphShape = if (factor ==1) this else {
+      polygon(vertices.map { case ( x,y) => (factor*x, factor * y)})(fg)
+    }
+
+
   }
 
   /** Experimental mutable shape. */
@@ -422,6 +468,8 @@ object GlyphShape {
     locally {
       if (absolute) path.moveTo(0, 0)
     }
+
+    def withForeground(brush: Brush): GlyphShape =  this
 
     def reset(): Unit = path.reset()
 
@@ -451,23 +499,28 @@ object GlyphShape {
     def fillMode(mode: PathFillMode) = path.setFillMode(mode)
 
     def moveTo(x: Scalar, y: Scalar): PathShape = {
-      path.moveTo(x, y); this
+      path.moveTo(x, y)
+      ; this
     }
 
     def lineTo(x: Scalar, y: Scalar): PathShape = {
-      path.lineTo(x, y); this
+      path.lineTo(x, y
+      ); this
     }
 
     def closePath: PathShape = {
-      path.closePath(); this
+      path.closePath
+      (); this
     }
 
     def addRect(x: Scalar, y: Scalar, w: Scalar, h: Scalar): PathShape = {
-      path.addRect(Rect.makeXYWH(x, y, w, h)); this
+      path.addRect(Rect.makeXYWH(x, y, w,
+      h)); this
     }
 
     def addOval(x: Scalar, y: Scalar, w: Scalar, h: Scalar): PathShape = {
-      path.addOval(Rect.makeXYWH(x, y, w, h)); this
+      path.addOval(Rect.makeXYWH(x, y, w,
+      h)); this
     }
 
     def addCircle(x: Scalar, y: Scalar, r: Scalar): PathShape = {
@@ -528,10 +581,53 @@ object GlyphShape {
 
     override def toString: String = s"(${shapes.mkString("~~~")})"
 
+    override def scale(factor: Scalar): GlyphShape = if (factor==1) this else superimposed(shapes.map(_.scale(factor)))
+
+    def withForeground(brush: Brush): GlyphShape =  this
+
   }
 
   /** @see superimposed */
   def superimposed(shape: GlyphShape, shapes: GlyphShape*): GlyphShape = superimposed(shape :: shapes.toList)
+
+
+  /** Superposition of located shapes */
+  def superimposed(shape: LocatedShape, shapes: LocatedShape*): GlyphShape = superimposed(shape :: shapes.toList)
+
+  /** Superposition of located shapes */
+  def superimposed(shapes: Iterable[LocatedShape]): GlyphShape = new GlyphShape {
+    def withForeground(brush: Brush): GlyphShape =  this
+    val tw = Measure.maxWidth(shapes.map(_.shape))
+    val th = Measure.maxHeight(shapes.map(_.shape))
+    val deltas = for {shape <- shapes} yield (Vec((tw - shape.w) / 2, (th - shape.h) / 2))
+
+    def draw(surface: Surface): Unit = {
+      val shape = shapes.iterator
+      for {delta <- deltas}
+        surface.withOrigin(delta) {
+          shape.next().draw(surface)
+        }
+    }
+
+    def diagonal: Vec = Vec(tw, th)
+
+    override def enclosing(point: Vec): Option[GlyphShape] = {
+      var it: Option[GlyphShape] = None
+      val delta = deltas.iterator
+      val shape = shapes.iterator
+      //println(s"$this.enclosing($point)")
+      while (it.isEmpty && delta.hasNext) {
+        val s = shape.next()
+        val d = delta.next()
+        //println(s"  $s@${point-d}")
+        it = s.shape.enclosing(point - d)
+      }
+      it
+    }
+
+    override def toString: String = s"(${shapes.mkString("~~~")})"
+
+  }
 
 
   /**
@@ -557,9 +653,17 @@ object GlyphShape {
     import shape.{w, h}
     Array(Vec(w, h / 2), Vec(w, h), Vec(w / 2, h), Vec(0, h), Vec(0, h / 2), Vec(0, 0), Vec(w / 2, 0), Vec(w, 0)).toSeq
   }
+
+
+  def fromGlyph(glyph: Glyph): GlyphShape = new GlyphShape {
+    def draw(surface: Surface): Unit = glyph.draw(surface)
+    def diagonal: Vec = glyph.diagonal
+    def withForeground(brush: Brush): GlyphShape = glyph.copy(brush)
+  }
+
 }
 
-case class Handle(thing: GlyphVariable, shape: GlyphShape, origin: Vec) {
+case class Handle(thing: TargetShape, shape: GlyphShape, origin: Vec) {
   def draw(surface: Surface): Unit = { surface.withOrigin(origin) { shape.draw(surface) } }
   def canHandle(point: Vec): Boolean = {
     val br = origin+shape.diagonal
@@ -567,29 +671,27 @@ case class Handle(thing: GlyphVariable, shape: GlyphShape, origin: Vec) {
   }
 }
 
-case class Handles(thing: GlyphVariable, handles: Seq[Handle]) {
+case class Handles(thing: TargetShape, handles: Seq[Handle]) {
   def draw(surface: Surface): Unit = for { handle<-handles } handle.draw(surface)
   def canHandle(point: Vec): Seq[Handle] =
     for { handle<-handles if handle.canHandle(point) } yield handle
 }
 
 /**
- * A variably-located and rotated shape currently located at `(x,y)` and currently rotated by `degrees.`
+ * A variably-located and rotated shape currently located at `(x,y)`.
  * Shown with a "handle" whose appearance can be changed when hovering or selected.
  */
-case class GlyphVariable(var x: Scalar, var y: Scalar, shape: GlyphShape) extends GlyphShape {
-
-  import GlyphShape.PathShape
+case class TargetShape(x$: Scalar, y$: Scalar, shape$: GlyphShape) extends LocatedShape(x$, y$, shape$) {
 
   val handleBrush0 = Brushes.yellow(width = 2f, mode = STROKE, cap = ROUND, alpha = 0.4f)
   val handleBrush = handleBrush0.copy()
   val hoverBrush0 = Brushes.white(width = 1, mode = STROKE, cap = ROUND, alpha = 0.7f)
   val hoverBrush = hoverBrush0.copy()
-  val radius = ((shape.w max shape.h) / 12) min 5
+  val radius = ((w max h) / 12) min 5
 
   private val handle = rect(radius, radius)(handleBrush)
   val deltaHandle = handle.diagonal scaled 0.5f
-  val handles = Handles(this, for { loc <- GlyphShape.cardinalPoints(this) } yield Handle(this, handle, loc-deltaHandle))
+  val handles = Handles(this, for { loc <- GlyphShape.cardinalPoints(this.shape) } yield Handle(this, handle, loc-deltaHandle))
 
   val hover =  circle(radius)(hoverBrush)
 
@@ -622,11 +724,8 @@ case class GlyphVariable(var x: Scalar, var y: Scalar, shape: GlyphShape) extend
   /** one of the glyph's handle(s) contains the mouse pointer */
   def canHandle(point: Vec): Boolean = handles.canHandle(point - (x,y)).nonEmpty
 
-  /** the glyph's bounding box contains the mouse pointer */
-  def isBeneath(point: Vec): Boolean = shape.encloses((point - (x,y)))
-
   /** Draw the shape and its auxiliary shapes */
-  def draw(surface: Surface): Unit = {
+  override def draw(surface: Surface): Unit = {
     surface.withOrigin(x, y) {
       shape.draw(surface)
       handles.draw(surface)
@@ -634,17 +733,43 @@ case class GlyphVariable(var x: Scalar, var y: Scalar, shape: GlyphShape) extend
     surface.withOrigin(centred(hover)) { hover.draw(surface) }
   }
 
-  def copyState: GlyphVariable = GlyphVariable(x, y, shape)
+  override def copyState: TargetShape = TargetShape(x, y, shape)
+
+  override def toString: String = s"$shape.variable${(x, y)}"
+
+}
+
+class LocatedShape(var x: Scalar, var y: Scalar, val shape: GlyphShape) {
+  def w: Scalar = shape.w
+  def h: Scalar = shape.h
+
+  @inline private def centred(g: GlyphShape): Vec = Vec(x, y) + ((diagonal - g.diagonal) scaled 0.5f)
+
+  /** the glyph's bounding box contains the mouse pointer */
+  def isBeneath(point: Vec): Boolean = shape.encloses((point - (x,y)))
+
+  /** Draw the shape and its auxiliary shapes */
+  def draw(surface: Surface): Unit = {
+    surface.withOrigin(x, y) {
+      shape.draw(surface)
+    }
+  }
+
+  def copyState: LocatedShape = LocatedShape(x, y, shape)
 
   def diagonal: Vec = shape.diagonal
 
   override def toString: String = s"$shape.variable${(x, y)}"
 
-  def isIn(set: Seq[GlyphVariable]): Boolean = set contains this
+  def isIn(set: Seq[LocatedShape]): Boolean = set contains this
 
-  def notIn(set: Seq[GlyphVariable]): Boolean = !(set contains this)
+  def notIn(set: Seq[LocatedShape]): Boolean = !(set contains this)
 
   def moveTo(x: Scalar, y: Scalar): Unit = {
+    this.x = x; this.y = y
+  }
+
+  def placeAt(x: Scalar, y: Scalar): Unit = {
     this.x = x; this.y = y
   }
 
@@ -653,17 +778,9 @@ case class GlyphVariable(var x: Scalar, var y: Scalar, shape: GlyphShape) extend
   }
 
   def center: Vec = (diagonal scaled 0.5f) + (x, y)
+
 }
 
-
-case class GlyphLocated(x: Scalar, y: Scalar, shape: GlyphShape) extends GlyphShape {
-
-  def draw(surface: Surface): Unit = surface.withOrigin(x, y) { shape.draw(surface) }
-
-  def diagonal: Vec = shape.diagonal
-
-  override def toString: String = s"$shape.located($x,$y)"
-
-  override def enclosing(point: Vec): Option[GlyphShape] = shape.enclosing(point-(x,y))
-
+object LocatedShape {
+  def apply(x: Scalar, y: Scalar, shape: GlyphShape): LocatedShape = new LocatedShape(x, y, shape)
 }

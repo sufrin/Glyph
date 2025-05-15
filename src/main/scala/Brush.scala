@@ -7,6 +7,8 @@ package org.sufrin.glyph
 import GlyphTypes.Paint
 
 import io.github.humbleui.skija.BlendMode
+import org.sufrin.glyph.Brush.BUTT
+import org.sufrin.glyph.GlyphShape.{FILL, STROKE, STROKE_AND_FILL}
 
 object Brush {
 
@@ -82,14 +84,21 @@ class Brush(var name: String) extends Paint {
 
   override def toString: String = {
     import Brush.{ROUND, SQUARE}
-           val id = if (name.isEmpty) f"Brush() color=0X${color}%08X" else name
-           val width = if (strokeWidth<2f) "" else s" width ${strokeWidth.toInt}"
+           val id = if (name.isEmpty) f"0X${color}%08X" else name
+           val width = s"${strokeWidth.toInt}"
            val cap = strokeCap match {
-             case ROUND => " cap ROUND"
-             case SQUARE => " cap SQUARE"
+             case ROUND => "/ROUND"
+             case SQUARE => "/SQUARE"
+             case BUTT => "/BUTT"
              case _ => ""
            }
-   if (Brush.includeDetail) s"$id$width$cap" else id
+           val mode = this.mode match {
+             case FILL => ".fill"
+             case STROKE => ".stroke"
+             case STROKE_AND_FILL => ".strokeandfill"
+             case _ => ""
+           }
+   if (Brush.includeDetail) s"$id/$width$cap$mode" else id
   }
 
   /** A copy of `this`` brush with changed attributes as specified. */
