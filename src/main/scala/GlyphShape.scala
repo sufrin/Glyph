@@ -500,31 +500,34 @@ object GlyphShape {
 
     def moveTo(x: Scalar, y: Scalar): PathShape = {
       path.moveTo(x, y)
-      ; this
+      this
     }
 
     def lineTo(x: Scalar, y: Scalar): PathShape = {
-      path.lineTo(x, y
-      ); this
+      path.lineTo(x, y)
+      this
     }
 
     def closePath: PathShape = {
-      path.closePath
-      (); this
+      path.closePath()
+      this
     }
 
     def addRect(x: Scalar, y: Scalar, w: Scalar, h: Scalar): PathShape = {
-      path.addRect(Rect.makeXYWH(x, y, w,
-      h)); this
+      path.addRect(Rect.makeXYWH(x, y, w, h)); this
     }
 
     def addOval(x: Scalar, y: Scalar, w: Scalar, h: Scalar): PathShape = {
-      path.addOval(Rect.makeXYWH(x, y, w,
-      h)); this
+      path.addOval(Rect.makeXYWH(x, y, w, h)); this
     }
 
     def addCircle(x: Scalar, y: Scalar, r: Scalar): PathShape = {
       path.addCircle(x, y, r); this
+    }
+
+    def addPathShape(shape: PathShape, x: Scalar, y: Scalar): PathShape = {
+      path.addPath(shape.path, x-shape.w/2, y-shape.h/2)
+      this
     }
 
     override def toString: String = s"PathShape($fg)(${path.getVerbs.toSeq.mkString(",")})"

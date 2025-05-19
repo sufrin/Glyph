@@ -5,13 +5,14 @@ package tests
 import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, Key, MouseButton}
 import GlyphTypes.{EventKey, Scalar, Window}
 
-import io.github.humbleui.skija.{PaintMode, PathFillMode}
+import io.github.humbleui.skija.{BlendMode, PaintMode, PathFillMode}
 import org.sufrin.glyph.Modifiers.{Alt, Bitmap, Command, Control, Pressed, Primary, Released, Secondary, Shift}
 import gesture._
 
+import io.github.humbleui.types.Rect
 import org.sufrin.{glyph, logging}
 import org.sufrin.glyph.Brushes.{black, blue, green, lightGrey, red, white, yellow}
-import org.sufrin.glyph.GlyphShape.{arrow, circle, polygon, rect, FILL, STROKE}
+import org.sufrin.glyph.GlyphShape.{arrow, circle, polygon, rect, FILL, PathShape, STROKE}
 import org.sufrin.glyph.styled.{Book, BookSheet, GlyphButton}
 import org.sufrin.glyph.unstyled.static.FilledPolygon
 
@@ -19,7 +20,18 @@ import java.io.File
 import scala.collection.mutable
 
 
-
+object PathSymbols {
+  val blend: BlendMode = BlendMode.SRC
+  val exx = new PathShape(red(width=0, blendMode=blend)) {
+    moveTo(0, 0)
+    lineTo(20, 20)
+    moveTo(0, 20)
+    lineTo(20, 0)
+  }
+  val pie = new PathShape(red(width=0, blendMode=blend)) {
+    addCircle(0,0,7)
+  }
+}
 
 /**
  * Container/editor for a displayList
@@ -284,7 +296,7 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
   }
 
   val selectionPath = new GlyphShape.PathShape(selectBrush)
-  val vertexPath = new GlyphShape.PathShape(Brushes("black/3.stroke-2-2"))
+  val vertexPath = new GlyphShape.PathShape(Brushes("yellow/1.stroke-2-2")(blendMode = BlendMode.XOR))
 
   def indicateVertices(surface: Surface): Unit = if (vertices.nonEmpty) {
     vertexPath.reset()
@@ -292,8 +304,13 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
     for { Vec(x,y) <- vertices.drop(1) } vertexPath.lineTo(x,y)
     for { Vec(x,y) <- vertices.take(1) } {
       vertexPath.lineTo(x,y)
-      vertexPath.addCircle(x, y, 10)
+      //vertexPath.addCircle(x, y, 10)
+      vertexPath.addPathShape(PathSymbols.exx, x, y)
     }
+    val b = (vertexPath.path.computeTightBounds())
+    val w = b.getWidth
+    val h = b.getHeight
+    vertexPath.addPathShape(PathSymbols.pie, b.getLeft+w/2, b.getTop+h/2)
     vertexPath.draw(surface)
   }
 
@@ -323,7 +340,10 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
     selection = List(target)
   }
 
-  def addShape(shape: GlyphShape) : Unit = addShape(lastMouseDown.x, lastMouseDown.y)(shape)
+  def addShape(shape: GlyphShape) : Unit = {
+    val delta = shape.diagonal scaled 0.5f
+    addShape(lastMouseDown.x-delta.x, lastMouseDown.y-delta.y)(shape)
+  }
 
   def addVertex(location: Vec): Unit = {
     vertices = vertices++List(location)

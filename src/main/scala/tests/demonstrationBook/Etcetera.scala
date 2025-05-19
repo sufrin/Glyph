@@ -23,7 +23,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
   import Brushes._
 
 
-    Page("Animation 1", "") {
+  Page("Animation 1", "") {
       import unstyled.dynamic.{Periodic, ActiveGlyph}
 
 
@@ -169,7 +169,114 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       )
     }
 
-    Page("Animation 2", "") {
+  Page("Animation 2", "") {
+    import unstyled.dynamic.{Periodic, ActiveGlyph}
+
+
+    val blueString  = blueLine.sliced(5f, 3f)
+    val whiteString = white(width=2).sliced(6f, 4f)
+    val redString   = red(width=4).sliced(5f, 4f)
+
+    // An active glyph whose initial image is formed by the mobile and ancillary actors
+    // Its state is the current angle of rotation of the mobile
+    class Stage extends ActiveGlyph[Double] (0.0){
+
+      private val D2R: Double = Math.PI/180.0
+      private val oneDegree: Double = 1.0
+
+      // each step turns the mobile by a degree
+      override def step(): Unit = {
+        var next = current + oneDegree
+        if (next>359.0) next = 0.0
+        set((next))
+      }
+
+
+      lazy val stage: Glyph             = Rect(400,400, blueLine, white)
+      var x, y: Scalar                  = 150f
+      def currentShape: LocatedShape    = GlyphShape.circle(3)(red).locatedAt(stage.w*0.5f+x,stage.h*0.5f+y)
+      def backgroundShape: LocatedShape = GlyphShape.circle(10)(blue).locatedAt(stage.w*0.5f, stage.h*0.5f)
+
+      /**
+       * Generate the glyph showing the next frame, by
+       * placing the linked vertices then forming a glyph superimposing
+       * the scenery, the turned mobile, and the placed vertices.
+       */
+      def toGlyph(degrees: Double): Glyph = {
+
+        locally
+        { val orbit = stage.w*0.5f-10f
+          import Math.{sin,cos}
+          val n = 4.0
+          val d = 5.0
+          val θ = (degrees % 360.0) * D2R
+          def r = cos((n/d) * θ)
+          println(r)
+          x=orbit*(r * cos(θ)).toFloat
+          y=orbit*(r * sin(θ)).toFloat
+        }
+
+        stage
+      }
+
+      override def draw(surface: Surface): Unit = {
+        drawBackground(surface)
+        //surface.withClip(diagonal) {
+          surface.withOrigin(currentGlyph.location) {
+            currentGlyph.draw(surface)
+            backgroundShape.draw(surface)
+            currentShape.draw(surface)
+          }
+        //}
+      }
+
+      /** A copy of this glyph; perhaps with different foreground/background */
+      def copy(fg: Brush, bg: Brush): Glyph = null
+    }
+
+
+    object Animation  {
+      lazy val animated: Stage = new Stage
+      lazy val driver:   Periodic[Double] = Periodic[Double](animated, 15.0)
+    }
+
+    val FPS = styled.ActiveString(f"${1000.0/Animation.driver.msPerFrame}%3.2f FPS")
+    def setFPS(): Unit = FPS.set(f"${1000.0/Animation.driver.msPerFrame}%3.2f FPS")
+
+    Col(align=Center)(
+      <div width="60em" align="justify">
+        <p>
+         xx
+        </p>
+        <p>
+          yy
+        </p>
+      </div>, ex,
+      FPS, ex,
+      Row(
+        TextToggle(whenFalse="Start", whenTrue="Stop", initially = false){
+          case true  =>
+            Animation.driver.start()
+            setFPS()
+          case false =>
+            Animation.driver.stop()
+        }, em,
+        TextButton("Faster"){
+          _ =>
+            if (Animation.driver.msPerFrame>2) Animation.driver.msPerFrame /= 2
+            setFPS()
+        }, em,
+        TextButton("Slower"){
+          _ =>
+            Animation.driver.msPerFrame *= 2
+            setFPS()
+        }
+      ), ex, ex,
+      Animation.animated, ex, ex
+    )
+  }
+
+  Page("Animation 3", "") {
     import unstyled.dynamic.{Periodic, Transform, Transformable}
     val shape = static.Concentric(rowAlign=Mid, colAlign=Center)(
       FilledOval(40, 40, fg=blue),
