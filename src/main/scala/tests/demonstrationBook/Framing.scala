@@ -130,9 +130,9 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
   Page("Edged #3", "Text.copy(bg=transparent).edged(fg, bg)\n(text bg prevails over edged bg unless transparent)") {
     def label(bg: Brush) = SimpleParagraphs(15, align=Center, font=FontFamily("Courier")(25), fg=darkGrey, bg=bg)("""The rain in spain falls mainly in the plain""")
 
-    Grid(padx=10, pady=10, fg=transparent, width=5).rows(
-      for {cap<-List(ROUND); tbg<- List(yellow, transparent); bg<-List(green, transparent); width<-List(2f, 4f, 10f, 20f, 40f)} yield
-        Label(s"fg=red($width,$cap)\ntext bg=$tbg, bg=$bg") above label(tbg).edged(fg=red(width = width, cap = cap), bg=bg) ,
+    Grid(padx=10, pady=10, fg=transparent, width=4).rows(
+      for {cap<-List(ROUND); tbg<-List("yellow", "transparent"); bg<-List("green", "transparent"); width<-List(2f, 4f, 10f, 15f)} yield
+        Label(s"fg=red($width,$cap)\ntext bg=$tbg, bg=$bg") above label(Brushes(tbg)).edged(fg=red(width = width, cap = cap), bg=Brushes(bg)) ,
     )
   }
 

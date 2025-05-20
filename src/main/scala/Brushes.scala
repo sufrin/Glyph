@@ -101,6 +101,8 @@ object Brushes extends Brushes {
 
     def decoratedBrush(specification: String): Brush = {
       specification match {
+        case s"$prefix($radius)" if isFloat(radius) =>
+          decoratedBrush(prefix).rounded(radius.toFloat)
         case s"$prefix.rounded($radius)" if isFloat(radius) =>
           decoratedBrush(prefix).rounded(radius.toFloat)
         case s"$prefix-$on-$off" if isFloat(on) && isFloat(off) =>

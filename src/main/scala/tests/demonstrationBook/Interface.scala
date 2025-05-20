@@ -113,6 +113,8 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
   Page("Glyph Transforms*", "") (new Transforms().GUI)
 
+  Page("Animation*", "")(new Animation().GUI)
+
   Page("Etc*", "") (new Etcetera().GUI)
 
   Page("Splash Screen", "")(new SplashScreen().GUI)

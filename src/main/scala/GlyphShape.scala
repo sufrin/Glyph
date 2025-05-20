@@ -462,7 +462,14 @@ object GlyphShape {
 
   }
 
-  /** Experimental mutable shape. */
+  /**
+   *
+   * Experimental mutable shape. If `absolute` then
+   * the path is drawn "as is", otherwise it is drawn
+   * so that the top/left coordinate of the path is at the origin.
+   * Its diagonal always denotes the distance from the top left to the
+   * bottom right coordinate of the path.
+   */
   class PathShape(fg: Brush, absolute: Boolean = true) extends GlyphShape {
     val path = new Path
     locally {
@@ -471,7 +478,10 @@ object GlyphShape {
 
     def withForeground(brush: Brush): GlyphShape =  this
 
-    def reset(): Unit = path.reset()
+    def reset(): Unit = {
+      path.reset()
+      if (absolute) path.moveTo(0, 0)         
+    }
 
     def draw(surface: Surface): Unit = if (absolute) {
       surface.drawPath(fg, path)
