@@ -10,6 +10,8 @@ import org.sufrin.glyph.NaturalSize.{Col, Row}
 import org.sufrin.glyph.unstyled.{reactive, static}
 import org.sufrin.glyph.unstyled.static.{FilledOval, FilledRect, Label, Rect}
 
+import java.lang.Math.{cos, sin}
+
 class Animation(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: StyleSheet = style.pageSheet
   import pageSheet.{em, ex}
@@ -172,12 +174,28 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
     val whiteString = white(width=2).sliced(6f, 4f)
     val redString   = red(width=4).sliced(5f, 4f)
 
-    // An active glyph whose initial image is formed by the mobile and ancillary actors
-    // Its state is the current angle of rotation of the mobile
+    /*
+     * An active glyph whose initial image is formed by the background.
+     * Its state is the current angle of rotation
+     * the first `toGlyph` call will be with `degrees=0.0`
+     */
+
     class Stage extends ActiveGlyph[Double] (0.0, Rect(600,600, blueLine, white)){
 
       private val D2R: Double = Math.PI/180.0
       private val oneDegree: Double = 1.0
+      locally { current = -oneDegree }
+
+
+      lazy val stage: Glyph    = background
+      val path                 = new PathShape(red(mode=PaintMode.STROKE), absolute=true)
+      val orbit                = stage.w*0.5f-10f
+      var startPos             = cartesian(orbit, 0.0)
+      val nib: LocatedShape    = circle(4)(blue).targetLocatedAt(0,0) // (stage.w*0.5f, stage.h*0.5f)
+      val centre: LocatedShape = circle(5)(blue).targetLocatedAt(0,0)
+      val line                 = lineBetween(centre, nib)(blue)
+      var n, d: Double         = 1
+      var stopped: Boolean     = false
 
       // each step turns the mobile by a degree
       override def step(): Unit = {
@@ -185,17 +203,17 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
         set((next))
       }
 
+      @inline private def cartesian(R: Double, θ: Double):(Scalar, Scalar) = ((R * cos(θ)).toFloat, (R * sin(θ)).toFloat)
+      @inline private def closeTo(l: Scalar, r: Scalar): Boolean = (l-r).abs <= 1e-5f
+      @inline private def closeTo(pos1: (Scalar,Scalar), pos2: (Scalar,Scalar)): Boolean =
+              closeTo(pos1._1, pos2._1) && closeTo(pos1._2, pos2._2)
 
-      lazy val stage: Glyph    = background
-      val path                 = new PathShape(red(mode=PaintMode.STROKE), absolute=true)
-      val nib: LocatedShape    = circle(5)(red).targetLocatedAt(stage.w*0.5f, stage.h*0.5f)
-      val centre: LocatedShape = circle(5)(blue).targetLocatedAt(0,0)
-      val line                 = lineBetween(centre, nib)(blue)
-      var n, d: Double         = 1
-      val orbit                = stage.w*0.5f-10f
-      val x0: Scalar = orbit
-      val y0: Scalar = 0
-
+      @inline def stopAtStart(pos: (Scalar, Scalar)): Unit =
+        if (closeTo(startPos, pos)) {
+          stopped = true
+          Animation.driver.stop()
+          PressStopButton()
+      }
 
       /**
        * Generate the glyph showing the next frame, by
@@ -204,26 +222,24 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
        */
       def toGlyph(degrees: Double): Glyph = {
         locally
-        {
-          import Math.{sin,cos}
+        { import Math.{sin,cos}
           val θ = degrees * D2R
-          def r = cos((n/d) * θ)
-          val x=orbit*(r * cos(θ)).toFloat
-          val y=orbit*(r * sin(θ)).toFloat
-          path.lineTo(x,y)
+          val pos = cartesian(cos((n/d) * θ) * orbit, θ)
+          if (degrees<1) path.moveTo(pos) else path.lineTo(pos)
           if (degrees%180 ==0) {
-            path.addCircle(x,y, 5)
+            path.addCircle(pos, 5)
+            stopAtStart(pos)
           }
-          nib.x = x-2.5f
-          nib.y = y-2.5f
+          nib.x = pos._1 - 2.5f
+          nib.y = pos._2 - 2.5f
         }
         stage
       }
 
+
       def reset(): Unit = {
         path.reset()
         set(0.0)
-        //path.lineTo(orbit, 0)
       }
 
       override def draw(surface: Surface): Unit = {
@@ -233,8 +249,10 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
           currentGlyph.draw(surface)
           surface.withOrigin(currentGlyph.location+(currentGlyph.diagonal scaled 0.5f)) {
             path.draw(surface)
-            //nib.draw(surface)
-            line.draw(surface)
+            if (!stopped) {
+              nib.draw(surface)
+              line.draw(surface)
+            }
           }
         }
         //}

@@ -187,6 +187,8 @@ trait GlyphShape { thisShape =>
    */
   def targetLocatedAt(x: Scalar, y: Scalar): TargetShape = TargetShape(x, y, thisShape)
 
+  def targetLocatedAt(pos: (Scalar, Scalar)): TargetShape = TargetShape(pos._1, pos._2, thisShape)
+
 
   /**
    * This shape, with a background (as far as possible of the same shape) coloured by `brush`.
@@ -513,8 +515,18 @@ object GlyphShape {
       this
     }
 
+    def moveTo(pos:(Scalar, Scalar)): PathShape = {
+      path.moveTo(pos._1, pos._2)
+      this
+    }
+
     def lineTo(x: Scalar, y: Scalar): PathShape = {
       path.lineTo(x, y)
+      this
+    }
+
+    def lineTo(pos:(Scalar, Scalar)): PathShape = {
+      path.lineTo(pos._1, pos._2)
       this
     }
 
@@ -531,12 +543,25 @@ object GlyphShape {
       path.addOval(Rect.makeXYWH(x, y, w, h)); this
     }
 
+    def addOval(pos: (Scalar, Scalar), dim: (Scalar,Scalar)): PathShape = {
+      path.addOval(Rect.makeXYWH(pos._1, pos._2, dim._1, dim._2)); this
+    }
+
     def addCircle(x: Scalar, y: Scalar, r: Scalar): PathShape = {
       path.addCircle(x, y, r); this
     }
 
+    def addCircle(pos: (Scalar, Scalar), r: Scalar): PathShape = {
+      path.addCircle(pos._1, pos._2, r); this
+    }
+
     def addPathShape(shape: PathShape, x: Scalar, y: Scalar): PathShape = {
       path.addPath(shape.path, x-shape.w/2, y-shape.h/2)
+      this
+    }
+
+    def addPathShape(shape: PathShape, pos: (Scalar, Scalar)): PathShape = {
+      path.addPath(shape.path, pos._1-shape.w/2, pos._2-shape.h/2)
       this
     }
 
