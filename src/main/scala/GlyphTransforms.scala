@@ -256,7 +256,7 @@ object GlyphTransforms {
     /**
      * The diagonal size of the glyph
      */
-    val diagonal: Vec = glyph.diagonal + offset.scaled(2f)
+    val diagonal: Vec = glyph.diagonal + offset.*(2f)
 
     def draw(surface: Surface): Unit = {
       // avoid the background spilling outside a rounded frame
@@ -487,9 +487,9 @@ object GlyphTransforms {
     def diagonal: Vec = box
 
     // Centre of the glyph's bounding box
-    private def glyphCentre = d scaled 0.5f
+    private def glyphCentre = d * 0.5f
     // Centre of this bounding box
-    private def thisCentre = diagonal scaled 0.5f
+    private def thisCentre = diagonal * 0.5f
 
     // Distance of the new centre from the old centre
     private def delta  = thisCentre - glyphCentre
@@ -565,7 +565,7 @@ object GlyphTransforms {
     override def toString: String = s"Skewed($skewX, $skewY, fg=$fg, bg=$bg)(${glyph.toString})"
 
     private val d = glyph.diagonal
-    private val center = d scaled 0.5f
+    private val center = d * 0.5f
 
     val diagonal: Vec = d + (skewX*d.y, skewY*d.x)
 

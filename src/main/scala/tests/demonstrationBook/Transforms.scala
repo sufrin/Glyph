@@ -200,7 +200,7 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
 
 
       val base = rect.diagonal
-      val BASE = base scaled 2f
+      val BASE = base * 2f
       val skews = List(-0.95f, -0.7f, -0.5f, -0.3f, 0f, 0.3f, 0.5f, 0.7f, 0.9f)
 
       def Sk(sx: Scalar, sy: Scalar): Glyph = Col(align=Center)(

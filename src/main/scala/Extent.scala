@@ -25,7 +25,7 @@ case class ScaledExtent(scale: Scalar, origin: Vec, extent: Vec) extends Extent 
   private val extentX = origin.x+extent.x*scale
   private val extentY = origin.y+extent.y*scale
   def contains(point: Vec): Boolean = {
-    val scaledPoint = point scaled scale
+    val scaledPoint = point * scale
     isEmpty || (
       (origin.x <= scaledPoint.x) && (scaledPoint.x < extentX) &&
         (origin.y <= scaledPoint.y) && (scaledPoint.y < extentY))

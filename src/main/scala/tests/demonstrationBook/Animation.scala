@@ -247,7 +247,7 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
         //surface.withClip(diagonal) {
         surface.withOrigin(currentGlyph.location) {
           currentGlyph.draw(surface)
-          surface.withOrigin(currentGlyph.location+(currentGlyph.diagonal scaled 0.5f)) {
+          surface.withOrigin(currentGlyph.location+(currentGlyph.diagonal * 0.5f)) {
             path.draw(surface)
             if (!stopped) {
               nib.draw(surface)

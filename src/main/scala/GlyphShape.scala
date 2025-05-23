@@ -39,9 +39,9 @@ trait GlyphShape { thisShape =>
 
   private class Scaled(original: GlyphShape, factor: Scalar) extends GlyphShape {
     def draw(surface: Surface): Unit = surface.withScale(factor) { original.draw(surface) }
-    def diagonal: Vec = original.diagonal scaled (factor)
+    def diagonal: Vec = original.diagonal * (factor)
     override def toString: String = s"$thisShape.scale(${factor})"
-    override def enclosing(point: Vec): Option[GlyphShape] = thisShape.enclosing(point.deScaled(factor, factor))
+    override def enclosing(point: Vec): Option[GlyphShape] = thisShape.enclosing(point/factor)
     override def scale(factor: Scalar): GlyphShape = if (factor==1) original else new Scaled(original, this.factor*factor)
     def withForeground(brush: Brush): GlyphShape = original.withForeground(brush).scale(factor)
   }
@@ -216,8 +216,8 @@ object GlyphShape {
     }
 
     val diag: Vec = Vec(2 * r, 2 * r)
-    val diagonal: Vec = diag + (delta scaled 2)
-    val middle = diagonal scaled 0.5f
+    val diagonal: Vec = diag + (delta * 2)
+    val middle = diagonal * 0.5f
 
     override def toString: String = s"circle($r)($fg)"
 
@@ -253,7 +253,7 @@ object GlyphShape {
     }
 
     val diag: Vec = Vec(width, height)
-    val diagonal: Vec = diag + (delta scaled 2)
+    val diagonal: Vec = diag + (delta * 2)
 
     override def toString: String = s"oval($width,$height)($fg)"
 
@@ -283,7 +283,7 @@ object GlyphShape {
     }
 
     val diag: Vec = Vec(width, height)
-    val diagonal: Vec = diag + (delta scaled 2)
+    val diagonal: Vec = diag + (delta * 2)
 
     override def toString: String = s"arc($width,$height,$startAngle,$sweepAngle,$incCentre)($fg)"
 
@@ -384,7 +384,7 @@ object GlyphShape {
     }
 
     val diag: Vec = Vec(width, height)
-    val diagonal: Vec = diag + (delta scaled 2)
+    val diagonal: Vec = diag + (delta * 2)
 
     override def toString: String = s"rect($width,$height)($fg)"
 
@@ -728,12 +728,12 @@ case class TargetShape(x$: Scalar, y$: Scalar, shape$: GlyphShape) extends Locat
   val radius = ((w max h) / 12) min 5
 
   private val handle = rect(radius, radius)(handleBrush)
-  val deltaHandle = handle.diagonal scaled 0.5f
+  val deltaHandle = handle.diagonal * 0.5f
   val handles = Handles(this, for { loc <- GlyphShape.cardinalPoints(this.shape) } yield Handle(this, handle, loc-deltaHandle))
 
   val hover =  circle(radius)(hoverBrush)
 
-  @inline private def centred(g: GlyphShape): Vec = Vec(x, y) + ((diagonal - g.diagonal) scaled 0.5f)
+  @inline private def centred(g: GlyphShape): Vec = Vec(x, y) + ((diagonal - g.diagonal) * 0.5f)
 
   def setHovering(state: Boolean): Unit = {
     if (state) {
@@ -781,7 +781,7 @@ class LocatedShape(var x: Scalar, var y: Scalar, val shape: GlyphShape) {
   def w: Scalar = shape.w
   def h: Scalar = shape.h
 
-  @inline private def centred(g: GlyphShape): Vec = Vec(x, y) + ((diagonal - g.diagonal) scaled 0.5f)
+  @inline private def centred(g: GlyphShape): Vec = Vec(x, y) + ((diagonal - g.diagonal) * 0.5f)
 
   /** the glyph's bounding box contains the mouse pointer */
   def isBeneath(point: Vec): Boolean = shape.encloses((point - (x,y)))
@@ -815,7 +815,7 @@ class LocatedShape(var x: Scalar, var y: Scalar, val shape: GlyphShape) {
     this.x += x; this.y += y
   }
 
-  def center: Vec = (diagonal scaled 0.5f) + (x, y)
+  def center: Vec = (diagonal * 0.5f) + (x, y)
 
 }
 

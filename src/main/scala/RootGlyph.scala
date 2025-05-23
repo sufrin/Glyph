@@ -180,7 +180,7 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   }
 
   def setScaledContentSize(diagonal: Vec): Unit = {
-    val diag = diagonal scaled hardwareScale scaled softwareScale
+    val diag = diagonal * hardwareScale * softwareScale
     RootGlyph.finest(s"setScaledContentSize($diagonal)=>$diag")
     App.runOnUIThread{()=>rootWindow.setContentSize(diag.x.floor.toInt, diag.y.floor.toInt)}
   }

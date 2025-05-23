@@ -8,37 +8,42 @@ trait Vec {
   val x: Scalar
   val y: Scalar
 
-  final def toPoint: io.github.humbleui.types.Point =
+  @inline final def toPoint: io.github.humbleui.types.Point =
     new io.github.humbleui.types.Point(x, y)
 
   override def toString: String = s"($x,$y)"
 
   /** This `Vec` when both coordinates are strictly positive; else `(0,0)` */
-  def whenPositive: Vec = if (x>0 && y>0) this else Vec.Zero
+  @inline def whenPositive: Vec = if (x>0 && y>0) this else Vec.Zero
 
-  final def +(delta: Vec): Vec = Vec(x + delta.x, y + delta.y)
+  @inline final def +(delta: Vec): Vec = Vec(x + delta.x, y + delta.y)
 
-  final def +(dx: Scalar, dy: Scalar): Vec = Vec(x + dx, y + dy)
+  @inline final def +(dx: Scalar, dy: Scalar): Vec = Vec(x + dx, y + dy)
 
-  final def -(delta: Vec): Vec = Vec(x - delta.x, y - delta.y)
+  @inline final def -(delta: Vec): Vec = Vec(x - delta.x, y - delta.y)
 
-  final def -(dx: Scalar, dy: Scalar): Vec = Vec(x - dx, y - dy)
+  @inline final def -(dx: Scalar, dy: Scalar): Vec = Vec(x - dx, y - dy)
 
-  final def scaled(factor: Vec): Vec = Vec(x * factor.x, y * factor.y)
+  @inline final def scaled(factor: Vec): Vec = Vec(x * factor.x, y * factor.y)
 
-  final def scaled(fx: Scale, fy: Scale): Vec = Vec(x * fx, y * fy)
+  @inline final def scaled(fx: Scale, fy: Scale): Vec = Vec(x * fx, y * fy)
 
-  final def scaled(factor: Scale): Vec = Vec(x * factor, y * factor)
+  @inline final def *(factor: Scale): Vec = Vec(x * factor, y * factor)
 
   /**
    *  `scaled(1/fx, 1/fy)`
    */
-  final def deScaled(fx: Scale, fy: Scale): Vec = Vec(x / fx, y / fy)
+  @inline final def deScaled(fx: Scale, fy: Scale): Vec = Vec(x / fx, y / fy)
+
+  /**
+   *  `scaled(1/factor)`
+   */
+  @inline final def /(factor: Scalar): Vec = Vec(x / factor, y / factor)
 
   /**
    * `scaled(1/factor.x, 1/factor.y)`
    */
-  final def deScaled(factor: Vec): Vec = Vec(x / factor.x, y / factor.y)
+  @inline final def deScaled(factor: Vec): Vec = Vec(x / factor.x, y / factor.y)
 
   /**
    *  This `Vec` rotated about `c`
@@ -59,31 +64,31 @@ trait Vec {
   /**
    * This `Vec` skewed by `skewX, skewY`
    */
-  final def skewed(skewX: Scalar, skewY: Scalar): Vec = {
+  @inline final def skewed(skewX: Scalar, skewY: Scalar): Vec = {
     Vec(x + y * skewX, y + x * skewY)
   }
 
   @inline final def toPair: (Int, Int) = (x.toInt, y.toInt)
   @inline final def toInts: (Int, Int) = (x.toInt, y.toInt)
 
-  final def distanceTo(other: Vec): Scalar = {
+  @inline final def distanceTo(other: Vec): Scalar = {
     val dx = x - other.x
     val dy = y - other.y
     root(dx * dx + dy * dy)
   }
 
-  final def distanceWithin(other: Vec, r: Scalar): Boolean = {
+  @inline final def distanceWithin(other: Vec, r: Scalar): Boolean = {
     val dx = x - other.x
     val dy = y - other.y
     (dx * dx + dy * dy) < r * r
   }
 
-  final def union(other: Vec): Vec = Vec(this.x max other.x, this.y max other.y)
+  @inline final def union(other: Vec): Vec = Vec(this.x max other.x, this.y max other.y)
 
   /**
    * Does this `Vec` fall wholly inside the box of the given `diagonal` at `origin`
    */
-  final def inside(origin: Vec, diagonal: Vec): Boolean =
+  @inline final def inside(origin: Vec, diagonal: Vec): Boolean =
     origin.x <= x && x <= origin.x + diagonal.x && origin.y <= y && y <= origin.y + diagonal.y
 
   @inline final def within(v: Vec): Boolean = x<v.x && y<v.y
@@ -109,40 +114,40 @@ object Vec {
 
   @inline def unapply(v: Vec): Option[(Scalar, Scalar)] = Some(v.x, v.y)
 
-  def apply(_x: Scalar, _y: Scalar): Vec = new Vec {
+  @inline def apply(_x: Scalar, _y: Scalar): Vec = new Vec {
     val x = _x
     val y = _y
   }
 
-  def apply(_x: Scalar, _y: Int): Vec = new Vec {
+  @inline def apply(_x: Scalar, _y: Int): Vec = new Vec {
     val x = _x
     val y = _y.toFloat
   }
 
-  def apply(_x: Int, _y: Scalar): Vec = new Vec {
+  @inline def apply(_x: Int, _y: Scalar): Vec = new Vec {
     val x = _x.toFloat
     val y = _y
   }
 
-  def apply(_x: Double, _y: Double): Vec = new Vec {
+  @inline def apply(_x: Double, _y: Double): Vec = new Vec {
     val x = _x.toFloat
     val y = _y.toFloat
   }
 
   /** ((Int,Int))=>Vec */
-  def apply(pos: (Int, Int)): Vec = { val (x, y) = pos; Vec(x, y) }
+  @inline def apply(pos: (Int, Int)): Vec = { val (x, y) = pos; Vec(x, y) }
 
   /** (Int,Int)=>Vec */
-  def apply(_x: Int, _y: Int): Vec = new Vec {
+  @inline def apply(_x: Int, _y: Int): Vec = new Vec {
     val x = _x.toFloat
     val y = _y.toFloat
   }
 
-  def scaleToPixels(scale: Scalar, pos: (Int, Int)): Pixels = {
+  @inline def scaleToPixels(scale: Scalar, pos: (Int, Int)): Pixels = {
     val (x, y) = pos; ((x * scale).toInt, (y * scale).toInt)
   }
 
-  def scaleToPixels(scale: Scalar, x: Scalar, y: Scalar): (Int, Int) =
+  @inline def scaleToPixels(scale: Scalar, x: Scalar, y: Scalar): (Int, Int) =
     ((x * scale).toInt, (y * scale).toInt)
 }
 

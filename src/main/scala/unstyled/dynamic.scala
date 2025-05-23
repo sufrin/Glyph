@@ -256,7 +256,7 @@ import io.github.humbleui.jwm.App
       surface.declareCurrentTransform(this)
     }
 
-    val diagonal: Vec = portDiagonal + (offset scaled 2f)
+    val diagonal: Vec = portDiagonal + (offset * 2f)
 
     def copy(fg: Brush=fg, bg:Brush=bg): ViewPort = new ViewPort(glyph.copy(fg, bg), fg, bg, initialPortDiagonal)
 

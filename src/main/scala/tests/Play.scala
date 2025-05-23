@@ -38,7 +38,7 @@ object PathSymbols {
  */
 class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extends  GestureBasedReactiveGlyph {
 
-  var lastMouse, lastMouseDown: Vec = background.diagonal scaled 0.5f
+  var lastMouse, lastMouseDown: Vec = background.diagonal * 0.5f
 
   val displayList: mutable.Queue[TargetShape] = new mutable.Queue[TargetShape]()
 
@@ -341,7 +341,7 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
   }
 
   def addShape(shape: GlyphShape) : Unit = {
-    val delta = shape.diagonal scaled 0.5f
+    val delta = shape.diagonal * 0.5f
     addShape(lastMouseDown.x-delta.x, lastMouseDown.y-delta.y)(shape)
   }
 

@@ -294,7 +294,7 @@ object reactive {
     def alphaHover: Int = 0x9F
     def alphaDisabled: Int = 0x70
 
-    val downOffset  = diagonal - down.diagonal - (extra scaled 0.5f)
+    val downOffset  = diagonal - down.diagonal - (extra * 0.5f)
     val upOffset    = diagonal - up.diagonal
     val hoverOffset = diagonal - hover.diagonal
 
