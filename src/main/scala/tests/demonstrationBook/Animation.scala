@@ -4,7 +4,7 @@ package tests.demonstrationBook
 import styled.{Book, BookSheet, TextButton, TextToggle}
 
 import io.github.humbleui.skija.PaintMode
-import org.sufrin.glyph.GlyphShape.{circle, lineBetween, rect, PathShape}
+import org.sufrin.glyph.GlyphShape.{asGlyph, circle, line, lineBetween, rect, superimposed, FILL, PathShape, STROKE}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.NaturalSize.{Col, Row}
 import org.sufrin.glyph.unstyled.{reactive, static}
@@ -192,8 +192,8 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
       val orbit                = stage.w*0.5f-10f
       var startPos             = cartesian(orbit, 0.0)
       val nib: LocatedShape    = circle(4)(blue).targetLocatedAt(0,0) // (stage.w*0.5f, stage.h*0.5f)
-      val centre: LocatedShape = circle(5)(blue).targetLocatedAt(0,0)
-      val line                 = lineBetween(centre, nib)(blue)
+      val centrum: LocatedShape = circle(5)(blue).targetLocatedAt(0,0)
+      val line                 = lineBetween(centrum, nib)(blue)
       var n, d: Double         = 1
       var stopped: Boolean     = false
 
@@ -404,6 +404,135 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
       NaturalSize.Grid(bg=lightGrey).grid(width=4)(animations.map(_.animated)), ex, ex, ex,
     )
   }
+
+  val Crank = Page("Crank", "") {
+    import unstyled.dynamic.{Periodic, ActiveGlyph}
+
+    class SpokedWheel(val radius: Scalar, spokes: Int)(brush: Brush) extends GlyphShape {
+      import Math.{cos, sin}
+      private val D2R: Double = Math.PI/180.0
+      val rimWidth = 15f
+      val spokeWidth = 10f
+      val shape = circle(radius)(brush(width=rimWidth, mode=STROKE))    ~~~    // rim
+                  circle(radius*.25f)(brush(width=rimWidth, mode=FILL)) ~~~    // hub
+                  rect(5, 2*radius)(brush(width=spokeWidth)) ~~~ rect(2*radius, 5)(brush(width=spokeWidth))
+
+      def studLocation = diagonal*0.25f
+
+      def draw(surface: Surface): Unit = {
+        shape.draw(surface)
+      }
+
+      def diagonal: Vec = shape.diagonal
+      def withForeground(brush: Brush): GlyphShape = new SpokedWheel(radius, spokes)(brush)
+
+    }
+
+
+    val blueString  = blueLine.sliced(5f, 3f)
+
+
+    // An active glyph whose initial image is formed by the mobile and ancillary actors
+    // Its state is the current angle of rotation of the mobile
+    class Stage extends ActiveGlyph[Double] (0.0, Rect(900, 900, lightGrey)){
+
+      private val D2R: Double = Math.PI/180.0
+      private val oneDegree: Double = 1.0
+
+      // each step turns the mobile by a degree
+      override def step(): Unit = set((current + oneDegree))
+
+      private def lineConnecting(v1: LocatedShape, v2: LocatedShape)(fg: Brush): LocatedShape  =  lineBetween(v1, v2)(fg).targetLocatedAt(0,0)
+
+      lazy val wheel  = new SpokedWheel(100, 4)(blue)
+      def wheel1(deg: Scalar) = wheel.turn(deg, true).locatedAt(450, 100)
+      def wheel2(deg: Scalar) = wheel.turn(deg, true).locatedAt(450, 500)
+
+
+
+
+      /**
+       * Vertices that will be placed whenever a frame is generated (see `toGlyph`) and
+       * superimposed dynamically by "elastic" strings.
+       *
+       */
+      object Linked {
+        val blob = circle(6)(red)
+        lazy val vertex1, vertex2: LocatedShape = blob.locatedAt(0, 0)
+        lazy val crank = lineConnecting(vertex1, vertex2)(brown(width=10, cap=ROUND))
+      }
+
+      /**
+       * Generate the glyph showing the next frame, by
+       * placing the linked vertices then forming a glyph superimposing
+       * the scenery, the turned mobile, and the placed vertices.
+       */
+      def toGlyph(degrees: Double): Glyph = {
+        import Linked._
+          val w1 = wheel1(degrees.toFloat)
+          val w2 = wheel2(degrees.toFloat)
+          vertex1.placeAt(w1.topLeft+(wheel.studLocation.turned(degrees.toFloat, Vec.Origin)))
+          vertex2.placeAt(w2.topLeft+(wheel.studLocation.turned(degrees.toFloat, Vec.Origin)))
+
+        asGlyph(
+          superimposed(
+          w1, w2, vertex1, vertex2,
+          crank
+        ))
+
+
+      }
+
+      /** A copy of this glyph; perhaps with different foreground/background */
+      def copy(fg: Brush, bg: Brush): Glyph = null
+    }
+
+
+    object Animation  {
+      lazy val animated: Stage = new Stage
+      lazy val driver:   Periodic[Double] = Periodic[Double](animated, 60.0)
+    }
+
+    val FPS = styled.ActiveString(f"${1000.0/Animation.driver.msPerFrame}%3.2f FPS")
+    def setFPS(): Unit = FPS.set(f"${1000.0/Animation.driver.msPerFrame}%3.2f FPS")
+
+    Col(align=Center)(
+      <div width="60em" align="justify">
+        <p>
+          This is an animation test case that uses <b>GlyphShape</b>s
+          to form the image(s) being animated as well as the stage on which the shapes are
+          shown.
+        </p>
+        <p>
+          Each frame of the animation is computed from scratch as it is shown;
+          and the coherence of the resulting animation seems satisfactory -- even
+          when the frame rate is quite high.
+        </p>
+      </div>, ex,
+      FPS, ex,
+      Row(
+        TextToggle(whenFalse="Start", whenTrue="Stop", initially = false){
+          case true  =>
+            Animation.driver.start()
+            setFPS()
+          case false =>
+            Animation.driver.stop()
+        }, em,
+        TextButton("Faster"){
+          _ =>
+            if (Animation.driver.msPerFrame>2) Animation.driver.msPerFrame /= 2
+            setFPS()
+        }, em,
+        TextButton("Slower"){
+          _ =>
+            Animation.driver.msPerFrame *= 2
+            setFPS()
+        }
+      ), ex, ex,
+      Animation.animated, ex, ex
+    )
+  }
+
 
   val GUI: Glyph = book.Layout.leftCheckBoxes(buttonAlign = Right, pageAlign = Center).enlarged(30)
 

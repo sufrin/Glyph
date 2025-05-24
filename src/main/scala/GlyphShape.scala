@@ -19,8 +19,9 @@ trait GlyphShape { thisShape =>
   def draw(surface: Surface): Unit            // draw on the given surface
   def diagonal:               Vec             // a bounding box
   def withForeground(brush: Brush): GlyphShape // a copy, with a new foreground brush
-  @inline def w: Scalar  = diagonal.x
-  @inline def h: Scalar  = diagonal.y
+  @inline def w:      Scalar  = diagonal.x
+  @inline def h:      Scalar  = diagonal.y
+  @inline def centre: Vec     = diagonal * 0.5f
 
   /** Is the given point within the shape: default is within the bounding box */
   @inline def encloses(point: Vec): Boolean = enclosing(point).nonEmpty
@@ -781,7 +782,9 @@ class LocatedShape(var x: Scalar, var y: Scalar, val shape: GlyphShape) {
   def w: Scalar = shape.w
   def h: Scalar = shape.h
 
+  @inline def topLeft: Vec = Vec(x, y)
   @inline private def centred(g: GlyphShape): Vec = Vec(x, y) + ((diagonal - g.diagonal) * 0.5f)
+  @inline def centre: Vec = topLeft + (diagonal * 0.5f)
 
   /** the glyph's bounding box contains the mouse pointer */
   def isBeneath(point: Vec): Boolean = shape.encloses((point - (x,y)))
@@ -809,6 +812,10 @@ class LocatedShape(var x: Scalar, var y: Scalar, val shape: GlyphShape) {
 
   def placeAt(x: Scalar, y: Scalar): Unit = {
     this.x = x; this.y = y
+  }
+
+  def placeAt(loc: Vec): Unit = {
+    this.x = loc.x; this.y = loc.y
   }
 
   def moveBy(x: Scalar, y: Scalar): Unit = {

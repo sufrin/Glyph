@@ -5,14 +5,14 @@ package tests
 import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, Key, MouseButton}
 import GlyphTypes.{EventKey, Scalar, Window}
 
-import io.github.humbleui.skija.{BlendMode, PaintMode, PathFillMode}
+import io.github.humbleui.skija.{BlendMode, PaintMode, PaintStrokeCap, PathFillMode}
 import org.sufrin.glyph.Modifiers.{Alt, Bitmap, Command, Control, Pressed, Primary, Released, Secondary, Shift}
 import gesture._
 
 import io.github.humbleui.types.Rect
 import org.sufrin.{glyph, logging}
 import org.sufrin.glyph.Brushes.{black, blue, green, lightGrey, red, white, yellow}
-import org.sufrin.glyph.GlyphShape.{arrow, circle, polygon, rect, FILL, PathShape, STROKE}
+import org.sufrin.glyph.GlyphShape.{arrow, asGlyph, circle, lineBetween, polygon, rect, superimposed, FILL, PathShape, STROKE}
 import org.sufrin.glyph.styled.{Book, BookSheet, GlyphButton}
 import org.sufrin.glyph.unstyled.static.FilledPolygon
 
@@ -380,7 +380,7 @@ object Play extends Application {
   implicit val sheet: StyleSheet= interfaceStyle
   implicit val bookSheet: BookSheet = BookSheet(sheet, sheet)
 
-  Page("Interact", ""){
+  val Interact = Page("Interact", ""){
     import sheet.{ex,em}
     val left, right = styled.ActiveString("   ")
     val done: Variable[Int]   = Variable(0){ case n => left.set(f"$n%03d") }
@@ -474,7 +474,6 @@ object Play extends Application {
       styled.Label("Brush: ") beside brushField.framed() beside styled.Label(" ")  beside dimField.framed()
     ).enlarged(20)
   }
-  //Page("Test", "")(new Page1(sheet).GUI)
 
   val GUI: Glyph =  {
     import glyphXML.Language.translation._
