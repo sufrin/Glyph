@@ -7,6 +7,7 @@ import io.github.humbleui.types.Rect
 import org.sufrin.glyph.Brush.{ROUND, SQUARE}
 import org.sufrin.glyph.Brushes.{black, green, invisible, lightGrey}
 import org.sufrin.glyph.GlyphShape.{asGlyph, circle, rect, superimposed, FILL, STROKE}
+import org.sufrin.glyph.unstyled.dynamic.{Animateable, Steppable}
 
 /**
  *  Lightweight precursor to `Glyph`. This type arrived in Glyph 0.9 and may eventually
@@ -61,13 +62,9 @@ trait GlyphShape { thisShape =>
     override def turn(degrees: Scalar, tight: Boolean=true): GlyphShape =
       if (degrees==0f) shape else new Turned(shape, this.degrees+degrees, tight)
 
-    override def originals: Seq[GlyphShape] = List(shape)
-
     override def withForeground(brush: Brush): GlyphShape = shape.withForeground(brush).turn(degrees, tight)
 
   }
-
-  def originals: Seq[GlyphShape] = List(thisShape)
 
 //  private class XTurned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphShape {
 //    override def toString: String = s"$original.turn($degrees)"
@@ -131,8 +128,6 @@ trait GlyphShape { thisShape =>
 
     override def toString: String = s"$thisShape|||$thatShape"
 
-    override def originals: Seq[GlyphShape] = List(thisShape, thatShape)
-
     override def scale(factor: Scalar): GlyphShape = if (factor==1) this else thisShape ||| thatShape
 
     def withForeground(brush: Brush): GlyphShape =  this
@@ -157,8 +152,6 @@ trait GlyphShape { thisShape =>
 
     override def toString: String = s"$thisShape---$thatShape"
 
-    override def originals: Seq[GlyphShape] = List(thisShape, thatShape)
-
     override def scale(factor: Scalar): GlyphShape = if (factor==1) this else thisShape ||| thatShape
 
     def withForeground(brush: Brush): GlyphShape =  this
@@ -180,6 +173,11 @@ trait GlyphShape { thisShape =>
    *
    */
   def locatedAt(x: Scalar, y: Scalar): LocatedShape = LocatedShape(x, y, thisShape)
+  def locatedAt(pos: (Scalar, Scalar)): LocatedShape = LocatedShape(pos._1, pos._2, thisShape)
+  def centredAt(x: Scalar, y: Scalar): LocatedShape = LocatedShape(x-thisShape.w*0.5f, y-thisShape.h*0.5f, thisShape)
+  def centredAt(pos: (Scalar, Scalar)): LocatedShape = LocatedShape(pos._1-thisShape.w*0.5f, pos._2-thisShape.h*0.5f, thisShape)
+  /** An shape at an initiallly-unspecified location */
+  def floating(): LocatedShape = LocatedShape(0, 0, thisShape)
 
   /**
    *  A `TargetShape` shaped like `thisShape`, initially drawn at `(x,y)`.
@@ -189,6 +187,10 @@ trait GlyphShape { thisShape =>
   def targetLocatedAt(x: Scalar, y: Scalar): TargetShape = TargetShape(x, y, thisShape)
 
   def targetLocatedAt(pos: (Scalar, Scalar)): TargetShape = TargetShape(pos._1, pos._2, thisShape)
+
+  def targetCentredAt(x: Scalar, y: Scalar): TargetShape = TargetShape(x-thisShape.w*0.5f, y-thisShape.h*0.5f, thisShape)
+
+  def targetCentredAt(pos: (Scalar, Scalar)): TargetShape = TargetShape(pos._1-thisShape.w*0.5f, pos._2-thisShape.h*0.5f, thisShape)
 
 
   /**
@@ -466,6 +468,53 @@ object GlyphShape {
   }
 
   /**
+   * A glyph defined by the same methods as an `AnimatedGlyph`. It invokes a redraw whenever
+   * its shape has been regenerated.
+   */
+  abstract class AnimatedShapeGlyph[T](initial: T, background: GlyphShape) extends AnimatedShape[T](initial, background) with Glyph {
+    override def afterShape(): Unit = reDraw()
+
+    /** A copy of this glyph; perhaps with different foreground/background */
+    def copy(fg: Brush, bg: Brush): Glyph = null
+
+    val fg: Brush = invisible
+    val bg: Brush = background.fg
+  }
+
+  /**
+   * An `Animateable` glyph shape that regenerates whenever its `current` value is set to a value that differs from its
+   * `current: T`.
+   */
+  abstract class AnimatedShape[T](initial: T, val background: GlyphShape) extends GlyphShape with Animateable[T] {
+    /** Generate the shape corresponding to `t` */
+    def toShape(t: T): GlyphShape
+    /** Invoked by `set` after shape generation */
+    def afterShape(): Unit = {}
+
+    protected var currentShape: GlyphShape = toShape(initial)
+    protected var current: T               = initial
+
+    def diagonal: Vec = background.diagonal
+    def center: Vec   = diagonal * 0.5f
+
+    /**
+     * Set the current state, and show its `toShape`.
+     */
+    def set(state: T): Unit =  {
+      if (state != current) { currentShape = toShape(state); afterShape() }
+      current = state
+    }
+
+    /** Get the current state. */
+    def get: T = current
+
+    override def draw(surface: Surface): Unit = {
+      background.draw(surface)
+      surface.withClip(diagonal) { currentShape.draw(surface) }
+      }
+    }
+
+  /**
    *
    * Experimental mutable shape. If `absolute` then
    * the path is drawn "as is", otherwise it is drawn
@@ -600,8 +649,6 @@ object GlyphShape {
         }
     }
 
-    override def originals: Seq[GlyphShape] = shapes
-
     def diagonal: Vec = Vec(tw, th)
 
     override def enclosing(point: Vec): Option[GlyphShape] = {
@@ -699,6 +746,9 @@ object GlyphShape {
     def diagonal: Vec = glyph.diagonal
     def withForeground(brush: Brush): GlyphShape = glyph.copy(brush)
   }
+
+  implicit def toVec(pair: (Scalar, Scalar)): Vec = Vec(pair._1, pair._2)
+  implicit def toPair(vec: Vec): (Scalar, Scalar) = (vec.x, vec.y)
 
 }
 
@@ -818,6 +868,10 @@ class LocatedShape(var x: Scalar, var y: Scalar, val shape: GlyphShape) {
     this.x = loc.x; this.y = loc.y
   }
 
+  def centerAt(loc: Vec): Unit = {
+    this.x = loc.x-(w*0.5f); this.y = loc.y-(w*0.5f)
+  }
+
   def moveBy(x: Scalar, y: Scalar): Unit = {
     this.x += x; this.y += y
   }
@@ -828,4 +882,7 @@ class LocatedShape(var x: Scalar, var y: Scalar, val shape: GlyphShape) {
 
 object LocatedShape {
   def apply(x: Scalar, y: Scalar, shape: GlyphShape): LocatedShape = new LocatedShape(x, y, shape)
+  def apply(pos: Vec, shape: GlyphShape): LocatedShape = new LocatedShape(pos.x, pos.y, shape)
+  def apply(pair: (Scalar, Scalar), shape: GlyphShape): LocatedShape = new LocatedShape(pair._1, pair._2, shape)
 }
+

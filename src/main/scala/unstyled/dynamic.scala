@@ -472,6 +472,8 @@ import io.github.humbleui.jwm.App
     def stop(): Unit  = {}
   }
 
+  trait Animateable[T] extends Settable[T] with Steppable
+
   /**
    * An active glyph whose bounding box is that of its initial glyph: which is `background` unless that is `null`, otherwise
    * `toGlyph(initial)`
@@ -480,7 +482,7 @@ import io.github.humbleui.jwm.App
    * after the first and subsequent assignments  to `current`. Although this is unenforceable,
    * it makes sense for `background` to be `toGlyph(initial)`.
    */
-  abstract class ActiveGlyph[T](initial: T, val background: Glyph=null) extends Glyph with Settable [T] with Steppable {
+  abstract class ActiveGlyph[T](initial: T, val background: Glyph=null) extends Glyph with Animateable [T]  {
     def toGlyph(t: T): Glyph
 
     val initialGlyph = if (background eq null) toGlyph(initial) else background
@@ -578,12 +580,13 @@ import io.github.humbleui.jwm.App
   }
 
   object Periodic {
-    def apply[T](glyph: dynamic.ActiveGlyph[T], msPerFrame:    Long=40L): Periodic[T] = new Periodic[T](glyph, msPerFrame)
-    def apply[T](glyph: dynamic.ActiveGlyph[T], fps: Double): Periodic[T]             = new Periodic[T](glyph, (1000.0/fps).toLong)
+    def apply[T](glyph: Animateable[T], msPerFrame:    Long=40L): Periodic[T] = new Periodic[T](glyph, msPerFrame)
+    def apply[T](glyph: Animateable[T], fps: Double): Periodic[T]             = new Periodic[T](glyph, (1000.0/fps).toLong)
   }
 
-  class Periodic[T](glyph: dynamic.ActiveGlyph[T], private var _msPerFrame: Long) {
+  class Periodic[T](glyph: Animateable[T], private var _msPerFrame: Long) {
     val schedule = Schedule(_msPerFrame){App.runOnUIThread(() => glyph.step())}
+
     def running = schedule.running
 
     def start(): Unit = if (!schedule.running) {

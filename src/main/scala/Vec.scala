@@ -30,6 +30,11 @@ trait Vec {
 
   @inline final def *(factor: Scale): Vec = Vec(x * factor, y * factor)
 
+  def arctan(): Scalar = {
+    import Math.{atan2, PI}
+    (atan2(y, x)*(180.0/PI)).toFloat
+  }
+
   /**
    *  `scaled(1/fx, 1/fy)`
    */
