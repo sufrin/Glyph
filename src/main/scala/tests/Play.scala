@@ -29,7 +29,11 @@ object PathSymbols {
     lineTo(20, 0)
   }
   val pie = new PathShape(red(width=0, blendMode=blend)) {
-    addCircle(0,0,7)
+    moveTo(0, 0)
+    lineTo(10, 10)
+    lineTo(0, 20)
+    moveTo(10, 10)
+    lineTo(20, 10)
   }
 }
 
@@ -250,7 +254,7 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
             else
               selection = selection ++ List(shape)
 
-        if (touched.isEmpty) lastMouseDown = location
+        lastMouseDown = location
         lastMouse = Vec.Origin
       }
 
@@ -298,8 +302,8 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
     if (guiRoot.hasKeyboardFocus(this)) focussedFrame.draw(surface)
   }
 
-  val selectionPath = new GlyphShape.PathShape(selectBrush)
-  val vertexPath = new GlyphShape.PathShape(Brushes("yellow/2.stroke-2-2")(blendMode = BlendMode.XOR))
+  val selectionPath = new GlyphShape.PathShape(selectBrush, false)
+  val vertexPath = new GlyphShape.PathShape(Brushes("red/2.stroke-2-2")/*(blendMode = BlendMode.XOR)*/, false)
 
   def indicateVertices(surface: Surface): Unit = if (vertices.nonEmpty) {
     vertexPath.reset()
@@ -310,11 +314,13 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
       //vertexPath.addCircle(x, y, 10)
       vertexPath.addPathShape(PathSymbols.exx, x, y)
     }
+    // mark the centre
     val b = (vertexPath.path.computeTightBounds())
     val w = b.getWidth
     val h = b.getHeight
     vertexPath.addPathShape(PathSymbols.pie, b.getLeft+w/2, b.getTop+h/2)
-    vertexPath.draw(surface)
+    // draw the path
+    surface.withOrigin(b.getLeft, b.getTop) { vertexPath.draw(surface) }
   }
 
 
@@ -333,8 +339,9 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
           selectionPath.addCircle(shape.x+shape.w/2, shape.y+shape.h/2, 10)
         }
     }
-    selectionPath.addCircle(lastMouseDown.x, lastMouseDown.y, 5)
-    selectionPath.draw(surface)
+    val b = (selectionPath.path.computeTightBounds())
+    surface.withOrigin(b.getLeft, b.getTop) { selectionPath.draw(surface) }
+    surface.withOrigin(lastMouseDown-(1,1)) { circle(2)(blue).draw(surface)}
   }
 
   def addShape(x:Scalar, y:Scalar)(shape: GlyphShape) : Unit = withState {
