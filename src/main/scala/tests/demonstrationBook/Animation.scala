@@ -4,7 +4,7 @@ package tests.demonstrationBook
 import styled.{Book, BookSheet, TextButton, TextToggle}
 
 import io.github.humbleui.skija.{PaintMode, PaintStrokeCap}
-import org.sufrin.glyph.GlyphShape.{asGlyph, circle, line, lineBetween, rect, superimposed, AnimatedShape, AnimatedShapeGlyph, FILL, PathShape, STROKE}
+import org.sufrin.glyph.GlyphShape.{asGlyph, circle, composite, line, lineBetween, rect, superimposed, AnimatedShape, AnimatedShapeGlyph, FILL, PathShape, STROKE}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.NaturalSize.{Col, Row}
 import org.sufrin.glyph.unstyled.{reactive, static}
@@ -63,19 +63,34 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
     }
 
 
-    val blueString  = blueLine.sliced(5f, 3f)
 
-
-    class Mechanism extends AnimatedShapeGlyph[Double] (-1.0, Rect(900, 900, lightGrey)){
+    class Mechanism extends AnimatedShapeGlyph[Double] (0.0, Vec(900, 900)){
       override def withForeground(brush: Brush): GlyphShape = null
+
+      override def copy(fg: Brush, bg: Brush): AnimatedShapeGlyph[Double] = new Mechanism
 
       private val D2R: Double = Math.PI/180.0
       private val oneDegree: Double = 1.0
 
       // each step turns the mobile by a degree
-      override def step(): Unit = set((current + oneDegree))
+      override def step(): Unit = set((current - oneDegree))
 
-      private def lineConnecting(v1: LocatedShape, v2: LocatedShape)(fg: Brush): LocatedShape  =  lineBetween(v1, v2)(fg).targetLocatedAt(0,0)
+      private def rodConnecting(v1: LocatedShape, v2: LocatedShape)(fg: Brush): LocatedShape  =  {
+        lineBetween(v1, v2)(fg).floating()
+      }
+
+      private def rodBetween(v1: Vec, v2: Vec)(fg: Brush): GlyphShape = new GlyphShape {
+        def draw(surface: Surface): Unit = {
+          val p = new PathShape(fg, false)
+          p.moveTo(v1.x, v1.y)
+          p.lineTo(v2.x, v2.y)
+          p.draw(surface)
+        }
+
+        def diagonal: Vec = Vec.Zero
+
+        def withForeground(brush: Brush): GlyphShape = null
+      }
 
       lazy val wheel1 = new RotatingWheel(100, 4)
       lazy val wheel2 = new RotatingWheel(100, 8)
@@ -88,31 +103,31 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
        *
        */
       object Linkage {
-        val join = superimposed(circle(16)(red), circle(12)(black))
-        lazy val join1, join2, join3: LocatedShape = join.floating()
-        lazy val link1 = lineConnecting(join1, join2)(brown(width=8, cap=ROUND))
-        lazy val link2 = lineConnecting(join1, join3)(brown(width=8, cap=ROUND))
-
+        val joint = composite(circle(16)(red), circle(12)(black))
+        lazy val joint1, joint2, joint3: LocatedShape = joint.floating()
+        lazy val rod1 = rodConnecting(joint1, joint2)(brown(width=14, cap=ROUND))
+        lazy val rod2 = rodConnecting(joint1, joint3)(brown(width=14, cap=ROUND))
       }
 
       /**
        * Generate the glyph showing the next frame, by
-       * placing the linked vertices then forming a glyph superimposing
+       * placing the roded vertices then forming a glyph superimposing
        * the scenery, the turned mobile, and the placed vertices.
        */
       def toShape(degrees: Double): GlyphShape = {
         import Linkage._
         val deg = degrees.toFloat
-        val w1 = wheel1.toShape(deg).centredAt(450, 150)
-        val w2 = wheel2.toShape(deg).centredAt(450, 500)
-        join1.placeAt(w1.topLeft+wheel1.jointLocation(deg))
-        join2.placeAt(w2.topLeft+wheel2.jointLocation(deg))
-        val cyl = cylinder.turn(join1.topLeft.arctan()).floating()
-        superimposed (
-          w1, w2,
-          join1, join2,
-          link1, link2,
-          cyl
+        val w1 = wheel1.toShape(deg).centredAt(w*0.25f, wheel1.h*0.5f+30)
+        val w2 = wheel2.toShape(deg).centredAt(w*0.25f, h-wheel2.h*0.5f-30)
+        joint1.centerAt(w1.center+wheel1.jointLocation(deg))
+        joint2.centerAt(w2.center+wheel2.jointLocation(deg))
+        joint3.centerAt(w1.center+(w1.w*2, 0))
+        val cyl = cylinder.turn((joint1.center).directionTo(joint3.center)).centredAt(joint3.center)
+        composite (
+          w2, w1,
+          joint1, joint2,
+          rod1, rod2,
+          cyl, joint3,
         )
       }
 
@@ -159,155 +174,10 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
             setFPS()
         }
       ), ex, ex,
-      Animation.mechanism, ex, ex
+      Animation.mechanism.framed(), ex, ex,
     )
   }
 
-  val PseudoMechanism = Page("Pseudomechanism", "") {
-    import unstyled.dynamic.{Periodic, ActiveGlyph}
-
-
-    // Ratio of the size if the mobile to the stage
-    val ratio: Scalar = 1.25f
-
-    // An arbitrarily-shaped and intricate mobile
-    val mobile: GlyphShape = {
-      import GlyphShape._
-      val shape =
-        (circle(25)(red)---
-          rect(150,450)(blueFrame(mode=PaintMode.STROKE))---
-          circle(25)(red)) ~~~ ((pie(95)(red,blue,transparent,green,yellow)~~~circle(10)(white)) ||| rect(100, 50)(yellow))
-      shape
-    }
-
-
-
-    // other elements
-    import GlyphShape._
-    val spot = GlyphShape.rect(12,12)(red)
-    val blob = GlyphShape.rect(12,12)(white)
-    val spotdelta = 0f
-    val diam      = mobile.w max mobile.h
-    val track     = arc(diam, diam, 0, 90.0f, true)(green(width=4, mode=STROKE))
-    val track2    = arc(300, 300, 90f, 90.0f, true)(red(width=12, mode=STROKE))
-    val track3    = arc(300, 300, 180f, 90.0f, false)(blue(width=12, mode=STROKE))
-
-    // The scenery
-    val scenery: GlyphShape = {
-      import GlyphShape._
-      track ~~~ track.turn(180) ~~~ rect(ratio*diam, ratio*diam)(lightGrey) ~~~ track2 ~~~ track2.turn(180) ~~~ track3 ~~~ track3.turn(180)
-    }
-
-    val blueString  = blueLine.sliced(5f, 3f)
-    val whiteString = white(width=2).sliced(6f, 4f)
-    val redString   = red(width=4).sliced(5f, 4f)
-
-    // An active glyph whose initial image is formed by the mobile and ancillary actors
-    // Its state is the current angle of rotation of the mobile
-    class Stage extends ActiveGlyph[Double] (0.0){
-      val orbit = scenery.w / 3f
-
-      private val D2R: Double = Math.PI/180.0
-      private val oneDegree: Double = 1.0
-
-      // each step turns the mobile by a degree
-      override def step(): Unit = set((current + oneDegree))
-
-      private def elastic(v1: LocatedShape, v2: LocatedShape)(fg: Brush): LocatedShape  =  lineBetween(v1, v2)(fg).floating()
-
-      /**
-       * Vertices that will be placed whenever a frame is generated (see `toGlyph`) and
-       * superimposed dynamically by "elastic" strings.
-       *
-       */
-      object Linked {
-        val blob = circle(6)(red)
-        val join1, join2, join3: LocatedShape = blob.floating()
-        val elastics =
-          superimposed(
-            join1, elastic(join1, join2)(blueString),
-            join2, elastic(join2, join3)(whiteString),
-            join3, elastic(join3, join1)(redString))
-      }
-
-      /**
-       * Generate the glyph showing the next frame, by
-       * placing the linked vertices then forming a glyph superimposing
-       * the scenery, the turned mobile, and the placed vertices.
-       */
-      def toGlyph(degrees: Double): Glyph = {
-        import Linked._
-        locally // Place the linked vertices
-        { val θ   = (degrees % 360.0) * D2R
-          val dx  = orbit * Math.cos(3f * θ).toFloat
-          val ddy = orbit * Math.cos(6f * θ).toFloat
-          val dy  = orbit * Math.sin(θ).toFloat
-
-          join1.placeAt(-orbit, ddy)
-          join2.placeAt(dx, orbit)
-          join3.placeAt(orbit, dy)
-        }
-
-
-        asGlyph(
-          superimposed(
-            scenery,
-            mobile.turn(degrees.toFloat),
-            elastics
-          )
-        )
-      }
-
-      /** A copy of this glyph; perhaps with different foreground/background */
-      def copy(fg: Brush, bg: Brush): Glyph = null
-    }
-
-
-    object Animation  {
-      lazy val animated: Stage = new Stage
-      lazy val driver:   Periodic[Double] = Periodic[Double](animated, 15.0)
-    }
-
-    val FPS = styled.ActiveString(f"${1000.0/Animation.driver.msPerFrame}%3.2f FPS")
-    def setFPS(): Unit = FPS.set(f"${1000.0/Animation.driver.msPerFrame}%3.2f FPS")
-
-    Col(align=Center)(
-      <div width="60em" align="justify">
-        <p>
-          This is an animation test case that uses <b>GlyphShape</b>s
-          to form the image(s) being animated as well as the stage on which the shapes -- which
-          are not intended to mean anything -- are
-          shown.
-        </p>
-        <p>
-          Each frame of the animation is computed from scratch as it is shown;
-          and the coherence of the resulting animation seems satisfactory -- even
-          when the frame rate is quite high.
-        </p>
-      </div>, ex,
-      FPS, ex,
-      Row(
-        TextToggle(whenFalse="Start", whenTrue="Stop", initially = false){
-          case true  =>
-            Animation.driver.start()
-            setFPS()
-          case false =>
-            Animation.driver.stop()
-        }, em,
-        TextButton("Faster"){
-          _ =>
-            if (Animation.driver.msPerFrame>2) Animation.driver.msPerFrame /= 2
-            setFPS()
-        }, em,
-        TextButton("Slower"){
-          _ =>
-            Animation.driver.msPerFrame *= 2
-            setFPS()
-        }
-      ), ex, ex,
-      Animation.animated, ex, ex
-    )
-  }
 
   val Rhodonea = Page("Rhodonea", "") {
     import unstyled.dynamic.{Periodic, ActiveGlyph}
@@ -552,3 +422,151 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
   val GUI: Glyph = book.Layout.leftCheckBoxes(buttonAlign = Right, pageAlign = Center).enlarged(30)
 
 }
+
+/*
+  val PseudoMechanism = Page("Pseudomechanism", "") {
+    import unstyled.dynamic.{Periodic, ActiveGlyph}
+
+
+    // Ratio of the size if the mobile to the stage
+    val ratio: Scalar = 1.25f
+
+    // An arbitrarily-shaped and intricate mobile
+    val mobile: GlyphShape = {
+      import GlyphShape._
+      val shape =
+        (circle(25)(red)---
+          rect(150,450)(blueFrame(mode=PaintMode.STROKE))---
+          circle(25)(red)) ~~~ ((pie(95)(red,blue,transparent,green,yellow)~~~circle(10)(white)) ||| rect(100, 50)(yellow))
+      shape
+    }
+
+
+
+    // other elements
+    import GlyphShape._
+    val spot = GlyphShape.rect(12,12)(red)
+    val blob = GlyphShape.rect(12,12)(white)
+    val spotdelta = 0f
+    val diam      = mobile.w max mobile.h
+    val track     = arc(diam, diam, 0, 90.0f, true)(green(width=4, mode=STROKE))
+    val track2    = arc(300, 300, 90f, 90.0f, true)(red(width=12, mode=STROKE))
+    val track3    = arc(300, 300, 180f, 90.0f, false)(blue(width=12, mode=STROKE))
+
+    // The scenery
+    val scenery: GlyphShape = {
+      import GlyphShape._
+      track ~~~ track.turn(180) ~~~ rect(ratio*diam, ratio*diam)(lightGrey) ~~~ track2 ~~~ track2.turn(180) ~~~ track3 ~~~ track3.turn(180)
+    }
+
+    val blueString  = blueLine.sliced(5f, 3f)
+    val whiteString = white(width=2).sliced(6f, 4f)
+    val redString   = red(width=4).sliced(5f, 4f)
+
+    // An active glyph whose initial image is formed by the mobile and ancillary actors
+    // Its state is the current angle of rotation of the mobile
+    class Stage extends ActiveGlyph[Double] (0.0){
+      val orbit = scenery.w / 3f
+
+      private val D2R: Double = Math.PI/180.0
+      private val oneDegree: Double = 1.0
+
+      // each step turns the mobile by a degree
+      override def step(): Unit = set((current + oneDegree))
+
+      private def elastic(v1: LocatedShape, v2: LocatedShape)(fg: Brush): LocatedShape  =  lineBetween(v1, v2)(fg).floating()
+
+      /**
+       * Vertices that will be placed whenever a frame is generated (see `toGlyph`) and
+       * superimposed dynamically by "elastic" strings.
+       *
+       */
+      object Linked {
+        val blob = circle(6)(red)
+        val join1, join2, join3: LocatedShape = blob.floating()
+        val elastics =
+          superimposed(
+            join1, elastic(join1, join2)(blueString),
+            join2, elastic(join2, join3)(whiteString),
+            join3, elastic(join3, join1)(redString))
+      }
+
+      /**
+       * Generate the glyph showing the next frame, by
+       * placing the linked vertices then forming a glyph superimposing
+       * the scenery, the turned mobile, and the placed vertices.
+       */
+      def toGlyph(degrees: Double): Glyph = {
+        import Linked._
+        locally // Place the linked vertices
+        { val θ   = (degrees % 360.0) * D2R
+          val dx  = orbit * Math.cos(3f * θ).toFloat
+          val ddy = orbit * Math.cos(6f * θ).toFloat
+          val dy  = orbit * Math.sin(θ).toFloat
+
+          join1.placeAt(-orbit, ddy)
+          join2.placeAt(dx, orbit)
+          join3.placeAt(orbit, dy)
+        }
+
+
+        asGlyph(
+          superimposed(
+            scenery,
+            mobile.turn(degrees.toFloat),
+            elastics
+          )
+        )
+      }
+
+      /** A copy of this glyph; perhaps with different foreground/background */
+      def copy(fg: Brush, bg: Brush): Glyph = null
+    }
+
+
+    object Animation  {
+      lazy val animated: Stage = new Stage
+      lazy val driver:   Periodic[Double] = Periodic[Double](animated, 15.0)
+    }
+
+    val FPS = styled.ActiveString(f"${1000.0/Animation.driver.msPerFrame}%3.2f FPS")
+    def setFPS(): Unit = FPS.set(f"${1000.0/Animation.driver.msPerFrame}%3.2f FPS")
+
+    Col(align=Center)(
+      <div width="60em" align="justify">
+        <p>
+          This is an animation test case that uses <b>GlyphShape</b>s
+          to form the image(s) being animated as well as the stage on which the shapes -- which
+          are not intended to mean anything -- are
+          shown.
+        </p>
+        <p>
+          Each frame of the animation is computed from scratch as it is shown;
+          and the coherence of the resulting animation seems satisfactory -- even
+          when the frame rate is quite high.
+        </p>
+      </div>, ex,
+      FPS, ex,
+      Row(
+        TextToggle(whenFalse="Start", whenTrue="Stop", initially = false){
+          case true  =>
+            Animation.driver.start()
+            setFPS()
+          case false =>
+            Animation.driver.stop()
+        }, em,
+        TextButton("Faster"){
+          _ =>
+            if (Animation.driver.msPerFrame>2) Animation.driver.msPerFrame /= 2
+            setFPS()
+        }, em,
+        TextButton("Slower"){
+          _ =>
+            Animation.driver.msPerFrame *= 2
+            setFPS()
+        }
+      ), ex, ex,
+      Animation.animated, ex, ex
+    )
+  }
+   */

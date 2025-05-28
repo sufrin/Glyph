@@ -6,7 +6,7 @@ import io.github.humbleui.skija.{PaintMode, Path, PathFillMode}
 import io.github.humbleui.types.Rect
 import org.sufrin.glyph.Brush.{ROUND, SQUARE}
 import org.sufrin.glyph.Brushes.{black, green, invisible, lightGrey}
-import org.sufrin.glyph.GlyphShape.{asGlyph, circle, rect, superimposed, FILL, STROKE}
+import org.sufrin.glyph.GlyphShape.{asGlyph, circle, rect, composite, FILL, STROKE}
 import org.sufrin.glyph.unstyled.dynamic.{Animateable, Steppable}
 
 /**
@@ -49,7 +49,7 @@ trait GlyphShape { thisShape =>
   }
 
   /**
-   * This drawable rotated clockwise about its centre through `degrees`. Implemented 
+   * This drawable rotated clockwise about its centre through `degrees`. Implemented
    * efficiently by a proxy class to avoid space leaks.
    *
    * The point is that if implemented by the "normal" method of transforming glyphs (ie by generating a glyph that draws the "host" glyph
@@ -165,7 +165,7 @@ trait GlyphShape { thisShape =>
    */
   def ~~~ (thatShape: GlyphShape): GlyphShape = {
     val (big, small) = if (thisShape.w*thisShape.h <= thatShape.w*thatShape.h) (thatShape, thisShape) else (thisShape, thatShape)
-    superimposed(big, small)
+    composite(big, small)
   }
 
   /**
@@ -174,8 +174,11 @@ trait GlyphShape { thisShape =>
    */
   def locatedAt(x: Scalar, y: Scalar): LocatedShape = LocatedShape(x, y, thisShape)
   def locatedAt(pos: (Scalar, Scalar)): LocatedShape = LocatedShape(pos._1, pos._2, thisShape)
+  def locatedAt(pos: Vec): LocatedShape = LocatedShape(pos.x, pos.y, thisShape)
+
   def centredAt(x: Scalar, y: Scalar): LocatedShape = LocatedShape(x-thisShape.w*0.5f, y-thisShape.h*0.5f, thisShape)
   def centredAt(pos: (Scalar, Scalar)): LocatedShape = LocatedShape(pos._1-thisShape.w*0.5f, pos._2-thisShape.h*0.5f, thisShape)
+  def centredAt(pos: Vec): LocatedShape = LocatedShape(pos.x-thisShape.w*0.5f, pos.y-thisShape.h*0.5f, thisShape)
   /** An shape at an initiallly-unspecified location */
   def floating(): LocatedShape = LocatedShape(0, 0, thisShape)
 
@@ -185,12 +188,12 @@ trait GlyphShape { thisShape =>
    * @see TargetShape
    */
   def targetLocatedAt(x: Scalar, y: Scalar): TargetShape = TargetShape(x, y, thisShape)
-
   def targetLocatedAt(pos: (Scalar, Scalar)): TargetShape = TargetShape(pos._1, pos._2, thisShape)
-
+  def targetLocatedAt(pos: Vec): LocatedShape = TargetShape(pos.x, pos.y, thisShape)
   def targetCentredAt(x: Scalar, y: Scalar): TargetShape = TargetShape(x-thisShape.w*0.5f, y-thisShape.h*0.5f, thisShape)
-
   def targetCentredAt(pos: (Scalar, Scalar)): TargetShape = TargetShape(pos._1-thisShape.w*0.5f, pos._2-thisShape.h*0.5f, thisShape)
+  def targetCentredAt(pos: Vec): LocatedShape = TargetShape(pos.x-thisShape.w*0.5f, pos.y-thisShape.h*0.5f, thisShape)
+
 
 
   /**
@@ -355,7 +358,7 @@ object GlyphShape {
       val diagonal: Vec = Vec.Zero
 
       def draw(surface: Surface): Unit =
-        surface.drawLines$(fg, l.x, l.y, r.x, r.y)
+        surface.drawLines$(fg, l.x+l.w*0.5f, l.y+l.h*0.5f, r.x+r.w*0.5f, r.y+r.h*0.5f)
 
       override def toString: String = s"lineBetween($l,$r)($fg)"
 
@@ -471,21 +474,18 @@ object GlyphShape {
    * A glyph defined by the same methods as an `AnimatedGlyph`. It invokes a redraw whenever
    * its shape has been regenerated.
    */
-  abstract class AnimatedShapeGlyph[T](initial: T, background: GlyphShape) extends AnimatedShape[T](initial, background) with Glyph {
+  abstract class AnimatedShapeGlyph[T](initial: T, diagonal: Vec) extends AnimatedShape[T](initial, diagonal) with Glyph {
     override def afterShape(): Unit = reDraw()
-
-    /** A copy of this glyph; perhaps with different foreground/background */
-    def copy(fg: Brush, bg: Brush): Glyph = null
-
+    def copy(fg: Brush, bg: Brush): AnimatedShapeGlyph[T] = { throw new UnsupportedOperationException (s"abstract AnimatedShapeGlyph.copy($fg, $bg) -- requires concrete override"); null }
     val fg: Brush = invisible
-    val bg: Brush = background.fg
+    val bg: Brush = invisible
   }
 
   /**
    * An `Animateable` glyph shape that regenerates whenever its `current` value is set to a value that differs from its
    * `current: T`.
    */
-  abstract class AnimatedShape[T](initial: T, val background: GlyphShape) extends GlyphShape with Animateable[T] {
+  abstract class AnimatedShape[T](initial: T, val diagonal: Vec) extends GlyphShape with Animateable[T] {
     /** Generate the shape corresponding to `t` */
     def toShape(t: T): GlyphShape
     /** Invoked by `set` after shape generation */
@@ -494,7 +494,6 @@ object GlyphShape {
     protected var currentShape: GlyphShape = toShape(initial)
     protected var current: T               = initial
 
-    def diagonal: Vec = background.diagonal
     def center: Vec   = diagonal * 0.5f
 
     /**
@@ -509,7 +508,6 @@ object GlyphShape {
     def get: T = current
 
     override def draw(surface: Surface): Unit = {
-      background.draw(surface)
       surface.withClip(diagonal) { currentShape.draw(surface) }
       }
     }
@@ -532,7 +530,7 @@ object GlyphShape {
 
     def reset(): Unit = {
       path.reset()
-      if (absolute) path.moveTo(0, 0)         
+      if (absolute) path.moveTo(0, 0)
     }
 
     def draw(surface: Surface): Unit = if (absolute) {
@@ -674,24 +672,23 @@ object GlyphShape {
   }
 
   /** @see superimposed */
-  def superimposed(shape: GlyphShape, shapes: GlyphShape*): GlyphShape = superimposed(shape :: shapes.toList)
+  def composite(shape: GlyphShape, shapes: GlyphShape*): GlyphShape = superimposed(shape :: shapes.toList)
 
 
   /** Superposition of located shapes */
-  def superimposed(shape: LocatedShape, shapes: LocatedShape*): GlyphShape = superimposed(shape :: shapes.toList)
+  def composite(shape: LocatedShape, shapes: LocatedShape*): GlyphShape = composite(shape :: shapes.toList)
 
   /** Superposition of located shapes */
-  def superimposed(shapes: Iterable[LocatedShape]): GlyphShape = new GlyphShape {
+  def composite(shapes: Iterable[LocatedShape]): GlyphShape = new GlyphShape {
     def withForeground(brush: Brush): GlyphShape =  this
-    val tw = Measure.maxWidth(shapes.map(_.shape))
-    val th = Measure.maxHeight(shapes.map(_.shape))
-    val deltas = for {shape <- shapes} yield (Vec((tw - shape.w) / 2, (th - shape.h) / 2))
+    val diagonals = for {shape <- shapes} yield (shape.x+shape.w, shape.y+shape.h)
+    val tw = diagonals.map(_._1).max
+    val th = diagonals.map(_._2).max
 
     def draw(surface: Surface): Unit = {
-      val shape = shapes.iterator
-      for {delta <- deltas}
-        surface.withOrigin(delta) {
-          shape.next().draw(surface)
+      for {shape <- shapes}
+         {
+          shape.draw(surface)
         }
     }
 
@@ -699,14 +696,12 @@ object GlyphShape {
 
     override def enclosing(point: Vec): Option[GlyphShape] = {
       var it: Option[GlyphShape] = None
-      val delta = deltas.iterator
       val shape = shapes.iterator
       //println(s"$this.enclosing($point)")
-      while (it.isEmpty && delta.hasNext) {
+      while (it.isEmpty && shape.hasNext) {
         val s = shape.next()
-        val d = delta.next()
         //println(s"  $s@${point-d}")
-        it = s.shape.enclosing(point - d)
+        it = s.shape.enclosing(point - (s.x, s.y))
       }
       it
     }

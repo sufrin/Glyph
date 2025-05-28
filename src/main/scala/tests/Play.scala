@@ -12,7 +12,7 @@ import gesture._
 import io.github.humbleui.types.Rect
 import org.sufrin.{glyph, logging}
 import org.sufrin.glyph.Brushes.{black, blue, green, lightGrey, red, white, yellow}
-import org.sufrin.glyph.GlyphShape.{arrow, asGlyph, circle, lineBetween, polygon, rect, superimposed, FILL, PathShape, STROKE}
+import org.sufrin.glyph.GlyphShape.{arrow, asGlyph, circle, lineBetween, polygon, rect, composite, FILL, PathShape, STROKE}
 import org.sufrin.glyph.styled.{Book, BookSheet, GlyphButton}
 import org.sufrin.glyph.unstyled.static.FilledPolygon
 
@@ -250,6 +250,7 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
             else
               selection = selection ++ List(shape)
 
+        if (touched.isEmpty) lastMouseDown = location
         lastMouse = Vec.Origin
       }
 
@@ -261,6 +262,8 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
       case MouseClick(_) =>
 
     }
+    //println(displayList)
+    //println(selection)
     feedback()
     reDraw()
   }
@@ -296,7 +299,7 @@ class Arena(background: Glyph)(left: Variable[Int], right: Variable[Int]) extend
   }
 
   val selectionPath = new GlyphShape.PathShape(selectBrush)
-  val vertexPath = new GlyphShape.PathShape(Brushes("yellow/1.stroke-2-2")(blendMode = BlendMode.XOR))
+  val vertexPath = new GlyphShape.PathShape(Brushes("yellow/2.stroke-2-2")(blendMode = BlendMode.XOR))
 
   def indicateVertices(surface: Surface): Unit = if (vertices.nonEmpty) {
     vertexPath.reset()

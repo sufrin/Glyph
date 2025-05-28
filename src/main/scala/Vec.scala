@@ -30,10 +30,14 @@ trait Vec {
 
   @inline final def *(factor: Scale): Vec = Vec(x * factor, y * factor)
 
-  def arctan(): Scalar = {
+  /** Arctangent, in degrees, of this `Vec` */
+  @inline def arctan: Scalar = {
     import Math.{atan2, PI}
     (atan2(y, x)*(180.0/PI)).toFloat
   }
+
+  /** Arctangent, in degrees, of the line from `this` to `other` */
+  @inline def directionTo(other: Vec):Scalar = (other-this).arctan
 
   /**
    *  `scaled(1/fx, 1/fy)`
