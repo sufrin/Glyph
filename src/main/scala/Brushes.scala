@@ -101,9 +101,11 @@ object Brushes extends Brushes {
 
     def decoratedBrush(specification: String): Brush = {
       specification match {
-        case s"$prefix($radius)" if isFloat(radius) =>
-          decoratedBrush(prefix).rounded(radius.toFloat)
+        case s"$prefix.stroke($width)" if isFloat(width) =>
+          decoratedBrush(prefix)(mode=STROKE).width(width.toFloat)
         case s"$prefix.rounded($radius)" if isFloat(radius) =>
+          decoratedBrush(prefix).rounded(radius.toFloat)
+        case s"$prefix($radius)" if isFloat(radius) =>
           decoratedBrush(prefix).rounded(radius.toFloat)
         case s"$prefix-$on-$off" if isFloat(on) && isFloat(off) =>
           decoratedBrush(prefix).dashed(on.toFloat, off.toFloat)
@@ -145,7 +147,7 @@ object Brushes extends Brushes {
         Brush(s"0X$hex")(color = hexToInt(hex))
       case specification =>
         logging.Default.warn(s"$specification is not the specification of a colour")
-        Brush(s"red($specification)")(color = 0XFFFF0000, width=2, mode=STROKE)
+        Brush(s"red/2.stroke", s"[because invalid $specification]")(color = 0XFFFF0000, width=2, mode=STROKE)
     }
 
     decoratedBrush(specification)

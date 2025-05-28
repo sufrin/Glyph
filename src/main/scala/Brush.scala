@@ -32,7 +32,7 @@ object Brush {
     }
   }
 
-  def apply(name: String=""): Brush = new Brush(name)
+  def apply(name: String="", description: String=""): Brush = new Brush(name, description)
 
   def ofString(descriptor: String): Brush = Brushes(descriptor)
 
@@ -76,7 +76,7 @@ object Brush {
  * We strongly advise against using "pure" `Paint` or its methods in a `Glyph` application. Nothing will
  * run faster, and debugging will be considerably harder.
  */
-class Brush(var name: String) extends Paint {
+class Brush(var name: String, val description: String="") extends Paint {
 
   import GlyphTypes.ImageFilter
 
@@ -87,9 +87,9 @@ class Brush(var name: String) extends Paint {
            val id = if (name.isEmpty) f"0X${color}%08X" else name
            val width = s"${strokeWidth.toInt}"
            val cap = strokeCap match {
-             case ROUND => "/ROUND"
-             case SQUARE => "/SQUARE"
-             case BUTT => "/BUTT"
+             case ROUND => ".round"
+             case SQUARE => ".square"
+             case BUTT => ".butt"
              case _ => ""
            }
            val mode = this.mode match {
@@ -98,7 +98,7 @@ class Brush(var name: String) extends Paint {
              case STROKE_AND_FILL => ".strokeandfill"
              case _ => ""
            }
-   if (Brush.includeDetail) s"$id/$width$cap$mode" else id
+   if (Brush.includeDetail) s"$id/$width$cap$mode$description" else id
   }
 
   /** A copy of `this`` brush with changed attributes as specified. */
@@ -114,9 +114,10 @@ class Brush(var name: String) extends Paint {
             pathEffect: PathEffect = this.pathEffect,
             filter: ImageFilter    = this.getImageFilter,
             shader: Shader         = this.shader,
-            blendMode: BlendMode   = this.getBlendMode
+            blendMode: BlendMode   = this.getBlendMode,
+            description: String    = this.description
            ): Brush =
-    Brush(name)
+    Brush(name, description)
       . col(color)
       . strokeWidth(width)
       . strokeCap(cap)
@@ -132,7 +133,7 @@ class Brush(var name: String) extends Paint {
 
   /** A copy of this brush with the same name. */
   def copy: Brush =
-    Brush(name)
+    Brush(name, description)
       .color(color)
       .strokeWidth(strokeWidth)
       .strokeCap(strokeCap)
@@ -317,19 +318,19 @@ class Brush(var name: String) extends Paint {
    */
   def sliced(sliceLength: Scalar, displacementLimit: Scalar, seed: Int=42): Brush = {
     val effect = GlyphTypes.PathEffect.makeDiscrete(sliceLength, displacementLimit, seed)
-    val result = this.copy(name=s"$this.chopped($sliceLength,$displacementLimit, $seed)", pathEffect=effect)
+    val result = this.copy(name=name, description=s"$description~$sliceLength~$displacementLimit", pathEffect=effect)
     result
   }
 
   /** A new brush painted with dashes. */
   def dashed(onOff: Scalar*): Brush = {
-    val result: Brush = this.copy(name=s"$this.dashed(${onOff.mkString(", ")})", pathEffect=GlyphTypes.PathEffect.makeDash(onOff))
+    val result: Brush = this.copy(name=name, description=s"$description-${onOff.mkString("-")})", pathEffect=GlyphTypes.PathEffect.makeDash(onOff))
     result
   }
 
   /** A new brush that rounds sharp corners. */
   def rounded(radius: Scalar): Brush = {
-    val result: Brush = copy(name=s"$this.rounded(${radius})", pathEffect=GlyphTypes.PathEffect.makeRoundedCorners(radius))
+    val result: Brush = copy(name=name,description=s"$description.rounded(${radius})", pathEffect=GlyphTypes.PathEffect.makeRoundedCorners(radius))
     result
   }
 
