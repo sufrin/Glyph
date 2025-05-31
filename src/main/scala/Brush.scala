@@ -98,7 +98,7 @@ class Brush(var name: String, val description: String="") extends Paint {
              case STROKE_AND_FILL => ".strokeandfill"
              case _ => ""
            }
-   if (Brush.includeDetail) s"$id/$width$cap$mode$description" else id
+   if (Brush.includeDetail) s"$id.$width$cap$mode$description" else id
   }
 
   /** A copy of `this`` brush with changed attributes as specified. */
