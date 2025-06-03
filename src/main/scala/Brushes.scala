@@ -140,8 +140,8 @@ object Brushes extends Brushes {
       case s"0x${hex}" if hex.matches("([0-9a-f])+") =>
         Brush(s"0X$hex")(color = hexToInt(hex))
       case specification =>
-        logging.Default.warn(s"$specification is not the specification of a colour")
-        Brush(s"red", s"[because invalid $specification]")(width=2, mode=STROKE)
+        logging.Default.warn(s"$specification is not a colour")
+        throw new IllegalArgumentException(s"$specification is not a colour")
     }
 
     decoratedBrush(specification)

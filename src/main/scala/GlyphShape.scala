@@ -58,11 +58,11 @@ trait GlyphShape { thisShape =>
    */
   def turn(degrees: Scalar, tight: Boolean=false): GlyphShape = if (degrees==0f) thisShape else new Turned(thisShape, degrees, tight)
 
-  private class Turned(shape: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphTransforms.Turned(shape, degrees, tight, invisible, invisible) {
+  private class Turned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphTransforms.Turned(original, degrees, tight, invisible, invisible) {
     override def turn(degrees: Scalar, tight: Boolean=true): GlyphShape =
-      if (degrees==0f) shape else new Turned(shape, this.degrees+degrees, tight)
+      if (degrees==0f) original else new Turned(original, this.degrees+degrees, tight)
 
-    override def withForeground(brush: Brush): GlyphShape = shape.withForeground(brush).turn(degrees, tight)
+    override def withForeground(brush: Brush): GlyphShape = original.withForeground(brush).turn(degrees, tight)
 
   }
 
@@ -781,6 +781,8 @@ case class TargetShape(x$: Scalar, y$: Scalar, shape$: GlyphShape) extends Locat
 
   @inline private def centred(g: GlyphShape): Vec = Vec(x, y) + ((diagonal - g.diagonal) * 0.5f)
 
+  override def withForeground(brush: Brush): TargetShape = new TargetShape(x, y, shape$.withForeground(brush))
+
   def setHovering(state: Boolean): Unit = {
     if (state) {
       hoverBrush.strokeWidth(hoverBrush0.strokeWidth * 2)
@@ -830,6 +832,8 @@ class LocatedShape(var x: Scalar, var y: Scalar, val shape: GlyphShape) {
   @inline def topLeft: Vec = Vec(x, y)
   @inline private def centred(g: GlyphShape): Vec = Vec(x, y) + ((diagonal - g.diagonal) * 0.5f)
   @inline def centre: Vec = topLeft + (diagonal * 0.5f)
+
+  def withForeground(brush: Brush): LocatedShape = new LocatedShape(x, y, shape.withForeground(brush))
 
   /** the glyph's bounding box contains the mouse pointer */
   def isBeneath(point: Vec): Boolean = shape.encloses((point - (x,y)))

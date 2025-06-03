@@ -19,6 +19,7 @@ import org.sufrin.glyph.unstyled.reactive.{Enterable, Reaction}
 import org.sufrin.glyph.unstyled.static.FilledPolygon
 
 import java.io.File
+import java.lang.IllegalArgumentException
 import scala.collection.mutable
 
 
@@ -30,6 +31,7 @@ object PathSymbols {
     moveTo(0, 20)
     lineTo(20, 0)
   }
+
   val pie = new PathShape(red(width=0, blendMode=blend)) {
     moveTo(0, 0)
     lineTo(10, 10)
@@ -37,12 +39,29 @@ object PathSymbols {
     moveTo(10, 10)
     lineTo(20, 10)
   }
+
+  val lastpie = new PathShape(blue(width=0, mode=STROKE, blendMode=blend)) {
+    moveTo(0, 0)
+    lineTo(10, 10)
+    lineTo(0, 20)
+    moveTo(10, 10)
+    lineTo(20, 10)
+  }
+
+  val lastx = new PathShape(blue(width=5, blendMode=blend), absolute = false) {
+    moveTo(0, 0)
+    lineTo(20, 20)
+    moveTo(0, 20)
+    lineTo(20, 0)
+  }
+
+  val last = lastpie//circle(3)(blue(width=2))
 }
 
 /**
  * Drawing board
  */
-class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int]) extends  GestureBasedReactiveGlyph { thisBoard =>
+class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])(implicit style: StyleSheet) extends  GestureBasedReactiveGlyph { thisBoard =>
 
   var lastMouse, lastMouseDown: Vec = background.diagonal * 0.5f
 
@@ -119,8 +138,8 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
       reDraw()
     }
 
-    def undoHint: String = states.toSeq.take(4).map(_.culprit).mkString(" ")
-    def redoHint: String = unstates.toSeq.take(4).map(_.culprit).mkString(" ")
+    def undoHint: String = s"Undo ${states.toSeq.take(4).map(_.culprit).mkString(" ")} ${if (states.length>4) "..." else ""}"
+    def redoHint: String = s"Redo ${unstates.toSeq.take(4).map(_.culprit).mkString(" ")} ${if (unstates.length>4) "..." else ""}"
 
     def clear(): Unit = {
       states.clear()
@@ -184,27 +203,52 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
     selection = mapped
   }
 
-  class Composition(x : Scalar, y : Scalar, shape : GlyphShape, val components: Seq[TargetShape]) extends TargetShape(x, y, shape)
+  /**
+   *  This `shape` was composed from the shapes of the given target components.
+   *  @see composeSelected
+   *  @see
+   */
+  class Composition(x : Scalar, y : Scalar, shape : GlyphShape, val components: Seq[TargetShape]) extends GlyphShape {
+    override def toString: String = s"Composition[${super.toString}]"
+    override def withForeground(brush: Brush): Composition = new Composition(x, y, shape.withForeground(brush), components)
 
-  /** compose the selected elements in the order of selection  */
+    def draw(surface: Surface): Unit = shape.draw(surface)
+
+    def diagonal: Vec = shape.diagonal
+
+    override def scale(factor: Scalar): GlyphShape = new Composition(x, y, shape.scale(factor), components)
+
+    override def turn(degrees: Scalar, tight: Boolean): GlyphShape = new Composition(x, y, shape.turn(degrees), components)
+  }
+
+  /** Compose the selected elements in the order of selection  */
   def composeSelected(compose: GlyphShape => GlyphShape => GlyphShape): Unit =
     if (selection.length>1) withState ("compose") {
-    var composed: GlyphShape = selection.head.shape
-        for { v <- selection.tail } composed = compose(composed)(v.shape)
-        val (x, y) = (selection.head.x, selection.head.y)
+      val targets = selection
+      val left = targets.map(_.x).min
+      val top = targets.map(_.y).min
+      var composed: GlyphShape = targets.head.shape
+        for { v <- targets.tail } composed = compose(composed)(v.shape)
         displayList.dequeueAll(_.isIn(selection))
-        val composite = new Composition(x, y, composed, selection)
+        val composite = new Composition(left, top, composed, targets).targetLocatedAt(left, top)
         displayList.enqueue(composite)
         selection = List(composite)
       }
     else bell.play()
 
-  def InPlace(targets: Seq[TargetShape]): GlyphShape = new GlyphShape {
-    val left  = targets.map(_.x).min
-    val right = targets.map{ t => t.x+t.w }.max
-    val bot = targets.map{ t => t.y+t.h }.max
-    val top = targets.map(_.y).min
-    val placed = targets.map{ t => t.shape.locatedAt(t.x-left, t.y-top)}
+  /**
+   * This shape's diagonal exactly spans the `targets'. Each
+   * target shape is shown at the appropriate position
+   * relative to the shape's origin.
+   * @param targets
+   */
+  class ComposedInPlace(val targets: Seq[TargetShape]) extends GlyphShape {
+    override def toString: String = s"InPlace(${targets.mkString(",\n")})"
+    private val left  = targets.map(_.x).min
+    private val right = targets.map{ t => t.x+t.w }.max
+    private val bot = targets.map{ t => t.y+t.h }.max
+    private val top = targets.map(_.y).min
+    private val placed = targets.map{ t => t.shape.locatedAt(t.x-left, t.y-top)}
 
     def draw(surface: Surface): Unit = {
         for { glyph <- placed } glyph.draw(surface)
@@ -212,13 +256,19 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
 
     def diagonal: Vec = Vec(right-left, bot-top)
 
-    def withForeground(brush: Brush): GlyphShape = null
+    def withForeground(brush: Brush): GlyphShape = new ComposedInPlace(targets.map(_.withForeground(brush)))
+
+    def topLeft: Vec = Vec(left, top)
   }
 
+  /**
+   * Compose the selection, and place the result at the top left corner of the selection's bounding box.
+   */
   def composeSelectedInPlace(): Unit =
     if (selection.length>1) withState ("compose") {
-      val (x, y) = (selection.head.x, selection.head.y)
-      val composite = new Composition(x, y, InPlace(selection), selection)
+      val inPlace = new ComposedInPlace(selection)
+      val Vec(x, y) = inPlace.topLeft
+      val composite = new Composition(x, y, inPlace, selection).targetLocatedAt(x, y)
       displayList.dequeueAll(_.isIn(selection))
       displayList.enqueue(composite)
       selection = List(composite)
@@ -227,14 +277,16 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
 
   def decomposeSelected(): Unit =
     if (selection.length == 1) {
-      selection.head match {
+      selection.head.shape match {
         case composition: Composition =>
           withState ("decompose") {
             displayList.dequeueAll(_.equals(selection.head))
             selection = composition.components
             displayList.enqueueAll(selection)
           }
-        case _ => bell.play()
+        case other =>
+          bell.play()
+          logging.Default.error(s"cannot decompose $other")
       }
     } else bell.play()
 
@@ -254,8 +306,8 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
       case _: MouseEnters => guiRoot.grabKeyboard(thisBoard)
       case _: MouseLeaves => guiRoot.freeKeyboard(completely = true)
 
-      case _: MouseScroll if CONTROL => transformSelected(_.scale(if (delta.x+delta.y>0) 1/1.05f else 1.05f), ".scale")
-      case _: MouseScroll            => transformSelected(_.turn((delta.x+delta.y).sign*5, COMPLEMENT), ".turn")
+      case _: MouseScroll if !CONTROL => transformSelected(_.scale(if (delta.x+delta.y>0) 1/1.05f else 1.05f), ".scale")
+      case _: MouseScroll if CONTROL  => transformSelected(_.turn((delta.x+delta.y).sign*5, COMPLEMENT), ".turn")
 
       case Keystroke(key, _) if !PRESSED =>
 
@@ -312,18 +364,18 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
       }
 
       case MouseMove(_) =>
-        if (PRESSED) {
+        if (PRESSED && selection.nonEmpty) {
           withState (".move") { for { shape <- selection } shape.moveBy(delta.x, delta.y) }
         }
         lastMouse = location
 
-      case MouseClick(_) if (PRIMARY) => withState ("click-p") {
+      case MouseClick(_) if (PRIMARY && !CONTROL) => withState (".primary") {
         selection = selected(location)
         lastMouseDown = location
         lastMouse = Vec.Origin
       }
 
-      case MouseClick(_) if (SECONDARY) => withState ("click-s") {
+      case MouseClick(_) if (SECONDARY || (PRIMARY&&CONTROL)) => withState (".secondary") {
           val touched = selected(location)
           for {shape <- touched}
             if (selection contains shape)
@@ -354,7 +406,7 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
   val focussedBrush: Brush      = Brushes.red(width=4, mode=GlyphShape.STROKE)
   val focussedFrame: GlyphShape = GlyphShape.rect(background.w-4, background.h-4)(focussedBrush)
 
-  val selectBrush: Brush = Brushes("white/2/ROUND")(mode=PaintMode.STROKE)
+  val selectBrush: Brush = Brushes("white.2.round")(mode=PaintMode.STROKE)
 
 
   def draw(surface: Surface): Unit = surface.withClip(diagonal) {
@@ -375,7 +427,7 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
   }
 
   val selectionPath = new GlyphShape.PathShape(selectBrush, false)
-  val vertexPath = new GlyphShape.PathShape(Brushes("red/2.stroke-4-4")(blendMode = BlendMode.XOR), false)
+  val vertexPath = new GlyphShape.PathShape(Brushes("red.2.stroke-4-4")(blendMode = BlendMode.XOR), false)
 
 
   def indicateVertices(surface: Surface): Unit = if (vertices.nonEmpty) {
@@ -415,7 +467,7 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
     }
     val b = (selectionPath.path.computeTightBounds())
     surface.withOrigin(b.getLeft, b.getTop) { selectionPath.draw(surface) }
-    surface.withOrigin(lastMouseDown-(1,1)) { circle(2)(blue).draw(surface)}
+    surface.withOrigin(lastMouseDown-PathSymbols.last.centre) { PathSymbols.last.draw(surface)}
   }
 
   def addShape(kind: String, x:Scalar, y:Scalar)(shape: GlyphShape) : Unit = withState(s"+$kind"){
@@ -438,30 +490,8 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
   }
 }
 
+class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleSheet) {
 
-
-object Play extends Application {
-  /**
-   * Default sheet
-   */
-  val LocalSheet: StyleSheet = StyleSheet()
-  val interfaceStyle: StyleSheet = LocalSheet.copy(
-    buttonDecoration=styles.decoration.Framed(fg=blue(width=2), enlarge=0.7f, radius=0.5f),
-    buttonFontSize = 20,
-    labelFontSize = 20,
-    textFontSize = 20,
-    backgroundBrush = Brushes.white
-  )
-  def title = s"""Play"""
-  override
-  val defaultIconPath: Option[String] = Some ("PNG/WorcesterCrest.png")
-
-  val book = Book()
-  val Page = book.Page
-  implicit val sheet: StyleSheet= interfaceStyle
-  implicit val bookSheet: BookSheet = BookSheet(sheet, sheet)
-
-  val Interact = Page("Interact", ""){
     import sheet.{ex,em}
     val left, right = styled.ActiveString("   ")
     val done: Variable[Int]   = Variable(0){ case n => left.set(f"$n%03d") }
@@ -473,9 +503,9 @@ object Play extends Application {
     var newBrush: Brush = Brushes("blue.stroke.round.width(4)")
 
     def but(kind: String)(shape: => GlyphShape): Glyph = {
-      val b  = styled.TextButton(kind){ _ => { drawingBoard.addShape(kind, shape); drawingBoard.feedback() } }
-        HintManager(b.asInstanceOf[Enterable], 5, ()=>newBrush.toString, false)
-        b
+      val b  = styled.TextButton(kind){ _ => { drawingBoard.addShape(kind, shape); drawingBoard.feedback() } }(sheet)
+      HintManager(b.asInstanceOf[Enterable], 5, ()=>newBrush.toString, false)(hintSheet)
+      b
     }
 
     val blackArrow =  arrow(black)
@@ -488,8 +518,8 @@ object Play extends Application {
       but("Rect")(rect(width,height)(newBrush.copy).scale(scale max 1)),
       but("Circ")(circle(radius)(newBrush.copy).scale(scale max 1)),
       but("Arrow")(arrow(newBrush.copy).scale(scale max 0.3f)),
-      but("Star")(GlyphShape.polygon(PolygonLibrary.regularStarPath(vertices))(fg=newBrush.copy).scale(scale max 0.3f)),
-      but("Poly")(GlyphShape.polygon(PolygonLibrary.regularPolygonPath(vertices))(fg=newBrush.copy).scale(scale max 0.3f)),
+      but("Star")(GlyphShape.polygon(PolygonLibrary.regularStarPath(vertices).tail)(fg=newBrush.copy).scale(scale max 0.3f)),
+      but("Poly")(GlyphShape.polygon(PolygonLibrary.regularPolygonPath(vertices).tail)(fg=newBrush.copy).scale(scale max 0.3f)),
 
     )
 
@@ -501,101 +531,136 @@ object Play extends Application {
       @inline def isFloat(s: String):Boolean = s.matches("[0-9]+([.][0-9]+)?")
       val specs = spec.toLowerCase.split("[ ]+|,[ ]*").toSeq
       for  { spec <- specs }
-           spec match {
-             case s"$v=$d" if v.nonEmpty && isFloat(d) =>
-               val dim = d.toFloat
-               v.head match {
-                 case 'w' => width = dim
-                 case 'h' => height = dim
-                 case 'r' => radius = dim
-                 case 's' => scale = dim
-                 case 'v' => vertices = dim.toInt
-                 case _ =>
-                   logging.Default.warn(s"$spec does not specify w=, h=, r=, s=, v=")
-               }
+        spec match {
+          case s"$v=$d" if v.nonEmpty && isFloat(d) =>
+            val dim = d.toFloat
+            v.head match {
+              case 'w' => width = dim
+              case 'h' => height = dim
+              case 'r' => radius = dim
+              case 's' => scale = dim
+              case 'v' => vertices = dim.toInt
+              case _ =>
+                logging.Default.warn(s"$spec does not specify w=, h=, r=, s=, v=")
+            }
 
-             case _ =>
-               logging.Default.warn(s"$spec does not specify dimensions properly")
-           }
+          case _ =>
+            logging.Default.warn(s"$spec does not specify dimensions properly")
+        }
 
       dimField.text=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices"
     }
 
-    def setNewBrush(spec: String): Unit = {
-      if (spec.nonEmpty) newBrush = Brush.ofString(spec)
+    def setNewBrush(specification: String): Unit = {
+      val spec = specification.replaceAll("edit:","")
+      if (spec.nonEmpty) {
+        try {
+          newBrush = Brush.ofString(spec)
+          showNewBrush()
+        }
+        catch {
+          case ex: IllegalArgumentException =>
+            brushField.text=s"edit:${spec}"
+        }
+      }
     }
 
     def showNewBrush(): Unit = {
       brushField.text = newBrush.toString
     }
 
-    lazy val brushField = styled.TextField(size=40, onEnter=setNewBrush(_), initialText=newBrush.toString)
-
-    val brushButton = styled.TextButton("Brush:"){ _ => setNewBrush(brushField.text) }(sheet.copy(buttonDecoration = Framed(fg=black(width=3), radius=50)))
-    locally {
-      HintManager(brushButton.asInstanceOf[Enterable], 5, ()=>newBrush.toString, false)
-    }
+    lazy val brushField = styled.TextField(size=50, onEnter=setNewBrush(_), initialText=newBrush.toString)
 
     def undoHinted(targetButton: Glyph): Glyph = {
-      HintManager(targetButton.asInstanceOf[Enterable], 5, drawingBoard.undoHint,  false)
+      HintManager(targetButton.asInstanceOf[Enterable], 5, drawingBoard.undoHint,  false)(hintSheet)
       targetButton
     }
 
     def redoHinted(targetButton: Glyph): Glyph = {
-      HintManager(targetButton.asInstanceOf[Enterable], 5, drawingBoard.redoHint, false)
+      HintManager(targetButton.asInstanceOf[Enterable], 5, drawingBoard.redoHint, false)(hintSheet)
       targetButton
     }
 
     def HintedButton(label: String, hint: String="")(action: Reaction): Glyph = {
       val button = styled.TextButton(label)(action)
-      if (hint.nonEmpty)  HintManager(button.asInstanceOf[Enterable], 5, ()=>hint)
+      if (hint.nonEmpty)  HintManager(button.asInstanceOf[Enterable], 5, ()=>hint)(hintSheet)
       button
     }
 
-    NaturalSize.Col(align=Center)(
+    val GUI: Glyph = NaturalSize.Col(align=Center)(
       drawingBoard,
       ex,
       FixedSize.Row(width=drawingBoard.w, align=Mid)(
+        undoHinted(HintedButton("<"){ _ =>  drawingBoard.handle(drawingBoard.UndoGesture, Vec.Origin, Vec.Zero) }),
+        left.framed(),
+        styled.Label(" "),
+        right.framed(),
+        redoHinted(HintedButton(">"){_ => drawingBoard.handle(drawingBoard.RedoGesture, Vec.Origin, Vec.Zero) }),
+        sheet.hFill(),
         HintedButton("Restart", "Clear the board and start again"){ _ => drawingBoard.restart() },
-        HintedButton("Clean", "Preserve the drawing and start again"){ _ => println(drawingBoard.displayList); drawingBoard.clean() },
+        HintedButton("Clean", "Preserve the drawing and start again"){ _ => drawingBoard.clean() },
         sheet.hFill(),
 
         HintedButton("o", "Compose selection in place")   { _ => {drawingBoard.composeSelectedInPlace()}},
         HintedButton("|", "Compose selection horizontally in selection order")   { _ => {drawingBoard.composeSelected(_.|||)}},
         HintedButton("-", "Compose selection vertically in selection order")   { _ => {drawingBoard.composeSelected(_.---)}},
         HintedButton("~", "Compose selection by superimposing in selection order")  { _ => {drawingBoard.composeSelected(_.~~~)}},
-        HintedButton("↯", "Decompose the selected compsition" )   { _ => {drawingBoard.decomposeSelected()}},
+        HintedButton("↯", "Decompose the selected composition" )   { _ => {drawingBoard.decomposeSelected()}},
         sheet.hFill(),
         HintedButton("Clear", "Clear the path design") { _ => drawingBoard.fromButton("-vertices") { drawingBoard.vertices = Seq.empty } },
         HintedButton("Path", "Make a path from the path design"){ _ => drawingBoard.fromButton("path") { drawingBoard.addPoly(newBrush.copy); drawingBoard.vertices = Seq.empty }},
         sheet.hFill(),
-        HintedButton("Repaint", "Repaint the selected objects with the current brush"){ _ => drawingBoard.fromButton("recolour") { drawingBoard.transformSelected{ shape => shape.withForeground(newBrush.copy)}}},
+        HintedButton("Repaint", "Repaint selection"){ _ => drawingBoard.transformSelected({ shape => shape.withForeground(newBrush.copy)}, "repaint")},
         sheet.hFill(1, 2f),
-        undoHinted(HintedButton("<"){ _ =>  drawingBoard.handle(drawingBoard.UndoGesture, Vec.Origin, Vec.Zero) }),
-        left.framed(),
-        styled.Label(" "),
-        right.framed(),
-        redoHinted(HintedButton(">"){_ => drawingBoard.handle(drawingBoard.RedoGesture, Vec.Origin, Vec.Zero) }),
-        HintedButton("Help"){ _ =>}
+        HintedButton("Help"){ _ => help }
       ),
       ex,
       FixedSize.Row(width=drawingBoard.w, align=Mid)(shapes),
       ex,
-      brushButton beside brushField.framed() beside styled.Label(" ")  beside dimField.framed()
+      brushField.framed() beside styled.Label(" ")  beside dimField.framed()
     ).enlarged(20)
+}
+
+object Play extends Application {
+
+  val LocalSheet: StyleSheet = StyleSheet()
+  val interfaceStyle: StyleSheet = LocalSheet.copy(
+    buttonDecoration=styles.decoration.RoundFramed(fg=blue(width=4, cap=PaintStrokeCap.ROUND), enlarge=0.25f, radius=0.25f),
+    buttonFontSize = 20,
+    labelFontSize = 20,
+    textFontSize = 20,
+    backgroundBrush = Brushes.white
+  )
+  def title = s"""Play"""
+  override
+  val defaultIconPath: Option[String] = Some ("PNG/WorcesterCrest.png")
+
+  implicit val sheet: StyleSheet = interfaceStyle
+  val hintSheet: StyleSheet = sheet.copy(fontScale = 0.65f)
+  val help: Glyph = {
+    import glyphXML.Language._
+    <div width="70em">
+      <p align="center">
+        Play -- playing with little diagrams
+      </p>
+      <p align="justify">
+        The diagram consists of a collection of geometric objects, some of which
+        may be "live", and some "selected". Liveness is shown by the brightening of a small circular "liveness"
+        indicator near their centre, and of the eight yellow "attachment points" at the corners
+        and mid-edges of their bounding box.
+      </p>
+      <p>
+        The first object is selected by clicking (within) it with the primary or secondary mouse button; subsequent objects
+        are selected (or deselected if they are already selected) by clicking within them with the secondary mouse button.
+      </p>
+      <p>
+        The first object selected has a bright circular "selection" indicator surrounding its "liveness" indicator;
+        others are shown linked  to it, in the order in which they were selected, by white line-segments.
+      </p>
+    </div>.enlarged(30)
   }
 
-  val GUI: Glyph =  {
-    import glyphXML.Language.translation._
-    import sheet.{em,ex}
-    NaturalSize.Col(align = Center)(
-      <div width="70em" align="justify">
-        <p align="center">GlyphShape Playground.</p>
-      </div>,
-      ex,
-      book.Layout.leftCheckBoxes(Justify),
-      ex
-    )
-  }
+
+  lazy val GUI: Glyph =  new Dashboard({ styled.windowdialogues.Dialogue.OK(help).InFront(GUI).start()}, hintSheet, sheet).GUI
 
 }
