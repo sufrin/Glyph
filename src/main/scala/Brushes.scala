@@ -122,6 +122,8 @@ object Brushes extends Brushes {
       }
     }
 
+    case class NonBrush(why: String) extends Exception
+
     def namedBrush(specification: String): Brush = specification.toLowerCase match {
       case "red" => Brush(s"red")(color = 0XFFFF0000)
       case "blue" => Brush(s"blue")(color = 0XFF0000FF)
@@ -141,7 +143,7 @@ object Brushes extends Brushes {
         Brush(s"0X$hex")(color = hexToInt(hex))
       case specification =>
         logging.Default.warn(s"$specification is not a colour")
-        throw new IllegalArgumentException(s"$specification is not a colour")
+        throw new NonBrush(s"$specification")
     }
 
     decoratedBrush(specification)

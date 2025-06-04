@@ -55,8 +55,9 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
   /**
    * The diagonal size of the glyph
    */
-  def diagonal: Vec = Vec(emDiagonal.x*size, emDiagonal.y)
+  def diagonal: Vec = Vec(emDiagonal.x*size, emDiagonal.y*1.2)
   val atBaseLine = em.height
+  val deltaY = emDiagonal.y*0.2f
 
   private def focussed: Boolean = guiRoot.hasKeyboardFocus(this)
 
@@ -182,7 +183,7 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
     surface.withClip(diagonal) {
       // NB: The text is going to be aligned on the baseline
       // in case we start supporting mixed fonts in `TextField`s
-      surface.withOrigin(location.x, 0) {
+      surface.withOrigin(location.x, deltaY) {
         TextModel.rePan()
         val right = TextModel.rightText(fg)
         val left = TextModel.leftText(panBy, fg)
@@ -204,9 +205,9 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
         }
         // Draw the cursor as an I-Beam
         surface.withOrigin(location.x, 0) {
-          surface.drawPolygon$(cursorBrush, cursorLeft, cursorSerifShrink, cursorLeft, diagonal.y - cursorSerifShrink) // ertical
-          surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, cursorSerifShrink, cursorLeft + cursorSerifWidth, cursorSerifShrink)
-          surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorSerifShrink, cursorLeft + cursorSerifWidth, diagonal.y - cursorSerifShrink)
+          surface.drawPolygon$(cursorBrush, cursorLeft, cursorSerifShrink-deltaY, cursorLeft, diagonal.y - cursorSerifShrink-deltaY) // ertical
+          surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, cursorSerifShrink-deltaY)
+          surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY)
 
           // Indicate when there's invisible text to the right
           if (left.w+right.w >= w) {

@@ -48,14 +48,14 @@ object PathSymbols {
     lineTo(20, 10)
   }
 
-  val lastx = new PathShape(blue(width=5, blendMode=blend), absolute = false) {
+  val last = new PathShape(red(width=2, mode=STROKE)) {
     moveTo(0, 0)
-    lineTo(20, 20)
-    moveTo(0, 20)
+    lineTo(10, 10)
+    lineTo(0, 20)
+    moveTo(20,20)
+    lineTo(10, 10)
     lineTo(20, 0)
   }
-
-  val last = lastpie//circle(3)(blue(width=2))
 }
 
 /**
@@ -502,11 +502,30 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
     var newBrush: Brush = Brushes("blue.stroke.round.width(4)")
 
-    def but(kind: String)(shape: => GlyphShape): Glyph = {
+    def addButton(kind: String, dim: String="")(shape: => GlyphShape): Glyph = {
       val b  = styled.TextButton(kind){ _ => { drawingBoard.addShape(kind, shape); drawingBoard.feedback() } }(sheet)
-      HintManager(b.asInstanceOf[Enterable], 5, ()=>newBrush.toString, false)(hintSheet)
+      HintManager(b.asInstanceOf[Enterable], 5, ()=>s"Add a $dim", true)(hintSheet)
       b
     }
+
+    class withRadius(R: Scalar)(shape: GlyphShape) extends GlyphShape {
+      val delta = (Vec(2*R, 2*R)-shape.diagonal) * 0.5f
+
+      def draw(surface: Surface): Unit = {
+        surface.withOrigin(delta) { shape.draw(surface)}
+      }
+
+      def diagonal: Vec = Vec(2*R, 2*R)
+
+      def withForeground(brush: Brush): GlyphShape = new withRadius(R)(shape.withForeground(brush))
+
+      override def enclosing(point: Vec): Option[GlyphShape] = {
+        val origin = point - delta
+        if (shape.encloses(point-delta)) Some(this) else None
+      }
+
+    }
+
 
     val blackArrow =  arrow(black)
 
@@ -514,12 +533,15 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
     var scale: Scalar = 1.0f
     var vertices: Int = 3
 
+    def RAD(shape: GlyphShape): GlyphShape = shape // new withRadius(radius)(shape)
+
+
     val shapes: List[Glyph] = List(
-      but("Rect")(rect(width,height)(newBrush.copy).scale(scale max 1)),
-      but("Circ")(circle(radius)(newBrush.copy).scale(scale max 1)),
-      but("Arrow")(arrow(newBrush.copy).scale(scale max 0.3f)),
-      but("Star")(GlyphShape.polygon(PolygonLibrary.regularStarPath(vertices).tail)(fg=newBrush.copy).scale(scale max 0.3f)),
-      but("Poly")(GlyphShape.polygon(PolygonLibrary.regularPolygonPath(vertices).tail)(fg=newBrush.copy).scale(scale max 0.3f)),
+      addButton("Rect", "rectangle (wxh)")(rect(width,height)(newBrush.copy).scale(scale max 1)),
+      addButton("Circ", "circle (radius r)")(circle(radius)(newBrush.copy).scale(scale max 1)),
+      addButton("Arrow", "arrow")(arrow(newBrush.copy).scale(scale max 0.3f)),
+      addButton("Star", "v-pointed star size r")(RAD(GlyphShape.polygon(PolygonLibrary.regularStarPath(vertices, C=radius, R=radius).tail)(fg=newBrush.copy)).scale(scale max 0.3f)),
+      addButton("Poly", "v-sided polygon size r")(RAD(GlyphShape.polygon(PolygonLibrary.regularPolygonPath(vertices, C=radius, R=radius).tail)(fg=newBrush.copy)).scale(scale max 0.3f)),
 
     )
 
@@ -527,11 +549,12 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
     lazy val dimField: TextField = styled.TextField(onEnter = setDims, onCursorLeave = setDims, size = 50, initialText=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices")
 
 
-    def setDims(spec: String): Unit = {
+    def setDims(specification: String): Unit = {
       @inline def isFloat(s: String):Boolean = s.matches("[0-9]+([.][0-9]+)?")
+      val spec = specification.replaceAll("«[^»]+»","").strip()
       val specs = spec.toLowerCase.split("[ ]+|,[ ]*").toSeq
-      for  { spec <- specs }
-        spec match {
+      for  { field <- specs }
+        field match {
           case s"$v=$d" if v.nonEmpty && isFloat(d) =>
             val dim = d.toFloat
             v.head match {
@@ -541,18 +564,22 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
               case 's' => scale = dim
               case 'v' => vertices = dim.toInt
               case _ =>
+                dimField.text=s"$spec «$field»"
                 logging.Default.warn(s"$spec does not specify w=, h=, r=, s=, v=")
+                return
             }
 
-          case _ =>
-            logging.Default.warn(s"$spec does not specify dimensions properly")
+          case other =>
+            dimField.text=s"$spec «$other»"
+            logging.Default.warn(s"$spec does not specify as w=, h=, r=, s=, v=")
+            return
         }
 
       dimField.text=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices"
     }
 
     def setNewBrush(specification: String): Unit = {
-      val spec = specification.replaceAll("edit:","")
+      val spec = specification.replaceAll("«[^»]+»","").strip()
       if (spec.nonEmpty) {
         try {
           newBrush = Brush.ofString(spec)
@@ -560,7 +587,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
         }
         catch {
           case ex: IllegalArgumentException =>
-            brushField.text=s"edit:${spec}"
+            brushField.text=s"${spec} «$ex»"
         }
       }
     }
@@ -569,33 +596,30 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       brushField.text = newBrush.toString
     }
 
-    lazy val brushField = styled.TextField(size=50, onEnter=setNewBrush(_), initialText=newBrush.toString)
+    lazy val brushField = styled.TextField(size=50, onEnter=setNewBrush(_), onCursorLeave=setNewBrush(_), initialText=newBrush.toString)
 
-    def undoHinted(targetButton: Glyph): Glyph = {
-      HintManager(targetButton.asInstanceOf[Enterable], 5, drawingBoard.undoHint,  false)(hintSheet)
-      targetButton
-    }
 
-    def redoHinted(targetButton: Glyph): Glyph = {
-      HintManager(targetButton.asInstanceOf[Enterable], 5, drawingBoard.redoHint, false)(hintSheet)
-      targetButton
-    }
-
-    def HintedButton(label: String, hint: String="")(action: Reaction): Glyph = {
+  def HintedButton(label: String, hint: String="")(action: Reaction): Glyph = {
       val button = styled.TextButton(label)(action)
       if (hint.nonEmpty)  HintManager(button.asInstanceOf[Enterable], 5, ()=>hint)(hintSheet)
       button
-    }
+  }
+
+  def DynamicHintedButton(label: String, hint: ()=>String)(action: Reaction): Glyph = {
+    val button = styled.TextButton(label)(action)
+    HintManager(button.asInstanceOf[Enterable], 5, hint, false)(hintSheet)
+    button
+  }
 
     val GUI: Glyph = NaturalSize.Col(align=Center)(
       drawingBoard,
       ex,
-      FixedSize.Row(width=drawingBoard.w, align=Mid)(
-        undoHinted(HintedButton("<"){ _ =>  drawingBoard.handle(drawingBoard.UndoGesture, Vec.Origin, Vec.Zero) }),
+      FixedSize.Row(width=drawingBoard.w, align=Mid) (
+        DynamicHintedButton("< ", drawingBoard.undoHint){ _ =>  drawingBoard.handle(drawingBoard.UndoGesture, Vec.Origin, Vec.Zero) },
         left.framed(),
         styled.Label(" "),
         right.framed(),
-        redoHinted(HintedButton(">"){_ => drawingBoard.handle(drawingBoard.RedoGesture, Vec.Origin, Vec.Zero) }),
+        DynamicHintedButton(">", drawingBoard.redoHint){ _ =>  drawingBoard.handle(drawingBoard.RedoGesture, Vec.Origin, Vec.Zero) },
         sheet.hFill(),
         HintedButton("Restart", "Clear the board and start again"){ _ => drawingBoard.restart() },
         HintedButton("Clean", "Preserve the drawing and start again"){ _ => drawingBoard.clean() },
@@ -610,7 +634,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
         HintedButton("Clear", "Clear the path design") { _ => drawingBoard.fromButton("-vertices") { drawingBoard.vertices = Seq.empty } },
         HintedButton("Path", "Make a path from the path design"){ _ => drawingBoard.fromButton("path") { drawingBoard.addPoly(newBrush.copy); drawingBoard.vertices = Seq.empty }},
         sheet.hFill(),
-        HintedButton("Repaint", "Repaint selection"){ _ => drawingBoard.transformSelected({ shape => shape.withForeground(newBrush.copy)}, "repaint")},
+        DynamicHintedButton("Paint", ()=>s"Repaint selection with  $newBrush"){ _ => drawingBoard.transformSelected({ shape => shape.withForeground(newBrush.copy)}, "repaint")},
         sheet.hFill(1, 2f),
         HintedButton("Help"){ _ => help }
       ),
@@ -624,6 +648,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 object Play extends Application {
 
   val LocalSheet: StyleSheet = StyleSheet()
+
   val interfaceStyle: StyleSheet = LocalSheet.copy(
     buttonDecoration=styles.decoration.RoundFramed(fg=blue(width=4, cap=PaintStrokeCap.ROUND), enlarge=0.25f, radius=0.25f),
     buttonFontSize = 20,
@@ -631,20 +656,26 @@ object Play extends Application {
     textFontSize = 20,
     backgroundBrush = Brushes.white
   )
+
   def title = s"""Play"""
   override
   val defaultIconPath: Option[String] = Some ("PNG/WorcesterCrest.png")
 
-  implicit val sheet: StyleSheet = interfaceStyle
-  val hintSheet: StyleSheet = sheet.copy(fontScale = 0.65f)
+  implicit val hintSheet: StyleSheet = interfaceStyle.copy(fontScale = 0.65f)
   val help: Glyph = {
     import glyphXML.Language._
-    <div width="70em">
+    <div width="70em"  fontSize="16" align="justify" leftMargin="3em" rightMargin="3em">
       <p align="center">
         Play -- playing with little diagrams
       </p>
-      <p align="justify">
-        The diagram consists of a collection of geometric objects, some of which
+      <p>
+        The diagram consists of a collection of geometric objects. Shapes are added to the diagram at the last-clicked position
+        using one of the shape-labelled buttons or the <b>Path</b> button (<i>qv</i>). The default dimensions of the shapes are
+        specified in an editable text field in the interface, and the default brush used when a shape is added is
+        also specified in an editable text field.
+      </p>
+      <p>
+        Some of the objects
         may be "live", and some "selected". Liveness is shown by the brightening of a small circular "liveness"
         indicator near their centre, and of the eight yellow "attachment points" at the corners
         and mid-edges of their bounding box.
@@ -657,10 +688,23 @@ object Play extends Application {
         The first object selected has a bright circular "selection" indicator surrounding its "liveness" indicator;
         others are shown linked  to it, in the order in which they were selected, by white line-segments.
       </p>
-    </div>.enlarged(30)
+      <p>
+        The <b>Path</b> button, constructs a closed polygonal path from the <i>current path design</i>, to which points are added
+        by clicking <b>Secondary-Shift</b> (or <b>Primary-Command-Shift</b> in the appropriate place. The path design is shown as a red dotted
+        line starting with a red dotted X.
+      </p>
+      <p>
+        When <i>v</i> is even the <b>Poly</b> button generates a <i>v</i>-edged regular polygon drawn as if inscribed in a concentric circle of radius <i>r</i>;
+        when  <i>v</i> is odd the polygon is displaced slightly from the centre of the corresponding concentric circle.
+      </p>
+      <p>
+        When <i>v</i> is odd the <b>Star</b> button generates a <i>v</i>-pointed star displaced slightly from the centre of the corresponding concentric circle.
+        Its vertices are exactly those of the corresponding polygon.
+      </p>
+    </div>
   }
 
 
-  lazy val GUI: Glyph =  new Dashboard({ styled.windowdialogues.Dialogue.OK(help).InFront(GUI).start()}, hintSheet, sheet).GUI
+  lazy val GUI: Glyph =  new Dashboard({ styled.windowdialogues.Dialogue.OK(help)(hintSheet).InFront(GUI).start()}, hintSheet, interfaceStyle).GUI
 
 }
