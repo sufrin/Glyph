@@ -521,19 +521,29 @@ object GlyphShape {
    * bottom right coordinate of the path.
    */
   class PathShape(fg: Brush, absolute: Boolean = true) extends GlyphShape {
+    hostShape =>
     val path = new Path
     locally {
       if (absolute) path.moveTo(0, 0)
     }
 
-    def withForeground(brush: Brush): GlyphShape =  this
+    def withForeground(brush: Brush): GlyphShape =  new GlyphShape {
+
+      override def draw(surface: Surface): Unit = hostShape.draw(brush, surface)
+
+      override def diagonal: Vec = hostShape.diagonal
+
+      override def withForeground(brush: Brush): GlyphShape = hostShape.withForeground(brush)
+    }
 
     def reset(): Unit = {
       path.reset()
       if (absolute) path.moveTo(0, 0)
     }
 
-    def draw(surface: Surface): Unit = if (absolute) {
+    def draw(surface: Surface): Unit = draw(fg, surface)
+
+    def draw(fg: Brush, surface: Surface): Unit = if (absolute) {
       surface.drawPath(fg, path)
     } else {
       val bounds = path.getBounds()

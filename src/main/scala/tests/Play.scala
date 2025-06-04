@@ -316,6 +316,7 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
           case Key.LEFT  =>  transformSelected(_.turn(-90, COMPLEMENT), ".turn")
           case Key.RIGHT =>  transformSelected(_.turn(90, COMPLEMENT), ".turn")
 
+          case Key.DIGIT8 if SHIFT  =>  transformSelected(_.scale(1.05f), ".scale")
           case Key.MULTIPLY  =>  transformSelected(_.scale(1.05f), ".scale")
           case Key.SLASH     =>  transformSelected(_.scale(1/1.05f), ".scale")
 
@@ -535,9 +536,18 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
     def RAD(shape: GlyphShape): GlyphShape = shape // new withRadius(radius)(shape)
 
+    def rectangle(w: Scalar, h: Scalar)(brush: Brush): GlyphShape = {
+      val path=new PathShape(brush, false)
+      path.moveTo(0, 0)
+      path.lineTo(w, 0)
+      path.lineTo(w, h)
+      path.lineTo(0, h)
+      path.closePath
+      path
+    }
 
     val shapes: List[Glyph] = List(
-      addButton("Rect", "rectangle (wxh)")(rect(width,height)(newBrush.copy).scale(scale max 1)),
+      addButton("Rect", "rectangle (wxh)")(rectangle(width,height)(newBrush.copy).scale(scale max 1)),
       addButton("Circ", "circle (radius r)")(circle(radius)(newBrush.copy).scale(scale max 1)),
       addButton("Arrow", "arrow")(arrow(newBrush.copy).scale(scale max 0.3f)),
       addButton("Star", "v-pointed star size r")(RAD(GlyphShape.polygon(PolygonLibrary.regularStarPath(vertices, C=radius, R=radius).tail)(fg=newBrush.copy)).scale(scale max 0.3f)),
