@@ -13,10 +13,12 @@ import io.github.humbleui.types.Rect
 import org.sufrin.{glyph, logging}
 import org.sufrin.glyph.Brushes.{black, blue, green, lightGrey, red, white, yellow}
 import org.sufrin.glyph.GlyphShape.{arrow, asGlyph, circle, composite, lineBetween, polygon, rect, FILL, PathShape, STROKE}
-import org.sufrin.glyph.styled.{Book, BookSheet, GlyphButton}
+import org.sufrin.glyph.styled.{Book, BookSheet, GlyphButton, RadioCheckBoxes}
 import org.sufrin.glyph.styles.decoration.{unDecorated, Framed}
 import org.sufrin.glyph.unstyled.reactive.{Enterable, Reaction}
-import org.sufrin.glyph.unstyled.static.FilledPolygon
+import org.sufrin.glyph.unstyled.static.{FilledPolygon, INVISIBLE}
+import org.sufrin.glyph.NaturalSize.{Col, Grid, Row}
+import org.sufrin.glyph.NaturalSize.Grid.Table
 
 import java.io.File
 import java.lang.IllegalArgumentException
@@ -160,7 +162,7 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
     feedback()
   }
 
-  def selected(location: Vec): Seq[TargetShape] = displayList.toSeq.filter(_.isBeneath(location))
+  def selected(location: Vec): Seq[TargetShape] = displayList.toSeq.filter{target => target.isBeneath(location)||target.canHandle(location)}
 
   def hovered(location: Vec): Seq[TargetShape] = displayList.toSeq.filter(_.isBeneath(location))
 
@@ -259,6 +261,20 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
     def withForeground(brush: Brush): GlyphShape = new ComposedInPlace(targets.map(_.withForeground(brush)))
 
     def topLeft: Vec = Vec(left, top)
+  }
+
+  /**
+   * Revise the Z order of the components: this
+   * may make something visible that was occluded.
+   */
+  def zedOrder(): Unit = {
+      @inline def area(t: TargetShape): Scalar = t.w*t.h
+      def earlier(t1: TargetShape, t2: TargetShape): Boolean = area(t1)>area(t2)
+      withState("zed") {
+        val targets = displayList.toSeq.sortWith(earlier)
+        displayList.clear()
+        displayList.enqueueAll(targets)
+      }
   }
 
   /**
@@ -372,7 +388,10 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
 
       case MouseClick(_) if (PRIMARY && !CONTROL) => withState (".primary") {
         selection = selected(location)
-        lastMouseDown = location
+        if (selection.isEmpty)
+          lastMouseDown = location
+        else
+          lastMouseDown = selection.head.centre
         lastMouse = Vec.Origin
       }
 
@@ -384,7 +403,7 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
             else
               selection = selection ++ List(shape)
 
-        lastMouseDown = location
+        lastMouseDown = if (selection.isEmpty) location else selection.head.centre
         lastMouse = Vec.Origin
       }
 
@@ -407,8 +426,7 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
   val focussedBrush: Brush      = Brushes.red(width=4, mode=GlyphShape.STROKE)
   val focussedFrame: GlyphShape = GlyphShape.rect(background.w-4, background.h-4)(focussedBrush)
 
-  val selectBrush: Brush = Brushes("white.2.round")(mode=PaintMode.STROKE)
-
+  val selectBrush: Brush = Brushes("white.2.round.stroke")(mode=PaintMode.STROKE, blendMode=BlendMode.OVERLAY)
 
   def draw(surface: Surface): Unit = surface.withClip(diagonal) {
     surface.declareCurrentTransform(thisBoard)
@@ -428,7 +446,7 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
   }
 
   val selectionPath = new GlyphShape.PathShape(selectBrush, false)
-  val vertexPath = new GlyphShape.PathShape(Brushes("red.2.stroke-4-4")(blendMode = BlendMode.XOR), false)
+  val vertexPath = new GlyphShape.PathShape(Brushes("red.2.round.stroke-4-4")(blendMode = BlendMode.DARKEN), false)
 
 
   def indicateVertices(surface: Surface): Unit = if (vertices.nonEmpty) {
@@ -588,6 +606,37 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       dimField.text=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices"
     }
 
+    lazy val brushWarning = {
+      import glyphXML.Language._
+      styled.windowdialogues.Dialogue.OK(
+        <p width="80em" leftMargin="1em" rightMargin="1em">
+          The brush specification is erroneous. Specification syntax is:
+          <![CDATA[
+          *   specification ::= decorated
+          *
+          *   decorated     ::= basic [decoration]*
+          *
+          *   basic         ::= named
+          *                 |   named.#strokewidth
+          *
+          *   named         ::= 0Xaarrggbb   // 4 hex bytes: alpha, red, blue, green
+          *                 |   "one of the named colours"
+          *
+          *   decoration    ::=  .width(#strokewidth)
+          *                 |    .stroke(#strokewidth)
+          *                 |    .rounded(#strokeradius)
+          *                 |    (#strokeRadius)
+          *                 |    -#on-#off
+          *                 |    ~#sliceLength~#displacement
+          *                 |    .stroke
+          *                 |    .fill
+          *                 |    .round | .butt | .square
+          *                 |    .blur(#blur)]]>
+        </p>).InFront(drawingBoard)
+    }
+
+
+
     def setNewBrush(specification: String): Unit = {
       val spec = specification.replaceAll("«[^»]+»","").strip()
       if (spec.nonEmpty) {
@@ -596,8 +645,9 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
           showNewBrush()
         }
         catch {
-          case ex: IllegalArgumentException =>
-            brushField.text=s"${spec} «$ex»"
+          case Brushes.NonBrush(why) =>
+            brushField.text=s"${spec} «error»"
+            if (brushWarning.running.isEmpty) brushWarning.start()
         }
       }
     }
@@ -606,22 +656,60 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       brushField.text = newBrush.toString
     }
 
-    lazy val brushField = styled.TextField(size=50, onEnter=setNewBrush(_), onCursorLeave=setNewBrush(_), initialText=newBrush.toString)
+    lazy val brushField = styled.TextField(size=50, onCursorLeave=setNewBrush(_), initialText=newBrush.toString)
 
 
-  def HintedButton(label: String, hint: String="")(action: Reaction): Glyph = {
+    def HintedButton(label: String, hint: String="")(action: Reaction)(implicit style: StyleSheet): Glyph = {
+        val button = styled.TextButton(label)(action)(style)
+        if (hint.nonEmpty)  HintManager(button.asInstanceOf[Enterable], 5, ()=>hint)(hintSheet)
+        button
+    }
+
+    def DynamicHintedButton(label: String, hint: ()=>String)(action: Reaction): Glyph = {
       val button = styled.TextButton(label)(action)
-      if (hint.nonEmpty)  HintManager(button.asInstanceOf[Enterable], 5, ()=>hint)(hintSheet)
+      HintManager(button.asInstanceOf[Enterable], 5, hint, false)(hintSheet)
       button
-  }
+    }
 
-  def DynamicHintedButton(label: String, hint: ()=>String)(action: Reaction): Glyph = {
-    val button = styled.TextButton(label)(action)
-    HintManager(button.asInstanceOf[Enterable], 5, hint, false)(hintSheet)
-    button
-  }
+    def brushFieldChooser(choices: String*): Glyph = {
+      styled.RadioCheckBoxes(choices){
+        case None =>
+        case Some(sel) =>
+           setNewBrush(brushField.text.replaceFirst(choices.mkString("(","|",")"), choices(sel)))
+      }(hintSheet).arrangedVertically()
+    }
+
+    /** Palette window */
+    lazy val colourWindow = {
+      @inline def butStyle(name: String) =
+        sheet.copy(buttonDecoration=unDecorated, buttonBackgroundBrush = Brushes.withName(name))
+      val buts = for { (name, colour) <- Brushes.namedColours if colour!=0 } yield
+          HintedButton("    ", name){ _ =>
+            val t = brushField.text
+            setNewBrush(t.replaceFirst("[a-z0-9]+", name))
+          }(butStyle(name))
+      val colourGrid = Grid(fg=black).table(width=4)(buts.toSeq)
+      val UI = Col(align=Center)(
+        Row(align=Mid)(colourGrid, em,
+        brushFieldChooser("stroke", "fill"), em,
+        brushFieldChooser("round", "butt", "square")
+        ),
+        ex,
+        brushField.framed()
+      )
+      styled.windowdialogues.Dialogue.OK(UI, title="Colour Palette").East(drawingBoard)
+    }
 
     val GUI: Glyph = NaturalSize.Col(align=Center)(
+      FixedSize.Row(width=drawingBoard.w, align=Mid)(
+        HintedButton("Restart", "Clear the board and start again"){ _ => drawingBoard.restart() },
+        HintedButton("Clean", "Preserve the drawing and start again"){ _ => drawingBoard.clean() },
+        HintedButton("Palette") { _ => if (colourWindow.running.isEmpty) colourWindow.start()},
+        sheet.hFill(),
+        HintedButton("Z", "Order the display to put smaller objects on top." )   { _ => {drawingBoard.zedOrder()}},
+        sheet.hFill(1, 2f),
+        HintedButton("Help"){ _ => help }
+      ),
       drawingBoard,
       ex,
       FixedSize.Row(width=drawingBoard.w, align=Mid) (
@@ -631,9 +719,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
         right.framed(),
         DynamicHintedButton(">", drawingBoard.redoHint){ _ =>  drawingBoard.handle(drawingBoard.RedoGesture, Vec.Origin, Vec.Zero) },
         sheet.hFill(),
-        HintedButton("Restart", "Clear the board and start again"){ _ => drawingBoard.restart() },
-        HintedButton("Clean", "Preserve the drawing and start again"){ _ => drawingBoard.clean() },
-        sheet.hFill(),
+
 
         HintedButton("o", "Compose selection in place")   { _ => {drawingBoard.composeSelectedInPlace()}},
         HintedButton("|", "Compose selection horizontally in selection order")   { _ => {drawingBoard.composeSelected(_.|||)}},
@@ -645,13 +731,11 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
         HintedButton("Path", "Make a path from the path design"){ _ => drawingBoard.fromButton("path") { drawingBoard.addPoly(newBrush.copy); drawingBoard.vertices = Seq.empty }},
         sheet.hFill(),
         DynamicHintedButton("Paint", ()=>s"Repaint selection with  $newBrush"){ _ => drawingBoard.transformSelected({ shape => shape.withForeground(newBrush.copy)}, "repaint")},
-        sheet.hFill(1, 2f),
-        HintedButton("Help"){ _ => help }
       ),
       ex,
       FixedSize.Row(width=drawingBoard.w, align=Mid)(shapes),
       ex,
-      brushField.framed() beside styled.Label(" ")  beside dimField.framed()
+      dimField.framed()
     ).enlarged(20)
 }
 

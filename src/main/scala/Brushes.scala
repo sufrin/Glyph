@@ -58,26 +58,56 @@ trait Brushes {
  * }}}
  *
  * {{{
- *   specification ::= basic
- *                 |   specification(radius)                // rounded
- *                 |   specification-on-off                 // dashed
- *                 |   specification~segmentSize~variation  // sliced
+ *   specification ::= decorated
+ *
+ *   decorated     ::= basic [decoration]*
  *
  *   basic         ::= named
- *                 |   named/strokewidth
- *                 |   named/strokewidth/strokeCap
- *
- *   strokeCap     ::= ROUND | SQUARE | BUTT | FLAT
+ *                 |   named.#strokewidth
  *
  *   named         ::= 0Xaarrggbb   // 4 hex bytes: alpha, red, blue, green
- *                 |   red   | blue  | green | white
- *                 |   grey1 | grey2 | grey3 | grey4
- *                 |   lightgrey | darkgrey | yellow
- *                 |   black     | transparent
+ *                 |   "one of the named colours"
+ *
+ *   decoration    ::=  .width(#strokewidth)
+ *                 |    .stroke(#strokewidth)
+ *                 |    .rounded(#strokeradius)
+ *                 |    (#strokeRadius)
+ *                 |    -#on-#off
+ *                 |    ~#sliceLength~#displacement
+ *                 |    .stroke
+ *                 |    .fill
+ *                 |    .round | .butt | .square
+ *                 |    .blur(#blur)
  * }}}
  */
 object Brushes extends Brushes {
 
+  case class NonBrush(why: String) extends Throwable
+
+  val namedColours: collection.mutable.Map[String, Int] = new collection.mutable.LinkedHashMap[String, Int]
+  locally {
+    val defs = Array(
+      "red" ->  0xFFFF0000,
+      "green" ->  0xFF00FF00,
+      "blue" -> 0XFF0000FF,
+      "white" -> 0XFFFFFFFF,
+      "grey1" -> 0XFFBBBBBB,
+      "grey2" -> 0XFFCDCDCD,
+      "grey3" -> 0XFFC5C5C5,
+      "grey4" -> 0XFFC2C2C2,
+      "lightgrey" -> 0XFFBBBBBB,
+      "darkgrey" -> 0XFF777777,
+      "black" -> 0XFF000000,
+      "yellow" -> 0XFFFFEF00,
+      "transparent" -> 0X000000,
+      "corn" -> 0xFFFBEC5D,
+      "cornflower" -> 0xFF6495ED,
+      "fuchsia" -> 0xFFFE4164,
+      "orange" -> 0xFFFF5349,
+      "" -> 0X000000,
+    )
+    for { defn <- defs } namedColours.addOne(defn)
+  }
 
   def withName(specification: String): Brush = {
 
@@ -122,28 +152,14 @@ object Brushes extends Brushes {
       }
     }
 
-    case class NonBrush(why: String) extends Exception
-
     def namedBrush(specification: String): Brush = specification.toLowerCase match {
-      case "red" => Brush(s"red")(color = 0XFFFF0000)
-      case "blue" => Brush(s"blue")(color = 0XFF0000FF)
-      case "green" => Brush(s"green")(color = 0XFF00FF00)
-      case "white" => Brush(s"white")(color = 0XFFFFFFFF)
-      case "grey1" => Brush(s"grey1")(color = 0XFFBBBBBB)
-      case "grey2" => Brush(s"grey2")(color = 0XFFCDCDCD)
-      case "grey3" => Brush(s"grey3")(color = 0XFFC5C5C5)
-      case "grey4" => Brush(s"grey4")(color = 0XFFC2C2C2)
-      case "lightgrey" => Brush(s"lightgrey")(color = 0XFFBBBBBB)
-      case "darkgrey" => Brush(s"darkgrey")(color = 0XFF777777)
-      case "black" => Brush(s"black")(color = 0XFF000000)
-      case "yellow" => Brush(s"yellow")(color = 0XFFFFDD00)
-      case "transparent" => Brush(s"transparent")(color = 0X00000000, alpha=0f)
-      case "" => Brush(s"transparent")(color = 0X00000000, alpha=0f)
       case s"0x${hex}" if hex.matches("([0-9a-f])+") =>
         Brush(s"0X$hex")(color = hexToInt(hex))
       case specification =>
-        logging.Default.warn(s"$specification is not a colour")
-        throw new NonBrush(s"$specification")
+        namedColours.get(specification) match {
+          case Some(colour) => new Brush(specification).color(colour)
+          case None => throw new NonBrush(s"$specification")
+        }
     }
 
     decoratedBrush(specification)
