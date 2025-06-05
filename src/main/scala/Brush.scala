@@ -76,7 +76,7 @@ object Brush {
  * We strongly advise against using "pure" `Paint` or its methods in a `Glyph` application. Nothing will
  * run faster, and debugging will be considerably harder.
  */
-class Brush(var name: String, val description: String="") extends Paint {
+class Brush(var name: String, var description: String="") extends Paint {
 
   import GlyphTypes.ImageFilter
 

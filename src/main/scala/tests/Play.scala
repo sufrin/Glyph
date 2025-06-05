@@ -269,7 +269,7 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
    */
   def zedOrder(): Unit = {
       @inline def area(t: TargetShape): Scalar = t.w*t.h
-      def earlier(t1: TargetShape, t2: TargetShape): Boolean = area(t1)>area(t2)
+      def earlier(t1: TargetShape, t2: TargetShape): Boolean = area(t1)>=area(t2)
       withState("zed") {
         val targets = displayList.toSeq.sortWith(earlier)
         displayList.clear()

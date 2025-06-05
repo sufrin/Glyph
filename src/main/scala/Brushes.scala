@@ -125,6 +125,10 @@ object Brushes extends Brushes {
       specification match {
         case s"$specification.width($stroke)" if isFloat(stroke) =>
           decoratedBrush(specification)(width=stroke.toFloat)
+        case s"$specification.alpha($alpha)" if isFloat(alpha) =>
+          val b = decoratedBrush(specification)
+          b.description=b.description+s".alpha($alpha)"
+          b(alpha=alpha.toFloat)
         case s"$prefix.stroke($width)" if isFloat(width) =>
           decoratedBrush(prefix)(mode=STROKE).width(width.toFloat)
         case s"$prefix.rounded($radius)" if isFloat(radius) =>
