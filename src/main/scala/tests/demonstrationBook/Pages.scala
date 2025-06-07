@@ -11,7 +11,7 @@ object Pages extends Application  {
   val LocalSheet: StyleSheet = StyleSheet()
 
   val interfaceStyle: StyleSheet = LocalSheet.copy(
-    buttonDecoration=styles.decoration.Blurred(fg=Brushes.blue, blur=5, spread=5, delta=5),
+    buttonDecoration=styles.decoration.Framed(fg=Brushes.blue),//blur=5, spread=5, delta=5),
     buttonFontSize = 20,
     labelFontSize = 20,
     textFontSize = 20,

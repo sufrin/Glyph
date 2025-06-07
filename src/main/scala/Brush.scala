@@ -32,7 +32,17 @@ object Brush {
     }
   }
 
-  def apply(name: String="", description: String=""): Brush = new Brush(name, description)
+  def apply(name: String="", description: String=""): Brush = {
+      (name, description) match {
+        case ("","") => new Brush("", "").color(0xFFaaaaaa).strokeWidth(10)
+        case (_, "") => Brushes(name).name(name)
+        case (_, _)  => Brushes(description).name(name)
+      }
+  }
+
+  def apply(name: String, brush: Brush): Brush = {
+      brush.copy(name=name)
+  }
 
   def ofString(descriptor: String): Brush = Brushes(descriptor)
 
@@ -84,7 +94,7 @@ class Brush(var name: String, var description: String="") extends Paint {
 
   override def toString: String = {
     import Brush.{ROUND, SQUARE}
-           val id = if (name.isEmpty) f"0X${color}%08X" else name
+           val id = if (name==description) "" else  if (name.isEmpty) f"0X${color}%08X" else name
            val width = s"${strokeWidth.toInt}"
            val cap = strokeCap match {
              case ROUND => ".round"
@@ -95,10 +105,13 @@ class Brush(var name: String, var description: String="") extends Paint {
            val mode = this.mode match {
              case FILL => ".fill"
              case STROKE => ".stroke"
-             case STROKE_AND_FILL => ".strokeandfill"
+             case STROKE_AND_FILL => ".stroke&fill"
              case _ => ""
            }
-   if (Brush.includeDetail) s"$id.$width$cap$mode$description" else id
+    val anti = if (this.antiAliased) "" else ".antialias(false)"
+    val dither = if (this.dithered) ".dither" else ""
+    val alpha = if (this.alpha==1) "" else s".alpha(${getAlpha})"
+   s"$id.$width$cap$mode$anti$dither$alpha"
   }
 
   /** A copy of `this`` brush with changed attributes as specified. */
@@ -303,7 +316,7 @@ class Brush(var name: String, var description: String="") extends Paint {
    * @return a new brush
    */
   def blurred(blur: Scalar, dx: Scalar=0f, dy: Scalar=0f): Brush = {
-    val result = Brush(f"$this.blurred($blur%2.2f, $dx%4.2f, $dy%4.2f)")
+    val result = this.copy()
     result.filter(ImageFilter.makeDropShadow(dx, dy, blur, color)).col(color)
     result
   }
@@ -318,20 +331,36 @@ class Brush(var name: String, var description: String="") extends Paint {
    */
   def sliced(sliceLength: Scalar, displacementLimit: Scalar, seed: Int=42): Brush = {
     val effect = GlyphTypes.PathEffect.makeDiscrete(sliceLength, displacementLimit, seed)
-    val result = this.copy(name=name, description=s"$description~$sliceLength~$displacementLimit", pathEffect=effect)
+    val result = this.copy(pathEffect=effect)
     result
   }
 
   /** A new brush painted with dashes. */
   def dashed(onOff: Scalar*): Brush = {
-    val result: Brush = this.copy(name=name, description=s"$description-${onOff.mkString("-")})", pathEffect=GlyphTypes.PathEffect.makeDash(onOff))
+    val result: Brush = this.copy(pathEffect=GlyphTypes.PathEffect.makeDash(onOff))
     result
   }
 
   /** A new brush that rounds sharp corners. */
   def rounded(radius: Scalar): Brush = {
-    val result: Brush = copy(name=name,description=s"$description.rounded(${radius})", pathEffect=GlyphTypes.PathEffect.makeRoundedCorners(radius))
+    val result: Brush = copy(pathEffect=GlyphTypes.PathEffect.makeRoundedCorners(radius))
     result
+  }
+
+  object Effect {
+    def sliced(sliceLength: Scalar, displacementLimit: Scalar, seed: Int=42): Unit =
+      pathEffect(GlyphTypes.PathEffect.makeDiscrete(sliceLength, displacementLimit, seed))
+
+    def dashed(onOff: Scalar*): Unit =
+      pathEffect(GlyphTypes.PathEffect.makeDash(onOff))
+
+    def rounded(radius: Scalar): Unit =
+      pathEffect(GlyphTypes.PathEffect.makeRoundedCorners(radius))
+
+    def none(): Unit = { pathEffect(null); filter(null) }
+
+    def blurred(blur: Scalar, dx: Scalar=0f, dy: Scalar=0f): Unit =
+      filter(ImageFilter.makeDropShadow(dx, dy, blur, color)).col(color)
   }
 
 

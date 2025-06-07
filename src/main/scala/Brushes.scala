@@ -3,7 +3,8 @@ package glyph
 
 import org.sufrin.glyph.NumberUtils.hexToInt
 import org.sufrin.glyph.unstyled.Text
-import org.sufrin.glyph.GlyphShape.{FILL, STROKE}
+import org.sufrin.glyph.GlyphShape.{FILL, STROKE, STROKE_AND_FILL}
+import org.sufrin.glyph.GlyphTypes.Scalar
 
 /**
  * A convenience trait that defines several brushes.
@@ -11,40 +12,40 @@ import org.sufrin.glyph.GlyphShape.{FILL, STROKE}
  * TODO: these should be systematically named and featured. The range of
  *       widths, and caps is unnecessary.
  */
-trait Brushes {
+trait DefaultBrushes {
 
   import io.github.humbleui.skija.PaintStrokeCap
   val SQUARE     = PaintStrokeCap.SQUARE
   val ROUND      = PaintStrokeCap.ROUND
   val BUTT       = PaintStrokeCap.BUTT
-  val red        = Brush("red").color(0xFFee0000).strokeWidth(0f)
-  val redLine    = Brush("redLine").color(0xFFee0000).strokeWidth(2.0f).cap(SQUARE)
-  val redWide    = Brush("redWide").color(0xFFee0000).strokeWidth(25.0f).cap(ROUND)
-  val redFrame   = Brush("redFrame").color(0xFFee0000).strokeWidth(5.0f).cap(ROUND)
-  val blue       = Brush("blue").color(0xFF0000ff).strokeWidth(0f)
-  val blueLine   = Brush("blueLine").color(0xFF0000ff).strokeWidth(2.0f).cap(SQUARE)
-  val blueFrame  = Brush("blueFrame").color(0xFF0000ff).strokeWidth(5.0f).cap(ROUND)
-  val green      = Brush("green").color(0xFF00ff00).strokeWidth(0f)
-  val greenLine  = Brush("greenLine").color(0xFF00ff00).strokeWidth(2.0f).cap(SQUARE)
-  val greenFrame = Brush("greenFrame").color(0xFF00ff00).strokeWidth(5.0f).cap(ROUND)
-  val white      = Brush("white")       col 0xFFffffff strokeWidth 0
-  val whiteFrame = Brush("whiteFrame")  col 0xFFffffff width 5 cap ROUND
-  val black      = Brush("black")         col 0xFF000000 width 0
-  val blackLine  = Brush("blackLine")     col 0xFF000000 width 2f cap SQUARE
-  val blackFrame = Brush("blackFrame")    col 0xFF000000 width 5f cap ROUND
-  val transparent= Brush("transparent") col 0 alpha(0f)
-  val invisible  = Brush("invisible") col 0 width 1 alpha(0f)
-  val lightGrey  = Brush("lightGrey") col 0xFFbbbbbb width 1
-  val darkGrey   = Brush("darkGrey")  col 0xFF777777 width 1
-  val grey1      = Brush(s"grey1")(color = 0XFFBBBBBB)
-  val grey2      = Brush(s"grey2")(color = 0XFFCDCDCD)
-  val grey3      = Brush(s"grey3")(color = 0XFFC5C5C5)
-  val grey4      = Brush(s"grey4")(color = 0XFFC2C2C2)
-  val yellow     = Brush("yellow").color(0xFFffdd00)
-  val yellowLine = Brush("yellow").color(0xFFffdd00).strokeWidth(2).cap(SQUARE)
-  val yellowFrame= Brush("yellow").color(0xFFffdd00).strokeWidth(5).cap(SQUARE)
+  val red        = Brush("red.0.fill")
+  val redLine    = Brush("red.2.square.fill")
+  val redWide    = Brush("red.25.fill.round")
+  val redFrame   = Brush("red.25.fill.round")
+  val blue       = Brush("blue.0.fill")
+  val blueLine   = Brush("blue.2.round.fill")
+  val blueFrame  = Brush("blue.5.round.fill")
+  val green      = Brush("green.fill")
+  val greenLine  = Brush("green.2.round.fill")
+  val greenFrame = Brush("green.5.round.fill")
+  val white      = Brush("white.fill")
+  val whiteFrame = Brush("white.5.round")
+  val black      = Brush("black.fill")
+  val blackLine  = Brush("black.2.square.fill")
+  val blackFrame = Brush("black.5.round.fill")
+  val transparent= Brush("transparent")
+  val invisible  = Brush("transparent.1")
+  val lightGrey  = Brush("lightGrey")
+  val darkGrey   = Brush("darkGrey")
+  val grey1      = Brush(s"grey1")
+  val grey2      = Brush(s"grey2")
+  val grey3      = Brush(s"grey3")
+  val grey4      = Brush(s"grey4")
+  val yellow     = Brush("yellow")
+  val yellowLine = Brush("yellow.2.square.stroke")
+  val yellowFrame= Brush("yellow.5.square.stroke")
   /** Using the new Brush API */
-  val yellowHuge = Brush("yellowHuge")(color=0xFFffdd00, width=75f, cap=ROUND, antiAlias = true)
+  val yellowHuge = Brush("yellow.75.round")
   val brown: Brush = Brush("brown")(color=0xFF964b00, width=0f)
 
 }
@@ -74,19 +75,119 @@ trait Brushes {
  *                 |    (#strokeRadius)
  *                 |    -#on-#off
  *                 |    ~#sliceLength~#displacement
- *                 |    .stroke
- *                 |    .fill
+ *                 |    .stroke | .fill | .stroke&fill
  *                 |    .round | .butt | .square
  *                 |    .blur(#blur)
  * }}}
  */
-object Brushes extends Brushes {
+object Brushes extends DefaultBrushes {
 
-  case class NonBrush(why: String) extends Throwable
+  trait Lex
+  case class Id(id: String) extends Lex
+  case class ScalarValue(value: Scalar) extends Lex
+  case class WithParameters(id: String, params: Seq[Scalar]) extends Lex {
+    override def toString: String = s"$id(${params.mkString(",")})"
+  }
+  case class Hexadecimal(color: Int) extends Lex {
+    override def toString: String = f"0x$color%6x"
+  }
+  def Parse(spec: String): Brush = {
+    def Lex(state: Brush, spec: String): List[Lex] = {
+    val explode = spec.split('.').toList
+    explode.map {
+      case v if v matches("[0-9]+([.][0-9]*)?") => ScalarValue(v.toFloat)
+      case s"0x${hex}" if hex.matches("([0-9a-fA-F])+") => Hexadecimal(hexToInt(hex))
+      case v if v matches("[a-zA-Z0-9&~-]+") => Id(v)
+      case s"$id($params)" if id matches ("[a-zA-Z0-9&~-]+") =>
+        val scalars = params.split(',').toSeq.map(_.toFloat).toList
+        WithParameters(id, scalars)
+      case other => throw new NonBrush(s"Lexical-error at $other in $spec", state)
+    }
+  }
+  def eval(b: Brush, l: List[Lex]): Brush = {
+    l match {
+      case Hexadecimal(colour)::rest =>
+        b.color(colour)
+        eval(b, rest)
+      case ScalarValue(width)::rest =>
+        b.strokeWidth(width)
+        eval(b, rest)
+      case Id("fill")::rest =>
+        b.mode(FILL)
+        eval(b, rest)
+      case Id("stroke")::rest =>
+        b.mode(STROKE)
+        eval(b, rest)
+      case Id("stroke&fill")::rest =>
+        b.mode(STROKE_AND_FILL)
+        eval(b, rest)
+      case Id("round")::rest =>
+        b.cap(ROUND)
+        eval(b, rest)
+      case Id("butt")::rest =>
+        b.cap(BUTT)
+        eval(b, rest)
+      case Id("square")::rest =>
+        b.cap(SQUARE)
+        eval(b, rest)
+      case Id("antialias")::rest =>
+        b.antiAlias(true)
+        eval(b, rest)
+      case Id("dither")::rest =>
+        b.dither(true)
+        eval(b, rest)
+      case WithParameters("alpha", List(n))::rest =>
+        b.alpha(n)
+        eval(b, rest)
+      case Id("--")::rest =>
+        b.Effect.dashed(10, 10)
+        eval(b, rest)
+      case Id("-.")::rest =>
+        b.Effect.dashed(10, 5)
+        eval(b, rest)
+      case WithParameters("--", List(n))::rest =>
+        b.Effect.dashed(n, n)
+        eval(b, rest)
+      case WithParameters("--", List(m, n))::rest =>
+        b.Effect.dashed(m, n)
+        eval(b, rest)
+      case WithParameters("--", List(m, n, o, p))::rest =>
+        b.Effect.dashed(m, n, o, p)
+        eval(b, rest)
+      case WithParameters("~~", List(m, n))::rest =>
+        b.Effect.sliced(m, n)
+        eval(b, rest)
+      case WithParameters("rounded", List(radius))::rest =>
+        b.Effect.rounded(radius)
+        eval(b, rest)
+      case Id(name)::rest =>
+        namedColours.get(name) match {
+          case Some(colour) =>
+            b.name=name
+            b.color(colour)
+            eval(b, rest)
+          case None =>
+            throw new NonBrush(s"Unknown colour name: $name in $spec", b)
+        }
+      case Nil =>
+      case other =>
+        throw new NonBrush(s"Brush notation error ${other.mkString(".")} in $spec", b)
+    }
+    b
+  }
 
-  val namedColours: collection.mutable.Map[String, Int] = new collection.mutable.LinkedHashMap[String, Int]
-  locally {
-    val defs = Array(
+    val state = new Brush(name = "", description = "")
+    eval(state, Lex(state, spec.toLowerCase))
+  }
+
+  def main(args: Array[String]): Unit = {
+    for { arg <- args } println(Brushes(arg))
+  }
+
+  case class NonBrush(why: String, brushState: Brush) extends Throwable
+
+
+  lazy val namedColours: collection.mutable.Map[String, Int] = collection.mutable.LinkedHashMap[String, Int](
       "red" ->  0xFFFF0000,
       "green" ->  0xFF00FF00,
       "blue" -> 0XFF0000FF,
@@ -104,79 +205,24 @@ object Brushes extends Brushes {
       "cornflower" -> 0xFF6495ED,
       "fuchsia" -> 0xFFFE4164,
       "orange" -> 0xFFFF5349,
+      "brown" ->0xFF964b00,
       "" -> 0X000000,
     )
-    for { defn <- defs } namedColours.addOne(defn)
+
+  def apply(specification: String): Brush = try {
+    Parse(specification)
+  } catch {
+    case ex: NonBrush =>
+      logging.Default.error(s"${ex.why} [using ${ex.brushState.toString}]")
+      ex.printStackTrace()
+      ex.brushState
   }
-
-  def withName(specification: String): Brush = {
-
-    def isFloat(s: String):Boolean = s.matches("[0-9]+([.][0-9]+)?")
-
-    def basicBrush(specification: String): Brush =
-          specification match {
-            case s"$specification.$stroke" if isFloat(stroke) =>
-              namedBrush(specification)(width=stroke.toFloat)
-            case _ =>
-              namedBrush(specification)
-          }
-
-    def decoratedBrush(specification: String): Brush = {
-      specification match {
-        case s"$specification.width($stroke)" if isFloat(stroke) =>
-          decoratedBrush(specification)(width=stroke.toFloat)
-        case s"$specification.alpha($alpha)" if isFloat(alpha) =>
-          val b = decoratedBrush(specification)
-          b.description=b.description+s".alpha($alpha)"
-          b(alpha=alpha.toFloat)
-        case s"$prefix.stroke($width)" if isFloat(width) =>
-          decoratedBrush(prefix)(mode=STROKE).width(width.toFloat)
-        case s"$prefix.rounded($radius)" if isFloat(radius) =>
-          decoratedBrush(prefix).rounded(radius.toFloat)
-        case s"$prefix($radius)" if isFloat(radius) =>
-          decoratedBrush(prefix).rounded(radius.toFloat)
-        case s"$prefix-$on-$off" if isFloat(on) && isFloat(off) =>
-          decoratedBrush(prefix).dashed(on.toFloat, off.toFloat)
-        case s"$prefix~$seg~$lim" if isFloat(seg) && isFloat(lim) =>
-          decoratedBrush(prefix).sliced(seg.toFloat, lim.toFloat)
-        case s"$prefix.stroke" =>
-          decoratedBrush(prefix)(mode=STROKE)
-        case s"$prefix.fill" =>
-          decoratedBrush(prefix)(mode=FILL)
-        case s"$prefix.round" =>
-          decoratedBrush(prefix)(cap=ROUND)
-        case s"$prefix.square" =>
-          decoratedBrush(prefix)(cap=SQUARE)
-        case s"$prefix.butt" =>
-          decoratedBrush(prefix)(cap=BUTT)
-        case s"$prefix.blur($blur)" if isFloat(blur) =>
-          decoratedBrush(prefix).blurred(blur.toFloat, 0f, 0f)
-        case _ =>
-          basicBrush(specification)
-      }
-    }
-
-    def namedBrush(specification: String): Brush = specification.toLowerCase match {
-      case s"0x${hex}" if hex.matches("([0-9a-f])+") =>
-        Brush(s"0X$hex")(color = hexToInt(hex))
-      case specification =>
-        namedColours.get(specification) match {
-          case Some(colour) => new Brush(specification).color(colour)
-          case None => throw new NonBrush(s"$specification")
-        }
-    }
-
-    decoratedBrush(specification)
-
-  }
-
-  def apply(specification: String): Brush = withName(specification)
 
   // The following are used to set the default attributes of unstyled glyphs
   //
-  var upFrame: Brush = Brush("Brushes.upFrame")       color 0xFF000000 strokeWidth 2f strokeCap ROUND
-  var downFrame: Brush = Brush("Brushes.downFrame")   color 0xFFFF0000 strokeWidth 2f strokeCap ROUND
-  var hoverFrame: Brush = Brush("Brushes.hoverFrame") color 0xFF00FF00 strokeWidth 2f strokeCap ROUND
+  var upFrame: Brush = Brush("black.2.round.fill")
+  var downFrame: Brush = Brush("red.2.round.fill")
+  var hoverFrame: Brush = Brush("green.2.round.fill")
 
   var buttonFamily: FontFamily = FontFamily("Menlo")
   var buttonPointSize: Float = 22.0f
@@ -184,12 +230,12 @@ object Brushes extends Brushes {
   def buttonFont = buttonFamily.makeFont(GlyphTypes.FontStyle.NORMAL, buttonPointSize)
   def buttonText(s: String, fg: Brush=buttonForeground, bg: Brush=buttonBackground): Text = Text(s, buttonFont, fg, bg)
 
-  var buttonForeground: Brush = Brush("Brushes.buttonForeground") color 0xFF000000 strokeWidth 1.0f
-  var buttonBackground: Brush = Brush("Brushes.buttonBackground") color 0xFFFFFFFF strokeWidth 1.0f
-  var buttonDown:       Brush = Brush("Brushes.buttonDown") color 0xFFFF0000 strokeWidth 1.0f
-  var buttonHover:      Brush = Brush("Brushes.buttonHover") color 0xFF00FF00 strokeWidth 1.0f
+  var buttonForeground: Brush = Brush("white.fill")
+  var buttonBackground: Brush = Brush("black.fill")
+  var buttonDown:       Brush = Brush("red.fill")
+  var buttonHover:      Brush = Brush("green.fill")
 
   /** Default paint for a point: black */
-  val point: Brush = Brush("Brushes.point") color 0xFF000000 strokeWidth 1.0f
+  val point: Brush = Brush("black.1")
 
 }

@@ -13,10 +13,11 @@ import io.github.humbleui.types.Rect
 import org.sufrin.{glyph, logging}
 import org.sufrin.glyph.Brushes.{black, blue, green, lightGrey, red, white, yellow}
 import org.sufrin.glyph.GlyphShape.{arrow, asGlyph, circle, composite, lineBetween, polygon, rect, FILL, PathShape, STROKE}
-import org.sufrin.glyph.styled.{Book, BookSheet, GlyphButton, RadioCheckBoxes}
+import org.sufrin.glyph.styled.{Book, BookSheet, GlyphButton, MenuButton, RadioCheckBoxes}
 import org.sufrin.glyph.styles.decoration.{unDecorated, Framed}
 import org.sufrin.glyph.unstyled.reactive.{Enterable, Reaction}
 import org.sufrin.glyph.unstyled.static.{FilledPolygon, INVISIBLE}
+import org.sufrin.glyph.Brush.{BUTT, ROUND, SQUARE}
 import org.sufrin.glyph.NaturalSize.{Col, Grid, Row}
 import org.sufrin.glyph.NaturalSize.Grid.Table
 
@@ -446,7 +447,7 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
   }
 
   val selectionPath = new GlyphShape.PathShape(selectBrush, false)
-  val vertexPath = new GlyphShape.PathShape(Brushes("red.2.round.stroke-4-4")(blendMode = BlendMode.DARKEN), false)
+  val vertexPath = new GlyphShape.PathShape(Brushes("red.2.round.stroke.dash(4)")(blendMode = BlendMode.DARKEN), false)
 
 
   def indicateVertices(surface: Surface): Unit = if (vertices.nonEmpty) {
@@ -519,7 +520,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
     val drawingBoard = new DrawingBoard(rect(1200, 800)(lightGrey))(done, undone)
 
-    var newBrush: Brush = Brushes("blue.stroke.round.width(4)")
+    var newBrush: Brush = Brushes("blue.4.stroke.round")
 
     def addButton(kind: String, dim: String="")(shape: => GlyphShape): Glyph = {
       val b  = styled.TextButton(kind){ _ => { drawingBoard.addShape(kind, shape); drawingBoard.feedback() } }(sheet)
@@ -628,8 +629,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
           *                 |    (#strokeRadius)
           *                 |    -#on-#off
           *                 |    ~#sliceLength~#displacement
-          *                 |    .stroke
-          *                 |    .fill
+          *                 |    .stroke | .fill | .stroke&fill
           *                 |    .round | .butt | .square
           *                 |    .blur(#blur)]]>
         </p>).InFront(drawingBoard)
@@ -641,11 +641,11 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       val spec = specification.replaceAll("«[^»]+»","").strip()
       if (spec.nonEmpty) {
         try {
-          newBrush = Brush.ofString(spec)
+          newBrush = Brushes(spec)
           showNewBrush()
         }
         catch {
-          case Brushes.NonBrush(why) =>
+          case Brushes.NonBrush(why, brush) =>
             brushField.text=s"${spec} «error»"
             if (brushWarning.running.isEmpty) brushWarning.start()
         }
@@ -679,23 +679,65 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       }(hintSheet).arrangedVertically()
     }
 
+    def brushFieldChooserMenu(fieldname: String, choices: String*)(choose: String => Unit)(implicit sheet: StyleSheet): Glyph = {
+      val buttons = choices.map {
+          name => MenuButton(name){ _ => choose(name) }
+      }
+      val menu = styled.overlaydialogues.Dialogue.Menu(fieldname, nested=false, buttons)
+      menu
+    }
+
     /** Palette window */
     lazy val colourWindow = {
+      val menu: StyleSheet = sheet.copy(buttonDecoration = Framed(black), fontScale=0.8f)
+      val protoBrush = newBrush
       @inline def butStyle(name: String) =
-        sheet.copy(buttonDecoration=unDecorated, buttonBackgroundBrush = Brushes.withName(name))
-      val buts = for { (name, colour) <- Brushes.namedColours if colour!=0 } yield
-          HintedButton("    ", name){ _ =>
-            val t = brushField.text
-            setNewBrush(t.replaceFirst("[a-z0-9]+", name))
+        sheet.copy(buttonDecoration=unDecorated, buttonBackgroundBrush = Brushes(name))
+      val buts = for { (name, col) <- Brushes.namedColours if col!=0 } yield
+          HintedButton("    ", name){
+            _ => protoBrush.setColor(col)
           }(butStyle(name))
       val colourGrid = Grid(fg=black).table(width=4)(buts.toSeq)
       val UI = Col(align=Center)(
-        Row(align=Mid)(colourGrid, em,
-        brushFieldChooser("stroke", "fill"), em,
-        brushFieldChooser("round", "butt", "square")
+        brushField, ex,
+        colourGrid, ex,
+        Row(align=Mid)(
+          brushFieldChooserMenu("Width", "0", "1", "2", "4", "6", "8", "10", "15", "20"){
+            v =>
+              protoBrush.strokeWidth(v.toFloat)
+          }(menu), ex,
+          brushFieldChooserMenu("Cap", "round", "butt", "square"){
+            v =>
+              val cap = v match { case "round"=>ROUND; case "butt"=>BUTT; case "square"=>SQUARE}
+              protoBrush.cap(cap)
+          }(menu), ex,
+          brushFieldChooserMenu("Mode", "stroke", "fill"){
+            v =>
+              val mode = v match { case "fill"=>FILL; case "stroke"=>STROKE }
+              protoBrush.mode(mode)
+          }(menu), ex,
+          brushFieldChooserMenu("Rounded", "()", "10",  "20", "30", "40", "50", "60", "70"){
+            case "()" => protoBrush.Effect.none()
+            case v =>
+              protoBrush.Effect.rounded(v.toFloat)
+          }(menu), ex,
+          brushFieldChooserMenu("Dash", "()", "--", "-.", "~", "~~", "~~~~"){
+            case "--" =>  protoBrush.Effect.dashed(10,10)
+            case "-." =>  protoBrush.Effect.dashed(10, 5)
+            case "~" =>  protoBrush.Effect.sliced(5, 3)
+            case "~~" =>  protoBrush.Effect.sliced(10, 3)
+            case "~~~" =>  protoBrush.Effect.sliced(10, 5)
+            case "~~~~" =>  protoBrush.Effect.sliced(10, 10)
+            case "()" =>  protoBrush.Effect.none()
+          }(menu), ex,
+          brushFieldChooserMenu("Blur", "()", "1", "2", "4", "6", "8"){
+            case "()" => protoBrush.Effect.none()
+            case v   => protoBrush.Effect.blurred(v.toFloat)
+          }(menu), ex,
         ),
         ex,
-        brushField.framed()
+        rectangle(300, 60)(protoBrush),
+        ex,ex,ex
       )
       styled.windowdialogues.Dialogue.OK(UI, title="Colour Palette").East(drawingBoard)
     }

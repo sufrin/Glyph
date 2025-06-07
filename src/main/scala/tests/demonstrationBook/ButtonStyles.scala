@@ -71,14 +71,14 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
       </div>,
       anchor,
       Grid(width=3, padx=10, pady=5).rows(
-        framed("darkGrey/2-10-10", "transparent", "transparent"), framed("darkGrey/2~5~2", "transparent", "transparent"), framed("darkGrey/3-10-10~5~3", "transparent", "yellow"),
-        framed("darkGrey/10/ROUND", "transparent") ,  framed("darkGrey/20/ROUND", "yellow") ,  framed("darkGrey/30/ROUND", "transparent"),
-        framed("darkGrey/10/SQUARE", "transparent") ,  framed("darkGrey/20/SQUARE", "yellow") ,  framed("darkGrey/30/SQUARE", "transparent"),
+        framed("darkGrey.2.--", "transparent", "transparent"), framed("darkGrey.2.~~(5,2)", "transparent", "transparent"), framed("darkGrey.33", "transparent", "yellow"),
+        framed("darkGrey.10.round", "transparent") ,  framed("darkGrey.20.round", "yellow") ,  framed("darkGrey.30.round", "transparent"),
+        framed("darkGrey.10.square", "transparent") ,  framed("darkGrey.20.square", "yellow") ,  framed("darkGrey.30.square", "transparent"),
 
-        roundframed("transparent", "lightGrey", 10, "transparent") ,  roundframed("transparent", "lightGrey(10)", 20, "green") ,  roundframed("transparent", "lightGrey", 30, "green"),
-        roundframed("red/10", "yellow", 0.1f, "yellow") ,  roundframed("red/20", "yellow", 0.1f, "yellow") ,  roundframed("red/30", "yellow", 0.1f, "yellow"),
-        roundframed("red/10", "green", 0.3f, "yellow") ,  roundframed("red/20", "green", 0.3f, "yellow") ,  roundframed("red/30", "green", 0.3f, "yellow"),
-        roundframed("red/10", "transparent", 0.6f, "transparent") ,  roundframed("red/20", "yellow", 0.6f, "yellow") ,  roundframed("red/30", "yellow", 0.9f, "yellow"),
+        roundframed("transparent", "lightGrey", 10, "transparent") ,  roundframed("transparent", "lightGrey.rounded(10)", 20, "green") ,  roundframed("transparent", "lightGrey", 30, "green"),
+        roundframed("red.30", "yellow", 0.1f, "yellow") ,  roundframed("red.20", "yellow", 0.1f, "yellow") ,  roundframed("red.30", "yellow", 0.1f, "yellow"),
+        roundframed("red.10", "green", 0.3f, "yellow") ,  roundframed("red.20", "green", 0.3f, "yellow") ,  roundframed("red.30", "green", 0.3f, "yellow"),
+        roundframed("red.10", "transparent", 0.6f, "transparent") ,  roundframed("red.20", "yellow", 0.6f, "yellow") ,  roundframed("red.30", "yellow", 0.9f, "yellow"),
       )
     )
   }

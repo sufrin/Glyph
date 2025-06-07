@@ -603,3 +603,93 @@ class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Bool
 }
 
 
+
+class Chooser(captions: Seq[String], prefer: String, inheritFramed: Boolean,
+                      action: Option[Int]=>Unit)(implicit sheet: StyleSheet) {
+  //import styled.text.Label
+
+  val preferred  = if (prefer eq null) captions(0) else prefer
+
+  val frameStyle: StyleSheet = sheet
+  // TODO: fix this
+  //    if (inheritFramed)
+  //      sheet
+  //    else
+  //      sheet.unFramed
+
+  lazy val checkBoxes =
+    for {i <- 0 until captions.length} yield
+      CheckBox(initially = (captions(i) == preferred))(reaction(i))(frameStyle)
+
+  def reaction(boxIndex: Int): Boolean => Unit = {
+    case true =>
+      for {i <- 0 until captions.length if i != boxIndex } checkBoxes(i).set(false)
+      action(Some(boxIndex))
+    case false =>
+      action(None)
+  }
+
+  def select(boxIndex: Int): Unit = {
+    assert(boxIndex<checkBoxes.length, s"RadioCheckBoxes.select($boxIndex) index out of range")
+    checkBoxes(boxIndex).set(true)
+  }
+
+  lazy val glyphRows: Seq[Glyph] = {
+    val glyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
+    for {i <- 0 until captions.length } {
+      glyphs += Label(s"${captions(i)}", Center, sheet.labelStyle)
+      glyphs += checkBoxes(i)
+    }
+    glyphs.toSeq
+  }
+
+  lazy val glyphCols: Seq[Glyph] = {
+    val glyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
+    for {i <- 0 until captions.length } {
+      glyphs += Label(s"${captions(i)}", Center, sheet.labelStyle)
+    }
+    for {i <- 0 until captions.length } { glyphs += checkBoxes(i) }
+    glyphs.toSeq
+  }
+
+  def emTab: Glyph = FixedSize.Space(sheet.emWidth, 1, 1)
+
+  def glyphButtons(align: Alignment=Justify): Seq[Glyph] = {
+    val glyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
+    val labels = captions.map{caption => Label(caption, Left, sheet.labelStyle)}
+
+    align match {
+      case Left =>
+        for {i <- 0 until captions.length } {
+          glyphs += NaturalSize.Row(align=Mid)(checkBoxes(i), emTab, labels(i)).enlargedBy(15, 0)
+        }
+
+      case Right =>
+        val width = labels.map(_.w).max + checkBoxes.head.w*3
+        for {i <- 0 until captions.length } {
+          glyphs += FixedSize.Row(width, align=Mid)(labels(i), emTab, checkBoxes(i)).enlargedBy(15, 0)
+        }
+
+      case Center =>
+        val width = labels.map(_.w).max + checkBoxes.head.w*3
+        for {i <- 0 until captions.length } {
+          glyphs += FixedSize.Row(width, align=Mid)(emTab, labels(i), emTab, checkBoxes(i)).enlargedBy(15, 0)
+        }
+
+      case Justify =>
+        val width = labels.map(_.w).max + checkBoxes.head.w*3
+        for {i <- 0 until captions.length } {
+          glyphs += FixedSize.Row(width, align=Mid)(emTab, labels(i), sheet.em, checkBoxes(i)).enlargedBy(15, 0)
+        }
+    }
+
+    glyphs.toSeq
+  }
+
+  def arrangedVertically(): Glyph =
+    NaturalSize.Grid(bg=sheet.buttonBackgroundBrush).table(width=2)(glyphRows)
+
+  def arrangedHorizontally(): Glyph =
+    NaturalSize.Grid(bg=sheet.buttonBackgroundBrush, padx=5).table(width=captions.length)(glyphCols)
+
+}

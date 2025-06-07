@@ -127,7 +127,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
 
   val hint: Glyph =
-    <p width="55em" align="justify" fontScale="0.7" frame="red/2">
+    <p width="55em" align="justify" fontScale="0.7" frame="red.2">
     clicking on this grey strip invites you to save the GUI's
     current appearance in a .png file.
     </p>

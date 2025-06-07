@@ -341,7 +341,7 @@ import io.github.humbleui.jwm.App
   }
 
   object OneOf {
-    val defaultBG: Brush = Brush("invisible")(color=0x0)
+    val defaultBG: Brush = Brush("transparent")
     val defaultFG: Brush = defaultBG
 
     def largestBG(glyphs: Seq[Glyph]): Brush = {

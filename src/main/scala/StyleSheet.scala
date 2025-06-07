@@ -15,22 +15,22 @@ case class StyleSheet
  buttonFontFamily: FontFamily  = FontFamily(),
  buttonFontStyle: FontStyle = FontStyle.NORMAL,
  buttonFontSize: Scalar  = 22f,
- buttonBorderBrush: Brush = Brush("buttonBorder")(color=0XFF777777, width=5f, cap=Brushes.ROUND),
- buttonBackgroundBrush: Brush = Brush("transparent")(color=0X00FFFFFF), // transparent
- buttonForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF), // blue
- buttonHoverBrush: Brush = Brush("green")(color=0xFF00FF00), // green
- buttonDownBrush: Brush = Brush("buttonDown")(color=0xFFFF0000), // red
- toggleBackgroundBrush: Brush = Brush("red")(color=0X00FFFFFF), // transparent
- toggleOnBrush: Brush = Brush("red")(color=0xFFFF0000), // red
- toggleOffBrush: Brush = Brush("blue")(color=0xFF0000FF), // blue
- labelBackgroundBrush: Brush = Brush("buttonBackground")(color=0X00FFFFFF), // transparent
- labelForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF), // blue
- textBackgroundBrush: Brush = Brush("transparent")(color=0X00FFFFFF), // transparent
- textForegroundBrush: Brush = Brush("blue")(color=0xFF0000FF), // blue
- popupBackgroundBrush: Brush = Brush("popupbackground") color 0xffeeeeee,
- popupForegroundBrush: Brush = Brush("popupforeground") color 0xff000000 strokeWidth(1),
- backgroundBrush: Brush = Brush("background")(color=0XFFBBBBBB),
- foregroundBrush: Brush = Brush("foreground")(color=0XFFBBBBBB),
+ buttonBorderBrush: Brush = Brushes("red.5.round.stroke"),
+ buttonBackgroundBrush: Brush = Brushes("transparent"), // transparent
+ buttonForegroundBrush: Brush = Brushes("blue"), // blue
+ buttonHoverBrush: Brush = Brushes("green"), // green
+ buttonDownBrush: Brush = Brushes("red"), // red
+ toggleBackgroundBrush: Brush = Brushes("transparent"), // transparent
+ toggleOnBrush: Brush = Brushes("red"), // red
+ toggleOffBrush: Brush = Brushes("blue"), // blue
+ labelBackgroundBrush: Brush = Brushes("transparent"), // transparent
+ labelForegroundBrush: Brush = Brushes("blue"), // blue
+ textBackgroundBrush: Brush = Brushes("transparent"), // transparent
+ textForegroundBrush: Brush = Brushes("blue"), // blue
+ popupBackgroundBrush: Brush = Brushes("0xFFeeeeee"),
+ popupForegroundBrush: Brush = Brushes("0xFF000000.1"),
+ backgroundBrush: Brush = Brushes("0XFFBBBBBB"),
+ foregroundBrush: Brush = Brushes("0XFFBBBBBB"),
  // Paragraph layout properties
  parAlign:    Alignment = Left,
  parSkip:     Scalar    = 5f,

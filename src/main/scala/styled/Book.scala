@@ -173,7 +173,7 @@ trait Book {
   object Layout {
     import GlyphTypes.Scalar
 
-    val dividerBlack = Brush("dividerblack")(color=0xFF770000, width=4)
+    val dividerBlack = Brush("black.4")(color=0xFF770000, width=4)
 
     def blackLine(width: Scalar, height: Scalar): Glyph = {
       static.Polygon(width, height, fg=dividerBlack)((0,0), (width,0), (width, height), (0, height), (0,0))

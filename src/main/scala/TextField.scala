@@ -153,12 +153,12 @@ class TextField(val fg: Brush, val bg: Brush, font: Font,
   /**
    * Brush used to show the cursor when focussed
    */
-  val focussedBrush = Brush("cursorfocussed") color 0Xff000000 strokeWidth 2.5f
+  val focussedBrush = Brushes("black") strokeWidth 2.5f
 
   /**
    * Brush used to show the cursor when focussed
    */
-  val unfocussedBrush = Brush("cursorunfocussed") color 0X33000000 strokeWidth 2.5f
+  val unfocussedBrush = Brushes("0X33000000") strokeWidth 2.5f
 
   /**
    * Brush used to show panned warnings

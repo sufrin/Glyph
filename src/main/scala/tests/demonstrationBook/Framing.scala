@@ -7,6 +7,7 @@ import NaturalSize.{Col, Grid, Row}
 import unstyled.static.Polygon
 
 import io.github.humbleui.skija.PaintStrokeCap
+import org.sufrin.glyph.GlyphShape.FILL
 
 class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: StyleSheet = style.buttonSheet.copy(fontScale = 0.8f)
@@ -17,7 +18,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
   import Brushes._
 
 
-  Page("Edged Text #1", "Texts .edged(fg, yellow, rf)\n(showing effect of fg brush size/cap") {
+  Page("Framed Text #1", "Texts .framed(fg, yellow, rf)\n(showing effect of fg brush size/cap") {
       val fg = red(width = 10, cap = ROUND).copy()
 
       def short = Label(" short ")(pageSheet.copy(labelBackgroundBrush = yellow))
@@ -30,11 +31,11 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       def row(rf: Scalar, cap:PaintStrokeCap = ROUND): Glyph = {
         val FG = fg(width=rf, cap=cap)
         Col(align=Center)(
-          Label(s".edged($FG)\n").scaled(0.9f),
+          Label(s".framed($FG)\n").scaled(0.9f),
           Row(align=Mid, skip=10)(
-            short.edged(FG, bg=yellow),
-            med.edged(FG, bg=yellow),
-            long.enlarged(20).edged(FG, bg=yellow)), ex)
+            short.framed(FG, bg=yellow),
+            med.framed(FG, bg=yellow),
+            long.enlarged(20).framed(FG, bg=yellow)), ex)
       }
 
 
@@ -45,8 +46,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
     }
 
   Page("RoundFramed Text #1", "Texts .roundFramed(fg, yellow, rf)\n(smaller rf => tighter corners)") {
-    val fg = red(width = 10, cap = ROUND).copy()
-
+    val fg = red(width = 10, cap = ROUND, mode=FILL).copy()
 
     def short = Label(" short ")
 
@@ -57,7 +57,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
 
     def row(rf: Scalar, fg: Brush= red(width = 10, cap = ROUND)): Glyph = {
       Col(align=Center)(
-        Label(s"rf=$rf, $fg)\n").scaled(0.9f),
+        Label(s"rf=$rf, $fg\n").scaled(0.9f),
         Row(align=Mid)(
           short.roundFramed(fg, yellow, rf), em,
           med.roundFramed(fg, yellow, rf), em,
@@ -73,7 +73,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
     ).enlarged(40)
   }
 
-  Page("Edged Text #2") {
+  Page("Framed Text #2") {
     val fg = red(width = 10, cap = ROUND).copy()
 
     def short = Label(" short ")(pageSheet.copy(labelBackgroundBrush = yellow)).rotated(1)
@@ -127,12 +127,12 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
     ).enlarged(40)
   }
 
-  Page("Edged #3", "Text.copy(bg=transparent).edged(fg, bg)\n(text bg prevails over edged bg unless transparent)") {
+  Page("Framed #3", "Text.copy(bg=transparent).framed(fg, bg)\n(text bg prevails over edged bg unless transparent)") {
     def label(bg: Brush) = SimpleParagraphs(15, align=Center, font=FontFamily("Courier")(25), fg=darkGrey, bg=bg)("""The rain in spain falls mainly in the plain""")
 
     Grid(padx=10, pady=10, fg=transparent, width=4).rows(
       for {cap<-List(ROUND); tbg<-List("yellow", "transparent"); bg<-List("green", "transparent"); width<-List(2f, 4f, 10f, 15f)} yield
-        Label(s"fg=red($width,$cap)\ntext bg=$tbg, bg=$bg") above label(Brushes(tbg)).edged(fg=red(width = width, cap = cap), bg=Brushes(bg)) ,
+        Label(s"fg=red($width,$cap)\ntext bg=$tbg, bg=$bg") above label(Brushes(tbg)).framed(fg=red(width = width, cap = cap), bg=Brushes(bg)) ,
     )
   }
 
@@ -218,19 +218,19 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       ]]>
       </div>
       <fill height="3ex"/>
-      <rows foreground="darkGrey/3" padX="2em" padY="2em" cols="3">
+      <rows foreground="darkGrey.3" padX="2em" padY="2em" cols="3">
           <glyph gid="star"/>
           <glyph gid="star" scaled="0.5"/>
-          <glyph gid="star" frame="red/1~5~5" />
-          <glyph gid="star" decorate="enlarge;edge;frame" frame="red/5~5~5" radius="0.1" enlarged="25px"/>
-          <glyph gid="star" decorate="edge;enlarge;frame" frame="red/20" radius="0.3" enlarged="25px" edge="black/3"/>
-          <div decorate="rotate;edge;frame" rotated="1" frame="red/25" radius="0.2" enlarged="25px" edge="black/3">
+          <glyph gid="star" frame="red.1.~~(5,5)" />
+          <glyph gid="star" decorate="enlarge;edge;frame" frame="red.5.~~(5,5).stroke" radius="0.1" enlarged="25px"/>
+          <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="0.3" enlarged="25px" edge="black.3"/>
+          <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="0.2" enlarged="25px" edge="black.3">
             <glyph gid="star"/>
             <glyph gid="star"/>
           </div>
-          <glyph gid="star" decorate="enlarge;edge;frame" frame="red/5~5~5" radius="3" enlarged="25px"/>
-          <glyph gid="star" decorate="edge;enlarge;frame" frame="red/20" radius="3" enlarged="25px" edge="black/3"/>
-          <div decorate="rotate;edge;frame" rotated="1" frame="red/25" radius="3" enlarged="25px" edge="black/3">
+          <glyph gid="star" decorate="enlarge;edge;frame" frame="red.5.~~(5,5).fill" radius="3" enlarged="25px"/>
+          <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="3" enlarged="25px" edge="black.3"/>
+          <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="3" enlarged="25px" edge="black.3">
             <glyph gid="star"/>
             <glyph gid="star"/>
           </div>
@@ -238,21 +238,21 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       <fill height="3ex"/>
       <div normalizePCData="true" fontFamily="Courier" fontScale="0.9" textForeground="black" textBackground="transparent" background="lightGrey">
       <![CDATA[
-           <rows foreground="darkGrey/3" padX="2em" padY="2em" cols="3">
+           <rows foreground="darkGrey.3" padX="2em" padY="2em" cols="3">
                 <glyph gid="star"/>
                 <glyph gid="star" scaled="0.5"/>
-                <glyph gid="star" frame="red/1~5~5" />
+                <glyph gid="star" frame="red.1.~~(5,5)" />
 
-                <glyph gid="star" decorate="enlarge;edge;frame" frame="red/5~5~5" radius="0.1" enlarged="25px"/>
-                <glyph gid="star" decorate="edge;enlarge;frame" frame="red/20" radius="0.3" enlarged="25px" edge="black/3"/>
-                <div decorate="rotate;edge;frame" rotated="1" frame="red/25" radius="3" enlarged="25px" edge="black/3">
+                <glyph gid="star" decorate="enlarge;edge;frame" frame="red.5.~~(5,5).stroke" radius="0.1" enlarged="25px"/>
+                <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="0.3" enlarged="25px" edge="black.3"/>
+                <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="3" enlarged="25px" edge="black.3">
                   <glyph gid="star"/>
                   <glyph gid="star"/>
                 </div>
 
-                <glyph gid="star" decorate="enlarge;edge;frame" frame="red/5~5~5" radius="3" enlarged="25px"/>
-                <glyph gid="star" decorate="edge;enlarge;frame" frame="red/20" radius="3" enlarged="25px" edge="black/3"/>
-                <div decorate="rotate;edge;frame" rotated="1" frame="red/25" radius="3" enlarged="25px" edge="black/3">
+                <glyph gid="star" decorate="enlarge;edge;frame" frame="red.5.~~(5,5).fill" radius="3" enlarged="25px"/>
+                <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="3" enlarged="25px" edge="black.3"/>
+                <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="3" enlarged="25px" edge="black.3">
                   <glyph gid="star"/>
                   <glyph gid="star"/>
                 </div>

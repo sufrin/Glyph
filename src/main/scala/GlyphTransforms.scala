@@ -6,6 +6,8 @@ import NaturalSize.{Col, Row}
 import unstyled.static
 import GlyphTransforms.{Framed, WithBaseline}
 
+import org.sufrin.glyph.GlyphShape.FILL
+
 /**
  *  As a notational convenience. `Glyphs` have intrinsic transforms that correspond to the external transformers implemented
  *  by the classes nested within the object `GlyphTransforms`. The trait `GlyphTransforms` is a mixin used to define the
@@ -167,16 +169,16 @@ object GlyphTransforms {
           if (radiusFactor>0f) (radiusFactor, radiusFactor) else (.25f, .25f)
 
         static.Concentric(rowAlign=Mid, colAlign=Center)(
-          RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = bg, bg = transparent),
-          RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg, bg = transparent),
+          RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = bg(mode=FILL), bg = transparent),   // background
+          RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg(mode=FILL), bg = transparent),  // frame
           glyph,
           )
       } else {
         val gw = glyph.w + fg.strokeWidth * 2
         val gh = glyph.h + fg.strokeWidth * 2
         static.Concentric(rowAlign=Mid, colAlign=Center)(
-          FilledRect(gw, gh, fg = bg, bg = transparent),
-          Rect(gw, gh, fg = fg, bg = transparent),
+          FilledRect(gw, gh, fg = bg, bg = transparent), // background
+          Rect(gw, gh, fg = fg, bg = transparent),       // frame
           glyph)
       }
     }
