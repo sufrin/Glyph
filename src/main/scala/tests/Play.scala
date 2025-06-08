@@ -447,7 +447,7 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
   }
 
   val selectionPath = new GlyphShape.PathShape(selectBrush, false)
-  val vertexPath = new GlyphShape.PathShape(Brushes("red.2.round.stroke.dash(4)")(blendMode = BlendMode.DARKEN), false)
+  val vertexPath = new GlyphShape.PathShape(Brushes("red.2.round.stroke.dashed(4)")(blendMode = BlendMode.DARKEN), false)
 
 
   def indicateVertices(surface: Surface): Unit = if (vertices.nonEmpty) {
@@ -638,18 +638,25 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
 
     def setNewBrush(specification: String): Unit = {
-      val spec = specification.replaceAll("«[^»]+»","").strip()
-      if (spec.nonEmpty) {
+      if (specification.nonEmpty) {
+        println(specification)
         try {
-          newBrush = Brushes(spec)
+          val brush = Brushes(specification)
+          newBrush.copy(brush)
+          protoBrush.copy(brush)
           showNewBrush()
         }
         catch {
           case Brushes.NonBrush(why, brush) =>
-            brushField.text=s"${spec} «error»"
+            logging.Default.error(s"Bad brush $specification $why [$brush]")
             if (brushWarning.running.isEmpty) brushWarning.start()
         }
       }
+    }
+
+    def setNewBrush(brush: Brush): Unit = {
+      newBrush = brush
+      showNewBrush()
     }
 
     def showNewBrush(): Unit = {
@@ -657,7 +664,6 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
     }
 
     lazy val brushField = styled.TextField(size=50, onCursorLeave=setNewBrush(_), initialText=newBrush.toString)
-
 
     def HintedButton(label: String, hint: String="")(action: Reaction)(implicit style: StyleSheet): Glyph = {
         val button = styled.TextButton(label)(action)(style)
@@ -671,14 +677,6 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       button
     }
 
-    def brushFieldChooser(choices: String*): Glyph = {
-      styled.RadioCheckBoxes(choices){
-        case None =>
-        case Some(sel) =>
-           setNewBrush(brushField.text.replaceFirst(choices.mkString("(","|",")"), choices(sel)))
-      }(hintSheet).arrangedVertically()
-    }
-
     def brushFieldChooserMenu(fieldname: String, choices: String*)(choose: String => Unit)(implicit sheet: StyleSheet): Glyph = {
       val buttons = choices.map {
           name => MenuButton(name){ _ => choose(name) }
@@ -687,59 +685,78 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       menu
     }
 
+    lazy val protoBrush = newBrush.copy()
+
     /** Palette window */
     lazy val colourWindow = {
       val menu: StyleSheet = sheet.copy(buttonDecoration = Framed(black), fontScale=0.8f)
-      val protoBrush = newBrush
+      def brushFeedback(): Unit = setNewBrush(protoBrush.copy())
       @inline def butStyle(name: String) =
         sheet.copy(buttonDecoration=unDecorated, buttonBackgroundBrush = Brushes(name))
       val buts = for { (name, col) <- Brushes.namedColours if col!=0 } yield
           HintedButton("    ", name){
-            _ => protoBrush.setColor(col)
+            _ =>
+              protoBrush.setColor(col)
+              brushFeedback()
           }(butStyle(name))
       val colourGrid = Grid(fg=black).table(width=4)(buts.toSeq)
-      val UI = Col(align=Center)(
-        brushField, ex,
+      val UI = Col(align=Center, bg=lightGrey)(
+        brushField.framed(), ex,
         colourGrid, ex,
         Row(align=Mid)(
           brushFieldChooserMenu("Width", "0", "1", "2", "4", "6", "8", "10", "15", "20"){
             v =>
               protoBrush.strokeWidth(v.toFloat)
+              brushFeedback()
           }(menu), ex,
           brushFieldChooserMenu("Cap", "round", "butt", "square"){
             v =>
               val cap = v match { case "round"=>ROUND; case "butt"=>BUTT; case "square"=>SQUARE}
               protoBrush.cap(cap)
+              brushFeedback()
           }(menu), ex,
           brushFieldChooserMenu("Mode", "stroke", "fill"){
             v =>
               val mode = v match { case "fill"=>FILL; case "stroke"=>STROKE }
               protoBrush.mode(mode)
+              brushFeedback()
           }(menu), ex,
           brushFieldChooserMenu("Rounded", "()", "10",  "20", "30", "40", "50", "60", "70"){
-            case "()" => protoBrush.Effect.none()
+            case "()" =>
+              protoBrush.Effect.none()
+              brushFeedback()
             case v =>
               protoBrush.Effect.rounded(v.toFloat)
+              brushFeedback()
           }(menu), ex,
-          brushFieldChooserMenu("Dash", "()", "--", "-.", "~", "~~", "~~~~"){
-            case "--" =>  protoBrush.Effect.dashed(10,10)
-            case "-." =>  protoBrush.Effect.dashed(10, 5)
-            case "~" =>  protoBrush.Effect.sliced(5, 3)
-            case "~~" =>  protoBrush.Effect.sliced(10, 3)
-            case "~~~" =>  protoBrush.Effect.sliced(10, 5)
-            case "~~~~" =>  protoBrush.Effect.sliced(10, 10)
-            case "()" =>  protoBrush.Effect.none()
+          brushFieldChooserMenu("Dash", "()", "--", "-.", ".-", "..", "~", "~~", "~~~~", "~~~~"){
+            def w = protoBrush.strokeWidth
+            v => v match {
+                case "--" => protoBrush.Effect.dashed(10*w, 10*w)
+                case "-." => protoBrush.Effect.dashed(10*w, 5*w)
+                case ".-" => protoBrush.Effect.dashed(5*w, 10*w)
+                case ".." => protoBrush.Effect.dashed(5*w, 5*w)
+                case "~" => protoBrush.Effect.sliced(5, 3)
+                case "~~" => protoBrush.Effect.sliced(10, 3)
+                case "~~~" => protoBrush.Effect.sliced(10, 5)
+                case "~~~~" => protoBrush.Effect.sliced(10, 10)
+                case "()" => protoBrush.Effect.none()
+              }
+              brushFeedback()
           }(menu), ex,
           brushFieldChooserMenu("Blur", "()", "1", "2", "4", "6", "8"){
-            case "()" => protoBrush.Effect.none()
-            case v   => protoBrush.Effect.blurred(v.toFloat)
+            v => v match {
+                case "()" => protoBrush.Effect.none()
+                case v => protoBrush.Effect.blurred(v.toFloat)
+              }
+              brushFeedback()
           }(menu), ex,
         ),
         ex,
         rectangle(300, 60)(protoBrush),
         ex,ex,ex
       )
-      styled.windowdialogues.Dialogue.OK(UI, title="Colour Palette").East(drawingBoard)
+      styled.windowdialogues.Dialogue.FLASH(UI, title="Colour Palette").East(drawingBoard)
     }
 
     val GUI: Glyph = NaturalSize.Col(align=Center)(

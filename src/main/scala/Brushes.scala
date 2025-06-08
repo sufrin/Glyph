@@ -6,6 +6,9 @@ import org.sufrin.glyph.unstyled.Text
 import org.sufrin.glyph.GlyphShape.{FILL, STROKE, STROKE_AND_FILL}
 import org.sufrin.glyph.GlyphTypes.Scalar
 
+import scala.annotation.tailrec
+import scala.util.matching.Regex.{MatchData, MatchIterator}
+
 /**
  * A convenience trait that defines several brushes.
  *
@@ -83,6 +86,7 @@ trait DefaultBrushes {
 object Brushes extends DefaultBrushes {
 
   trait Lex
+  case object EOS extends Lex
   case class Id(id: String) extends Lex
   case class ScalarValue(value: Scalar) extends Lex
   case class WithParameters(id: String, params: Seq[Scalar]) extends Lex {
@@ -91,18 +95,21 @@ object Brushes extends DefaultBrushes {
   case class Hexadecimal(color: Int) extends Lex {
     override def toString: String = f"0x$color%6x"
   }
+
+  lazy val Chunks = new scala.util.matching.Regex("(([.]?)(([0-9a-zA-Z&~-])+([(][0-9.,]+[)])?))")
+
   def Parse(spec: String): Brush = {
     def Lex(state: Brush, spec: String): List[Lex] = {
-    val explode = spec.split('.').toList
-    explode.map {
-      case v if v matches("[0-9]+([.][0-9]*)?") => ScalarValue(v.toFloat)
-      case s"0x${hex}" if hex.matches("([0-9a-fA-F])+") => Hexadecimal(hexToInt(hex))
-      case v if v matches("[a-zA-Z0-9&~-]+") => Id(v)
-      case s"$id($params)" if id matches ("[a-zA-Z0-9&~-]+") =>
-        val scalars = params.split(',').toSeq.map(_.toFloat).toList
-        WithParameters(id, scalars)
-      case other => throw new NonBrush(s"Lexical-error at $other in $spec", state)
-    }
+      val explode = Chunks.findAllMatchIn(spec).map(_.group(3)).toList
+      explode.map {
+        case v if v matches("[0-9]+([.][0-9]*)?") => ScalarValue(v.toFloat)
+        case s"0x${hex}" if hex.matches("([0-9a-fA-F])+") => Hexadecimal(hexToInt(hex))
+        case v if v matches("[a-zA-Z0-9&~-]+") => Id(v)
+        case s"$id($params)" if id matches ("[a-zA-Z0-9&~-]+") =>
+          val scalars = params.split(',').toSeq.map(_.toFloat).toList
+          WithParameters(id, scalars)
+        case other => throw new NonBrush(s"Lexical-error at $other in $spec", state)
+      }
   }
   def eval(b: Brush, l: List[Lex]): Brush = {
     l match {
@@ -140,25 +147,40 @@ object Brushes extends DefaultBrushes {
         b.alpha(n)
         eval(b, rest)
       case Id("--")::rest =>
-        b.Effect.dashed(10, 10)
+        b.Effect.dashed(10*b.strokeWidth, 10*b.strokeWidth)
         eval(b, rest)
       case Id("-.")::rest =>
-        b.Effect.dashed(10, 5)
+        b.Effect.dashed(10*b.strokeWidth, 5*b.strokeWidth)
         eval(b, rest)
-      case WithParameters("--", List(n))::rest =>
+      case Id(".-")::rest =>
+        b.Effect.dashed(5*b.strokeWidth, 10*b.strokeWidth)
+        eval(b, rest)
+      case Id("..")::rest =>
+        b.Effect.dashed(5*b.strokeWidth, 5*b.strokeWidth)
+        eval(b, rest)
+      case WithParameters("dashed", List(n))::rest =>
         b.Effect.dashed(n, n)
         eval(b, rest)
-      case WithParameters("--", List(m, n))::rest =>
+      case WithParameters("dashed", List(m, n))::rest =>
         b.Effect.dashed(m, n)
         eval(b, rest)
-      case WithParameters("--", List(m, n, o, p))::rest =>
+      case WithParameters("dashed", List(m, n, o, p))::rest =>
         b.Effect.dashed(m, n, o, p)
         eval(b, rest)
-      case WithParameters("~~", List(m, n))::rest =>
+      case WithParameters("sliced", List(m, n))::rest =>
         b.Effect.sliced(m, n)
         eval(b, rest)
       case WithParameters("rounded", List(radius))::rest =>
         b.Effect.rounded(radius)
+        eval(b, rest)
+      case WithParameters("blurred", List(blur))::rest =>
+        b.Effect.blurred(blur)
+        eval(b, rest)
+      case WithParameters("blurred", List(blur, delta))::rest =>
+        b.Effect.blurred(blur, delta, delta)
+        eval(b, rest)
+      case WithParameters("blurred", List(blur, dx, dy))::rest =>
+        b.Effect.blurred(blur, dx, dy)
         eval(b, rest)
       case Id(name)::rest =>
         namedColours.get(name) match {
@@ -208,6 +230,12 @@ object Brushes extends DefaultBrushes {
       "brown" ->0xFF964b00,
       "" -> 0X000000,
     )
+
+  def colourName(colour: Int): String = {
+    var result = f"0X${colour}%08X"
+    for { (name, col) <- namedColours if col==colour} result=name
+    result
+  }
 
   def apply(specification: String): Brush = try {
     Parse(specification)

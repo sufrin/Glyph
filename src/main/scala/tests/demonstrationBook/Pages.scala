@@ -2,6 +2,9 @@ package org.sufrin.glyph
 package tests.demonstrationBook
 import styled.BookSheet
 
+import org.sufrin.glyph.Brushes.{green, red}
+import org.sufrin.glyph.styles.decoration.Decoration
+
 object Pages extends Application  {
   import styles._
 
@@ -9,9 +12,14 @@ object Pages extends Application  {
    * Default sheet
    */
   val LocalSheet: StyleSheet = StyleSheet()
+  val decor: Decoration = {
+    import styles.decoration._
+    // Blurred(red, green, 10, 5)
+    RoundFramed(fg=Brushes("blue.6.round"), bg=Brushes("cornflower").alpha(0.2), enlarge=0.25f, radius=0.25f)
+  }
 
   val interfaceStyle: StyleSheet = LocalSheet.copy(
-    buttonDecoration=styles.decoration.Framed(fg=Brushes.blue),//blur=5, spread=5, delta=5),
+    buttonDecoration=decor,
     buttonFontSize = 20,
     labelFontSize = 20,
     textFontSize = 20,
