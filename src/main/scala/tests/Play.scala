@@ -18,7 +18,8 @@ import org.sufrin.glyph.styles.decoration.{unDecorated, Framed}
 import org.sufrin.glyph.unstyled.reactive.{Enterable, Reaction}
 import org.sufrin.glyph.unstyled.static.{FilledPolygon, INVISIBLE}
 import org.sufrin.glyph.Brush.{BUTT, ROUND, SQUARE}
-import org.sufrin.glyph.NaturalSize.{Col, Grid, Row}
+import org.sufrin.glyph.Colour.HSV
+import org.sufrin.glyph.NaturalSize.{transparent, Col, Grid, Row}
 import org.sufrin.glyph.NaturalSize.Grid.Table
 
 import java.io.File
@@ -639,7 +640,6 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
     def setNewBrush(specification: String): Unit = {
       if (specification.nonEmpty) {
-        println(specification)
         try {
           val brush = Brushes(specification)
           newBrush.copy(brush)
@@ -671,6 +671,12 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
         button
     }
 
+   def HintedUnstyledButton(label: String, hint: String="", fg: Brush, bg: Brush)(action: Reaction): Glyph = {
+      val button = unstyled.reactive.FramedButton(label, fg, bg)(action)
+      if (hint.nonEmpty)  HintManager(button.asInstanceOf[Enterable], 5, ()=>hint)(hintSheet)
+      button
+    }
+
     def DynamicHintedButton(label: String, hint: ()=>String)(action: Reaction): Glyph = {
       val button = styled.TextButton(label)(action)
       HintManager(button.asInstanceOf[Enterable], 5, hint, false)(hintSheet)
@@ -691,15 +697,39 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
     lazy val colourWindow = {
       val menu: StyleSheet = sheet.copy(buttonDecoration = Framed(black), fontScale=0.8f)
       def brushFeedback(): Unit = setNewBrush(protoBrush.copy())
-      @inline def butStyle(name: String) =
-        sheet.copy(buttonDecoration=unDecorated, buttonBackgroundBrush = Brushes(name))
-      val buts = for { (name, col) <- Brushes.namedColours if col!=0 } yield
-          HintedButton("    ", name){
+      val colButs = for { (name, col) <- Brushes.namedColours if col!=0 } yield
+          HintedUnstyledButton("  ", name, fg=transparent, bg=Brushes(name)){
             _ =>
               protoBrush.setColor(col)
               brushFeedback()
-          }(butStyle(name))
-      val colourGrid = Grid(fg=black).table(width=4)(buts.toSeq)
+      }
+      val hueButs = for { i <- 0 until 24  } yield {
+        HintedUnstyledButton("  ", s"${i*15}", fg=transparent, bg=Brushes(s"hsv(${i*15}).fill")){
+          _ =>
+            val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
+            protoBrush.setColor(HSV(i*15, s, v).argb)
+            brushFeedback()
+        }
+      }
+      val satButs =
+        for { i<-0 to 10 } yield  HintedUnstyledButton(" ", s"${i*0.1}", fg=transparent, bg=Brushes(s"hsv(0, ${i*0.1}, 1).fill")){
+          _ =>
+            val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
+            protoBrush.setColor(HSV(h, i*0.1, v).argb)
+            brushFeedback()
+        }
+      val briButs =
+        for { i<-0 to 10 } yield  HintedUnstyledButton(" ", s"${i*0.1}", fg=transparent, bg=Brushes(s"hsv(0, 1, ${i*0.1}).fill")){
+          _ =>
+            val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
+            protoBrush.setColor(HSV(h, s, i*0.1).argb)
+            brushFeedback()
+        }
+
+      val colourGrid = Grid(fg=black).table(width=12)(colButs.toList)
+      val hueGrid = Grid(fg=black).table(width=12)(hueButs.toList)
+      val satGrid = Grid(fg=black).table(width=11)(satButs.toList)
+      val briGrid = Grid(fg=black).table(width=11)(briButs.toList)
       val UI = Col(align=Center, bg=lightGrey)(
         brushField.framed(), ex,
         colourGrid, ex,
@@ -730,11 +760,11 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
               brushFeedback()
           }(menu), ex,
           brushFieldChooserMenu("Dash", "()", "--", "-.", ".-", "..", "~", "~~", "~~~~", "~~~~"){
-            def w = protoBrush.strokeWidth
+            def w = 1f
             v => v match {
-                case "--" => protoBrush.Effect.dashed(10*w, 10*w)
-                case "-." => protoBrush.Effect.dashed(10*w, 5*w)
-                case ".-" => protoBrush.Effect.dashed(5*w, 10*w)
+                case "--" => protoBrush.Effect.dashed(20*w, 20*w)
+                case "-." => protoBrush.Effect.dashed(20*w, 10*w)
+                case ".-" => protoBrush.Effect.dashed(10*w, 20*w)
                 case ".." => protoBrush.Effect.dashed(5*w, 5*w)
                 case "~" => protoBrush.Effect.sliced(5, 3)
                 case "~~" => protoBrush.Effect.sliced(10, 3)
@@ -751,10 +781,19 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
               }
               brushFeedback()
           }(menu), ex,
+          brushFieldChooserMenu("α", "0.1", "0.2", "0.3", "0.4", "0.5"){
+            v =>
+              protoBrush.alpha(v.toFloat)
+              brushFeedback()
+          }(menu)
         ),
         ex,
-        rectangle(300, 60)(protoBrush),
-        ex,ex,ex
+        (rectangle(300, 60)(protoBrush) ~~~ rectangle(360,90)(transparent)).framed(black),
+        ex,
+        hueGrid, ex,
+        satGrid, ex,
+        briGrid, ex,
+        ex,ex
       )
       styled.windowdialogues.Dialogue.FLASH(UI, title="Colour Palette").East(drawingBoard)
     }

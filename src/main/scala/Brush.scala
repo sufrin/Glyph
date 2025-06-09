@@ -112,7 +112,7 @@ class Brush(var name: String, var description: String="") extends Paint {
            }
     val anti = if (this.antiAliased) "" else ".antialias(false)"
     val dither = if (this.dithered) ".dither" else ""
-    val alpha = if (this.alpha==1) "" else s".alpha(${getAlpha})"
+    val alpha = if (this.alpha==1) "" else s".alpha(${getAlphaf})"
    s"$id.$width$cap$mode$anti$dither$alpha$effect"
   }
 

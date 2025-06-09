@@ -3,6 +3,7 @@ package glyph
 
 import org.sufrin.glyph.NumberUtils.hexToInt
 import org.sufrin.glyph.unstyled.Text
+import org.sufrin.glyph.Colour.HSV
 import org.sufrin.glyph.GlyphShape.{FILL, STROKE, STROKE_AND_FILL}
 import org.sufrin.glyph.GlyphTypes.Scalar
 
@@ -96,7 +97,7 @@ object Brushes extends DefaultBrushes {
     override def toString: String = f"0x$color%6x"
   }
 
-  lazy val Chunks = new scala.util.matching.Regex("(([.]?)(([0-9a-zA-Z&~-])+([(][0-9.,]+[)])?))")
+  lazy val Chunks = new scala.util.matching.Regex("(([.]?)(([0-9a-zA-Z&~+-])+([(][0-9.,]+[)])?))")
 
   def Parse(spec: String): Brush = {
     def Lex(state: Brush, spec: String): List[Lex] = {
@@ -104,8 +105,8 @@ object Brushes extends DefaultBrushes {
       explode.map {
         case v if v matches("[0-9]+([.][0-9]*)?") => ScalarValue(v.toFloat)
         case s"0x${hex}" if hex.matches("([0-9a-fA-F])+") => Hexadecimal(hexToInt(hex))
-        case v if v matches("[a-zA-Z0-9&~-]+") => Id(v)
-        case s"$id($params)" if id matches ("[a-zA-Z0-9&~-]+") =>
+        case v if v matches("[a-zA-Z0-9&~+-]+") => Id(v)
+        case s"$id($params)" if id matches ("[a-zA-Z0-9&~+-]+") =>
           val scalars = params.split(',').toSeq.map(_.toFloat).toList
           WithParameters(id, scalars)
         case other => throw new NonBrush(s"Lexical-error at $other in $spec", state)
@@ -113,6 +114,15 @@ object Brushes extends DefaultBrushes {
   }
   def eval(b: Brush, l: List[Lex]): Brush = {
     l match {
+      case WithParameters("hsv", List(h,s,v)) :: rest=>
+        b.color(HSV(h,s,v).argb)
+        eval(b, rest)
+      case WithParameters("hsv", List(h,s)) :: rest=>
+        b.color(HSV(h,s,1.0).argb)
+        eval(b, rest)
+      case WithParameters("hsv", List(h)) :: rest=>
+        b.color(HSV(h,1.0,1.0).argb)
+        eval(b, rest)
       case Hexadecimal(colour)::rest =>
         b.color(colour)
         eval(b, rest)
@@ -199,7 +209,7 @@ object Brushes extends DefaultBrushes {
   }
 
     val state = new Brush(name = "", description = "")
-    eval(state, Lex(state, spec.toLowerCase))
+    eval(state, Lex(state, spec.toLowerCase.replace(" ","")))
   }
 
   def main(args: Array[String]): Unit = {
@@ -211,29 +221,43 @@ object Brushes extends DefaultBrushes {
 
   lazy val namedColours: collection.mutable.Map[String, Int] = collection.mutable.LinkedHashMap[String, Int](
       "red" ->  0xFFFF0000,
+      "rose" -> 0xFFFE28A2,
+      "pink" -> 0xFFFFC0CB,
+      "purple" -> 0xFFA020F0,
       "green" ->  0xFF00FF00,
       "blue" -> 0XFF0000FF,
-      "white" -> 0XFFFFFFFF,
-      "grey1" -> 0XFFBBBBBB,
-      "grey2" -> 0XFFCDCDCD,
-      "grey3" -> 0XFFC5C5C5,
-      "grey4" -> 0XFFC2C2C2,
-      "lightgrey" -> 0XFFBBBBBB,
-      "darkgrey" -> 0XFF777777,
-      "black" -> 0XFF000000,
-      "yellow" -> 0XFFFFEF00,
-      "transparent" -> 0X000000,
-      "corn" -> 0xFFFBEC5D,
+      "persianblue" -> 0xFF1C39BB,
       "cornflower" -> 0xFF6495ED,
+      "periwinkle" -> 0xFFCCCCFF,
+      "yellow" -> 0XFFFFFF00,
+      "yellow+pantone" -> 0xFFFEDF00,
+      "yellow+ryb" -> 0xFFFEFE33,
       "fuchsia" -> 0xFFFE4164,
-      "orange" -> 0xFFFF5349,
+      "orange" -> 0xFFFFAE42,
       "brown" ->0xFF964b00,
+      "black+warm" -> 0XFF004242,
+      "black" -> 0XFF000000,
+      "white" -> 0XFFFFFFFF,
+      "grey1" -> 0XFFaaaaaa,
+      "grey2" -> 0XFF999999,
+      "grey3" -> 0XFF888888,
+      "grey4" -> 0XFF777777,
+      "darkgrey" -> 0XFF777777,
+      "lightgrey" -> 0XFFBBBBBB,
+      "transparent" -> 0X000000,
       "" -> 0X000000,
     )
 
   def colourName(colour: Int): String = {
-    var result = f"0X${colour}%08X"
+    import Colour._
+    var result = "" // f"0X${colour}%08X"
     for { (name, col) <- namedColours if col==colour} result=name
+
+    if (result=="") {
+      val HSV(h,s,v) = rgbToHSV(intToRGB(colour))
+      //result=f"0X${colour}%08X"
+      result=f"hsv(${h.toInt}%d,${s}%1.1f,${v}%1.1f)"
+    }
     result
   }
 
