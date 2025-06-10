@@ -40,7 +40,7 @@ class ShowingBaseline(glyph: Glyph, enable: Variable[Boolean], val fg: Brush) ex
 
 object ShowingBaseline {
   /** Default colour */
-  var fg: Brush = Brush("Showingbaseline.fg") color 0xFF000000 strokeWidth 1.0f
+  var fg: Brush = Brush("black.1", "Showingbaseline.fg")
   /** Boolean Variable controlling visibility of ShowingBaseline frames */
   val enabled: Variable[Boolean] = new Variable(true)
   def apply(fg: Brush=fg, g: Glyph): Glyph = new ShowingBaseline(g, enabled, fg)

@@ -18,7 +18,7 @@ object Brush {
     p match {
       case b: Brush => b
       case _        =>
-        new Brush (f"of(0X${p.getColor}%08X)")
+        new Brush ("")
         .color (p.getColor)
         .strokeWidth (p.getStrokeWidth)
         .strokeCap (p.getStrokeCap)
@@ -32,25 +32,11 @@ object Brush {
     }
   }
 
-  def apply(name: String="", description: String=""): Brush = {
-      (name, description) match {
-        case ("","") => new Brush("", "").color(0xFFaaaaaa).strokeWidth(10)
-        case (_, "") => Brushes(name).name(name)
-        case (_, _)  => Brushes(description).name(name)
-      }
-  }
-
-  def apply(name: String, brush: Brush): Brush = {
-      brush.copy(name=name)
-  }
-
-  def ofString(descriptor: String): Brush = Brushes(descriptor)
+  def apply(specification: String="", tag: String=""): Brush = Brushes(specification)
 
   val ROUND:  PaintStrokeCap  = PaintStrokeCap.ROUND
   val SQUARE: PaintStrokeCap  = PaintStrokeCap.SQUARE
   val BUTT:   PaintStrokeCap  = PaintStrokeCap.BUTT
-
-  val includeDetail: Boolean = true
 }
 
 /**
@@ -58,15 +44,15 @@ object Brush {
  * when a `Glyph` is rendered on it. This class is a subclass of `io.github.humbleui.skija.Paint`, but
  * provides an intelligible and efficient API for building, modifying, and deriving paint-potent objects.
  *
- * The standard notation for constructing a named `Brush` with features `(name="...", f1=v1, f2=v2, ...)` is:
+ * The standard notation for constructing a `Brush` with features `(f1=v1, f2=v2, ...)` is:
  * {{{
- *   Brush("name")(f1=v1, f2=v2, ...)
+ *   Brush()(f1=v1, f2=v2, ...)
  * }}}
  *
  * Features not mentioned in the parameter list take default values -- usually "neutral" or "ignorable", as described in the `Paint`.
  * Example: a `ROUND` red brush of width 30.
  * {{{
- *   val rre = Brush("roundredexample")(color=0XFFFF0000, cap=Brush.ROUND, width=30f)
+ *   val rre = Brush()(color=0XFFFF0000, cap=Brush.ROUND, width=30f)
  * }}}
  *
  * A `Brush` is mutable: its individual attributes can be changed dynamically by invoking one of the
@@ -80,13 +66,12 @@ object Brush {
  * As far as possible we have named brush attributes ("getters"), brush mutation methods ("setters"), and brush construction and
  * copying parameters systematically. They won't necessarily have the same names as their counterparts within `Paint`.
  *
- * @param name the name of the brush: this can be changed, but it's not advisable to do so except
- *             to contribute to a systematic debugging discipline.
+ * @param tag basis for a way of identifying the role of the brush -- intended for use when debugging systematically
  *
  * We strongly advise against using "pure" `Paint` or its methods in a `Glyph` application. Nothing will
  * run faster, and debugging will be considerably harder.
  */
-class Brush(var name: String, var description: String="") extends Paint {
+class Brush(val specification: String, var tag: String="") extends Paint {
 
   import GlyphTypes.ImageFilter
 
@@ -113,11 +98,12 @@ class Brush(var name: String, var description: String="") extends Paint {
     val anti = if (this.antiAliased) "" else ".antialias(false)"
     val dither = if (this.dithered) ".dither" else ""
     val alpha = if (this.alpha==1) "" else s".alpha(${getAlphaf})"
-   s"$id.$width$cap$mode$anti$dither$alpha$effect"
+    val tagged = if (tag.isEmpty) "" else s".tag($tag)"
+   s"$id.$width$cap$mode$anti$dither$alpha$effect$tagged"
   }
 
   /** A copy of `this`` brush with changed attributes as specified. */
-  def apply(name: String        = this.name,
+  def apply(specification: String = this.specification,
             color: Int          = this.color,
             width: Float        = this.strokeWidth,
             cap: PaintStrokeCap = this.strokeCap,
@@ -130,10 +116,10 @@ class Brush(var name: String, var description: String="") extends Paint {
             filter: ImageFilter    = this.getImageFilter,
             shader: Shader         = this.shader,
             blendMode: BlendMode   = this.getBlendMode,
-            description: String    = this.description,
-            effect: String         = this.effect
+            effect: String         = this.effect,
+            tag: String            = this.tag
            ): Brush =
-    Brush(name, description)
+    Brush()
       . col(color)
       . strokeWidth(width)
       . strokeCap(cap)
@@ -147,10 +133,11 @@ class Brush(var name: String, var description: String="") extends Paint {
       . shader(shader)
       . blendMode(blendMode)
       . effect(effect)
+      . tagged(tag)
 
-  /** A copy of this brush with the same name. */
+  /** An exact copy of this brush */
   def copy: Brush =
-    Brush(name, description)
+    new Brush(specification)
       .color(color)
       .strokeWidth(strokeWidth)
       .strokeCap(strokeCap)
@@ -164,9 +151,10 @@ class Brush(var name: String, var description: String="") extends Paint {
       .shader(getShader)
       .blendMode(getBlendMode)
       .effect(effect)
+      .tagged(tag)
 
   /** Copy the properties of `that: Brush` to `this: Brush` */
-  def copy(that: Brush): Brush = {
+  def copyFrom(that: Brush): Brush = {
       color(that.color)
       strokeWidth(that.strokeWidth)
       strokeCap(that.strokeCap)
@@ -180,7 +168,12 @@ class Brush(var name: String, var description: String="") extends Paint {
       shader(that.getShader)
       blendMode(that.getBlendMode)
       effect(that.effect)
+      tagged(that.tag)
       this
+  }
+
+  @inline def tagged(tag: String): Brush = {
+    this.tag = tag; this
   }
 
   /** Mutation */
@@ -194,11 +187,6 @@ class Brush(var name: String, var description: String="") extends Paint {
 
   @inline def blendMode: BlendMode = getBlendMode
 
-  /** Mutation */
-  @inline def name(newName: String): Brush = {
-    name = newName
-    this
-  }
 
   /** Mutation */
   @inline def effect(newEffect: String): Brush = {

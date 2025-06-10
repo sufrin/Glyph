@@ -86,11 +86,14 @@ object Brushes extends DefaultBrushes {
   case class WithParameters(id: String, params: Seq[Scalar]) extends Lex {
     override def toString: String = s"$id(${params.mkString(",")})"
   }
+  case class WithParameter(id: String, param: String) extends Lex {
+    override def toString: String = s"$id($param)"
+  }
   case class Hexadecimal(color: Int) extends Lex {
     override def toString: String = f"0x$color%6x"
   }
 
-  lazy val Chunks = new scala.util.matching.Regex("(([.]?)(([0-9a-zA-Z&~+-])+([(][0-9.,]+[)])?))")
+  lazy val Chunks = new scala.util.matching.Regex("(([.]?)(([0-9a-zA-Z&~+-])+([(]([a-z]+)[)]|[(][0-9.,]+[)])?))")
 
   def Parse(spec: String): Brush = {
     def Lex(state: Brush, spec: String): List[Lex] = {
@@ -99,109 +102,114 @@ object Brushes extends DefaultBrushes {
         case v if v matches("[0-9]+([.][0-9]*)?") => ScalarValue(v.toFloat)
         case s"0x${hex}" if hex.matches("([0-9a-fA-F])+") => Hexadecimal(hexToInt(hex))
         case v if v matches("[a-zA-Z0-9&~+-]+") => Id(v)
-        case s"$id($params)" if id matches ("[a-zA-Z0-9&~+-]+") =>
+        case s"$id($param)" if id.matches ("[a-zA-Z0-9&~+-]+") && param.matches("[a-z]+") =>
+           WithParameter(id, param)
+        case s"$id($params)" if id.matches ("[a-zA-Z0-9&~+-]+")  =>
           val scalars = params.split(',').toSeq.map(_.toFloat).toList
           WithParameters(id, scalars)
         case other => throw new NonBrush(s"Lexical-error at $other in $spec", state)
       }
   }
-  def eval(b: Brush, l: List[Lex]): Brush = {
-    l match {
-      case WithParameters("hsv", List(h,s,v)) :: rest=>
+  def eval(b: Brush, symbols: List[Lex]): Brush = {
+    for { symbol <- symbols }
+    symbol match {
+      case WithParameters("hsv", List(h,s,v)) =>
         b.color(HSV(h,s,v).argb)
-        eval(b, rest)
-      case WithParameters("hsv", List(h,s)) :: rest=>
+        
+      case WithParameters("hsv", List(h,s)) =>
         b.color(HSV(h,s,1.0).argb)
-        eval(b, rest)
-      case WithParameters("hsv", List(h)) :: rest=>
+        
+      case WithParameters("hsv", List(h)) =>
         b.color(HSV(h,1.0,1.0).argb)
-        eval(b, rest)
-      case Hexadecimal(colour)::rest =>
+        
+      case Hexadecimal(colour) =>
         b.color(colour)
-        eval(b, rest)
-      case ScalarValue(width)::rest =>
+        
+      case ScalarValue(width) =>
         b.strokeWidth(width)
-        eval(b, rest)
-      case Id("fill")::rest =>
+        
+      case Id("fill") =>
         b.mode(FILL)
-        eval(b, rest)
-      case Id("stroke")::rest =>
+        
+      case Id("stroke") =>
         b.mode(STROKE)
-        eval(b, rest)
-      case Id("stroke&fill")::rest =>
+        
+      case Id("stroke&fill") =>
         b.mode(STROKE_AND_FILL)
-        eval(b, rest)
-      case Id("round")::rest =>
+        
+      case Id("round") =>
         b.cap(ROUND)
-        eval(b, rest)
-      case Id("butt")::rest =>
+        
+      case Id("butt") =>
         b.cap(BUTT)
-        eval(b, rest)
-      case Id("square")::rest =>
+        
+      case Id("square") =>
         b.cap(SQUARE)
-        eval(b, rest)
-      case Id("antialias")::rest =>
+        
+      case Id("antialias") =>
         b.antiAlias(true)
-        eval(b, rest)
-      case Id("dither")::rest =>
+        
+      case Id("dither") =>
         b.dither(true)
-        eval(b, rest)
-      case WithParameters("alpha", List(n))::rest =>
+        
+      case WithParameters("alpha", List(n)) =>
         b.alpha(n)
-        eval(b, rest)
-      case Id("--")::rest =>
+        
+      case Id("--") =>
         b.Effect.dashed(10*b.strokeWidth, 10*b.strokeWidth)
-        eval(b, rest)
-      case Id("-.")::rest =>
+        
+      case Id("-.") =>
         b.Effect.dashed(10*b.strokeWidth, 5*b.strokeWidth)
-        eval(b, rest)
-      case Id(".-")::rest =>
+        
+      case Id(".-") =>
         b.Effect.dashed(5*b.strokeWidth, 10*b.strokeWidth)
-        eval(b, rest)
-      case Id("..")::rest =>
+        
+      case Id("..") =>
         b.Effect.dashed(5*b.strokeWidth, 5*b.strokeWidth)
-        eval(b, rest)
-      case WithParameters("dashed", List(n))::rest =>
+        
+      case WithParameters("dashed", List(n)) =>
         b.Effect.dashed(n, n)
-        eval(b, rest)
-      case WithParameters("dashed", List(m, n))::rest =>
+        
+      case WithParameters("dashed", List(m, n)) =>
         b.Effect.dashed(m, n)
-        eval(b, rest)
-      case WithParameters("dashed", List(m, n, o, p))::rest =>
+        
+      case WithParameters("dashed", List(m, n, o, p)) =>
         b.Effect.dashed(m, n, o, p)
-        eval(b, rest)
-      case WithParameters("sliced", List(m, n))::rest =>
+        
+      case WithParameters("sliced", List(m, n)) =>
         b.Effect.sliced(m, n)
-        eval(b, rest)
-      case WithParameters("rounded", List(radius))::rest =>
+        
+      case WithParameters("rounded", List(radius)) =>
         b.Effect.rounded(radius)
-        eval(b, rest)
-      case WithParameters("blurred", List(blur))::rest =>
+        
+      case WithParameters("blurred", List(blur)) =>
         b.Effect.blurred(blur)
-        eval(b, rest)
-      case WithParameters("blurred", List(blur, delta))::rest =>
+        
+      case WithParameters("blurred", List(blur, delta)) =>
         b.Effect.blurred(blur, delta, delta)
-        eval(b, rest)
-      case WithParameters("blurred", List(blur, dx, dy))::rest =>
+        
+      case WithParameters("blurred", List(blur, dx, dy)) =>
         b.Effect.blurred(blur, dx, dy)
-        eval(b, rest)
-      case Id(name)::rest =>
+        
+      case WithParameter("tag", tag) =>
+        b.tagged(tag)
+        
+      case Id(name) =>
         namedColours.get(name) match {
           case Some(colour) =>
-            b.name=name
             b.color(colour)
-            eval(b, rest)
+            
           case None =>
             throw new NonBrush(s"Brush notation error: $name in $spec", b)
         }
-      case Nil =>
+
       case other =>
-        throw new NonBrush(s"Brush notation error ${other.mkString(".")} in $spec", b)
+        throw new NonBrush(s"Brush notation error ${other} in $spec", b)
     }
     b
   }
 
-    val state = new Brush(name = "", description = "")
+    val state = new Brush("")
     eval(state, Lex(state, spec.toLowerCase.replace(" ","")))
   }
 

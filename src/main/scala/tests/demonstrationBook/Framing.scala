@@ -201,6 +201,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
     }
 
   Page("GlyphXML", "") {
+    // TODO: decoration implemntations for round framed need checking
     translation("star") = { style => PolygonLibrary.filledStargon(9, fg=blue(width=4)).scaled(.5f) }
     <div width="70em" >
       <col align="center">
@@ -221,14 +222,16 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       <rows foreground="darkGrey.3" padX="2em" padY="2em" cols="3">
           <glyph gid="star"/>
           <glyph gid="star" scaled="0.5"/>
-          <glyph gid="star" frame="red.1.~~(5,5)" />
-          <glyph gid="star" decorate="enlarge;edge;frame" frame="red.5.~~(5,5).stroke" radius="0.1" enlarged="25px"/>
+          <glyph gid="star" frame="red.2.sliced(3,2)" />
+
+          <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20.dashed(10,10)"  enlarged="25px"/>
           <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="0.3" enlarged="25px" edge="black.3"/>
           <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="0.2" enlarged="25px" edge="black.3">
             <glyph gid="star"/>
             <glyph gid="star"/>
           </div>
-          <glyph gid="star" decorate="enlarge;edge;frame" frame="red.5.~~(5,5).fill" radius="3" enlarged="25px"/>
+
+          <glyph gid="star" decorate="enlarge;frame" frame="red.5.stroke.sliced(5,5)" radius="3" enlarged="25px"/>
           <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="3" enlarged="25px" edge="black.3"/>
           <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="3" enlarged="25px" edge="black.3">
             <glyph gid="star"/>
@@ -239,23 +242,23 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
       <div normalizePCData="true" fontFamily="Courier" fontScale="0.9" textForeground="black" textBackground="transparent" background="lightGrey">
       <![CDATA[
            <rows foreground="darkGrey.3" padX="2em" padY="2em" cols="3">
+              <glyph gid="star"/>
+              <glyph gid="star" scaled="0.5"/>
+              <glyph gid="star" frame="red.2.sliced(3,2)" />
+
+              <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20.dashed(10,10)"  enlarged="25px"/>
+              <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="0.3" enlarged="25px" edge="black.3"/>
+              <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="0.2" enlarged="25px" edge="black.3">
                 <glyph gid="star"/>
-                <glyph gid="star" scaled="0.5"/>
-                <glyph gid="star" frame="red.1.~~(5,5)" />
+                <glyph gid="star"/>
+              </div>
 
-                <glyph gid="star" decorate="enlarge;edge;frame" frame="red.5.~~(5,5).stroke" radius="0.1" enlarged="25px"/>
-                <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="0.3" enlarged="25px" edge="black.3"/>
-                <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="3" enlarged="25px" edge="black.3">
-                  <glyph gid="star"/>
-                  <glyph gid="star"/>
-                </div>
-
-                <glyph gid="star" decorate="enlarge;edge;frame" frame="red.5.~~(5,5).fill" radius="3" enlarged="25px"/>
-                <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="3" enlarged="25px" edge="black.3"/>
-                <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="3" enlarged="25px" edge="black.3">
-                  <glyph gid="star"/>
-                  <glyph gid="star"/>
-                </div>
+              <glyph gid="star" decorate="enlarge;frame" frame="red.5.fill.sliced(5,5)" radius="3" enlarged="25px"/>
+              <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="3" enlarged="25px" edge="black.3"/>
+              <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="3" enlarged="25px" edge="black.3">
+                <glyph gid="star"/>
+                <glyph gid="star"/>
+              </div>
           </rows>
       ]]>
       </div>

@@ -637,8 +637,8 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       if (specification.nonEmpty) {
         try {
           val brush = Brushes.Parse(specification)
-          newBrush.copy(brush)
-          protoBrush.copy(brush)
+          newBrush.copyFrom(brush)
+          protoBrush.copyFrom(brush)
           showNewBrush()
         }
         catch {

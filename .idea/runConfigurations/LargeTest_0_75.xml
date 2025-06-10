@@ -2,7 +2,6 @@
   <configuration default="false" name="LargeTest 0.75" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="org.sufrin.glyph.tests.LargeTest" />
     <module name="Glyph" />
-    <option name="PROGRAM_PARAMETERS" value="-screen=p -scale=0.75" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

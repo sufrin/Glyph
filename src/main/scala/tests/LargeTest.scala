@@ -11,8 +11,10 @@ import unstyled.{reactive, static, BooleanButton, Text}
 
 import io.github.humbleui.jwm.EventKey
 import io.github.humbleui.skija.BlendMode
+import org.sufrin.glyph.NaturalSize.Col
+import org.sufrin.glyph.tests.Example2.font
 
-trait LargeTestGUI {
+object LargeTestGUI {
 
   import unstyled.dynamic.OneOf
   import GlyphTransforms.Framed
@@ -848,7 +850,7 @@ trait LargeTestGUI {
     )
   }
   val bb: Brush = Brush("blue")(color = 0xff0000ff, width = 1.0f, cap = ROUND)
-  val cc: Brush = bb(width = 15f, name = "wide blue")
+  val cc: Brush = bb(width = 15f, tag = "wide blue")
   private val scene16 = {
 
     val starSize = polyStar7(black).diagonal
@@ -961,9 +963,9 @@ trait LargeTestGUI {
       implicit val sheet: StyleSheet = StyleSheet()
       import sheet.ex
 
-      val upColor     = yellowHuge(name = "yellow", width = 0)
-      val downColor   = red(name = "red", width = 0)
-      val hoverColor  = green(name = "green", width = 0)
+      val upColor     = yellowHuge(width = 0)
+      val downColor   = red(width = 0)
+      val hoverColor  = green(width = 0)
       val noEffect    = hoverColor.pathEffect
       val wibEffect    = wibbly(green).pathEffect
 
@@ -1199,7 +1201,7 @@ trait LargeTestGUI {
   }
 
 
-  private val helpGUI = Framed(whiteFrame)(
+  private val helpGUI =
     Col(align=Center)(
     SimpleParagraphs(ems=70, smallFont, blue)(
       """[C] This is a test of some basic Glyph  components.
@@ -1218,7 +1220,7 @@ trait LargeTestGUI {
         |
         |[*] Elsewhere there are demonstrations of some of the derived GUI components, such as styled texts, menus, and popups.""".stripMargin
     )
-  ))
+  )
 
   private val scene0 = {
     Col(align=Center)(helpGUI)
@@ -1261,7 +1263,9 @@ trait LargeTestGUI {
       Row(align=Mid, skip=10)(Label("Window resizing enabled "), Resizing.enableButton),
       popupAnchor
     )
-  private val oneScene = false
+
+  private val oneScene = true
+
   val root: Glyph =
     (oneScene match {
       case true => Col(align=Center)(scene0)
@@ -1315,20 +1319,24 @@ trait LargeTestGUI {
 }
 
 object LargeTest extends Application {
-  override val defaultIconPath: Option[String] = Some("./parrot.png")
+  override val defaultIconPath: Option[String] = Some("ICONS/parrot.png")
 
   val title      = "LargeTest"
-  val theGUI     = new LargeTestGUI {}
-  val GUI: Glyph = theGUI.root
+    locally {
+      println("Starting")
+    }
 
+  val GUI: Glyph = Col(align=Center)(
+    LargeTestGUI.root
+  )
 
   override def handleUnfocussedKey(event: EventKey): Unit = {
     if (event.isPressed) {
       import io.github.humbleui.jwm.Key._ // this is inelegant, but there's no straightforward way to import all keys into GlyphTypes then re-export them
       event.getKey match {
-        case LEFT  => theGUI.oneOf.prev()
-        case RIGHT => theGUI.oneOf.next()
-        case _ =>
+        case LEFT  => LargeTestGUI.oneOf.prev()
+        case RIGHT => LargeTestGUI.oneOf.next()
+        case key => println(key)
       }
     }
   }

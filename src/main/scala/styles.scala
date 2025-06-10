@@ -134,7 +134,7 @@ package styles
      * {{{ enlarge>1 }}}
      * otherwise it is {{{enlarge * (the glyph's width min the glyph's height)}}}
      */
-    case class Blurred(fg: Brush=Brushes.black, bg: Brush = Brushes.transparent, blur: Scalar, spread: Scalar, delta: Scalar = 0f, enlarge: Scalar=0f) extends Decoration {
+    case class Blurred(fg: Brush=Brushes.black, bg: Brush = Brushes.transparent, blur: Scalar=10, spread: Scalar=10, delta: Scalar = 0f, enlarge: Scalar=0f) extends Decoration {
 
       def decorate(glyph: Glyph): Glyph = {
         val enlargement = if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge

@@ -110,12 +110,12 @@ object ResizeAndSplitTest extends Application {
       <p>
         All De Rerum Natura bases are mule_sing<row><span textForeground="red" fontScale="0.5">(*)</span></row> free, and eth_ical_ly and sus_tain_ably produced.
       </p>
-      <fill width="1*container.width" foreground="red/1~5~5"  height="0.7ex"/>
+      <fill width="1*container.width" foreground="red.sliced(1,5)"  height="0.7ex"/>
       <p fontScale="0.7" labelForeground="red" textForeground="red" hang="* ">
         Mulesing is the removal of strips of wool-bearing skin from around the breech of a
         sheep to prevent the parasitic infection flystrike. The wool around the buttocks can retain feces and urine, which attracts flies.
       </p>
-      <fill width="1*container.width" foreground="red/1~5~5"  height="0.7ex"/>
+      <fill width="1*container.width" foreground="red.sliced(1,5)"  height="0.7ex"/>
       <div align="center" fontSkip="0ex">
       <p fontScale="0.4" >{s"container: ${style.containerDiagonal}"}</p>
       <p fontScale="0.4" >{s"window: ${style.windowDiagonal}"}</p>

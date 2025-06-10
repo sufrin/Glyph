@@ -21,8 +21,8 @@ trait Example2Interface {
     Label("A simple label", font, fg=white, bg=labelBackground) enlarged(20),
     spacer,
     Row(skip=10)(
-        TextButton("make it blue") { _ => labelBackground.color(blue.color) }.edged(buttonFrame),
-        TextButton("make it red")  { _ => labelBackground.color(red.color) }.edged(buttonFrame)
+        TextButton("make it blue", bg=invisible) { _ => labelBackground.color(blue.color) }.edged(buttonFrame),
+        TextButton("make it red", bg=invisible)  { _ => labelBackground.color(red.color) }.edged(buttonFrame)
     )
   ).enlarged(20)
 }

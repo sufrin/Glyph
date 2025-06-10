@@ -71,7 +71,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
       </div>,
       anchor,
       Grid(width=3, padx=10, pady=5).rows(
-        framed("darkGrey.2.--", "transparent", "transparent"), framed("darkGrey.2.~~(5,2)", "transparent", "transparent"), framed("darkGrey.30.square", "transparent", "yellow"),
+        framed("darkGrey.2.--", "transparent", "transparent"), framed("darkGrey.2.sliced(5,2)", "transparent", "transparent"), framed("darkGrey.30.square", "transparent", "yellow"),
         framed("darkGrey.10.round", "transparent") ,  framed("darkGrey.20.round", "yellow") ,  framed("darkGrey.30.round", "transparent"),
         framed("darkGrey.10.square", "transparent") ,  framed("darkGrey.20.square", "yellow") ,  framed("darkGrey.30.square", "transparent"),
 

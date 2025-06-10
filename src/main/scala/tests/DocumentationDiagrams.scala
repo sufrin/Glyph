@@ -17,19 +17,19 @@ object DocumentationDiagrams {
   import NaturalSize.Col
   import PolygonLibrary._
 
-  val yellow   = Brush("yellow") color (0xFFffff00) strokeWidth (1.0f) strokeCap(ROUND)
-  val green    = Brush("green") color (0xFF00ff00) strokeWidth (5.0f) strokeCap(ROUND)
-  val grey     = Brush("grey") color (0xCC000000) strokeWidth (1.0f)
-  val black    = Brush("black") color (0xFF000000) strokeWidth (1.0f) antiAlias(false)
-  val blue     = Brush("blue") color (0xFF0000ff) strokeWidth (1.0f) strokeCap(ROUND)
-  val red      = Brush("red") color (0xFFff0000) strokeWidth (1.0f) strokeCap(ROUND)
-  val white    = Brush("white") color (0xFFffffff) strokeWidth (1.0f) strokeCap(ROUND)
-  val transparent  = Brush("transparent") color (0)
+  val yellow   = Brush("yellow.1")
+  val green    = Brush("green.5.round")
+  val grey     = Brush("lightgrey.1")
+  val black    = Brush("black.1")
+  val blue     = Brush("blue.1.round")
+  val red      = Brush("red.1.round")
+  val white    = Brush("white.1.round")
+  val transparent  = Brush("transparent")
 
   object Wide {
-    val blue  = Brush("Wide.blue") color (0xFF0000ff) strokeWidth (15.0f) strokeCap(SQUARE)
-    val red   = Brush("Wide.red") color (0xFFff0000) strokeWidth (15.0f) strokeCap(SQUARE)
-    val green = Brush("Wide.green") color (0xFF00ff00) strokeWidth (15.0f) strokeCap(SQUARE)
+    val blue  = Brush("blue.15.square", "Wide.blue")
+    val red   = Brush("red.15.square", "Wide.red")
+    val green = Brush("green.15.square", "Wide.green")
   }
 
   import GlyphTransforms.{Rotated, Scaled}
@@ -260,7 +260,7 @@ object DocumentationDiagrams {
       implicit val style: StyleSheet = StyleSheet(fontScale=0.6f)
       val declare: Glyph = <ATTRIBUTES key="tag:p" enlarged="20px"/>
       val gxml1: Glyph= <p width="20em" align="left" frame="red/3" rotated="2">Hello world</p>
-      val gxml2: Glyph= <p width="20em" align="left" frame="black/3-5-5">Hello world! Is this the very best you can do?</p>
+      val gxml2: Glyph= <p width="20em" align="left" frame="black.3.dashed(5,5)">Hello world! Is this the very best you can do?</p>
       val gxml3: Glyph =
         <div width="27em" align="justify">
           <p>
@@ -340,7 +340,7 @@ object DocumentationDiagrams {
     write("filledstarw17.png", false)(filledStargon(17)(blueish))
     write("filledstarw7g.png", false)(filledStargon(7)(greenish))
 
-    val wibRed = Brush("wibRed")(color=0x77ff0000, width=16f, pathEffect=PathEffect.makeDiscrete(4.0f, 15.5f, 3))
+    val wibRed = Brush("red")(color=0x77ff0000, width=16f, pathEffect=PathEffect.makeDiscrete(4.0f, 15.5f, 3))
     val wibRedder = red(width=12f, pathEffect=PathEffect.makeDiscrete(4.0f, 15.5f, 3), cap=BUTT)
 
     val para=Label("""This is text with a special edging.""")
