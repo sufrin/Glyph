@@ -204,7 +204,7 @@ class Dialogue[T](blurb:        Glyph,
 
           override def screen: Screen = location.screen
 
-          override def onKeyboardUnfocussed(key: EventKey): Unit = {
+          def onKeyboardUnfocussedX(key: EventKey): Unit = {
             import io.github.humbleui.jwm.Key._
             var drag = true
             key.getKey match {

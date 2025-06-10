@@ -56,32 +56,25 @@ trait DefaultBrushes {
 
 /**
  * Concrete definitions of a variety of brushes, and implementation of
- * a tiny language for specifying brushes.
+ * a tiny language for specifying brushes. A `brush.toString` yields
+ * a specification that can be parsed to yield that `brush: Brush`.
  *
  * {{{
  *   Brushes(specification): Brush yields a brush as specified
- * }}}
- *
- * {{{
- *   specification ::= decorated
- *
- *   decorated     ::= basic [decoration]*
- *
- *   basic         ::= named
- *                 |   named.#strokewidth
+ *   specification ::= named [decoration]*
  *
  *   named         ::= 0Xaarrggbb   // 4 hex bytes: alpha, red, blue, green
+ *                 |   hsv(#hue,#saturation,#brightness)
  *                 |   "one of the named colours"
  *
- *   decoration    ::=  .width(#strokewidth)
- *                 |    .stroke(#strokewidth)
+ *   decoration    ::=  #strokewidth)
  *                 |    .rounded(#strokeradius)
- *                 |    (#strokeRadius)
- *                 |    -#on-#off
- *                 |    ~#sliceLength~#displacement
+ *                 |    .dashed(#on, #off)
+ *                 |    .sliced(#sliceLength,#maxdisplacement)
  *                 |    .stroke | .fill | .stroke&fill
  *                 |    .round | .butt | .square
- *                 |    .blur(#blur)
+ *                 |    .alpha(#alpha)
+ *                 |    .blurred(#blur)
  * }}}
  */
 object Brushes extends DefaultBrushes {
@@ -199,7 +192,7 @@ object Brushes extends DefaultBrushes {
             b.color(colour)
             eval(b, rest)
           case None =>
-            throw new NonBrush(s"Unknown colour name: $name in $spec", b)
+            throw new NonBrush(s"Brush notation error: $name in $spec", b)
         }
       case Nil =>
       case other =>

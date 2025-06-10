@@ -610,29 +610,24 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
     lazy val brushWarning = {
       import glyphXML.Language._
-      styled.windowdialogues.Dialogue.OK(
+      styled.windowdialogues.Dialogue.FLASH(
         <p width="80em" leftMargin="1em" rightMargin="1em">
           The brush specification is erroneous. Specification syntax is:
           <![CDATA[
-          *   specification ::= decorated
-          *
-          *   decorated     ::= basic [decoration]*
-          *
-          *   basic         ::= named
-          *                 |   named.#strokewidth
+          *   specification ::= named [decoration]*
           *
           *   named         ::= 0Xaarrggbb   // 4 hex bytes: alpha, red, blue, green
+          *                 |   hsv(#hue,#saturation,#brightness)
           *                 |   "one of the named colours"
           *
-          *   decoration    ::=  .width(#strokewidth)
-          *                 |    .stroke(#strokewidth)
+          *   decoration    ::=  #strokewidth)
           *                 |    .rounded(#strokeradius)
-          *                 |    (#strokeRadius)
-          *                 |    -#on-#off
-          *                 |    ~#sliceLength~#displacement
+          *                 |    .dashed(#on, #off)
+          *                 |    .sliced(#sliceLength,#maxdisplacement)
           *                 |    .stroke | .fill | .stroke&fill
           *                 |    .round | .butt | .square
-          *                 |    .blur(#blur)]]>
+          *                 |    .alpha(#alpha)
+          *                 |    .blurred(#blur)]]>
         </p>).InFront(drawingBoard)
     }
 
@@ -641,7 +636,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
     def setNewBrush(specification: String): Unit = {
       if (specification.nonEmpty) {
         try {
-          val brush = Brushes(specification)
+          val brush = Brushes.Parse(specification)
           newBrush.copy(brush)
           protoBrush.copy(brush)
           showNewBrush()
@@ -663,7 +658,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       brushField.text = newBrush.toString
     }
 
-    lazy val brushField = styled.TextField(size=50, onCursorLeave=setNewBrush(_), initialText=newBrush.toString)
+    lazy val brushField = styled.TextField(size=50, onEnter=setNewBrush(_), initialText=newBrush.toString)
 
     def HintedButton(label: String, hint: String="")(action: Reaction)(implicit style: StyleSheet): Glyph = {
         val button = styled.TextButton(label)(action)(style)
@@ -863,8 +858,8 @@ object Play extends Application {
       <p>
         The diagram consists of a collection of geometric objects. Shapes are added to the diagram at the last-clicked position
         using one of the shape-labelled buttons or the <b>Path</b> button (<i>qv</i>). The default dimensions of the shapes are
-        specified in an editable text field in the interface, and the default brush used when a shape is added is
-        also specified in an editable text field.
+        specified in an editable text field in the interface. The default brush used when a shape is added is
+        specified in the <b>Palette</b> window.
       </p>
       <p>
         Some of the objects
