@@ -283,8 +283,8 @@ object Brushes extends DefaultBrushes {
   def buttonFont = buttonFamily.makeFont(GlyphTypes.FontStyle.NORMAL, buttonPointSize)
   def buttonText(s: String, fg: Brush=buttonForeground, bg: Brush=buttonBackground): Text = Text(s, buttonFont, fg, bg)
 
-  var buttonForeground: Brush = Brush("white.fill")
-  var buttonBackground: Brush = Brush("black.fill")
+  var buttonForeground: Brush = Brush("black.fill")
+  var buttonBackground: Brush = Brush("white.fill")
   var buttonDown:       Brush = Brush("red.fill")
   var buttonHover:      Brush = Brush("green.fill")
 

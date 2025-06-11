@@ -24,6 +24,9 @@ object LargeTestGUI {
 
   implicit val sheet: StyleSheet = StyleSheet()
 
+  val  red = Brush("red.1.stroke")
+  val  redFrame = Brush("red.3.stroke")
+
   private lazy val atPopupAnchor = East(popupAnchor)
   val face: Typeface =
     FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
@@ -108,7 +111,7 @@ object LargeTestGUI {
 
     def g(fg: Brush) = abcd(fg = fg)
 
-    def b() = RawButton(g(blue), g(redFrame), g(greenFrame)) { _ => }.framed(redFrame)
+    def b() = RawButton(g(blue(width=2)), g(red(width=2)), g(green(width=2))) { _ => }.framed(redFrame)
 
     Col(align=Center)(
       textColumn(fg = blue)("(3) Synthesised raw button b() transformed by \n.rotated(i), .turned(27f * i), and .scaled(1.5f) for i<-0 until 9"),
@@ -422,9 +425,9 @@ object LargeTestGUI {
 
 
   private val scene8 = {
-    val fatYellow: Brush = yellowHuge.copy strokeWidth 40
-    val fatGreen: Brush = fatYellow.copy col 0xff00ff00
-    val fatRed: Brush = fatYellow.copy col 0xffff0000
+    val fatYellow: Brush = Brush("yellow.40.stroke.round")
+    val fatGreen: Brush = Brush("green.40.stroke.round")
+    val fatRed: Brush = Brush("red.40.stroke.round")
     val glyph: Glyph = Text("RawButton", medFont)
 
     val b1 = RawButton(glyph(), red, green) { _ => }
@@ -963,7 +966,7 @@ object LargeTestGUI {
       implicit val sheet: StyleSheet = StyleSheet()
       import sheet.ex
 
-      val upColor     = yellowHuge(width = 0)
+      val upColor     = Brush("pink")
       val downColor   = red(width = 0)
       val hoverColor  = green(width = 0)
       val noEffect    = hoverColor.pathEffect
@@ -1197,7 +1200,7 @@ object LargeTestGUI {
       onOff(initially=false, fg=green, bg=red, NoHint) {
         state =>
           enableButton.guiRoot.autoScale = state
-      }.framed(fg=redFrame)
+      }.framed(fg=red(width=2))
   }
 
 
