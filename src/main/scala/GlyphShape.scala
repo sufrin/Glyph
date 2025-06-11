@@ -723,10 +723,15 @@ object GlyphShape {
 
   /**
    * A standard glyph drawn as the given `shape`.
+   * TODO; THIS PROBABLY SHOULDN'T BE IMPLICIT: COPY DANGER
    */
   implicit def asGlyph(shape: GlyphShape): Glyph = new Glyph {
     wrapped =>
-    def copy(fg: Brush, bg: Brush): Glyph = wrapped.copy(fg, bg)
+    def copy(fg: Brush, bg: Brush): Glyph =
+      shape match {
+        case g: Glyph => g.copy(fg, bg)
+        case other => other.withForeground(fg)
+      }
 
     def draw(surface: Surface): Unit = shape.draw(surface)
 

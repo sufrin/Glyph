@@ -1264,7 +1264,7 @@ object LargeTestGUI {
       popupAnchor
     )
 
-  private val oneScene = true
+  private val oneScene = false
 
   val root: Glyph =
     (oneScene match {
