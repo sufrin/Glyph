@@ -77,7 +77,7 @@ class Brush(val specification: String, var tag: String="") extends Paint {
 
   import io.github.humbleui.skija.{PaintMode, PaintStrokeCap, PathEffect, Shader}
 
-  var effect: String=""
+  var effectId, filterId: String=""
 
   override def toString: String = {
     import Brush.{ROUND, SQUARE}
@@ -97,9 +97,9 @@ class Brush(val specification: String, var tag: String="") extends Paint {
            }
     val anti = if (this.antiAliased) "" else ".antialias(false)"
     val dither = if (this.dithered) ".dither" else ""
-    val alpha = if (this.alpha==1) "" else s".alpha(${getAlphaf})"
+    val alpha = if (this.alpha==1) "" else f".alpha(${getAlphaf}%0.2f)"
     val tagged = if (tag.isEmpty) "" else s".tag($tag)"
-   s"$id.$width$cap$mode$anti$dither$alpha$effect$tagged"
+   s"$id.$width$cap$mode$anti$dither$alpha$effectId$filterId$tagged"
   }
 
   /** A copy of `this`` brush with changed attributes as specified. */
@@ -116,7 +116,8 @@ class Brush(val specification: String, var tag: String="") extends Paint {
             filter: ImageFilter    = this.getImageFilter,
             shader: Shader         = this.shader,
             blendMode: BlendMode   = this.getBlendMode,
-            effect: String         = this.effect,
+            effectId: String       = this.effectId,   // documentation for the applied effect
+            filterId: String       = this.filterId,   // documentation for the applied filter
             tag: String            = this.tag
            ): Brush =
     Brush()
@@ -132,7 +133,8 @@ class Brush(val specification: String, var tag: String="") extends Paint {
       . filter(filter)
       . shader(shader)
       . blendMode(blendMode)
-      . effect(effect)
+      . effectId(effectId)
+      . filterId(filterId)
       . tagged(tag)
 
   /** An exact copy of this brush */
@@ -150,7 +152,8 @@ class Brush(val specification: String, var tag: String="") extends Paint {
       .filter(getImageFilter)
       .shader(getShader)
       .blendMode(getBlendMode)
-      .effect(effect)
+      .effectId(effectId)
+      .filterId(filterId)
       .tagged(tag)
 
   /** Copy the properties of `that: Brush` to `this: Brush` */
@@ -167,7 +170,9 @@ class Brush(val specification: String, var tag: String="") extends Paint {
       filter(that.getImageFilter)
       shader(that.getShader)
       blendMode(that.getBlendMode)
-      effect(that.effect)
+      pathEffect(that.pathEffect)
+      effectId(that.effectId)
+      filterId(that.filterId)
       tagged(that.tag)
       this
   }
@@ -189,8 +194,14 @@ class Brush(val specification: String, var tag: String="") extends Paint {
 
 
   /** Mutation */
-  @inline def effect(newEffect: String): Brush = {
-    effect = newEffect
+  @inline def effectId(newEffect: String): Brush = {
+    effectId = newEffect
+    this
+  }
+
+  /** Mutation */
+  @inline def filterId(newId: String): Brush = {
+    filterId = newId
     this
   }
 
@@ -316,7 +327,7 @@ class Brush(val specification: String, var tag: String="") extends Paint {
    * @return a new brush
    */
   def blurred(blur: Scalar, dx: Scalar=0f, dy: Scalar=0f): Brush = {
-    val result = this.copy(effect=s"${this.effect}.blurred($blur,$dx,$dy)")
+    val result = this.copy(filterId=s".blurred($blur,$dx,$dy)")
     result.filter(ImageFilter.makeDropShadow(dx, dy, blur, color)).col(color)
     result
   }
@@ -331,47 +342,51 @@ class Brush(val specification: String, var tag: String="") extends Paint {
    */
   def sliced(sliceLength: Scalar, displacementLimit: Scalar, seed: Int=42): Brush = {
     val effect = GlyphTypes.PathEffect.makeDiscrete(sliceLength, displacementLimit, seed)
-    val result = this.copy(pathEffect=effect, effect=s"${this.effect}.sliced($sliceLength,$displacementLimit)")
+    val result = this.copy(pathEffect=effect, effectId=s"${this.effectId}.sliced($sliceLength,$displacementLimit)")
     result
   }
 
   /** A new brush painted with dashes. */
   def dashed(onOff: Scalar*): Brush = {
-    val result: Brush = this.copy(pathEffect=GlyphTypes.PathEffect.makeDash(onOff), effect=s"${this.effect}.dashed(${onOff.mkString(",")})")
+    val result: Brush = this.copy(pathEffect=GlyphTypes.PathEffect.makeDash(onOff), effectId=s"${this.effectId}.dashed(${onOff.mkString(",")})")
     result
   }
 
   /** A new brush that rounds sharp corners. */
   def rounded(radius: Scalar): Brush = {
-    val result: Brush = copy(pathEffect=GlyphTypes.PathEffect.makeRoundedCorners(radius), effect=s"${this.effect}.rounded($radius)")
+    val result: Brush = copy(pathEffect=GlyphTypes.PathEffect.makeRoundedCorners(radius), effectId=f"${this.effectId}.rounded($radius%3.2f)")
     result
   }
 
   object Effect {
     def sliced(sliceLength: Scalar, displacementLimit: Scalar, seed: Int=42): Unit = {
       pathEffect(GlyphTypes.PathEffect.makeDiscrete(sliceLength, displacementLimit, seed))
-      effect=s".sliced($sliceLength,$displacementLimit)"
+      effectId=s".sliced($sliceLength,$displacementLimit)"
     }
 
     def dashed(onOff: Scalar*): Unit = {
       pathEffect(GlyphTypes.PathEffect.makeDash(onOff))
-      effect=s".dashed(${onOff.mkString(",")})"
+      effectId=s".dashed(${onOff.mkString(",")})"
     }
 
     def rounded(radius: Scalar): Unit = {
       pathEffect(GlyphTypes.PathEffect.makeRoundedCorners(radius))
-      effect=s".rounded($radius)"
+      effectId=s".rounded($radius)"
     }
 
-    def none(): Unit = {
+    def noEffect(): Unit = {
       pathEffect(null)
+      effectId=""
+    }
+
+    def noFilter(): Unit = {
       filter(null)
-      effect=""
+      filterId=""
     }
 
     def blurred(blur: Scalar, dx: Scalar=0f, dy: Scalar=0f): Unit = {
       filter(ImageFilter.makeDropShadow(dx, dy, blur, color)).col(color)
-      effect=s".blurred($blur,$dx,$dy)"
+      filterId=s".blurred($blur,$dx,$dy)"
     }
   }
 

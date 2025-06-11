@@ -54,6 +54,9 @@ trait DefaultBrushes {
 
 }
 
+
+
+
 /**
  * Concrete definitions of a variety of brushes, and implementation of
  * a tiny language for specifying brushes. A `brush.toString` yields
@@ -72,12 +75,30 @@ trait DefaultBrushes {
  *                 |    .dashed(#on, #off)
  *                 |    .sliced(#sliceLength,#maxdisplacement)
  *                 |    .stroke | .fill | .stroke&fill
- *                 |    .round | .butt | .square
+ *                 |    .round  | .butt | .square
  *                 |    .alpha(#alpha)
  *                 |    .blurred(#blur)
  * }}}
  */
 object Brushes extends DefaultBrushes {
+
+  val brushSpecificationNotation: String =
+    """
+      |   specification ::= named [decoration]*
+      |
+      |   named         ::= 0Xaarrggbb   // 4 hex bytes: alpha, red, blue, green
+      |                 |   hsv(#hue,#saturation,#brightness)
+      |                 |   "one of the named colours"
+      |
+      |   decoration    ::=  #strokewidth)
+      |                 |    .rounded(#strokeradius)
+      |                 |    .dashed(#on, #off)
+      |                 |    .sliced(#sliceLength,#maxdisplacement)
+      |                 |    .stroke | .fill | .stroke&fill
+      |                 |    .round  | .butt | .square
+      |                 |    .alpha(#alpha)
+      |                 |    .blurred(#blur)
+      |""".stripMargin
 
   trait Lex
   case object EOS extends Lex
@@ -154,19 +175,7 @@ object Brushes extends DefaultBrushes {
         
       case WithParameters("alpha", List(n)) =>
         b.alpha(n)
-        
-      case Id("--") =>
-        b.Effect.dashed(10*b.strokeWidth, 10*b.strokeWidth)
-        
-      case Id("-.") =>
-        b.Effect.dashed(10*b.strokeWidth, 5*b.strokeWidth)
-        
-      case Id(".-") =>
-        b.Effect.dashed(5*b.strokeWidth, 10*b.strokeWidth)
-        
-      case Id("..") =>
-        b.Effect.dashed(5*b.strokeWidth, 5*b.strokeWidth)
-        
+
       case WithParameters("dashed", List(n)) =>
         b.Effect.dashed(n, n)
         
@@ -200,11 +209,11 @@ object Brushes extends DefaultBrushes {
             b.color(colour)
             
           case None =>
-            throw new NonBrush(s"Brush notation error: $name in $spec", b)
+            throw new NonBrush(s"Brush specification error at $name in $spec", b)
         }
 
       case other =>
-        throw new NonBrush(s"Brush notation error ${other} in $spec", b)
+        throw new NonBrush(s"Brush specification error at $other in $spec", b)
     }
     b
   }

@@ -2,6 +2,7 @@ package org.sufrin
 package glyph
 package styled
 import org.sufrin.glyph.unstyled.{dynamic, reactive}
+import org.sufrin.glyph.unstyled.reactive.Enterable
 
 /** Intermediate definitions refactored from `styled` by (more or less) substitution */
 

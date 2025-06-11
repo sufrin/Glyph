@@ -24,7 +24,7 @@ object LargeTestGUI {
 
   implicit val sheet: StyleSheet = StyleSheet()
 
-  val  red = Brush("red.1.stroke")
+  val  red = Brush("red.1.fill")
   val  redFrame = Brush("red.3.stroke")
 
   private lazy val atPopupAnchor = East(popupAnchor)

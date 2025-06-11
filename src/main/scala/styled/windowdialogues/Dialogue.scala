@@ -175,6 +175,9 @@ class Dialogue[T](blurb:        Glyph,
     thisPopup
   }
 
+  def show(): Unit =
+    if (running.isEmpty) start()
+
   /** Allocate the window and start the interaction */
   def start(logEvents: Boolean = false): Unit = {
     App.runOnUIThread {
