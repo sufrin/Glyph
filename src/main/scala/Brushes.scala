@@ -44,7 +44,6 @@ trait DefaultBrushes {
   val grey1      = Brush(s"grey1")
   val grey2      = Brush(s"grey2")
   val grey3      = Brush(s"grey3")
-  val grey4      = Brush(s"grey4")
   val yellow     = Brush("yellow")
   val yellowLine = Brush("yellow.2.square.stroke")
   val yellowFrame= Brush("yellow.5.square.stroke")
@@ -87,6 +86,7 @@ object Brushes extends DefaultBrushes {
       |   specification ::= named [decoration]*
       |
       |   named         ::= 0Xaarrggbb   // 4 hex bytes: alpha, red, blue, green
+      |                 |   0Xrrggbb     // 3 hex bytes: red, blue, green
       |                 |   hsv(#hue,#saturation,#brightness)
       |                 |   "one of the named colours"
       |
@@ -96,7 +96,7 @@ object Brushes extends DefaultBrushes {
       |                 |    .sliced(#sliceLength,#maxdisplacement)
       |                 |    .stroke | .fill | .stroke&fill
       |                 |    .round  | .butt | .square
-      |                 |    .alpha(#alpha)
+      |                 |    .alpha(#alpha) // fractional alpha
       |                 |    .blurred(#blur)
       |""".stripMargin
 
@@ -117,11 +117,12 @@ object Brushes extends DefaultBrushes {
   lazy val Chunks = new scala.util.matching.Regex("(([.]?)(([0-9a-zA-Z&~+-])+([(]([a-z]+)[)]|[(][0-9.,]+[)])?))")
 
   def Parse(spec: String): Brush = {
+    @inline def alphaDefault(i: Int):Int = if ((i&0xFF000000) != 0) i else i|0xFF000000
     def Lex(state: Brush, spec: String): List[Lex] = {
       val explode = Chunks.findAllMatchIn(spec).map(_.group(3)).toList
       explode.map {
         case v if v matches("[0-9]+([.][0-9]*)?") => ScalarValue(v.toFloat)
-        case s"0x${hex}" if hex.matches("([0-9a-fA-F])+") => Hexadecimal(hexToInt(hex))
+        case s"0x${hex}" if hex.matches("([0-9a-fA-F])+") => Hexadecimal(alphaDefault(hexToInt(hex)))
         case v if v matches("[a-zA-Z0-9&~+-]+") => Id(v)
         case s"$id($param)" if id.matches ("[a-zA-Z0-9&~+-]+") && param.matches("[a-z]+") =>
            WithParameter(id, param)
@@ -177,28 +178,28 @@ object Brushes extends DefaultBrushes {
         b.alpha(n)
 
       case WithParameters("dashed", List(n)) =>
-        b.Effect.dashed(n, n)
+        b.ComposeEffect.dashed(n, n)
         
       case WithParameters("dashed", List(m, n)) =>
-        b.Effect.dashed(m, n)
+        b.ComposeEffect.dashed(m, n)
         
       case WithParameters("dashed", List(m, n, o, p)) =>
-        b.Effect.dashed(m, n, o, p)
+        b.ComposeEffect.dashed(m, n, o, p)
         
       case WithParameters("sliced", List(m, n)) =>
-        b.Effect.sliced(m, n)
+        b.ComposeEffect.sliced(m, n)
         
       case WithParameters("rounded", List(radius)) =>
-        b.Effect.rounded(radius)
+        b.ComposeEffect.rounded(radius)
         
       case WithParameters("blurred", List(blur)) =>
-        b.Effect.blurred(blur)
+        b.ComposeEffect.blurred(blur)
         
       case WithParameters("blurred", List(blur, delta)) =>
-        b.Effect.blurred(blur, delta, delta)
+        b.ComposeEffect.blurred(blur, delta, delta)
         
       case WithParameters("blurred", List(blur, dx, dy)) =>
-        b.Effect.blurred(blur, dx, dy)
+        b.ComposeEffect.blurred(blur, dx, dy)
         
       case WithParameter("tag", tag) =>
         b.tagged(tag)
@@ -251,11 +252,9 @@ object Brushes extends DefaultBrushes {
       "grey1" -> 0XFFaaaaaa,
       "grey2" -> 0XFF999999,
       "grey3" -> 0XFF888888,
-      "grey4" -> 0XFF777777,
       "darkgrey" -> 0XFF777777,
       "lightgrey" -> 0XFFBBBBBB,
       "transparent" -> 0X000000,
-      "" -> 0X000000,
     )
 
   def colourName(colour: Int): String = {
@@ -271,14 +270,7 @@ object Brushes extends DefaultBrushes {
     result
   }
 
-  def apply(specification: String): Brush = try {
-    Parse(specification)
-  } catch {
-    case ex: NonBrush =>
-      logging.Default.error(s"${ex.why} [using ${ex.brushState.toString}]")
-      ex.printStackTrace()
-      ex.brushState
-  }
+
 
   // The following are used to set the default attributes of unstyled glyphs
   //
@@ -300,4 +292,14 @@ object Brushes extends DefaultBrushes {
   /** Default paint for a point: black */
   val point: Brush = Brush("black.1")
 
+  val fallbackBrush: Brush = Brush("black.2", tag="fallbackBrush").sliced(1,1)
+
+  def apply(specification: String): Brush = try {
+    Parse(specification)
+  } catch {
+    case ex: NonBrush =>
+      logging.Default.error(s"${ex.why} [parsed ${ex.brushState.toString}]")
+      ex.printStackTrace()
+      fallbackBrush.copy()
+  }
 }

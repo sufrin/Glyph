@@ -52,6 +52,7 @@ object GlyphTypes {
 
     /** Turns sharp corners into rounded corners. */
     @inline def makeRoundedCorners(radius: Scalar): PathEffect = io.github.humbleui.skija.PathEffect.makeCorner(radius)
+
   }
 
   object ImageFilter {

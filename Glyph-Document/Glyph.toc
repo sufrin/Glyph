@@ -5,28 +5,28 @@
 \contentsline {subsection}{\numberline {2.1}The Glyph Interface}{8}{subsection.26}%
 \contentsline {subsection}{\numberline {2.2}Glyph Composition}{9}{subsection.40}%
 \contentsline {subsection}{\numberline {2.3}Brushes}{20}{subsection.132}%
-\contentsline {section}{\numberline {3}Glyph Transformers}{22}{section.161}%
-\contentsline {section}{\numberline {4}Polygonal Glyphs}{25}{section.196}%
-\contentsline {subsection}{\numberline {4.1}Specification}{25}{subsection.197}%
-\contentsline {subsection}{\numberline {4.2}Paint Effects}{26}{subsection.215}%
-\contentsline {section}{\numberline {A}Mutability of Glyphs and Brushes}{30}{appendix.258}%
-\contentsline {subsection}{\numberline {A.1}Glyphs are mutable}{30}{subsection.259}%
-\contentsline {subsection}{\numberline {A.2}Brushes are mutable}{31}{subsection.273}%
-\contentsline {section}{\numberline {B}Text Glyphs and Fonts}{33}{appendix.284}%
-\contentsline {section}{\numberline {C}The glyphXML notation}{35}{appendix.301}%
-\contentsline {section}{\numberline {D}The Focus Protocol}{37}{appendix.334}%
-\contentsline {subsection}{\numberline {D.1}MouseMove events}{37}{subsection.335}%
-\contentsline {subsection}{\numberline {D.2}MouseButton events}{37}{subsection.336}%
-\contentsline {subsection}{\numberline {D.3}MouseScroll events}{38}{subsection.337}%
-\contentsline {subsection}{\numberline {D.4}Locating Reactive Glyphs}{38}{subsection.339}%
-\contentsline {subsection}{\numberline {D.5}Locating Glyphs in the presence of Overlays}{39}{subsection.340}%
-\contentsline {section}{\numberline {E}Anatomy of a Simple Reactive Glyph}{41}{appendix.342}%
-\contentsline {section}{\numberline {F}Examples}{44}{appendix.431}%
-\contentsline {subsection}{\numberline {F.1}A Passive GUI}{44}{subsection.432}%
-\contentsline {subsection}{\numberline {F.2}A GUI with explicitly-styled components}{45}{subsection.448}%
-\contentsline {subsection}{\numberline {F.3}A GUI with implicitly-styled components}{47}{subsection.491}%
-\contentsline {subsection}{\numberline {F.4}A Primitive Calculator}{50}{subsection.548}%
-\contentsline {section}{\numberline {G}Images of GUIs}{52}{appendix.613}%
-\contentsline {subsection}{\numberline {G.1}Source that gave rise to Figures \ref {DynamicResizing1} and \ref {DynamicResizing2}}{62}{subsection.628}%
-\contentsline {section}{\numberline {H}What next?}{64}{appendix.719}%
-\contentsline {section}{\numberline {I}Acknowledgements}{64}{appendix.720}%
+\contentsline {section}{\numberline {3}Glyph Transformers}{23}{section.167}%
+\contentsline {section}{\numberline {4}Polygonal Glyphs}{26}{section.202}%
+\contentsline {subsection}{\numberline {4.1}Specification}{26}{subsection.203}%
+\contentsline {subsection}{\numberline {4.2}Paint Effects}{27}{subsection.221}%
+\contentsline {section}{\numberline {A}Mutability of Glyphs and Brushes}{31}{appendix.264}%
+\contentsline {subsection}{\numberline {A.1}Glyphs are mutable}{31}{subsection.265}%
+\contentsline {subsection}{\numberline {A.2}Brushes are mutable}{32}{subsection.279}%
+\contentsline {section}{\numberline {B}Text Glyphs and Fonts}{34}{appendix.290}%
+\contentsline {section}{\numberline {C}The glyphXML notation}{36}{appendix.307}%
+\contentsline {section}{\numberline {D}The Focus Protocol}{38}{appendix.340}%
+\contentsline {subsection}{\numberline {D.1}MouseMove events}{38}{subsection.341}%
+\contentsline {subsection}{\numberline {D.2}MouseButton events}{38}{subsection.342}%
+\contentsline {subsection}{\numberline {D.3}MouseScroll events}{39}{subsection.343}%
+\contentsline {subsection}{\numberline {D.4}Locating Reactive Glyphs}{39}{subsection.345}%
+\contentsline {subsection}{\numberline {D.5}Locating Glyphs in the presence of Overlays}{40}{subsection.346}%
+\contentsline {section}{\numberline {E}Anatomy of a Simple Reactive Glyph}{42}{appendix.348}%
+\contentsline {section}{\numberline {F}Examples}{45}{appendix.437}%
+\contentsline {subsection}{\numberline {F.1}A Passive GUI}{45}{subsection.438}%
+\contentsline {subsection}{\numberline {F.2}A GUI with explicitly-styled components}{46}{subsection.454}%
+\contentsline {subsection}{\numberline {F.3}A GUI with implicitly-styled components}{48}{subsection.497}%
+\contentsline {subsection}{\numberline {F.4}A Primitive Calculator}{51}{subsection.554}%
+\contentsline {section}{\numberline {G}Images of GUIs}{53}{appendix.619}%
+\contentsline {subsection}{\numberline {G.1}Source that gave rise to Figures \ref {DynamicResizing1} and \ref {DynamicResizing2}}{63}{subsection.634}%
+\contentsline {section}{\numberline {H}What next?}{65}{appendix.725}%
+\contentsline {section}{\numberline {I}Acknowledgements}{65}{appendix.726}%

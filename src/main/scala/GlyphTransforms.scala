@@ -160,7 +160,7 @@ object GlyphTransforms {
     override def copy(fg: Brush = fg, bg: Brush = bg): RoundFramed = new RoundFramed(glyph.copy(), fg, bg, radiusFactor)
 
 
-    val delegate: Glyph = {
+    def delegate: Glyph = {
       if (radiusFactor>0f) {
         val gw = glyph.w + fg.strokeWidth * 4 // Larger than for rectangular: the curvature bites otherwise
         val gh = glyph.h + fg.strokeWidth * 4
@@ -169,8 +169,8 @@ object GlyphTransforms {
           if (radiusFactor>0f) (radiusFactor, radiusFactor) else (.25f, .25f)
 
         static.Concentric(rowAlign=Mid, colAlign=Center)(
-          RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = bg(mode=FILL), bg = transparent),   // background
-          RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg(mode=FILL), bg = transparent),  // frame
+          RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = bg/*(mode=FILL)*/, bg = transparent),   // background
+          RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg/*(mode=FILL)*/, bg = transparent),  // frame
           glyph,
           )
       } else {
@@ -183,7 +183,7 @@ object GlyphTransforms {
       }
     }
 
-    val diagonal: Vec = delegate.diagonal
+    def diagonal: Vec = delegate.diagonal
 
     override def draw(surface: Surface): Unit = {
       delegate.draw(surface)

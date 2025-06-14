@@ -101,7 +101,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
       path.closePath
       path
     }
-    val colButs = for { (name, col) <- Brushes.namedColours if col!=0 } yield
+    val colButs = for { (name, col) <- Brushes.namedColours  } yield
       HintedUnstyledButton("  ", name, fg=transparent, bg=Brushes(name)){
         _ =>
           protoBrush.setColor(col)
@@ -112,7 +112,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
         _ =>
           val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
           protoBrush.setColor(HSV(i*15, s, v).argb)
-          protoBrush.Effect.noFilter()
+          protoBrush.ComposeEffect.noFilter()
           brushFeedback()
       }
     }
@@ -121,7 +121,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
         _ =>
           val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
           protoBrush.setColor(HSV(h, i*0.1, v).argb)
-          protoBrush.Effect.noFilter()
+          protoBrush.ComposeEffect.noFilter()
           brushFeedback()
       }
     val briButs =
@@ -129,7 +129,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
         _ =>
           val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
           protoBrush.setColor(HSV(h, s, i*0.1).argb)
-          protoBrush.Effect.noFilter()
+          protoBrush.ComposeEffect.noFilter()
           brushFeedback()
       }
 
@@ -165,10 +165,14 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
         Other Brush properties can be selected from the menus that appear between the
         colours buttons and the feedback glyphs.
       </p>
-    </div>.enlarged(30)).InFront(GUI)
+    </div>.enlarged(30)).InFront(COLOURGUI)
   }
 
-    lazy val GUI = Col(align=Center, bg=lightGrey)(
+    lazy val sample = ((rectangle(textModel.w, textModel.h)(protoBrush) ||| textModel) ~~~ rectangle(30+2*textModel.w,30+textModel.h)(transparent)).framed(black)
+
+    lazy val GUI = Col(align=Center, bg=lightGrey)(COLOURGUI, ex, sample, ex, HUEGUI).enlarged(30)
+
+    lazy val COLOURGUI = Col(align=Center, bg=lightGrey)(
       brushField.framed(), ex,
       colourGrid, ex,
       FixedSize.Row(align=Mid, width=colourGrid.w)(
@@ -191,56 +195,66 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
         }(menuSheet), ex,
         brushFieldChooserMenu("Rounded", "()", "10",  "20", "30", "40", "50", "60", "70"){
           case "()" =>
-            protoBrush.Effect.noEffect()
-            protoBrush.Effect.noFilter() // cancel blurring
+            protoBrush.ComposeEffect.noEffect()
+            protoBrush.ComposeEffect.noFilter() // cancel blurring
             brushFeedback()
           case v =>
-            protoBrush.Effect.rounded(v.toFloat)
-            protoBrush.Effect.noFilter() // cancel blurring
+            protoBrush.ComposeEffect.rounded(v.toFloat)
+            protoBrush.ComposeEffect.noFilter() // cancel blurring
             brushFeedback()
         }(menuSheet), ex,
-        brushFieldChooserMenu("Effect", "()", "-", "--", "---", "----", "~", "~~", "~~~", "~~~~"){
+        brushFieldChooserMenu("--", "()", "-", "--", "---", "----"){
           def w = protoBrush.strokeWidth+1
           v => v match {
-            case "-" => protoBrush.Effect.dashed(5,5)
-            case "--" => protoBrush.Effect.dashed(10,10)
-            case "---" => protoBrush.Effect.dashed(15,15)
-            case "----" => protoBrush.Effect.dashed(5*w, 5*w)
-            case "~" => protoBrush.Effect.sliced(2*w, 2)
-            case "~~" => protoBrush.Effect.sliced(2*w, 2*w)
-            case "~~~" => protoBrush.Effect.sliced(3*w, 3*w)
-            case "~~~~" => protoBrush.Effect.sliced(4*w, 3*w)
-            case "()" => protoBrush.Effect.noEffect()
-          }
-            protoBrush.Effect.noFilter() // cancel blurring
+              case "-" => protoBrush.ComposeEffect.dashed(5,5)
+              case "--" => protoBrush.ComposeEffect.dashed(10,10)
+              case "---" => protoBrush.ComposeEffect.dashed(15,15)
+              case "----" => protoBrush.ComposeEffect.dashed(5*w, 5*w)
+              case "()" => protoBrush.ComposeEffect.noEffect()
+            }
+            protoBrush.ComposeEffect.noFilter() // cancel blurring
+            brushFeedback()
+        }(menuSheet), ex,
+        brushFieldChooserMenu("~~", "()", "~", "~~", "~~~", "~~~~"){
+          def w = protoBrush.strokeWidth+1
+          v => v match {
+              case "~" => protoBrush.ComposeEffect.sliced(2*w, 2)
+              case "~~" => protoBrush.ComposeEffect.sliced(2*w, 2*w)
+              case "~~~" => protoBrush.ComposeEffect.sliced(3*w, 3*w)
+              case "~~~~" => protoBrush.ComposeEffect.sliced(4*w, 3*w)
+              case "()" => protoBrush.ComposeEffect.noEffect()
+            }
+            protoBrush.ComposeEffect.noFilter() // cancel blurring
             brushFeedback()
         }(menuSheet), ex,
         brushFieldChooserMenu("Blur", "()", "1", "2", "4", "6", "8"){
           v => v match {
             case "()" =>
-              protoBrush.Effect.noFilter()
+              protoBrush.ComposeEffect.noFilter()
             case v =>
-              protoBrush.Effect.blurred(v.toFloat)
+              protoBrush.ComposeEffect.blurred(v.toFloat)
           }
             brushFeedback()
         }(menuSheet), ex,
-        brushFieldChooserMenu("α", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.6", "0.8", "0.9", "1"){
+        brushFieldChooserMenu("α", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1"){
           v =>
             protoBrush.alpha(v.toFloat)
-            protoBrush.Effect.noFilter() // cancel blurring
+            protoBrush.ComposeEffect.noFilter() // cancel blurring
             brushFeedback()
         }(menuSheet),
         sheet.hFill(),
         styled.TextButton("Help"){ _=> helpDialogue.show() }(menuSheet)
       ),
-      ex,
-      ((rectangle(textModel.w, textModel.h)(protoBrush) ||| textModel) ~~~ rectangle(30+2*textModel.w,30+textModel.h)(transparent)).framed(black),
+    )
+
+    lazy val HUEGUI = Col(align=Center, bg=lightGrey)(
       ex,
       hueGrid, ex,
       satGrid, ex,
       briGrid, ex,
       ex,ex
-    ).enlarged(30)
+    )
 
-    lazy val Dialogue: styled.windowdialogues.Dialogue[Unit] = styled.windowdialogues.Dialogue.FLASH(GUI, title="Brush Palette")
+
+  lazy val Dialogue: styled.windowdialogues.Dialogue[Unit] = styled.windowdialogues.Dialogue.FLASH(GUI, title="Brush Palette")
 }

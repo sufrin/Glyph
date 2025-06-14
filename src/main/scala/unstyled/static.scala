@@ -340,7 +340,7 @@ import GlyphTypes.Scalar
         ww, hh,
         sw, hh,
         sw, sw)
-      surface.canvas.drawPolygon(vertices, paint)
+      surface.canvas.drawPolygon(vertices, fg)
     }
 
     def copy(fg: Brush=fg, bg: Brush=bg): Rect = new Rect(diagonal, fg, bg)
