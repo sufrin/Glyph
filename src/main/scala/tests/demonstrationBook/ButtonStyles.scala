@@ -2,14 +2,16 @@ package org.sufrin.glyph
 package tests.demonstrationBook
 
 import styled.{Book, BookSheet, RadioCheckBoxes, TextButton}
-import NaturalSize.{Col, Grid, Row}
+import NaturalSize.{transparent, Col, Grid, Row}
 import unstyled.static.INVISIBLE
 import GlyphTypes.Scalar
 import unstyled.reactive.Reaction
 
+import io.github.humbleui.skija.paragraph.Alignment
 import org.sufrin.glyph.styled.windowdialogues.Dialogue
 import org.sufrin.glyph.styles.decoration.{Blurred, Decoration, Shaded}
 import org.sufrin.glyph.Brushes.black
+import org.sufrin.glyph.unstyled.dynamic.OneOf
 
 
 class ButtonStyles (implicit val style: BookSheet, implicit val translation: glyphXML.Translation) {
@@ -44,21 +46,23 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
     import styled.TextButton
     import styles.decoration.{Framed, RoundFramed}
 
-    lazy val fg: Brush = Brush("darkGrey.30.square")
-    lazy val bg: Brush = Brush("transparent")
+    lazy val fg: Brush = Brush("darkGrey.16.square")
+    lazy val bg: Brush = Brush("lightGrey")
     lazy val buttonBG: Brush = Brush("transparent")
-    var enlarge: Scalar = 30f
-    var radius: Scalar = 0.9f
-    var blur: Scalar = 15f
-    var spread: Scalar = 5f
-    var delta: Scalar = 20f
+    lazy val buttonFG: Brush = Brush("white")
+    var enlarge: Scalar = 5f
+    var radius: Scalar = 0.8f
+    var blur: Scalar = 10f
+    var spread: Scalar = 12f
+    var delta: Scalar = 12f
+    var belta: Scalar = 0f
 
     import styled.windowdialogues.Dialogue.FLASH
 
     def exemplar(id: String, caption: () => String, decor: () => Decoration): Glyph = {
       lazy val button: Glyph = TextButton(id)
       { _ =>
-        val style = styleSheet.copy(buttonBackgroundBrush=buttonBG, buttonDecoration = decor())
+        val style = styleSheet.copy(buttonForegroundBrush=buttonFG, buttonBackgroundBrush=buttonBG, buttonDecoration = decor())
         lazy val dialogue: Dialogue[Unit] =
           FLASH(
             Col(align=Center)(
@@ -67,34 +71,52 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
             )
           )
         dialogue.InFront(anchor).start()
-      }(styleSheet.copy(buttonDecoration = Framed(black(width=4), enlarge=20)))
+      }(styleSheet.copy(buttonBackgroundBrush=buttonBG, buttonDecoration = decor()))//(styleSheet.copy(buttonDecoration = Framed(black(width=4), enlarge=20)))
       button
     }
 
 
 
-    lazy val roundframed: Glyph = exemplar("RoundFramed(fg, bg, enlarge, radius)", ()=>s"$fg, $bg, $enlarge, $radius, $buttonBG", ()=>RoundFramed(fg, bg, enlarge, radius))
+    lazy val roundframed: Glyph = exemplar("RoundFramed(fg, bg, enlarge, radius)", ()=>s"$fg, $bg, $enlarge, $radius, buttonfg=$buttonFG, buttonbg=$buttonBG", ()=>RoundFramed(fg, bg, enlarge, radius))
 
-    lazy val  framed: Glyph = exemplar("Framed(fg, bg, enlarge)", ()=>s"$fg, $bg, $enlarge, $buttonBG", ()=>Framed(fg, bg, enlarge))
+    lazy val  framed: Glyph = exemplar("Framed(fg, bg, enlarge)", ()=>s"$fg, $bg, $enlarge, buttonfg=$buttonFG, buttonbg=$buttonBG", ()=>Framed(fg, bg, enlarge))
 
-    lazy val shaded: Glyph = exemplar("Shaded(fg, bg, enlarge, delta)", ()=>s"$fg, $bg, $enlarge, $delta", ()=>Shaded(fg, bg,  enlarge, delta=delta, down=false))
+    lazy val shaded: Glyph = exemplar("Shaded(fg, bg, enlarge, delta)", ()=>s"$fg, $bg, $enlarge, $delta, buttonfg=$buttonFG, buttonbg=$buttonBG", ()=>Shaded(fg, bg,  enlarge, delta=delta, down=false))
 
-    lazy val  blurred: Glyph = exemplar("Blurred(fg, bg, blur, spread, delta)", ()=>s"$fg, $bg, $blur, $spread, $delta", ()=>Blurred(fg, bg,  blur, spread, delta))
+    lazy val  blurred: Glyph = exemplar("Blurred(fg, bg, blur, spread, belta)", ()=>s"$fg, $bg, $blur, $spread, $belta, buttonfg=$buttonFG, buttonbg=$buttonBG", ()=>Blurred(fg, bg,  blur, spread, belta))
 
     def selector(caption: String, preferred: Scalar, choices: Scalar*)(action: Scalar=> Unit) : Glyph = {
-      styled.Label(caption).enlarged(50) beside RadioCheckBoxes(choices.map(_.toString), preferred.toString){
-        case None =>
-        case Some(index) => action(choices(index))
-      }.arrangedHorizontally().framed()
+      styled.Label(s" $caption: ").beside(chooser(choices, preferred)(action)).framed(black(width=4))
+    }
+
+
+    def chooser(numbers: Seq[Scalar], preferred: Scalar)(select: Scalar => Unit): Glyph = {
+      val labels = numbers.map {
+        d => styled.Label(f"${d}%2.2f")
+      }
+      val hintText=numbers.mkString(" ")
+      val oneOf= new OneOf(labels, Center, fg=transparent, BG=transparent)
+      val next = styled.TextButton(">", hint=Hint(5, hintText)){ _ => oneOf.next(); select(numbers(oneOf.selection))  }
+      val prev = styled.TextButton("<", hint=Hint(5, hintText)){ _ => oneOf.prev(); select(numbers(oneOf.selection))  }
+      locally {
+        var prefs = for { i <- 0 until numbers.length if numbers(i)==preferred } yield i
+        for { pref <- prefs } oneOf._selection=pref
+      }
+      NaturalSize.Row(align=Mid)(prev.framed(black), oneOf, next.framed(black))
     }
 
 
     Col(align=Center)(
       <div width="60em" align="justify" parSkip="3ex">
-        <p align="center">Button decoration with Framed and RoundFramed.</p>
-        <p>Select properties of foreground, background and buttonbackground,
-          then press decoration style buttons to pop up a button
-          specified with the given properties.
+        <p align="center">Button decoration.</p>
+        <p>Select colours and properties, then use one of the four
+          buttons below to bring up a new
+          example of the decoration style that embodies them all exactly.
+        </p>
+        <p>
+          <b>Note</b> that the four buttons will always embody most
+          properties of the brushes you have chosen, but that their other
+          properties are fixed when this GUI is constructed.
         </p>
         <fill height="3ex"/>
       </div>,
@@ -109,16 +131,19 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
       Grid(width=3, padx=20, pady=20)(
         selector("Enlarge", enlarge, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>enlarge=v},
         selector("Radius", radius, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>radius=v},
-        INVISIBLE(),
-        selector("Blur", blur, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>blur=v},
         selector("Delta", delta, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>delta=v},
+
+        selector("Blur", blur, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>blur=v},
         selector("Spread", blur, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>spread=v},
+        selector("Belta", radius, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>belta=v},
       ),
 
-      Grid(width=3, padx=10, pady=20).rows(
-        styled.Label("FG"), styled.Label("BG"), styled.Label("buttonBG"),
+      Grid(width=2, padx=20, pady=10).rows(
+        styled.Label("FG"), styled.Label("BG"),
         new BrushChooser(fg, fg, { _=> }).COLOURGUI,
         new BrushChooser(bg, bg, { _=> }).COLOURGUI,
+        styled.Label("buttonFG"), styled.Label("buttonBG"),
+        new BrushChooser(buttonFG, buttonFG, { _=> }).COLOURGUI,
         new BrushChooser(buttonBG, buttonBG, { _=> }).COLOURGUI
       )
     )
