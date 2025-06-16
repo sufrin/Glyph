@@ -48,10 +48,10 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
 
     lazy val fg: Brush = Brush("darkGrey.16.square")
     lazy val bg: Brush = Brush("lightGrey")
-    lazy val buttonBG: Brush = Brush("transparent")
-    lazy val buttonFG: Brush = Brush("white")
+    lazy val startBG, buttonBG: Brush = Brush("transparent")
+    lazy val startFG, buttonFG: Brush = Brush("white")
     var enlarge: Scalar = 5f
-    var radius: Scalar = 0.8f
+    var radius: Scalar = 20f
     var blur: Scalar = 10f
     var spread: Scalar = 12f
     var delta: Scalar = 12f
@@ -71,7 +71,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
             )
           )
         dialogue.InFront(anchor).start()
-      }(styleSheet.copy(buttonBackgroundBrush=buttonBG, buttonDecoration = decor()))//(styleSheet.copy(buttonDecoration = Framed(black(width=4), enlarge=20)))
+      }(styleSheet.copy(buttonBackgroundBrush=startBG, buttonDecoration = decor()))//(styleSheet.copy(buttonDecoration = Framed(black(width=4), enlarge=20)))
       button
     }
 
@@ -116,13 +116,8 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
       <div width="60em" align="justify" parSkip="3ex">
         <p align="center">Button decoration.</p>
         <p>Select colours and properties, then use one of the four
-          buttons below to bring up a new
+          buttons below to bring up a window containing a new and documented
           example of the decoration style that embodies them all exactly.
-        </p>
-        <p>
-          <b>Note</b> that the four buttons will always embody most
-          properties of the brushes you have chosen, but that their other
-          properties are fixed when this GUI is constructed.
         </p>
         <fill height="3ex"/>
       </div>,
@@ -136,7 +131,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
 
       Grid(width=3, padx=20, pady=20)(
         selector("Enlarge", enlarge, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>enlarge=v },
-        selector("Radius", radius, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>radius=v },
+        selector("Radius", radius, 0.0f, 0.02f, 0.04f, 0.06f, 0.1f, 0.12f, 0.14f, 0.16f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>radius=v },
         selector("Delta", delta, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>delta=v },
 
         selector("Blur", blur, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>blur=v},
