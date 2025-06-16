@@ -11,9 +11,9 @@ import GlyphTypes.Scalar
  *  `fg` should have a very small stroke width, otherwise the frame might obliterate parts of the glyph
  *  and its surroundings.
  */
-class ShowingBaseline(glyph: Glyph, enable: Variable[Boolean], val fg: Brush) extends Glyph {
+class ShowingBaseline(glyph: Glyph, enable: Variable[Boolean], override val fg: Brush) extends Glyph {
   val diagonal: Vec = glyph.diagonal
-  val bg: Brush = Brush().color(0)
+  override val bg: Brush = Brush().color(0)
 
   override def toString: String = s"DebugGeometry($glyph)$baseLineText"
 

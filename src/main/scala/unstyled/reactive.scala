@@ -198,8 +198,8 @@ object reactive {
 
     override def glyphContaining(p: Vec): Option[Hit] = glyph.glyphContaining(p)
 
-    val fg: Brush = glyph.fg
-    val bg: Brush = glyph.bg
+    override val fg: Brush = glyph.fg
+    override val bg: Brush = glyph.bg
 
     def alphaDown:  Int = 0xFF
     def alphaUp:    Int = 0xFF
@@ -247,7 +247,7 @@ object reactive {
    * within it, and (when hovering) shows `up` displaced/dimmed as specified by its `hover`
    * property.
    */
-  class RawButton(up: Glyph, down: Glyph, hover: Glyph, val fg: Brush, val bg: Brush,
+  class RawButton(up: Glyph, down: Glyph, hover: Glyph, override val fg: Brush, override val bg: Brush,
                   val react: Reaction) extends GenericButton {
     override def toString: String = s"RawButton($up, $down, $hover)"
 
@@ -531,7 +531,7 @@ object reactive {
 
   }
 
-  class HorizontalSlider(track: Glyph, image: Glyph, initialProportion: Scalar, val fg: Brush, val bg: Brush, reaction: Scalar => Unit) extends Slider {
+  class HorizontalSlider(track: Glyph, image: Glyph, initialProportion: Scalar, override val fg: Brush, override val bg: Brush, reaction: Scalar => Unit) extends Slider {
     val diagonal: Vec = Vec(track.w, image.h max track.h)
     override def toString: String = s"Slider.H(${(track.w,track.h)} [${(image.w, image.h)}])"
     var x: Scalar = 0
@@ -594,7 +594,7 @@ object reactive {
   }
 
 
-  class VerticalSlider(track: Glyph, image: Glyph, initialProportion: Scalar, val fg: Brush, val bg: Brush, reaction: Scalar => Unit) extends Slider {
+  class VerticalSlider(track: Glyph, image: Glyph, initialProportion: Scalar, override val fg: Brush, override val bg: Brush, reaction: Scalar => Unit) extends Slider {
     val diagonal: Vec = Vec(image.w max track.w, image.h max track.h)
     override def toString: String = s"Slider.V(${(track.w,track.h)} [${(image.w, image.h)}])"
     var x: Scalar = 0
@@ -689,8 +689,8 @@ object reactive {
     /** A copy of this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = new Delegate(glyph)
 
-    val fg: Brush = glyph.fg
-    val bg: Brush = glyph.bg
+    override val fg: Brush = glyph.fg
+    override val bg: Brush = glyph.bg
 
     override def isReactive: Boolean = true
 

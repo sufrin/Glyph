@@ -110,8 +110,8 @@ class EventsAndWindows(implicit val style: BookSheet, implicit val translation: 
 
         /** A copy of this glyph; perhaps with different foreground/background */
         def copy(fg: Brush, bg: Brush): Glyph = null
-        val fg: Brush = Brushes.black
-        val bg: Brush = Brushes.yellowHuge
+        override val fg: Brush = Brushes.black
+        override val bg: Brush = Brushes.yellowHuge
       }
 
       Col(align=Center)(

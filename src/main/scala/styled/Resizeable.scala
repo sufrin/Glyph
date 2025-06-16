@@ -52,8 +52,8 @@ class Resizeable(glyph: StyleSheet=>Glyph, initialStyle: StyleSheet) extends Gly
   def draw(surface: Surface): Unit = delegate.draw(surface)
   def diagonal: Vec = delegate.diagonal
   def copy(fg: Brush=delegate.fg, bg: Brush=delegate.bg): Glyph = delegate.copy(fg, bg)
-  val fg: Brush = delegate.fg
-  val bg: Brush = delegate.bg
+  override val fg: Brush = delegate.fg
+  override val bg: Brush = delegate.bg
   override def glyphContaining(p: Vec): Option[Hit] = delegate.glyphContaining(p)
   override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)
 

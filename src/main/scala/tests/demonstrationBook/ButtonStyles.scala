@@ -77,13 +77,19 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
 
 
 
-    lazy val roundframed: Glyph = exemplar("RoundFramed(fg, bg, enlarge, radius)", ()=>s"$fg, $bg, $enlarge, $radius, buttonfg=$buttonFG, buttonbg=$buttonBG", ()=>RoundFramed(fg, bg, enlarge, radius))
+    lazy val roundframed: Glyph =
+      exemplar("RoundFramed(fg, bg, enlarge, radius)",
+               ()=>s"$fg, $bg, $enlarge, $radius, buttonfg=$buttonFG, buttonbg=$buttonBG",
+               ()=>RoundFramed(fg, bg, enlarge, radius))
 
     lazy val  framed: Glyph = exemplar("Framed(fg, bg, enlarge)", ()=>s"$fg, $bg, $enlarge, buttonfg=$buttonFG, buttonbg=$buttonBG", ()=>Framed(fg, bg, enlarge))
 
     lazy val shaded: Glyph = exemplar("Shaded(fg, bg, enlarge, delta)", ()=>s"$fg, $bg, $enlarge, $delta, buttonfg=$buttonFG, buttonbg=$buttonBG", ()=>Shaded(fg, bg,  enlarge, delta=delta, down=false))
 
-    lazy val  blurred: Glyph = exemplar("Blurred(fg, bg, blur, spread, belta)", ()=>s"$fg, $bg, $blur, $spread, $belta, buttonfg=$buttonFG, buttonbg=$buttonBG", ()=>Blurred(fg, bg,  blur, spread, belta))
+    lazy val  blurred: Glyph =
+      exemplar("Blurred(fg, bg, blur, spread, enlarge, belta)",
+               ()=>s"$fg, $bg, $blur, $spread, $belta, buttonfg=$buttonFG, buttonbg=$buttonBG",
+               ()=>Blurred(fg, bg,  blur, spread, belta, enlarge))
 
     def selector(caption: String, preferred: Scalar, choices: Scalar*)(action: Scalar=> Unit) : Glyph = {
       styled.Label(s" $caption: ").beside(chooser(choices, preferred)(action)).framed(black(width=4))
@@ -129,13 +135,13 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
       ),
 
       Grid(width=3, padx=20, pady=20)(
-        selector("Enlarge", enlarge, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>enlarge=v},
-        selector("Radius", radius, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>radius=v},
-        selector("Delta", delta, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>delta=v},
+        selector("Enlarge", enlarge, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>enlarge=v },
+        selector("Radius", radius, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>radius=v },
+        selector("Delta", delta, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>delta=v },
 
         selector("Blur", blur, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>blur=v},
-        selector("Spread", blur, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>spread=v},
-        selector("Belta", radius, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>belta=v},
+        selector("Spread", spread, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>spread=v },
+        selector("Belta", belta, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>belta=v },
       ),
 
       Grid(width=2, padx=20, pady=10).rows(

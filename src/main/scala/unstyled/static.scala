@@ -11,8 +11,8 @@ import GlyphTypes.Scalar
   class Image(glyph: Glyph) extends Glyph {
     val theImage = External.toImage(glyph)
     override def toString: String = s"Image($diagonal)"
-    val fg: Brush = glyph.fg
-    val bg: Brush = glyph.bg
+    override val fg: Brush = glyph.fg
+    override val bg: Brush = glyph.bg
 
     /**
      * Draw the glyph on the surface at its given size (as if at the origin).
@@ -88,7 +88,7 @@ import GlyphTypes.Scalar
     def Static(fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, delta: Scalar, down: Boolean=false)(glyph: Glyph) =
         GlyphTransforms.Shaded(glyph, fg, bg, 0f, delta, down)
 
-    class  Dynamic(glyph: Glyph, val fg: Brush, val bg: Brush, delta: Scalar, val down: Variable[Boolean]) extends Glyph {
+    class  Dynamic(glyph: Glyph, override val fg: Brush, override val bg: Brush, delta: Scalar, val down: Variable[Boolean]) extends Glyph {
       override def toString: String = s"Shaded.Dynamic($fg, $bg, delta=$delta, $down)\n  ($glyph)"
       val fgWidth = fg.getStrokeWidth
       val offset = delta
@@ -131,7 +131,7 @@ import GlyphTypes.Scalar
 
     def apply(fg: Brush = Brushes.transparent, bg: Brush = Brushes.transparent)(located: Glyph*): Glyph = new Envelope(located, fg, bg)
 
-    class Envelope(located: Seq[Glyph], val fg: Brush, val bg: Brush) extends Composite(located) {
+    class Envelope(located: Seq[Glyph], override val fg: Brush, override val bg: Brush) extends Composite(located) {
       override val kind: String = "Envelope"
       assert(located.nonEmpty, "Envelope must contain at least one glyph")
 
@@ -243,8 +243,8 @@ import GlyphTypes.Scalar
         override
         val baseLine = 0f
 
-        val fg = theseGenerators.fg
-        val bg = theseGenerators.bg
+        override val fg = theseGenerators.fg
+        override val bg = theseGenerators.bg
 
         locally {
           setParents()
@@ -265,8 +265,8 @@ import GlyphTypes.Scalar
   /** An empty glyph with the given dimensions */
   class Skip(width: Scalar, height: Scalar) extends Glyph {
     val diagonal = Vec(width, height)
-    val fg = Brushes.invisible
-    val bg = Brushes.invisible
+    override val fg = Brushes.invisible
+    override val bg = Brushes.invisible
     override def draw(surface: Surface): Unit = ()
 
     override val toString: String = s"Skip($width, $height)"
@@ -287,8 +287,8 @@ import GlyphTypes.Scalar
     def apply(width: Scalar): Glyph = new Skip(width, width)
   }
 
-  /** A zero-diagonal empty glyph from which to inherit colours */
-  class INVISIBLE(val fg: Brush, val bg: Brush) extends Glyph {
+  /** A zero-diagonal empty glyph; useful in defining anchors for dialogues. Colours can be inherited, too.  */
+  class INVISIBLE(override val fg: Brush, override val bg: Brush) extends Glyph {
     override def toString: String = s"INVISIBLE(fg=$fg, bg=$bg)"
     def draw(surface: Surface): Unit = {}
     def diagonal: Vec = Vec.Zero
@@ -302,9 +302,9 @@ import GlyphTypes.Scalar
   /**
    * A point, made with the given paint. If the paint is thick then it's more of a blob than a point.
    */
-  class Point(val fg: Brush) extends Glyph {
+  class Point(override val fg: Brush) extends Glyph {
     val diagonal = Vec(paint.getStrokeWidth, paint.getStrokeWidth)
-    val bg = Brushes.transparent
+    override val bg = Brushes.transparent
 
     def draw(surface: Surface): Unit =
       surface.drawPoints$(paint, diagonal.x/2, diagonal.y/2)
@@ -325,7 +325,7 @@ import GlyphTypes.Scalar
    *
    * @see FilledRect
    */
-  class Rect(val diagonal: Vec, val fg: Brush, val bg: Brush) extends Glyph {
+  class Rect(val diagonal: Vec, override val fg: Brush, override val bg: Brush) extends Glyph {
     override val kind: String = "Rect"
     override def toString: String = s"Rect($diagonal, fg=$fg, bg=$bg)"
 
@@ -373,7 +373,7 @@ import GlyphTypes.Scalar
    * @param dx the horizontal offset of the shadow from the origin of the drawn shadow box
    * @param dy the vertical  offset of the shadow from the origin of the drawn shadow box
    */
-  class BlurredFrame(val inside: Option[Glyph], val diagonal: Vec, blur: Scalar, spread: Scalar, val fg: Brush, val bg: Brush, val dx: Scalar, dy: Scalar) extends Glyph {
+  class BlurredFrame(val inside: Option[Glyph], val diagonal: Vec, blur: Scalar, spread: Scalar, override val fg: Brush, override val bg: Brush, val dx: Scalar, dy: Scalar) extends Glyph {
     override val kind: String = "BlurredFrame"
     override def toString: String = s"BlurredFrame($diagonal, $blur, $spread dx=$dx, dy=$dy fg=$fg, bg=$bg)"
 
@@ -398,7 +398,7 @@ import GlyphTypes.Scalar
    * multiples of `s` -- the smaller of `diagonal.x, diagonal.y`. The arc that ends laterals has radius `s*xrf`, and the arc
    * that ends verticals has radius `s*yrf`.  The smaller the multiple, the tighter-looking are the corners.
    */
-  class RRect(val solid: Boolean, val xrf: Scalar, val yrf: Scalar, val diagonal: Vec, val fg: Brush, val bg: Brush) extends Glyph {
+  class RRect(val solid: Boolean, val xrf: Scalar, val yrf: Scalar, val diagonal: Vec, override val fg: Brush, override val bg: Brush) extends Glyph {
 
     import io.github.humbleui.types.{RRect => SRRECT}
     override val kind: String = "RRect"
@@ -440,7 +440,7 @@ import GlyphTypes.Scalar
    *
    * @see Rect
    */
-  class FilledRect(val diagonal: Vec, val fg: Brush, val bg: Brush) extends Glyph {
+  class FilledRect(val diagonal: Vec, override val fg: Brush, override val bg: Brush) extends Glyph {
     override val kind: String = "FilledRect"
     override def toString: String = s"FilledRect($diagonal, fg=$fg, bg=$bg)"
 
@@ -458,7 +458,7 @@ import GlyphTypes.Scalar
   /**
    * A filled oval that fits in a box with the given `diagonal`.
    */
-  class FilledOval(val diagonal: Vec, val fg: Brush, val bg: Brush) extends Glyph {
+  class FilledOval(val diagonal: Vec, override val fg: Brush, override val bg: Brush) extends Glyph {
     override val kind: String = "FilledOval"
     override def toString: String = s"FilledOval($diagonal, fg=$fg, bg=$bg)"
 
@@ -479,7 +479,7 @@ import GlyphTypes.Scalar
    * box is `Vec.Zero`; in that case the box is calculated from the normalized (to the
    * positive quadrant) vertices, with allowance made for the strokewidth of `fg`.
    */
-  class Polygon(box: Vec, vertices: Iterable[(Scalar, Scalar)], val fg: Brush, val bg: Brush) extends Glyph {
+  class Polygon(box: Vec, vertices: Iterable[(Scalar, Scalar)], override val fg: Brush, override val bg: Brush) extends Glyph {
     override val kind: String = "Polygon"
     override def toString: String = s"Polygon($diagonal, fg=$fg, bg=$bg)(\n     ${vertices.mkString(",")}\n)"
     val compiled: Array[Scalar] = Surface.arrayOfPairs(vertices)
@@ -529,7 +529,7 @@ import GlyphTypes.Scalar
    *
    * TODO: subler `glyphContaining`
    */
-  class FilledPolygon(val diagonal: Vec, vertices: Iterable[(Scalar, Scalar)], val fg: Brush, val bg: Brush) extends Glyph {
+  class FilledPolygon(val diagonal: Vec, vertices: Iterable[(Scalar, Scalar)], override val fg: Brush, override val bg: Brush) extends Glyph {
 
     import io.github.humbleui.skija.Path
 
@@ -585,8 +585,8 @@ import GlyphTypes.Scalar
     def draw(surface: Surface): Unit = rep.draw(surface)
     def diagonal: Vec = rep.diagonal
     def copy(fg: Brush=this.fg, bg: Brush=this.bg): Glyph = new BreakableGlyph(hyphen, glyphs)
-    val fg: Brush = glyphs.head.fg
-    val bg: Brush = glyphs.head.bg
+    override val fg: Brush = glyphs.head.fg
+    override val bg: Brush = glyphs.head.bg
     /** Index of the first of the glyphs that doesn't
      * fit within `w`.
      */
@@ -620,8 +620,8 @@ import GlyphTypes.Scalar
       def draw(surface: Surface): Unit = ()
       def diagonal: Vec = Vec(width, height)
       def copy(fg: Brush=Brushes.transparent, bg: Brush=Brushes.transparent): Glyph = Empty(width, height)
-      val fg: Brush = Brushes.transparent
-      val bg: Brush = Brushes.transparent
+      override val fg: Brush = Brushes.transparent
+      override val bg: Brush = Brushes.transparent
     }
   }
 

@@ -68,10 +68,14 @@ trait GlyphTransforms {
   /**
    * Same as `this.turned(degrees, fg, bg)` but with an imposed bounding box `(bw, bh)`
    */
-  def turnedBoxed(bw: Scalar, bh: Scalar)(degrees: Scalar, fg: Brush = thisGlyph.fg, bg: Brush = thisGlyph.bg): Glyph =
+  def turnedBoxed(bw: Scalar, bh: Scalar)(degrees: Scalar, fg: Brush = thisGlyph.fg, bg: Brush = thisGlyph.bg): Glyph = {
+    val (f, b) = (fg, bg)
     new GlyphTransforms.Turned(thisGlyph, degrees, false, fg, bg) {
+      override val fg: Brush = f
+      override val bg: Brush = b
       override def box: Vec = Vec(bw, bh)
     }
+  }
 
   /**
    *
@@ -130,7 +134,7 @@ trait GlyphTransforms {
 }
 
 object GlyphTransforms {
-
+  val oldStyle = false
   /**
    * A glyph that renders as `glyph` framed by a surround painted with `fg`, on a mount painted with `bg`.
    *
@@ -146,18 +150,19 @@ object GlyphTransforms {
    *
    */
   object RoundFramed {
-    def apply(fg: Brush, bg: Brush, radiusFactor: Scalar=0f)(glyph: Glyph): RoundFramed =
-      new RoundFramed(glyph, fg, bg, radiusFactor)
+    def apply(fg: Brush, bg: Brush, radiusFactor: Scalar=0f)(glyph: Glyph): Glyph =
+      if (oldStyle) new XRoundFramed(glyph, fg, bg, radiusFactor) else
+        styles.decoration.Framed(fg, bg, 0, radiusFactor).decorate(glyph)
   }
 
-  class RoundFramed(val glyph: Glyph, val fg: Brush, val bg: Brush, val radiusFactor: Scalar) extends TransformedGlyph {
+  class XRoundFramed(val glyph: Glyph, override val fg: Brush, override val bg: Brush, val radiusFactor: Scalar) extends TransformedGlyph {
     import static.{FilledRect, Rect, RRect}
 
     override def toString: String = s"RoundFramed($fg, $bg)($glyph)"
     override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)
     override def glyphContaining(p: Vec): Option[Hit] = delegate.glyphContaining(p)
     override def contains(p: Vec): Boolean = delegate.contains(p)
-    override def copy(fg: Brush = fg, bg: Brush = bg): RoundFramed = new RoundFramed(glyph.copy(), fg, bg, radiusFactor)
+    override def copy(fg: Brush = fg, bg: Brush = bg): XRoundFramed = new XRoundFramed(glyph.copy(), fg, bg, radiusFactor)
 
 
     def delegate: Glyph = {
@@ -208,7 +213,7 @@ object GlyphTransforms {
   }
 
   /** The glyph displaced by `(dx,dy)` in a cavity of size `(w, h)` */
-  private class InCavity(w: Scalar, h: Scalar, dx: Scalar, dy: Scalar, val glyph: Glyph, val fg: Brush, val bg: Brush) extends TransformedGlyph {
+  private class InCavity(w: Scalar, h: Scalar, dx: Scalar, dy: Scalar, val glyph: Glyph, override val fg: Brush, override val bg: Brush) extends TransformedGlyph {
 
     override def toString: String = s"InCavity($w, $h, $dx, $dy)($glyph)"
     override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(p-delta)
@@ -249,7 +254,7 @@ object GlyphTransforms {
       new Framed(glyph, fg, bg)
   }
 
-  class Framed(val glyph: Glyph, val fg: Brush, val bg: Brush) extends TransformedGlyph {
+  class Framed(val glyph: Glyph, override val fg: Brush, override val bg: Brush) extends TransformedGlyph {
 
     private val edgeWidth: Scalar = fg.strokeWidth
     private val inset: Vec = Vec(edgeWidth / 2f, edgeWidth / 2f)
@@ -301,8 +306,8 @@ object GlyphTransforms {
         val (_fg, _bg) = (fg, bg)
         new TransformedGlyph {
           val glyph: Glyph = _glyph
-          val fg: Brush = if (_fg eq null) glyph.fg else _fg
-          val bg: Brush = if (_bg eq null) glyph.bg else _bg
+          override val fg: Brush = if (_fg eq null) glyph.fg else _fg
+          override val bg: Brush = if (_bg eq null) glyph.bg else _bg
 
           private val offset = Vec(dw / 2f, dh / 2f)
 
@@ -358,7 +363,7 @@ object GlyphTransforms {
    *
    * @see Turned
    */
-  class Rotated(val glyph: Glyph, quads: Int, val fg: Brush, val bg: Brush) extends TransformedGlyph {
+  class Rotated(val glyph: Glyph, quads: Int, override val fg: Brush, override val bg: Brush) extends TransformedGlyph {
     override val kind = "Rotated"
     private val quadrants = Rotated.mod4(quads)
     override def toString: String = s"Rotated($quadrants, fg=$fg, bg=$bg)(${glyph.toString})"
@@ -438,7 +443,7 @@ object GlyphTransforms {
    *  It took me an unconscionably long time to get the `relativeLocation` function right. In the end
    *  it turned out to be obvious.
    */
-  class Turned(val glyph: Glyph, degrees: Scalar, tight: Boolean, val fg: Brush, val bg: Brush) extends TransformedGlyph {
+  class Turned(val glyph: Glyph, degrees: Scalar, tight: Boolean, override val fg: Brush, override val bg: Brush) extends TransformedGlyph {
     import Math.PI
     private val `pi`    = PI
     private val `pi/2`  = `pi`/2
@@ -561,7 +566,7 @@ object GlyphTransforms {
    * be made more efficient by calculating the `skewed` transform appropriately.
    *
    */
-  class Skewed(val glyph: Glyph, skewX: Scalar, skewY: Scalar, val fg: Brush, val bg: Brush) extends TransformedGlyph {
+  class Skewed(val glyph: Glyph, skewX: Scalar, skewY: Scalar, override val fg: Brush, override val bg: Brush) extends TransformedGlyph {
     require(skewX>=0f && skewY>=0f, "Skew factors must be non-negative")
     override val kind = "Skewed"
     override def toString: String = s"Skewed($skewX, $skewY, fg=$fg, bg=$bg)(${glyph.toString})"
@@ -617,7 +622,7 @@ object GlyphTransforms {
     }
   }
 
-  class Mirrored(val glyph: Glyph, leftRight: Boolean, topBottom: Boolean, val fg: Brush, val bg: Brush) extends TransformedGlyph {
+  class Mirrored(val glyph: Glyph, leftRight: Boolean, topBottom: Boolean, override val fg: Brush, override val bg: Brush) extends TransformedGlyph {
 
     override val kind = "Mirrored"
 
@@ -681,7 +686,7 @@ object GlyphTransforms {
    * @see RawButton.hardwareScale
    *
    */
-  class Scaled(val glyph: Glyph, scale: Vec, val fg: Brush, val bg: Brush) extends TransformedGlyph {
+  class Scaled(val glyph: Glyph, scale: Vec, override val fg: Brush, override val bg: Brush) extends TransformedGlyph {
     override def toString: String = s"Scaled($scale)($glyph, fg=$fg, bg=$bg)"
 
     def draw(surface: Surface): Unit = {
@@ -726,7 +731,7 @@ object GlyphTransforms {
         new Shaded(glyph.enlarged(if (enlarge <= 1f) enlarge * (glyph.w min glyph.h) else enlarge), fg = fg, bg = bg, delta = delta, down)
   }
 
-  class Shaded(val glyph: Glyph, val fg: Brush, val bg: Brush, delta: Scalar, val down: Boolean) extends TransformedGlyph {
+  class Shaded(val glyph: Glyph, override val fg: Brush, override val bg: Brush, delta: Scalar, val down: Boolean) extends TransformedGlyph {
 
     override def toString: String = s"Shaded.Static($fg, $bg, delta=$delta, $down)\n  ($glyph)"
 
@@ -785,8 +790,8 @@ object GlyphTransforms {
         WithBaseline(glyph.copy(fg, bg), baseLine$)
       }
 
-      val fg: Brush = glyph.fg
-      val bg: Brush = glyph.bg
+      override val fg: Brush = glyph.fg
+      override val bg: Brush = glyph.bg
 
       def draw(surface: Surface): Unit = glyph.draw(surface)
     }

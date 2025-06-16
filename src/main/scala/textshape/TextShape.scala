@@ -99,7 +99,7 @@ import org.sufrin.glyph.textshape.TextShape.{paragraphStyle, textStyle}
     /** A copy of this glyph; perhaps with different foreground/background */
     def copy(fg: Brush, bg: Brush): Glyph = toGlyph(pts)
 
-    val fg: Brush = thisShape.fg
-    val bg: Brush = thisShape.bg
+    override val fg: Brush = thisShape.fg
+    override val bg: Brush = thisShape.bg
   }
 }

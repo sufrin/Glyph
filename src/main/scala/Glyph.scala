@@ -349,9 +349,11 @@ trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyp
 
   /** A copy of this glyph; perhaps with different foreground/background */
   def copy(fg: Brush=fg, bg: Brush=bg): Glyph
+  /** A copy of this glyph; perhaps with different foreground/background */
   def apply(fg: Brush=fg, bg: Brush=bg): Glyph = this.copy(fg, bg)
-  /** Because Glyph extends GlyphShape */
-  override def withForeground(brush: Brush): GlyphShape = GlyphShape.fromGlyph(this.copy(brush))
+
+  /** Abstract a glyphShape from a  `this.copy(fg, bg)` -- necessary only because `Glyph extends GlyphShape` */
+  override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = GlyphShape.fromGlyph(this.copy(fg, bg))
 
   /**
    * A functionally equivalent copy of this glyph, generated within the

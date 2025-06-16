@@ -185,8 +185,8 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
     App.runOnUIThread{()=>rootWindow.setContentSize(diag.x.floor.toInt, diag.y.floor.toInt)}
   }
 
-  val fg: Brush = Brushes.invisible
-  val bg: Brush = Brushes.invisible
+  override val fg: Brush = Brushes.invisible
+  override val bg: Brush = Brushes.invisible
   var diagonal: Vec = GUIroot.diagonal
   locally { GUIroot.parent = this }
   override def toString: String = s"RootGlyph\n\tdelegate = $GUIroot"

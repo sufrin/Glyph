@@ -66,9 +66,9 @@ object PathSymbols {
 /**
  * Drawing board
  */
-class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])(implicit style: StyleSheet) extends  GestureBasedReactiveGlyph { thisBoard =>
+class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, override val bg: Brush=lightGrey)(left: Variable[Int], right: Variable[Int])(implicit style: StyleSheet) extends  GestureBasedReactiveGlyph { thisBoard =>
 
-  var lastMouse, lastMouseDown: Vec = background.diagonal * 0.5f
+  var lastMouse, lastMouseDown: Vec = Vec(w, h) * 0.5f
 
   val displayList: mutable.Queue[TargetShape] = new mutable.Queue[TargetShape]()
 
@@ -215,7 +215,6 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
    */
   class Composition(x : Scalar, y : Scalar, shape : GlyphShape, val components: Seq[TargetShape]) extends GlyphShape {
     override def toString: String = s"Composition[${super.toString}]"
-    override def withForeground(brush: Brush): Composition = new Composition(x, y, shape.withForeground(brush), components)
 
     def draw(surface: Surface): Unit = shape.draw(surface)
 
@@ -419,22 +418,18 @@ class DrawingBoard(background: Glyph)(left: Variable[Int], right: Variable[Int])
     reDraw()
   }
 
-  def copy(fg: Brush=fg, bg: Brush=bg): DrawingBoard = new DrawingBoard(background)(left, right)
+  def copy(fg: Brush=fg, bg: Brush=bg): DrawingBoard = new DrawingBoard(w, h, fg, bg)(left, right)
 
-  val fg: Brush = background.fg
-  val bg: Brush = background.bg
-
-  def diagonal: Vec = background.diagonal
+  def diagonal: Vec = Vec(w, h)
 
   val focussedBrush: Brush      = Brushes.red(width=4, mode=GlyphShape.STROKE)
-  val focussedFrame: GlyphShape = GlyphShape.rect(background.w-4, background.h-4)(focussedBrush)
+  val focussedFrame: GlyphShape = GlyphShape.rect(w-4, h-4)(focussedBrush)
 
   val selectBrush: Brush = Brushes("white.2.round.stroke")(mode=PaintMode.STROKE, blendMode=BlendMode.OVERLAY)
 
   def draw(surface: Surface): Unit = surface.withClip(diagonal) {
     surface.declareCurrentTransform(thisBoard)
     drawBackground(surface)
-    background.draw(surface)
 
     for { shape <- displayList } {
       shape.setHovering(shape.isBeneath(lastMouse)||shape.canHandle(lastMouse))
@@ -519,8 +514,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
     val done: Variable[Int]   = Variable(0){ case n => left.set(f"$n%03d") }
     val undone: Variable[Int] = Variable(0){ case n => right.set(f"$n%03d") }
 
-
-    val drawingBoard = new DrawingBoard(rect(1200, 800)(lightGrey))(done, undone)
+    val drawingBoard = new DrawingBoard(1200, 800, lightGrey)(done, undone)
 
     var newBrush: Brush = Brushes("blue.4.stroke.round")
 
@@ -539,7 +533,6 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
       def diagonal: Vec = Vec(2*R, 2*R)
 
-      def withForeground(brush: Brush): GlyphShape = new withRadius(R)(shape.withForeground(brush))
 
       override def enclosing(point: Vec): Option[GlyphShape] = {
         val origin = point - delta
@@ -571,8 +564,8 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       addButton("Rect", "rectangle (wxh)")(rectangle(width,height)(newBrush.copy).scale(scale max 1)),
       addButton("Circ", "circle (radius r)")(circle(radius)(newBrush.copy).scale(scale max 1)),
       addButton("Arrow", "arrow")(arrow(newBrush.copy).scale(scale max 0.3f)),
-      addButton("Star", "v-pointed star size r")(RAD(GlyphShape.polygon(PolygonLibrary.regularStarPath(vertices, C=radius, R=radius).tail)(fg=newBrush.copy)).scale(scale max 0.3f)),
-      addButton("Poly", "v-sided polygon size r")(RAD(GlyphShape.polygon(PolygonLibrary.regularPolygonPath(vertices, C=radius, R=radius).tail)(fg=newBrush.copy)).scale(scale max 0.3f)),
+      addButton("Star", "v-pointed star size r")(RAD(GlyphShape.polygon(PolygonLibrary.regularStarPath(vertices, C=radius, R=radius).tail)(brush=newBrush.copy)).scale(scale max 0.3f)),
+      addButton("Poly", "v-sided polygon size r")(RAD(GlyphShape.polygon(PolygonLibrary.regularPolygonPath(vertices, C=radius, R=radius).tail)(brush=newBrush.copy)).scale(scale max 0.3f)),
 
     )
 
@@ -659,7 +652,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
         HintedButton("Clear", "Clear the path design") { _ => drawingBoard.fromButton("-vertices") { drawingBoard.vertices = Seq.empty } },
         HintedButton("Path", "Make a path from the path design"){ _ => drawingBoard.fromButton("path") { drawingBoard.addPoly(newBrush.copy); drawingBoard.vertices = Seq.empty }},
         sheet.hFill(),
-        DynamicHintedButton("Paint", ()=>s"Repaint selection with  $newBrush"){ _ => drawingBoard.transformSelected({ shape => shape.withForeground(newBrush.copy)}, "repaint")},
+        DynamicHintedButton("Paint", ()=>s"Repaint selection with  $newBrush"){ _ => drawingBoard.transformSelected({ shape => shape.withBrushes(newBrush.copy)}, "repaint")},
       ),
       ex,
       FixedSize.Row(width=drawingBoard.w, align=Mid)(shapes),

@@ -74,6 +74,52 @@ package styles
       def decorate(glyph: Glyph): Glyph
     }
 
+    import GlyphShape.PathShape
+
+
+    /**
+     * Decorate the glyph with a (possibly-curved) frame
+     *
+     * @param fg           foreground of the frame
+     * @param bg           background of the frame
+     * @param enlarge      (if `<1`) multiple of the smaller of the two glyph dimensions to enlarge the glyph by; otherwise absolute value to enlarge the glyph by.
+     * @param radius       (if `==0`) a rectangular frame; otherwise the `radius` of the corner curves
+     * @see GlyphTransforms.Framed
+     */
+    case class Framed(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar=0.15f, radius: Scalar=0) extends Decoration {
+      import GlyphShape._
+      val ffg=if (radius==0) fg(mode=STROKE) else fg(mode=STROKE).rounded(radius)
+      val fbg=if (radius==0) bg(mode=FILL) else bg(mode=FILL).rounded(radius)
+      def decorate(glyph: Glyph): Glyph = {
+        val fenlarge = if (enlarge<1) (glyph.w min glyph.h)*enlarge else enlarge
+        val frame = rectangularPolygon(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(ffg)
+        val background = rectangularPolygon(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(fbg)
+        asGlyph(superimposed(List(background, frame, glyph)))
+      }
+    }
+
+    /**
+     * Decorate the glyph with a (possibly-curved) frame. 06/2025 -- identical to Framed
+     *
+     * @param fg           foreground of the frame
+     * @param bg           background of the frame
+     * @param enlarge      (if `<1`) multiple of the smaller of the two glyph dimensions to enlarge the glyph by; otherwise absolute value to enlarge the glyph by.
+     * @param radius (if `==0`) a rectangular frame; otherwise the `radius` of the corner curves
+     *
+     * @see Framed
+     */
+    case class RoundFramed(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar=0.15f, radius: Scalar=0) extends Decoration {
+      import GlyphShape._
+      val ffg=if (radius==0) fg(mode=STROKE) else fg(mode=STROKE).rounded(radius)
+      val fbg=if (radius==0) bg(mode=FILL) else bg(mode=FILL).rounded(radius)
+      def decorate(glyph: Glyph): Glyph = {
+        val fenlarge = if (enlarge<1) (glyph.w min glyph.h)*enlarge else enlarge
+        val frame = rectangularPolygon(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(ffg)
+        val background = rectangularPolygon(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(fbg)
+        asGlyph(superimposed(List(background, frame, glyph)))
+      }
+    }
+
     /**
      * Decorate the glyph with a (possibly-curved) frame
      *
@@ -82,8 +128,9 @@ package styles
      * @param enlarge      (if `<1`) multiple of the smaller of the two glyph dimensions to enlarge the glyph by; otherwise absolute value to enlarge the glyph by.
      * @param radius (if `==0`) a rectangular frame; otherwise the `radius` of the corner curves
      * @see GlyphTransforms.Framed
+     *
      */
-    case class Framed(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar = 0.15f, radius: Scalar = 0f) extends Decoration {
+    @deprecated("Old version") case class XFramed(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar = 0.15f, radius: Scalar = 0f) extends Decoration {
       def decorate(glyph: Glyph): Glyph =
         glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).framed(fg, bg, radius)
     }
@@ -97,7 +144,7 @@ package styles
      * @param radius (if `==0`) a rectangular frame; otherwise the `radius` of the corner curves
      * @see GlyphTransforms.Framed
      */
-    case class RoundFramed(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar = 0.15f, radius: Scalar = 0f) extends Decoration {
+    @deprecated("Old version") case class XRoundFramed(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar = 0.15f, radius: Scalar = 0f) extends Decoration {
       def decorate(glyph: Glyph): Glyph =
         glyph.enlarged(if (enlarge < 1f) enlarge * (glyph.w min glyph.h) else enlarge).roundFramed(fg, bg, radius)
     }

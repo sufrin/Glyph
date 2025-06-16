@@ -21,8 +21,8 @@ import io.github.humbleui.jwm.App
    * `Variable` (with value 1.0f is allocated.
    */
   class DynamicallyScaled(theScale: Variable[Scale], glyph: Glyph) extends Glyph {
-    val fg = glyph.fg
-    val bg = glyph.bg
+    override val fg = glyph.fg
+    override val bg = glyph.bg
     val scale = if (theScale eq null) Variable(1.0f) else theScale
     def draw(surface: Surface): Unit = {
       surface.withClip(diagonal) {
@@ -51,8 +51,8 @@ import io.github.humbleui.jwm.App
    *  A `Glyph` with the same diagonal as `glyph`, which is drawn with origin at `(panFactor, tiltFactor)`
    */
   class DynamicallyScrolled(tiltFactor: Variable[Float], panFactor: Variable[Float], glyph: Glyph) extends Glyph {
-    val fg = glyph.fg
-    val bg = glyph.bg
+    override val fg = glyph.fg
+    override val bg = glyph.bg
     def draw(surface: Surface): Unit = {
       surface.withOrigin(panFactor.value, tiltFactor.value) {
         glyph.draw(surface)
@@ -93,7 +93,7 @@ import io.github.humbleui.jwm.App
    *       one to which all events are forwarded from the top level. This amounts to an
    *       internal virtual window. Perhaps straightforward to deliver eventually.....
    */
-  class ViewPort(glyph: Glyph, val fg: Brush, val bg: Brush, initialPortDiagonal: Vec = null) extends ReactiveGlyph {
+  class ViewPort(glyph: Glyph, override val fg: Brush, override val bg: Brush, initialPortDiagonal: Vec = null) extends ReactiveGlyph {
 
     import GlyphTypes.Scalar
 
@@ -281,8 +281,8 @@ import io.github.humbleui.jwm.App
    *
    * Its `bg` is set to `BG`, if that appears, else to the `bg` of the largest (in area) of the glyphs.
    */
-  class OneOf(val glyphs: Seq[Glyph], align: Alignment, val fg: Brush, BG: Brush=null, val enableBG: Boolean = true) extends Composite(glyphs) {
-    val bg = if (BG eq null) OneOf.largestBG(glyphs) else BG
+  class OneOf(val glyphs: Seq[Glyph], align: Alignment, override val fg: Brush, BG: Brush=null, val enableBG: Boolean = true) extends Composite(glyphs) {
+    override val bg = if (BG eq null) OneOf.largestBG(glyphs) else BG
     override val kind = "OneOf"
     override def toString: String = s"""OneOf(fg=$fg, bg=$bg\n glyphs=\n  ${glyphs.map(_.toString).mkString(",\n  ")})"""
 
@@ -372,7 +372,7 @@ import io.github.humbleui.jwm.App
    * @param fg
    * @param bg
    */
-  class SplitScreen(left: Glyph, right: Glyph, dynamic: Boolean, val fg: Brush, val bg: Brush)
+  class SplitScreen(left: Glyph, right: Glyph, dynamic: Boolean, override val fg: Brush, override val bg: Brush)
         extends  Glyph {
     import GlyphTypes.Scalar
 

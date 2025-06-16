@@ -478,8 +478,8 @@ class EventLog[Event](size: Int, lines: Int, keepLines: Int=0)(implicit style: S
   /** A copy of this glyph; perhaps with different foreground/background */
   def copy(fg: Brush, bg: Brush): Glyph = new EventLog(size, lines, keepLines)
 
-  val bg: Brush = style.labelBackgroundBrush
-  val fg: Brush = style.labelForegroundBrush
+  override val bg: Brush = style.labelBackgroundBrush
+  override val fg: Brush = style.labelForegroundBrush
 }
 
 class StringLog (size: Int, lines: Int, keepLines: Int)(implicit style: StyleSheet) extends EventLog[String](size, lines, keepLines) {

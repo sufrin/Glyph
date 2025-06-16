@@ -70,7 +70,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
       fontScale=3f,
       buttonBackgroundBrush=Brushes.blue,
       buttonForegroundBrush=Brushes.white,
-      buttonDecoration = decoration.RoundFramed(fg=Brushes.blue(width=10), bg=Brushes.blue, radius = .48f)
+      buttonDecoration = decoration.RoundFramed(fg=Brushes.blue(width=10), bg=Brushes.blue, radius = 40)
     )
 
     val selectButtonStyle: StyleSheet = sheet.buttonSheet.copy(

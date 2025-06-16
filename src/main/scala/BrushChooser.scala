@@ -168,7 +168,8 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     </div>.enlarged(30)).InFront(COLOURGUI)
   }
 
-    lazy val sample = ((rectangle(textModel.w, textModel.h)(protoBrush) ||| textModel) ~~~ rectangle(30+2*textModel.w,30+textModel.h)(transparent)).framed(black)
+    lazy val sample =
+      asGlyph((rectangle(textModel.w, textModel.h)(protoBrush) ||| textModel) ~~~ rectangle(30+2*textModel.w,30+textModel.h)(transparent)).framed(black)
 
     lazy val GUI = Col(align=Center, bg=lightGrey)(COLOURGUI, ex, sample, ex, HUEGUI).enlarged(30)
 

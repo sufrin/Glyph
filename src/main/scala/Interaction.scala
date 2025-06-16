@@ -98,10 +98,14 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
     val window: Window = thisInteraction.window
 
     /** The handler draws `root` at scale when needed */
-    val root: Glyph    =
+    val root: Glyph    = {
+      val (f, b) = (guiRoot.fg, guiRoot.bg)
       new RootGlyph(guiRoot) {
+        override val fg: Brush = f
+        override val bg: Brush = b
         override val args: List[String] = thisInteraction.args
       }
+    }
 
     val screen: Screen = thisInteraction.screen
     locally {

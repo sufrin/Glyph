@@ -506,14 +506,15 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       val shapes: List[GlyphShape] =
         List(
           arrow(red), arrow(red(width=3,mode=STROKE)), arrow(blue), arrow(blue(mode=STROKE)),
-        cr,           cb,                     cg,                                   cg.bg(yellow),
-        (cr ~~~ cb),  (cr~~~cb).bg(yellow),   (cr~~~cb.bg(yellow)),                 (cr.bg(yellow)~~~cb),
-        (cr --- cg),  (cr --- cg).bg(yellow), (cr---cb.bg(yellow)),                 (cr.bg(yellow)---cb),
-        (cr---cb.bg(yellow)).bg(green).turned(45), (cr---cb.bg(yellow)).bg(green).turned(45).bg(red),                     (cr---cb.bg(yellow)).bg(green),       (cr.bg(yellow)---cb).bg(green),
-        poly3(redStroke), poly3(redStroke).bg(yellow), poly3(redStroke).bg(yellow).bg(blue), poly3(redStroke).bg(yellow).bg(green),
+        cr,           cb,                     cg,                                   cg.withBackground(yellow),
+        (cr ~~~ cb),  (cr~~~cb).withBackground(yellow),   (cr~~~cb.withBackground(yellow)),                 (cr.withBackground(yellow)~~~cb),
+        (cr --- cg),  (cr --- cg).withBackground(yellow), (cr---cb.withBackground(yellow)),                 (cr.withBackground(yellow)---cb),
+        (cr---cb.withBackground(yellow)).withBackground(green).turn(45), (cr---cb.withBackground(yellow)).withBackground(green).turn(45).withBackground(red),
+           (cr---cb.withBackground(yellow)).withBackground(green),       (cr.withBackground(yellow)---cb).withBackground(green),
+        poly3(redStroke), poly3(redStroke).withBackground(yellow), poly3(redStroke).withBackground(yellow).withBackground(blue), poly3(redStroke).withBackground(yellow).withBackground(green),
         poly1(blue(width=25, cap=SQUARE, mode=PaintMode.STROKE)),
         poly2(blue(width=5, cap=ROUND, mode=PaintMode.STROKE)),
-        poly2(blue(width=5, cap=ROUND, mode=PaintMode.STROKE)).bg(green), poly2(redFill).turned(45f, true).bg(yellow),
+        poly2(blue(width=5, cap=ROUND, mode=PaintMode.STROKE)).withBackground(green), poly2(redFill).turn(45f, true).withBackground(yellow),
         )
 
       Col(align=Center)(

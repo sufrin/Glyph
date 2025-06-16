@@ -39,7 +39,7 @@ object FixedSize  {
    * @param baseline the nominal baseline
    *
    */
-  class Space(var _w: Scalar, var _h: Scalar, xS: Scalar, yS: Scalar, val fg: Brush = nothing, val bg: Brush = nothing, override val baseLine: Scalar=0) extends Glyph {
+  class Space(var _w: Scalar, var _h: Scalar, xS: Scalar, yS: Scalar, override val fg: Brush = nothing, override val bg: Brush = nothing, override val baseLine: Scalar=0) extends Glyph {
     override val xStretch: Scalar = xS
     override val yStretch: Scalar = yS
     override def toString: String = s"FixedSpace(${_w}±$xS, ${_h}±$yS)"
@@ -241,8 +241,8 @@ object FixedSize  {
         override
         val baseLine = base
 
-        val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
-        val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
+        override val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
+        override val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
 
         locally {
           setParents()
@@ -298,8 +298,8 @@ object FixedSize  {
         val glyphs = theGlyphs
         val diagonal = Vec(width, height)
 
-        val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
-        val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
+        override val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
+        override val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
 
         locally {
           setParents()

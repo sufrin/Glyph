@@ -25,7 +25,7 @@ import org.sufrin.logging.FINER
  *
  * @see styled.TextField for a styled companion object.
  */
-class TextField(val fg: Brush, val bg: Brush, font: Font,
+class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 var onEnter: String => Unit,
                 var onError: (EventKey, Glyph) => Unit,
                 var onCursorLeave: String => Unit,

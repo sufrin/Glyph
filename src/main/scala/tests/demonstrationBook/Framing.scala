@@ -4,10 +4,12 @@ package tests.demonstrationBook
 import styled.{Book, BookSheet, Label}
 import GlyphTypes.Scalar
 import NaturalSize.{Col, Grid, Row}
-import unstyled.static.Polygon
+import unstyled.static.{INVISIBLE, Polygon}
 
-import io.github.humbleui.skija.PaintStrokeCap
+import io.github.humbleui.skija.{PaintMode, PaintStrokeCap}
 import org.sufrin.glyph.GlyphShape.FILL
+import org.sufrin.glyph.styled.windowdialogues.Dialogue
+import org.sufrin.glyph.unstyled.dynamic.OneOf
 
 class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: StyleSheet = style.buttonSheet.copy(fontScale = 0.8f)
@@ -16,7 +18,6 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
   val book = Book()
   val Page = book.Page
   import Brushes._
-
 
   Page("Framed Text #1", "Texts .framed(fg, yellow, rf)\n(showing effect of fg brush size/cap") {
       val fg = red(width = 10, cap = ROUND).copy()
@@ -135,6 +136,154 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
         Label(s"fg=red($width,$cap)\ntext bg=$tbg, bg=$bg") above label(Brushes(tbg)).framed(fg=red(width = width, cap = cap), bg=Brushes(bg)) ,
     )
   }
+
+  if (false) Page("Sampler", "") {
+    import styled.TextButton
+    import styles.decoration.{Decoration, Blurred, Shaded}
+    val styleSheet = pageSheet
+    val anchor = INVISIBLE()
+
+    lazy val fg: Brush = Brush("darkGrey.16.square")
+    lazy val bg: Brush = Brush("lightGrey")
+    lazy val buttonBG: Brush = Brush("transparent")
+    lazy val buttonFG: Brush = Brush("white")
+    var enlarge: Scalar = 5f
+    var radius: Scalar = 0.8f
+    var blur: Scalar = 10f
+    var spread: Scalar = 12f
+    var delta: Scalar = 12f
+    var belta: Scalar = 0f
+
+    import styled.windowdialogues.Dialogue.FLASH
+
+
+    def exemplar(id: String, caption: () => String, decor: () => Decoration): Glyph = {
+      lazy val button: Glyph = TextButton(id)
+      { _ =>
+        val style = styleSheet.copy(buttonForegroundBrush=buttonFG, buttonBackgroundBrush=buttonBG, buttonDecoration = decor())
+        lazy val dialogue: Dialogue[Unit] =
+          FLASH(
+            Col(align=Center)(
+              styled.Label(id)(style),
+              styled.Label(caption().replace(',', '\n'))
+            )
+          )
+        dialogue.InFront(anchor).start()
+      }(styleSheet.copy(buttonBackgroundBrush=buttonBG, buttonDecoration = decor()))//(styleSheet.copy(buttonDecoration = Framed(black(width=4), enlarge=20)))
+      button
+    }
+
+    import GlyphShape.PathShape
+
+    def rectangle(w: Scalar, h: Scalar)(brush: Brush): GlyphShape = {
+      val path=new PathShape(brush, false)
+      path.moveTo(0, 0)
+      path.lineTo(w, 0)
+      path.lineTo(w, h)
+      path.lineTo(0, h)
+      path.closePath
+      path
+    }
+
+    def Framed(fg: Brush, bg: Brush, enlarge: Scalar): Decoration = new Decoration {
+      import GlyphShape._
+      val ffg=fg mode PaintMode.STROKE
+      val fbg=bg mode PaintMode.FILL
+      def decorate(glyph: Glyph): Glyph = {
+        val fenlarge = if (enlarge<1) (glyph.w min glyph.h)*enlarge else enlarge
+        val frame = rectangularPolygon(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(ffg)
+        val background = rectangularPolygon(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(fbg)
+        asGlyph(superimposed(List(background, frame, glyph)), fg, bg)
+      }
+    }
+
+    def RoundFramed(fg: Brush, bg: Brush, enlarge: Scalar, radius: Scalar): Decoration = new Decoration {
+      import GlyphShape._
+      val rad = radius max 0.1f
+      val ffg=fg(mode=PaintMode.STROKE).rounded(radius)
+      val fbg=bg(mode=PaintMode.FILL).rounded(radius)
+      def decorate(glyph: Glyph): Glyph = {
+        val fenlarge = if (enlarge<1) (glyph.w min glyph.h)*enlarge else enlarge
+        val frame = rectangle(glyph.w+2*fg.strokeWidth+enlarge, glyph.h+2*fg.strokeWidth+enlarge)(ffg)
+        val background = rectangle(glyph.w+2*fg.strokeWidth+enlarge, glyph.h+2*fg.strokeWidth+enlarge)(fbg)
+        asGlyph(superimposed(List(background, frame, glyph)), fg, bg)
+      }
+    }
+
+
+    lazy val roundframed: Glyph =
+      exemplar("RoundFramed(fg, bg, enlarge, radius)",
+        ()=>s"$fg, $bg, $enlarge, $radius, buttonfg=$buttonFG, buttonbg=$buttonBG",
+        ()=>RoundFramed(fg, bg, enlarge, radius))
+
+    lazy val  framed: Glyph =
+      exemplar("Framed(fg, bg, enlarge)",
+               ()=>s"$fg, $bg, $enlarge, buttonfg=$buttonFG, buttonbg=$buttonBG",
+               ()=>Framed(fg, bg, enlarge))
+
+
+    def selector(caption: String, preferred: Scalar, choices: Scalar*)(action: Scalar=> Unit) : Glyph = {
+      styled.Label(s" $caption: ").beside(chooser(choices, preferred)(action)).framed(black(width=4))
+    }
+
+
+    def chooser(numbers: Seq[Scalar], preferred: Scalar)(select: Scalar => Unit): Glyph = {
+      val labels = numbers.map {
+        d => styled.Label(f"${d}%2.2f")
+      }
+      val hintText=numbers.mkString(" ")
+      val oneOf= new OneOf(labels, Center, fg=transparent, BG=transparent)
+      val next = styled.TextButton(">", hint=Hint(5, hintText)){ _ => oneOf.next(); select(numbers(oneOf.selection))  }
+      val prev = styled.TextButton("<", hint=Hint(5, hintText)){ _ => oneOf.prev(); select(numbers(oneOf.selection))  }
+      locally {
+        var prefs = for { i <- 0 until numbers.length if numbers(i)==preferred } yield i
+        for { pref <- prefs } oneOf._selection=pref
+      }
+      NaturalSize.Row(align=Mid)(prev.framed(black), oneOf, next.framed(black))
+    }
+
+
+    Col(align=Center)(
+      <div width="60em" align="justify" parSkip="3ex">
+        <p align="center">Button decoration.</p>
+        <p>Select colours and properties, then use one of the four
+          buttons below to bring up a new
+          example of the decoration style that embodies them all exactly.
+        </p>
+        <p>
+          <b>Note</b> that the four buttons will always embody most
+          properties of the brushes you have chosen, but that their other
+          properties are fixed when this GUI is constructed.
+        </p>
+        <fill height="3ex"/>
+      </div>,
+      anchor,
+      Grid(width=2, padx=20, pady=20)(
+        framed,
+        roundframed,
+      ),
+
+      Grid(width=3, padx=20, pady=20)(
+        selector("Enlarge", enlarge, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>enlarge=v },
+        selector("Radius", radius, 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.8f, 0.9f, 20.0f, 30.0f, 40.0f, 50f, 60f){ v=>radius=v },
+        selector("Delta", delta, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>delta=v },
+
+        selector("Blur", blur, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>blur=v},
+        selector("Spread", spread, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>spread=v },
+        selector("Belta", belta, 0, 2, 4, 6, 8, 10, 12, 14, 16, 20){ v=>belta=v },
+      ),
+
+      Grid(width=2, padx=20, pady=10).rows(
+        styled.Label("FG"), styled.Label("BG"),
+        new BrushChooser(fg, fg, { _=> }).COLOURGUI,
+        new BrushChooser(bg, bg, { _=> }).COLOURGUI,
+        styled.Label("buttonFG"), styled.Label("buttonBG"),
+        new BrushChooser(buttonFG, buttonFG, { _=> }).COLOURGUI,
+        new BrushChooser(buttonBG, buttonBG, { _=> }).COLOURGUI
+      )
+    )
+  }
+
 
   Page("Miscellaneous", "") {
       val (x, y) = (150f, 100f)

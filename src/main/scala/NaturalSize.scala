@@ -87,8 +87,8 @@ object NaturalSize {
           drawLines(surface)
         }
 
-        val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
-        val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
+        override val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
+        override val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
 
         locally {
           setParents()
@@ -165,8 +165,8 @@ object NaturalSize {
           drawLines(surface)
         }
 
-        val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
-        val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
+        override val fg = theseGenerators.fg //if (glyphs.isEmpty) theseGenerators.fg else if (theseGenerators.fg.color == 0x00000000) glyphs.head.fg else theseGenerators.fg
+        override val bg = theseGenerators.bg //if (glyphs.isEmpty) theseGenerators.bg else if (theseGenerators.bg.color == 0x00000000) glyphs.head.bg else theseGenerators.bg
 
         locally {
           setParents()
@@ -329,8 +329,8 @@ object NaturalSize {
         override val kind: String = "TabulateRows"
         val glyphs   = theGlyphs
         val diagonal = Vec(maxw, y)
-        val fg = theseGenerators.fg
-        val bg = theseGenerators.bg
+        override val fg = theseGenerators.fg
+        override val bg = theseGenerators.bg
         locally {
           setParents()
         }
@@ -385,8 +385,8 @@ object NaturalSize {
         override val kind: String = "Grid.asRows"
         val glyphs   = theGlyphs
         val diagonal = Vec(width*(maxw+edgeX), y+(if (i==0) 0 else maxh+edgeY))
-        val fg = theseGenerators.fg
-        val bg = theseGenerators.bg
+        override val fg = theseGenerators.fg
+        override val bg = theseGenerators.bg
         locally {
           setParents()
         }
@@ -423,8 +423,8 @@ object NaturalSize {
         override val kind: String = "Grid.asCols"
         val glyphs   = theGlyphs
         val diagonal = Vec(x+(if (i==0) 0 else maxw), height*maxh)
-        val fg = theseGenerators.fg
-        val bg = theseGenerators.bg
+        override val fg = theseGenerators.fg
+        override val bg = theseGenerators.bg
         locally {
           setParents()
         }

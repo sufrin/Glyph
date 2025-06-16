@@ -716,7 +716,10 @@ most important of its characteristics are its width (aka \SCALA{strokeWidth}), a
 the colour of the paint it will apply. But it also has ``shape'', in the sense that
 corners painted with it may be rounded, squared, mitered,
 \textit{etc}; as well as having many other definable
-characteristics, including a human-readable name.
+characteristics.\footnote{There is a built-in
+(and extensible) table of named colours: \Scala{Brushes.namedColours}, as
+well as a textual notation that supports
+specification of brush colours and properties as strings.}
 
 For example, here are definitions of the \SCALA{blue} and \SCALA{red} brushes
 used while preparing this paper.\footnote{Colour
@@ -725,17 +728,23 @@ constant. The first byte specifies its
 \textit{alpha} -- which is analogous to opacity or covering power; the second, third, and fourth bytes
 specify its red, green, and blue components.} 
 \begin{scala}
-  val blue = Brush("blue")(color=0xFF0000ff,  width=1.0f, cap=ROUND)
-  val red  = Brush("red") (color=0xFFFF0000,  width=1.0f, cap=ROUND)
+  val blue = Brush("blue")(width=1.0f, cap=ROUND)
+  val red  = Brush("red") (width=1.0f, cap=ROUND)
 \end{scala}
 
 and \SCALA{val Wide.blue} was defined as:
 \begin{scala}
-  Brush("Wide.blue")(color = 0xFF0000ff,
-                     width = 15.0f,
-                     cap   = SQUARE)
+  Brush()(color = 0xFF0000FF,
+          width = 15.0f,
+          cap   = SQUARE
+         )
 \end{scala}
-
+but the three colours could also have been defined using the string notation:
+\begin{scala}
+  Brush("blue.1.round")
+  Brush("red.1.round")
+  Brush("blue.15.square")
+\end{scala}
 
 The following two images show some brush properties in action. Notice the
 rounded corners of the first rectangle, and that the points have
@@ -746,7 +755,7 @@ all the characteristics of the brushes they were drawn with.
 \glyph[scale=0.6]{eg1e}
 
 
-In fact the library incorporates an embedded domain-specific language of brushes:
+Glyph incorporates an embedded domain-specific language of brushes:
 some expressions denote new brushes or variants of existing
 brushes; and others denote commands that affect existing
 brushes.\footnote{See appendix \ref{brushesaremutable} for an explanation
@@ -757,7 +766,7 @@ as a variant of \SCALA{blue}:
 
 \begin{scala}
 
-               blue(width=15.0f, name="Wide.Blue", cap=SQUARE)
+               blue(width=15.0f, cap=SQUARE)
 \end{scala}
 
 Brushes are  cheap to build, and it is straightforward to
@@ -770,8 +779,8 @@ For example:
 Row(align=Mid)(
    Point(Wide.blue(width=2*Wide.blue.strokeWidth, cap=BUTT)),
    Skip(2*Wide.blue.strokeWidth),
-   Rect(150f, 100f, Brush("")(color=red.color,
-                              width=Wide.blue.strokeWidth, cap=SQUARE)))
+   Rect(150f, 100f, Brush()(color=red.color,
+                            width=Wide.blue.strokeWidth, cap=SQUARE)))
 \end{scala}
 
 denotes the glyph
@@ -785,13 +794,13 @@ constructor that supports their specification as strings. Some examples are:\foo
 \ref{PaintEffects}~\textbf{Paint Effects} for explanation of ``wobbly'', ``dashed'' and ``dotted''.}
 
 \begin{scala}
-Brushes("0xFFFF0000/3/ROUND")    // red brush; width 3; round cap
-Brushes("0xFFFFDD00/3/SQUARE")   // yellow brush; width 3; square cap
-Brushes("red/3/ROUND")           // red brush; width 3; round cap
-Brushes("red/3/ROUND-5-15")      // as above, but dashed
-Brushes("red/3/ROUND-2-5")       // as above, but dotted
-Brushes("green/10~4~2")          // a wobbly green brush of width 10 
-Brushes("nothing")               // a transparent brush (no pigment)
+Brush("0xFFFF0000.3.round")             // red brush; width 3; round cap
+Brush("0xFFFFDD00.3.square")            // yellow brush; width 3; square cap
+Brushes("red.3.round")                  // red brush; width 3; round cap
+Brushes("red.3.round.dashed(5,15)")     // as above, but dashed
+Brushes("red.3.round.dashed(2,5)")      // as above, but dotted
+Brushes("green.10.sliced(4,2)")         // a wobbly green brush of width 10 
+Brushes("transparent")                  // a transparent brush (no pigment)
 \end{scala} 
 
 \newpage

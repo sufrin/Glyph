@@ -65,7 +65,6 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
 
 
     class Mechanism extends AnimatedShapeGlyph[Double] (0.0, Vec(900, 900)){
-      override def withForeground(brush: Brush): GlyphShape = null
 
       override def copy(fg: Brush, bg: Brush): AnimatedShapeGlyph[Double] = new Mechanism
 
@@ -79,7 +78,8 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
         lineBetween(v1, v2)(fg).floating()
       }
 
-      private def rodBetween(v1: Vec, v2: Vec)(fg: Brush): GlyphShape = new GlyphShape {
+      private def rodBetween(v1: Vec, v2: Vec)(brush: Brush): GlyphShape = new GlyphShape {
+        override val fg: Brush = brush
         def draw(surface: Surface): Unit = {
           val p = new PathShape(fg, false)
           p.moveTo(v1.x, v1.y)
