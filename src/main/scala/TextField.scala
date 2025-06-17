@@ -495,7 +495,7 @@ object TextField extends logging.Loggable {
     styled.windowdialogues.Dialogue.OK(unstyled.static.Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
   }
 
-  def apply(fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, font: Font=Brushes.buttonFont,
+  def apply(fg: Brush = fallback.textForeground, bg: Brush = fallback.textBackground, font: Font=fallback.textFont,
             onEnter: String=>Unit              = { case text: String => },
             onError: (EventKey, Glyph) => Unit = popupError(_,_),
             onCursorLeave: String=>Unit        = { case text: String => },

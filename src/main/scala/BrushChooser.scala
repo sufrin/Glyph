@@ -5,7 +5,7 @@ import unstyled.reactive.{Enterable, Reaction}
 
 import org.sufrin.glyph.Brush.{BUTT, ROUND, SQUARE}
 import org.sufrin.glyph.Brushes.{black, lightGrey, NonBrush}
-import org.sufrin.glyph.Colour.HSV
+import org.sufrin.glyph.Colour.{ARGB, HSV}
 import org.sufrin.glyph.GlyphShape.{FILL, STROKE}
 import org.sufrin.glyph.NaturalSize.{transparent, Col, Grid, Row}
 import org.sufrin.glyph.styles.decoration.Framed
@@ -72,10 +72,9 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
 
   lazy val brushField = styled.TextField(size=50, onEnter=setResultBrush(_), initialText=resultBrush.toString)(hintSheet)
 
-  def HintedUnstyledButton(label: String, hint: String="", fg: Brush, bg: Brush)(action: Reaction): Glyph = {
-    val button = unstyled.reactive.FramedButton(label, fg, bg)(action)
-    if (hint.nonEmpty)  HintManager(button.asInstanceOf[Enterable], 5, ()=>hint)(hintSheet)
-    button
+  def ColourPaletteButton(label: String, hint: String="", colour: Brush)(action: Reaction): Glyph = {
+    val hover: Hint = if (hint.nonEmpty)  Hint(5, hint)(hintSheet) else NoHint
+    unstyled.reactive.UniformlyColouredButton(Vec(sheet.emWidth*2, sheet.exHeight*2), colour, hover)(action)
   }
 
 
@@ -101,36 +100,57 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
       path.closePath
       path
     }
-    val colButs = for { (name, col) <- Brushes.namedColours  } yield
-      HintedUnstyledButton("  ", name, fg=transparent, bg=Brushes(name)){
+
+  val colButs = for { (name, col) <- Brushes.namedColours  } yield
+      ColourPaletteButton("  ", name, Brushes(name)){
         _ =>
           protoBrush.setColor(col)
           brushFeedback()
+          for { brush <- briBrushes++satBrushes } {
+            brush.hue(ARGB(col).hue)
+          }
       }
-    val hueButs = for { i <- 0 until 24  } yield {
-      HintedUnstyledButton("  ", s"${i*15}°", fg=transparent, bg=Brushes(s"hsv(${i*15}).fill")){
+
+  val satBrushes: Seq[Brush] = for { i<- 0 to 10 } yield Brushes(s"hsv(${protoBrush.hue}, ${i*0.1}, 1)")
+  val briBrushes: Seq[Brush] = for { i<- 0 to 10 } yield Brushes(s"hsv(${protoBrush.hue}, 1, ${i*0.1})")
+
+    lazy val satButs =
+      for { i<-0 to 10 } yield  ColourPaletteButton(" ", f"Sat ${i*0.1}%1.1f", satBrushes(i)){
         _ =>
-          val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
-          protoBrush.setColor(HSV(i*15, s, v).argb)
+          //val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
+          //setColor(HSV(h, i*0.1, v).toInt)
+          protoBrush.sat(i*0.1)
           protoBrush.ComposeEffect.noFilter()
           brushFeedback()
+          for { brush <- briBrushes } {
+            brush.sat(i*0.1)
+          }
       }
-    }
-    val satButs =
-      for { i<-0 to 10 } yield  HintedUnstyledButton(" ", f"Sat ${i*0.1}%1.1f", fg=transparent, bg=Brushes(s"hsv(0, ${i*0.1}, 1).fill")){
+
+     lazy val briButs =
+      for { i<-0 to 10 } yield  ColourPaletteButton(" ", f"Vib ${i*0.1}%1.1f", briBrushes(i)){
         _ =>
-          val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
-          protoBrush.setColor(HSV(h, i*0.1, v).argb)
+          //val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
+          //protoBrush.setColor(HSV(h, s, i*0.1).argb)
+          protoBrush.vib(i*0.1)
           protoBrush.ComposeEffect.noFilter()
           brushFeedback()
+          for { brush <- satBrushes } {
+            brush.vib(i*0.1)
+          }
       }
-    val briButs =
-      for { i<-0 to 10 } yield  HintedUnstyledButton(" ", f"Vib ${i*0.1}%1.1f", fg=transparent, bg=Brushes(s"hsv(0, 1, ${i*0.1}).fill")){
-        _ =>
-          val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
-          protoBrush.setColor(HSV(h, s, i*0.1).argb)
-          protoBrush.ComposeEffect.noFilter()
-          brushFeedback()
+
+     lazy val hueButs = for { i <- 0 until 24  } yield {
+        ColourPaletteButton("  ", s"${i*15}°", Brushes(s"hsv(${i*15}).fill")){
+          _ =>
+            val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
+            protoBrush.setColor(HSV(i*15, s, v).toInt)
+            protoBrush.ComposeEffect.noFilter()
+            brushFeedback()
+            for { brush <- briBrushes++satBrushes } {
+              brush.hue(i*15)
+            }
+        }
       }
 
     val colourGrid = Grid(fg=black).table(width=12)(colButs.toList)

@@ -136,13 +136,13 @@ object Brushes extends DefaultBrushes {
     for { symbol <- symbols }
     symbol match {
       case WithParameters("hsv", List(h,s,v)) =>
-        b.color(HSV(h,s,v).argb)
+        b.color(HSV(h,s,v).toInt)
         
       case WithParameters("hsv", List(h,s)) =>
-        b.color(HSV(h,s,1.0).argb)
+        b.color(HSV(h,s,1.0).toInt)
         
       case WithParameters("hsv", List(h)) =>
-        b.color(HSV(h,1.0,1.0).argb)
+        b.color(HSV(h,1.0,1.0).toInt)
         
       case Hexadecimal(colour) =>
         b.color(colour)
@@ -269,25 +269,6 @@ object Brushes extends DefaultBrushes {
     }
     result
   }
-
-
-
-  // The following are used to set the default attributes of unstyled glyphs
-  //
-  var upFrame: Brush = Brush("black.2.round.fill")
-  var downFrame: Brush = Brush("red.2.round.fill")
-  var hoverFrame: Brush = Brush("green.2.round.fill")
-
-  var buttonFamily: FontFamily = FontFamily("Menlo")
-  var buttonPointSize: Float = 22.0f
-  var buttonFace = buttonFamily.normalFace
-  def buttonFont = buttonFamily.makeFont(GlyphTypes.FontStyle.NORMAL, buttonPointSize)
-  def buttonText(s: String, fg: Brush=buttonForeground, bg: Brush=buttonBackground): Text = Text(s, buttonFont, fg, bg)
-
-  var buttonForeground: Brush = Brush("black.fill")
-  var buttonBackground: Brush = Brush("white.fill")
-  var buttonDown:       Brush = Brush("red.fill")
-  var buttonHover:      Brush = Brush("green.fill")
 
   /** Default paint for a point: black */
   val point: Brush = Brush("black.1")

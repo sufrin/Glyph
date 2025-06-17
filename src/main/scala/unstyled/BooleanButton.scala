@@ -17,7 +17,7 @@ import GlyphTypes.Font
  * @see EarlyMenuTest for a very simple example.
  */
 trait BooleanButton  {
-  def buttonFont: Font = Brushes.buttonFont
+  def buttonFont: Font = fallback.buttonFont
   def fg: Brush = Brushes.black
   def bg: Brush = Brushes.white
   def toGlyph(string: String): Glyph = Text(string, buttonFont, fg, bg)

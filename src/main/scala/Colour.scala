@@ -3,23 +3,37 @@ package org.sufrin.glyph
 object Colour {
 
   trait Colour {
-    def rgb: RGB
-    def hsv: HSV
-    def argb: Int // max alpha + RGB as an integer
+    def rgb:   RGB
+    def hsv:   HSV
+    def toInt: Int // max alpha + RGB as an integer
+
+    def argb:  ARGB = ARGB(toInt)
+    def hue: Double = hsv.h
+    def sat: Double = hsv.s
+    def vib: Double = hsv.v
+    def hue(h: Double): Colour = HSV(h, sat, vib)
+    def sat(s: Double): Colour = HSV(hue, s, vib)
+    def vib(v: Double): Colour = HSV(hue, sat, v)
   }
 
   // values in [0, 1]
   case class RGB(r: Double, g: Double, b: Double) extends Colour {
     def rgb: RGB = this
     def hsv: HSV = rgbToHSV(this)
-    def argb: Int = (0XFF<<24)|rgbToInt(this)
+    def toInt: Int = (0XFF<<24)|rgbToInt(this)
   }
 
   // h in [0, 360), s,v in [0,1]
   case class HSV(h: Double, s: Double, v: Double) extends Colour {
     def rgb: RGB = hsvToRGB(this)
     def hsv: HSV = this
-    def argb: Int = (0XFF<<24)|rgbToInt(this.rgb)
+    def toInt: Int = (0XFF<<24)|rgbToInt(this.rgb)
+  }
+
+  case class ARGB(color: Int) extends Colour {
+    def rgb: RGB = intToRGB(color)
+    def hsv: HSV = rgbToHSV(rgb)
+    def toInt: Int =  (0XFF<<24)|rgbToInt(this.rgb)
   }
 
   def rgbToInt(rgb: RGB): Int = {

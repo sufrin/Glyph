@@ -2,6 +2,7 @@ package org.sufrin.glyph
 package unstyled
 
 import io.github.humbleui.jwm.{EventMouseScroll, Window}
+import org.sufrin.glyph.unstyled.static.{FilledRect, INVISIBLE}
 
 /**
  *  A collection of `Reactive` glyph types.
@@ -78,6 +79,8 @@ object reactive {
      * This is intended to support hinting: maintained but as-yet unused.
      */
     var modifiers: Int    = 0
+
+
     @inline def disabled: Boolean = !enabled
 
     /**
@@ -165,16 +168,20 @@ object reactive {
   }
 
   object ColourButton {
-    val up:    Brush = Brushes.buttonForeground()
-    val down:  Brush = Brushes.buttonDown()
-    val hover: Brush = Brushes.buttonHover()
-    val bg:    Brush = Brushes.buttonBackground
+    val up:    Brush = fallback.buttonForeground()
+    val down:  Brush = fallback.buttonDown()
+    val hover: Brush = fallback.buttonHover()
+    val bg:    Brush = fallback.buttonBackground
+
+    /** The simplest form of text button. Its state is indicated by the brush used to paint the foreground (background) of the text.  */
     def apply(text: String, up: Brush=up, down: Brush=down, hover: Brush=hover, bg: Brush = bg, background: Boolean = true, hint: Hint=NoHint)(react: Reaction): ReactiveGlyph = {
-        val glyph: Glyph = Brushes.buttonText(text, up, bg)
+        val glyph: Glyph = fallback.buttonText(text, up, bg)
         val button = new ColourButton(glyph, down, hover, background, react)
         hint(button)
         button
     }
+
+    /** The simplest form of glyph button. Its state is indicated by the brush used to paint the foreground (background) of the glyph.  */
     def apply(glyph: Glyph, down: Brush, hover: Brush, background: Boolean, hint: Hint)(react: Reaction): ReactiveGlyph = {
       val button = new ColourButton(glyph, down, hover, background, react)
       hint(button)
@@ -186,12 +193,15 @@ object reactive {
     override def toString: String =
       s"ColourButton($up, $down, $hover, $background)"
 
-
+    /** The brush  */
     val up: Brush           = if (background) appearance.bg else appearance.fg
+
     val currentBrush: Brush = up.copy()
+
     val glyph: Glyph        = if (background) appearance(bg=currentBrush) else appearance(fg=currentBrush)
+
     def setCurrentBrush(b: Brush): Unit = {
-      currentBrush.color(b.color).width(b.strokeWidth)
+      currentBrush.color(b.color).width(b.strokeWidth).mode(b.mode)
     }
 
     locally { glyph.parent = this }
@@ -215,8 +225,8 @@ object reactive {
           if (inactive) (up, alphaUp) else
           (pressed, hovered) match {
             case (true, true)  => (down,   alphaDown)
-            case (false, true) => (hover, alphaHover)
-            case (_, _)        => (up,    alphaUp)
+            case (false, true) => (hover,  alphaHover)
+            case (_, _)        => (up,     alphaUp)
           }
         }
         surface.withAlpha(diagonal, alpha) {
@@ -383,33 +393,48 @@ object reactive {
       }
   }
 
-  /** Simply-constructed simple buttons */
+  /** Simple buttons with intrinsic (default) styling.*/
   object TextButton  {
 
-    def apply(text: String, fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, background: Boolean = true)
+    def apply(text: String, fg: Brush = fallback.buttonForeground, bg: Brush = fallback.buttonBackground, background: Boolean = true)
              (reaction: Reaction): ColourButton = {
-         val up = Brushes.buttonText(text, fg, bg).enlarged(Brushes.upFrame.strokeWidth * 4)
+         val up = fallback.buttonText(text, fg, bg).enlarged(fallback.upFrame.strokeWidth * 4)
          //new RawButton(up, up(fg = red), up(fg = green), up.fg, up.bg, reaction)
-         new ColourButton(up, red, green, background, reaction)
+         new ColourButton(up, fg, bg, background, reaction)
        }
+
+
     }
+
+  object UniformlyColouredButton {
+    /**
+     * A uniformly coloured button, with a hint
+     */
+    def apply(size: Vec, colour: Brush, hint: Hint=NoHint)
+             (reaction: Reaction): RawButton = {
+      val glyph = FilledRect(size.x, size.y, colour)
+      val but = new RawButton(glyph, glyph(), glyph(), colour, colour, reaction)
+      hint(but)
+      but
+    }
+  }
 
   object FramedButton  {
 
     /** A framed button whose up, down, and hover glyphs look the same */
     def apply(up: Glyph)(reaction: Reaction): RawButton =
       new RawButton(
-        up.framed(Brushes.upFrame),
-        up().framed(Brushes.downFrame),
-        up().framed(Brushes.hoverFrame), up.fg, up.bg, reaction)
+        up.framed(fallback.upFrame),
+        up().framed(fallback.downFrame),
+        up().framed(fallback.hoverFrame), up.fg, up.bg, reaction)
 
     /** A framed button whose up, down, and hover glyphs are all `text` */
-    def apply(text: String, fg: Brush=Brushes.buttonForeground, bg: Brush=Brushes.buttonBackground)(reaction: Reaction): RawButton = {
-      val up = Brushes.buttonText(text, fg, bg).enlarged(Brushes.upFrame.strokeWidth*4)
+    def apply(text: String, fg: Brush=fallback.buttonForeground, bg: Brush=fallback.buttonBackground)(reaction: Reaction): RawButton = {
+      val up = fallback.buttonText(text, fg, bg).enlarged(fallback.upFrame.strokeWidth*4)
       new RawButton(
-        up.framed(Brushes.upFrame),
-        up().framed(Brushes.downFrame),
-        up().framed(Brushes.hoverFrame), up.fg, up.bg, reaction)
+        up.framed(fallback.upFrame),
+        up().framed(fallback.downFrame),
+        up().framed(fallback.hoverFrame), up.fg, up.bg, reaction)
     }
 
     /**
@@ -417,9 +442,9 @@ object reactive {
      *   independent of the state of the keyboard modifiers or the mouse button that was pressed.
      */
     def apply(up: Glyph)(action: => Unit): RawButton = new RawButton(
-      up.framed(Brushes.upFrame),
-      up().framed(Brushes.downFrame),
-      up().framed(Brushes.hoverFrame), up.fg, up.bg, { _ => action })
+      up.framed(fallback.upFrame),
+      up().framed(fallback.downFrame),
+      up().framed(fallback.hoverFrame), up.fg, up.bg, { _ => action })
 
   }
 
@@ -428,9 +453,9 @@ object reactive {
     import org.sufrin.glyph.unstyled.static.Shaded
 
     /** A button with a shaded presentation, and `text` as its caption */
-    def apply(text: String, fg: Brush = Brushes.buttonForeground, bg: Brush = Brushes.buttonBackground, delta: GlyphTypes.Scalar=6f)(reaction: Reaction): RawButton = {
-      val up    = Shaded.Static(fg, bg, delta, false)(Brushes.buttonText(text, fg, bg))
-      val down  = Shaded.Static(fg, bg, delta, true)(Brushes.buttonText(text, fg, bg))
+    def apply(text: String, fg: Brush = fallback.buttonForeground, bg: Brush = fallback.buttonBackground, delta: GlyphTypes.Scalar=6f)(reaction: Reaction): RawButton = {
+      val up    = Shaded.Static(fg, bg, delta, false)(fallback.buttonText(text, fg, bg))
+      val down  = Shaded.Static(fg, bg, delta, true)(fallback.buttonText(text, fg, bg))
       val hover = up.copy()
       RawButton(up, down, hover) (reaction)
     }

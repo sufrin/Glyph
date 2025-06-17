@@ -10,9 +10,10 @@ import styled.TextToggle
 import unstyled.{reactive, static, BooleanButton, Text}
 
 import io.github.humbleui.jwm.EventKey
-import io.github.humbleui.skija.BlendMode
+import io.github.humbleui.skija.{BlendMode, PaintMode}
 import org.sufrin.glyph.NaturalSize.Col
 import org.sufrin.glyph.tests.Example2.font
+import org.sufrin.glyph.GlyphTransforms.Enlarged
 
 object LargeTestGUI {
 
@@ -28,15 +29,17 @@ object LargeTestGUI {
   val  redFrame = Brush("red.3.stroke")
 
   private lazy val atPopupAnchor = East(popupAnchor)
-  val face: Typeface =
-    FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL)
-  private val medFont: Font = new Font(face, 36)
-  private val smallFont: Font = new Font(face, 20)
-  private val largeFont: Font = new Font(face, 40)
-  private val hugeFont: Font = new Font(face, 50)
-  private val giantFont: Font = new Font(face, 75)
-  private val buttonFont: Font = new Font(face, 28)
+
+  val family = FontFamily("Menlo")
+  //val face: Typeface = FontManager.default.matchFamilyStyle("Menlo", FontStyle.NORMAL) // old-style
+  private val medFont: Font = family.makeFont(size=36) //new Font(face, 36)
+  private val smallFont: Font = family.makeFont(size=20)//new Font(face, 20)
+  private val largeFont: Font = family.makeFont(size=40)//new Font(face, 40)
+  private val hugeFont: Font = family.makeFont(size=50)//new Font(face, 50)
+  private val giantFont: Font = family.makeFont(size=75)//new Font(face, 75)
+  private val buttonFont: Font = family.makeFont(size=28)//new Font(face, 28)
   private val exg = Text(" ", medFont)
+
   private val trup =
     FilledPolygon(100, 100, fg = blue)((100, 0), (0, 0), (100, 100), (100, 0))
 
@@ -1273,11 +1276,9 @@ object LargeTestGUI {
     (oneScene match {
       case true => Col(align=Center)(scene0)
       case false =>
-        Col(align=Center)(
-          Framed()(menu),
-          Polygon(screenWidth, 1f, fg = black)((0, 0), (screenWidth, 0)),
-          oneOf,
-          Label(" ")
+        Col(align=Center, skip=10)(
+          menu,
+          oneOf.framed(black),
         )
     }) enlarged 10f
 
@@ -1311,7 +1312,7 @@ object LargeTestGUI {
   private def polyStar7(brush: Brush) = openStargon(7, fg = brush)
 
   private def sceneButton(i: Int): Glyph =
-    Framed()(reactive.TextButton(s"$i", blue) { _ => oneOf.select(i) })
+    Framed(fg=black(width=0))(Enlarged(10,5)(reactive.TextButton(s"$i", blue) { _ => oneOf.select(i) }))
 
   private object Toggles extends BooleanButton {
     override val bg: Brush = yellowHuge

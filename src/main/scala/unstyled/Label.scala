@@ -3,7 +3,16 @@ package unstyled
 import GlyphTypes._
 
 object Label {
-  def apply(text: String, font: Font=Brushes.buttonFont, fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, align: Alignment=Center): Glyph = {
+  /** A (possibly multi-line) label in the given font.
+   *
+   * @param text
+   * @param font
+   * @param fg colour of the text
+   * @param bg colour of the background
+   * @param align alignment of the lines (if >1) of the text.
+   * @return
+   */
+  def apply(text: String, font: Font=fallback.textFont, fg: Brush=fallback.textForeground, bg: Brush=Brushes.transparent, align: Alignment=Center): Glyph = {
     import NaturalSize.Col
     val lines = text.split('\n').toList
     lines.length match {

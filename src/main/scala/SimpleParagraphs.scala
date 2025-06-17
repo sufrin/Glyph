@@ -33,7 +33,7 @@ object SimpleParagraphs {
    *  [*] as above, but the first starts with a bulletpoint
    * }}}
    */
-  def apply(ems: Int, font: Font = Brushes.buttonFont, fg: Brush = blue, bg: Brush = transparent, align: Alignment=Justify)(text: String): Glyph = {
+  def apply(ems: Int, font: Font = fallback.buttonFont, fg: Brush = blue, bg: Brush = transparent, align: Alignment=Justify)(text: String): Glyph = {
     val emWidth = unstyled.Text("n", font).w
 
     def paragraphLines(ems: Int, text: String, align: Alignment): Seq[Glyph] = {

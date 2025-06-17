@@ -8,6 +8,7 @@ import GlyphTypes.{Paint, PathEffect, Scalar}
 
 import io.github.humbleui.skija.BlendMode
 import org.sufrin.glyph.Brush.BUTT
+import org.sufrin.glyph.Colour.ARGB
 import org.sufrin.glyph.GlyphShape.{FILL, STROKE, STROKE_AND_FILL}
 
 object Brush {
@@ -256,6 +257,14 @@ class Brush(val specification: String, var tag: String="") extends Paint {
     pathEffect(currentEffect.effect)
     this
   }
+
+  def hue: Double = ARGB(color).hue
+  def sat: Double = ARGB(color).sat
+  def vib: Double = ARGB(color).vib
+
+  def hue(h: Double): Brush = color(ARGB(color).hue(h).toInt)
+  def sat(s: Double): Brush = color(ARGB(color).sat(s).toInt)
+  def vib(v: Double): Brush = color(ARGB(color).vib(v).toInt)
 
   /** Mutation */
   @inline def filterId(newId: String): Brush = {
