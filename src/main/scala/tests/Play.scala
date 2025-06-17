@@ -493,6 +493,12 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     selection = List(target)
   }
 
+  def addText(text: String, brush: Brush): Unit = {
+    val shape = GlyphShape.text(text)(brush)
+    addShape("text", shape)
+    lastMouseDown = Vec(lastMouseDown.x, lastMouseDown.y+shape.h)
+  }
+
   def addShape(kind: String, shape: GlyphShape) : Unit = {
     val delta = shape.diagonal * 0.5f
     addShape(kind, lastMouseDown.x-delta.x, lastMouseDown.y-delta.y)(shape)
@@ -505,6 +511,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
   def addPoly(fg: Brush) : Unit = if (vertices.nonEmpty) {
     addShape("poly", lastPathOrigin.x,lastPathOrigin.y)(polygon(vertices)(fg))
   }
+
 }
 
 class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleSheet) {
@@ -516,7 +523,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
     val drawingBoard = new DrawingBoard(1200, 800, lightGrey)(done, undone)
 
-    var newBrush: Brush = Brushes("blue.4.stroke.round")
+    var newBrush: Brush = Brushes("blue.0.stroke.round")
 
     def addButton(kind: String, dim: String="")(shape: => GlyphShape): Glyph = {
       val b  = styled.TextButton(kind){ _ => { drawingBoard.addShape(kind, shape); drawingBoard.feedback() } }(sheet)
@@ -524,7 +531,15 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       b
     }
 
-    class withRadius(R: Scalar)(shape: GlyphShape) extends GlyphShape {
+
+
+    def addText(text: String): Unit = {
+      drawingBoard.addText(text, newBrush.copy)
+      textField.text=""
+    }
+
+
+  class withRadius(R: Scalar)(shape: GlyphShape) extends GlyphShape {
       val delta = (Vec(2*R, 2*R)-shape.diagonal) * 0.5f
 
       def draw(surface: Surface): Unit = {
@@ -566,11 +581,12 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       addButton("Arrow", "arrow")(arrow(newBrush.copy).scale(scale max 0.3f)),
       addButton("Star", "v-pointed star size r")(RAD(GlyphShape.polygon(PolygonLibrary.regularStarPath(vertices, C=radius, R=radius).tail)(brush=newBrush.copy)).scale(scale max 0.3f)),
       addButton("Poly", "v-sided polygon size r")(RAD(GlyphShape.polygon(PolygonLibrary.regularPolygonPath(vertices, C=radius, R=radius).tail)(brush=newBrush.copy)).scale(scale max 0.3f)),
-
+      //addButton("Text", "text from the text window")(GlyphShape.text(textField.text, sheet.textFont)(fg=newBrush.copy).scale(scale max 0.3f))
     )
 
 
-    lazy val dimField: TextField = styled.TextField(onEnter = setDims, onCursorLeave = setDims, size = 50, initialText=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices")
+  lazy val dimField: TextField = styled.TextField(onEnter = setDims, onCursorLeave = setDims, size = 50, initialText=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices")
+  lazy val textField: TextField = styled.TextField(size = 50, onEnter = addText(_), initialText=s"this is text")
 
 
     def setDims(specification: String): Unit = {
@@ -624,9 +640,9 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
     lazy val GUI: Glyph = NaturalSize.Col(align=Center)(
       FixedSize.Row(width=drawingBoard.w, align=Mid)(
-        HintedButton("Restart", "Clear the board and start again"){ _ => drawingBoard.restart() },
-        HintedButton("Clean", "Preserve the drawing and start again"){ _ => drawingBoard.clean() },
-        HintedButton("Palette") { _ => if (brushChooserWindow.running.isEmpty) brushChooserWindow.start()},
+        HintedButton("Restart", "Clear the drawing and start again"){ _ => drawingBoard.restart() },
+        HintedButton("Cleanup", "Preserve the drawing and start again"){ _ => drawingBoard.clean() },
+        HintedButton("Brush", "Set the brush properties") { _ => if (brushChooserWindow.running.isEmpty) brushChooserWindow.start()},
         sheet.hFill(),
         HintedButton("Z", "Order the display to put smaller objects on top." )   { _ => {drawingBoard.zedOrder()}},
         sheet.hFill(1, 2f),
@@ -657,7 +673,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       ex,
       FixedSize.Row(width=drawingBoard.w, align=Mid)(shapes),
       ex,
-      dimField.framed()
+      dimField.framed() beside em beside textField.framed()
     ).enlarged(20)
 }
 
