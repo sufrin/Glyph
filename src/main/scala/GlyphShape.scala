@@ -1,12 +1,12 @@
 package org.sufrin.glyph
 
-import GlyphTypes.Scalar
+import GlyphTypes.{Font, Scalar}
 
 import io.github.humbleui.skija.{PaintMode, Path, PathFillMode}
 import io.github.humbleui.types.Rect
 import org.sufrin.glyph.Brush.{ROUND, SQUARE}
 import org.sufrin.glyph.Brushes.{black, green, invisible, lightGrey}
-import org.sufrin.glyph.GlyphShape.{asGlyph, circle, rect, composite, FILL, STROKE}
+import org.sufrin.glyph.GlyphShape.{asGlyph, circle, composite, rect, FILL, STROKE}
 import org.sufrin.glyph.unstyled.dynamic.{Animateable, Steppable}
 
 /**
@@ -63,7 +63,7 @@ trait GlyphShape { thisShape =>
    */
   def turn(degrees: Scalar, tight: Boolean=false): GlyphShape = if (degrees==0f) thisShape else new Turned(thisShape, degrees, tight)
 
-  private class Turned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphTransforms.Turned(asGlyph(original, fg, bg), degrees, tight, invisible, invisible) {
+  private class Turned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphTransforms.Turned(asGlyph(original), degrees, tight, invisible, invisible) {
     override def turn(degrees: Scalar, tight: Boolean=true): GlyphShape =
       if (degrees==0f) original else new Turned(original, this.degrees+degrees, tight)
 
@@ -298,6 +298,9 @@ object GlyphShape {
       brushes.map { brush => rot += sector; arc(2 * radius, 2 * radius, rot, sector, true)(brush) }
     )
   }
+
+  def text(text: String, font: Font=fallback.textFont)(fg: Brush=fallback.textForeground, bg: Brush=fallback.textBackground): GlyphShape =
+      unstyled.Text(text, font, fg, bg).asInstanceOf[GlyphShape]
 
 
   /**
@@ -703,8 +706,7 @@ object GlyphShape {
   /**
    * A standard glyph with the given foreground and background and drawn as `shape`.
    */
-  implicit def asGlyph(shape: GlyphShape, fg: Brush = Brushes.transparent, bg: Brush=Brushes.transparent): Glyph = {
-    val (f, b) = (fg, bg)
+  def asGlyph(shape: GlyphShape): Glyph = {
     new Glyph {
       wrapped =>
       /**
@@ -719,10 +721,11 @@ object GlyphShape {
       def draw(surface: Surface): Unit = shape.draw(surface)
 
       val diagonal: Vec = shape.diagonal
-      override val fg: Brush = f
-      override val bg: Brush = b
+      override val fg: Brush = shape.fg
+      override val bg: Brush = shape.bg
     }
   }
+
 
   val STROKE: PaintMode = PaintMode.STROKE
   val FILL: PaintMode = PaintMode.FILL

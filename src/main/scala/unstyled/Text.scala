@@ -19,7 +19,8 @@ object Text  {
    *                  implementation is a `skija.TextLine`.
    * @return
    */
-  def apply(string: String, font: Font, fg: Brush = Brushes.black, bg: Brush = Brushes.transparent, transient: Boolean=false) = new Text(string, font, fg, bg, transient)
+  def apply(string: String, font: Font=fallback.textFont, fg: Brush = fallback.textForeground, bg: Brush = fallback.textBackground, transient: Boolean=false) =
+      new Text(string, font, fg, bg, transient)
 
   val fontCache = new mutable.HashMap[(String,Font), io.github.humbleui.skija.TextLine](1024, 2.0)
 
