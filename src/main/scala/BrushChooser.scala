@@ -14,12 +14,16 @@ import org.sufrin.glyph.styled.windowdialogues.Dialogue
 import org.sufrin.logging
 
 /**
- * A glyph by which brushes can be specified interactively.
+ * Provides several `Glyph`s for use as user interfaces that support 
+ * the assignment of brush properties to the `resultBrush: Brush`, whose
+ * initial properties are those of `protoBrush: Brush`.
+ * 
+ * 
  */
 class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: NonBrush=>Unit)(implicit sheet: StyleSheet) {
   thisChooser =>
   
-  def brushWarning(anchor: Glyph) = {
+  protected def brushWarning(anchor: Glyph) = {
     import glyphXML.Language._
     styled.windowdialogues.Dialogue.FLASH(
       <p width="80em" leftMargin="1em" rightMargin="1em">
@@ -42,10 +46,10 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
       </p>).InFront(anchor)
   }
 
-  val hintSheet: StyleSheet = sheet.copy(fontScale = 0.8f)
-  val menuSheet: StyleSheet = hintSheet.copy(buttonDecoration = Framed(black(width=1)))
+  protected val hintSheet: StyleSheet = sheet.copy(fontScale = 0.8f)
+  protected val menuSheet: StyleSheet = hintSheet.copy(buttonDecoration = Framed(black(width=1)))
 
-  def setResultBrush(specification: String): Unit = {
+  protected def setResultBrush(specification: String): Unit = {
     if (specification.nonEmpty) {
       try {
         val brush = Brushes.Parse(specification)
@@ -61,24 +65,24 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     }
   }
 
-  def setResultBrush(brush: Brush): Unit = {
+  protected def setResultBrush(brush: Brush): Unit = {
     resultBrush.copyFrom(brush)
     showResultBrush()
   }
 
-  def showResultBrush(): Unit = {
+  protected def showResultBrush(): Unit = {
     brushField.text = resultBrush.toString
   }
 
-  lazy val brushField = styled.TextField(size=50, onEnter=setResultBrush(_), initialText=resultBrush.toString)(hintSheet)
+  protected lazy val brushField = styled.TextField(size=50, onEnter=setResultBrush(_), initialText=resultBrush.toString)(hintSheet)
 
-  def ColourPaletteButton(label: String, hint: String="", colour: Brush)(action: Reaction): Glyph = {
+  protected def ColourPaletteButton(label: String, hint: String="", colour: Brush)(action: Reaction): Glyph = {
     val hover: Hint = if (hint.nonEmpty)  Hint(5, hint)(hintSheet) else NoHint
     unstyled.reactive.UniformlyColouredButton(Vec(sheet.emWidth*2, sheet.exHeight*2), colour, hover)(action)
   }
 
 
-  def brushFieldChooserMenu(fieldname: String, choices: String*)(choose: String => Unit)(implicit sheet: StyleSheet): Glyph = {
+  protected def brushFieldChooserMenu(fieldname: String, choices: String*)(choose: String => Unit)(implicit sheet: StyleSheet): Glyph = {
     val buttons = choices.map {
       name => MenuButton(name){ _ => choose(name) }
     }
@@ -90,8 +94,9 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     import sheet.{em,ex}
     import GlyphShape._
 
-    def brushFeedback(): Unit = setResultBrush(protoBrush.copy())
-    def rectangle(w: Scalar, h: Scalar)(brush: Brush): GlyphShape = {
+  protected def brushFeedback(): Unit = setResultBrush(protoBrush.copy())
+  
+  protected   def rectangle(w: Scalar, h: Scalar)(brush: Brush): GlyphShape = {
       val path=new PathShape(brush, false)
       path.moveTo(0, 0)
       path.lineTo(w, 0)
@@ -101,7 +106,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
       path
     }
 
-  val colButs = for { (name, col) <- Brushes.namedColours  } yield
+  protected val colButs = for { (name, col) <- Brushes.namedColours  } yield
       ColourPaletteButton("  ", name, Brushes(name)){
         _ =>
           protoBrush.setColor(col)
@@ -111,10 +116,10 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
           }
       }
 
-  val satBrushes: Seq[Brush] = for { i<- 0 to 10 } yield Brushes(s"hsv(${protoBrush.hue}, ${i*0.1}, 1)")
-  val briBrushes: Seq[Brush] = for { i<- 0 to 10 } yield Brushes(s"hsv(${protoBrush.hue}, 1, ${i*0.1})")
+  protected lazy val satBrushes: Seq[Brush] = for { i<- 0 to 10 } yield Brushes(s"hsv(${protoBrush.hue}, ${i*0.1}, 1)")
+  protected lazy val briBrushes: Seq[Brush] = for { i<- 0 to 10 } yield Brushes(s"hsv(${protoBrush.hue}, 1, ${i*0.1})")
 
-    lazy val satButs =
+  protected lazy val satButs =
       for { i<-0 to 10 } yield  ColourPaletteButton(" ", f"Sat ${i*0.1}%1.1f", satBrushes(i)){
         _ =>
           //val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
@@ -127,7 +132,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
           }
       }
 
-     lazy val briButs =
+  protected lazy val briButs =
       for { i<-0 to 10 } yield  ColourPaletteButton(" ", f"Vib ${i*0.1}%1.1f", briBrushes(i)){
         _ =>
           //val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
@@ -140,7 +145,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
           }
       }
 
-     lazy val hueButs = for { i <- 0 until 24  } yield {
+  protected lazy val hueButs = for { i <- 0 until 24  } yield {
         ColourPaletteButton("  ", s"${i*15}°", Brushes(s"hsv(${i*15}).fill")){
           _ =>
             val HSV(h,s,v) = Colour.intToRGB(protoBrush.color).hsv
@@ -153,13 +158,13 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
         }
       }
 
-    val colourGrid = Grid(fg=black).table(width=12)(colButs.toList)
-    val hueGrid = Grid(fg=black).table(width=12)(hueButs.toList)
-    val satGrid = Grid(fg=black).table(width=11)(satButs.toList)
-    val briGrid = Grid(fg=black).table(width=11)(briButs.toList)
-    val textModel = unstyled.Text(" Textual ", sheet.labelFont.makeWithSize(36), protoBrush)
+  protected lazy val colourGrid = Grid(fg=black).table(width=12)(colButs.toList)
+  protected lazy val hueGrid = Grid(fg=black).table(width=12)(hueButs.toList)
+  protected lazy val satGrid = Grid(fg=black).table(width=11)(satButs.toList)
+  protected lazy val briGrid = Grid(fg=black).table(width=11)(briButs.toList)
+  protected lazy val textModel = unstyled.Text(" Textual ", sheet.labelFont.makeWithSize(36), protoBrush)
 
-  lazy val helpDialogue: Dialogue[Unit] = {
+  protected lazy val helpDialogue: Dialogue[Unit] = {
     import glyphXML.Language._
     styled.windowdialogues.Dialogue.FLASH(<div width="50em" align="justify" parskip="1.5ex">
       <p>
@@ -188,14 +193,26 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     </div>.enlarged(30)).InFront(COLOURGUI)
   }
 
-    lazy val sample =
+    lazy val SAMPLE: Glyph =
       asGlyph((rectangle(textModel.w, textModel.h)(protoBrush) ||| textModel) ~~~ rectangle(30+2*textModel.w,30+textModel.h)(transparent)).framed(black)
 
-    lazy val GUI = Col(align=Center, bg=lightGrey)(COLOURGUI, ex, sample, ex, HUEGUI).enlarged(30)
 
-    lazy val COLOURGUI = Col(align=Center, bg=lightGrey)(
-      brushField.framed(), ex,
-      colourGrid, ex,
+    /** A GUI that supports setting properties as text */
+    lazy val BRUSHGUI: Glyph = brushField.framed()
+
+    /** The comprehensive GUI that has all forms of brush property selection, together with the `Sample` that shows
+     * the effects of the current choices.
+     */
+    lazy val GUI: Glyph = Col(align=Center, bg=lightGrey)(COLOURGUI, ex, PROPERTYGUI, ex, SAMPLE: Glyph, ex, HSVGUI).enlarged(30)
+
+    /** A GUI for choosing among named colours */
+    lazy val COLOURGUI: Glyph = Col(align=Center, bg=lightGrey)(
+      BRUSHGUI, ex,
+      colourGrid
+    )
+
+    /** A GUI for choosing properties */
+    lazy val PROPERTYGUI: Glyph = Col(align=Center, bg=lightGrey)(
       FixedSize.Row(align=Mid, width=colourGrid.w)(
         brushFieldChooserMenu("Width", "0", "1", "2", "4", "6", "8", "10", "15", "20", "25","30"){
           v =>
@@ -268,14 +285,16 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
       ),
     )
 
-    lazy val HUEGUI = Col(align=Center, bg=lightGrey)(
+    /** A gui for choosing brush colours */
+    lazy val HSVGUI: Glyph = Col(align=Center, bg=lightGrey)(
       ex,
       hueGrid, ex,
       satGrid, ex,
       briGrid, ex,
-      ex,ex
+      ex
     )
 
+  /** A `Dialogue` inhabited by the comprehensive `GUI` */
+  lazy val Dialogue: styled.windowdialogues.Dialogue[Unit] = styled.windowdialogues.Dialogue.FLASH(GUI, title="Brush Design")
 
-  lazy val Dialogue: styled.windowdialogues.Dialogue[Unit] = styled.windowdialogues.Dialogue.FLASH(GUI, title="Brush Palette")
 }
