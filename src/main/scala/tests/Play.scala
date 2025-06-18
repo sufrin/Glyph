@@ -21,7 +21,8 @@ import org.sufrin.glyph.Brush.{BUTT, ROUND, SQUARE}
 import org.sufrin.glyph.Colour.HSV
 import org.sufrin.glyph.NaturalSize.{transparent, Col, Grid, Row}
 import org.sufrin.glyph.NaturalSize.Grid.Table
-import org.sufrin.glyph.styled.windowdialogues.Dialogue.{OK}
+import org.sufrin.glyph.styled.windowdialogues.Dialogue.OK
+import org.sufrin.glyph.unstyled.Text
 
 import java.io.File
 import java.lang.IllegalArgumentException
@@ -78,7 +79,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
   var lastPathOrigin: Vec = Vec.Origin
 
-  var deletion: Seq[TargetShape] = Seq.empty
+  var cut: Seq[TargetShape] = Seq.empty
 
   val bell = Sound.Clip("WAV/glass.wav")
 
@@ -92,11 +93,12 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
                       lastMouseDown: Vec,
                       vertices: Seq[Vec],
                       displayList: Seq[TargetShape],
-                      selection: Seq[TargetShape]
+                      selection: Seq[TargetShape],
+                      cut: Seq[TargetShape]
                     )
 
 
-    def copyState(culprit: String): State = State(culprit, lastPathOrigin, lastMouse, lastMouseDown, vertices, displayList.toSeq.map(_.copyState), selection.map(_.copyState))
+    def copyState(culprit: String): State = State(culprit, lastPathOrigin, lastMouse, lastMouseDown, vertices, displayList.toSeq.map(_.copyState), selection.map(_.copyState), cut)
 
     def restoreState(state: State): Unit = {
       thisBoard.lastPathOrigin = state.lastPathOrigin
@@ -106,6 +108,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
       thisBoard.displayList.clear();
       thisBoard.displayList.enqueueAll(state.displayList)
       thisBoard.selection = state.selection
+      thisBoard.cut = state.cut
     }
 
     var states, unstates: mutable.Stack[State] = new mutable.Stack[State]
@@ -195,7 +198,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
   /** Apply the transform, as if about the current centre  */
   def transformSelected(transform: GlyphShape => GlyphShape, command: String=""): Unit = withState (command) {
-    deletion = selection
+    //cut = selection
     val mapped = selection.map {
       case v: TargetShape =>
         val v$ = transform(v.shape)
@@ -203,7 +206,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
         v$.targetLocatedAt(v.x+delta.x/2, v.y+delta.y/2)
     }
     displayList.dequeueAll(_.isIn(selection))
-    deletion = selection
+    //cut = selection
     displayList.enqueueAll(mapped)
     selection = mapped
   }
@@ -354,19 +357,38 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
           case Key.HOME  => withState ("deselect") { selection = Seq.empty }
 
-          case Key.X | Key.V =>
+          case Key.X  =>
             withState ("vertex") { addVertex(lastMouseDown) }
+
+          case Key.C if selection.length==1 =>
+            withState ("copy") { cut = selection }
+
+          case Key.V if cut.length==1 =>
+            withState ("paste") {
+              val shape = cut.head.shape
+              addShape("paste", shape)
+              selection = cut
+            }
 
           case Key.DELETE | Key.BACKSPACE =>
             withState (if (COMPLEMENT) "delete complement" else "delete") {
               if (COMPLEMENT) {
-                deletion = displayList.toSeq.filter(_.notIn(selection))
+                cut = displayList.toSeq.filter(_.notIn(selection))
                 displayList.dequeueAll(_.notIn(selection))
               } else {
                 displayList.dequeueAll(_.isIn(selection))
-                deletion = selection
+                cut = selection
               }
               selection = Seq.empty
+            }
+
+          case Key.F1 =>
+            withState (if (COMPLEMENT) "rehandle" else "unhandle") {
+              if (COMPLEMENT) {
+                for { shape <- selection } shape.handles.enabled = true
+              } else {
+                for { shape <- selection } shape.handles.enabled = false
+              }
             }
 
 
@@ -494,9 +516,19 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
   }
 
   def addText(text: String, brush: Brush): Unit = {
-    val shape = GlyphShape.text(text)(brush)
-    addShape("text", shape)
-    lastMouseDown = Vec(lastMouseDown.x, lastMouseDown.y+shape.h)
+    var reselect: Seq[TargetShape] = Seq.empty
+    val shape = GlyphShape.text (text) (brush)
+    if (selection.nonEmpty) {
+      val selected = selection.last
+      selected.shape match {
+        case t: Text =>
+          lastMouseDown = selected.center+Vec(0, t.height*0.5f+t.drop*0.5f)
+          reselect = selection
+        case _ =>
+      }
+    }
+    addShape ("text", shape)
+    selection = reselect ++ List(selection.head)
   }
 
   def addShape(kind: String, shape: GlyphShape) : Unit = {

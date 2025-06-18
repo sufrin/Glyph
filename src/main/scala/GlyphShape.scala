@@ -302,6 +302,8 @@ object GlyphShape {
   def text(text: String, font: Font=fallback.textFont)(fg: Brush=fallback.textForeground, bg: Brush=fallback.textBackground): GlyphShape =
       unstyled.Text(text, font, fg, bg).asInstanceOf[GlyphShape]
 
+  case class label()
+
 
   /**
    * A line that has no bounding box. Used for drawing lines to be superimposed
@@ -758,9 +760,15 @@ case class Handle(thing: TargetShape, shape: GlyphShape, origin: Vec) {
 }
 
 case class Handles(thing: TargetShape, handles: Seq[Handle]) {
-  def draw(surface: Surface): Unit = for { handle<-handles } handle.draw(surface)
-  def canHandle(point: Vec): Seq[Handle] =
-    for { handle<-handles if handle.canHandle(point) } yield handle
+  var enabled: Boolean = true
+  def draw(surface: Surface): Unit =
+    if (enabled) for { handle<-handles } handle.draw(surface)
+  def canHandle(point: Vec): Seq[Handle] = {
+    if (enabled)
+      for { handle<-handles if handle.canHandle(point) } yield handle
+    else
+      Seq.empty
+  }
 }
 
 /**
