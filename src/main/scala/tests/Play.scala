@@ -531,6 +531,15 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     selection = reselect ++ List(selection.head)
   }
 
+  def replaceLastSelection(shape: GlyphShape): Unit = withState ("replace"){
+    val last = selection.last
+    val delta = last.shape.centre-shape.centre
+    val target = TargetShape(last.x+delta.x, last.y, shape) // centred in the same place
+    displayList.dequeueAll{ target => target==last }
+    displayList.enqueue(target)
+    selection = selection.tail :+ target
+  }
+
   def addShape(kind: String, shape: GlyphShape) : Unit = {
     val delta = shape.diagonal * 0.5f
     addShape(kind, lastMouseDown.x-delta.x, lastMouseDown.y-delta.y)(shape)
@@ -569,6 +578,27 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       drawingBoard.addText(text, newBrush.copy)
       textField.text=""
     }
+
+    def editTextSelection(mods: Bitmap): Unit = {
+      if (drawingBoard.selection.nonEmpty) {
+        drawingBoard.selection.last.shape match {
+          case t: Text =>
+            textField.text = t.string
+          case _ =>
+        }
+      }
+    }
+
+  def storeTextSelection(mods: Bitmap): Unit = {
+    if (drawingBoard.selection.nonEmpty) {
+      drawingBoard.selection.last.shape match {
+        case t: Text =>
+          drawingBoard.replaceLastSelection(GlyphShape.text(textField.text, t.font)(t.fg, t.bg))
+        case _ =>
+      }
+    }
+  }
+
 
 
   class withRadius(R: Scalar)(shape: GlyphShape) extends GlyphShape {
@@ -705,7 +735,10 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       ex,
       FixedSize.Row(width=drawingBoard.w, align=Mid)(shapes),
       ex,
-      dimField.framed() beside em beside textField.framed()
+      dimField.framed() beside em beside
+          Col(HintedButton("?", "fetch the selected text")(editTextSelection(_)),
+              HintedButton("!", "replace the selected text")(storeTextSelection(_))
+          ) beside textField.framed()
     ).enlarged(20)
 }
 
