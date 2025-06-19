@@ -101,7 +101,7 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
         d => styled.Label(f"${d}%2.2f")
       }
       val hintText=numbers.mkString(" ")
-      val oneOf= new OneOf(labels, Center, fg=transparent, BG=transparent)
+      val oneOf= OneOf.seq(align=Center, fg=transparent, bg=transparent)(labels)
       val next = styled.TextButton(">", hint=Hint(5, hintText)){ _ => oneOf.next(); select(numbers(oneOf.selection))  }
       val prev = styled.TextButton("<", hint=Hint(5, hintText)){ _ => oneOf.prev(); select(numbers(oneOf.selection))  }
       locally {

@@ -193,11 +193,13 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     </div>.enlarged(30)).InFront(COLOURGUI)
   }
 
-    lazy val SAMPLE: Glyph =
-      asGlyph((rectangle(textModel.w, textModel.h)(protoBrush) ||| textModel) ~~~ rectangle(30+2*textModel.w,30+textModel.h)(transparent)).framed(black)
+    lazy val SAMPLE: Glyph = {
+      val model = (rectangle(textModel.w, textModel.h)(protoBrush) ||| textModel)
+      asGlyph(model ~~~ rectangle(30+model.w,30+model.h)(transparent)).framed(black)
+    }
 
 
-    /** A GUI that supports setting properties as text */
+  /** A GUI that supports setting properties as text */
     lazy val BRUSHGUI: Glyph = brushField.framed()
 
     /** The comprehensive GUI that has all forms of brush property selection, together with the `Sample` that shows

@@ -281,7 +281,7 @@ import io.github.humbleui.jwm.App
    *
    * Its `bg` is set to `BG`, if that appears, else to the `bg` of the largest (in area) of the glyphs.
    */
-  class OneOf(val glyphs: Seq[Glyph], align: Alignment, override val fg: Brush, BG: Brush=null, val enableBG: Boolean = true) extends Composite(glyphs) {
+  class OneOf(val glyphs: Seq[Glyph], align: Alignment, valign: VAlignment, override val fg: Brush, BG: Brush=null, val enableBG: Boolean = true) extends Composite(glyphs) {
     override val bg = if (BG eq null) OneOf.largestBG(glyphs) else BG
     override val kind = "OneOf"
     override def toString: String = s"""OneOf(fg=$fg, bg=$bg\n glyphs=\n  ${glyphs.map(_.toString).mkString(",\n  ")})"""
@@ -306,17 +306,12 @@ import io.github.humbleui.jwm.App
     val boundingRect = Vec(glyphs.map(_.w).max, glyphs.map(_.h).max)+(inset, inset)
     val diagonal = boundingRect+(inset, inset)
 
-    // Locate the subglyphs concentrically [maybe change later]
+    // Locate the subglyphs.
     // Link subglyphs into the glyph tree
     // TODO: (why didn't this happen in Composite?)
     locally {
-      val xFactor = align match {
-        case Center => 0.5f
-        case Left => 0.0f
-        case Right => 1.0f
-      }
       for {glyph <- glyphs} {
-          glyph @@ ((diagonal.x-glyph.w)*xFactor, (diagonal.y-glyph.h)/2)
+          glyph @@ ((diagonal.x-glyph.w)*align.proportion, (diagonal.y-glyph.h)*valign.proportion)
           glyph.parent = this
       }
     }
@@ -337,7 +332,7 @@ import io.github.humbleui.jwm.App
     /**
      * A  copy of this glyph: made with the same constructor
      */
-    def copy(fg: Brush=fg, bg:Brush=bg): Glyph = new OneOf(glyphs, align, fg, bg)
+    def copy(fg: Brush=fg, bg:Brush=bg): Glyph = new OneOf(glyphs, align, valign, fg, bg, enableBG)
   }
 
   object OneOf {
@@ -349,13 +344,12 @@ import io.github.humbleui.jwm.App
       g.bg
     }
 
-    def apply(fg: Brush=defaultFG, bg: Brush=null, align: Alignment=Center, enableBG: Boolean = true)(glyphs: Glyph*): OneOf =
-        new OneOf(glyphs, align, fg=fg, BG=bg, enableBG)
+    def apply(fg: Brush=defaultFG, bg: Brush=null, align: Alignment=Center, valign: VAlignment=Mid, enableBG: Boolean = true)(glyphs: Glyph*): OneOf =
+        new OneOf(glyphs, align, valign, fg=fg, BG=bg, enableBG)
 
 
-    def seq(fg: Brush=defaultFG, bg: Brush=defaultFG, align: Alignment=Center)(glyphs: Seq[Glyph]): OneOf =
-        new OneOf(glyphs, align, fg=fg, BG=bg)
-
+    def seq(fg: Brush=defaultFG, bg: Brush=defaultFG, align: Alignment=Center, valign: VAlignment=Mid)(glyphs: Seq[Glyph]): OneOf =
+        new OneOf(glyphs, align, valign, fg=fg, BG=bg)
 
   }
 

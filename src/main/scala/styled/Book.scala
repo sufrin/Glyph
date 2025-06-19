@@ -83,10 +83,10 @@ trait Book {
    *
    * @see OneOf
    */
-  def buttonedBook(buttonAlign: Alignment=Justify, pageAlign: Alignment)(implicit sheet: BookSheet): BookComponents = {
+  def buttonedBook(buttonAlign: Alignment=Justify, pageAlign: Alignment, pageVAlign: VAlignment=Mid)(implicit sheet: BookSheet): BookComponents = {
     implicit val style: StyleSheet = sheet.buttonSheet
     val glyphs: Seq[Glyph] = pages.toList.map(_.root())
-    val oneOf = OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
+    val oneOf = OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign, valign=pageVAlign)(glyphs)
     val keyed = (0 until glyphs.length) zip pages
     val uniform = buttonAlign==Justify
 
@@ -127,10 +127,10 @@ trait Book {
    *
    * @see OneOf
    */
-  def checkBoxedBook(buttonAlign: Alignment=Left, pageAlign: Alignment=Center)(implicit sheet: BookSheet): BookComponents = {
+  def checkBoxedBook(buttonAlign: Alignment=Left, pageAlign: Alignment=Center, pageVAlign: VAlignment=Mid)(implicit sheet: BookSheet): BookComponents = {
     implicit val style: StyleSheet = sheet.buttonSheet
     val glyphs: Seq[Glyph] = pages.toList.map(_.root())
-    val oneOf = OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign)(glyphs)
+    val oneOf = OneOf.seq(bg=sheet.pageSheet.backgroundBrush, align=pageAlign, valign=pageVAlign)(glyphs)
 
     val radio = RadioCheckBoxes(pages.toList.map(_.title), prefer=pages.head.title){
       case Some(n) => oneOf.select(n)
@@ -183,66 +183,66 @@ trait Book {
      * A `BookComponents` with a button corresponding to each page, and a `OneOf` holding the pages.
      * Each button selects the corresponding page on the `OneOf` when clicked.
      */
-    def rawButtoned(buttonAlign: Alignment = Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet): BookComponents =
+    def rawButtoned(buttonAlign: Alignment = Justify, pageAlign: Alignment=Center, pageVAlign: VAlignment=Mid)(implicit sheet: BookSheet): BookComponents =
       buttonedBook(buttonAlign, pageAlign)(sheet)
 
     /**
      * A `BookComponents` with a captioned checkbox corresponding to each page, and a `OneOf` holding the pages.
      * Each checkbox selects the corresponding page on the `OneOf` when clicked.
      */
-    def rawCheckBoxed(buttonAlign: Alignment = Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet): BookComponents =
-      checkBoxedBook(buttonAlign, pageAlign)(sheet)
+    def rawCheckBoxed(buttonAlign: Alignment = Justify, pageAlign: Alignment=Center, pageVAlign: VAlignment=Mid)(implicit sheet: BookSheet): BookComponents =
+      checkBoxedBook(buttonAlign, pageAlign, pageVAlign)(sheet)
 
-    def rightCheckBoxes(buttonAlign: Alignment = Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet): Glyph = {
-      val BookComponents(buttons, oneOf) = checkBoxedBook(buttonAlign, pageAlign)
+    def rightCheckBoxes(buttonAlign: Alignment = Justify, pageAlign: Alignment=Center, pageVAlign: VAlignment=Mid)(implicit sheet: BookSheet): Glyph = {
+      val BookComponents(buttons, oneOf) = checkBoxedBook(buttonAlign, pageAlign, pageVAlign)
       val rhs = Col(align=Left)(buttons)
       val lhs = oneOf
       val divider = blackLine(4, rhs.h max lhs.h)
       Row(align=Mid, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
 
-    def rightButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet):  Glyph   = {
-      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
+    def rightButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center, pageVAlign: VAlignment=Mid)(implicit sheet: BookSheet):  Glyph   = {
+      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign, pageVAlign)
       val rhs = Col(align=Right)(buttons)
       val lhs = oneOf
       val divider = blackLine(4, rhs.h max lhs.h)
       Row(align=Mid, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
 
-    def leftButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet): Glyph = {
-      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
+    def leftButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center, pageVAlign: VAlignment=Mid)(implicit sheet: BookSheet): Glyph = {
+      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign, pageVAlign)
       val lhs = Col(align=Right)(buttons)
       val rhs = oneOf
       val divider = blackLine(2, rhs.h max lhs.h)
       Row(align=Mid, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
 
-    def leftCheckBoxes(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet): Glyph = {
-      val BookComponents(buttons, oneOf) = checkBoxedBook(buttonAlign, pageAlign)
+    def leftCheckBoxes(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center, pageVAlign: VAlignment=Mid)(implicit sheet: BookSheet): Glyph = {
+      val BookComponents(buttons, oneOf) = checkBoxedBook(buttonAlign, pageAlign, pageVAlign)
       val lhs = Col(align=Right)(buttons)
       val rhs = oneOf
       val divider = blackLine(2, rhs.h max lhs.h)
       Row(align=Mid, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
 
-    def rotatedButtons(quads: Int, buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet) = {
-      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
+    def rotatedButtons(quads: Int, buttonAlign: Alignment=Justify, pageAlign: Alignment=Center, pageVAlign: VAlignment=Mid)(implicit sheet: BookSheet) = {
+      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign, pageVAlign)
       val lhs = Row(Bottom)(buttons.map { b => b.rotated(quads, bg=transparent) })
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
       Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs, divider, rhs)
     }
 
-    def skewedButtons(skewX: Scalar, skewY: Scalar, buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet) = {
-      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
+    def skewedButtons(skewX: Scalar, skewY: Scalar, buttonAlign: Alignment=Justify, pageAlign: Alignment=Center, pageVAlign: VAlignment=Mid)(implicit sheet: BookSheet) = {
+      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign, pageVAlign)
       val lhs = Row(align=Bottom)(buttons.map { b => (b.rotated(3, bg=transparent)) })
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)
       Col(align=Center, bg=sheet.buttonSheet.backgroundBrush)(lhs.skewed(-skewX, skewY), divider, rhs)
     }
 
-    def topButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center)(implicit sheet: BookSheet) = {
-      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign)
+    def topButtons(buttonAlign: Alignment=Justify, pageAlign: Alignment=Center, pageVAlign: VAlignment=Mid)(implicit sheet: BookSheet) = {
+      val BookComponents(buttons, oneOf) = buttonedBook(buttonAlign, pageAlign, pageVAlign)
       val lhs = Row(align=Bottom, bg=transparent)(buttons)
       val rhs = oneOf
       val divider = blackLine(rhs.w max lhs.w, 4)

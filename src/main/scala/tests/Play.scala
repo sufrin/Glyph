@@ -225,7 +225,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
     override def scale(factor: Scalar): GlyphShape = new Composition(x, y, shape.scale(factor), components)
 
-    override def turn(degrees: Scalar, tight: Boolean): GlyphShape = new Composition(x, y, shape.turn(degrees), components)
+    override def turn(degrees: Scalar, tight: Boolean): GlyphShape = new Composition(x, y, shape.turn(degrees, tight), components)
   }
 
   /** Compose the selected elements in the order of selection  */
@@ -341,7 +341,8 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
           case Key.MULTIPLY  =>  transformSelected(_.scale(1.05f), ".scale")
           case Key.SLASH     =>  transformSelected(_.scale(1/1.05f), ".scale")
 
-          case Key.PERIOD =>  transformSelected(_.turn(5, COMPLEMENT), ".turn")
+          case Key.PERIOD =>
+            transformSelected(_.turn(if (COMPLEMENT) -1 else 1, CONTROL), ".turn")
 
           case Key.Z if CONTROL && SHIFT=> redo()
 
@@ -384,11 +385,8 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
           case Key.F1 =>
             withState (if (COMPLEMENT) "rehandle" else "unhandle") {
-              if (COMPLEMENT) {
-                for { shape <- selection } shape.handles.enabled = true
-              } else {
-                for { shape <- selection } shape.handles.enabled = false
-              }
+              val shapes = if (selection.isEmpty) selected(lastMouse) else selection
+              for { shape <- shapes } shape.handles.enabled = if (selection.isEmpty) !shape.handles.enabled else COMPLEMENT
             }
 
 
@@ -623,7 +621,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
     var width, height, radius: Scalar = 150
     var scale: Scalar = 1.0f
-    var vertices: Int = 3
+    var vertices: Int = 5
 
     def RAD(shape: GlyphShape): GlyphShape = shape // new withRadius(radius)(shape)
 
@@ -758,49 +756,93 @@ object Play extends Application {
   override
   val defaultIconPath: Option[String] = Some ("PNG/WorcesterCrest.png")
 
-  implicit val hintSheet: StyleSheet = interfaceStyle.copy(fontScale = 0.65f)
   val help: Glyph = {
+    implicit val helpSheet = interfaceStyle.copy(textFontSize=16, labelFontSize = 16, buttonFontSize = 16)
+    implicit val bookSheet: BookSheet = BookSheet(helpSheet, helpSheet)
     import glyphXML.Language._
-    <div width="70em"  fontSize="16" align="justify" leftMargin="3em" rightMargin="3em">
-      <p align="center">
-        Play -- playing with little diagrams
+    val book = Book()
+    val Page = book.Page
+    Page("Diagram", "")(
+    <div width="70em"  align="justify" leftMargin="3em" rightMargin="3em">
+      <caption>The Diagram</caption>
+      <p>
+        The diagram consists of a collection of geometric or textual objects.
       </p>
       <p>
-        The diagram consists of a collection of geometric objects. Shapes are added to the diagram at the last-clicked position
-        using one of the shape-labelled buttons or the <b>Path</b> button (<i>qv</i>). The default dimensions of the shapes are
-        specified in an editable text field in the interface. The default brush used when a shape is added is
-        specified in the <b>Palette</b> window.
+        Some of the objects are "live", and some "selected". The live ones are those whose bounding boxes enclose the
+        mouse cursor; and this is shown by the brightening of the yellow "attachment points" at the corners
+        and mid-edges of their bounding box. These attachments can be disabled  <i>for the selection</i> by pressing F1, and
+        enabled by pressing SHIFT-F1; otherwise F1 inverts the attachments states of all live objects.
+        If more than one object is currently selected, they have their attachments and centre points painted solid red, and their centre points  joined by
+        white line segments (in the order they were selected). The first object selected has a bright circular "selection" indicator around its
+        centre point. Clicking anywhere other than on an object with either primary or secondary mouse button clears the selection sequence.
       </p>
       <p>
-        Some of the objects
-        may be "live", and some "selected". Liveness is shown by the brightening of a small circular "liveness"
-        indicator near their centre, and of the eight yellow "attachment points" at the corners
-        and mid-edges of their bounding box.
+        In what follows, B1 means a click on an object with the primary mouse button and B2 means a click on an object with the secondary mouse button. B2 can be simulated by CMD-B1.
       </p>
       <p>
-        The first object is selected by clicking (within) it with the primary or secondary mouse button; subsequent objects
-        are selected (or deselected if they are already selected) by clicking within them with the secondary mouse button.
+        B1: starts a new selection sequence with the object object.
       </p>
       <p>
-        The first object selected has a bright circular "selection" indicator surrounding its "liveness" indicator;
-        others are shown linked  to it, in the order in which they were selected, by white line-segments.
+        B2: inverts the selection state of the object, and adds it to (or removes it from) the selection sequence.
       </p>
       <p>
-        The <b>Path</b> button, constructs a closed polygonal path from the <i>current path design</i>, to which points are added
-        by clicking <b>Secondary-Shift</b> (or <b>Primary-Command-Shift</b> in the appropriate place. The path design is shown as a red dotted
-        line starting with a red dotted X.
-      </p>
-      <p>
-        When <i>v</i> is even the <b>Poly</b> button generates a <i>v</i>-edged regular polygon drawn as if inscribed in a concentric circle of radius <i>r</i>;
-        when  <i>v</i> is odd the polygon is displaced slightly from the centre of the corresponding concentric circle.
-      </p>
-      <p>
-        When <i>v</i> is odd the <b>Star</b> button generates a <i>v</i>-pointed star displaced slightly from the centre of the corresponding concentric circle.
-        Its vertices are exactly those of the corresponding polygon.
+        Selected objects can be scaled using the mousewheel; and can be rotated by pressing CMD while rotating the mousewheel.
+        PERIOD rotates by 1 degree, and SHIFT-PERIOD counter-rotates by one degree.
       </p>
     </div>
+    )
+    Page("Shapes", "")(
+      <div width="70em"  align="justify" leftMargin="3em" rightMargin="3em">
+        <caption>Shapes</caption>
+        <p>
+          Pressing a button with the name of a shape on it constructs that shape, with appropriate dimensions as specified
+          in the <i>dimension field</i>, then adds it to the diagram and selects it.
+        </p>
+        <p>
+          The brush used to colour a shape as it is added is specified in the <b>Brush design</b> window, which can be popped up by the <b>Brush</b> button. The <b>Paint</b>
+          button changes the paint(s) used in the selected objects to that specified in that window.
+        </p>
+      </div>
+    )
+    Page("Polygons")(
+      <div width="70em"  align="justify" leftMargin="3em" rightMargin="3em">
+        <caption>Polygons</caption>
+        <p>
+        The <b>Path</b> button, constructs a closed polygonal path from the <i>current path design</i>, to which points are added
+        by clicking <b>SHIFT-B2</b> (or <b>COMMAND-SHIFT-B1</b> in the appropriate place. The path design is shown as a red dotted
+        line starting with a red dotted X.
+      </p>
+        <p>
+          When <i>v</i> is even the <b>Poly</b> button generates a <i>v</i>-edged regular polygon drawn as if inscribed in a concentric circle of radius <i>r</i>;
+          when  <i>v</i> is odd the polygon is displaced slightly from the centre of the corresponding concentric circle.
+        </p>
+        <p>
+          When <i>v</i> is odd the <b>Star</b> button generates a <i>v</i>-pointed star displaced slightly from the centre of the corresponding concentric circle.
+          Its vertices are exactly those of the corresponding polygon.
+        </p>
+      </div>
+    )
+    Page("Text Objects", "")(
+      <div width="70em"  align="justify" leftMargin="3em" rightMargin="3em">
+        <caption>Text objects</caption>
+        <p>
+          The <i>text</i> component is used to compose or edit text. On each ENTER, the text of that component is used
+          to add a text object to the diagram. The shape is added at the last selected object (below it if it's
+          also a text shape). If there's no selected object the shape is added at LM.
+        </p>
+        <p>
+          The <b>?</b> button copies to the text component the text of the last selected object, if it is text.
+        </p>
+        <p>
+          The <b>!</b> button replaces the last selected object with a text object made from the <i>text</i> component's text.
+        </p>
+      </div>
+    )
+    book.Layout.topButtons(pageAlign=Center, pageVAlign = Top)
   }
 
+  val hintSheet: StyleSheet = interfaceStyle.copy(fontScale = 0.65f)
 
   lazy val GUI: Glyph =  new Dashboard({ styled.windowdialogues.Dialogue.OK(help)(hintSheet).InFront(GUI).start()}, hintSheet, interfaceStyle).GUI
 

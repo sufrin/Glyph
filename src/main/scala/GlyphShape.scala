@@ -5,7 +5,7 @@ import GlyphTypes.{Font, Scalar}
 import io.github.humbleui.skija.{PaintMode, Path, PathFillMode}
 import io.github.humbleui.types.Rect
 import org.sufrin.glyph.Brush.{ROUND, SQUARE}
-import org.sufrin.glyph.Brushes.{black, green, invisible, lightGrey}
+import org.sufrin.glyph.Brushes.{black, green, invisible, lightGrey, red}
 import org.sufrin.glyph.GlyphShape.{asGlyph, circle, composite, rect, FILL, STROKE}
 import org.sufrin.glyph.unstyled.dynamic.{Animateable, Steppable}
 
@@ -224,7 +224,6 @@ object GlyphShape {
       res
     }
 
-
     override def scale(factor: Scalar): GlyphShape = if (factor == 1) this else circle(factor * r)(fg)
 
     override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape =
@@ -251,6 +250,8 @@ object GlyphShape {
 
 
     override def scale(factor: Scalar): GlyphShape = if (factor == 1) this else oval(factor * width, factor * height)(fg)
+
+    //override def rotationallySymmetric: Boolean = .6 < Math.abs(w-h)/(w max h)
 
     override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape =
       if (bg==null) oval(width, height)(fg) else oval(width, height)(fg) ~~~ oval(width, height)(fg)
@@ -496,7 +497,7 @@ object GlyphShape {
   /**
    *
    * Experimental mutable shape. If `absolute` then
-   * the path is drawn "as is", otherwise it is drawn
+   * the path is drawn "as is" -- with negative coordinates being interpreted , otherwise it is drawn
    * so that the top/left coordinate of the path is at the origin.
    * Its diagonal always denotes the distance from the top left to the
    * bottom right coordinate of the path.
@@ -777,33 +778,30 @@ case class Handles(thing: TargetShape, handles: Seq[Handle]) {
  */
 case class TargetShape(x$: Scalar, y$: Scalar, shape$: GlyphShape) extends LocatedShape(x$, y$, shape$) {
 
-  val handleBrush0 = Brushes.yellow(width = 2f, mode = STROKE, cap = ROUND, alpha = 0.4f)
+  val handleBrush0 = Brushes.yellow(width = 1f, mode = STROKE, cap = ROUND, alpha = 0.6f)
   val handleBrush = handleBrush0.copy()
-  val hoverBrush0 = Brushes.white(width = 1, mode = STROKE, cap = ROUND, alpha = 0.7f)
-  val hoverBrush = hoverBrush0.copy()
+  val centreBrush0 = Brushes.red(width = 1, mode = STROKE, cap = ROUND, alpha = 0.7f)
+  val centreBrush = centreBrush0.copy()
   val radius = ((w max h) / 12) min 5
 
   private val handle = rect(radius, radius)(handleBrush)
   val deltaHandle = handle.diagonal * 0.5f
   val handles = Handles(this, for { loc <- GlyphShape.cardinalPoints(this.shape) } yield Handle(this, handle, loc-deltaHandle))
 
-  val hover =  circle(radius)(hoverBrush)
+  val centreHandle = circle(radius)(centreBrush)
 
-  @inline private def centred(g: GlyphShape): Vec = Vec(x, y) + ((diagonal - g.diagonal) * 0.5f)
+  @inline private def centeredAbout(g: GlyphShape): Vec = Vec(x, y) + ((diagonal - g.diagonal) * 0.5f)
 
   override def withForeground(brush: Brush): TargetShape = new TargetShape(x, y, shape$.withBrushes(brush))
 
   def setHovering(state: Boolean): Unit = {
     if (state) {
-      hoverBrush.strokeWidth(hoverBrush0.strokeWidth * 2)
-      hoverBrush.alpha(1.0)
       handleBrush.alpha(1f)
       handleBrush.strokeWidth(2*handleBrush0.strokeWidth)
     } else {
-      hoverBrush.strokeWidth(hoverBrush0.strokeWidth)
-      hoverBrush.alpha(hoverBrush0.alpha)
       handleBrush.alpha(handleBrush0.alpha)
       handleBrush.strokeWidth(handleBrush0.strokeWidth)
+      handleBrush.color(handleBrush0.color)
     }
   }
 
@@ -811,9 +809,13 @@ case class TargetShape(x$: Scalar, y$: Scalar, shape$: GlyphShape) extends Locat
     if (state) {
       handleBrush.mode(FILL)
       handleBrush.alpha(1.0)
+      handleBrush.color(red.color)
+      centreBrush.mode(FILL)
     } else {
       handleBrush.mode(STROKE)
-      handleBrush.alpha(hoverBrush0.alpha)
+      handleBrush.alpha(handleBrush0.alpha)
+      handleBrush.color(handleBrush0.color)
+      centreBrush.mode(centreBrush0.mode)
     }
   }
 
@@ -826,12 +828,13 @@ case class TargetShape(x$: Scalar, y$: Scalar, shape$: GlyphShape) extends Locat
       shape.draw(surface)
       handles.draw(surface)
     }
-    surface.withOrigin(centred(hover)) { hover.draw(surface) }
+    surface.withOrigin(centeredAbout(centreHandle)) { centreHandle.draw(surface) }
   }
 
   override def copyState: TargetShape = TargetShape(x, y, shape)
 
   override def toString: String = s"$shape.variable${(x, y)}"
+
 
 }
 
