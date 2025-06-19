@@ -740,6 +740,14 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
     ).enlarged(20)
 }
 
+/**
+ * This program was built as a(nother) way of testing the utility of
+ * the Glyph toolkit, revising components that are found hard to use, and promoting
+ * the design of useful composite components. It gave rise to the `BrushChooser`
+ * component, which in turn gave rise to the re-engineering of parts of the
+ * `Brush` algebra and the textual notation for brushes.
+ */
+
 object Play extends Application {
 
   val LocalSheet: StyleSheet = StyleSheet()
