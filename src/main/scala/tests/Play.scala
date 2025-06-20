@@ -778,8 +778,8 @@ object Play extends Application {
       </p>
       <p>
         Some of the objects are "live", and some "selected". The live ones are those whose bounding boxes enclose the
-        mouse cursor; and this is shown by the brightening of the yellow "attachment points" at the corners
-        and mid-edges of their bounding box. These attachments can be disabled  <i>for the selection</i> by pressing F1, and
+        mouse cursor; and this is shown by the brightening of the yellow "attachment points" on their circumference.
+        These attachments can be disabled  <i>for the selection</i> by pressing F1, and
         enabled by pressing SHIFT-F1; otherwise F1 inverts the attachments states of all live objects.
         If more than one object is currently selected, they have their attachments and centre points painted solid red, and their centre points  joined by
         white line segments (in the order they were selected). The first object selected has a bright circular "selection" indicator around its

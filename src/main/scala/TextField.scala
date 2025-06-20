@@ -90,13 +90,15 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   private var abbreviationTrigger = Key.UNDEFINED
   private def resetAbbreviationTrigger(): Unit = abbreviationTrigger = Key.UNDEFINED
 
+  import Modifiers._
+  val ANYCONTROL  = Control | Command
+  val ANYSHIFT    = ANYCONTROL | Alt
+
   override def accept(key: EventKey, location: Vec, window: Window): Unit = {
-    import Modifiers._
     import io.github.humbleui.jwm.{Clipboard, ClipboardEntry, ClipboardFormat}
     import io.github.humbleui.jwm.Key._
 
-    val ANYCONTROL  = Control | Command
-    val ANYSHIFT    = ANYCONTROL | Alt
+
     val mods: Bitmap = toBitmap(key)
 
     if (mods.includeSome(Pressed)) key._key match {
@@ -106,19 +108,28 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
       case HOME       => TextModel.home()
       case RIGHT if mods.includeSome(ANYCONTROL) => TextModel.home()
       case RIGHT      => TextModel.mvRight()
-      case BACKSPACE  => TextModel.del()
-      case DELETE     => TextModel.mvRight(); TextModel.del()
+
       case ENTER      => onEnter(text)
       case C if mods.includeSome(ANYCONTROL) =>
         Clipboard.set(new ClipboardEntry(ClipboardFormat.TEXT, text.getBytes()))
 
-      case X | U if mods.includeSome(ANYCONTROL) =>
+      case X if mods.includeSome(ANYCONTROL) =>
+        Clipboard.set(new ClipboardEntry(ClipboardFormat.TEXT, text.getBytes()))
+        TextModel.clear()
+
+      case U if mods.includeSome(ANYCONTROL) =>
         Clipboard.set(new ClipboardEntry(ClipboardFormat.TEXT, text.getBytes()))
         TextModel.clear()
 
       case V if mods.includeSome(ANYCONTROL) =>
-        val entry = Clipboard.get(ClipboardFormat.TEXT).getString
-        if (entry ne null) TextModel.ins(entry)
+        while (TextModel.left>0) TextModel.del()
+
+      case BACKSPACE  if mods.includeSome(ANYCONTROL) =>
+        TextModel.swap2()
+
+      case BACKSPACE  => TextModel.del()
+
+      case DELETE     => TextModel.mvRight(); TextModel.del()
 
       // case ESCAPE     => TextModel.abbreviation()
 
@@ -365,6 +376,13 @@ def giveUpKeyboardFocus(): Unit = guiRoot.giveupFocus()
     def del(): Unit  = {
       if (left != 0) left -= 1
     }
+
+    def swap2(): Unit  =
+      if (left>1) {
+        val c = buffer(left-2)
+        buffer(left-2) = buffer(left-1)
+        buffer(left-1) = c
+      }
 
     private var pendingDeletions: Int = 0
     private def doPendingDeletions(): Unit =

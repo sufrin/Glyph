@@ -19,8 +19,9 @@ import org.sufrin.glyph.unstyled.dynamic.{Animateable, Steppable}
 trait GlyphShape { thisShape =>
   def draw(surface: Surface): Unit                                     // draw on the given surface
   def diagonal:               Vec                                      // a bounding box
-  def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = thisShape   // a copy, with new brushes if that means anything
-  def withBackground(bg: Brush): GlyphShape = rect(w, h)(bg) ~~~ this  //this shape, with a rectangular background coloured bg
+  def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = thisShape  // a copy, with new brushes if that means anything
+  def withBackground(bg: Brush): GlyphShape = rect(w, h)(bg) ~~~ this  // this shape, with a rectangular background coloured bg
+  def cardinalPoints: Seq[Vec] = Seq.empty                             // places for handles
 
   @inline def w:      Scalar  = diagonal.x
   @inline def h:      Scalar  = diagonal.y
@@ -216,6 +217,10 @@ object GlyphShape {
     val diag: Vec = Vec(2 * r, 2 * r)
     val diagonal: Vec = diag + (delta * 2)
     val middle = diagonal * 0.5f
+    override val cardinalPoints: Seq[Vec] = {
+      val halfR = r*0.5
+      List(Vec(diag.x, r), Vec(r, diag.y), Vec(0, r), Vec(r, 0))
+    }
 
     override def toString: String = s"circle($r)($fg)"
 
@@ -408,7 +413,7 @@ object GlyphShape {
    * visible point; and its top,left point appears at the origin.
    *
    */
-  def polygon(vertices: Iterable[(Scalar, Scalar)])(brush: Brush): GlyphShape = new GlyphShape {
+  def polygon(vertices: Seq[(Scalar, Scalar)])(brush: Brush): GlyphShape = new GlyphShape {
     override val fg: Brush=brush
     val kind: String = "Polygon"
 
@@ -428,7 +433,10 @@ object GlyphShape {
       path.closePath()
     }
 
+
     private var offsetL, offsetT = 0f
+
+    override def cardinalPoints: Seq[Vec] = vertices.map{ case (x,y) => Vec(x-offsetL, y-offsetT) }
 
     val diagonal = {
       val bounds = path.getBounds()
@@ -737,7 +745,10 @@ object GlyphShape {
 
   def cardinalPoints(shape: GlyphShape): Seq[Vec] = {
     import shape.{w, h}
-    Array(Vec(w, h / 2), Vec(w, h), Vec(w / 2, h), Vec(0, h), Vec(0, h / 2), Vec(0, 0), Vec(w / 2, 0), Vec(w, 0)).toSeq
+    if (shape.cardinalPoints.nonEmpty)
+      shape.cardinalPoints
+    else
+      Array(Vec(w, h / 2), Vec(w, h), Vec(w / 2, h), Vec(0, h), Vec(0, h / 2), Vec(0, 0), Vec(w / 2, 0), Vec(w, 0)).toSeq
   }
 
 
