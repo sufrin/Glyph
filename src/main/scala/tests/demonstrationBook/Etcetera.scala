@@ -344,7 +344,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       ).above(colourGlyphExample).scaled(0.9f).enlarged(10f)
     }
 
-    Page("Fonts*", "Font families\n(available on this computer)\n\n\n") {
+
+    if (false) Page("Fonts*", "Font families\n(available on this computer)\n\n\n") {
       object FontFamilies {
         import GlyphTypes._
         lazy val names: Seq[String] =

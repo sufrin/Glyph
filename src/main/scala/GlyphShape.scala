@@ -19,7 +19,7 @@ import org.sufrin.glyph.unstyled.dynamic.{Animateable, Steppable}
 trait GlyphShape { thisShape =>
   def draw(surface: Surface): Unit                                     // draw on the given surface
   def diagonal:               Vec                                      // a bounding box
-  def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = thisShape  // a copy, with new brushes if that means anything
+  def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape  // a copy, with new brushes if that means anything
   def withBackground(bg: Brush): GlyphShape = rect(w, h)(bg) ~~~ this  // this shape, with a rectangular background coloured bg
   def cardinalPoints: Seq[Vec] = Seq.empty                             // places for handles
 
@@ -139,6 +139,8 @@ trait GlyphShape { thisShape =>
 
     override def scale(factor: Scalar): GlyphShape = if (factor==1) this else thisShape ||| thatShape
 
+    override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = thisShape.withBrushes(fg, bg) ||| thatShape.withBrushes(fg, bg)
+
   }
 
   /** left '''above''' right */
@@ -158,7 +160,10 @@ trait GlyphShape { thisShape =>
 
     override def toString: String = s"$thisShape---$thatShape"
 
-    override def scale(factor: Scalar): GlyphShape = if (factor==1) this else thisShape ||| thatShape
+    override def scale(factor: Scalar): GlyphShape = if (factor==1) this else thisShape --- thatShape
+
+    override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = thisShape.withBrushes(fg, bg) --- thatShape.withBrushes(fg, bg)
+
 
   }
 
@@ -670,7 +675,7 @@ object GlyphShape {
 
     override def scale(factor: Scalar): GlyphShape = if (factor==1) this else superimposed(shapes.map(_.scale(factor)))
 
-    def withBrushes(brush: Brush): GlyphShape =  this
+    override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = superimposed(shapes.map(_.withBrushes(fg, bg)))
 
   }
 
@@ -708,6 +713,8 @@ object GlyphShape {
       }
       it
     }
+
+    override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = composite(shapes.map(_.withBrushes(fg, bg)))
 
     override def toString: String = s"(${shapes.mkString("~~~")})"
 
@@ -900,6 +907,8 @@ class LocatedShape(var x: Scalar, var y: Scalar, val shape: GlyphShape) {
   }
 
   def center: Vec = (diagonal * 0.5f) + (x, y)
+
+  def withBrushes(fg: Brush=shape.fg, bg: Brush=shape.bg): LocatedShape = LocatedShape(x, y, shape.withBrushes(fg, bg))
 
 }
 

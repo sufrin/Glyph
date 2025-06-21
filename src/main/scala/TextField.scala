@@ -29,6 +29,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 var onEnter: String => Unit,
                 var onError: (EventKey, Glyph) => Unit,
                 var onCursorLeave: String => Unit,
+                var onChange: Option[String => Unit],
                 size: Int,
                 initialText: String,
                 abbreviations: utility.TextAbbreviations
@@ -59,7 +60,8 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   val atBaseLine = em.height
   val deltaY = emDiagonal.y*0.2f
 
-  private def focussed: Boolean = guiRoot.hasKeyboardFocus(this)
+  private def focussed: Boolean =
+    if (hasGuiRoot) guiRoot.hasKeyboardFocus(this) else false
 
   /**
    * Accept textlayout input denoting a diacritical that will become part of a composite character.
@@ -72,12 +74,14 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
     val end  = key.getReplacementEnd
     // Cases I know of are for single accent characters
     TextModel.insForReplacement(key.getText, 1+end-start) // pending characters to delete
+    if (onChange.isDefined) onChange.get.apply(text)
     reDraw()
     resetAbbreviationTrigger()
   }
 
   override def accept(key: EventTextInput, location: Vec, window: Window): Unit = {
     TextModel.ins(key.getText)
+    if (onChange.isDefined) onChange.get.apply(text)
     reDraw()
     resetAbbreviationTrigger()
   }
@@ -118,8 +122,13 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
         TextModel.clear()
 
       case U if mods.includeSome(ANYCONTROL) =>
-        Clipboard.set(new ClipboardEntry(ClipboardFormat.TEXT, text.getBytes()))
-        TextModel.clear()
+        if (mods.includeSome(Shift))
+            while (TextModel.hasRight) {
+              TextModel.mvRight()
+              TextModel.del()
+            }
+          else
+            while (TextModel.hasLeft) TextModel.del()
 
       case V if mods.includeSome(ANYCONTROL) =>
         while (TextModel.left>0) TextModel.del()
@@ -131,7 +140,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
 
       case DELETE     => TextModel.mvRight(); TextModel.del()
 
-      // case ESCAPE     => TextModel.abbreviation()
+      case ESCAPE     => TextModel.abbreviation()
 
       // two successive presses on the same shift key triggers an abbreviation
       case CONTROL | MAC_COMMAND | SHIFT | LINUX_SUPER | ALT | MAC_OPTION =>
@@ -147,9 +156,11 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
            for (i<-0 until 3*size) {
              TextModel.ins(f"$i%03d ")
            }
+
       case other  =>
         if (mods.includeSome(ANYSHIFT)) onError(key, this)
     }
+    if (onChange.isDefined) onChange.get.apply(text)
     reDraw()
   }
 
@@ -234,8 +245,8 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
     }
   }
 
-def takeKeyboardFocus(): Unit = guiRoot.grabKeyboard(this)
-def giveUpKeyboardFocus(): Unit = guiRoot.giveupFocus()
+def takeKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.grabKeyboard(this)
+def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
 
 
@@ -251,7 +262,7 @@ def giveUpKeyboardFocus(): Unit = guiRoot.giveupFocus()
       reDraw() // window.requestFrame()
     case _: GlyphLeave =>
       onCursorLeave(text)
-      guiRoot.freeKeyboard()
+      if (hasGuiRoot) guiRoot.freeKeyboard()
   }
 
   override def accept(mouse: EventMouseButton, location: Vec, window: Window): Unit = {
@@ -517,6 +528,7 @@ object TextField extends logging.Loggable {
             onEnter: String=>Unit              = { case text: String => },
             onError: (EventKey, Glyph) => Unit = popupError(_,_),
             onCursorLeave: String=>Unit        = { case text: String => },
+            onChange: Option[String=>Unit]     = None,
             size: Int,
             initialText: String = "",
             abbreviations: utility.TextAbbreviations = null
@@ -525,7 +537,8 @@ object TextField extends logging.Loggable {
             onEnter=onEnter,
             onError=onError,
             onCursorLeave=onCursorLeave,
+            onChange=onChange,
             size=size,
             initialText=initialText,
-            abbreviations)
+            abbreviations=abbreviations)
 }

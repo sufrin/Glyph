@@ -479,6 +479,8 @@ import io.github.humbleui.jwm.App
   abstract class ActiveGlyph[T](initial: T, val background: Glyph=null) extends Glyph with Animateable [T]  {
     def toGlyph(t: T): Glyph
 
+    val forcedSet: Boolean = false
+
     val initialGlyph = if (background eq null) toGlyph(initial) else background
 
     protected var currentGlyph: Glyph = initialGlyph
@@ -488,7 +490,7 @@ import io.github.humbleui.jwm.App
      * Set the current state, and show its `toGlyph`.
      */
     def set(state: T): Unit =  {
-      if (state != current) currentGlyph = toGlyph(state)
+      if (forcedSet || state != current) currentGlyph = toGlyph(state)
       current = state
       // if (hasGuiRoot)
       reDraw()

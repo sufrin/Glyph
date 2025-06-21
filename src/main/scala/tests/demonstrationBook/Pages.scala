@@ -15,7 +15,7 @@ object Pages extends Application  {
   val decor: Decoration = {
     import styles.decoration._
     // Blurred(red, green, 10, 5)
-    RoundFramed(fg=Brushes("blue.6.round"), bg=Brushes("cornflower").alpha(0.2), enlarge=0.25f, radius=0.25f)
+    RoundFramed(fg=Brushes("blue.6.round"), bg=Brushes("cornflower").alpha(0.3), enlarge=0.25f, radius=20f)
   }
 
   val interfaceStyle: StyleSheet = LocalSheet.copy(

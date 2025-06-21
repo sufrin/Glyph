@@ -226,6 +226,8 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     override def scale(factor: Scalar): GlyphShape = new Composition(x, y, shape.scale(factor), components)
 
     override def turn(degrees: Scalar, tight: Boolean): GlyphShape = new Composition(x, y, shape.turn(degrees, tight), components)
+
+    override def withBrushes(fg: Brush=shape.fg, bg: Brush=shape.bg): GlyphShape = new Composition(x, y, shape.withBrushes(fg, bg), components)
   }
 
   /** Compose the selected elements in the order of selection  */
@@ -249,7 +251,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
    * relative to the shape's origin.
    * @param targets
    */
-  class ComposedInPlace(val targets: Seq[TargetShape]) extends GlyphShape {
+  class ComposedInPlace(val targets: Seq[LocatedShape]) extends GlyphShape {
     override def toString: String = s"InPlace(${targets.mkString(",\n")})"
     private val left  = targets.map(_.x).min
     private val right = targets.map{ t => t.x+t.w }.max
@@ -264,6 +266,8 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     def diagonal: Vec = Vec(right-left, bot-top)
 
     def withForeground(brush: Brush): GlyphShape = new ComposedInPlace(targets.map(_.withForeground(brush)))
+
+    def withBrushes(fg: Brush=this.fg, bg: Brush=this.bg): GlyphShape = new ComposedInPlace(targets.map(_.withBrushes(fg, bg)))
 
     def topLeft: Vec = Vec(left, top)
   }
@@ -613,6 +617,8 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
         val origin = point - delta
         if (shape.encloses(point-delta)) Some(this) else None
       }
+
+      def withBrushes(fg: Brush=shape.fg, bg: Brush=shape.bg): GlyphShape = new withRadius(R)(shape.withBrushes(fg, bg))
 
     }
 

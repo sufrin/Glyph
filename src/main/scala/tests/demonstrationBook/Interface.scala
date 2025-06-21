@@ -109,6 +109,23 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
   Page("Text Tool", "") (new TextTool().GUI)
 
+  Page("Fonts", "Font families\n(available on this computer)\n\n\n") {
+    val chooser = new FontAndBrushChooser()
+    import glyphXML.Language._
+    chooser.fontChooser.showExample()
+    Col(align=Center)(
+      <div width="75em" align="justify">
+        <p>
+          This page draws the example text with the selected brush, using the chosen font, style, and size.
+          Notice the difference in appearance between fill-mode and stroke-mode brushes. In stroke mode
+          the text appears "outlined", especially when the brush width is relatively small; and this
+          appearance persists when the font size is larger, even when the brush width is quite large.
+        </p>
+      </div>,
+      chooser.GUI
+      ).enlarged(20)
+  }
+
   Page("Events/Windows*", "") (new EventsAndWindows().GUI)
 
   Page("Glyph Transforms*", "") (new Transforms().GUI)

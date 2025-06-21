@@ -20,7 +20,7 @@ import org.sufrin.logging
  * 
  * 
  */
-class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: NonBrush=>Unit)(implicit sheet: StyleSheet) {
+class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: NonBrush=>Unit, onChoose: Brush => Unit = {_ => })(implicit sheet: StyleSheet) {
   thisChooser =>
   
   protected def brushWarning(anchor: Glyph) = {
@@ -72,6 +72,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
 
   protected def showResultBrush(): Unit = {
     brushField.text = resultBrush.toString
+    onChoose(resultBrush)
   }
 
   protected lazy val brushField = styled.TextField(size=50, onEnter=setResultBrush(_), initialText=resultBrush.toString)(hintSheet)
@@ -168,9 +169,9 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     import glyphXML.Language._
     styled.windowdialogues.Dialogue.FLASH(<div width="50em" align="justify" parskip="1.5ex">
       <p>
-        This button selection palette offers several ways of
+        This brush selection palette offers several ways of
         specifying a Brush. Visual feedback is provided by a
-        showing couple of glyphs whose foreground is specified
+        showing couple of glyphs -- their foreground is painted
         with the brush.
       </p>
       <p>
@@ -190,7 +191,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
         Other Brush properties can be selected from the menus that appear between the
         colours buttons and the feedback glyphs.
       </p>
-    </div>.enlarged(30)).InFront(COLOURGUI)
+    </div>.enlarged(30))
   }
 
     lazy val SAMPLE: Glyph = {
@@ -199,17 +200,17 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     }
 
 
-  /** A GUI that supports setting properties as text */
-    lazy val BRUSHGUI: Glyph = brushField.framed()
-
     /** The comprehensive GUI that has all forms of brush property selection, together with the `Sample` that shows
      * the effects of the current choices.
      */
     lazy val GUI: Glyph = Col(align=Center, bg=lightGrey)(COLOURGUI, ex, PROPERTYGUI, ex, SAMPLE: Glyph, ex, HSVGUI).enlarged(30)
 
+    lazy val NOTEXTGUI: Glyph = Col(align=Center, bg=lightGrey)(colourGrid, ex, PROPERTYGUI, ex, SAMPLE: Glyph, ex, HSVGUI).enlarged(30)
+
     /** A GUI for choosing among named colours */
     lazy val COLOURGUI: Glyph = Col(align=Center, bg=lightGrey)(
-      BRUSHGUI, ex,
+      brushField.framed(),
+      ex,
       colourGrid
     )
 
@@ -283,7 +284,11 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
             brushFeedback()
         }(menuSheet),
         sheet.hFill(),
-        styled.TextButton("Help"){ _=> helpDialogue.show() }(menuSheet)
+        styled.TextButton("Help"){
+          _=> if (helpDialogue.running.isEmpty) {
+            helpDialogue.InFront(PROPERTYGUI).start()
+          }
+        }(menuSheet)
       ),
     )
 

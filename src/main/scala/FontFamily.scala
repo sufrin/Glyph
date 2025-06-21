@@ -127,11 +127,29 @@ object FontFamily extends logging.Loggable {
     }
 
     /**
+     * This `font` at `size`
+     */
+    def sized(size: Scalar): Font = {
+      val id = FontFamily.fontID(font)
+      id match {
+        case Some(id) => FontFamily(id.family, id.style, size)
+        case None     => font
+      }
+    }
+
+    /**
      * This `font` in the named style (if possible)
      */
     def styled(style: String): Font = {
       FontFamily.fontID(font) match {
         case Some(id) => FontFamily(id.family, FontFamily.styleNamed(style), id.size)
+        case None     => font
+      }
+    }
+
+    def familied(family: String): Font = {
+      FontFamily.fontID(font) match {
+        case Some(id) => FontFamily(family, id.style, id.size)
         case None     => font
       }
     }

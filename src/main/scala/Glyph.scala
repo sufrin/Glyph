@@ -184,7 +184,7 @@ trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyp
    *  -- the redraw is hidden by double-buffering of the drawn
    *  GUI.
    */
-  def reDraw(): Unit = guiRoot.reDraw()
+  def reDraw(): Unit = if (hasGuiRoot) guiRoot.reDraw()
 
   /** Is this an enabled reactive glyph */
   def enabled(state: Boolean): Boolean = {

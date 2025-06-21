@@ -60,6 +60,8 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
 
       def toShape(t: Double): GlyphShape = this.shape.turn(t.toFloat, tight=true)
 
+      def withBrushes(fg: org.sufrin.glyph.Brush, bg: org.sufrin.glyph.Brush): GlyphShape = this
+
     }
 
 
@@ -90,6 +92,8 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
         def diagonal: Vec = Vec.Zero
 
         def withForeground(brush: Brush): GlyphShape = null
+
+        def withBrushes(fg: Brush, bg: Brush): GlyphShape = throw new java.lang.UnsupportedOperationException()
       }
 
       lazy val wheel1 = new RotatingWheel(100, 4)

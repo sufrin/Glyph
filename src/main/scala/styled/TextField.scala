@@ -34,6 +34,7 @@ object TextField {
   def apply(onEnter: String => Unit            = { case text: String => },
             onError: (EventKey, Glyph) => Unit = { case (key, glyph) => },
             onCursorLeave: String=>Unit        = { case text: String => },
+            onChange: Option[String => Unit]   = None,
             size:    Int,
             initialText: String = "",
             abbreviations: TextAbbreviations = null
@@ -42,6 +43,6 @@ object TextField {
     val fg: Brush = sheet.textForegroundBrush
     val bg: Brush = sheet.textBackgroundBrush
     val font: Font = sheet.textFont
-    new TextField(fg, bg, font, onEnter, onError, onCursorLeave, size, initialText, abbreviations)
+    new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations)
   }
 }
