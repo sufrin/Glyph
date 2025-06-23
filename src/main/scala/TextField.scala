@@ -98,6 +98,21 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   val ANYCONTROL  = Control | Command
   val ANYSHIFT    = ANYCONTROL | Alt
 
+  protected var abbreviationKey: Key = Key.UNDEFINED
+  protected var abbreviationMods: Bitmap = Bitmap(0)
+
+  /**
+   * Set the abbreviation key (and modifiers).
+   * @param key
+   * @param mods
+   * @return
+   */
+  def withAbbreviationKey(key: Key, mods: Int=0): TextField = {
+    abbreviationKey = key
+    abbreviationMods = Bitmap(mods)
+    this
+  }
+
   override def accept(key: EventKey, location: Vec, window: Window): Unit = {
     import io.github.humbleui.jwm.{Clipboard, ClipboardEntry, ClipboardFormat}
     import io.github.humbleui.jwm.Key._
@@ -156,6 +171,9 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
            for (i<-0 until 3*size) {
              TextModel.ins(f"$i%03d ")
            }
+
+      case other  if abbreviationKey!=UNDEFINED && other==abbreviationKey && mods ==abbreviationMods =>
+        TextModel.abbreviation()
 
       case other  =>
         if (mods.includeSome(ANYSHIFT)) onError(key, this)

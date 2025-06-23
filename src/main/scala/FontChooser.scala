@@ -3,6 +3,7 @@ package org.sufrin.glyph
 import styled.{ActiveString, Label, MenuButton}
 import unstyled.reactive.{Enterable, Reaction}
 
+import io.github.humbleui.jwm.Key
 import org.sufrin.glyph.Brush.{BUTT, ROUND, SQUARE}
 import org.sufrin.glyph.Brushes.{black, lightGrey, NonBrush}
 import org.sufrin.glyph.Colour.{ARGB, HSV}
@@ -101,7 +102,7 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
 
   def interpretSpecialKey(key: GlyphTypes.EventKey, glyph: Glyph): Unit = {
     val mods: Bitmap = toBitmap(key)
-    example.text=s"${example.text} ${mods.toString}"
+    example.text=s"${example.text} ${key._key} ${mods.toString} "
   }
 
   val abbrs = new TextAbbreviations(onLineTrigger = false)
@@ -113,17 +114,24 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
   }
   
   lazy val brush: Brush = initialBrush
-  lazy val example      = styled.TextField(size=50, onChange=Some(showExample), onError=interpretSpecialKey, initialText = "This (editable) text is shown below", abbreviations = abbrs)
+  lazy val example      = styled.TextField(size=50,
+                                           onChange=Some(showExample),
+                                           onError=interpretSpecialKey,
+                                           initialText = "This (editable) text is shown below",
+                                           abbreviations = abbrs).withAbbreviationKey(Key.ESCAPE)
 
 
   import sheet.{em, ex}
   import CellFit._
 
-  val GUI: Glyph = Col(align=Center)(
+  val checkBox: Glyph =
+     styled.CheckBox(initially=abbrs.onLineTrigger, hint=Hint(5, "Enable/disable automatic substitution for abbreviations\n(when disabled the 'abbreviate' key can be used)")(sheet.copy(fontScale = 0.6f))){ state => abbrs.onLineTrigger=state }
+
+  lazy val GUI: Glyph = Col(align=Center)(
     Row(align=Mid)(familyChooser, em, styleChooser.framed(), em,  sizeChooser.framed()), ex,
     Grid(width=2, pady=10).rows(
     Label("Text "), example.framed(),
-    Label("Abbr "), styled.CheckBox(initially=abbrs.onLineTrigger) { state => abbrs.onLineTrigger=state }.cellFit(ShiftWest),
+    Label("Auto "), checkBox.cellFit(ShiftWest),
     Label("Font "), fontText.framed(),
     aboveDisplay._1.cellFit(ShiftWest), aboveDisplay._2.cellFit(ShiftWest)
     ),

@@ -28,6 +28,7 @@ import org.sufrin.utility.TextAbbreviations
 /** Styled and unstyled TextFields are implemented by the same class. */
 object TextField {
 
+
   import GlyphTypes.Font
   import io.github.humbleui.jwm.EventKey
 

@@ -73,23 +73,15 @@ object Modifiers {
   implicit def BitmapOfEvent(event: Event) : Bitmap = Bitmap(Modifiers(event))
 
   implicit class Bitmap(val modifiers: Int) extends AnyVal {
-        override def toString: String =  {
-          var s = ""
-          for { shift <- 0 until modString.size } {
-            val bit: Int = 1<<shift
-            if ((bit & modifiers) != 0 ) s = s"$s ${modString(shift)}"
-          }
-          s = s ++ f" (0x${modifiers}%04x)"
-          s
-        }
+        override def toString: String =  toShortString
 
         def toShortString: String = {
           var s = ""
           for {shift <- 0 until modString.size} {
             val bit: Int = 1 << shift
-            if ((bit & modifiers) != 0) s = s"$s ${modString(shift)}"
+            if ((bit & modifiers) != 0) s = s"$s ${shortModString(shift)}"
           }
-          s.replaceAll("Released|Pressed|Default", "")
+          s
         }
 
         def toLongString: String = {
@@ -98,7 +90,7 @@ object Modifiers {
             val bit: Int = 1 << shift
             if ((bit & modifiers) != 0) s = s"$s ${modString(shift)}"
           }
-          s
+          s++ f" (0x${modifiers}%04x)"
         }
 
 
@@ -170,6 +162,28 @@ object Modifiers {
       |Middle
       |Back
       |Forward""".stripMargin.split('\n')
+
+  val shortModString:  Array[String] =
+    """Lock
+      |Shi
+      |Ctrl
+      |Alt
+      |Win
+      |Meta
+      |Supr
+      |Cmd
+      |Opt
+      |Fn
+      |Rel
+      |Prs
+      |Dflt
+      |Kpad
+      |Rght
+      |Pri
+      |Sec
+      |Mid
+      |Back
+      |Frwd""".stripMargin.split('\n')
 }
 
 

@@ -26,14 +26,16 @@ class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Doubl
   val id = s"HintManager${this.hashCode()}"
 
   /**
-   * The new layer is constructed lazily (in fact, at the point of first entry as the target's
-   * `onGlyphEvent` method is invojed) because the target glyph will certainly have been rooted
-   * before it is entered,  so `target.guiRoot` will by then be meaningful. The glyph that the layer
+   * Get the overlay layer that corresponds to this hint manager.
+   *
+   * NB: The new layer is constructed at the point of first entry or exit as the target's
+   * `onGlyphEvent` method is invoked. The target glyph will certainly have been rooted
+   * before it is entered and its `guiRoot` will by then be meaningful. The glyph that the layer
    * will show is computed only after it is determined that the layer is visible, and this makes
    * it feasible to generate hints dynamically.
    */
-  lazy val layer =
-       target.guiRoot.Overlay.newAnnotation(id, glyph=INVISIBLE(), isModal = false, visible = false, strictHiding = false, active = false)
+  def getLayer(guiRoot: RootGlyph): RootLayer =
+    guiRoot.Overlay.annotations.getOrElse(id, guiRoot.Overlay.newAnnotation(id, glyph=INVISIBLE(), isModal = false, visible = false, strictHiding = false, active = false))
 
   lazy val schedule = new Schedule()
 
@@ -41,7 +43,8 @@ class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Doubl
 
   locally {
     target.onGlyphEvent {
-      case (true, where) =>
+      case (rootGlyph, true, where) =>
+        val layer = getLayer(target.guiRoot)
         if (_allow() && !layer.visible && seconds>=0) {
           layer.visible = true
           layer.glyph = hintCache.getOrElse(hint())
@@ -51,7 +54,8 @@ class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Doubl
             target.reDraw()
           }
         }
-      case (false, _) =>
+      case (rootGlyph, false, _) =>
+        val layer = getLayer(target.guiRoot)
         if (seconds==0)
           layer.visible = false
         else
@@ -79,7 +83,7 @@ object HintManager {
   def apply(target: Enterable, seconds: Double, hint: ()=>String, constant: Boolean = true)(implicit style: StyleSheet): HintManager = {
       new HintManager(
       target,
-        ()=>static.Label(hint(), style.labelStyle.font, fg=Brushes.red, bg=Brushes.white).enlarged(10).framed(),
+        ()=>styled.Label(hint())(style.copy(labelForegroundBrush = Brushes.red, labelBackgroundBrush = Brushes.white)).enlarged(10).framed(),
       seconds,
       constant)
   }

@@ -213,6 +213,9 @@ trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyp
     this
   }
 
+  /**
+   * Assign the parent (must be invoked by any containing glyph, or glyph that uses this glyph as a proxy.
+   */
   def parent_= (theParent: Glyph): Unit = _parent = theParent
 
   /** Parent in the glyph tree */

@@ -23,12 +23,17 @@ object reactive {
     def guiRoot:  RootGlyph
     def reDraw(): Unit
 
-    protected var _onGlyphEvent: Option[(Boolean, Vec)=>Unit] = None
+    protected var _onGlyphEvent: Option[(RootGlyph, Boolean, Vec)=>Unit] = None
 
     /**
      * Set or clear the action to be invoked when the cursor enters or leaves a reactive glyph.
+     *
+     * The action will be applied to `(root, hovering, location)`, where
+     * `root` is the root glyph of the enterable in which the event takes place;
+     * `hovering` is true iff the cursor is hovering over the enterable;
+     * `location` is the location (relative to the enterable) of the event.
      */
-    def onGlyphEvent(action: ((Boolean, Vec) => Unit)=null): Unit = {
+    def onGlyphEvent(action: ((RootGlyph, Boolean, Vec) => Unit)=null): Unit = {
       _onGlyphEvent = if (action eq null) None else Some(action)
     }
   }
@@ -39,7 +44,7 @@ object reactive {
    * it invokes `react()`. If the mouse is pressed over it, but released elsewhere,
    * then there is no reaction.
    */
-  abstract class GenericButton extends ReactiveGlyph with Enterable {
+  abstract class GenericButton extends ReactiveGlyph with Enterable { thisButton =>
 
     import io.github.humbleui.jwm.{EventMouseButton, Window}
 
@@ -158,10 +163,12 @@ object reactive {
             pressed = false //println(s"""$showState Leave@$location""")
         }
 
-        _onGlyphEvent match {
-          case None =>
-          case Some(action) => action(hovered, location + rootDistance)
-        }
+        try {
+          _onGlyphEvent match {
+            case None =>
+            case Some(action) => action(thisButton.guiRoot, hovered, location + rootDistance)
+          }
+        } catch { case e: AssertionError => println(s"${e.toString}")}
         markStateChanged
       }
     }
@@ -475,7 +482,7 @@ object reactive {
    *
    * TODO: Turned sliders attract focus curiously.
    */
-  abstract class Slider extends ReactiveGlyph with Enterable {
+  abstract class Slider extends ReactiveGlyph with Enterable { thisSlider =>
 
     import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, MouseCursor, Window}
     /** Invoked when the cursor drags to `loc` */
@@ -548,7 +555,7 @@ object reactive {
 
         _onGlyphEvent match {
           case None =>
-          case Some(action) => action(hovered, location + rootDistance)
+          case Some(action) => action(thisSlider.guiRoot, hovered, location + rootDistance)
         }
         markStateChanged
       }

@@ -59,7 +59,6 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
       }
       catch {
         case nonBrush: Brushes.NonBrush =>
-          println(nonBrush)
           onError(nonBrush)
       }
     }
@@ -163,7 +162,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
   protected lazy val hueGrid = Grid(fg=black).table(width=12)(hueButs.toList)
   protected lazy val satGrid = Grid(fg=black).table(width=11)(satButs.toList)
   protected lazy val briGrid = Grid(fg=black).table(width=11)(briButs.toList)
-  protected lazy val textModel = unstyled.Text(" Textual ", sheet.labelFont.makeWithSize(36), protoBrush)
+  protected lazy val textModel = unstyled.Text(" Text example ", sheet.labelFont.makeWithSize(36), protoBrush)
 
   protected lazy val helpDialogue: Dialogue[Unit] = {
     import glyphXML.Language._
@@ -189,7 +188,8 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
       </p>
       <p>
         Other Brush properties can be selected from the menus that appear between the
-        colours buttons and the feedback glyphs.
+        colours buttons and the feedback glyphs; or by modifying the font descriptor window
+        and typing the Enter key.
       </p>
     </div>.enlarged(30))
   }

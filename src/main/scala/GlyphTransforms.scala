@@ -219,6 +219,12 @@ object GlyphTransforms {
     override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(p-delta)
     override def glyphContaining(p: Vec): Option[Hit] = glyph.glyphContaining(p-delta)
 
+
+    override def parent_=(parent: Glyph): Unit = {
+      super.parent_=(parent) // link this glyph into the tree
+      glyph.parent = this    // link the contained glyph into the tree through this
+    }
+
     /**
      * Draw the glyph on the surface at its given size (as if at the origin).
      */
