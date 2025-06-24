@@ -46,7 +46,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
       </p>).InFront(anchor)
   }
 
-  protected val hintSheet: StyleSheet = sheet.copy(fontScale = 0.8f)
+  protected val hintSheet: StyleSheet = sheet.copy(fontScale = 0.7f)
   protected val menuSheet: StyleSheet = hintSheet.copy(buttonDecoration = Framed(black(width=1)))
 
   protected def setResultBrush(specification: String): Unit = {
@@ -106,8 +106,9 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
       path
     }
 
-  protected val colButs = for { (name, col) <- Brushes.namedColours  } yield
-      ColourPaletteButton("  ", name, Brushes(name)){
+  protected val colButs = for { (name, col) <- Brushes.namedColours  } yield {
+      val brush = Brushes(name)
+      ColourPaletteButton("  ", f"$name%s (${brush.hue}%3.1f,${brush.sat}%1.1f,${brush.vib}%1.1f)", brush){
         _ =>
           protoBrush.setColor(col)
           brushFeedback()
@@ -115,6 +116,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
             brush.hue(ARGB(col).hue)
           }
       }
+  }
 
   protected lazy val satBrushes: Seq[Brush] = for { i<- 0 to 10 } yield Brushes(s"hsv(${protoBrush.hue}, ${i*0.1}, 1)")
   protected lazy val briBrushes: Seq[Brush] = for { i<- 0 to 10 } yield Brushes(s"hsv(${protoBrush.hue}, 1, ${i*0.1})")
@@ -203,9 +205,9 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     /** The comprehensive GUI that has all forms of brush property selection, together with the `Sample` that shows
      * the effects of the current choices.
      */
-    lazy val GUI: Glyph = Col(align=Center, bg=lightGrey)(COLOURGUI, ex, PROPERTYGUI, ex, SAMPLE: Glyph, ex, HSVGUI).enlarged(30)
+    lazy val GUI: Glyph = Col(align=Center, bg=lightGrey)(COLOURGUI, ex, PROPERTYGUI, ex, SAMPLE: Glyph, ex, HSVGUI).enlarged(30, bg=sheet.backgroundBrush)
 
-    lazy val NOTEXTGUI: Glyph = Col(align=Center, bg=lightGrey)(colourGrid, ex, PROPERTYGUI, ex, SAMPLE: Glyph, ex, HSVGUI).enlarged(30)
+    lazy val NOTEXTGUI: Glyph = Col(align=Center, bg=lightGrey)(colourGrid, ex, PROPERTYGUI, ex, SAMPLE: Glyph, ex, HSVGUI).enlarged(30, bg=sheet.backgroundBrush)
 
     /** A GUI for choosing among named colours */
     lazy val COLOURGUI: Glyph = Col(align=Center, bg=lightGrey)(
@@ -215,7 +217,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     )
 
     /** A GUI for choosing properties */
-    lazy val PROPERTYGUI: Glyph = Col(align=Center, bg=lightGrey)(
+    lazy val PROPERTYGUI: Glyph = Col(align=Center, bg=sheet.backgroundBrush)(
       FixedSize.Row(align=Mid, width=colourGrid.w)(
         brushFieldChooserMenu("Width", "0", "1", "2", "4", "6", "8", "10", "15", "20", "25","30"){
           v =>
@@ -293,12 +295,11 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     )
 
     /** A gui for choosing brush colours */
-    lazy val HSVGUI: Glyph = Col(align=Center, bg=lightGrey)(
+    lazy val HSVGUI: Glyph = Col(align=Center, bg=sheet.backgroundBrush)(
       ex,
       hueGrid, ex,
       satGrid, ex,
-      briGrid, ex,
-      ex
+      briGrid
     )
 
   /** A `Dialogue` inhabited by the comprehensive `GUI` */
