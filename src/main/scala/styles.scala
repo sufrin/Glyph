@@ -101,8 +101,8 @@ package styles
           ffg.pathEffect(effect)
           fbg.pathEffect(effect)
         }
-        val frame = rectangularPolygon(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(ffg)
-        val background = rectangularPolygon(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(fbg)
+        val frame = rect(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(ffg)
+        val background = rect(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(fbg)
         asGlyph(superimposed(List(background, frame, glyph)))
       }
     }
@@ -129,8 +129,8 @@ package styles
           ffg.pathEffect(effect)
           fbg.pathEffect(effect)
         }
-        val frame = rectangularPolygon(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(ffg)
-        val background = rectangularPolygon(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(fbg)
+        val frame = rect(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(ffg)
+        val background = rect(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(fbg)
         asGlyph(superimposed(List(background, frame, glyph)))
       }
     }

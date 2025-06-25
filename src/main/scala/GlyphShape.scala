@@ -6,7 +6,7 @@ import io.github.humbleui.skija.{PaintMode, Path, PathFillMode}
 import io.github.humbleui.types.Rect
 import org.sufrin.glyph.Brush.{ROUND, SQUARE}
 import org.sufrin.glyph.Brushes.{black, green, invisible, lightGrey, red}
-import org.sufrin.glyph.GlyphShape.{asGlyph, circle, composite, rect, FILL, STROKE}
+import org.sufrin.glyph.GlyphShape.{asGlyph, circle, composite, rect, superimposed, FILL, STROKE}
 import org.sufrin.glyph.unstyled.dynamic.{Animateable, Steppable}
 
 /**
@@ -20,7 +20,7 @@ trait GlyphShape { thisShape =>
   def draw(surface: Surface): Unit                                     // draw on the given surface
   def diagonal:               Vec                                      // a bounding box
   def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape  // a copy, with new brushes if that means anything
-  def withBackground(bg: Brush): GlyphShape = rect(w, h)(bg) ~~~ this  // this shape, with a rectangular background coloured bg
+  def withBackground(bg: Brush): GlyphShape = superimposed(List(rect(w, h)(bg), this))  // this shape, with a rectangular background coloured bg
   def cardinalPoints: Seq[Vec] = Seq.empty                             // places for handles
 
   @inline def w:      Scalar  = diagonal.x
@@ -368,7 +368,6 @@ object GlyphShape {
     val b = 3f *a
     val c = f* 20f
     val d = f * 30f
-    //val fg = if (brush.cap == SQUARE) brush else brush(cap = SQUARE)
     polygon((0, a), (0, b), (c, b), (c, a + b), (d, (a + b) / 2), (c, 0), (c, a))(brush) //~~~rect(d,a+b)(black(mode=STROKE))
   }
 
@@ -376,30 +375,8 @@ object GlyphShape {
    * A `(width, height)` rectangle, occupying a `(width+brush.strokeWidth, height+brush.strokeWidth)` rectangle.
    * The rectangle is filled, or not, according to  `brush.mode: PaintMode`
    */
-  def rect(width: Scalar, height: Scalar)(brush: Brush): GlyphShape = new GlyphShape {
-    override val fg: Brush = brush
+  def rect(width: Scalar, height: Scalar): Brush => GlyphShape = polygon((0, 0), (width, 0), (width, height), (0, height))
 
-    val delta = Vec(fg.strokeWidth / 2, fg.strokeWidth / 2)
-
-    def draw(surface: Surface): Unit = surface.withOrigin(delta) {
-      // if (fg.mode != STROKE) surface.fillRect(fg, diag)
-      surface.drawRect(fg, diag)
-    }
-
-    val diag: Vec = Vec(width, height)
-    val diagonal: Vec = diag + (delta * 2)
-
-    override def toString: String = s"rect($width,$height)($fg)"
-
-    override def withBrushes(fg: Brush, bg: Brush=null): GlyphShape = rect(width, height)(fg)
-
-    override def scale(factor: Scalar): GlyphShape = if (factor ==1) this else rect(factor * width, factor * height)(fg)
-
-  }
-
-  def rectangularPolygon(w: Scalar, h: Scalar): Brush=>GlyphShape = polygon(
-    (0, 0), (w, 0), (w, h), (0, h)
-  )
 
   /**
    * A closed polygon made of `vertex::vertices`.

@@ -437,10 +437,10 @@ components' heights. The complete API for these compositions is quite
 expressive:
 \begin{scala}
    Col(align:   Alignment = Left,
-       fg:      Brush     = nothing,
-       bg:      Brush     = nothing,
+       fg:      Brush     = transparent,
+       bg:      Brush     = transparent,
        uniform: Boolean   = false,
-       frame:   Brush     = nothing,
+       frame:   Brush     = transparent,
        skip:    Scalar    = 0f)(glyphs)
 \end{scala}
 Constructs the vertical catenation of glyphs; its height is the sum of the
@@ -468,10 +468,10 @@ with foreground frame are drawn between glyphs.
 The \Scala{Row} composition API is analogous.
 \begin{scala}
    Row(align:   VAlignment = Top,
-       fg:      Brush      = nothing,
-       bg:      Brush      = nothing,
+       fg:      Brush      = transparent,
+       bg:      Brush      = transparent,
        uniform: Boolean    = false,
-       frame:   Brush      = nothing,
+       frame:   Brush      = transparent,
        skip:    Scalar     = 0f)(glyphs)
 \end{scala}
 
@@ -513,15 +513,15 @@ def redR:  Glyph = FilledRect(50f, 25f, fg=red)
 def blueR: Glyph = FilledRect(100f, 25, fg=blue)
 \end{scala}
 
-The \Scala{fill} function is a horizontal/vertical ``stretchable''
+The \Scala{fill} function yields a horizontal/vertical ``stretchable''
 filler of nominal width $10$ units and stretchability $1.0$.
 
 The APIs for \Scala{FixedSize.Row} and \Scala{FixedSize.Col} are analogous.
 \begin{scala}
         Row(width: Scalar,
             align: VAlignment = Top,
-            fg:    Brush      = nothing,
-            bg:    Brush      = nothing)(glyphs)
+            fg:    Brush      = transparent,
+            bg:    Brush      = transparent)(glyphs)
 \end{scala}
 Constructs the horizontal catenation of glyphs, \textit{vertically} aligned
 in the row, as specified by align.  Its height is the largest of the
@@ -571,8 +571,8 @@ It can also be helpful to organize glyph sequences in tabular form.
 Several methods for doing this are provided by \Scala{NaturalSize.Grid}
 -- all invoked by first specifying various aspects of the table.
 \begin{scala}
-        Grid(fg:     Brush  = nothing,
-             bg:     Brush  = nothing,
+        Grid(fg:     Brush  = transparent,
+             bg:     Brush  = transparent,
              padx:   Scalar = 0,
              pady:   Scalar = 0,
              width:  Scalar = 0,
@@ -592,8 +592,8 @@ The parameters \Scala{width} and \Scala{height}  are used to interpret
 \Scala{width} means ``number of columns''; and \Scala{height} means
 ``number of rows.}
 \begin{enumerate}
-     \item  if there's a \Scala{width} parameter then glyphs is interpreted as a catenation of rows of the given \Scala{width}
-     \item  if there's a \Scala{height} parameter then glyphs is interpreted as a catenation of columns of the given \Scala{height}
+     \item  if there's a \Scala{width} parameter then \Scala{glyphs} is interpreted as a catenation of rows of the given \Scala{width}
+     \item  if there's a \Scala{height} parameter then \Scala{glyphs} is interpreted as a catenation of columns of the given \Scala{height}
      \item  if there are neither \Scala{width} nor \Scala{height} parameters, then:
             \Scala{glyphs} is interpreted as \Scala{width} were \Scala{ceiling(sqrt(glyphs.length))}
 \end{enumerate}
@@ -1004,10 +1004,10 @@ of specific colours:
 
 \begin{scala}
  def filledStargon(n: Int, fg: Brush): Glyph =
-     FilledPolygon.$(256, 256, fg, nothing)(regularStarPath(n))                        
+     FilledPolygon.$(256, 256, fg, transparent)(regularStarPath(n))                        
    
  def nonFilledStargon(n: Int, fg: Brush): Glyph =
-     Polygon.$(256, 256, fg, nothing)(regularStarPath(n))                    
+     Polygon.$(256, 256, fg, transparent)(regularStarPath(n))                    
 \end{scala}
 
 
@@ -1849,7 +1849,7 @@ trait Example2Interface {
   val font: Font  =
         FontFamily("Courier").makeFont(size=32)
   val spacer =
-      Rect(0, 20, fg=nothing)
+      Rect(0, 20, fg=transparent)
 
   val GUI: Glyph = Col(align=Center, bg=lightGrey) (
     Label("A simple label", font,
@@ -1914,7 +1914,7 @@ import styled.Label
 trait Example3Interface {
   implicit val style: StyleSheet
 
-  val spacer = Rect(0, 20, fg=nothing)
+  val spacer = Rect(0, 20, fg=transparent)
 
   def GUI: Glyph = Col(align=Center, bg=lightGrey) (
     Label("A simple label") enlarged(20),
@@ -1987,14 +1987,14 @@ were built with styles specifying different button appearances.
 \begin{scala}
   buttonForegroundBrush = red,
   buttonDecoration =
-    styles.decoration.Blurred(fg=yellow, bg=nothing, 16, 5)
+    styles.decoration.Blurred(fg=yellow, bg=transparent, 16, 5)
 \end{scala}
 
 \pdffig[scale=0.35]{PNG/example3c}
 \begin{scala}
   buttonForegroundBrush = black,
   buttonDecoration =
-    styles.decoration.Shaded(fg=darkGrey, bg=nothing, 16, 5)
+    styles.decoration.Shaded(fg=darkGrey, bg=transparent, 16, 5)
 \end{scala}
 \end{center}
 
