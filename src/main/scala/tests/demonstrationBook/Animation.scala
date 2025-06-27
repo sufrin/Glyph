@@ -1,10 +1,10 @@
 package org.sufrin.glyph
 package tests.demonstrationBook
 
-import styled.{Book, BookSheet, TextButton, TextToggle}
+import styled.{ActiveString, Book, BookSheet, MenuButton, TextButton, TextToggle}
 
 import io.github.humbleui.skija.{PaintMode, PaintStrokeCap}
-import org.sufrin.glyph.GlyphShape.{asGlyph, circle, composite, line, lineBetween, rect, superimposed, AnimatedShape, AnimatedShapeGlyph, FILL, PathShape, STROKE}
+import org.sufrin.glyph.GlyphShape.{asGlyph, circle, composite, line, lineBetween, oval, rect, superimposed, AnimatedShape, AnimatedShapeGlyph, FILL, PathShape, STROKE}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.NaturalSize.{Col, Grid, Row}
 import org.sufrin.glyph.unstyled.{reactive, static}
@@ -12,6 +12,7 @@ import org.sufrin.glyph.unstyled.dynamic.Animateable
 import org.sufrin.glyph.unstyled.static.{FilledOval, FilledRect, Label, Rect}
 
 import java.lang.Math.{cos, log, log1p, sin}
+import scala.math.{ceil, floor}
 
 class Animation(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
   implicit val pageSheet: StyleSheet = style.pageSheet
@@ -31,12 +32,13 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
       val rimWidth = 25f
       val spokeWidth = 15f
       val spokeAngle = 360f/spokes.toFloat
-      val shape =
+      val shape = {
         circle(radius+rimWidth*0.6f)(rimBrush(width=rimWidth*0.3f, mode=STROKE)) ~~~
         circle(radius)(brush(width=rimWidth, mode=STROKE))    ~~~    // rim
         circle(radius*.25f)(brush(width=rimWidth, mode=FILL)) ~~~    // hub
         superimposed(for { spoke <- 0 until spokes } yield rect(2*radius, 5)(brush(width=spokeWidth)).turn(spoke*spokeAngle, true)) ~~~
         rect(5, 2*radius)(red(width=spokeWidth/2))
+      }
 
       def draw(surface: Surface): Unit = {
         shape.draw(surface)
@@ -351,13 +353,9 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
     )
   }
 
-  val MoonSnail = Page("MoonSnail", "") {
+  val Spiral = Page("Spiral", "") {
     import unstyled.dynamic.{Periodic, ActiveGlyph}
 
-
-    val blueString  = blueLine.sliced(5f, 3f)
-    val whiteString = white(width=2).sliced(6f, 4f)
-    val redString   = red(width=4).sliced(5f, 4f)
 
     /*
      * An active glyph whose initial image is formed by the background.
@@ -365,23 +363,20 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
      * the first `toGlyph` call will be with `degrees=0.0`
      */
 
-    class Stage extends ActiveGlyph[Double] (0.0, Rect(600,600, blueLine, white)){
+    class Stage extends ActiveGlyph[Double] (0.0, Rect(700,700, lightGrey(width=3).sliced(3, 2), transparent)) {
 
       private val D2R: Double = Math.PI/180.0
       private val oneDegree: Double = 1.0
       locally { current = -oneDegree }
 
-
       lazy val stage: Glyph    = background
-      val path                 = new PathShape(red(mode=PaintMode.STROKE), absolute=true)
-      val orbit                = stage.w*0.5f-10f
-      var startPos             = cartesian(orbit, 0.0)
-      val nib: LocatedShape    = circle(4)(blue).targetLocatedAt(0,0) // (stage.w*0.5f, stage.h*0.5f)
-      val centrum: LocatedShape = circle(5)(blue).targetLocatedAt(0,0)
-      val line                 = lineBetween(centrum, nib)(blue)
-      var n, d: Double         = 1
-      var dx: Double           = 0.0
-      var stopped: Boolean     = false
+      val path                 = new PathShape(red(width=0, cap=ROUND, mode=PaintMode.STROKE), absolute=true)
+      val orbit                = stage.w*0.5f-30f
+      var d: Double            = 0.03
+      var turns: Int           = 0
+      var scale: Scalar        = 1.0f
+
+      val SHOWTURNS = ActiveString(f"Scale is $scale%1.5f after $turns%03d turns.")
 
       // each step turns the mobile by a degree
       override def step(): Unit = {
@@ -390,49 +385,31 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
       }
 
       @inline private def cartesian(R: Double, θ: Double):(Scalar, Scalar) = ((R * cos(θ)).toFloat, (R * sin(θ)).toFloat)
-      @inline private def closeTo(l: Scalar, r: Scalar): Boolean = (l-r).abs <= 1e-5f
-      @inline private def closeTo(pos1: (Scalar,Scalar), pos2: (Scalar,Scalar)): Boolean =
-        closeTo(pos1._1, pos2._1) && closeTo(pos1._2, pos2._2)
 
-      @inline def stopAtStart(pos: (Scalar, Scalar)): Unit =
-        if (closeTo(startPos, pos)) {
-          stopped = true
-          Animation.driver.stop()
-          PressStopButton()
-        }
-
-      @inline def stopAnimation(): Unit =
-      { stopped = true
-        Animation.driver.stop()
-        PressStopButton()
-      }
-
-      def F1(R: Double, θ: Double): Double = R // circle
-      def F2(R: Double, θ: Double): Double = R*Math.exp(d * 0.1 * θ)*0.1
-
-      val F = F2(_, _)
+      def F(R: Double, θ: Double): Double = R*Math.exp(d * θ)
 
       /**
-       * Generate the glyph showing the next frame, by
-       * placing the linked vertices then forming a glyph superimposing
-       * the scenery, the turned mobile, and the placed vertices.
+       * Generate the glyph showing the next frame.
        */
       def toGlyph(degrees: Double): Glyph = {
-        locally
-        { import Math.{sin,cos}
           val θ = degrees * D2R
           val R = F(orbit, θ)
-          val pos = {
-            val (x, y) = cartesian(R, θ)
-            (x+θ.toFloat*dx.toFloat, y)
+          val pos = cartesian(R, θ)
+          if (degrees<1)
+            path.moveTo(pos)
+          else
+            path.lineTo(pos)
+
+
+
+        if (degrees%(360) == 0) {
+          turns+= 1
+          scale = {
+            val f = log1p(floor(degrees / 360.0)).toFloat
+            0.5f*(if (d>0) (1/f) else f)
           }
-          if (degrees>n*360 || pos._1>orbit || pos._2>orbit) {
-            path.closePath
-            stopAnimation()
-          }
-          if (degrees<1) path.moveTo(pos) else path.lineTo(pos)
-          nib.x = pos._1 - 2.5f
-          nib.y = pos._2 - 2.5f
+          SHOWTURNS.set(f"Scale is $scale%1.5f after ${turns}%03d turns.")
+          if (turns>=125) { Animation.stop() }
         }
         stage
       }
@@ -440,22 +417,22 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
 
       def reset(): Unit = {
         path.reset()
+        scale = 1.0f
+        turns = 0
         set(0.0)
       }
 
       override def draw(surface: Surface): Unit = {
         drawBackground(surface)
         surface.withClip(diagonal) {
-        surface.withOrigin(currentGlyph.location) {
-          currentGlyph.draw(surface)
-          surface.withOrigin(currentGlyph.location+(currentGlyph.diagonal * 0.5f)) {
-            path.draw(surface)
-            if (!stopped) {
-              nib.draw(surface)
-              line.draw(surface)
+          surface.withOrigin(currentGlyph.location) {
+            currentGlyph.draw(surface)
+            surface.withOrigin(currentGlyph.location + (currentGlyph.diagonal * 0.5f)) {
+              surface.withScale(scale) {
+                path.draw(surface)
+              }
             }
           }
-        }
         }
       }
 
@@ -474,9 +451,14 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
         PressStartButton()
       }
 
-      def N(i: Int): Unit = { stage.n=i.toDouble; start() }
+      def stop(): Unit = {
+        driver.stop()
+        PressStopButton()
+      }
+
       def D(i: Double): Unit = { stage.d=i.toDouble; start() }
-      def XIF(i: Double): Unit = { stage.dx=i.toDouble; start() }
+      def D: Double = stage.d
+      val SHOWTURNS = stage.SHOWTURNS
     }
 
     def PressStartButton(): Unit = startButton.set(true)
@@ -494,24 +476,49 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
         Animation.driver.stop()
     }
 
+    object Menus {
 
-    val Ns = styled.RadioCheckBoxes("4/8/12/16/20/24/28/32".split('/').toSeq){
-      case None     => Animation.N(1)
-      case Some(i)  => Animation.N(4*(i+1))
+      def chooserMenu(fieldname: String, choices: Seq[String])(choose: String => Unit): Glyph = {
+        val buttons = choices.map {
+          name => MenuButton(name) { _ => choose(name) }
+        }
+        val menu = styled.overlaydialogues.Dialogue.Menu(fieldname, nested = false, buttons)
+        menu
+      }
+
+      def chooserMenu(fieldname: String, choice: String, choices: String*)(choose: String => Unit)(implicit sheet: StyleSheet): Glyph =
+        chooserMenu(fieldname, choice :: choices.toList)(choose)
+
+
+      def scalarMenu(fieldname: String, choices: Scalar*)(choose: Scalar => Unit)(implicit sheet: StyleSheet): Glyph =
+        chooserMenu(fieldname, choices.map(_.toString)) { s => choose(s.toFloat) }
+
+      def intMenu(fieldname: String, choices: Int*)(choose: Int => Unit)(implicit sheet: StyleSheet): Glyph =
+        chooserMenu(fieldname, choices.map(_.toString)) { s => choose(s.toInt) }
+
     }
 
-    val Ds = styled.TextField(initialText="0.25", size = 20, onEnter = { case text => Animation.D(text.toDouble) }).framed(blackFrame)
-    val XIFs = styled.TextField(initialText="0.0", size = 20, onEnter = { case text => Animation.XIF(text.toDouble) }).framed(blackFrame)
+    val SHOWD = styled.ActiveString(f"D is ${Animation.D}%2.3f  ")
 
+    val SHOWT = Animation.SHOWTURNS
+
+    def setD(d: Scalar): Unit = {
+      Animation.D(d)
+      SHOWD.set(f"D is ${d}%2.3f")
+    }
+
+    val DFIELDL = Menus.scalarMenu("D(<0)", -0.4f, -0.3f , -0.2f, -0.1f, -0.09f, -0.07f, -0.05f, -0.03f, -0.01f, -0.009f)(setD)
+
+    val DFIELDR = Menus.scalarMenu("D(>0)", 0.4f, 0.3f , 0.2f, 0.1f, 0.09f, 0.07f, 0.05f, 0.03f, 0.01f, 0.009f)(setD)
 
     Col(align=Center)(
       <div width="60em" align="center">
         <p >
-          Drawing Moonsnail curves of the form:
+          Drawing curves of the form: <i>r(θ) = a . exp(D . θ)</i>,
         </p>
-        <p><i>r(θ) = a . exp(D . θ)</i><!--, displaced laterally by <i>XIF . θ</i>--></p>
+        <p>scaled by <i>log(1+⌊θ/2π⌋)/2</i> (inversely when <i>D>0</i>). </p>
         <p>
-          Draw by choosing TURNS and/or D; or use <b>Start/Stop</b>
+          Draw by choosing D; or use <b>Start/Stop</b>
         </p>
       </div>, ex,
       FPS, ex,
@@ -527,15 +534,13 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
             setFPS()
         }
         ),
-
       ex, ex,
       Animation.stage, ex, ex,
       Grid(width=2, padx=10, pady=10).Table(
-        Label("TURNS"), Ns.arrangedHorizontally(),
-        Label("D"),     Ds,
-        //Label("XIF"),   XIFs
-      ),
-      startButton
+        DFIELDL.framed(), DFIELDR.framed(),
+        ), ex,
+        SHOWD, ex,  SHOWT, ex,
+        startButton.framed()
       )
   }
 

@@ -485,10 +485,10 @@ object GlyphShape {
     }
 
   /**
-   *
    * Experimental mutable shape. If `absolute` then
-   * the path is drawn "as is" -- with negative coordinates being interpreted , otherwise it is drawn
+   * the path is drawn "as is" -- with all coordinates interpreted relative to the origin, otherwise it is drawn
    * so that the top/left coordinate of the path is at the origin.
+   *
    * Its diagonal always denotes the distance from the top left to the
    * bottom right coordinate of the path.
    */
