@@ -376,7 +376,7 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
       var turns: Int           = 0
       var scale: Scalar        = 1.0f
 
-      val SHOWTURNS = ActiveString(f"Scale is $scale%1.5f after $turns%03d turns.")
+      val SHOWSTAGE = ActiveString(f" "*50)
 
       // each step turns the mobile by a degree
       override def step(): Unit = {
@@ -408,8 +408,8 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
             val f = log1p(floor(degrees / 360.0)).toFloat
             0.5f*(if (d>0) (1/f) else f)
           }
-          SHOWTURNS.set(f"Scale is $scale%1.5f after ${turns}%03d turns.")
-          if (turns>=125) { Animation.stop() }
+          SHOWSTAGE.set(f"After ${turns}%03d turns R is $R%2.3e, scale is $scale%1.5f.")
+          if (turns>=150) { Animation.stop() }
         }
         stage
       }
@@ -458,7 +458,7 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
 
       def D(i: Double): Unit = { stage.d=i.toDouble; start() }
       def D: Double = stage.d
-      val SHOWTURNS = stage.SHOWTURNS
+      val SHOWTURNS = stage.SHOWSTAGE
     }
 
     def PressStartButton(): Unit = startButton.set(true)

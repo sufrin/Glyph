@@ -790,7 +790,7 @@ denotes the glyph
 
 \SSS{DefaultBrushes}
 The \Scala{Brushes} module defines several predefined names for colours, as well as a
-constructor that supports their specification as strings. Some examples are:\footnote{See
+constructor that supports their specification by strings. Some examples are:\footnote{See
 \ref{PaintEffects}~\textbf{Paint Effects} for explanation of ``wobbly'', ``dashed'' and ``dotted''.}
 
 \begin{scala}
@@ -979,7 +979,7 @@ couple of these, namely:
 
 \begin{scala}
   brush.sliced(segLength: Scalar, maxDisplacement: Scalar, ...): Brush
-  brush.dashed(on_0, off_0, on_1, off_1, ...): Brush
+  brush.dashed(on_1, off_1, on_2, off_2, ...): Brush
 \end{scala}
 
 The former yields a brush whose paths are ``sliced'' into segments of the
@@ -992,6 +992,7 @@ The latter yields a brush that draws paths that are dotted/dashed with on
 (visible) segments of the given length(s), and off (transparent) segments
 of the given length.
 
+\begin{comment}
 In the following sequence of examples we compute the vertices of a
 7-pointed regular star (a ``stargon''), then construct a ``wobbly''
 paintbrush (\SCALA{blueish}) that is used to render the star: first as a
@@ -1073,7 +1074,7 @@ here are  stars with $n=17, 11, 5, 3$:
 
 But for $n=4, 6, 8$, and other even numbers, the generator doesn't work.\footnote{Try them, then see if you can explain why.}
 
-\begin{comment}
+
 \begin{center}
 \pdffig[scale=0.3]{PNG/filledstarw4}
 \pdffig[scale=0.3]{PNG/filledstarw6}
@@ -1087,8 +1088,8 @@ open one uses a brush without a path effect.
 
 \pdffig[scale=0.3]{PNG/filledstarw18}
 \end{center}
-\end{comment}
 
+\end{comment}
 
 \SSS{Framing with sliced and dashed paints}
 The \Scala{sliced} modifier can also be used to yield exotic-looking frames. For example:
@@ -1137,6 +1138,7 @@ yields a blurred brush of the same colour as \Scala{brush}. When
 used on \textit{filled} glyphs, it blurs their outline, and
 can shift the blurred outline relative to their origin (by $(dx, dy)$).
 
+\begin{comment}
 Below we show the effects of painting a filled star with
 \Scala{blue.blurred(24f)} and with \Scala{blue.blurred(48f, 20f, 20f)}.
 Both are \Scala{framed()}: notice that the latter is displaced by $(20, 20)$ within the
@@ -1147,7 +1149,7 @@ natural bounding box indicated by the frame.
 \quad\quad
 \pdffig[scale=0.5]{PNG/filledstarw5blur20}
 \end{center}
-
+\end{comment}
 \clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1271,6 +1273,12 @@ for glyphs such as those built by \Scala{.framed(...)} whose
 bounding boxes are partly determined by the width of  brushes used
 in them. Decreasing a stroke width dynamically does not violate
 this assumption.
+
+\textit{Note (added June 2025)} In practice brush mutation is used only
+very rarely in actual interfaces.  A couple of examples can be seen among
+the test programs, and in the font-selector and brush-selector
+modules; and in the discussion of \Scala{ColouredButton} in appendix \ref{anatomy}.
+
 
 \clearpage
 
@@ -1569,7 +1577,7 @@ enabled for the topmost overlay then if you can see some of a button then you ca
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\S{Anatomy of a Simple Reactive Glyph}
+\S{Anatomy of a Simple Reactive Glyph}\label{anatomy}
 
 Here we give an account of the structure of the reactive glyph class
 \Scala{ColouredButton}. The appearance of such buttons is specified
@@ -1714,22 +1722,25 @@ its ``embedded'' \Scala{glyph}.
 As usual we define a companion object to deliver methods
 that support the convenient construction of useful \Scala{ColourButton}s.
 The first one we show here provides a text-labelled button
-using the various defaults provided by \Scala{Brushes}. The defaults
-can be overridden at construction time.\footnote{The \Scala{Brushes} defaults
-are all defined as variables, so can be changed as a program starts. This
-provides a very rudimentary alternative to the styling features  shown later.}
+using the various defaults provided by \Scala{fallback}. The defaults
+can be overridden at construction time.\footnote{The \Scala{fallback} defaults
+are derived from a style sheet that can always be changed.}
 
 \begin{scala}
 object ColourButton {
- import Brushes.{buttonForeground=>up, ButtonDown  =>down,
-                 buttonBackground=>bg, buttonHover =>hover }
- def apply(text:  String,
+    val up:    Brush = fallback.buttonForeground()
+    val down:  Brush = fallback.buttonDown()
+    val hover: Brush = fallback.buttonHover()
+    val bg:    Brush = fallback.buttonBackground
+
+    def apply(text:  String,
            up: Brush=up, down: Brush=down, hover: Brush=hover,
            bg: Brush=bg, background: Boolean = true)
           (react: Reaction): ReactiveGlyph =
  { val glyph: Glyph = Brushes.buttonText(text)
    new ColourButton(glyph, down, hover, background, react)
  }
+
 
  def apply(glyph:Glyph,down:Brush,hover:Brush,background:Boolean)
           (react: Reaction): ReactiveGlyph =
@@ -2126,7 +2137,7 @@ code shows how the tools can be used. Figures \ref{DynamicResizing1} and
 \SAVEDFIG OverlaysAnnotation2/Annotations page with grid and corner enabled/
 \SAVEDFIG TransformsMirror/Mirror transformations /
 \SAVEDFIG EtcGlyphShape/Exploration of the GlyphShape API /
-\SAVEDFIG EtcAnimation1/An animation in progress /
+\SAVEDFIG EtcAnimation/An animation in progress /
 \SAVEDFIG EtcCheckBox/Varieties of checkbox/
 \SAVEDFIG DynamicResizing1/Viewport onto a dynamically configurable glyph/
 \SAVEDFIG DynamicResizing2/Viewport onto a dynamically configurable glyph (different configuration)/

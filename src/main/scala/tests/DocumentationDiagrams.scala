@@ -5,6 +5,8 @@ import Brushes.{blueLine, lightGrey, redFrame}
 import GlyphTypes._
 import unstyled.Text
 
+import io.github.humbleui.skija.PaintMode
+
 
 /**
  *  Glyph examples for use in documentation
@@ -122,9 +124,9 @@ object DocumentationDiagrams {
       FilledPolygon(100, 100, fg = blue(width=3))((0,0), (20, 0), (20, 20), (40, 20), (40, 0), (60,0), (60, 60), (80, 60), (80, 0), (100,0)),
       FilledPolygon(100, 100, fg = blue(width=3))((100,0), (100, 100), (0, 100), (0,0), (20, 0), (20, 20), (40, 20), (40, 0), (60,0), (60, 60), (80, 60), (80, 0), (100,0)),
       Polygon(100, 100, fg = blue(width=3))((0, 0), (20, 0), (20, 20), (40, 20), (40, 0), (60, 0), (60, 60), (80, 60), (80, 0), (100, 0)),
-      Polygon(100, 100, fg = blue(width=3))((100, 0), (100, 100), (0, 100), (0, 0), (20, 0), (20, 20), (40, 20), (40, 0), (60, 0), (60, 60), (80, 60), (80, 0), (100, 0)),
-
-    )
+      Polygon(100, 100, fg = blue(width=3, mode=PaintMode.STROKE))((100, 0), (100, 100), (0, 100), (0, 0), (20, 0), (20, 20), (40, 20), (40, 0), (60, 0), (60, 60), (80, 60), (80, 0), (100, 0)),
+      Polygon(100, 100, fg = blue(width=6, mode=PaintMode.FILL))((100, 0), (100, 100), (0, 100), (0, 0), (20, 0), (20, 20), (40, 20), (40, 0), (60, 0), (60, 60), (80, 60), (80, 0), (100, 0)),
+      )
 
     var n=0
     for { (text, glyph) <- samples } {
@@ -351,7 +353,7 @@ object DocumentationDiagrams {
       para.enlarged(20).edged(fg = black(width = 2f).dashed(15f, 5f)).enlarged(10))
 
     write("redpoly.png", false)(
-      Polygon(200, 200, fg = red(width = 4f, pathEffect = PathEffect.makeDiscrete(5f, 100f, 15), cap = ROUND)
+      Polygon(200, 200, fg = red(width = 4f, cap = ROUND).sliced(5f, 100f, 15)
       )((0, 100), (200, 100)).enlarged(4).framed())
 
     val gridTables = {
