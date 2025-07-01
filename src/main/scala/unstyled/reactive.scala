@@ -208,12 +208,13 @@ object reactive {
     val glyph: Glyph        = if (background) appearance(bg=currentBrush) else appearance(fg=currentBrush)
 
     def setCurrentBrush(b: Brush): Unit = {
-      currentBrush.color(b.color).width(b.strokeWidth).mode(b.mode)
+      currentBrush.color(b.color).width(b.strokeWidth).mode(b.mode).pathEffect(b.pathEffect).mode(b.mode)
     }
 
     locally { glyph.parent = this }
 
     override def glyphContaining(p: Vec): Option[Hit] = glyph.glyphContaining(p)
+    override def contains(p: Vec): Boolean = glyph.contains(p)
 
     override val fg: Brush = glyph.fg
     override val bg: Brush = glyph.bg
