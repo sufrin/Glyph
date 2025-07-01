@@ -146,7 +146,8 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
             while (TextModel.hasLeft) TextModel.del()
 
       case V if mods.includeSome(ANYCONTROL) =>
-        while (TextModel.left>0) TextModel.del()
+        val text = Clipboard.get(ClipboardFormat.TEXT).getString
+        TextModel.ins(text)
 
       case BACKSPACE  if mods.includeSome(ANYCONTROL) =>
         TextModel.swap2()
