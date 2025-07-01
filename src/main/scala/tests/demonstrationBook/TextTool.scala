@@ -83,7 +83,7 @@ class TextTool(implicit style: StyleSheet)  {
         <item>Visual cues are given for out-of-field text</item>
         <item>The usual cut, copy, paste, and navigate keys are provided:</item>
         <itemize itemIndent="10em" hang="+">
-              <item>Ctrl/Cmd C - copy all</item>
+              <item>Ctrl/Cmd C - copy all to clipboard</item>
               <item>Ctrl/Cmd X - cut all to clipboard</item>
               <item>Ctrl/Cmd V - insert from clipboard</item>
               <item>Home, End, Left, Right, and Backspace - their usual effect</item>

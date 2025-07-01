@@ -34,7 +34,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
       Row(align=Mid)(
         PolygonLibrary.star7(fg=redLine, R=50f, C=50f),
         em,
-        <p width="30" align="justify">This is a long pro-forma text for a dial_ogue that I expect to be just_ified prop_erly in all the dial_ogues.</p>
+        <p width="30em" align="justify">This is a long pro-forma text for a dial_ogue that I expect to be just_ified prop_erly in all the dial_ogues.</p>
       )
 
     Col(align=Center)(

@@ -13,6 +13,8 @@ object GlyphTypes {
   type Window      = io.github.humbleui.jwm.Window
   type EventKey    = io.github.humbleui.jwm.EventKey
   type FontStyle   = io.github.humbleui.skija.FontStyle
+  type Path        = io.github.humbleui.skija.Path
+  type PathFillMode = io.github.humbleui.skija.PathFillMode
 
   object FontManager {
     import io.github.humbleui.skija.FontMgr
