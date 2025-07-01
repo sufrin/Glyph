@@ -34,13 +34,12 @@ import GlyphTypes.Scalar
   /** Shaded glyphs suitable for use in making buttons */
   object Shaded  {
 
-    import io.github.humbleui.skija.Path
 
 
-    case class ShadingPaths(topLeft: Path, bottomRight: Path)
+    case class ShadingPaths(topLeft: GlyphTypes.Path, bottomRight: GlyphTypes.Path)
 
     def shadingPaths(w: Scalar, h: Scalar, delta: Scalar): ShadingPaths = {
-      val bottomRight = new Path()
+      val bottomRight = new GlyphTypes.Path()
       locally {
         bottomRight.moveTo(0f, h)
         bottomRight.lineTo(w, h)
@@ -57,7 +56,7 @@ import GlyphTypes.Scalar
         bottomRight.addRect(top)
       }
 
-      val topLeft = new Path()
+      val topLeft = new GlyphTypes.Path()
       locally {
         topLeft.lineTo(w, 0f)
         topLeft.lineTo(w + delta, delta)
@@ -535,7 +534,7 @@ import GlyphTypes.Scalar
 
     override val kind: String = "FilledPolygon"
     override def toString: String = s"FilledPolygon($diagonal, fg=$fg, bg=$bg)(\n       ${vertices.mkString(",")}\n)"
-    val path = new Path()
+    val path = new GlyphTypes.Path()
     locally {
       val (sx, sy) = vertices.head
       path.moveTo(sx, sy)
@@ -577,6 +576,158 @@ import GlyphTypes.Scalar
 
     def apply(w: Scalar, h: Scalar, fg: Brush = black, bg: Brush = transparent): Constructor = Constructor(Vec(w, h), fg, bg)
   }
+
+/**
+ * A (Mutable) Path Glyph.
+ *
+ * Its diagonal always denotes the distance from the top left to the
+ * bottom right coordinate of the pixels drawn on by the path, and
+ * these coordinates are always "normalized" (ie made relative to
+ * the bounding rectangle) before the path is drawn.
+ *
+ * If `strictContains` then the bounds of the glyph are taken to be the
+ * "outside" of the path; else they are taken to be its
+ * bounding rectangle. This may be useful when constructing reactive glyphs
+ * such as circular buttons.
+ *
+ */
+class Path(override val fg: Brush, override val bg: Brush, strictContains: Boolean, val path: GlyphTypes.Path = new GlyphTypes.Path) extends Glyph {
+  hostShape =>
+
+  import GlyphTypes.PathFillMode
+
+  /** Normalize all coordinates before drawing */
+  protected val normalize: Boolean = true
+
+  locally {
+    if (!normalize) path.moveTo(0, 0)
+  }
+
+  def reset(): Unit = {
+    path.reset()
+    if (!normalize) path.moveTo(0, 0)
+  }
+
+  /**
+   * Does this glyph contain the absolute location `p`.
+   */
+  override def contains(p: Vec): Boolean = {
+    val relp = p - rootDistance
+    if (strictContains) path.contains(relp.x, relp.y) else super.contains(p)
+  }
+
+  override def glyphContaining(p: Vec): Option[Hit] = {
+    val result = { // if (0 < p.x && p.x < diagonal.x && 0 < p.y && p.y < diagonal.y)
+      if (path.contains(p.x, p.y)) Some(Hit(this, p)) else None
+    }
+    // println(s"$this.contains($p) = $result")
+    result
+  }
+
+  def draw(surface: Surface): Unit = surface.withClip(diagonal) {
+    if (normalize){
+      drawBackground(surface)
+      val bounds = path.getBounds()
+      val offsetL = bounds._left - fg.strokeWidth / 2
+      val offsetT = bounds._top - fg.strokeWidth / 2
+      surface.withOrigin(-offsetL, -offsetT) {
+        surface.drawPath(fg, path)
+      }
+    }
+    else {
+      drawBackground(surface)
+      surface.drawPath(fg, path)
+    }
+  }
+
+  def topLeft: Vec = {
+    val bounds = path.getBounds()
+    Vec(bounds._left, bounds._top)
+  }
+
+  def diagonal: Vec = {
+    val bounds = path.getBounds()
+    Vec(bounds._right - bounds._left + fg.strokeWidth, bounds._bottom - bounds._top + fg.strokeWidth)
+  }
+
+  def fillMode: PathFillMode = path.getFillMode
+
+  def fillMode(mode: PathFillMode) = path.setFillMode(mode)
+
+  def moveTo(x: Scalar, y: Scalar): Path = {
+    path.moveTo(x, y)
+    this
+  }
+
+  def moveTo(pos:(Scalar, Scalar)): Path = {
+    path.moveTo(pos._1, pos._2)
+    this
+  }
+
+  def lineTo(x: Scalar, y: Scalar): Path = {
+    path.lineTo(x, y)
+    this
+  }
+
+  def lineTo(pos:(Scalar, Scalar)): Path = {
+    path.lineTo(pos._1, pos._2)
+    this
+  }
+
+  def closePath: Path = {
+    path.closePath()
+    this
+  }
+
+  def addRect(x: Scalar, y: Scalar, w: Scalar, h: Scalar): Path = {
+    import io.github.humbleui.types.Rect.makeXYWH
+    path.addRect(makeXYWH(x, y, w, h)); this
+  }
+
+  def addOval(x: Scalar, y: Scalar, w: Scalar, h: Scalar): Path = {
+    import io.github.humbleui.types.Rect.makeXYWH
+    path.addOval(makeXYWH(x, y, w, h)); this
+  }
+
+  def addOval(pos: (Scalar, Scalar), dim: (Scalar,Scalar)): Path = {
+    import io.github.humbleui.types.Rect.makeXYWH
+    path.addOval(makeXYWH(pos._1, pos._2, dim._1, dim._2)); this
+  }
+
+  def addArc(x: Scalar, y: Scalar, w: Scalar, h: Scalar, startAngle: Scalar, sweepAngle: Scalar): Path = {
+    import io.github.humbleui.types.Rect.makeXYWH
+    path.addArc(makeXYWH(x, y, w, h), startAngle, sweepAngle); this
+  }
+
+  def addArc(pos: (Scalar, Scalar), dim: (Scalar,Scalar), startAngle: Scalar, sweepAngle: Scalar): Path = {
+    import io.github.humbleui.types.Rect.makeXYWH
+    path.addArc(makeXYWH(pos._1, pos._2, dim._1, dim._2), startAngle, sweepAngle); this
+  }
+
+  def addCircle(x: Scalar, y: Scalar, r: Scalar): Path = {
+    path.addCircle(x, y, r); this
+  }
+
+  def addCircle(pos: (Scalar, Scalar), r: Scalar): Path = {
+    path.addCircle(pos._1, pos._2, r); this
+  }
+
+  def addPath(shape: Path, x: Scalar, y: Scalar): Path = {
+    path.addPath(shape.path, x-shape.w/2, y-shape.h/2)
+    this
+  }
+
+  def addPath(shape: Path, pos: (Scalar, Scalar)): Path = {
+    path.addPath(shape.path, pos._1-shape.w/2, pos._2-shape.h/2)
+    this
+  }
+
+  override def toString: String = s"Path($fg)(${path.getVerbs.toSeq.mkString(",")})"
+
+
+  /** A copy of this glyph that shares the same path */
+  def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new Path(fg, bg, strictContains, path)
+}
 
 
   case class BreakableGlyph(hyphen: Glyph, glyphs: Seq[Glyph]) extends Glyph {

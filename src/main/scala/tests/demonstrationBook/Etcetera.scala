@@ -9,8 +9,8 @@ import unstyled.{reactive, static}
 import unstyled.dynamic.SplitScreen
 import unstyled.static._
 
-import io.github.humbleui.skija.PaintMode
-import org.sufrin.glyph.GlyphShape.{arc, circle, rect, PathShape, STROKE}
+import io.github.humbleui.skija.{PaintMode, PathFillMode}
+import org.sufrin.glyph.GlyphShape.{arc, circle, rect, FILL, PathShape, STROKE}
 
 import java.util.Date
 
@@ -441,10 +441,62 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     ) enlarged 20f
   }
 
+    Page("Path"){
+      val p0 = new Path(blue, yellow, strictContains = true) {
+        moveTo(0, 0)
+        lineTo(200, 0)
+        lineTo(200, 200)
+        closePath
+        addCircle(100, 100, 40)
+        addCircle(0, 0, 40)
+        addCircle(200, 200, 40)
+        addCircle(200, 0, 40)
+        fillMode(PathFillMode.EVEN_ODD)
+      }
+      val p1 = new Path(blue, yellow, strictContains = true) {
+        moveTo(0, 0)
+        lineTo(200, 0)
+        lineTo(200, 200)
+        closePath
+        addCircle(100, 100, 40)
+        fillMode(PathFillMode.EVEN_ODD)
+      }
+
+      val p2=p1(green(width=16, mode=STROKE).sliced(20, 5))
+      val p3=p1(red(width=16, mode=STROKE).dashed(20, 5))
+      val pDiamond = new Path (blue, transparent, strictContains = true) {
+        val Vec(hh, ww)  = p3.diagonal
+        moveTo(ww/2, 0)
+        lineTo(ww, hh/2)
+        lineTo(ww/2, hh)
+        lineTo(0, hh/2)
+        closePath
+        fillMode(PathFillMode.EVEN_ODD)
+      }
+      val b1 = new unstyled.reactive.RawButton(p1, p3, p2.rotated(2), fg=transparent, bg=transparent, { _=> }) {
+        override val withDetailedShape: Boolean = true
+      }
+      val b2 = unstyled.reactive.ColourButton(pDiamond(blue.sliced(2,4)), red.sliced(2,4), green.sliced(2,4), false, NoHint){ _=>}
+      Col(align=Center)(
+        <div width="80em" align="justify">
+          <p>
+             This example shows shapes and buttons constructed from two
+              <b>Path</b> glyphs. The glyphs both have
+              <tt>fillMode(PathFillMode.EVEN_ODD)</tt>, and <tt>strictContains = true</tt>.
+            Notice that the buttons show their "hovered" state only when
+            the mouse enters the blue "inside" of the showing glyph.
+          </p>
+        </div>, ex,
+        Row( Label("A Path") above p0().framed(), em, em, em, Label("A simpler path") above p1().framed()), ex, ex,
+        Label("A RawButton using three distinctly-brushed copies of the simpler path; one rotated") above b1.framed(), ex, ex,
+        Label("A ColourButton using three sliced brushes") above (b2.framed())
+        )
+    }
+
     Page("Polygon", "") {
 
       def p1 = Polygon(Vec.Origin, blackFrame(width=40, cap=ROUND), transparent)((-100, -100), (-100, +100), (+100, +100), (+100, -100), (-100, -100))
-      def p2 = Polygon(200, 200, red(width=40, cap=ROUND), transparent)((0, 200), (200, 200), (200, 0), (0, 0), (0, 200))
+      def p2 = FilledPolygon(200, 200, red(width=40, cap=ROUND, mode=STROKE), transparent)((0, 200), (200, 200), (200, 0), (0, 0), (0, 200))
       def p3 =  Concentric.Center(p1, p2)
       val explain = <div width="80em" align="justify">
         <p>Connected lines specified by vertices, with diagonal specified by <tt>box</tt>, unless
