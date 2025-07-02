@@ -763,7 +763,8 @@ object Play extends Application {
     buttonFontSize = 20,
     labelFontSize = 20,
     textFontSize = 20,
-    backgroundBrush = Brushes.white
+    backgroundBrush = Brushes.white,
+    buttonBackgroundBrush = transparent
   )
 
   def title = s"""Play"""

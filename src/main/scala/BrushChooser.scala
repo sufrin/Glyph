@@ -47,7 +47,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
   }
 
   protected val hintSheet: StyleSheet = sheet.copy(fontScale = 0.7f)
-  protected val menuSheet: StyleSheet = hintSheet.copy(buttonDecoration = Framed(black(width=1)))
+  protected val menuSheet: StyleSheet = hintSheet.copy(buttonDecoration = Framed(black(width=1.5f), enlarge=8), buttonBackgroundBrush = lightGrey)
 
   protected def setResultBrush(specification: String): Unit = {
     if (specification.nonEmpty) {
@@ -218,7 +218,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
 
     /** A GUI for choosing properties */
     lazy val PROPERTYGUI: Glyph = Col(align=Center, bg=sheet.backgroundBrush)(
-      FixedSize.Row(align=Mid, width=colourGrid.w)(
+      FixedSize.Row(align=Mid, width=colourGrid.w, bg=lightGrey)(
         brushFieldChooserMenu("Width", "0", "1", "2", "4", "6", "8", "10", "15", "20", "25","30"){
           v =>
             protoBrush.strokeWidth(v.toFloat)
@@ -295,7 +295,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     )
 
     /** A gui for choosing brush colours */
-    lazy val HSVGUI: Glyph = Col(align=Center, bg=sheet.backgroundBrush)(
+    lazy val HSVGUI: Glyph = Col(align=Center, bg=lightGrey)(
       ex,
       hueGrid, ex,
       satGrid, ex,
