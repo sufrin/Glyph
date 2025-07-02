@@ -222,21 +222,16 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
     drawBackground(surface)
     surface.declareCurrentTransform(this)
     surface.withClip(diagonal) {
-      // NB: The text is going to be aligned on the baseline
-      // in case we start supporting mixed fonts in `TextField`s
-      surface.withOrigin(location.x, deltaY) {
+
+      surface.withOrigin(0, deltaY) {
+
         TextModel.rePan()
-        val right = TextModel.rightText(fg)
-        val left = TextModel.leftText(panBy, fg)
-        //println(s"${left.baseLine} ${right.baseLine}")
-        left.draw(surface)
-        surface.withOrigin(left.w, 0) {
-          right.draw(surface)
-        }
+        val (all, leftw) = TextModel.allText(panBy)
+        all.draw(surface)
 
         // prepare to draw the cursor
         val cursorNudge = if (TextModel.left==0) focussedBrush.strokeWidth/2f else 0
-        val cursorLeft = left.w + cursorNudge
+        val cursorLeft = leftw + cursorNudge
         val cursorBrush: Brush = if (focussed) focussedBrush else unfocussedBrush
 
         // show the text margins when logging
@@ -245,20 +240,19 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
           surface.drawPolygon$(cursorBrush(color=0XFFFF0000), TextModel.margin, 0, TextModel.margin, diagonal.y)
         }
         // Draw the cursor as an I-Beam
-        surface.withOrigin(location.x, 0) {
-          surface.drawPolygon$(cursorBrush, cursorLeft, cursorSerifShrink-deltaY, cursorLeft, diagonal.y - cursorSerifShrink-deltaY) // ertical
-          surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, cursorSerifShrink-deltaY)
-          surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY)
 
-          // Indicate when there's invisible text to the right
-          if (left.w+right.w >= w) {
-            surface.drawPolygon$(panWarningBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
-          }
+        surface.drawPolygon$(cursorBrush, cursorLeft, cursorSerifShrink-deltaY, cursorLeft, diagonal.y - cursorSerifShrink-deltaY) // ertical
+        surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, cursorSerifShrink-deltaY)
+        surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY)
 
-          // Indicate when there's invisible text to the left
-          if (panBy > 0) {
-            surface.drawPolygon$(panWarningBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
-          }
+        // Indicate when there's invisible text to the right
+        if (all.w >= w) {
+          surface.drawPolygon$(panWarningBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
+        }
+
+        // Indicate when there's invisible text to the left
+        if (panBy > 0) {
+          surface.drawPolygon$(panWarningBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
         }
       }
     }
@@ -337,9 +331,26 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       ins(newText)
     }
 
-    def leftString:  String            = new String(buffer, 0, left)
-    def leftString(from: Int):  String = if (from<0 || left-from<=0) "" else new String(buffer, from, left-from)
-    def rightString: String            = new String(buffer, right, N-right)
+    def leftString:  String            = {
+      //new String(buffer, 0, left)
+      val builder = new java.lang.StringBuilder
+      for { cp <- 0     until left } builder.appendCodePoint(buffer(cp))
+      builder.toString
+    }
+
+    def leftString(from: Int):  String = if (from<0 || left-from<=0) "" else {
+      //new String(buffer, from, left-from)
+      val builder = new java.lang.StringBuilder
+      for { cp <- from     until left } builder.appendCodePoint(buffer(cp))
+      builder.toString
+    }
+
+    def rightString: String            = {
+      //new String(buffer, right, N-right)
+      val builder = new java.lang.StringBuilder
+      for { cp <- right until N } builder.appendCodePoint(buffer(cp))
+      builder.toString
+    }
 
     /** The `Text` to the left of the cursor: for drawing */
     @inline def leftText: Text = Text(leftString, font)
@@ -350,25 +361,39 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     /** The `Text` to the left of the cursor from the `from`th character */
     @inline def leftText(from: Int, fg: Brush): Text = Text(leftString(from), font, fg, transient = true)
 
-    /** The entire `Text` */
-    @inline def allText(from: Int): Text = Text(new String(buffer, from, left+N-right-from), font)
+
+    /** (`Text` from `from`, and its width up to `left`) */
+    @inline def allText(from: Int): (Text, Scalar) = {
+      // Text(new String(buffer, from, left+N-right-from), font)
+      val builder = new java.lang.StringBuilder
+      for { cp <- from     until left } builder.appendCodePoint(buffer(cp))
+      val leftWidth = io.github.humbleui.skija.TextLine.make(builder.toString, font).getWidth
+      for { cp <- right until N } builder.appendCodePoint(buffer(cp))
+      (Text(builder.toString, font, fg, transient = true), leftWidth)
+    }
 
     @inline def hasLeft:  Boolean = left!=0
     @inline def hasRight: Boolean = right!=N
 
+    private val nudge = em.width/2
     /**
      * Implementation of cursor motion to a horizontal location.
+     *
+     * NB: Skija's implementation of `.charIndexOf(x)` , etc, are inaccurate when surrogate pairs are present and
+     * we work around this problem.
+     *
+     * @see Indexer
      */
     def moveTo(x: GlyphTypes.Scalar): Unit = {
-      val index = allText(panBy).charIndexOf(x)+panBy
-      while (left<index) mvRight()
-      while (left>index) mvLeft()
+      val nudgex = x+nudge
+      val snap = new Indexer(panBy)
+      var index= snap.indexOf(nudgex)+panBy
+      while (left<index && left!=length) mvRight()
+      while (left>index && left!=0) mvLeft()
     }
 
     def markTo(x: GlyphTypes.Scalar): Unit = {
-      val index = allText(panBy).charIndexOf(x)+panBy
-      while (left<index) mvRight()
-      while (left>index) mvLeft()
+      moveTo(x)
     }
 
     /**
@@ -514,6 +539,40 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     def leftCodePoints: Seq[CodePoint] =
         buffer.toIndexedSeq.take(left)
+
+
+    /**
+     * Workaround to support finding the index of the character that appears
+     * at a particular distance from the start of the string.
+     *
+     * Not particularly efficient, but this is not problematic since it is
+     * constructed exactly once per mouse click.
+     */
+    class Indexer(pan: Int) {
+      private val codePoints: Seq[CodePoint] = buffer.toIndexedSeq.take(left).drop(pan) ++ buffer.drop(right)
+      private val glyphs = font.getUTF32Glyphs(codePoints.toArray)
+      private val advances = font.getWidths(glyphs)
+      private val prefixes = Array.ofDim[Scalar](advances.length + 1)
+      locally {
+        var sum: Scalar = 0
+        for {i <- 0 until advances.length} {
+          sum += advances(i)
+          prefixes(i + 1) = sum
+        }
+      }
+
+      /**
+       * @param distance
+       * @return the index of the first character appearing at no more than `distance` to the right of
+       *         the start of the string represented by the model.
+       */
+      def indexOf(distance: Scalar): Int = {
+        var index = prefixes.length - 1
+        while (index != 0 && prefixes(index) > distance) index -= 1
+        index
+      }
+    }
+
 
     def abbreviation(): Unit = if (abbreviations!=null) {
       abbreviations.findAbbreviation(leftCodePoints, left) match {

@@ -75,4 +75,16 @@ class Text(val string: String, val font: Font, override val fg: Brush, override 
      * OBSOLETE: same as this.copy(fg, bg)
      */
     @deprecated("Obsolete") def asLabel(fg: Brush = this.fg, bg: Brush = this.fg): Glyph = this.copy(fg, bg)
+
+  lazy val positions = implementation.getPositions()
+
+  /*
+  def codePointIndexToCharIndex(codePointIndex: Int): Int = string.offsetByCodePoints(0, codePointIndex)
+  def codePointIndexToPosition(codePointIndex: Int): Scalar = {
+      val offset = string.offsetByCodePoints(0, codePointIndex)
+      println(s"$offset ${positions.toList.mkString("(",",", ")")}")
+      positions(2*offset)
+  }
+  */
+
 }

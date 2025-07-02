@@ -3,6 +3,8 @@ package unstyled
 
 import GlyphTypes.Scalar
 
+import io.github.humbleui.types.Point
+
 /**
  * Publicly useable features of a Text glyph.
  */
@@ -11,8 +13,10 @@ trait TextInterface extends Glyph {
   protected val implementation: io.github.humbleui.skija.TextLine
 
   /** The index of the character (Unicode codepoint) whose visual representation is laterally offset by `distance` from the
-    * start of the displayed text.
-    */
+   * start of the displayed text.
+   *
+   * Gives wrong answer when surrogate-pairs are present
+   */
   def charIndexOf(distance: Scalar): Int =
     implementation.getOffsetAtCoord(distance)
 
@@ -27,7 +31,9 @@ trait TextInterface extends Glyph {
     implementation.getCoordAtOffset(index)
 
   /** Font-specific identifiers of the individual characters of the text. "These IDs
-    * help in rendering text efficiently".
-    */
+   * help in rendering text efficiently".
+   *
+   * Gives wrong answer when surrogate-pairs are present.
+   */
   def glyphIDs: Seq[Short] = implementation.getGlyphs.toSeq
 }
