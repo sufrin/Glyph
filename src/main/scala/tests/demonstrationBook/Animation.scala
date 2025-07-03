@@ -300,8 +300,8 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
     def PressStopButton(): Unit = startButton.set(false)
 
 
-    lazy val FPS = styled.ActiveString(f"Drawing speed ${1000.0/Animation.driver.msPerFrame}%3.2f °/sec")
-    def setFPS(): Unit = FPS.set(f"Drawing speed ${1000.0/Animation.driver.msPerFrame}%3.2f °/sec")
+    lazy val FPS = styled.ActiveString(f"Drawing speed ${1000.0/Animation.driver.msPerFrame}%4.2f°/sec  ")
+    def setFPS(): Unit = FPS.set(f"Drawing speed ${1000.0/Animation.driver.msPerFrame}%4.2f°/sec  ")
 
     lazy val startButton =  TextToggle(whenFalse="Start", whenTrue="Stop", initially = false){
       case true  =>
@@ -370,7 +370,8 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
       locally { current = -oneDegree }
 
       lazy val stage: Glyph    = background
-      val path                 = new PathShape(red(width=0, cap=ROUND, mode=PaintMode.STROKE), absolute=true)
+      val curveColor           = red(width=2, cap=ROUND, mode=PaintMode.STROKE)
+      val path                 = new PathShape(curveColor, absolute=true)
       val orbit                = stage.w*0.5f-30f
       var d: Double            = 0.03
       var turns: Int           = 0
@@ -410,6 +411,10 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
           }
           SHOWSTAGE.set(f"After ${turns}%03d turns R is $R%2.3e, scale is $scale%1.5f.")
           if (turns>=150) { Animation.stop() }
+          if (scale<0.5) curveColor.width(4) else
+          if (scale<0.25) curveColor.width(5) else
+          if (scale<0.15) curveColor.width(10) else
+          if (scale>1) curveColor.width(1)
         }
         stage
       }
@@ -465,8 +470,8 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
     def PressStopButton(): Unit = startButton.set(false)
 
 
-    lazy val FPS = styled.ActiveString(f"Drawing speed ${1000.0/Animation.driver.msPerFrame}%3.2f °/sec")
-    def setFPS(): Unit = FPS.set(f"Drawing speed ${1000.0/Animation.driver.msPerFrame}%3.2f °/sec")
+    lazy val FPS = styled.ActiveString(f"Drawing speed ${1000.0/Animation.driver.msPerFrame}%4.2f°/sec  ")
+    def setFPS(): Unit = FPS.set(f"Drawing speed ${1000.0/Animation.driver.msPerFrame}%4.2f°/sec  ")
 
     lazy val startButton =  TextToggle(whenFalse="Start", whenTrue="Stop", initially = false){
       case true  =>
@@ -514,9 +519,14 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
     Col(align=Center)(
       <div width="60em" align="center">
         <p >
-          Drawing curves of the form: <i>r(θ) = a . exp(D . θ)</i>,
+          Drawing curves of the form: <i>r(θ) = K . D<col><i>θ</i><b>&nbsp;</b></col>)</i>,
         </p>
-        <p>scaled by <i>log(1+⌊θ/2π⌋)/2</i> (inversely when <i>D>0</i>). </p>
+        <p>
+          scaled by <b>log</b><col sep="black" align="center"><i>1+turns</i><i>2</i></col> (inversely when <i>D>0</i>)
+        </p>
+        <p>
+          where <i>turns=<b>floor</b><col sep="black" align="center"><i>θ</i><i>2π</i></col></i>.
+        </p>
         <p>
           Draw by choosing D; or use <b>Start/Stop</b>
         </p>

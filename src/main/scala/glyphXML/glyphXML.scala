@@ -501,9 +501,9 @@ object Translation {
       val asGlyph: Glyph = Paragraph.fromGlyphs(sheet, targets.map(_.asGlyph), parHang).enlargedBy(0f, sheet.parSkip)
     }
 
-    case class ColTarget(background: Brush, chunks: Seq[Target], alignment: Alignment = Left) extends Target {
+    case class ColTarget(background: Brush, chunks: Seq[Target], alignment: Alignment = Left, frame: Brush=Brushes.transparent) extends Target {
       val theGlyphs = chunks.map(_.asGlyph)
-      val theGlyph =  NaturalSize.Col(align=alignment, bg=background)(theGlyphs)
+      val theGlyph =  NaturalSize.Col(align=alignment, bg=background, frame=frame)(theGlyphs)
       val asGlyph: Glyph = theGlyph
     }
 
@@ -993,7 +993,9 @@ class Translation(val primitives: Primitives=new Primitives) {
           case "col" =>
             val glyphs: Seq[Target] = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$$, sheet$, source) }
             val alignment = attributes$.Align("align", Left)
-            Decorated(ColTarget(sheet$.backgroundBrush, glyphs, alignment))
+            val frame     = attributes$.Brush("sep", attributes$.Brush("separator", Brushes.transparent))
+            println(frame)
+            Decorated(ColTarget(sheet$.backgroundBrush, glyphs, alignment, frame))
 
 
           case "row" =>
