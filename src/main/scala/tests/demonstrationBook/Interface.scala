@@ -112,6 +112,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
   Page("Fonts", "Font families\n(available on this computer)\n\n\n") {
     val chooser = new FontAndBrushChooser()
     import glyphXML.Language._
+    import content.ex
     chooser.fontChooser.showExample()
     Col(align=Center)(
       <div width="75em" align="justify">
@@ -121,7 +122,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
           the text appears "outlined", especially when the brush width is relatively small; and this
           appearance persists when the font size is larger, even when the brush width is quite large.
         </p>
-      </div>,
+      </div>, ex, ex,
       chooser.GUI
       ).enlarged(20)
   }

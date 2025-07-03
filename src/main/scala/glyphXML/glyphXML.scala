@@ -994,7 +994,6 @@ class Translation(val primitives: Primitives=new Primitives) {
             val glyphs: Seq[Target] = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$$, sheet$, source) }
             val alignment = attributes$.Align("align", Left)
             val frame     = attributes$.Brush("sep", attributes$.Brush("separator", Brushes.transparent))
-            println(frame)
             Decorated(ColTarget(sheet$.backgroundBrush, glyphs, alignment, frame))
 
 

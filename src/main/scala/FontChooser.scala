@@ -39,7 +39,7 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
 
   var fontString: String = FontFamily.fontString(initialFont)
   var _font: Font = initialFont
-  val fontText = styled.TextField(size=50, initialText=fontString, onEnter=setFontFrom)
+  val fontText = styled.TextField(size=60, initialText=fontString, onEnter=setFontFrom)
 
   import FontFamily._
 
@@ -109,10 +109,10 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
   }
   
   lazy val brush: Brush = initialBrush
-  lazy val example      = styled.TextField(size=50,
+  lazy val example      = styled.TextField(size=60,
                                            onChange=Some(showExample),
                                            onError=interpretSpecialKey,
-                                           initialText = "This (editable) text is shown below",
+                                           initialText = "This editable text is shown in the dashed frame in Font",
                                            abbreviations = abbrs).withAbbreviationKey(Key.ESCAPE)
 
 
@@ -122,14 +122,13 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
   val checkBox: Glyph =
      styled.CheckBox(initially=abbrs.onLineTrigger, hint=Hint(5, "Enable/disable automatic substitution for abbreviations\n(when disabled the 'abbreviate' key can be used)")(sheet.copy(fontScale = 0.6f))){ state => abbrs.onLineTrigger=state }
 
-  lazy val labelledFields = Grid(width=2, pady=10).rows(
-        Label("Text "), example.framed(white(width=2)),
-        Label("Auto "), checkBox.cellFit(ShiftWest),
-        Label("Font "), fontText.framed(white(width=2)),
+  lazy val labelledFields = Grid(width=2, pady=15).rows(
+        Label("Text "), Row(example.framed(lightGrey(width=2)), checkBox.framed(lightGrey(width=2))),
+        Label("Font "), fontText.framed(lightGrey(width=2)).cellFit(ShiftWest),
         aboveDisplay._1.cellFit(ShiftWest), aboveDisplay._2.cellFit(ShiftWest)
     )
 
-  lazy val exampleDisplay = new ActiveGlyph[String]("", Rect(labelledFields.w, 3*fontText.h, black)) {
+  lazy val exampleDisplay = new ActiveGlyph[String]("", Rect(1.5f*labelledFields.w, 3*fontText.h, black)) {
     override val forcedSet: Boolean = true
     def toGlyph(t: String): Glyph = Text(t, _font, fg=brush)
     def copy(fg: Brush, bg: Brush): Glyph = this
@@ -138,14 +137,14 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
   lazy val GUI: Glyph = Col(align=Center, bg=sheet.backgroundBrush)(
     Row(align=Mid)(familyChooser, em, styleChooser.framed(), em,  sizeChooser.framed()), ex,
     labelledFields,
-    exampleDisplay.framed(Brushes.darkGrey(width=2).sliced(4, 1))
+    exampleDisplay.framed(Brushes.darkGrey(width=3).dashed(10, 10))
   )
 
 }
 
 class FontAndBrushChooser(implicit val sheet: StyleSheet) {
 
-  val brush: Brush = Brush("black.1.stroke").copy()
+  val brush: Brush = Brush("black.1.fill").copy()
 
   import FontFamily._
 
