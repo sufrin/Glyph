@@ -7,6 +7,8 @@ import styled.{BookSheet, TextButton}
 import GlyphTypes.Scalar
 import Location.Location
 
+import org.sufrin.glyph.NaturalSize.Col
+
 object glyphXMLTest extends Application {
     import Translation.Target._
 
@@ -51,15 +53,15 @@ object glyphXMLTest extends Application {
       translator("B1")        =  TextButton("Button1"){ _ => println(s"B1") }(_).turned(10)
       translator("B2")        =  TextButton("Button2"){ _ => println(s"B2") }(_)
       translator("B3")        =  TextButton("Button3"){ _ => println(s"B3") }(_)
-      translator("LINK")      =  sheet => TextButton("LINK"){ _ => println(s"LINK") }(sheet.copy(buttonDecoration = styles.decoration.unDecorated))
+      translator("LINK")      =  TextButton("LINK"){ _ => println(s"LINK") }(_)
       translator("L1")        =  Label("Label1")(_)
       translator("L2")        =  Label("Label2")(_)
       translator("L3")        =  Label("Label3")(_)
       translator("LS")        =  sheet => NaturalSize.Col()(Label("LS1")(sheet), Label("LS2")(sheet), Label("LS3")(sheet)).framed().turned(10f)
-      translator("LSC")       =  <col frame="black"><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
-      translator("B1")        = <ATTRIBUTES buttonForeground="red/2"        buttonBackground="yellow"/>
-      translator("B2")        = <ATTRIBUTES buttonForeground="green/2"      buttonBackground="yellow"/>
-      translator("B3")        = <ATTRIBUTES buttonForeground="lightgrey/2"  buttonBackground="black"/>
+      translator("LSC")       =  <col edge="black.3.dashed(10,10)"><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
+      translator("B1")        = <ATTRIBUTES buttonForeground="red.2"        buttonBackground="yellow"/>
+      translator("B2")        = <ATTRIBUTES buttonForeground="green.2"      buttonBackground="yellow"/>
+      translator("B3")        = <ATTRIBUTES buttonForeground="lightgrey.2"  buttonBackground="black"/>
       translator("tag:body")  = <ATTRIBUTES background="white"/>
       translator("tag:p")     = <ATTRIBUTES textBackground="white" align="justify" parSkip="1ex"/>
     }
@@ -69,7 +71,7 @@ object glyphXMLTest extends Application {
     val sheet: StyleSheet = StyleSheet().copy(
         backgroundBrush       = Brushes.transparent,
         buttonForegroundBrush = Brushes.red,
-        buttonDecoration           = styles.decoration.Blurred(fg=Brushes.red(width=10), bg=Brushes.transparent, blur=5f, spread=5f)
+        buttonDecoration      = styles.decoration.RoundFramed(fg=Brushes.red(width=10), bg=Brushes.grey2, radius = 20)//Blurred(fg=Brushes.red(width=10), bg=Brushes.transparent, blur=5f, spread=5f)
       )
     implicit val pageSheet: StyleSheet = StyleSheet().copy(
         backgroundBrush       = Brushes.transparent,
@@ -94,22 +96,20 @@ object glyphXMLTest extends Application {
         </caption>
 
 
-        <p align="justify" hang="* ">
-          The <glyph gid="B2"/>  in spain falls <b fontScale=".8">mainly</b> in the  plain. &filler; <glyph gid="B1"/>
-        </p>
-        <p align="justify" hang="* ">
+
+        <p align="justify">
           The <glyph gid="B2"/>  in  spain falls <b>mainly</b> in the  plain. &filler; <glyph gid="B1"/>
         </p>
 
         <!--glyph gid="B1" fg="green"/><glyph gid="B2" fg="green" scaled="2"/-->
 
-        <p leftMargin="5em" rightMargin="5em" frame="green/1"  rotated="2">
+        <p leftMargin="5em" rightMargin="5em" edge="green.1"  rotated="2">
           The (<glyph gid="LINK"/>) in spain falls <i>mainly</i> in the plain.
         </p>
 
         <p>
           Here is a longish &ls;col&gt;umn turned by 45 degrees in the midst
-          <col frame="black/2" turned="45"><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
+          <col edge="black.2" turned="45"><glyph gid="L1"/> <glyph gid="LINK"/><glyph gid="L3"/></col>
           of a paragraph. Note its alignment relative to the baseline.
         </p>
         <p>
@@ -118,11 +118,17 @@ object glyphXMLTest extends Application {
           <![CDATA[<glyph gid="LSC"/>]]>
           has the same relation to the baseline.
         </p>
+        <p> TODO: Why are buttons embedded in a /framed/ col/row inactive?
+          <row>
+            <col radius="30" frame="black.4.rounded(40)"><glyph gid="LINK"/><glyph gid="LINK"/><glyph gid="LINK"/></col>
+            <col radius="30" frame="black.4"><glyph gid="LINK"/></col>
+          </row>
+        </p>
 
         <fill/>
 
         <div textFontFamily="Menlo" textFontSize="16" width="0.9999*width">
-        <row frame="red/1" width="1*width">
+        <row frame="red.1" width="1*width">
           <p align="justify" width="17em" >This is the left hand col_umn of the two col_umns that are on this row.</p>
           <fill stretch="1"/>
           <p align="justify"  width="17em">This is the right hand col_umn of two.</p>
@@ -146,11 +152,11 @@ object glyphXMLTest extends Application {
     val p2 = Page("Tables") {
       <body align="justify" width="25em" textFontFamily="Menlo" textFontSize="20" labelFontFamily="Courier" labelFontSize="30">
         <SCOPE>
-        <ATTRIBUTES key="tag:p" textBackground="" align="left" parSkip="1ex" frame="white" scoped="true"/>
-        <ATTRIBUTES key="outer" foreground="blue/5" padY="40px" padX="40px" background="grey2"/>
-        <ATTRIBUTES key="tag:table" foreground="grey3/1" />
-        <ATTRIBUTES key="tag:rows" foreground="blue/1" background="darkGrey"/>
-        <ATTRIBUTES key="tag:cols" foreground="green/1" />
+        <ATTRIBUTES key="tag:p" textBackground="transparent" align="left" parSkip="1ex" frame="white" scoped="true"/>
+        <ATTRIBUTES key="outer" foreground="blue.5" padY="40px" padX="40px" background="grey2"/>
+        <ATTRIBUTES key="tag:table" foreground="lightGrey.3" />
+        <ATTRIBUTES key="tag:rows" foreground="blue.1" background="pink"/>
+        <ATTRIBUTES key="tag:cols" foreground="green.1" />
          <!--<debug:attributes id="tag:table"/>
          <debug:attributes id="tag:rows"/>
          <debug:attributes id="tag:cols"/>
@@ -316,6 +322,19 @@ object glyphXMLTest extends Application {
         <cj logging="true" width="42em"><b>0</b><b>1</b><b>2</b><b>3</b><b>4</b></cj>
       </body>
   }
+
+  /* 
+  val p7=Page("?"){
+    import sheet.ex
+    val b1 = TextButton("B1"){ _ => println("B1") }(pageSheet.copy(buttonDecoration = styles.decoration.Framed(Brush("red.2"))))
+    val b1r = TextButton("B1R"){ _ => println("B1R") }(pageSheet.copy(buttonDecoration = styles.decoration.RoundFramed(Brush("red.2"), radius = 30)))
+    val b2 = unstyled.reactive.TextButton("B2"){ _ => println("B2") }
+    val b3 = unstyled.reactive.TextButton("B3"){ _ => println("B3") }
+    val b4 = unstyled.reactive.TextButton("B4"){ _ => println("B4") }
+    //NaturalSize.Grid(width=1,pady=20,fg=Brushes.redLine)
+    Col(b1, ex, b1r, ex, b2, ex, b3.framed(Brush("blue.2")), b4.roundFramed(Brush("red.2"), radius=40), styles.decoration.RoundFramed(Brush("red.2"), radius = 40).decorate(b4()))
+
+  } */
 
 
 

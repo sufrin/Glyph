@@ -578,7 +578,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
             They can be composed laterally <span><b>(left|||right)</b></span> and vertically <b>(top---bottom)</b>, and superimposed <b>(l~~~r)</b>. In the latter case, the shape
             with the smaller area (<b>l</b> when they have the same area) is drawn centred on the other shape.
           </p>, ex,
-        NaturalSize.Grid(fg=black, padx=10, pady=10).table(width=4)(shapes.map(GlyphShape.asGlyph(_))), ex, ( <p width="70em" align="justify">
+        NaturalSize.Grid(fg=black, padx=10, pady=10).table(width=4)(shapes.map(_.asGlyph)), ex, ( <p width="70em" align="justify">
           Shapes also have intrinsic methods <b>scale(factor:Scalar),</b> and <b>turn(degrees:Scalar)</b> with much the same
           interpretation as those present in ordinary glyphs. The method <b>bg(Brush): GlyphShape</b> constructs a new
           shape <i>as far as possible like the original shape</i> with the given brush as its background colour. Shapes derived by

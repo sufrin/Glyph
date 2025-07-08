@@ -12,7 +12,7 @@ import gesture._
 import io.github.humbleui.types.Rect
 import org.sufrin.{glyph, logging}
 import org.sufrin.glyph.Brushes.{black, blue, green, lightGrey, red, white, yellow, NonBrush}
-import org.sufrin.glyph.GlyphShape.{arrow, asGlyph, circle, composite, lineBetween, polygon, rect, FILL, PathShape, STROKE}
+import org.sufrin.glyph.GlyphShape.{arrow, circle, composite, lineBetween, polygon, rect, FILL, PathShape, STROKE}
 import org.sufrin.glyph.styled.{Book, BookSheet, GlyphButton, MenuButton, RadioCheckBoxes}
 import org.sufrin.glyph.styles.decoration.{unDecorated, Framed}
 import org.sufrin.glyph.unstyled.reactive.{Enterable, Reaction}

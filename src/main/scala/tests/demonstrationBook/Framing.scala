@@ -193,7 +193,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
         val fenlarge = if (enlarge<1) (glyph.w min glyph.h)*enlarge else enlarge
         val frame = rect(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(ffg)
         val background = rect(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(fbg)
-        asGlyph(superimposed(List(background, frame, glyph)))
+        (superimposed(List(background, frame, glyph)).asGlyph)
       }
     }
 
@@ -206,7 +206,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
         val fenlarge = if (enlarge<1) (glyph.w min glyph.h)*enlarge else enlarge
         val frame = rectangle(glyph.w+2*fg.strokeWidth+enlarge, glyph.h+2*fg.strokeWidth+enlarge)(ffg)
         val background = rectangle(glyph.w+2*fg.strokeWidth+enlarge, glyph.h+2*fg.strokeWidth+enlarge)(fbg)
-        asGlyph(superimposed(List(background, frame, glyph)))
+        (superimposed(List(background, frame, glyph)).asGlyph)
       }
     }
 

@@ -152,7 +152,7 @@ object GlyphTransforms {
   object RoundFramed {
     def apply(fg: Brush, bg: Brush, radiusFactor: Scalar=0f)(glyph: Glyph): Glyph =
       if (oldStyle) new XRoundFramed(glyph, fg, bg, radiusFactor) else
-        styles.decoration.Framed(fg, bg, 0, radiusFactor).decorate(glyph)
+        styles.decoration.RoundFramed(fg, bg, 0, radiusFactor).decorate(glyph)
   }
 
   class XRoundFramed(val glyph: Glyph, override val fg: Brush, override val bg: Brush, val radiusFactor: Scalar) extends TransformedGlyph {

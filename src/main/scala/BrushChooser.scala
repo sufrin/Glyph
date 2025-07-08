@@ -198,7 +198,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
 
     lazy val SAMPLE: Glyph = {
       val model = (rectangle(textModel.w, textModel.h)(protoBrush) ||| textModel)
-      asGlyph(model ~~~ rectangle(30+model.w,30+model.h)(transparent)).framed(black)
+      (model ~~~ rectangle(30+model.w,30+model.h)(transparent)).asGlyph.framed(black)
     }
 
 

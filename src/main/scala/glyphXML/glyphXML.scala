@@ -54,7 +54,7 @@ import scala.xml._
  */
 
 class Macro(body: Node) {
-/*
+/**
  *{{{
  *   <MACRO key="cj">
  *     <div width="\$width(21em)">
@@ -68,9 +68,9 @@ class Macro(body: Node) {
  * the invocation
  *{{{
  *   <cj width="42"><b>Able</b><span>Baker</span></cj>
- *```
+ *
  * should expand to
- *```
+ *
  *   <div width="42em">
  *         <p align="center"><b>CJ in 42em</b></p>
  *         <p align="center"><b>Able</b></p>
@@ -117,7 +117,7 @@ class Macro(body: Node) {
  *       </div>
  * }}}
  *
- * * @param body
+ * @param body -- the entire invocation of <MACRO ...>  ...</MACRO>
  */
 
   def expansion(invocationAttributes: AttributeMap, invocation: Node): Seq[Node] = {
@@ -994,6 +994,8 @@ class Translation(val primitives: Primitives=new Primitives) {
             val glyphs: Seq[Target] = children.filterNot(isBlank(_)).flatMap { source => translate(tags$, paragraph, attributes$$, sheet$, source) }
             val alignment = attributes$.Align("align", Left)
             val frame     = attributes$.Brush("sep", attributes$.Brush("separator", Brushes.transparent))
+            val debug= attributes$.Bool("debug", false)
+            if (debug) println(glyphs)
             Decorated(ColTarget(sheet$.backgroundBrush, glyphs, alignment, frame))
 
 

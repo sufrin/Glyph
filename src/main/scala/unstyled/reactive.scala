@@ -405,10 +405,10 @@ object reactive {
   object TextButton  {
 
     def apply(text: String, fg: Brush = fallback.buttonForeground, bg: Brush = fallback.buttonBackground, background: Boolean = true)
-             (reaction: Reaction): ColourButton = {
+             (reaction: Reaction): ReactiveGlyph = {
          val up = fallback.buttonText(text, fg, bg).enlarged(fallback.upFrame.strokeWidth * 4)
-         //new RawButton(up, up(fg = red), up(fg = green), up.fg, up.bg, reaction)
-         new ColourButton(up, fg, bg, background, reaction)
+         new RawButton(up, up(fg = red), up(fg = green), up.fg, up.bg, reaction)
+         //new ColourButton(up, fg, bg, background, reaction)
        }
 
 

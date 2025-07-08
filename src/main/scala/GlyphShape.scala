@@ -6,7 +6,7 @@ import io.github.humbleui.skija.{PaintMode, Path, PathFillMode}
 import io.github.humbleui.types.Rect
 import org.sufrin.glyph.Brush.{ROUND, SQUARE}
 import org.sufrin.glyph.Brushes.{black, green, invisible, lightGrey, red}
-import org.sufrin.glyph.GlyphShape.{asGlyph, circle, composite, rect, superimposed, FILL, STROKE}
+import org.sufrin.glyph.GlyphShape.{circle, composite, rect, superimposed, FILL, STROKE}
 import org.sufrin.glyph.unstyled.dynamic.{Animateable, Steppable}
 
 /**
@@ -64,7 +64,7 @@ trait GlyphShape { thisShape =>
    */
   def turn(degrees: Scalar, tight: Boolean=false): GlyphShape = if (degrees==0f) thisShape else new Turned(thisShape, degrees, tight)
 
-  private class Turned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphTransforms.Turned(asGlyph(original), degrees, tight, invisible, invisible) {
+  private class Turned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphTransforms.Turned(original.asGlyph, degrees, tight, invisible, invisible) {
     override def turn(degrees: Scalar, tight: Boolean=true): GlyphShape =
       if (degrees==0f) original else new Turned(original, this.degrees+degrees, tight)
 
@@ -177,6 +177,27 @@ trait GlyphShape { thisShape =>
   }
 
   /**
+   * A standard glyph with the given foreground and background and drawn as `shape`.
+   */
+  def asGlyph: Glyph = new Glyph {
+    wrapped =>
+    /**
+     * Stock copy of the glyph
+     */
+    def copy(fg: Brush, bg: Brush): Glyph =
+      thisShape match {
+        case g: Glyph => g.copy(fg, bg)
+        case other    => other.withBrushes(fg, bg).asGlyph
+      }
+
+    def draw(surface: Surface): Unit = thisShape.draw(surface)
+
+    val diagonal: Vec = thisShape.diagonal
+    override val fg: Brush = thisShape.fg
+    override val bg: Brush = thisShape.bg
+  }
+
+  /**
    *  A `LocatedShape` shaped like `thisShape`, initially drawn at `(x,y)`.
    *
    */
@@ -203,7 +224,6 @@ trait GlyphShape { thisShape =>
   def targetCentredAt(pos: Vec): LocatedShape = TargetShape(pos.x-thisShape.w*0.5f, pos.y-thisShape.h*0.5f, thisShape)
 
 }
-
 
 
 object GlyphShape {
@@ -698,28 +718,8 @@ object GlyphShape {
   }
 
 
-  /**
-   * A standard glyph with the given foreground and background and drawn as `shape`.
-   */
-  def asGlyph(shape: GlyphShape): Glyph = {
-    new Glyph {
-      wrapped =>
-      /**
-       * Stock copy of the glyph
-       */
-      def copy(fg: Brush, bg: Brush): Glyph =
-        shape match {
-          case g: Glyph => g.copy(fg, bg)
-          case other    => asGlyph(other.withBrushes(fg, bg))
-        }
 
-      def draw(surface: Surface): Unit = shape.draw(surface)
 
-      val diagonal: Vec = shape.diagonal
-      override val fg: Brush = shape.fg
-      override val bg: Brush = shape.bg
-    }
-  }
 
 
   val STROKE: PaintMode = PaintMode.STROKE

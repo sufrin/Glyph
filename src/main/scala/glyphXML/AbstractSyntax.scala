@@ -39,6 +39,17 @@ object AbstractSyntax {
         in the plain
       </outer>
     )
+    t(<div width="45em" align="justify">
+        <p>
+          This app solves the equation <i UPPER="foo">c = a + b</i> if at least &amp; two of <i>a, b, c</i>
+          are well-formed numbers: possibly floating-point.
+        </p>
+        <p>
+          Typing <tt>↩</tt> (<i>ie. the enter key</i>) in any of the text fields, causes the
+          equation to be re-solved.
+          <!-- A comment -->
+        </p>
+      </div>)
   }
 
 }

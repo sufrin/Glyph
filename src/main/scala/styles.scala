@@ -71,6 +71,7 @@ package styles
 
     import org.sufrin.glyph.GlyphShape.FILL
     import org.sufrin.glyph.GlyphTypes.PathEffect
+    import org.sufrin.glyph.unstyled.static.Concentric
 
     /** The decoration applied to a glyph */
     trait Decoration {
@@ -103,7 +104,9 @@ package styles
         }
         val frame = rect(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(ffg)
         val background = rect(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(fbg)
-        asGlyph(superimposed(List(background, frame, glyph)))
+        //asGlyph(superimposed(List(background, frame, glyph)))
+        // TODO: check frame radius working ok
+        unstyled.static.Concentric.Mid(background.asGlyph, frame.asGlyph, glyph)
       }
     }
 
@@ -131,7 +134,9 @@ package styles
         }
         val frame = rect(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(ffg)
         val background = rect(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(fbg)
-        asGlyph(superimposed(List(background, frame, glyph)))
+        //asGlyph(superimposed(List(background, frame, glyph)))
+        import unstyled.static.Concentric
+        unstyled.static.Concentric.Mid(background.asGlyph, frame.asGlyph, glyph)
       }
     }
 

@@ -4,7 +4,7 @@ package tests.demonstrationBook
 import styled.{ActiveString, Book, BookSheet, MenuButton, TextButton, TextToggle}
 
 import io.github.humbleui.skija.{PaintMode, PaintStrokeCap}
-import org.sufrin.glyph.GlyphShape.{asGlyph, circle, composite, line, lineBetween, oval, rect, superimposed, AnimatedShape, AnimatedShapeGlyph, FILL, PathShape, STROKE}
+import org.sufrin.glyph.GlyphShape.{circle, composite, line, lineBetween, oval, rect, superimposed, AnimatedShape, AnimatedShapeGlyph, FILL, PathShape, STROKE}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.NaturalSize.{Col, Grid, Row}
 import org.sufrin.glyph.unstyled.{reactive, static}
