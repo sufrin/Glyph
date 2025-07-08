@@ -1,7 +1,9 @@
 package org.sufrin.glyph
 
 /**
- * A `Brush` delivers `Paint` with a more convenient API
+ * A `Brush` delivers `Paint`. The `Brush` API is (for the most part)
+ * straightforwardly declarative, and the algebra of brushes supports
+ * the derivation of brushes from other brushes, path effects, etc.
  */
 
 import GlyphTypes.{Paint, PathEffect, Scalar}
@@ -76,11 +78,18 @@ object Brush {
     override def compose(inner: Effect): Effect =  inner
   }
 
+  /**
+   * Transform a `Paint` into the equivalent `Brush` -- not
+   * needed except for acquired or inherited `Paint`; and never
+   * used in the `Glyph` toolkit.
+   * @param p
+   * @return
+   */
   def ofPaint(p: Paint): Brush = {
     p match {
       case b: Brush => b
       case _ =>
-        new Brush("")
+        new Brush("ofPaint")
           .color(p.getColor)
           .strokeWidth(p.getStrokeWidth)
           .strokeCap(p.getStrokeCap)
