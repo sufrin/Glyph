@@ -323,7 +323,7 @@ object glyphXMLTest extends Application {
       </body>
   }
 
-  /* 
+  /*
   val p7=Page("?"){
     import sheet.ex
     val b1 = TextButton("B1"){ _ => println("B1") }(pageSheet.copy(buttonDecoration = styles.decoration.Framed(Brush("red.2"))))

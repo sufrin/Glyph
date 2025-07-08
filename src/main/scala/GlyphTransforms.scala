@@ -134,68 +134,14 @@ trait GlyphTransforms {
 }
 
 object GlyphTransforms {
-  val oldStyle = false
   /**
    * A glyph that renders as `glyph` framed by a surround painted with `fg`, on a mount painted with `bg`.
    *
-   * If `radiusFactor>0` then the surround and mount are rounded rectangles; otherwise they are square
-   * rectangles.
-   *
-   * When `radiusFactor>0`  it specifies the lateral/vertical radius factors of the rounded rectangles.
-   *
-   * The size of the mounted glyph is always extended by a multiple, `K` of `fg.strokeWidth` in each direction.
-   * When `fg.strokeCap` is `ROUND`, `K` is 3; otherwise it is `2`. The former factor is usually enough for the
-   * bounding box of the original glyph to fit inside the rim of the frame; except when `fg.strokeWidth` is
-   * small.
-   *
+   * If `radius<=0` the surround and mount are rectangles.
+   * If `radius>0` then the surround and mount are rounded rectangles with radius `radius` if `radius>=1` else radius*(glyph.w min glyph.h)`.
    */
   object RoundFramed {
-    def apply(fg: Brush, bg: Brush, radiusFactor: Scalar=0f)(glyph: Glyph): Glyph =
-      if (oldStyle) new XRoundFramed(glyph, fg, bg, radiusFactor) else
-        styles.decoration.RoundFramed(fg, bg, 0, radiusFactor).decorate(glyph)
-  }
-
-  class XRoundFramed(val glyph: Glyph, override val fg: Brush, override val bg: Brush, val radiusFactor: Scalar) extends TransformedGlyph {
-    import static.{FilledRect, Rect, RRect}
-
-    override def toString: String = s"RoundFramed($fg, $bg)($glyph)"
-    override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = delegate.reactiveContaining(p)
-    override def glyphContaining(p: Vec): Option[Hit] = delegate.glyphContaining(p)
-    override def contains(p: Vec): Boolean = delegate.contains(p)
-    override def copy(fg: Brush = fg, bg: Brush = bg): XRoundFramed = new XRoundFramed(glyph.copy(), fg, bg, radiusFactor)
-
-
-    def delegate: Glyph = {
-      if (radiusFactor>0f) {
-        val gw = glyph.w + fg.strokeWidth * 4 // Larger than for rectangular: the curvature bites otherwise
-        val gh = glyph.h + fg.strokeWidth * 4
-        // calculate sensible rounding radii
-        val (xrf, yrf) =
-          if (radiusFactor>0f) (radiusFactor, radiusFactor) else (.25f, .25f)
-
-        static.Concentric(rowAlign=Mid, colAlign=Center)(
-          RRect(gw, gh, solid = true, xrf = xrf, yrf = yrf, fg = bg/*(mode=FILL)*/, bg = transparent),   // background
-          RRect(gw, gh, solid = false, xrf = xrf, yrf = yrf, fg = fg/*(mode=FILL)*/, bg = transparent),  // frame
-          glyph,
-          )
-      } else {
-        val gw = glyph.w + fg.strokeWidth * 2
-        val gh = glyph.h + fg.strokeWidth * 2
-        static.Concentric(rowAlign=Mid, colAlign=Center)(
-          FilledRect(gw, gh, fg = bg, bg = transparent), // background
-          Rect(gw, gh, fg = fg, bg = transparent),       // frame
-          glyph)
-      }
-    }
-
-    def diagonal: Vec = delegate.diagonal
-
-    override def draw(surface: Surface): Unit = {
-      delegate.draw(surface)
-    }
-
-    locally { delegate.parent = this }
-
+    def apply(fg: Brush, bg: Brush, radius: Scalar=0f)(glyph: Glyph): Glyph = styles.decoration.RoundFramed(fg, bg, 0, radius).decorate(glyph)
   }
 
 
