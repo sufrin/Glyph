@@ -1,14 +1,21 @@
 package org.sufrin.glyph
 
 /**
- *  An `Alignment` describes alignments used when justifying paragraphs.
+ *  A (horizontal)  `Alignment` is a descriptor used when justifying paragraphs.
  *  Its `left, right` scalars describe the stretchability of the spaces
  *  that will be placed at the left and right of each line of a justified
  *  paragraph. Its `last` scalar is the stretchability at the right of
  *  the final line of the paragraph (which may have fewer words in it
  *  than the others.
  *
+ *  Alignments also describe how column elements are set within columns. The
+ *  alignment calculation for `glyph` when locating it in a column of width `w`
+ *  with a given `alignment` is
+ *
+ *  {{{glyph.location.x = alignment.proportion*(w-glyph.w)}}}
+ *
  * @see text
+ * @see Col
  *
  */
 trait Alignment {
@@ -52,6 +59,11 @@ case object Justify extends Alignment {
   override val proportion: Float = 1f // meaningless when Column setting
 }
 
+
+/**
+ * A (vertical) `VAlignment` is the vertical analogue of a horizontal `Alignment`. Used when
+ * laying out `Row`s.
+ */
 trait VAlignment {
   /**  Proportion of excess space to use when Row setting */
   val proportion: Float
