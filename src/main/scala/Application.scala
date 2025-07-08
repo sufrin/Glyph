@@ -7,8 +7,9 @@ import org.sufrin.glyph.NaturalSize.Row
 import java.io.File
 
 /**
- * An application specified by a GUI, and a title. Some generic flags
- * may be given.
+ * An application specified by a GUI, and a title. Some generic arguments
+ * may be specified on the command line. Other command-line arguments are
+ * made available to the GUI (as `extraArgs`)
  */
 trait Application {
   thisApplication =>
