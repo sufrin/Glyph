@@ -4,8 +4,11 @@
 //    sbt clean publishLocal
 // OR BUILD AS AN UBER-JAR BY:
 //    sbt clean assembly
-// THE UBER-JAR includes all the dependencies needed to run
-// as a java target: it's huge
+// THE UBER-JAR includes (unpacked) all the dependencies needed to run
+// as a java program. (>40mb)
+//
+// java -jar glyph+skija.jar # runs org.sufrin/glyph.tests.demonstrationBook.Pages
+// java -cp glyph+skija.jar org.sufrin.glyph.tests.ANEXAMPLE # runs ANEXAMPLE
 //
 // The file: lib/Logging.jar (also in SkijaLib) is the only unmanaged
 // component needed to use the glyph library.
