@@ -17,7 +17,8 @@ $lib/Glyph.jar
 # echo $LIBPATH
 PROGRAM=${1-demonstrationBook.Pages}
 
-CLASSPATH=$LIBPATH scala org.sufrin.glyph.tests.$PROGRAM 2>/dev/null &
+CLASSPATH=$LIBPATH scala org.sufrin.glyph.tests.$PROGRAM
+#2>/dev/null &
 
 
 

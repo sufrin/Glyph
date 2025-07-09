@@ -27,7 +27,7 @@ Compile / packageOptions += Package.ManifestAttributes("Multi-Release" -> "true"
 enablePlugins(AssemblyPlugin)
 
 assembly / assemblyJarName := "glyph+skija.jar"
-assembly / mainClass := Some("org.sufrin.glyph.tests.Example4")
+assembly / mainClass := Some("org.sufrin.glyph.tests.demonstrationBook.Pages")
 assembly / assemblyMergeStrategy := {
   case PathList("io", "github", "humbleui", "skija", "impl", "Cleanable.class") =>
         MergeStrategy.discard       // the pre version 9 variant
