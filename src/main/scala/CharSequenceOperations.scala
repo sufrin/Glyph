@@ -1,4 +1,6 @@
 
+package org.sufrin
+package utility
 object CharSequenceOperations {
 
   implicit class WithCharSequenceOps(val chars: CharSequence) extends AnyVal {

@@ -1,4 +1,5 @@
-package org.sufrin.utility
+package org.sufrin
+package utility
 
 import org.sufrin.glyph.PrefixCodePointMap.{CodePoint, CodePointSequence}
 

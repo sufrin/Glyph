@@ -73,7 +73,7 @@ object NumberUtils {
     s.toLowerCase.toList.map("0123456789abcdef".indexOf(_)).reduce (_ * 16 + _) // { (l,d) => (l * 16 + d)}
   }
 
-  import utility.CharSequenceOperations._
+  import org.sufrin.utility.CharSequenceOperations._
 
   /**
    * @param s  \uxxxx (where the x are hex digits)

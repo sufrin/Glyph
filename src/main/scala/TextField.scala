@@ -32,7 +32,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 var onChange: Option[String => Unit],
                 size: Int,
                 initialText: String,
-                abbreviations: utility.TextAbbreviations
+                abbreviations: org.sufrin.utility.TextAbbreviations
                ) extends ReactiveGlyph
 {
 
@@ -609,7 +609,7 @@ object TextField extends logging.Loggable {
             onChange: Option[String=>Unit]     = None,
             size: Int,
             initialText: String = "",
-            abbreviations: utility.TextAbbreviations = null
+            abbreviations: org.sufrin.utility.TextAbbreviations = null
            ): TextField =
       new TextField(fg, bg, font,
             onEnter=onEnter,
