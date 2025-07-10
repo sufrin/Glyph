@@ -2,7 +2,10 @@ package org.sufrin
 package glyph
 
 import GlyphTypes.{EventKey, Window}
+import io.github.humbleui.skija.PaintStrokeCap
 import org.sufrin.glyph.NaturalSize.Row
+import org.sufrin.glyph.unstyled.Text
+import org.sufrin.glyph.unstyled.static.Rect
 
 import java.io.File
 
@@ -56,6 +59,10 @@ trait Application {
   }
 
   val defaultIconPath: Option[String] = None
+
+  /** The dock/system-tray proxy */
+  val dock: Dock = new Dock { setGlyph(Rect(25, 25, bg=Brushes.yellow, fg=Brushes.blue(width=1, cap=PaintStrokeCap.ROUND).dashed(4,4))) }
+
   val extraArgs = new ArrayBuffer[String]()
   var useScreen: Char = 'p'
   var scaleFactor = 1.0f
@@ -73,6 +80,7 @@ trait Application {
     var logPrefix: String = ""
     extraArgs.clear()
 
+    try { java.awt.Taskbar.getTaskbar } catch { case error: Throwable => () }
 
     for {arg <- args} arg match {
       case s"-log($logprefix)" => logPrefix=logprefix
@@ -140,6 +148,8 @@ trait Application {
           case 'p' => App.getPrimaryScreen
           case _   => getScreen(useScreen-'0')
         }
+
+        override val dock: Dock = thisApplication.dock
       }.start()
     })
   }

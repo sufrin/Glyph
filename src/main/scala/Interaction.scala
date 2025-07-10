@@ -62,6 +62,7 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
   def title:       String         = "Glyph Interaction"
   def iconPath:    Option[String] = None
   val logEvents:   Boolean        = false
+  val dock:        Dock           = null
 
   /** Invoke this when the focus leaves the window */
   def onFocusLeave(): Unit = { }
@@ -104,6 +105,7 @@ class Interaction(val window: Window, guiRoot: Glyph, initialScaleFactor: Scalar
         override val fg: Brush = f
         override val bg: Brush = b
         override val args: List[String] = thisInteraction.args
+        override val dock: Dock = thisInteraction.dock
       }
     }
 

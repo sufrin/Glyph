@@ -69,6 +69,8 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
   import io.github.humbleui.jwm.App.runOnUIThread
   def copy(fg: Brush=this.fg, bg: Brush=this.bg) : Glyph = new RootGlyph(GUIroot)
 
+  val dock: Dock = null
+
   /**
    *  When a window size changes, automatically scale its non-resizeable GUIs when they are not (programmatically)
    *  `resizeable`. This can be changed at any time.

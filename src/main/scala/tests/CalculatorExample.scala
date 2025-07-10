@@ -6,6 +6,8 @@ import Brushes._
 import styled.BookSheet
 import styles.decoration
 
+import io.github.humbleui.skija.PaintMode
+
 
 class AdderGUI()(implicit sheet: StyleSheet)  {
   import NaturalSize.{Col, Row}
@@ -156,7 +158,11 @@ trait TopLevelGUI {
 object CalculatorExample extends Application {
     val GUI: Glyph = new TopLevelGUI {} . root
     override def title: String = "CalculatorExample"
-    override val defaultIconPath: Option[String] = Some("./PNG/redpoly.png")
+    //override val defaultIconPath: Option[String] = Some("./PNG/redpoly.png")
+    override val dock = new Dock {
+      import GlyphShape._
+      setGlyph((text("=")() ~~~ rect(25,25)(red(width=1, mode=PaintMode.STROKE))).scale(1f).asGlyph)
+    }
 }
 
 

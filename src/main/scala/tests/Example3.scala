@@ -1,8 +1,11 @@
 package org.sufrin.glyph
 package tests
-import unstyled.static.Rect
+import unstyled.static.{FilledRect, Rect}
 import Brushes._
 import NaturalSize.{Col, Row}
+
+import org.sufrin.glyph.unstyled.Text
+import sun.awt.resources.awt
 
 /**
  * Interface using implicitly-styled glyphs. The interface is a "mixin" trait that expects to
@@ -16,8 +19,7 @@ trait Example3Interface {
 
   import styled.{Label, TextButton}
 
-
-  def GUI: Glyph = Col(align=Center, bg=lightGrey) (
+  lazy val GUI: Glyph = Col(align=Center, bg=lightGrey) (
     Label("A simple label") enlarged(20),
     spacer,
     Row(skip=10)(
@@ -32,6 +34,16 @@ object Example3 extends Application with Example3Interface  {
 
     override def title: String = "Example 3"
 
+    override val dock: Dock = new Dock() {
+      locally {
+        setGlyph(Text("eg3"))
+        onTrayClick(Text("3", fg=Brushes.red, bg=Brushes.yellow)){
+          location =>
+            styled.windowdialogues.Dialogue.FLASH(styled.Label("You clicked\non the system\ntray icon")).OnRootOf(GUI, location).start()
+        }
+      }
+    }
+
     implicit val style: StyleSheet = StyleSheet(
       labelBackgroundBrush  = green().rounded(18),
       labelForegroundBrush  = white,
@@ -40,3 +52,4 @@ object Example3 extends Application with Example3Interface  {
       buttonDecoration      = styles.decoration.Edged(blue(cap=ROUND, width=18))
     )
 }
+

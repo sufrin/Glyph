@@ -4,6 +4,7 @@ import styled.BookSheet
 
 import org.sufrin.glyph.Brushes.{green, red}
 import org.sufrin.glyph.styles.decoration.Decoration
+import org.sufrin.glyph.unstyled.Text
 
 object Pages extends Application  {
   import styles._
@@ -35,7 +36,8 @@ object Pages extends Application  {
 
   def title = s"""Demonstration Book"""
 
-  override
-  val defaultIconPath: Option[String] = Some ("PNG/WorcesterCrest.png")
+  override val dock = new Dock() {
+      setGlyph(Text("Pages"))
+  }
 
 }
