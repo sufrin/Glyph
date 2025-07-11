@@ -160,12 +160,12 @@ class Macro(body: Node) {
         val result = {
           value match {
             case s"$$$ref($value)" =>
-              actualAttributes.get(ref) match {
+              actualAttributes.get(ref.toLowerCase) match {
                 case Some(value) => value
                 case None        => value
               }
             case s"$$$ref" =>
-              actualAttributes.get(ref) match {
+              actualAttributes.get(ref.toLowerCase) match {
                 case Some(value) => value
                 case None =>
                   Default.warn(s"Macro reference $invocation has no parameter $ref")
@@ -179,7 +179,7 @@ class Macro(body: Node) {
 
       var attribs: MetaData = Null
       for { attr <- attrs } {
-        attribs = MetaData.concatenate(attribs, Attribute(null, attr.key, deref(attr.value.text), attribs))//MetaData.concatenate(attribs, attr.prefixedKey, attr.value.text)
+        attribs = MetaData.concatenate(attribs, Attribute(null, attr.key.toLowerCase, deref(attr.value.text), attribs))//MetaData.concatenate(attribs, attr.prefixedKey, attr.value.text)
       }
 
       attribs = MetaData.normalize(attribs, null)
@@ -250,21 +250,21 @@ class Primitives {
   }
 
   /** Declare a named glyph generator */
-  def update(id: String, glyph: StyleSheet=>Glyph): Unit = styledMap(id)=glyph
+  def update(id: String, glyph: StyleSheet=>Glyph): Unit = styledMap(id.toLowerCase)=glyph
   /** Declare a named attribute map: used for inheritance of attributes */
-  def update(id: String, map: AttributeMap): Unit = globalAttributesMap(id)=map
+  def update(id: String, map: AttributeMap): Unit = globalAttributesMap(id.toLowerCase)=map
   /** Declare a new kind of tag */
-  def update(id: String, generator: Translation) = extensionMap(id) = generator
+  def update(id: String, generator: Translation) = extensionMap(id.toLowerCase) = generator
   /** Declare a new text entity */
-  def update(id: String, expansion: String) = entityMap(id) = expansion
+  def update(id: String, expansion: String) = entityMap(id.toLowerCase) = expansion
   /** Declare a new expandable entity */
   def update(id: String, node: Node) : Unit = {
     node  match {
       case element: Elem =>
-        if (element.label.toUpperCase == "ATTRIBUTES")
-          globalAttributesMap(id) = Translation.normalizeKeys(element.attributes.asAttrMap)
+        if (element.label.toLowerCase == "attributes")
+          globalAttributesMap(id.toLowerCase) = Translation.normalizeKeys(element.attributes.asAttrMap)
         else
-          elementMap(id) = element
+          elementMap(id.toLowerCase) = element
 
       case other =>
         import Default.error
@@ -273,7 +273,7 @@ class Primitives {
   }
 
   /** Declare a new macro */
-  def update(id: String, abbr: Macro) : Unit = macroMap(id) = abbr
+  def update(id: String, abbr: Macro) : Unit = macroMap(id.toLowerCase) = abbr
 }
 
 object Paragraph {
@@ -630,12 +630,12 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
   /**
    * Yields the string with key `key`, or `alt`
    */
-  def String(key: String, alt: String): String = attributes.getOrElse(key, alt)
+  def String(key: String, alt: String): String = attributes.getOrElse(key.toLowerCase, alt)
 
   /**
    * Yields the Int with key `key` (if it looks like a number), or `alt`
    */
-  def Int(key: String, alt: Int): Int = attributes.get(key) match {
+  def Int(key: String, alt: Int): Int = attributes.get(key.toLowerCase) match {
     case Some (s) if s.matches("-?[0-9]+") => s.toInt
     case Some(s)  =>
       warn(s"$key(=$s) should be an Int [using $alt] ($at)")
@@ -646,7 +646,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
   /**
    * Yields Float Int with key `key` (if it looks like a floating point number), or `alt`
    */
-  def Float(key: String, alt: Float): Float = attributes.get(key) match {
+  def Float(key: String, alt: Float): Float = attributes.get(key.toLowerCase) match {
     case Some (spec) =>
       try {
         spec.toFloat
@@ -688,7 +688,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
    *
    */
   def Units(key: String, alt: Float)(sheet: StyleSheet): Float = {
-    attributes.get(key) match {
+    attributes.get(key.toLowerCase) match {
       case Some(spec) =>
         spec.toLowerCase match {
           case (s"${s}em") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.emWidth
@@ -724,7 +724,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
   /**
    * Yields the Boolean with key `key` (if it's t, f, true, false, on, or off), or `default`
    */
-  def Bool(key: String, default: Boolean): Boolean = attributes.get(key) match {
+  def Bool(key: String, default: Boolean): Boolean = attributes.get(key.toLowerCase) match {
     case None => default
     case Some(boolean) =>
       boolean.toLowerCase match {
@@ -739,7 +739,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
   /**
    * Yields the lateral alignment with key `key` (if it's one of `{left, right, center, justify}`), or `default`
    */
-  def Align(key: String, default: Alignment): Alignment = attributes.get(key) match {
+  def Align(key: String, default: Alignment): Alignment = attributes.get(key.toLowerCase) match {
     case None => default
     case Some(alignment) => alignment.toLowerCase match {
       case ("left") => Left
@@ -756,7 +756,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
   /**
    * Yields the vertical alignment with key `key` (if it's one of `{top, bottom, mid, center}`), or `default`
    */
-  def VAlign(key: String, default: VAlignment): VAlignment = attributes.get(key) match {
+  def VAlign(key: String, default: VAlignment): VAlignment = attributes.get(key.toLowerCase) match {
     case None => default
     case Some(alignment) => alignment.toLowerCase match {
       case ("top") => Top
@@ -776,7 +776,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
    *
    * @see Brushes
    */
-  def Brush(key: String, alt: Brush): Brush = attributes.get(key) match {
+  def Brush(key: String, alt: Brush): Brush = attributes.get(key.toLowerCase) match {
     case None       => alt
     case Some(name) => Brushes(name)
   }
@@ -1024,10 +1024,10 @@ class Translation(val primitives: Primitives=new Primitives) {
           case "glyph" =>
             //println (s"<glyph ${attributes$.asString}/>")
             val id: String = localAttributes.String("gid", alt="")
-            if (styledMap.get(id).isDefined)
-               Decorated(GlyphTarget(paragraph, sheet$, generateGlyph(tags$, paragraph, attributes$, sheet$, id)))
+            if (styledMap.get(id.toLowerCase).isDefined)
+               Decorated(GlyphTarget(paragraph, sheet$, generateGlyph(tags$, paragraph, attributes$, sheet$, id.toLowerCase)))
             else {
-               elementMap.get(id) match {
+               elementMap.get(id.toLowerCase) match {
                  case None =>
                    logging.Default.warn (s"$tagString <glyph ${attributes.asString}/> UNDEFINED (no generator or element)")
                    Decorated(GlyphTarget(paragraph, sheet$, styled.Label (s"UNDEFINED $id")(sheet$.copy(labelForegroundBrush = Brushes.red))))
