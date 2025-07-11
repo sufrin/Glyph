@@ -77,7 +77,7 @@ applications. The following are available:
     [info] * org.sufrin.glyph.tests.HandleQuit
     [info] * org.sufrin.glyph.tests.LargeTest
     [info] * org.sufrin.glyph.tests.ResizeAndSplitTest
-    [info] * org.sufrin.glyph.tests.ResizeableWIndowTest
+    [info] * org.sufrin.glyph.tests.ResizeableWindowTest
     [info] * org.sufrin.glyph.tests.GlyphBook.GlyphBook
     [info] * org.sufrin.glyph.tests.glyphXMLTest
 

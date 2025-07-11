@@ -1233,7 +1233,7 @@ object Language {
 
       def textStyleTranslation(tag: String, textStyle: String): Translation = new Translation(primitives) {
         override def translate(tags: List[String], paragraph: Boolean, attributes: AttributeMap, sheet: StyleSheet, children: Seq[Node]): Seq[Target] = {
-          super.translate(tag :: tags, paragraph, attributes.updated("textStyle", textStyle), sheet, children)
+          super.translate(tag :: tags, paragraph, attributes.updated("textstyle", textStyle), sheet, children)
         }
       }
 

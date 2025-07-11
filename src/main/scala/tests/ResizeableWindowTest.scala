@@ -8,7 +8,7 @@ import styles.decoration.Edged
 import Location.East
 import unstyled.static
 
-object ResizeableWIndowTest extends Application {
+object ResizeableWindowTest extends Application {
   import glyphXML.Language._
 
   /**
@@ -83,11 +83,11 @@ object ResizeableWIndowTest extends Application {
       <p>
         All De Rerum Natura bases are mule_sing<row><span textForeground="red" fontScale="0.5">(*)</span></row> free, and eth_ical_ly and sus_tain_ably produced.
       </p>
-      <fill width="1*container.width" foreground="red.sliced(1,5)"  height="0.7ex"/>
-      <p fontScale="0.7" labelForeground="red" textForeground="red" hang="* ">
+      <p fontScale="0.7" labelForeground="red" textForeground="red" hang="* " decorate="enlarge;frame;enlarge" frame="red.2.sliced(2,1)" enlarged="0.65em">
         Mulesing is the removal of strips of wool-bearing skin from around the breech of a
-        sheep to prevent the parasitic infection flystrike. The wool around the buttocks can retain feces and urine, which attracts flies.
+        sheep to prevent the parasitic infection <i>flystrike</i>. The wool around the buttocks can retain feces and urine, which attracts flies.
       </p>
+      <p><i>Try changing the <bi>width</bi> of this window by dragging a vertical edge.</i></p>
     </div>
   ) enlarged 10 edged (black(width=2)) enlarged 20
 

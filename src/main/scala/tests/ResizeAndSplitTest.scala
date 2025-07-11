@@ -92,7 +92,7 @@ object ResizeAndSplitTest extends Application {
       TextButton("L<->R") {
         _ => static.exchange()
       },
-      Row(align=Mid)(Label("Enable dynamic scaling:"), enableDynamic)
+      Row(align=Mid)(Label("Enable dynamic scaling (when changing the window size):"), enableDynamic)
     ) enlarged enlargement framed black(width=4)
   }
 

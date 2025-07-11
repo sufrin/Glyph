@@ -756,6 +756,10 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
 object Play extends Application {
 
+  override val dock = new Dock {
+    setGlyph(Text("Play", fg=red, bg=yellow))
+  }
+
   val LocalSheet: StyleSheet = StyleSheet()
 
   val interfaceStyle: StyleSheet = LocalSheet.copy(
@@ -768,8 +772,6 @@ object Play extends Application {
   )
 
   def title = s"""Play"""
-  override
-  val defaultIconPath: Option[String] = Some ("PNG/WorcesterCrest.png")
 
   val help: Glyph = {
     implicit val helpSheet = interfaceStyle.copy(textFontSize=16, labelFontSize = 16, buttonFontSize = 16)
