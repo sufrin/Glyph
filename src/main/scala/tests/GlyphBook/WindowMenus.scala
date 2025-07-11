@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package tests.demonstrationBook
+package tests.GlyphBook
 
 import styled.windowdialogues.Dialogue
 import styled.windowdialogues.Dialogue.{OK, POPUP}

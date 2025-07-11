@@ -78,7 +78,7 @@ applications. The following are available:
     [info] * org.sufrin.glyph.tests.LargeTest
     [info] * org.sufrin.glyph.tests.ResizeAndSplitTest
     [info] * org.sufrin.glyph.tests.ResizeableWIndowTest
-    [info] * org.sufrin.glyph.tests.demonstrationBook.Pages
+    [info] * org.sufrin.glyph.tests.GlyphBook.GlyphBook
     [info] * org.sufrin.glyph.tests.glyphXMLTest
 
 You can run any of them with (eg)

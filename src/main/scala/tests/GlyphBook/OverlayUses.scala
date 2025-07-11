@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package tests.demonstrationBook
+package tests.GlyphBook
 
 import styled.overlaydialogues.Dialogue
 import styled.overlaydialogues.Dialogue.{Menu, NestedMenu, OK}

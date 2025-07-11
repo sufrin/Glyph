@@ -7,7 +7,7 @@
 // THE UBER-JAR includes (unpacked) all the dependencies needed to run
 // as a java program. (>40mb)
 //
-// java -jar glyph+skija.jar # runs org.sufrin/glyph.tests.demonstrationBook.Pages
+// java -jar glyph+skija.jar # runs org.sufrin/glyph.tests.GlyphBook.GlyphBook
 // java -cp glyph+skija.jar org.sufrin.glyph.tests.ANEXAMPLE # runs ANEXAMPLE
 //
 // The file: lib/Logging.jar (also in SkijaLib) is the only unmanaged
@@ -30,7 +30,7 @@ Compile / packageOptions += Package.ManifestAttributes("Multi-Release" -> "true"
 enablePlugins(AssemblyPlugin)
 
 assembly / assemblyJarName := "glyph+skija.jar"
-assembly / mainClass := Some("org.sufrin.glyph.tests.demonstrationBook.Pages")
+assembly / mainClass := Some("org.sufrin.glyph.tests.GlyphBook.GlyphBook")
 assembly / assemblyMergeStrategy := {
   case PathList("io", "github", "humbleui", "skija", "impl", "Cleanable.class") =>
         MergeStrategy.discard       // the pre version 9 variant

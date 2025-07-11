@@ -30,7 +30,7 @@ object Bridge extends Bridge {
       val classLoader = new URLClassLoader(Array(codeURL), this.getClass.getClassLoader)
 
       // Load the class by name
-      val applicationClass = classLoader.loadClass("org.sufrin.glyph.tests.demonstrationBook.Pages") // fully qualified name
+      val applicationClass = classLoader.loadClass("org.sufrin.glyph.tests.GlyphBook.GlyphBook") // fully qualified name
 
       // Get the `main` method (static, takes Array[String])
       val mainMethod: Method = applicationClass.getMethod("main", classOf[Array[String]])

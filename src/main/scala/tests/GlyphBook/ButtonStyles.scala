@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package tests.demonstrationBook
+package tests.GlyphBook
 
 import styled.{Book, BookSheet, RadioCheckBoxes, TextButton}
 import NaturalSize.{transparent, Col, Grid, Row}

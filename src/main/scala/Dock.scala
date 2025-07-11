@@ -1,11 +1,13 @@
 package org.sufrin.glyph
-import java.awt.{TrayIcon}
+import org.sufrin.glyph.unstyled.static.FilledRect
+
+import java.awt.TrayIcon
 import java.awt.event.{MouseEvent, MouseListener}
 import java.io.ByteArrayInputStream
 
 /**
  * A proxy class for system tray and dock. A simple use  is exemplified in
- * the `Pages` `Application`, where the dock is assigned an icon made from a simple text glyph.
+ * the `GlyphBook` `Application`, where the dock is assigned an icon made from a simple text glyph.
  *
  * A more ambitious use appears in the `Example3` `Application`, where
  * a system tray icon showing "3" is made that responds to a mouse click
@@ -28,14 +30,18 @@ import java.io.ByteArrayInputStream
  */
 
 class Dock() {
+  var glyph: Glyph = FilledRect(20,10, Brushes.red)
+
   lazy val taskBar = java.awt.Taskbar.getTaskbar
 
   def setProgressValue(percentage: Int): Unit =
     if (java.awt.Taskbar.isTaskbarSupported) taskBar.setProgressValue(percentage)
 
   /** Set the dock icon image from the given glyph */
-  def setGlyph(glyph: Glyph): Unit =
+  def setGlyph(glyph: Glyph): Unit = {
     if (java.awt.Taskbar.isTaskbarSupported) taskBar.setIconImage(Dock.AWTImage(glyph))
+    this.glyph = glyph
+  }
 
   lazy val tray: java.awt.SystemTray = java.awt.SystemTray.getSystemTray
 

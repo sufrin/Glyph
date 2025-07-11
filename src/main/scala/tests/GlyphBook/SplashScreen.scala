@@ -1,10 +1,12 @@
 package org.sufrin.glyph
-package tests.demonstrationBook
+package tests.GlyphBook
 
 import styled.{BookSheet, Label, RadioCheckBoxes, TextButton}
 import NaturalSize._
 import styles.decoration
 import Location.South
+
+import org.sufrin.glyph.unstyled.Text
 
 class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyphXML.Translation) {
   implicit val  buttons: StyleSheet =
@@ -37,10 +39,12 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
         theRootGlyph
       }
 
-      def title = s"""Sampler -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
+      def title = s"""Glyph Book -scale=$scaleFactor ${extraArgs.mkString(", ")}"""
 
-      override
-      val defaultIconPath: Option[String] = Some("./flag.png")
+
+      override val dock = new Dock() {
+        setGlyph(styled.Label("Glyph\nBook")(sheet.pageSheet))
+      }
 
       override def whenStarted(): Unit = {
         super.whenStarted()
@@ -50,7 +54,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
 
       def confirmCloseOn(glyph: Glyph)(window: Window): Unit = {
         import styled.windowdialogues.Dialogue.OKNO
-        // TODO: windowdialogues need set software scale more carefully than now if autoScale
+        // TODO: windowdialogues should set software scale more carefully than now if autoScale
         val prompt = Row(align=Mid)(PolygonLibrary.closeButtonGlyph scaled 5 enlarged 50,
           Label("Do you want to Exit?")(sheet.pageSheet) scaled 1.5f
         ).enlarged(50)
@@ -100,7 +104,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
         <MACRO key="strut"><fill width="1*width" bg="lightGrey"/></MACRO>
         <MACRO key="centered"><row width="1*width"><fill/>&BODY;<fill/></row></MACRO>
         <p>
-        The <b>Glyph Sampler</b> button starts a completely new instance of the GUI.
+        The <b>Glyph Book</b> button starts a completely new instance of the GUI.
         The checkboxes below it determine what tab layout and scale the new instance will have; as well
         as what screen (if there are many) it will be shown on at first.
       </p>
@@ -152,7 +156,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
     ) . enlarged(15) . edged(Brushes.blue)
 
     val GUI: Glyph = Col(align=Center)(
-      TextButton(" Glyph Sampler ") { _ => thisApplication.main(Array(scale, style, screen))} (splashStyle.copy(fontScale=3f)),
+      TextButton(" Glyph Book ") { _ => thisApplication.main(Array(scale, style, screen))} (splashStyle.copy(fontScale=3f)),
       splashStyle.vFill(),
       styleDefinitionButtons,
       splashStyle.vFill(),
