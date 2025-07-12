@@ -1402,18 +1402,20 @@ that role in detail here.}
 The following straightforward example starts by declaring a common attribute for
 \Scala{<p>} elements, then defines three glyphs. 
 
-\begin{scala}
+\verbatimfamily{\sffamily}
+\verbatimsize{\footnotesize\color{blue}}
+\begin{verbatim}
  import glyphXML.Language._
  implicit val style: StyleSheet = StyleSheet()
  val declare: Glyph = <ATTRIBUTES key="tag:p" enlarged="20px"/>
 
  val gxml1: Glyph =
-     <p width="20em" align="left" frame="red/2" rotated="2">
+     <p width="20em" align="left" frame="red.2" rotated="2">
        Hello world
      </p>
 
  val gxml2: Glyph =
-     <p width="20em" align="left" frame="black/3-5-5">
+     <p width="20em" align="left" frame="black.3.dashed(5,5)">
         Hello world! Is this the very best you can do?
      </p>
 
@@ -1433,7 +1435,7 @@ The following straightforward example starts by declaring a common attribute for
         different lang_uage.
      </p>
    </div>
-\end{scala}
+\end{verbatim}
 
 Notice the various forms of decoration/framing that are specified for these two
 examples.
@@ -1786,10 +1788,10 @@ object ColourButton {
 The very best way of getting to grips with \textbf{Glyph} is to
 study the source of one or two of the examples included in the
 \Scala{tests} package: particularly the glyph sampler code from
-\Scala{tests.demonstrationBook}, and the smaller
+\Scala{tests.GlyphBook}, and the smaller
 \Scala{tests.CalculatorExample}.  Additional examples worth looking
 at are \Scala{ResizeableWindowTest} and \Scala{ResizeAndSplitTest}.
-They demonstrate sophisticated use of \Scala{glyphXML} 
+These demonstrate sophisticated use of \Scala{glyphXML} 
 and the \Scala{Resizeable} container to build resizeable GUIs,
 
 The following few examples are considerably smaller, and not
@@ -1917,10 +1919,7 @@ caption is red, then the button's reaction method is invoked. Here,
 each button's reaction changes the colour \Scala{labelBackground} that
 was used to paint the label's background.
 
-\begin{center}
-\pdffig[scale=0.30]{PNG/example2b}
-\pdffig[scale=0.30]{PNG/example2c}
-\end{center}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
@@ -2021,7 +2020,7 @@ were built with styles specifying different button appearances.
     buttonDecoration =
       styles.decoration.Framed( fg=darkGrey(cap=ROUND, width=6)
                               , bg=grey2
-                              , radiusFactor = 0.3f)
+                              , radius = 0.1f)
 \end{scala}
 
 \pdffig[scale=0.3]{PNG/example3b}
@@ -2149,7 +2148,7 @@ def  format(d: Double): String = f"$d%.5g"
 \S{Images of GUIs}
 
 Figures \ref{Splash} to \ref{EtcCheckBox} show images of a few pages
-of the \texttt{tests.GlyphBook.GlyphBook} example. They 
+of the \Scala{tests.GlyphBook} example. They 
 illustrate some of the available tools in use, and their source
 code shows how the tools can be used. Figures \ref{DynamicResizing1} --
 \ref{DynamicResizing5} show a couple of dynamically reconfigurable GUIs.
@@ -2308,12 +2307,12 @@ object ResizeableWindowTest extends Application {
 \S{What next?}
 If you have found these example interfaces interesting and would like to
 study one or two larger working examples that use many features
-of \Glyph then \Scala{tests.GlyphBook.GlyphBook} is a
+of \Glyph then \Scala{tests.GlyphBook} is a
 good place to start. 
 
 The package \Scala{styled} defines a plethora of styled glyphs,
 both reactive and passive; and the \Scala{styled.overlaydialogues}
-and \Scala{styleded.windowdialogues} packages show how to use the
+and \Scala{styled.windowdialogues} packages show how to use the
 \Glyph's basic features to build popup dialogues and menus.
 
 The package \Scala{glyphXML} was a latecomer to this party. It

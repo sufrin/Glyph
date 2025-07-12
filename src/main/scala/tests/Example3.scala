@@ -48,7 +48,7 @@ object Example3 extends Application with Example3Interface  {
       labelForegroundBrush  = white,
       labelFontFamily       = FontFamily("Courier"),
       labelFontSize         = 32,
-      buttonDecoration      = styles.decoration.Edged(blue(cap=ROUND, width=18))
+      buttonDecoration      = styles.decoration.Framed(blue(cap=ROUND, width=18))
     )
 }
 
