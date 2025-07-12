@@ -546,7 +546,7 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
         ),
       ex, ex,
       Animation.stage, ex, ex,
-      Grid(width=2, padx=10, pady=10).Table(
+      Grid(width=2, padx=10, pady=10).table(
         DFIELDL.framed(), DFIELDR.framed(),
         ), ex,
         SHOWD, ex,  SHOWT, ex,

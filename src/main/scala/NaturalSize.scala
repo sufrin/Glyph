@@ -49,7 +49,7 @@ object NaturalSize {
      * {{{ 0.0 <= proportion <= 1.0 && theGlyphs.nonEmpty }}}
      */
     def aligned(proportion: Float, theGlyphs: Seq[Glyph], atBaseline: Boolean = false): Composite = {
-      require(theGlyphs.nonEmpty, "Row glyph sequence is empty")
+      //require(theGlyphs.nonEmpty, "Row glyph sequence is empty")
       val height = Measure.maxHeight(theGlyphs)
       val width = Measure.totalWidth(theGlyphs)
       val maxWidth = skip+Measure.maxWidth(theGlyphs)
@@ -136,7 +136,7 @@ object NaturalSize {
      */
 
     def aligned(proportion: Float, theGlyphs: Seq[Glyph]): Composite = {
-      require(theGlyphs.nonEmpty, "Col glyph sequence is empty")
+      //require(theGlyphs.nonEmpty, "Col glyph sequence is empty")
       val width = Measure.maxWidth(theGlyphs)
       val height = Measure.totalHeight(theGlyphs)
       val maxHeight = skip+Measure.maxHeight(theGlyphs)
@@ -240,15 +240,17 @@ object NaturalSize {
   }
 
   import GlyphTypes.Scalar
-
-    /*
+    /**
      *  All `GridGenerators` methods with `width`, and/or `height`, and 'glyphs` formal parameters interpret
      *  glyphs as follows:
-     *  if there's a `width` parameter then glyphs is interpreted as a catenation of rows of the given `width`;
-     *  if there's a `height` parameter then glyphs is interpreted as a catenation of columns of the given `height`.
-     *  if there are both `width` and `height` parameters, then if one argument is omitted,
-     *  `glyphs` is interpreted as if the method had only one formal paramater; if
-     *  both arguments are omitted then `width` is taken to be `ceiling(sqrt(glyphs.length))`.
+     *
+     *    * if there's a `width` parameter then glyphs is interpreted as a catenation of rows of the given `width`;
+     *
+     *    * if there's a `height` parameter then glyphs is interpreted as a catenation of columns of the given `height`.
+     *
+     *    * if there are both `width` and `height` parameters, then if one argument is omitted,
+     *      `glyphs` is interpreted as if the method had only one formal paramater; if
+     *      both arguments are omitted then `width` is taken to be `ceiling(sqrt(glyphs.length))`.
      *
      */
   trait GridGenerators {
@@ -266,7 +268,7 @@ object NaturalSize {
        * them all.
        */
     def grid(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Glyph = {
-      require(glyphs.nonEmpty, "Grid glyph sequence is empty")
+      //require(glyphs.nonEmpty, "Grid glyph sequence is empty")
       (width>0, height>0) match {
         case (true, false) => uniformlyByRows(width)(glyphs)
         case (false, true) => uniformlyByCols(height)(glyphs)
@@ -288,15 +290,15 @@ object NaturalSize {
      *  Each col will be as wide as its widest element;
      *  each row will be as high as its highest element.
      */
-    def Table(glyph: Glyph, glyphs: Glyph*): Glyph = table(width, height)(glyph::glyphs.toList)
-    def Table(glyphs: Seq[Glyph]): Glyph = table(width, height)(glyphs)
+    def table(glyph: Glyph, glyphs: Glyph*): Glyph = table(width, height)(glyph::glyphs.toList)
+    def table(glyphs: Seq[Glyph]): Glyph = table(width, height)(glyphs)
 
     /**
      *  Each col will be as wide as its widest element;
      *  each row will be as high as its highest element.
      */
     def table(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Glyph = {
-      require(glyphs.nonEmpty, "Table glyph sequence is empty")
+      //(glyphs.nonEmpty, "Table glyph sequence is empty")
       val (rowLength, transpose)   =
           if (width>0) (width, false)
           else
@@ -347,18 +349,16 @@ object NaturalSize {
        */
     def rows(glyphs: Seq[Glyph]): Glyph = table(width=width, height=0)(glyphs)
     def rows(glyph: Glyph, glyphs: Glyph*): Glyph = table(width=width, height=0)(glyph::glyphs.toList)
-    def Rows(glyphs: Seq[Glyph]): Glyph = table(width=width, height=0)(glyphs)
-    def Rows(glyph: Glyph, glyphs: Glyph*): Glyph = table(width=width, height=0)(glyph::glyphs.toList)
+
 
 
       /**
-       * Glyphs are arranged as a grid of consrtant-width columns, dimensioned to (just) fit
+       * Glyphs are arranged as a grid of constant-width columns, dimensioned to (just) fit
        * all cells in each column.
        */
     def cols(glyphs: Seq[Glyph]): Glyph = table(width=0, height=height)(glyphs)
     def cols(glyph: Glyph, glyphs: Glyph*): Glyph = table(width=0, height=height)(glyph::glyphs.toList)
-    def Cols(glyphs: Seq[Glyph]): Glyph = table(width=0, height=height)(glyphs)
-    def Cols(glyph: Glyph, glyphs: Glyph*): Glyph = table(width=0, height=height)(glyph::glyphs.toList)
+
 
     private def uniformlyByRows(width: Int)(glyphs: Seq[Glyph]): Glyph = {
       val maxh = pady + Measure.maxHeight(glyphs)

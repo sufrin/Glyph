@@ -20,7 +20,7 @@ import org.sufrin.glyph.unstyled.static.{FilledPolygon, INVISIBLE}
 import org.sufrin.glyph.Brush.{BUTT, ROUND, SQUARE}
 import org.sufrin.glyph.Colour.HSV
 import org.sufrin.glyph.NaturalSize.{transparent, Col, Grid, Row}
-import org.sufrin.glyph.NaturalSize.Grid.Table
+import org.sufrin.glyph.NaturalSize.Grid.table
 import org.sufrin.glyph.styled.windowdialogues.Dialogue.OK
 import org.sufrin.glyph.unstyled.Text
 

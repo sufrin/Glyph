@@ -454,7 +454,8 @@ by align:
 \item \Scala{Left}   --   left edges of the bounding boxes aligned
 \item \Scala{Right}  --   right edges of the bounding boxes aligned
 \item \Scala{Center}  --  centre\footnote{Yes, I know!
-Dr. Webster has a lot to answer for.} lines of the bounding boxes aligned
+Dr. Webster has a lot to answer for. But you can spell it
+\Scala{Centre} if you want.} lines of the bounding boxes aligned
 \end{itemize}
 
 If \Scala{uniform}, then the glyphs are all treated as if their
@@ -463,7 +464,7 @@ each glyph is treated as if its height were \Scala{glyph.h+skip}, thereby
 leaving a little vertical space between them in the column.
 
 If \Scala{frame} is a nontrivial brush (ie with $alpha>0$), then horizontal lines
-with foreground frame are drawn between glyphs.
+with foreground \Scala{frame} are drawn between glyphs.
 
 The \Scala{Row} composition API is analogous.
 \begin{scala}
@@ -538,8 +539,8 @@ Virginia, we probably should have called this \Scala{Overlay}!}
 compositions of a point and a pair of rectangles; respectively:
 \begin{scala}
         Concentric(rowAlign=Mid, colAlign=Center)(p,b,r)
-        Concentric(rowAlign=Mid, colAlign=Right)(p,b,r)
         Concentric(rowAlign=Top, colAlign=Center)(p,b,r)      
+        Concentric(rowAlign=Mid, colAlign=Right)(p,b,r)
 \end{scala}
 
 \begin{center}
@@ -595,7 +596,7 @@ The parameters \Scala{width} and \Scala{height}  are used to interpret
      \item  if there's a \Scala{width} parameter then \Scala{glyphs} is interpreted as a catenation of rows of the given \Scala{width}
      \item  if there's a \Scala{height} parameter then \Scala{glyphs} is interpreted as a catenation of columns of the given \Scala{height}
      \item  if there are neither \Scala{width} nor \Scala{height} parameters, then:
-            \Scala{glyphs} is interpreted as \Scala{width} were \Scala{ceiling(sqrt(glyphs.length))}
+            \Scala{glyphs} is interpreted as if \Scala{width} were \Scala{ceiling(sqrt(glyphs.length))}
 \end{enumerate}
 
 
@@ -616,11 +617,38 @@ analogously  \Scala{cols} presents a grid of column data with rows of uniform ve
       before their normal \Scala{glyphs} parameters: if they appear these take precedence over
       the corresponding parameters to \Scala{Grid}
 \end{itemize}
-Figures \ref{gridorder}, \ref{gridtable} and  \ref{gridcellFit} illustrate several ways of using
-the \Scala{Grid} methods \Scala{grid}, and \Scala{table}. 
+
+Figure \ref{haddock} shows the \Scala{GUI} glyph -- derived as follows:
+
+\let\scalasize\scriptsize
+\begin{scala}
+ def glyphs = "Bb Cc DdDdDd\ndddddddd Ee Ff Gg Hh".split(' ').toList.map(Label(_))
+ def nums = "1 2 3 4 5 6 7 8 9 10 11 12 13 14".split(' ').toList.map(Label(_))
+
+ val GUI: Glyph =
+ Col(skip=8, align=Centre)(
+   Grid(width=2,  fg=blackLine, padx=10, pady=10)(Label("Grid\nw=2")::glyphs),
+   Grid(width=4, bg=yellow, fg=redLine, padx=10, pady=10)(Label("Grid\nw=4")::glyphs),
+   Grid(height=2, fg=greenLine, padx=10, pady=10).table(Label("Grid\nh=2\ntable")::glyphs),
+   Grid(width=4, bg=yellow, fg=brownLine, padx=10, pady=10).table(Label("Grid\nw=4\ntable")::glyphs),
+   ).enlarged(10).framed(brownFrame).enlarged(20) beside 
+ Col(skip=8, align=Centre)(
+   Grid(width=5, fg=greenLine, padx=10, pady=10)(Label("Grid\nw=5")::nums),
+   Grid(height=3, fg=greenLine, padx=10, pady=10)(Label("Grid\nh=3")::nums),
+   Grid(width=5, fg=greenLine, padx=10, pady=10).rows(Label("Grid\nw=5\nrows")::nums),
+   Grid(height=3, fg=greenLine, padx=10, pady=10).cols(Label("Grid\nh=3\ncols")::nums),
+   Grid(height=3, fg=greenLine, padx=10, pady=10).table(Label("Grid\nh=3\ntable")::nums),
+   ).enlarged(10).framed(brownFrame).enlarged(20)
+\end{scala}
+
+\PNGFIGURE[scale=0.35]{haddock}{Varieties of Grid}
+
+
+Figure \ref{gridorder} shows the difference between uniformly-sized cells and adequately-sized cells.
 
 
 
+\SSS{Adjusting content to cell sizes}
 
 Individual glyphs in a grid can be made to fit their cell by
 various methods, including shifting in various directions within the cell, scaling to
@@ -645,19 +673,21 @@ case object Stretch        extends Method // scaled up to fit the cell
 case object Enlarge        extends Method // centred in the cell
 \end{scala}
 
-In each case the grid is composed by:
+Figure \ref{gridcellFit} shows a few examples of an individual cell's content being made to fit
+its (uniformly sized) cell. In each case the grid is composed by:
 \begin{scala}
-Grid(fg = red(width=0), padx=10, pady=10).grid(width=3)(data)
+Grid(width=3, fg = red(width=0), padx=10, pady=10)(...)
 \end{scala}
 
-\PNGFIGURE[scale=0.35]{gridorder}{Tables made with \Scala{.grid(width = 1)(data)}
-                                  and \Scala{.rows(width = 1)(data)}}
+\PNGFIGURE[scale=0.35]{gridorder}{Tables made with \Scala{.grid(width = 1)(...)}
+                                  and \Scala{.rows(width = 1)(...)}}
 
 
-\PNGFIGURE[scale=0.5]{gridtable}{Table presentations of a grid}
+%\PNGFIGURE[scale=0.5]{gridtable}{Table presentations of a grid}
 
 
 \PNGFIGURE[scale=0.5]{gridcellFit}{Individual cell placement with \texttt{fitToCell}}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
