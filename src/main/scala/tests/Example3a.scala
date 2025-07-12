@@ -14,7 +14,7 @@ object Example3a extends Application  with Example3Interface {
     labelFontSize         = 32,
     buttonBackgroundBrush = grey2,
     buttonForegroundBrush = black,
-    buttonDecoration      = styles.decoration.Framed(fg=darkGrey(cap=ROUND, width=6), bg=grey2, radius = 0.3f)
+    buttonDecoration      = styles.decoration.RoundFramed(fg=darkGrey(cap=ROUND, width=6), bg=grey2, radius = 0.1f)
   )
   override def title: String = "Example 3a"
   override val dock = Dock("eg3a")
