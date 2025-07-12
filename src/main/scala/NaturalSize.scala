@@ -49,7 +49,7 @@ object NaturalSize {
      * {{{ 0.0 <= proportion <= 1.0 && theGlyphs.nonEmpty }}}
      */
     def aligned(proportion: Float, theGlyphs: Seq[Glyph], atBaseline: Boolean = false): Composite = {
-      // require(theGlyphs.nonEmpty)
+      require(theGlyphs.nonEmpty, "Row glyph sequence is empty")
       val height = Measure.maxHeight(theGlyphs)
       val width = Measure.totalWidth(theGlyphs)
       val maxWidth = skip+Measure.maxWidth(theGlyphs)
@@ -136,7 +136,7 @@ object NaturalSize {
      */
 
     def aligned(proportion: Float, theGlyphs: Seq[Glyph]): Composite = {
-      //require(theGlyphs.nonEmpty)
+      require(theGlyphs.nonEmpty, "Col glyph sequence is empty")
       val width = Measure.maxWidth(theGlyphs)
       val height = Measure.totalHeight(theGlyphs)
       val maxHeight = skip+Measure.maxHeight(theGlyphs)
@@ -266,6 +266,7 @@ object NaturalSize {
        * them all.
        */
     def grid(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Glyph = {
+      require(glyphs.nonEmpty, "Grid glyph sequence is empty")
       (width>0, height>0) match {
         case (true, false) => uniformlyByRows(width)(glyphs)
         case (false, true) => uniformlyByCols(height)(glyphs)
@@ -295,6 +296,7 @@ object NaturalSize {
      *  each row will be as high as its highest element.
      */
     def table(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Glyph = {
+      require(glyphs.nonEmpty, "Table glyph sequence is empty")
       val (rowLength, transpose)   =
           if (width>0) (width, false)
           else
@@ -336,7 +338,7 @@ object NaturalSize {
         }
         def copy(fg: Brush = fg, bg: Brush = bg): Glyph = table(height)(theGlyphs.map(_.copy(fg, bg)))
       }
-      if (fg.getAlpha!=0) core.edged(fg) else core
+      if (fg.getAlpha!=0 && fg.strokeWidth<=2) core.edged(fg) else core
     }
 
       /**
@@ -392,7 +394,7 @@ object NaturalSize {
         }
         def copy(fg: Brush = fg, bg: Brush = bg): Glyph = uniformlyByRows(width)(theGlyphs.map(_.copy()))
       }
-      if (fg.getAlpha!=0) core.edged(fg) else core
+      if (fg.getAlpha!=0 && fg.strokeWidth<=2) core.edged(fg) else core
     }
 
 
@@ -430,15 +432,8 @@ object NaturalSize {
         }
         def copy(fg: Brush = fg, bg: Brush = bg): Glyph = uniformlyByCols(height)(theGlyphs.map(_.copy()))
       }
-      if ( (fg.getAlpha != 0)) core.edged(fg) else core
+      if (fg.getAlpha!=0 && fg.strokeWidth<=2) core.edged(fg) else core
     }
-
-    def Width(width: Int)(theGlyphs: Glyph*): Glyph =
-        uniformlyByRows(width)(theGlyphs)
-
-    def Height(height: Int)(theGlyphs: Glyph*): Glyph =
-        uniformlyByCols(height)(theGlyphs)
-
   }
 
   object Grid extends GridGenerators {

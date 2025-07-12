@@ -17,40 +17,45 @@ import scala.util.matching.Regex.{MatchData, MatchIterator}
  *       widths, and caps is unnecessary.
  */
 trait DefaultBrushes {
-
   import io.github.humbleui.skija.PaintStrokeCap
+
+  def LineBrush(color: String): Brush = Brush(s"$color.2.round.stroke")
+  def FrameBrush(color: String): Brush = Brush(s"$color.5.round.stroke")
   val SQUARE     = PaintStrokeCap.SQUARE
   val ROUND      = PaintStrokeCap.ROUND
   val BUTT       = PaintStrokeCap.BUTT
   val red        = Brush("red.0.fill")
-  val redLine    = Brush("red.2.square.fill")
-  val redWide    = Brush("red.25.fill.round")
-  val redFrame   = Brush("red.25.fill.round")
+  val redLine    = LineBrush("red")
+  val redFrame   = FrameBrush("red")
+  val pink       = Brush("pink.0.fill")
+  val pinkLine   = LineBrush("pink")
+  val pinkFrame  = FrameBrush("pink")
   val blue       = Brush("blue.0.fill")
-  val blueLine   = Brush("blue.2.round.fill")
-  val blueFrame  = Brush("blue.5.round.fill")
-  val green      = Brush("green.fill")
-  val greenLine  = Brush("green.2.round.fill")
-  val greenFrame = Brush("green.5.round.fill")
-  val white      = Brush("white.fill")
-  val whiteFrame = Brush("white.5.round")
-  val black      = Brush("black.fill")
-  val blackLine  = Brush("black.2.square.fill")
-  val blackFrame = Brush("black.5.round.fill")
-  val transparent= Brush("transparent")
+  val blueLine   = LineBrush("blue")
+  val blueFrame  = FrameBrush("blue")
+  val green      = Brush("green.0.fill")
+  val greenLine  = LineBrush("green")
+  val greenFrame = FrameBrush("green")
+  val white      = Brush("white.0.fill")
+  val whiteLine  = LineBrush("white")
+  val whiteFrame = FrameBrush("white")
+  val black      = Brush("black.0.fill")
+  val blackLine  = LineBrush("black")
+  val blackFrame = FrameBrush("black")
+  val transparent= Brush("transparent.0")
   val invisible  = Brush("transparent.1")
   val lightGrey  = Brush("lightGrey")
   val darkGrey   = Brush("darkGrey")
   val grey1      = Brush(s"grey1")
   val grey2      = Brush(s"grey2")
   val grey3      = Brush(s"grey3")
+  val brown      = Brush("brown.0")
+  val brownLine  = LineBrush("brown")
+  val brownFrame = FrameBrush("brown")
   val yellow     = Brush("yellow")
-  val yellowLine = Brush("yellow.2.square.stroke")
-  val yellowFrame= Brush("yellow.5.square.stroke")
-  /** Using the new Brush API */
-  val yellowHuge = Brush("yellow.75.round")
-  val brown: Brush = Brush("brown")(color=0xFF964b00, width=0f)
-
+  val yellowLine = LineBrush("yellow")
+  val yellowFrame= FrameBrush("yellow")
+  val yellowHuge = Brush("yellow.75.round.stroke")
 }
 
 

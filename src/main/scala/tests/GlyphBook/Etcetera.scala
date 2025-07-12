@@ -327,7 +327,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           t1,     t2 scaled 1.7f,    t3.enlarged(15)
         )).enlarged(40f).edged(black), ex, ex,
 
-        NaturalSize.Grid.Width(1)(
+        NaturalSize.Grid(width=1)(
           Col(align=Center)(
             Label("A TextToggle can have multi-line legends in either or both states."), ex,
             TextToggle(whenTrue = ("True"), whenFalse = ("Not True\n(or true)"), initially = true) { _ => }, ex,

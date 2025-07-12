@@ -54,6 +54,13 @@ case object Center extends Alignment {
 
 }
 
+case object Centre extends Alignment {
+  val (left, right, last): Fills = (30000f, 30000f, 30000f)
+  override val proportion: Float = 0.5f
+}
+
+
+
 case object Justify extends Alignment {
   val (left, right, last): Fills = (0f, 0f, 30000f)
   override val proportion: Float = 1f // meaningless when Column setting
