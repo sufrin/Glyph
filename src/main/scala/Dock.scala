@@ -33,7 +33,7 @@ import java.io.ByteArrayInputStream
 class Dock() {
   import Dock._
 
-  var glyph: Glyph = FilledRect(20,10, Brushes.red)
+  var glyph: Glyph = null
 
   lazy val taskBar = java.awt.Taskbar.getTaskbar
 
@@ -41,9 +41,9 @@ class Dock() {
     if (java.awt.Taskbar.isTaskbarSupported) taskBar.setProgressValue(percentage)
 
   /** Set the dock icon image from the given glyph */
-  def setGlyph(glyph: Glyph): Unit = {
-    if (java.awt.Taskbar.isTaskbarSupported) taskBar.setIconImage(Dock.AWTImage(glyph))
+  def setGlyph(glyph: Glyph = Dock.defaultDockGlyph): Unit = {
     this.glyph = glyph
+    if (java.awt.Taskbar.isTaskbarSupported) taskBar.setIconImage(Dock.AWTImage(this.glyph))
   }
 
   lazy val systemTray: java.awt.SystemTray = java.awt.SystemTray.getSystemTray
@@ -102,6 +102,14 @@ object Dock {
     //ic.setImageAutoSize(true)
     TrayIcon(ic)
   } else TrayIcon(null)
+
+  val defaultDockGlyph: Glyph =
+    unstyled.Label(" Glyph \n APP \ndock", font=FontFamily("Courier").makeFont(size=10),
+                   fg=Brushes.red, bg=Brushes.yellow).
+      framed(fg=Brushes.redLine, bg=Brushes.yellow, radius=10)
+
+  /** A  `Dock` with the default (static) icon */
+  def apply(): Dock = apply(defaultDockGlyph)
 
   /** A  `Dock` whose icon is derived from `iconGlyph` */
   def apply(iconGlyph: Glyph): Dock = new Dock { setGlyph(iconGlyph) }

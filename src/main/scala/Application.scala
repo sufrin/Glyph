@@ -61,7 +61,7 @@ trait Application {
   val defaultIconPath: Option[String] = None
 
   /** The dock/system-tray proxy */
-  val dock: Dock = new Dock { setGlyph(Rect(25, 25, bg=Brushes.yellow, fg=Brushes.blue(width=1, cap=PaintStrokeCap.ROUND).dashed(4,4))) }
+  val dock: Dock = Dock()
 
   val extraArgs = new ArrayBuffer[String]()
   var useScreen: Char = 'p'
