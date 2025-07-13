@@ -35,12 +35,12 @@ object Example3 extends Application with Example3Interface  {
     override def title: String = "Example 3"
 
     override val dock: Dock = new Dock() {
-        val icon = trayIcon(Text("3", fg=Brushes.red, bg=Brushes.yellow))
+        val icon = trayIcon(Text("\u2462", fg=Brushes.red, bg=Brushes.yellow).framed(blue))
         icon.handleClick {
           location =>
             styled.windowdialogues.Dialogue.FLASH(styled.Label("You clicked\non the system\ntray icon")).OnRootOf(GUI, location).start()
         }
-      setGlyph(Text("eg3", fg=Brushes.red, bg=Brushes.yellow))
+      setGlyph(Text("\u24e7\u2462", fg=Brushes.red, bg=Brushes.yellow).framed(red(width=2)))
     }
 
     implicit val style: StyleSheet = StyleSheet(
@@ -48,7 +48,7 @@ object Example3 extends Application with Example3Interface  {
       labelForegroundBrush  = white,
       labelFontFamily       = FontFamily("Courier"),
       labelFontSize         = 32,
-      buttonDecoration      = styles.decoration.Framed(blue(cap=ROUND, width=18))
+      buttonDecoration      = styles.decoration.RoundFramed(fg=blue(cap=ROUND, width=18), enlarge=0, radius=0.01f),
     )
 }
 

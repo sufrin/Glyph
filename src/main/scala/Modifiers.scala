@@ -70,6 +70,8 @@ object Modifiers {
     case _  => 0
   }
 
+  val empty: Bitmap = Bitmap(0)
+
   implicit def BitmapOfEvent(event: Event) : Bitmap = Bitmap(Modifiers(event))
 
   implicit class Bitmap(val modifiers: Int) extends AnyVal {

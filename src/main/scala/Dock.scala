@@ -11,16 +11,16 @@ import java.io.ByteArrayInputStream
  * the `GlyphBook` `Application`, where the dock is assigned an icon made from a simple text glyph.
  *
  * A more ambitious use appears in the `Example3` `Application`, where
- * a system tray icon showing "3" is made that responds to a mouse click
+ * a system tray icon showing "(3)" is made that responds to a mouse click
  * by popping up a FLASH window dialogue "near" the tray icon.
  * {{{
  * override val dock: Dock = new Dock() {
- *         val icon = trayIcon(Text("3", fg=Brushes.red, bg=Brushes.yellow))
+ *         val icon = trayIcon(Text("\u2462", fg=Brushes.red, bg=Brushes.yellow).framed(blue))
  *         icon.handleClick {
  *           location =>
  *             styled.windowdialogues.Dialogue.FLASH(styled.Label("You clicked\non the system\ntray icon")).OnRootOf(GUI, location).start()
  *         }
- *         setGlyph(Text("eg3"))
+ *       setGlyph(Text("\u24e7\u2462", fg=Brushes.red, bg=Brushes.yellow).framed(red(width=2)))
  *     }
  * }}}
  *
@@ -85,6 +85,9 @@ object Dock {
           def mouseExited(e: MouseEvent): Unit = {}
         })
       }
+
+    def remove(): Unit =
+      if (isDefined) java.awt.SystemTray.getSystemTray.remove(icon)
   }
 
   /** Returns the `AWT Image` derived from glyph` (png encoding) */

@@ -17,7 +17,7 @@ object Example3a extends Application  with Example3Interface {
     buttonDecoration      = styles.decoration.RoundFramed(fg=darkGrey(cap=ROUND, width=6), bg=grey2, radius = 0.1f)
   )
   override def title: String = "Example 3a"
-  override val dock = Dock("eg3a")
+  override val dock = Dock("Example\n3a")
 }
 
 
@@ -33,7 +33,7 @@ object Example3b extends Application  with Example3Interface {
     buttonDecoration      = styles.decoration.Blurred(fg=yellow, bg=transparent, 16, 5)
   )
   override def title: String = "Example 3b"
-  override val dock = Dock("eg3b")
+  override val dock = Dock("Example\n3b")
 }
 
 object Example3c extends Application  with Example3Interface {
@@ -47,6 +47,7 @@ object Example3c extends Application  with Example3Interface {
     buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=transparent, 16, 5)
   )
   override def title: String = "Example 3c"
+  override val dock = Dock("Example\n3c")
 }
 
 /** Extending an interface to provide a clone button  */
@@ -83,7 +84,7 @@ object Example3d extends Application {
   val GUI: Glyph = new Example3dInterface(style).GUI beside (cloneButton rotated 1)
 
   override def title: String = "Example 3d"
-  override val dock = Dock("eg3d")
+  override val dock = Dock("Example\n3d")
 }
 
 
@@ -116,7 +117,7 @@ object Example3e extends Application { thisApplication =>
   val GUI: Glyph = new Example3dInterface(style).GUI beside (cloneButton rotated 1)
 
   override def title: String = "Example 3e"
-  override val dock = Dock("eg3\ne")
+  override val dock = Dock("Example\n3e")
   locally { dock.trayIcon(unstyled.Label("3e", font=fallback.textFamily(12)), "Example3e") }
 
 
@@ -126,7 +127,8 @@ object Example3e extends Application { thisApplication =>
 }
 
 /**
- * As example 3e, but all windows have close-window confirm dialogues.
+ * As example 3e, but all windows have close-window confirm dialogues; and the system tray icon
+ * (if implemented) can be clicked -- one time only -- to clone the interface.
  */
 object Example3f extends Application { thisApplication =>
   def roundGreen: Brush = green().rounded(18)
@@ -141,7 +143,7 @@ object Example3f extends Application { thisApplication =>
     buttonDecoration      = styles.decoration.Shaded(fg=darkGrey, bg=transparent, 16, 5)
   )
 
-  val cloneButton: Glyph = styled.TextButton("Clone") {
+  val cloneButtonReaction: unstyled.reactive.Reaction = {
     _ =>
       val clone = new Application {
         override def title: String = "Example 3d clone"
@@ -154,10 +156,19 @@ object Example3f extends Application { thisApplication =>
       clone.main(Array())
   }
 
+  val cloneButton: Glyph = styled.TextButton("Clone")(cloneButtonReaction)
+
   val GUI: Glyph = new Example3dInterface(style).GUI beside (cloneButton rotated 1)
 
   override def title: String = "Example 3f"
-  override val dock = Dock("eg3f")
+  override val dock = Dock("Example\n3f")
+  locally {
+    val icon = dock.trayIcon(unstyled.Label("3f", font=fallback.textFamily(12)), "Example3f: click here to clone (one-time only)")
+    icon.handleClick {
+         _ =>
+           icon.remove()
+           cloneButtonReaction(Modifiers.empty)
+    } }
 
 
   override def whenStarted(): Unit = {
