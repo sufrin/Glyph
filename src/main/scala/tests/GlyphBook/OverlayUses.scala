@@ -348,7 +348,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
           This page tests annotation-style overlays, using the low-level annotation API.
         </p>
         <p>
-          The checkbox below enables/disables overlaying of a 10x10 grid on
+          The checkbox below enables/disables overlaying of a grid of 10x10 grids on
           the whole of the current window, no matter what page/subpage is showing.
           The grid can be useful when exploring the dimensions of
           glyphs.
@@ -362,7 +362,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translation: glyph
       <div width="45em" align="justify">
         <p>
           The button below pops up an annotation overlay that points to
-          the East wall of the window. The overlay stays up until its button is
+          the northwest corner of the window. The overlay stays up until its button is
           pressed, no matter what page/subpage of the app is showing.
         </p>
       </div>,ex,
