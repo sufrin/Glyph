@@ -65,15 +65,16 @@ object NumberUtils {
     rep
   }
 
+  import org.sufrin.utility.CharSequenceOperations._
+
   /**
    *   Pre: `s` consists only of hexadecimal characters
    *   @return the integer represented in hexadecimal by the string `s`.
    */
   def hexToInt(s: String): Int = {
-    s.toLowerCase.toList.map("0123456789abcdef".indexOf(_)).reduce (_ * 16 + _) // { (l,d) => (l * 16 + d)}
+    //s.toLowerCase.toList.map("0123456789abcdef".indexOf(_)).reduce (_ * 16 + _) // { (l,d) => (l * 16 + d)}
+    s.hexToInt.get
   }
-
-  import org.sufrin.utility.CharSequenceOperations._
 
   /**
    * @param s  \uxxxx (where the x are hex digits)
@@ -87,6 +88,5 @@ object NumberUtils {
    * @return the Long whose representation is s
    */
   def hexToLong(s: String): Long = s.hexToLong.get
-
 
 }
