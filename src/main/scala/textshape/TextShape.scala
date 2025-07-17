@@ -57,9 +57,9 @@ import org.sufrin.glyph.textshape.TextShape.{paragraphStyle, textStyle}
     //style.setHeightMode(HeightMode.ALL)
     //style.setHeight(1f)
     val metrics = font.getMetrics();
-    System.out.println("Ascent: " + metrics.getAscent());
-    System.out.println("Descent: " + metrics.getDescent());
-    System.out.println("Leading: " + metrics.getLeading());
+    println("Ascent: " + metrics.getAscent());
+    println("Descent: " + metrics.getDescent());
+    println("Leading: " + metrics.getLeading());
     style
   }
 }
