@@ -9,7 +9,6 @@ import io.github.humbleui.skija.{BlendMode, PaintMode, PaintStrokeCap, PathFillM
 import org.sufrin.glyph.Modifiers.{Alt, Bitmap, Command, Control, Pressed, Primary, Released, Secondary, Shift}
 import gesture._
 
-import io.github.humbleui.types.Rect
 import org.sufrin.{glyph, logging}
 import org.sufrin.glyph.Brushes.{black, blue, green, lightGrey, red, white, yellow, NonBrush}
 import org.sufrin.glyph.GlyphShape.{arrow, circle, composite, lineBetween, polygon, rect, FILL, PathShape, STROKE}
@@ -114,7 +113,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     var states, unstates: mutable.Stack[State] = new mutable.Stack[State]
 
     /** Push the current state onto the undo stack unless the command is mergeable (starts with a .) and matches the topmost culprit. */
-    def withState(command: String)(action: => Unit): Unit = {
+    def runUndoably(command: String)(action: => Unit): Unit = {
       if (command.startsWith(".") && states.nonEmpty && states.top.culprit == command) {
         //logging.Default.warn(s"$command merged.")
       } else {
@@ -155,14 +154,14 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     }
   } // UndoRedo
 
-  import UndoRedo.{undo, redo, withState}
+  import UndoRedo.{undo, redo, runUndoably}
 
   def undoHint() = UndoRedo.undoHint
   def redoHint() = UndoRedo.redoHint
 
   /** For external invocation of an action that requires feedback and redrawing */
   def fromButton(command: String = "")(action: => Unit): Unit = {
-    if (command != "unrecorded") withState(command) {
+    if (command != "unrecorded") runUndoably(command) {
       action
     } else action
     feedback()
@@ -197,7 +196,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
 
   /** Apply the transform, as if about the current centre  */
-  def transformSelected(transform: GlyphShape => GlyphShape, command: String=""): Unit = withState (command) {
+  def transformSelected(transform: GlyphShape => GlyphShape, command: String=""): Unit = runUndoably (command) {
     //cut = selection
     val mapped = selection.map {
       case v: TargetShape =>
@@ -232,7 +231,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
   /** Compose the selected elements in the order of selection  */
   def composeSelected(compose: GlyphShape => GlyphShape => GlyphShape): Unit =
-    if (selection.length>1) withState ("compose") {
+    if (selection.length>1) runUndoably ("compose") {
       val targets = selection
       val left = targets.map(_.x).min
       val top = targets.map(_.y).min
@@ -279,7 +278,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
   def zedOrder(): Unit = {
       @inline def area(t: TargetShape): Scalar = t.w*t.h
       def earlier(t1: TargetShape, t2: TargetShape): Boolean = area(t1)>=area(t2)
-      withState("zed") {
+      runUndoably("zed") {
         val targets = displayList.toSeq.sortWith(earlier)
         displayList.clear()
         displayList.enqueueAll(targets)
@@ -290,7 +289,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
    * Compose the selection, and place the result at the top left corner of the selection's bounding box.
    */
   def composeSelectedInPlace(): Unit =
-    if (selection.length>1) withState ("compose") {
+    if (selection.length>1) runUndoably ("compose") {
       val inPlace = new ComposedInPlace(selection)
       val Vec(x, y) = inPlace.topLeft
       val composite = new Composition(x, y, inPlace, selection).targetLocatedAt(x, y)
@@ -304,7 +303,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     if (selection.length == 1) {
       selection.head.shape match {
         case composition: Composition =>
-          withState ("decompose") {
+          runUndoably ("decompose") {
             displayList.dequeueAll(_.equals(selection.head))
             selection = composition.components
             displayList.enqueueAll(selection)
@@ -353,30 +352,30 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
           case Key.Z if CONTROL => undo()
 
           case Key.A if CONTROL =>
-            withState (if (COMPLEMENT) "complement" else "select") {
+            runUndoably (if (COMPLEMENT) "complement" else "select") {
               if (COMPLEMENT)
                 selection = displayList.toSeq.filter(_.notIn(selection))
               else
                 selection = displayList.toSeq
             }
 
-          case Key.HOME  => withState ("deselect") { selection = Seq.empty }
+          case Key.HOME  => runUndoably ("deselect") { selection = Seq.empty }
 
           case Key.X  =>
-            withState ("vertex") { addVertex(lastMouseDown) }
+            runUndoably ("vertex") { addVertex(lastMouseDown) }
 
           case Key.C if selection.length==1 =>
-            withState ("copy") { cut = selection }
+            runUndoably ("copy") { cut = selection }
 
           case Key.V if cut.length==1 =>
-            withState ("paste") {
+            runUndoably ("paste") {
               val shape = cut.head.shape
               addShape("paste", shape)
               selection = cut
             }
 
           case Key.DELETE | Key.BACKSPACE =>
-            withState (if (COMPLEMENT) "delete complement" else "delete") {
+            runUndoably (if (COMPLEMENT) "delete complement" else "delete") {
               if (COMPLEMENT) {
                 cut = displayList.toSeq.filter(_.notIn(selection))
                 displayList.dequeueAll(_.notIn(selection))
@@ -388,7 +387,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
             }
 
           case Key.F1 =>
-            withState (if (COMPLEMENT) "rehandle" else "unhandle") {
+            runUndoably (if (COMPLEMENT) "rehandle" else "unhandle") {
               val shapes = if (selection.isEmpty) selected(lastMouse) else selection
               for { shape <- shapes } shape.handles.enabled = if (selection.isEmpty) !shape.handles.enabled else COMPLEMENT
             }
@@ -401,18 +400,18 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
             bell.play()
         }
 
-      case MouseClick(_)  if (PRESSED && COMPLEMENT) => withState ("vertex") {
+      case MouseClick(_)  if (PRESSED && COMPLEMENT) => runUndoably ("vertex") {
         lastMouseDown = location
         addVertex(location)
       }
 
       case MouseMove(_) =>
         if (PRESSED && selection.nonEmpty) {
-          withState (".move") { for { shape <- selection } shape.moveBy(delta.x, delta.y) }
+          runUndoably (".move") { for {shape <- selection} shape.moveBy(delta.x, delta.y) }
         }
         lastMouse = location
 
-      case MouseClick(_) if (PRIMARY && !CONTROL) => withState (".primary") {
+      case MouseClick(_) if (PRIMARY && !CONTROL) => runUndoably (".primary") {
         selection = selected(location)
         if (selection.isEmpty)
           lastMouseDown = location
@@ -421,7 +420,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
         lastMouse = Vec.Origin
       }
 
-      case MouseClick(_) if (SECONDARY || (PRIMARY&&CONTROL)) => withState (".secondary") {
+      case MouseClick(_) if (SECONDARY || (PRIMARY&&CONTROL)) => runUndoably (".secondary") {
           val touched = selected(location)
           for {shape <- touched}
             if (selection contains shape)
@@ -511,7 +510,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     surface.withOrigin(lastMouseDown-PathSymbols.last.centre) { PathSymbols.last.draw(surface)}
   }
 
-  def addShape(kind: String, x:Scalar, y:Scalar)(shape: GlyphShape) : Unit = withState(s"+$kind"){
+  def addShape(kind: String, x:Scalar, y:Scalar)(shape: GlyphShape) : Unit = runUndoably(s"+$kind"){
     val target = shape.targetLocatedAt(x min (w - shape.w), y min (h - shape.h))
     displayList.enqueue(target)
     selection = List(target)
@@ -533,7 +532,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     selection = reselect ++ List(selection.head)
   }
 
-  def replaceLastSelection(shape: GlyphShape): Unit = withState ("replace"){
+  def replaceLastSelection(shape: GlyphShape): Unit = runUndoably ("replace"){
     val last = selection.last
     val delta = last.shape.centre-shape.centre
     val target = TargetShape(last.x+delta.x, last.y, shape) // centred in the same place
