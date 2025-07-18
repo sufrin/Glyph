@@ -17,7 +17,7 @@ object CharSequenceOperations {
      if (index<l.length) l.charAt(index) else r.charAt(index-l.length)
     }
 
-    /** Constant space and time view of the specified subsequence */
+    /** "Efficient" view of the specified subsequence */
     def subSequence(start: Int, end: Int): CharSequence = {
       if (start==0 && end==length) this else
       if (start<=l.length && end<=l.length) l.subSequence(start, end) else {
@@ -68,6 +68,37 @@ object CharSequenceOperations {
     new String(array)
   }
 
+  /** Equal sequences */
+  def ====(l: CharSequence, r: CharSequence): Boolean = (l eq r) || {
+        var eq = l.length == r.length
+        var i = 0
+        while (i<l.length&&eq) {
+          eq=l.charAt(i)==r.charAt(i)
+          i += 1
+        }
+        eq
+    }
+
+  /**
+   * Hashcode computed from `cs.drop(cs.length-15)` using the same algorithm (as it happens)
+   * as `String.hashCode`.
+   */
+  def ####(cs: CharSequence): Int = {
+    cs.length match {
+      case 0 => 0
+      case 1 => 31*cs.charAt(0).toInt
+      case n =>
+        var h: Int = 0
+        var i: Int = (n-15) max 0
+        while (i!=n) {
+          h = 31*h + cs.charAt(i).toInt
+          i+=1
+        }
+        h
+    }
+  }
+
+
   implicit class WithCharSequenceOps(val chars: CharSequence) extends AnyVal {
 
     def map[T](f: Char=>T): Seq[T] = (0 until chars.length).map{i=>f(chars.charAt(i))}
@@ -76,7 +107,7 @@ object CharSequenceOperations {
 
     def cat(others: CharSequence*): CharSequence = Cat(chars +: others )
 
-    def foreach (op: Char=>Unit): Unit = for { c<-forwardIterator() } op(c)
+    @inline def foreach (op: Char=>Unit): Unit = for { c<-iterator } op(c)
 
     /** A strict iterator that just fails if `next()` is used after `hasNext` yields false */
     def iterator: Iterator[Char] = new Iterator[Char] {
@@ -96,7 +127,7 @@ object CharSequenceOperations {
     def toSeq: Seq[Char] = toIndexedSeq
 
     /** An iterator that yields '\u0000' when `next()` is used after `hasNext` yields false */
-    def forwardIterator(): Iterator[Char] = new Iterator[Char] {
+    def forwardIterator: Iterator[Char] = new Iterator[Char] {
       var i: Int = 0
       @inline def hasNext: Boolean = i < chars.length
       @inline def next(): Char =
@@ -104,7 +135,7 @@ object CharSequenceOperations {
     }
 
     /** A reverse iterator that yields '\u0000' when `next()` is used after `hasNext` yields false */
-    def reversedIterator(): Iterator[Char] = new Iterator[Char] {
+    def reversedIterator: Iterator[Char] = new Iterator[Char] {
       var i: Int = chars.length
       @inline def hasNext: Boolean = i > 0
       @inline def next(): Char = if (hasNext)  { i -= 1; chars.charAt(i) } else '\u0000'
@@ -117,8 +148,8 @@ object CharSequenceOperations {
       @inline def next(): Char = if (hasNext) { i -= 1; chars.charAt(i) } else '\u0000'
     }
 
-    @inline private def `16`(n: Long): Long = n<<4
-    @inline private def `16`(n: Int): Int = n<<4
+    @inline private def `16x`(n: Long): Long = n<<4
+    @inline private def `16x`(n: Int): Int = n<<4
 
     /**
      *  Map a well-formed hexit sequence to Some(`Long`)
@@ -127,10 +158,10 @@ object CharSequenceOperations {
     def hexToLong: Option[Long] = {
       var n: Long    = 0
       var wellFormed = true
-      for { c <- chars.forwardIterator() }
-        if ('a'<=c&&c<='f')  n = `16`(n)+c-'a'+10 else
-          if ('A'<=c&&c<='F')  n = `16`(n)+c-'A'+10 else
-            if ('0'<=c&&c<='9')  n = `16`(n)+c-'0' else wellFormed = false
+      for { c <- chars }
+        if ('a'<=c&&c<='f')  n = `16x`(n)+c-'a'+10 else
+          if ('A'<=c&&c<='F')  n = `16x`(n)+c-'A'+10 else
+            if ('0'<=c&&c<='9')  n = `16x`(n)+c-'0' else wellFormed = false
       if (wellFormed) Some(n) else None
     }
 
@@ -141,10 +172,10 @@ object CharSequenceOperations {
     def hexToInt: Option[Int] = {
       var n: Int    = 0
       var wellFormed = true
-      for { c <- chars.forwardIterator() }
-        if ('a'<=c&&c<='f')  n = `16`(n)+c-'a'+10 else
-          if ('A'<=c&&c<='F')  n = `16`(n)+c-'A'+10 else
-            if ('0'<=c&&c<='9')  n = `16`(n)+c-'0' else wellFormed = false
+      for { c <- chars }
+        if ('a'<=c&&c<='f')  n = `16x`(n)+c-'a'+10 else
+          if ('A'<=c&&c<='F')  n = `16x`(n)+c-'A'+10 else
+            if ('0'<=c&&c<='9')  n = `16x`(n)+c-'0' else wellFormed = false
       if (wellFormed) Some(n) else None
     }
 
@@ -154,14 +185,14 @@ object CharSequenceOperations {
      */
     def toUnicode: Option[Char] = {
       var n: Long = 0
-      val it         = chars.forwardIterator()
+      val it         = chars.forwardIterator
       val slosh      = it.next()
       val u          = it.next()
       var wellFormed = slosh=='\\' && (u=='u' || u=='U')
       if (wellFormed) for { c <- it }
-        if ('a'<=c&&c<='f')  n = `16`(n)+c-'a'+10 else
-          if ('A'<=c&&c<='F')  n = `16`(n)+c-'A'+10 else
-            if ('0'<=c&&c<='9')  n = `16`(n)+c-'0' else wellFormed = false
+        if ('a'<=c&&c<='f')  n = `16x`(n)+c-'a'+10 else
+          if ('A'<=c&&c<='F')  n = `16x`(n)+c-'A'+10 else
+            if ('0'<=c&&c<='9')  n = `16x`(n)+c-'0' else wellFormed = false
       if (wellFormed) Some(n.toChar) else None
     }
   }

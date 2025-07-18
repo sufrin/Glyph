@@ -70,7 +70,7 @@ class   PrefixMap[T]
    * matches one of the mapping's domain elements, and `i` is the length
    * of that prefix. If there is no such prefix, yield `None`.
    */
-  def longestPrefixMatch(s: CharSequence): Option[(T, Int)] = longestPrefixMatch(s.forwardIterator())
+  def longestPrefixMatch(s: CharSequence): Option[(T, Int)] = longestPrefixMatch(s.forwardIterator)
 
   /**
    * Yield `Some(t, i)` where `t` is the value of the mapping at longest suffix of {{{s take upTo}}} that
@@ -134,7 +134,7 @@ class   PrefixMap[T]
    *  for the characters along the given path.
    */
   def prefixed(s: CharSequence): PrefixMap[T] =
-    prefixed(s.forwardIterator())
+    prefixed(s.forwardIterator)
 
   /**
    *   Post: map=map0 + s -> v
@@ -146,7 +146,7 @@ class   PrefixMap[T]
    *   Post: map=map0 + s.reverse -> v
    */
   def reverseUpdate(s: CharSequence, t: T) =
-    prefixed(s.reversedIterator()).value = Some(t)
+    prefixed(s.reversedIterator).value = Some(t)
 
   /**
    *   Post:   map = map0 \ {s}
@@ -245,7 +245,6 @@ object PrefixMap {
     for { pair <- pairs } map += pair
     map
   }
-
 
 }
 
