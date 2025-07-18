@@ -2,9 +2,15 @@ package org.sufrin
 package glyph
 
 import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked, Key}
+import io.github.humbleui.skija.TextLine
+import org.sufrin
 import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.unstyled.Text
 import org.sufrin.logging.FINER
+
+import scala.::
+import scala.collection.IndexedSeqView.Slice
+import scala.collection.mutable
 
 
 /**
@@ -226,8 +232,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
       surface.withOrigin(0, deltaY) {
 
         TextModel.rePan()
-        val (all, leftw) = TextModel.allText(panBy)
-        all.draw(surface)
+        val (leftw, allWidth) = TextModel.draw(surface)
 
         // prepare to draw the cursor
         val cursorNudge = if (TextModel.left==0) focussedBrush.strokeWidth/2f else 0
@@ -246,7 +251,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
         surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY)
 
         // Indicate when there's invisible text to the right
-        if (all.w >= w) {
+        if (allWidth >= w) {
           surface.drawPolygon$(panWarningBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
         }
 
@@ -301,7 +306,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
    *          buffer[0 until left] ++ buffer[right until buffer.size]
    *      }}}
    *
-   *  When it needs to be shown, a couple of `Text` glyphs are made from it; this
+   *  When it needs to be shown, a  `Text` glyph is made from it; this
    *  may well be quite inefficient, but it happens only at human-finger speed.
    *
    *  The model could easily be equipped with an undo/redo feature but it hardly
@@ -361,16 +366,41 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     /** The `Text` to the left of the cursor from the `from`th character */
     @inline def leftText(from: Int, fg: Brush): Text = Text(leftString(from), font, fg, transient = true)
 
+    var lastTextLine: io.github.humbleui.skija.TextLine = null
 
-    /** (`Text` from `from`, and its width up to `left`) */
-    @inline def allText(from: Int): (Text, Scalar) = {
-      // Text(new String(buffer, from, left+N-right-from), font)
+    /** (Text, cursorPosition, textWidth) [used by workaround] */
+    @inline def allText(from: Int): (Text, Scalar, Scalar) = {
+      // Text(new String(buffer, pan, left+N-right-from), font)
       val builder = new java.lang.StringBuilder
-      for { cp <- from     until left } builder.appendCodePoint(buffer(cp))
+      for { cp <- pan     until left } builder.appendCodePoint(buffer(cp))
       val leftWidth = io.github.humbleui.skija.TextLine.make(builder.toString, font).getWidth
       for { cp <- right until N } builder.appendCodePoint(buffer(cp))
-      (Text(builder.toString, font, fg, transient = true), leftWidth)
+      val text = Text(builder.toString, font, fg, transient = true)
+      (text, leftWidth, text.w)
     }
+
+    /** (TextLine, cursorPosition, textWidth) -- used by `draw` */
+    @inline def allTextLine(from: Int): (TextLine, Scalar, Scalar) = {
+      // Text(new String(buffer, pan, left+N-right-from), font)
+      val builder = new java.lang.StringBuilder
+      for { cp <- pan     until left } builder.appendCodePoint(buffer(cp))
+      val leftWidth = io.github.humbleui.skija.TextLine.make(builder.toString, font).getWidth
+      for { cp <- right until N } builder.appendCodePoint(buffer(cp))
+      lastTextLine = io.github.humbleui.skija.TextLine.make(builder.toString, font)
+      (lastTextLine, leftWidth, lastTextLine.getWidth)
+    }
+
+    /** Makes provision for workaround: delegated to by the main `draw` */
+    def draw(surface: Surface): (Scalar, Scalar) =
+      if (workaround) {
+        val (text, cursor, width) = allText(pan: Int)
+        text.draw(surface)
+        (cursor, width)
+      } else {
+        val (tl, cursor, width) = allTextLine(pan: Int)
+        surface.drawTextLine(fg, tl, 0, tl.getHeight)
+        (cursor, width)
+      }
 
     @inline def hasLeft:  Boolean = left!=0
     @inline def hasRight: Boolean = right!=N
@@ -379,15 +409,13 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     /**
      * Implementation of cursor motion to a horizontal location.
      *
-     * NB: Skija's implementation of `.charIndexOf(x)` , etc, are inaccurate when surrogate pairs are present and
-     * we work around this problem.
+     * NB: Skija's implementation of `.charIndexOf(x)` , etc, are inaccurate when surrogate pairs are present
      *
      * @see Indexer
      */
     def moveTo(x: GlyphTypes.Scalar): Unit = {
       val nudgex = x+nudge
-      val snap = new Indexer(panBy)
-      var index= snap.indexOf(nudgex)+panBy
+      var index  = indexOfVisible(nudgex)+panBy
       while (left<index && left!=length) mvRight()
       while (left>index && left!=0) mvLeft()
     }
@@ -537,40 +565,69 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     var abbreviating: Boolean = false
 
-    def leftCodePoints: Seq[CodePoint] =
-        buffer.toIndexedSeq.take(left)
+    /** codepoints at the left of the cursor */
+    private def leftCodePoints: Seq[CodePoint] = new Seq[CodePoint] {
+      def apply(i: Int): CodePoint = buffer(i)
+      def length: CodePoint = left
+      def iterator: Iterator[CodePoint] = new Iterator[CodePoint] {
+        var ix: Int = 0
+        def hasNext: Boolean = ix<left
+        def next(): CodePoint = { val v = buffer(ix); ix += 1; v }
+      }
+    }
 
+    private def codePointArray(pan: Int): Array[CodePoint] = {
+      val r = Array.ofDim[CodePoint](length)
+      var o = 0
+      for { i<-pan until left } { r(o)=buffer(i); o+=1 }
+      for { i<-right until N } { r(o)=buffer(i); o+=1 }
+      r
+    }
 
+    private def visibleGlyphs: Array[Short] = font.getUTF32Glyphs(codePointArray(pan))
+
+    private def visibleGlyphWidths: Array[Scalar] = font.getWidths(visibleGlyphs)
+
+    private def visiblePositions: Array[Scalar] = {
+      var sum = 0f
+      val widths = visibleGlyphWidths
+      val positions = Array.ofDim[Scalar](widths.length + 1)
+      for {i <- 0 until widths.length } {
+        sum += widths(i)
+        positions(i + 1) = sum
+      }
+      positions
+    }
+
+    final val workaround = false
     /**
-     * Workaround to support finding the index of the character that appears
-     * at a particular distance from the start of the string.
+     * @param distance
+     * @return the index of the first character appearing at no more than `distance` to the right of
+     *         the view of the start of the string represented by the model.
      *
-     * Not particularly efficient, but this is not problematic since it is
-     * constructed exactly once per mouse click.
+     * WARNING: indexOfVisible is thrown off by the presence of glyphs that are
+     *          "shaped" as more than one glyph (such as emojis), whichever
+     *          of the implementations defined herein is chosen
+     *
+     *         TODO: The presence of codepoints that represent some special characters (eg. smileys) in
+     *               the text throws the Skia/Skija text measurement off (smileys, for example, are measured a tad shorter than they appear,
+     *               and have an incorrect baseline). The former can make mouse-clicking to move the cursor rightwards of
+     *               material containing emojis a little haphazard.
+     *               The latter manifests as a different aggregate baseline for text with/without an (eg) emoji.
+     *
+     * (or not) TODO:
+     *               If urgent,  the width issue could be worked around  within `visibleGlyphWidths` by inspecting the
+     *               corresponding `CodePoint`s. But the [adhoc complexity]/benefit ratio starts getting too high and
+     *               waiting for Skia/Skija to fix this area  is advised....
+     *
      */
-    class Indexer(pan: Int) {
-      private val codePoints: Seq[CodePoint] = buffer.toIndexedSeq.take(left).drop(pan) ++ buffer.drop(right)
-      private val glyphs = font.getUTF32Glyphs(codePoints.toArray)
-      private val advances = font.getWidths(glyphs)
-      private val prefixes = Array.ofDim[Scalar](advances.length + 1)
-      locally {
-        var sum: Scalar = 0
-        for {i <- 0 until advances.length} {
-          sum += advances(i)
-          prefixes(i + 1) = sum
-        }
-      }
-
-      /**
-       * @param distance
-       * @return the index of the first character appearing at no more than `distance` to the right of
-       *         the start of the string represented by the model.
-       */
-      def indexOf(distance: Scalar): Int = {
-        var index = prefixes.length - 1
-        while (index != 0 && prefixes(index) > distance) index -= 1
-        index
-      }
+    def indexOfVisible(distance: Scalar): Int = if (workaround) {
+      val xpos  = visiblePositions
+      var index = xpos.length-1
+      while (index != 0 && xpos(index) > distance) index -= 1
+      index
+    } else {
+      if (lastTextLine eq null) 0 else lastTextLine.getLeftOffsetAtCoord(distance)
     }
 
 
@@ -620,3 +677,5 @@ object TextField extends logging.Loggable {
             initialText=initialText,
             abbreviations=abbreviations)
 }
+
+
