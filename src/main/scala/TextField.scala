@@ -314,20 +314,25 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
    */
   object TextModel {
     type CodePoint = Int
-    var buffer: Array[CodePoint] = Array.ofDim[CodePoint](size+3)
-    @inline private def N = buffer.size
-    var left  = 0
-    var right = N
-    def length: Int = left+N-right
+    var buffer: Array[CodePoint] = Array.ofDim[CodePoint](size + 3)
 
-    def clear(): Unit = { left=0; right = N }
+    @inline private def N = buffer.size
+
+    var left = 0
+    var right = N
+
+    def length: Int = left + N - right
+
+    def clear(): Unit = {
+      left = 0; right = N
+    }
 
     override def toString: String = s"TextField.TextModel(${leftString}, ${rightString})"
 
     def text: String = {
       val builder = new java.lang.StringBuilder
-      for { cp <- 0     until left } builder.appendCodePoint(buffer(cp))
-      for { cp <- right until N } builder.appendCodePoint(buffer(cp))
+      for {cp <- 0 until left} builder.appendCodePoint(buffer(cp))
+      for {cp <- right until N} builder.appendCodePoint(buffer(cp))
       builder.toString
     }
 
@@ -336,24 +341,24 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       ins(newText)
     }
 
-    def leftString:  String            = {
+    def leftString: String = {
       //new String(buffer, 0, left)
       val builder = new java.lang.StringBuilder
-      for { cp <- 0     until left } builder.appendCodePoint(buffer(cp))
+      for {cp <- 0 until left} builder.appendCodePoint(buffer(cp))
       builder.toString
     }
 
-    def leftString(from: Int):  String = if (from<0 || left-from<=0) "" else {
+    def leftString(from: Int): String = if (from < 0 || left - from <= 0) "" else {
       //new String(buffer, from, left-from)
       val builder = new java.lang.StringBuilder
-      for { cp <- from     until left } builder.appendCodePoint(buffer(cp))
+      for {cp <- from until left} builder.appendCodePoint(buffer(cp))
       builder.toString
     }
 
-    def rightString: String            = {
+    def rightString: String = {
       //new String(buffer, right, N-right)
       val builder = new java.lang.StringBuilder
-      for { cp <- right until N } builder.appendCodePoint(buffer(cp))
+      for {cp <- right until N} builder.appendCodePoint(buffer(cp))
       builder.toString
     }
 
@@ -366,58 +371,63 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     /** The `Text` to the left of the cursor from the `from`th character */
     @inline def leftText(from: Int, fg: Brush): Text = Text(leftString(from), font, fg, transient = true)
 
-    var lastTextLine: io.github.humbleui.skija.TextLine = null
-
-    /** (Text, cursorPosition, textWidth) [used by workaround] */
-    @inline def allText(from: Int): (Text, Scalar, Scalar) = {
-      // Text(new String(buffer, pan, left+N-right-from), font)
-      val builder = new java.lang.StringBuilder
-      for { cp <- pan     until left } builder.appendCodePoint(buffer(cp))
-      val leftWidth = io.github.humbleui.skija.TextLine.make(builder.toString, font).getWidth
-      for { cp <- right until N } builder.appendCodePoint(buffer(cp))
-      val text = Text(builder.toString, font, fg, transient = true)
-      (text, leftWidth, text.w)
+    def leftWidth(from: Int): Scalar = {
+      val codePoints = visiblePointArray(from)
+      TextLine.make(new String(codePoints, 0, left-from), font).getWidth
     }
 
-    /** (TextLine, cursorPosition, textWidth) -- used by `draw` */
+    var lastTextLine: io.github.humbleui.skija.TextLine = null
+
+    /**
+     * [only used by width-calculation workaround]
+     * True iff all CodePoints in the last-displayed line were in the BMP
+     */
+    var allBMP: Boolean = true
+
+    /**
+     * `Text` representing the characters after `from`
+     */
+    @inline def visibleText(from: Int): Text = {
+      val codePoints = visiblePointArray(from)
+      val text = Text(new String(codePoints, 0, length), font)
+      lastTextLine = text.implementation
+      text
+    }
+
+    /**
+     * (TextLine, cursorPosition, textWidth) -- used by `draw`
+     * POST: `allBMP` iff all codePoints are in the BMP
+     */
     @inline def allTextLine(from: Int): (TextLine, Scalar, Scalar) = {
-      // Text(new String(buffer, pan, left+N-right-from), font)
-      val builder = new java.lang.StringBuilder
-      for { cp <- pan     until left } builder.appendCodePoint(buffer(cp))
-      val leftWidth = io.github.humbleui.skija.TextLine.make(builder.toString, font).getWidth
-      for { cp <- right until N } builder.appendCodePoint(buffer(cp))
-      lastTextLine = io.github.humbleui.skija.TextLine.make(builder.toString, font)
+      val codePoints = visiblePointArray(from)
+      //println(codePoints.length, left, left-from)
+      val leftWidth = TextLine.make(new String(codePoints, 0, left-from), font).getWidth
+      lastTextLine = TextLine.make(new String(codePoints, 0, length-from), font)
       (lastTextLine, leftWidth, lastTextLine.getWidth)
     }
 
-    /** Makes provision for workaround: delegated to by the main `draw` */
+    /** Delegated to by the main `draw` */
     def draw(surface: Surface): (Scalar, Scalar) =
-      if (workaround) {
-        val (text, cursor, width) = allText(pan: Int)
-        text.draw(surface)
-        (cursor, width)
-      } else {
-        val (tl, cursor, width) = allTextLine(pan: Int)
-        surface.drawTextLine(fg, tl, 0, tl.getHeight)
-        (cursor, width)
-      }
+    { val (tl, cursor, width) = allTextLine(pan: Int)
+      surface.drawTextLine(fg, tl, 0, tl.getHeight)
+      (cursor, width)
+    }
 
-    @inline def hasLeft:  Boolean = left!=0
-    @inline def hasRight: Boolean = right!=N
+    @inline def hasLeft: Boolean = left != 0
 
-    private val nudge = em.width/2
+    @inline def hasRight: Boolean = right != N
+
+    private val nudge = em.width / 2
+
     /**
      * Implementation of cursor motion to a horizontal location.
-     *
-     * NB: Skija's implementation of `.charIndexOf(x)` , etc, are inaccurate when surrogate pairs are present
-     *
-     * @see Indexer
      */
     def moveTo(x: GlyphTypes.Scalar): Unit = {
-      val nudgex = x+nudge
-      var index  = indexOfVisible(nudgex)+panBy
-      while (left<index && left!=length) mvRight()
-      while (left>index && left!=0) mvLeft()
+      val nudgex = x + nudge
+      val index = indexOfVisible(nudgex) + panBy
+      //println(x, left, panBy, index)
+      while (left < index && left != right) mvRight()
+      while (left > index && left != 0) mvLeft()
     }
 
     def markTo(x: GlyphTypes.Scalar): Unit = {
@@ -425,29 +435,29 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     /**
-     *   Grow buffer if necessary to make room for another few characters.
+     * Grow buffer if necessary to make room for another few characters.
      */
     def ensureAdequateSize(): Unit = {
       val quantum = 10
-      if (left==right) {
-        val newBuffer = Array.ofDim[CodePoint](buffer.length+quantum)
+      if (left == right) {
+        val newBuffer = Array.ofDim[CodePoint](buffer.length + quantum)
         var newRight = newBuffer.size
-        for { i <- 0 until left } newBuffer(i) = buffer(i)
-        for { i <- right until N } {
-           newRight -= 1
-           newBuffer(newRight) = buffer(i)
+        for {i <- 0 until left} newBuffer(i) = buffer(i)
+        for {i <- right until N} {
+          newRight -= 1
+          newBuffer(newRight) = buffer(i)
         }
         buffer = newBuffer
-        right  = newRight
+        right = newRight
       }
     }
 
     def isRight(cp: CodePoint): Boolean =
       (Character.getDirectionality(cp)) match {
-      case Character.DIRECTIONALITY_RIGHT_TO_LEFT
-         | Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC =>  true
-      case _ => false
-    }
+        case Character.DIRECTIONALITY_RIGHT_TO_LEFT
+             | Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC => true
+        case _ => false
+      }
 
     def insCodePoint(cp: CodePoint): Unit = {
       ensureAdequateSize()
@@ -456,36 +466,39 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       left += 1
     }
 
-    def del(): Unit  = {
+    def del(): Unit = {
       if (left != 0) left -= 1
     }
 
-    def swap2(): Unit  =
-      if (left>1) {
-        val c = buffer(left-2)
-        buffer(left-2) = buffer(left-1)
-        buffer(left-1) = c
+    def swap2(): Unit =
+      if (left > 1) {
+        val c = buffer(left - 2)
+        buffer(left - 2) = buffer(left - 1)
+        buffer(left - 1) = c
       }
 
     private var pendingDeletions: Int = 0
-    private def doPendingDeletions(): Unit =
-      while (pendingDeletions>0) { del(); pendingDeletions -= 1 }
 
-    /** Insert a character from the Unicode BMP  */
+    private def doPendingDeletions(): Unit =
+      while (pendingDeletions > 0) {
+        del(); pendingDeletions -= 1
+      }
+
+    /** Insert a character */
     def ins(ch: Char): Unit = {
       doPendingDeletions()
       insCodePoint(ch)
-      if (abbreviations!=null && abbreviations.onLineTrigger) abbreviation()
+      if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
 
     /**
-     *  Insert a string that may contain "surrogate pairs" arising from
-     *  characters (for example Smileys, Kanji, ...) outside the BMP
+     * Insert a string that may contain "surrogate pairs" arising from
+     * characters (for example Smileys, Kanji, ...) outside the BMP
      */
     def ins(string: String): Unit = {
       doPendingDeletions()
       string.codePoints.forEach(insCodePoint(_))
-      if (abbreviations!=null && abbreviations.onLineTrigger) abbreviation()
+      if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
 
     /**
@@ -497,16 +510,16 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     def insForReplacement(string: String, toReplace: Int): Unit = {
       pendingDeletions = toReplace
       string.codePoints.forEach(insCodePoint(_))
-      if (abbreviations!=null && abbreviations.onLineTrigger) abbreviation()
+      if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
 
-    def mvLeft(): Unit = if (left!=0) {
+    def mvLeft(): Unit = if (left != 0) {
       left -= 1
       right -= 1
       buffer(right) = buffer(left)
     }
 
-    def mvRight(): Unit = if (right!=N) {
+    def mvRight(): Unit = if (right != N) {
       buffer(left) = buffer(right)
       right += 1
       left += 1
@@ -521,46 +534,48 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     def end(): Unit = {
-      while (right<N) {
+      while (right < N) {
         buffer(left) = buffer(right)
         left += 1
         right += 1
       }
     }
 
-    var pan:         Int = 0
+    var pan: Int = 0
 
     // Define a sensible margin for panning
-    val marginChars: Int      = size/10 max 1
-    val margin: Scalar        = Text("M"*(marginChars), font).width
+    val marginChars: Int = size / 10 max 1
+    val margin: Scalar = Text("M" * (marginChars), font).width
 
     def rePan(): Unit = {
       import TextField.{finest, logging}
       val size: Scalar = w
-      @inline def vleft: Scalar = leftText(pan, fg).width
-      if (logging) finest(s"rePan: $pan $vleft $size $margin ${ (vleft < size, vleft<margin, vleft>=size-margin)}")
-      if (leftText.width<size) {
+
+      @inline def vleft: Scalar = leftWidth(pan)
+
+      if (logging) finest(s"rePan: $pan $vleft $size $margin ${(vleft < size, vleft < margin, vleft >= size - margin)}")
+      if (leftWidth(0) < size) {
         pan = 0
         if (logging) finest("<<")
       } else {
-        (vleft < size, vleft<margin, vleft>=size-margin) match {
+        (vleft < size, vleft < margin, vleft >= size - margin) match {
           case (true, _, true) => // visible, but in the right margin
             if (logging) finest("RM")
-            if (rightMargin) while (vleft>=size-margin) pan += marginChars
+            if (rightMargin) while (vleft >= size - margin) pan += marginChars
           case (true, true, _) => // visible, but in left margin
             if (logging) finest("LM")
-            while (vleft<margin) pan -= marginChars
-          case (true, false, false)  => // still visible
+            while (vleft < margin) pan -= marginChars
+          case (true, false, false) => // still visible
             if (logging) finest("V")
           case _ =>
             if (logging) finest("J")
-            while (0<=vleft && vleft<=size && pan-marginChars>=0)
+            while (0 <= vleft && vleft <= size && pan - marginChars >= 0)
               pan -= marginChars
-            while (vleft>=size)
+            while (vleft >= size)
               pan += marginChars
         }
       }
-      if (logging) finest(s"rePan= $pan $vleft $size $margin ${ (vleft < size, vleft<margin, vleft>=size-margin)}")
+      if (logging) finest(s"rePan= $pan $vleft $size $margin ${(vleft < size, vleft < margin, vleft >= size - margin)}")
     }
 
     var abbreviating: Boolean = false
@@ -568,68 +583,149 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     /** codepoints at the left of the cursor */
     private def leftCodePoints: Seq[CodePoint] = new Seq[CodePoint] {
       def apply(i: Int): CodePoint = buffer(i)
+
       def length: CodePoint = left
+
       def iterator: Iterator[CodePoint] = new Iterator[CodePoint] {
         var ix: Int = 0
-        def hasNext: Boolean = ix<left
-        def next(): CodePoint = { val v = buffer(ix); ix += 1; v }
+
+        def hasNext: Boolean = ix < left
+
+        def next(): CodePoint = {
+          val v = buffer(ix); ix += 1; v
+        }
       }
     }
 
-    private def codePointArray(pan: Int): Array[CodePoint] = {
-      val r = Array.ofDim[CodePoint](length)
+    /** codepoints at the right of the cursor */
+    private def rightCodePoints: Seq[CodePoint] = new Seq[CodePoint] {
+      def apply(i: Int): CodePoint = buffer(i)
+
+      def length: CodePoint = N - right
+
+      def iterator: Iterator[CodePoint] = new Iterator[CodePoint] {
+        var ix: Int = right
+
+        def hasNext: Boolean = ix < N
+
+        def next(): CodePoint = {
+          val v = buffer(ix); ix += 1; v
+        }
+      }
+    }
+
+    /** The codepoints to the right of `pan` */
+    private def visiblePoints(): Iterator[CodePoint] = new Iterator[CodePoint] {
+      val offset = right-left
+      var ix = pan
+      val thisLength = left+N-right
+      def hasNext: Boolean = ix<thisLength
+      def next(): CodePoint = {
+        val cp = buffer(if (ix<left) ix else ix+offset)
+        ix += 1
+        cp
+      }
+    }
+
+    @inline private def bufferedPointAt(i: Int): CodePoint = {
+      val cp = buffer(i)
+      if (!Character.isBmpCodePoint(cp)) allBMP = false
+      cp
+    }
+
+    /**
+     * POST: `allBMP = allBMP && buffer(i).isBMPCodePoint`
+     */
+    private def visiblePointArray(pan: Int): Array[CodePoint] = {
+      allBMP = true
+      val r = Array.ofDim[CodePoint](length - pan)
       var o = 0
-      for { i<-pan until left } { r(o)=buffer(i); o+=1 }
-      for { i<-right until N } { r(o)=buffer(i); o+=1 }
+      for {i <- pan until left} {
+        r(o) = bufferedPointAt(i); o += 1
+      }
+      for {i <- right until N} {
+        r(o) = bufferedPointAt(i); o += 1
+      }
       r
     }
 
-    private def visibleGlyphs: Array[Short] = font.getUTF32Glyphs(codePointArray(pan))
+    /**
+     * PRECONDITION: all the visible codepoints must be in the BMP
+     * @return the sequence of glyph encodings for the visible code points
+     */
+    private def unsafeVisibleGlyphs: Array[Short] = font.getUTF32Glyphs(visiblePointArray(pan))
 
-    private def visibleGlyphWidths: Array[Scalar] = font.getWidths(visibleGlyphs)
+    /**
+     * PRECONDITION:: all the visible codepoints must be in the BMP
+     * @return the sequence of widths of the visible code points
+     */
+    private def unsafeVisibleGlyphWidths: Array[Scalar] = font.getWidths(unsafeVisibleGlyphs)
 
-    private def visiblePositions: Array[Scalar] = {
+    /**
+     * PRECONDITION:: all the visible codepoints must be in the BMP
+     * @return iterator over the sequence of glyph boundaries of the visible code points
+     * @see  visibleBoundaries()
+     */
+    private def unsafeVisibleBoundaries(): Iterator[Scalar] = {
       var sum = 0f
-      val widths = visibleGlyphWidths
-      val positions = Array.ofDim[Scalar](widths.length + 1)
-      for {i <- 0 until widths.length } {
-        sum += widths(i)
-        positions(i + 1) = sum
-      }
-      positions
+      val widths = unsafeVisibleGlyphWidths.iterator
+      widths.scanLeft(0f)((l, r) => (l + r))
     }
+
+    /**
+     * @param codePoint
+     * @return the width of the given `codePoint` as it will be shown in the current `font`
+     *
+     * In the case of a non-BMP codepoint we use `TextLine.make` to force the
+     * codepoint to be rendered as it will be if it appears in a TextLine
+     * made using the current font.
+     */
+    @inline private def codePointWidth(codePoint: CodePoint): Scalar =
+      if (Character.isBmpCodePoint(codePoint))
+        font.getWidths(Array(font.getUTF32Glyph(codePoint)))(0) else {
+        val chars = Character.toChars(codePoint)
+        TextLine.make(new String(chars, 0, chars.length), font).getWidth
+      }
+
+    /**
+     * @return iterator over the widths of the visible characters
+     */
+    @inline private def visibleWidths(): Iterator[Scalar] = visiblePoints().map(codePointWidth(_))
+
+    /**
+     * @return (increasing) iterator over the left boundaries of the visible characters
+     */
+    @inline private def visibleBoundaries(): Iterator[Scalar] = visiblePoints().map(codePointWidth(_)).scanLeft(0f)(_+_)
+
 
     final val workaround = false
     /**
+     * PRECONDITION: the buffer must not have changed since the last `draw` (so that
+     * `allBMP` accurately reflects the presence of non-BMP codePoints)
      * @param distance
-     * @return the index of the first character appearing at no more than `distance` to the right of
-     *         the view of the start of the string represented by the model.
+     * @return the index of the first character whose displayed form includes `distance`
      *
-     * WARNING: indexOfVisible is thrown off by the presence of glyphs that are
-     *          "shaped" as more than one glyph (such as emojis), whichever
-     *          of the implementations defined herein is chosen
-     *
-     *         TODO: The presence of codepoints that represent some special characters (eg. smileys) in
-     *               the text throws the Skia/Skija text measurement off (smileys, for example, are measured a tad shorter than they appear,
-     *               and have an incorrect baseline). The former can make mouse-clicking to move the cursor rightwards of
-     *               material containing emojis a little haphazard.
-     *               The latter manifests as a different aggregate baseline for text with/without an (eg) emoji.
-     *
-     * (or not) TODO:
-     *               If urgent,  the width issue could be worked around  within `visibleGlyphWidths` by inspecting the
-     *               corresponding `CodePoint`s. But the [adhoc complexity]/benefit ratio starts getting too high and
-     *               waiting for Skia/Skija to fix this area  is advised....
+     * NOTE: when all characters in the (last-displayed) text line were from the BMP it
+     * is safe to use the Skia/Skija `getLeftOffsetAtCoord`; but it is unsafe
+     * otherwise, so we calculate character  boundaries independently. (See `visibleBoundaries`)
      *
      */
-    def indexOfVisible(distance: Scalar): Int = if (workaround) {
-      val xpos  = visiblePositions
-      var index = xpos.length-1
-      while (index != 0 && xpos(index) > distance) index -= 1
-      index
-    } else {
-      if (lastTextLine eq null) 0 else lastTextLine.getLeftOffsetAtCoord(distance)
+    def indexOfVisible(distance: Scalar): Int = {
+      //println("V", visibleBoundaries().toList)
+      //println("U", unsafeVisibleBoundaries().toList)
+      if (allBMP) {
+        if (lastTextLine eq null) 0 else lastTextLine.getLeftOffsetAtCoord(distance)
+      } else {
+        // linear search up a nonDecreasing iterator.
+        val positions = visibleBoundaries()
+        var index = pan
+        while (positions.hasNext && distance>positions.next()) {
+          index += 1
+        }
+       // println("D", index, distance)
+        index-pan-1
+      }
     }
-
 
     def abbreviation(): Unit = if (abbreviations!=null) {
       abbreviations.findAbbreviation(leftCodePoints, left) match {
