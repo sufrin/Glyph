@@ -172,7 +172,6 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
       case Key.PERIOD if mods.includeSome(ANYCONTROL) =>
         TextModel.markToCursor()
 
-
       case BACKSPACE  if mods.includeSome(ANYCONTROL) =>
         TextModel.swap2()
 
@@ -651,7 +650,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     /** codepoints at the left of the cursor in reverse order */
-    private def reverseLeftCodePoints: Iterator[CodePoint] = new Iterator[CodePoint] {
+    private def reverseLeftCodePoints(): Iterator[CodePoint] = new Iterator[CodePoint] {
         var ix: Int = left
         def hasNext: Boolean = ix > 0
         def next(): CodePoint = {
@@ -801,6 +800,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     def abbreviation(): Unit = if (abbreviations!=null) {
       abbreviations.reverseFindAbbreviation(reverseLeftCodePoints) match {
         case None =>
+
         case Some((repl, size)) =>
           if (!abbreviating) {
             abbreviating = true

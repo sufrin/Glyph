@@ -119,11 +119,14 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
   import sheet.{em, ex}
   import CellFit._
 
-  val checkBox: Glyph =
+  val triggerBox: Glyph =
      styled.CheckBox(initially=abbrs.onLineTrigger, hint=Hint(5, "Enable/disable automatic substitution for abbreviations\n(when disabled the 'abbreviate' key can be used)")(sheet.copy(fontScale = 0.6f))){ state => abbrs.onLineTrigger=state }
 
+  val implicitBox: Glyph =
+    styled.CheckBox(initially=abbrs.onLineTrigger, hint=Hint(5, "Enable/disable implicit unicode abbreviations of the form U+HHHHH ")(sheet.copy(fontScale = 0.6f))){ state => abbrs.implicitUnicode=state }
+
   lazy val labelledFields = Grid(width=2, pady=15).rows(
-        Label("Text "), Row(example.framed(lightGrey(width=2)), checkBox.framed(lightGrey(width=2))),
+        Label("Text "), Row(example.framed(lightGrey(width=2)), triggerBox.framed(lightGrey(width=2)), implicitBox.framed(lightGrey(width=2))),
         Label("Font "), fontText.framed(lightGrey(width=2)).cellFit(ShiftWest),
         aboveDisplay._1.cellFit(ShiftWest), aboveDisplay._2.cellFit(ShiftWest)
     )

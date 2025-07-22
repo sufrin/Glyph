@@ -12,7 +12,7 @@ import org.sufrin.SourceLocation.SourceLocation
 class TextTool(implicit style: StyleSheet)  {
   implicit val pageStyle: BookSheet = BookSheet(style, style)
   val anchor = static.INVISIBLE()
-  val abbrev = new TextAbbreviations(onLineTrigger = true)
+  val abbrev = new TextAbbreviations(onLineTrigger = true, implicitUnicode = false)
   abbrev("(c)") = "\u00A9"
   abbrev("\u00A9") = "(c)"
   abbrev("(r)") = "\u00AE"
@@ -38,11 +38,14 @@ class TextTool(implicit style: StyleSheet)  {
   val defs = translation.meaning
 
   defs("CONTROLS") =
-    _=>Label("Log events") beside styled.CheckBox(initially=false) {
-      state => anchor.guiRoot.eventHandler.logEvents=state
-    } beside Label(" Live abbreviations") beside styled.CheckBox(initially=abbrev.onLineTrigger) {
+    _=> //Label("Log events") beside styled.CheckBox(initially=false) { state => anchor.guiRoot.eventHandler.logEvents=state } beside
+      Label(" Live abbreviations") beside styled.CheckBox(initially=abbrev.onLineTrigger) {
       state => abbrev.onLineTrigger=state
-    }
+    } beside
+      Label(" u+.....") beside styled.CheckBox(initially=abbrev.implicitUnicode) {
+        state => abbrev.implicitUnicode=state
+  }
+
 
   val textField: TextField = styled.TextField(size = 40, onEnter = { _ =>  }, onCursorLeave = { _ => anchor.guiRoot.giveupFocus() }, abbreviations = abbrev)(style.copy(fontScale = 1.5f))
   defs("TEXTFIELD") = _=>textField.framed()
@@ -66,7 +69,7 @@ class TextTool(implicit style: StyleSheet)  {
       </p>
       <fill/>
       <p>Interaction is more-or-less standard.</p>
-      <itemize itemIndent="2em"  hang="•" logging="true">
+      <itemize itemIndent="2em"  hang="•" >
         <item>The cursor is shown as an I-beam and always kept in view</item>
         <item>The selection has a coloured background</item>
         <item>Visual cues are given when there is out-of-sight text</item>
@@ -88,11 +91,10 @@ class TextTool(implicit style: StyleSheet)  {
       </itemize>
 
       <p>
-        When "Live abbreviations" is set, typing an abbreviation results in the insertion of the
-        unicode sequence it abbreviates. At any other time, typing the same shift key twice
-        in succession has the same result. The machinery is straightforward, and is intended to be used
-        in text editors and other text components to make it easy for users to generate characters
-        that aren't natively available on their input device. [see Input Method@Wikipedia]
+        When "Live abbreviations" is set, typing the last character of an abbreviation results in the insertion of the
+        sequence it abbreviates, otherwise typing the same shift key twice in succession when the cursor is at the end of
+        an abbreviation has the same result. If "u+....." is set then sequences of the form <b>u+</b><i>5 hex digits</i> are
+        implicitly taken as abbreviations for the corresponding unicode character.
       </p>
       <fill/>
       <p>
