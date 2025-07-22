@@ -47,13 +47,13 @@ class AdderGUI()(implicit sheet: StyleSheet)  {
 
   /** Check that the named field looks like a number or a candidate for filling */
   def check(name: String, field: TextField): Unit = {
-    if (!(field.text.toDoubleOption.isDefined || field.text.isBlank))
+    if (!(field.string.toDoubleOption.isDefined || field.string.isBlank))
     {
       Dialogue.CHOOSE(Paragraph(30, Justify)(
         s"""
-          |${field.text} doesn't look much like a number.
+          |${field.string} doesn't look much like a number.
           |""".stripMargin))("Clear", "Carry on entering a number").North(field).andThen {
-        case "Clear" => field.text = ""; field.takeKeyboardFocus()
+        case "Clear" => field.string = ""; field.takeKeyboardFocus()
         case _       => field.takeKeyboardFocus()
       }
     }
@@ -70,24 +70,24 @@ class AdderGUI()(implicit sheet: StyleSheet)  {
   }
 
   def clear(): Unit = {
-    for { field <- fields }  field.text=""
+    for { field <- fields }  field.string=""
   }
 
   def text(d: Double): String = f"$d%.5g"
 
   def calculemus(target: TextField*): Unit = {
-    val av = a.text.toDoubleOption
-    val bv = b.text.toDoubleOption
-    val cv = c.text.toDoubleOption
+    val av = a.string.toDoubleOption
+    val bv = b.string.toDoubleOption
+    val cv = c.string.toDoubleOption
     (cv, av, bv) match {
-      case (Some(c), Some(a), None) if b.text.isBlank => b.text = text(`c⊕a`(c)(a))
-      case (Some(c), None, Some(b)) if a.text.isBlank => a.text = text(`c⊕b`(c)(b))
-      case (None, Some(a), Some(b)) if c.text.isBlank => c.text = text(`a⊕b`(a)(b))
+      case (Some(c), Some(a), None) if b.string.isBlank => b.string = text(`c⊕a`(c)(a))
+      case (Some(c), None, Some(b)) if a.string.isBlank => a.string = text(`c⊕b`(c)(b))
+      case (None, Some(a), Some(b)) if c.string.isBlank => c.string = text(`a⊕b`(a)(b))
       case (Some(cv), Some(a), Some(b))                 =>
            if   (cv==`a⊕b`(a)(b)) {}
            else
            if (target.nonEmpty) {
-             for { field <- target } field.text=""
+             for { field <- target } field.string=""
              calculemus()
            } else {
              Dialogue.OK(Label("Eh?"))

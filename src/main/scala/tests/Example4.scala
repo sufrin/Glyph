@@ -46,22 +46,22 @@ class Example4Interface(sheet: StyleSheet) {
 
   def calculemus(): Unit =
     (
-      c.text.toDoubleOption,
-      a.text.toDoubleOption,
-      b.text.toDoubleOption
+      c.string.toDoubleOption,
+      a.string.toDoubleOption,
+      b.string.toDoubleOption
     ) match {
-      case (None, Some(av), Some(bv)) => c.text = text(av + bv)
-      case (Some(cv), Some(av), None) => b.text = text(cv - av)
-      case (Some(cv), None, Some(bv)) => a.text = text(cv - bv)
+      case (None, Some(av), Some(bv)) => c.string = text(av + bv)
+      case (Some(cv), Some(av), None) => b.string = text(cv - av)
+      case (Some(cv), None, Some(bv)) => a.string = text(cv - bv)
       case (Some(cv), Some(av), Some(bv)) =>
-        if (cv == av + bv) {} else c.text = text(av + bv)
+        if (cv == av + bv) {} else c.string = text(av + bv)
       case _ =>
     }
 
   def text(d: Double): String = f"$d%.5g"
 
   def clear(): Unit = {
-    for { field <- fields } field.text = ""
+    for { field <- fields } field.string = ""
   }
 }
 

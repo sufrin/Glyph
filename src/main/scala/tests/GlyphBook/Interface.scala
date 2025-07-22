@@ -54,10 +54,10 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
     translation("item") =
       new Macro(
-        <row inheritWidth="true">
+        <row inheritwidth="true">
           <!--attributes AT="ITEM" id="tag:item"/-->
-          <fill width="$itemIndent"/>
-          <p hang="$hang" width="$itemWidth" align="$itemAlign">
+          <fill width="$itemindent"/>
+          <p hang="$hang" width="$itemwidth" align="$itemalign">
             &BODY;
           </p>
         </row>)
@@ -65,8 +65,8 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
     translation("itemize") =
       new Macro(
         <SCOPE>
-        <ATTRIBUTES key="tag:item" logging="$logging(false)" leftMargin="$leftMargin(5em)" hang="$hang( * )"  itemIndent="$itemIndent(2em)"  itemWidth="$itemWidth(50em)" itemAlign="$itemAlign(justify)"/>
-        <span itemIndent="$itemIndent(2em)">
+        <ATTRIBUTES key="tag:item" logging="$logging(false)" leftmargin="$leftmargin(5em)" hang="$hang( * )"  itemindent="$itemindent(2em)"  itemwidth="$itemwidth(70em)" itemalign="$itemalign(justify)"/>
+        <span itemindent="$itemindent(2em)">
           <col align="left" >
             <!--attributes AT="ITEMIZE" /-->
             &BODY;

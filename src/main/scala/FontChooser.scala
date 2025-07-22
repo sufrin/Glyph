@@ -46,8 +46,8 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
   def setFont(newFont: Font): Unit = {
     _font = newFont
     fontString = _font.asString
-    fontText.text=fontString
-    showExample(example.text)
+    fontText.string=fontString
+    showExample(example.string)
   }
 
   @inline def isFloat(s: String): Boolean = s.toFloatOption.isDefined
@@ -92,12 +92,12 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
   }(chooserStyle)
 
 
-  def showExample(text: String=example.text): Unit = exampleDisplay.set(text)
+  def showExample(text: String=example.string): Unit = exampleDisplay.set(text)
 
 
   def interpretSpecialKey(key: GlyphTypes.EventKey, glyph: Glyph): Unit = {
     val mods: Bitmap = toBitmap(key)
-    example.text=s"${example.text} ${key._key} ${mods.toString} "
+    example.string=s"${example.string} ${key._key} ${mods.toString} "
   }
 
   val abbrs = new TextAbbreviations(onLineTrigger = false)

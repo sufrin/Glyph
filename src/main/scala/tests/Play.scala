@@ -577,14 +577,14 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
     def addText(text: String): Unit = {
       drawingBoard.addText(text, newBrush.copy)
-      textField.text=""
+      textField.string=""
     }
 
     def editTextSelection(mods: Bitmap): Unit = {
       if (drawingBoard.selection.nonEmpty) {
         drawingBoard.selection.last.shape match {
           case t: Text =>
-            textField.text = t.string
+            textField.string = t.string
           case _ =>
         }
       }
@@ -594,7 +594,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
     if (drawingBoard.selection.nonEmpty) {
       drawingBoard.selection.last.shape match {
         case t: Text =>
-          drawingBoard.replaceLastSelection(GlyphShape.text(textField.text, t.font)(t.fg, t.bg))
+          drawingBoard.replaceLastSelection(GlyphShape.text(textField.string, t.font)(t.fg, t.bg))
         case _ =>
       }
     }
@@ -669,18 +669,18 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
               case 's' => scale = dim
               case 'v' => vertices = dim.toInt
               case _ =>
-                dimField.text=s"$spec «$field»"
+                dimField.string=s"$spec «$field»"
                 logging.Default.warn(s"$spec does not specify w=, h=, r=, s=, v=")
                 return
             }
 
           case other =>
-            dimField.text=s"$spec «$other»"
+            dimField.string=s"$spec «$other»"
             logging.Default.warn(s"$spec does not specify as w=, h=, r=, s=, v=")
             return
         }
 
-      dimField.text=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices"
+      dimField.string=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices"
     }
 
     def HintedButton(label: String, hint: String="")(action: Reaction)(implicit style: StyleSheet): Glyph = {

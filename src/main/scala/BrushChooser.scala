@@ -70,7 +70,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
   }
 
   protected def showResultBrush(): Unit = {
-    brushField.text = resultBrush.toString
+    brushField.string = resultBrush.toString
     onChoose(resultBrush)
   }
 

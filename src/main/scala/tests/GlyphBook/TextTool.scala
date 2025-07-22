@@ -50,7 +50,7 @@ class TextTool(implicit style: StyleSheet)  {
 
   val GUI: Glyph = NaturalSize.Col(align=Center)(
     anchor,
-    <body width="60em" align="justify" fg="blue" parSkip="0.75em" itemWidth="60em" source={SOURCE}>
+    <body width="70em" align="justify" fg="blue" parSkip="0.75em" itemwidth="60em" itemindent="2em" itemalign="justify" source={SOURCE}>
       <p>
         This is an example of a TextField that has been set up by mapping a few abbreviations to emojis,
         namely:
@@ -65,6 +65,28 @@ class TextTool(implicit style: StyleSheet)  {
         <glyph gid="CONTROLS"/>
       </p>
       <fill/>
+      <p>Interaction is more-or-less standard.</p>
+      <itemize itemIndent="2em"  hang="•" logging="true">
+        <item>The cursor is shown as an I-beam and always kept in view</item>
+        <item>The selection has a coloured background</item>
+        <item>Visual cues are given when there is out-of-sight text</item>
+        <item>The usual cut, copy, paste, and navigate keys are provided:</item>
+      </itemize>
+      <itemize itemIndent="2em" hang="•">
+        <item>Home, End, Left, Right, and Backspace - usual effect</item>
+        <item>Ctrl/Cmd C - copy the selection (default all) to clipboard</item>
+        <item>Ctrl/Cmd X - cut the selection (default all) all to clipboard</item>
+        <item>Ctrl/Cmd V - insert from clipboard</item>
+        <item>Mousebutton - set the cursor here</item>
+        <item>The selection is between the mark (if any) and the cursor)</item>
+        <itemize itemIndent="4em" hang="•">
+          <item>Secondary mousebutton - set the mark here</item>
+          <item>Ctrl/Cmd mousebutton - set the mark here</item>
+          <item>Ctrl/Cmd . - set the mark at the cursor</item>
+          <item>Ctrl/Cmd S - swap the mark and cursor</item>
+        </itemize>
+      </itemize>
+
       <p>
         When "Live abbreviations" is set, typing an abbreviation results in the insertion of the
         unicode sequence it abbreviates. At any other time, typing the same shift key twice
@@ -78,17 +100,6 @@ class TextTool(implicit style: StyleSheet)  {
         by using the "any-shift-key-twice" method.
       </p>
       <fill/>
-      <itemize itemIndent="5em" logging="false">
-          <item>The cursor is always kept in view</item>
-        <item>Visual cues are given for out-of-field text</item>
-        <item>The usual cut, copy, paste, and navigate keys are provided:</item>
-        <itemize itemIndent="10em" hang="+">
-              <item>Ctrl/Cmd C - copy all to clipboard</item>
-              <item>Ctrl/Cmd X - cut all to clipboard</item>
-              <item>Ctrl/Cmd V - insert from clipboard</item>
-              <item>Home, End, Left, Right, and Backspace - their usual effect</item>
-        </itemize>
-      </itemize>
       </body>
   )
 }

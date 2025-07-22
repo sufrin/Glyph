@@ -9,8 +9,16 @@ class TextAbbreviations(var onLineTrigger: Boolean = false) {
 
   def clearMapping(): Unit = trie.clear()
 
+  /**  */
   def findAbbreviation(chars: CodePointSequence, upTo: Int): Option[(String, Int)] =
     trie.longestSuffixMatch(chars, upTo)
+
+  /**
+   * Given an iterator traversing the (forward) sequence s in reverse,
+   * find the longest suffix of `s` that matches a path from the root of `trie`.
+   */
+  def reverseFindAbbreviation(reverseIterator: Iterator[CodePoint]): Option[(String, Int)] =
+    trie.longestPrefixMatch(reverseIterator)
 
   def mapTo(abbrev: String, result: String): Unit = trie.reverseUpdate(toCodePoints(abbrev), result)
 

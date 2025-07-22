@@ -41,6 +41,8 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 abbreviations: org.sufrin.utility.TextAbbreviations
                ) extends ReactiveGlyph
 {
+  /** A copy of this glyph; perhaps with different foreground/background */
+  def copy(fg: Brush, bg: Brush): Glyph = new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations)
 
   import io.github.humbleui.jwm.{EventMouseButton, Window}
   val em = Text("M", font)
@@ -50,12 +52,12 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
     text => takeKeyboardFocus()
   }
 
-  locally { TextModel.text = initialText }
+  locally { TextModel.string = initialText }
 
-  def text: String = TextModel.text
+  def string: String = TextModel.string
 
-  def text_=(newText: String): Unit = {
-    TextModel.text = newText
+  def string_=(newText: String): Unit = {
+    TextModel.string = newText
     reDraw()
   }
 
@@ -77,7 +79,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
     if (hasGuiRoot) guiRoot.hasKeyboardFocus(this) else false
 
   /**
-   * Accept textlayout input denoting a diacritical that will become part of a composite character.
+   * Accept input denoting a diacritical that will become part of a composite character.
    *
    * TODO: Clarify whether _selection..., _replacement... fields denote anything useable
    *       It's not clear from the example programs
@@ -87,20 +89,20 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
     val end  = key.getReplacementEnd
     // Cases I know of are for single accent characters
     TextModel.insForReplacement(key.getText, 1+end-start) // pending characters to delete
-    if (onChange.isDefined) onChange.get.apply(text)
+    if (onChange.isDefined) onChange.get.apply(string)
     reDraw()
     resetAbbreviationTrigger()
   }
 
   override def accept(key: EventTextInput, location: Vec, window: Window): Unit = {
     TextModel.ins(key.getText)
-    if (onChange.isDefined) onChange.get.apply(text)
+    if (onChange.isDefined) onChange.get.apply(string)
     reDraw()
     resetAbbreviationTrigger()
   }
 
-  /** 
-   * The last shift-key that was pressed alone.  
+  /**
+   * The last shift-key that was pressed alone.
    * Two successive presses of the same shift key
    * (with transparent else pressed) triggers an abbreviation hunt.
    */
@@ -141,13 +143,15 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
       case RIGHT if mods.includeSome(ANYCONTROL) => TextModel.home()
       case RIGHT      => TextModel.mvRight()
 
-      case ENTER      => onEnter(text)
+      case ENTER      => onEnter(string)
       case C if mods.includeSome(ANYCONTROL) =>
-        Clipboard.set(new ClipboardEntry(ClipboardFormat.TEXT, text.getBytes()))
+        val toCopy = if (TextModel.hasMark) TextModel.markedString else string
+        Clipboard.set(new ClipboardEntry(ClipboardFormat.TEXT, toCopy.getBytes()))
 
       case X if mods.includeSome(ANYCONTROL) =>
-        Clipboard.set(new ClipboardEntry(ClipboardFormat.TEXT, text.getBytes()))
-        TextModel.clear()
+        val toCopy = if (TextModel.hasMark) TextModel.markedString else string
+        Clipboard.set(new ClipboardEntry(ClipboardFormat.TEXT, toCopy.getBytes()))
+        if (TextModel.hasMark) TextModel.cutMarked() else TextModel.clear()
 
       case U if mods.includeSome(ANYCONTROL) =>
         if (mods.includeSome(Shift))
@@ -161,6 +165,13 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
       case V if mods.includeSome(ANYCONTROL) =>
         val text = Clipboard.get(ClipboardFormat.TEXT).getString
         TextModel.ins(text)
+
+      case S if mods.includeSome(ANYCONTROL) =>
+        TextModel.swapMark()
+
+      case Key.PERIOD if mods.includeSome(ANYCONTROL) =>
+        TextModel.markToCursor()
+
 
       case BACKSPACE  if mods.includeSome(ANYCONTROL) =>
         TextModel.swap2()
@@ -192,7 +203,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
       case other  =>
         if (mods.includeSome(ANYSHIFT)) onError(key, this)
     }
-    if (onChange.isDefined) onChange.get.apply(text)
+    if (onChange.isDefined) onChange.get.apply(string)
     reDraw()
   }
 
@@ -202,27 +213,29 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   /**
    *  Top and bottom vertical shrink of the I-beam serifs
    */
-  val cursorSerifShrink = 6.0f
+  val cursorHeightDelta = 6.0f
 
   /**
    * Brush used to show the cursor when focussed
    */
-  val focussedBrush = Brushes("black") strokeWidth 2.5f
+  val focussedBrush = Brushes.black(width=3f)
 
   /**
    * Brush used to show the cursor when focussed
    */
-  val unfocussedBrush = Brushes("0X33000000") strokeWidth 2.5f
+  val unfocussedBrush = focussedBrush(alpha=0.4f)
 
   /**
    * Brush used to show panned warnings
    */
-  val panWarningBrush = fg(width=4, alpha=0.5f).dashed(2,2)//copy() strokeWidth 20.0f alpha 0.3
+  val panWarningBrush = fg(width=6, alpha=0.5f).dashed(2,2)
 
   /**
    *  Offset from start/end of the glyph of x of the pan-warning stroke
    */
   val panWarningOffset = panWarningBrush.strokeWidth
+
+  val markBrush: Brush = Brushes.red(width=diagonal.y, alpha=0.3f)
 
   /** The most recent origin of the displayed textlayout */
   def panBy: Int = TextModel.pan
@@ -246,6 +259,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
         val cursorNudge = if (TextModel.left==0) focussedBrush.strokeWidth/2f else 0
         val cursorLeft = leftWidth + cursorNudge
         val cursorBrush: Brush = if (focussed) focussedBrush else unfocussedBrush
+        val cursorBottom = diagonal.y-cursorHeightDelta-deltaY
 
         // show the text margins when logging
         if (TextField.loggingLevel(FINER)) {
@@ -253,16 +267,30 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
           surface.drawPolygon$(cursorBrush(color=0XFFFF0000), TextModel.margin, 0, TextModel.margin, diagonal.y)
         }
         // Draw the cursor as an I-Beam
-        surface.drawPolygon$(cursorBrush, cursorLeft, cursorSerifShrink-deltaY, cursorLeft, diagonal.y - cursorSerifShrink-deltaY) // vertical
-        surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, cursorSerifShrink-deltaY) // top bar
-        surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY) // bottom bar
+        surface.drawLines$(cursorBrush, cursorLeft, cursorHeightDelta-deltaY, cursorLeft, cursorBottom) // vertical
+        surface.drawLines$(cursorBrush, cursorLeft - cursorSerifWidth, cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, cursorHeightDelta-deltaY) // top bar
+        surface.drawLines$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY) // bottom bar
+
+        //Show the mark
+          TextModel.markPosition match {
+          case None =>
+          case Some(markPosition) =>
+            surface.drawLines$(markBrush, markPosition min cursorLeft, cursorBottom/2, markPosition max cursorLeft, cursorBottom/2)
+          //if (overflow && markPosition>w) surface.drawPolygon$(markBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
+          //if (panning && markPosition==0f) surface.drawPolygon$(markBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
+        }
       }
+
+
 
     // Indicate when there's invisible text to the right
     if (overflow) surface.drawPolygon$(panWarningBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
 
     // Indicate when there's invisible text to the left
     if (panning) surface.drawPolygon$(panWarningBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
+
+
+
   }
 }
 
@@ -271,18 +299,16 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
 
 
-  /** A copy of this glyph; perhaps with different foreground/background */
-  def copy(fg: Brush, bg: Brush): Glyph = null
 
   /** Seize focus on entry [prototype only] */
   override def accept(event: GlyphEvent, location: Vec, window: Window): Unit = event match {
     case _: GlyphEnter =>
       import io.github.humbleui.jwm.MouseCursor
-      onCursorEnter(text)
+      onCursorEnter(string)
       window.setMouseCursor(MouseCursor.IBEAM)
       reDraw() // window.requestFrame()
     case _: GlyphLeave =>
-      onCursorLeave(text)
+      onCursorLeave(string)
       if (hasGuiRoot) guiRoot.freeKeyboard()
   }
 
@@ -290,7 +316,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     import Modifiers._
     import TextModel.{markTo, moveTo}
     val mods = toBitmap(mouse)
-    val ctrl = Control|Command
+    val ctrl = Control|Command|Secondary
     if (mouse.isPressed)
       if (mods.includeSome(ctrl)) markTo(location.x) else moveTo(location.x)
     reDraw() // window.requestFrame()
@@ -334,7 +360,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     override def toString: String = s"TextField.TextModel(${leftString}, ${rightString})"
 
     /**  String represented by the buffer */
-    def text: String = {
+    def string: String = {
       val builder = new java.lang.StringBuilder
       for {cp <- 0 until left} builder.appendCodePoint(buffer(cp))
       for {cp <- right until N} builder.appendCodePoint(buffer(cp))
@@ -342,7 +368,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     /**  Set the string represented by the buffer */
-    def text_=(newText: String): Unit = {
+    def string_=(newText: String): Unit = {
       clear()
       ins(newText)
     }
@@ -378,22 +404,11 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     var allBMP: Boolean = true
 
     /**
-     * `Text` representing the characters after `from`
-     */
-    @inline def visibleText(from: Int): Text = {
-      val codePoints = visiblePointArray(from)
-      val text = Text(new String(codePoints, 0, length), font)
-      lastTextLine = text.implementation
-      text
-    }
-
-    /**
      * (TextLine, cursorPosition, textWidth) -- used by `draw`
      * POST: `allBMP` iff all codePoints are in the BMP
      */
-    @inline def allTextLine(from: Int): (TextLine, Scalar, Scalar) = {
+    @inline private def allTextLine(from: Int): (TextLine, Scalar, Scalar) = {
       val codePoints = visiblePointArray(from)
-      //println(codePoints.length, left, left-from)
       val leftWidth = TextLine.make(new String(codePoints, 0, left-from), font).getWidth
       lastTextLine = TextLine.make(new String(codePoints, 0, length-from), font)
       (lastTextLine, leftWidth, lastTextLine.getWidth)
@@ -403,7 +418,14 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     def draw(surface: Surface): (Scalar, Scalar) =
     { val (tl, cursor, width) = allTextLine(pan: Int)
       surface.drawTextLine(fg, tl, 0, tl.getHeight)
+
       (cursor, width)
+    }
+
+    def markPosition: Option[Scalar] = {
+      if (mark>=0) {
+        Some(visiblePoints(pan).take(mark-pan).map(codePointWidth(_)).sum)
+      } else None
     }
 
     @inline def hasLeft: Boolean = left != 0
@@ -423,9 +445,47 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       while (left > index && left != 0) mvLeft()
     }
 
-    def markTo(x: GlyphTypes.Scalar): Unit = {
-      moveTo(x)
+    // MARK MANIPULATION
+
+    def markedString: String = {
+      if (mark>0) {
+        val codePoints = visiblePointArray(mark min left)
+        new String(codePoints, 0, (left-mark).abs)
+      } else ""
     }
+
+    var mark: Int = 0
+
+    def hasMark: Boolean = mark>0
+
+    def markTo(x: GlyphTypes.Scalar): Unit = {
+      val nudgex = x + nudge
+      val index = indexOfVisible(nudgex) + panBy
+      mark = index
+    }
+
+    def markToCursor(): Unit = {
+      mark=left
+    }
+
+    def swapMark(): Unit = {
+      if (mark>=0) {
+        val nextMark = left
+        while (left < mark && left != right) mvRight()
+        while (left > mark && left != 0) mvLeft()
+        mark = nextMark
+      }
+    }
+
+    def cutMarked(): Unit = {
+      if (hasMark) {
+        if (mark>left) swapMark()
+        val m = mark
+        while (hasLeft && m<left) del()
+      }
+    }
+
+    // END MARK MANIPULATION
 
     /**
      * Grow buffer if necessary to make room for another few characters.
@@ -453,6 +513,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       }
 
     def insCodePoint(cp: CodePoint): Unit = {
+      mark = -1
       ensureAdequateSize()
       assert(left < right, s"TextModel(size=$size) is full")
       buffer(left) = cp
@@ -460,15 +521,18 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     def del(): Unit = {
+      mark = -1
       if (left != 0) left -= 1
     }
 
-    def swap2(): Unit =
+    def swap2(): Unit = {
+      mark = -1
       if (left > 1) {
         val c = buffer(left - 2)
         buffer(left - 2) = buffer(left - 1)
         buffer(left - 1) = c
       }
+    }
 
     private var pendingDeletions: Int = 0
 
@@ -576,19 +640,25 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     /** codepoints at the left of the cursor */
     private def leftCodePoints: Seq[CodePoint] = new Seq[CodePoint] {
       def apply(i: Int): CodePoint = buffer(i)
-
       def length: CodePoint = left
-
       def iterator: Iterator[CodePoint] = new Iterator[CodePoint] {
         var ix: Int = 0
-
         def hasNext: Boolean = ix < left
-
         def next(): CodePoint = {
           val v = buffer(ix); ix += 1; v
         }
       }
     }
+
+    /** codepoints at the left of the cursor in reverse order */
+    private def reverseLeftCodePoints: Iterator[CodePoint] = new Iterator[CodePoint] {
+        var ix: Int = left
+        def hasNext: Boolean = ix > 0
+        def next(): CodePoint = {
+          ix -= 1; buffer(ix)
+        }
+      }
+
 
     /** widths of characters between from and the cursor */
     private def leftWidths(from: Int): Iterator[Scalar] = new Iterator[Scalar] {
@@ -603,14 +673,10 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     /** codepoints at the right of the cursor */
     private def rightCodePoints: Seq[CodePoint] = new Seq[CodePoint] {
       def apply(i: Int): CodePoint = buffer(i)
-
       def length: CodePoint = N - right
-
       def iterator: Iterator[CodePoint] = new Iterator[CodePoint] {
         var ix: Int = right
-
         def hasNext: Boolean = ix < N
-
         def next(): CodePoint = {
           val v = buffer(ix); ix += 1; v
         }
@@ -618,9 +684,11 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     /** The codepoints to the right of `pan` */
-    private def visiblePoints(): Iterator[CodePoint] = new Iterator[CodePoint] {
+    private def visiblePoints(): Iterator[CodePoint] = visiblePoints(pan)
+
+    private def visiblePoints(from: Int): Iterator[CodePoint] = new Iterator[CodePoint] {
       val offset = right-left
-      var ix = pan
+      var ix = from
       val thisLength = left+N-right
       def hasNext: Boolean = ix<thisLength
       def next(): CodePoint = {
@@ -731,7 +799,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     def abbreviation(): Unit = if (abbreviations!=null) {
-      abbreviations.findAbbreviation(leftCodePoints, left) match {
+      abbreviations.reverseFindAbbreviation(reverseLeftCodePoints) match {
         case None =>
         case Some((repl, size)) =>
           if (!abbreviating) {
