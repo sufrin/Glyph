@@ -59,6 +59,13 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
     reDraw()
   }
 
+  /** Index of the character boundary of the cursor 0..length  */
+  def cursor: Int = TextModel.left
+
+  /** text.length  */
+  def length: Int = TextModel.length
+
+
   /**
    * The diagonal size of the glyph
    */
@@ -210,12 +217,12 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   /**
    * Brush used to show panned warnings
    */
-  val panWarningBrush = fg.copy() strokeWidth 20.0f alpha 0.3
+  val panWarningBrush = fg(width=4, alpha=0.5f).dashed(2,2)//copy() strokeWidth 20.0f alpha 0.3
 
   /**
    *  Offset from start/end of the glyph of x of the pan-warning stroke
    */
-  val panWarningOffset = panWarningBrush.strokeWidth / 2
+  val panWarningOffset = panWarningBrush.strokeWidth
 
   /** The most recent origin of the displayed textlayout */
   def panBy: Int = TextModel.pan
@@ -227,16 +234,17 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   def draw(surface: Surface): Unit = {
     drawBackground(surface)
     surface.declareCurrentTransform(this)
+    var panning = panBy>0
+    var overflow = false
     surface.withClip(diagonal) {
-
       surface.withOrigin(0, deltaY) {
-
         TextModel.rePan()
-        val (leftw, allWidth) = TextModel.draw(surface)
+        val (leftWidth, allWidth) = TextModel.draw(surface)
+        overflow=allWidth>=w
 
         // prepare to draw the cursor
         val cursorNudge = if (TextModel.left==0) focussedBrush.strokeWidth/2f else 0
-        val cursorLeft = leftw + cursorNudge
+        val cursorLeft = leftWidth + cursorNudge
         val cursorBrush: Brush = if (focussed) focussedBrush else unfocussedBrush
 
         // show the text margins when logging
@@ -245,23 +253,18 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
           surface.drawPolygon$(cursorBrush(color=0XFFFF0000), TextModel.margin, 0, TextModel.margin, diagonal.y)
         }
         // Draw the cursor as an I-Beam
-
-        surface.drawPolygon$(cursorBrush, cursorLeft, cursorSerifShrink-deltaY, cursorLeft, diagonal.y - cursorSerifShrink-deltaY) // ertical
-        surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, cursorSerifShrink-deltaY)
-        surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY)
-
-        // Indicate when there's invisible text to the right
-        if (allWidth >= w) {
-          surface.drawPolygon$(panWarningBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
-        }
-
-        // Indicate when there's invisible text to the left
-        if (panBy > 0) {
-          surface.drawPolygon$(panWarningBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
-        }
+        surface.drawPolygon$(cursorBrush, cursorLeft, cursorSerifShrink-deltaY, cursorLeft, diagonal.y - cursorSerifShrink-deltaY) // vertical
+        surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, cursorSerifShrink-deltaY) // top bar
+        surface.drawPolygon$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorSerifShrink-deltaY) // bottom bar
       }
-    }
+
+    // Indicate when there's invisible text to the right
+    if (overflow) surface.drawPolygon$(panWarningBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
+
+    // Indicate when there's invisible text to the left
+    if (panning) surface.drawPolygon$(panWarningBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
   }
+}
 
 def takeKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.grabKeyboard(this)
 def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
@@ -312,7 +315,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
    *  The model could easily be equipped with an undo/redo feature but it hardly
    *  seems worth doing so in the prototype toolkit.
    */
-  object TextModel {
+  private object TextModel {
     type CodePoint = Int
     var buffer: Array[CodePoint] = Array.ofDim[CodePoint](size + 3)
 
@@ -321,6 +324,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     var left = 0
     var right = N
 
+    /** Number of characters in the buffer */
     def length: Int = left + N - right
 
     def clear(): Unit = {
@@ -329,6 +333,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     override def toString: String = s"TextField.TextModel(${leftString}, ${rightString})"
 
+    /**  String represented by the buffer */
     def text: String = {
       val builder = new java.lang.StringBuilder
       for {cp <- 0 until left} builder.appendCodePoint(buffer(cp))
@@ -336,17 +341,13 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       builder.toString
     }
 
+    /**  Set the string represented by the buffer */
     def text_=(newText: String): Unit = {
       clear()
       ins(newText)
     }
 
-    def leftString: String = {
-      //new String(buffer, 0, left)
-      val builder = new java.lang.StringBuilder
-      for {cp <- 0 until left} builder.appendCodePoint(buffer(cp))
-      builder.toString
-    }
+    def leftString: String = leftString(0)
 
     def leftString(from: Int): String = if (from < 0 || left - from <= 0) "" else {
       //new String(buffer, from, left-from)
@@ -362,18 +363,10 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       builder.toString
     }
 
-    /** The `Text` to the left of the cursor: for drawing */
-    @inline def leftText: Text = Text(leftString, font)
-
-    /** The `Text` to the right of the cursor */
-    @inline def rightText(fg: Brush): Text = Text(rightString, font, fg, transient = true)
-
-    /** The `Text` to the left of the cursor from the `from`th character */
-    @inline def leftText(from: Int, fg: Brush): Text = Text(leftString(from), font, fg, transient = true)
-
     def leftWidth(from: Int): Scalar = {
-      val codePoints = visiblePointArray(from)
-      TextLine.make(new String(codePoints, 0, left-from), font).getWidth
+      //val codePoints = visiblePointArray(from)
+      //TextLine.make(new String(codePoints, 0, left-from), font).getWidth
+      leftWidths(from).sum
     }
 
     var lastTextLine: io.github.humbleui.skija.TextLine = null
@@ -544,7 +537,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     var pan: Int = 0
 
     // Define a sensible margin for panning
-    val marginChars: Int = size / 10 max 1
+    val marginChars: Int = size / 5 max 2
     val margin: Scalar = Text("M" * (marginChars), font).width
 
     def rePan(): Unit = {
@@ -596,6 +589,16 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
         }
       }
     }
+
+    /** widths of characters between from and the cursor */
+    private def leftWidths(from: Int): Iterator[Scalar] = new Iterator[Scalar] {
+        var ix: Int = from
+        def hasNext: Boolean = ix < left
+        def next(): Scalar = {
+          val v = codePointWidth(buffer(ix)); ix += 1; v
+        }
+    }
+
 
     /** codepoints at the right of the cursor */
     private def rightCodePoints: Seq[CodePoint] = new Seq[CodePoint] {
