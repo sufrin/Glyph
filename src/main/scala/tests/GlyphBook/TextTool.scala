@@ -47,7 +47,12 @@ class TextTool(implicit style: StyleSheet)  {
   }
 
 
-  val textField: TextField = styled.TextField(size = 40, onEnter = { _ =>  }, onCursorLeave = { _ => anchor.guiRoot.giveupFocus() }, abbreviations = abbrev)(style.copy(fontScale = 1.5f))
+  val textField: TextField =
+      styled.TextField(size = 40,
+                       onEnter = { _ =>  },
+                       onCursorLeave = { _ => anchor.guiRoot.giveupFocus() },
+                       onError = { case (eventKey, _) => println(eventKey)},
+                       abbreviations = abbrev)(style.copy(fontScale = 1.5f))
   defs("TEXTFIELD") = _=>textField.framed()
 
 

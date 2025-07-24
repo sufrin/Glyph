@@ -38,12 +38,13 @@ object TextField {
             onChange: Option[String => Unit]   = None,
             size:    Int,
             initialText: String = "",
-            abbreviations: TextAbbreviations = null
+            abbreviations: TextAbbreviations = null,
+            glyphcountData: GlyphcountData = GlyphcountData()
            )
            (implicit sheet: StyleSheet): TextField = {
     val fg: Brush = sheet.textForegroundBrush
     val bg: Brush = sheet.textBackgroundBrush
     val font: Font = sheet.textFont
-    new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations)
+    new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations, glyphcountData)
   }
 }

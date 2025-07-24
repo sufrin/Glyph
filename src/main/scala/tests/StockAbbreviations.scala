@@ -230,5 +230,10 @@ object StockAbbreviations {
       (":-|", "\uD83D\uDE10"),
       (":)", "\uD83D\uDE00"),
       (":O",  "\uD83D\uDE2E"),
+      ("ukflag" -> "\uD83C\uDDEC\uD83C\uDDE7"),
+      ("family" -> "\uD83E\uDDD1"),
+      ("footprints" -> "\uD83D\uDC63"),
+      ("faceinclouds" -> "\uD83D\uDE36\u200D\uD83C\uDF2B\uFE0F"),
+      ("testing" -> "testing")
       )
 }

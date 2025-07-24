@@ -323,14 +323,13 @@ case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean, h
     val onFG = detail.toggle.on.fg
     val onBG = detail.toggle.on.bg
 
-    val whenTTrue: Glyph  = Label(whenTrue, Center, detail.up)
-    val whenFFalse: Glyph = Label(whenFalse, Center, detail.down)
+    val whenTTrue: Glyph  = unstyled.Label(whenTrue, sheet.labelFont,  fg=onFG, bg=onBG)
+    val whenFFalse: Glyph = unstyled.Label(whenFalse, sheet.labelFont, fg=offFG, bg=offBG)
     val Vec(w, h) = (whenTTrue.diagonal union whenFFalse.diagonal)
 
     unstyled.BooleanGlyphs(
-      new OnOff(whenTrue  =
-        Decorate(whenTTrue.enlargedTo(w, h)),
-                 whenFalse = Decorate(whenFFalse.enlargedTo(w, h)), initially = initially, fg = offFG, bg = offBG),
+      new OnOff(whenTrue  = whenTTrue.enlargedTo(w, h),
+                whenFalse = whenFFalse.enlargedTo(w, h), initially = initially, fg = offFG, bg = offBG),
       initially = initially,
       fg = detail.toggle.off.fg,
       bg = detail.toggle.off.bg,

@@ -7,46 +7,66 @@ import org.sufrin
 import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.unstyled.Text
 import org.sufrin.logging.FINER
+import org.sufrin.utility.TextAbbreviations
 
-import scala.::
-import scala.collection.IndexedSeqView.Slice
-import scala.collection.mutable
 
 
 /**
  *  A fixed-width reactive glyph that can be edited from the keyboard. The width of
  *  the glyph is `size * em`, where `em` is the size of an "m" in the specified font.
- *  The textlayout being edited can be of any length.
+ *  The text being edited can be of any length.
  *  It is panned, if necessary, to keep the cursor in view.
  *  Simple visual indications are given at each end of the glyph
- *  when there is non-visible textlayout at that end.
+ *  when there is non-visible text at that end.
  *
  *  When the mouse cursor enters this glyph, it grabs the keyboard focus, and this
  *  directs subsequent keystrokes to it.
  *
  *  When the mouse cursor leaves this glyph, it gives up the keyboard focus.
  *
- *  TODO: give visual feedback when this has the keyboard focus.
  *  TODO: styled colouration of cursor
  *
- * @see styled.TextField for a styled companion object.
+ *
+ * NOTES:
+ *
+ * 1-This served as a serious exercise in understanding the ramificatons of unicode representations of glyphs. Among
+ * other things there is not a 1-1 correspondence between UTF32 codepoints and glyphs as displayed. So although I chose
+ * a representation consisting of codepoints, working out the details of glyph widths (for navigation) has been a bit
+ * of a trial.  Skia/Skija doesn't treat non-BMP codepoints as first-class citizens; and that makes measuring (so as
+ * to implement mouse-pointing) quite difficult. At the moment the presence of glyphs represented by more than a
+ * single (UTF32) codepoint mucks up mouse-pointing. I have a workaround in mind that will (quite inefficiently)
+ * deal with these cases.
+ *
+ * 2-Our method of constructing the glyph to codepointcount mappings is designed to make it unnecessary to
+ * preload data for glyphs that are the (sole)-targets of abbreviations, or inserted (as singleton glyphs) from
+ * the clipboard (ctrl-V), though data-preloading is possible.
+ *
+ * 3-Tests (OS/X) suggest correct functioning for left-to-right material, including polycoded emoji glyphs.
+ *
+ *
  */
 class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 var onEnter: String => Unit,
                 var onError: (EventKey, Glyph) => Unit,
                 var onCursorLeave: String => Unit,
                 var onChange: Option[String => Unit],
-                size: Int,
+                val size: Int,
                 initialText: String,
-                abbreviations: org.sufrin.utility.TextAbbreviations
+                val abbreviations: org.sufrin.utility.TextAbbreviations,
+                val glyphCountData: GlyphcountData
                ) extends ReactiveGlyph
 {
   /** A copy of this glyph; perhaps with different foreground/background */
-  def copy(fg: Brush, bg: Brush): Glyph = new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations)
+  def copy(fg: Brush, bg: Brush): Glyph = new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations, glyphCountData)
 
   import io.github.humbleui.jwm.{EventMouseButton, Window}
-  val em = Text("M", font)
-  val emDiagonal = Vec(em.width, em.drop)
+  private val em         = Text("M", font)
+  private val emDiagonal = Vec(em.width, em.drop)
+  private val atBaseLine = em.height
+  private val nudge      = em.width / 2
+  private val deltaY     = emDiagonal.y*0.2f
+  def diagonal: Vec      = Vec(emDiagonal.x*size, emDiagonal.y*1.2)
+
 
   var onCursorEnter: String => Unit = {
     text => takeKeyboardFocus()
@@ -68,12 +88,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   def length: Int = TextModel.length
 
 
-  /**
-   * The diagonal size of the glyph
-   */
-  def diagonal: Vec = Vec(emDiagonal.x*size, emDiagonal.y*1.2)
-  val atBaseLine = em.height
-  val deltaY = emDiagonal.y*0.2f
+
 
   private def focussed: Boolean =
     if (hasGuiRoot) guiRoot.hasKeyboardFocus(this) else false
@@ -104,7 +119,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   /**
    * The last shift-key that was pressed alone.
    * Two successive presses of the same shift key
-   * (with transparent else pressed) triggers an abbreviation hunt.
+   * triggers an abbreviation hunt.
    */
   private var abbreviationTrigger = Key.UNDEFINED
   private def resetAbbreviationTrigger(): Unit = abbreviationTrigger = Key.UNDEFINED
@@ -165,11 +180,12 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
       case V if mods.includeSome(ANYCONTROL) =>
         val text = Clipboard.get(ClipboardFormat.TEXT).getString
         TextModel.ins(text)
+        TextModel.accountForCodePointCounts(text)
 
       case S if mods.includeSome(ANYCONTROL) =>
         TextModel.swapMark()
 
-      case Key.PERIOD if mods.includeSome(ANYCONTROL) =>
+      case Key.DOWN if mods.includeSome(ANYCONTROL) =>
         TextModel.markToCursor()
 
       case BACKSPACE  if mods.includeSome(ANYCONTROL) =>
@@ -179,22 +195,17 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
 
       case DELETE     => TextModel.mvRight(); TextModel.del()
 
-      case ESCAPE     => TextModel.abbreviation()
-
       // two successive presses on the same shift key triggers an abbreviation
       case CONTROL | MAC_COMMAND | SHIFT | LINUX_SUPER | ALT | MAC_OPTION =>
-        if (abbreviationTrigger eq key._key) {
+        if (abbreviationTrigger eq Key.MAC_OPTION) {
+          println(TextModel.reverseLeftCodePoints().take(4).map(c=>f"$c%xu+").toList.reverse.mkString(" "))
+        }
+        else if (abbreviationTrigger eq key._key) {
           TextModel.abbreviation()
           resetAbbreviationTrigger()
         } else {
           abbreviationTrigger = key._key
         }
-
-      // to support pan testing
-      case S if mods.includeSome(ANYSHIFT) && TextField.loggingLevel(FINER) =>
-           for (i<-0 until 3*size) {
-             TextModel.ins(f"$i%03d ")
-           }
 
       case other  if abbreviationKey!=UNDEFINED && other==abbreviationKey && mods ==abbreviationMods =>
         TextModel.abbreviation()
@@ -417,7 +428,6 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     def draw(surface: Surface): (Scalar, Scalar) =
     { val (tl, cursor, width) = allTextLine(pan: Int)
       surface.drawTextLine(fg, tl, 0, tl.getHeight)
-
       (cursor, width)
     }
 
@@ -431,7 +441,6 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     @inline def hasRight: Boolean = right != N
 
-    private val nudge = em.width / 2
 
     /**
      * Implementation of cursor motion to a horizontal location.
@@ -493,11 +502,11 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       val quantum = 10
       if (left == right) {
         val newBuffer = Array.ofDim[CodePoint](buffer.length + quantum)
-        var newRight = newBuffer.size
+        var newRight, j = right+quantum
         for {i <- 0 until left} newBuffer(i) = buffer(i)
-        for {i <- right until N} {
-          newRight -= 1
-          newBuffer(newRight) = buffer(i)
+        for {i <- right until buffer.length} {
+          newBuffer(j) = buffer(i)
+          j += 1
         }
         buffer = newBuffer
         right = newRight
@@ -521,10 +530,12 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     def del(): Unit = {
       mark = -1
-      if (left != 0) left -= 1
+      //if (ATFLAGRIGHT) left-=2 else
+      val n = leftGlyph2Codepoints
+      if (left >=n ) left -= n
     }
 
-    def swap2(): Unit = {
+    def swap2(): Unit = { // TODO: count glyphs
       mark = -1
       if (left > 1) {
         val c = buffer(left - 2)
@@ -569,16 +580,38 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
 
-    def mvLeft(): Unit = if (left != 0) {
+    @inline private def MVLEFT(): Unit = {
       left -= 1
       right -= 1
       buffer(right) = buffer(left)
     }
 
-    def mvRight(): Unit = if (right != N) {
+    @inline private def MVRIGHT(): Unit =  {
       buffer(left) = buffer(right)
       right += 1
       left += 1
+    }
+
+    @inline private def ISREGIONAL(cp: CodePoint): Boolean = 0X1F1E6 <= cp && cp <= 0X1F1FF
+
+    @inline private def ATFLAG: Boolean =
+      (left>0&&right<N) && ISREGIONAL(buffer(right)) && ISREGIONAL(buffer(left-1))
+
+    @inline private def ATZWJ: Boolean =
+      (left>1) && buffer(left-1)==0X200D
+
+    @inline private def ATFLAGRIGHT: Boolean = {
+      (left>=2) && ISREGIONAL(buffer(left-1)) && ISREGIONAL(buffer(left-2))
+    }
+
+    def mvLeft(): Unit = if (left != 0) {
+      val n = leftGlyph2Codepoints
+      for { i<-0 until n} MVLEFT()
+    }
+
+    def mvRight(): Unit = if (right != N) {
+      val n = rightGlyph2Codepoints
+      for { i<-0 until n } MVRIGHT()
     }
 
     def home(): Unit = {
@@ -650,7 +683,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     /** codepoints at the left of the cursor in reverse order */
-    private def reverseLeftCodePoints(): Iterator[CodePoint] = new Iterator[CodePoint] {
+    def reverseLeftCodePoints(): Iterator[CodePoint] = new Iterator[CodePoint] {
         var ix: Int = left
         def hasNext: Boolean = ix > 0
         def next(): CodePoint = {
@@ -750,12 +783,15 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
      * codepoint to be rendered as it will be if it appears in a TextLine
      * made using the current font.
      */
-    @inline private def codePointWidth(codePoint: CodePoint): Scalar =
+    @inline private def codePointWidth(codePoint: CodePoint): Scalar = {
       if (Character.isBmpCodePoint(codePoint))
         font.getWidths(Array(font.getUTF32Glyph(codePoint)))(0) else {
         val chars = Character.toChars(codePoint)
-        TextLine.make(new String(chars, 0, chars.length), font).getWidth
+        // font.measureText(new String(chars, 0, chars.length), fg).getWidth // FAILS -- too short
+        val line = TextLine.make(new String(chars, 0, chars.length), font)
+        line.getWidth
       }
+    }
 
     /**
      * @return iterator over the widths of the visible characters
@@ -766,6 +802,11 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
      * @return (increasing) iterator over the left boundaries of the visible characters
      */
     @inline private def visibleBoundaries(): Iterator[Scalar] = visiblePoints().map(codePointWidth(_)).scanLeft(0f)(_+_)
+
+    def glyphCount(multiCode: String): Int = {
+      val line = TextLine.make(new String(multiCode), font)
+      line.getGlyphs.length
+    }
 
 
     final val workaround = false
@@ -797,6 +838,42 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       }
     }
 
+
+
+
+    /** Map the GLYPH at the left of the cursor to the number of codepoints that represent it */
+    def leftGlyph2Codepoints: Int =
+      glyphCountData.leftGlyphCodepointCount.longestPrefixMatch(reverseLeftCodePoints()) match {
+        case None => 1
+        case Some((_, n)) => n
+      }
+
+    /** Map the GLYPH at the right of the cursor to the number of codepoints that represent it */
+    def rightGlyph2Codepoints: Int =
+      glyphCountData.rightGlyphCodepointCount.longestPrefixMatch(rightCodePoints.iterator) match {
+        case None => 1
+        case Some((_, n)) => n
+      }
+
+    /**
+     * Count the GLYPHS yielded by `insertion`, and bring the
+     * left and right glyph size  mappings up to date.
+     * This should be applied when any (individual) glyph (represented as `insertion`)
+     * is introduced to the TextLine from the outside.
+     */
+    def accountForCodePointCounts(insertion: String): Unit = {
+      if (insertion.size>1) {
+        val cps = TextAbbreviations.toCodePoints(insertion)
+        //println(s"$repl (${repl.length}) => ${glyphCount(repl)}")
+        if (glyphCount(insertion)==1 && cps.length>1) {
+          glyphCountData.leftGlyphCodepointCount.reverseUpdate(cps, true)
+          glyphCountData.rightGlyphCodepointCount.update(cps, true)
+          //for { (codes, _) <- leftGlyphCodepointCount } println("L", codes.map{_.toHexString}.mkString(", "))
+          //for { (codes, _) <- rightGlyphCodepointCount } println("R", codes.map{_.toHexString}.mkString(", "))
+        }
+      }
+    }
+
     def abbreviation(): Unit = if (abbreviations!=null) {
       abbreviations.reverseFindAbbreviation(reverseLeftCodePoints) match {
         case None =>
@@ -806,6 +883,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
             abbreviating = true
             if (left >= size) left -= size
             ins(repl)
+            accountForCodePointCounts(repl)
             abbreviating = false
           }
       }
@@ -833,7 +911,8 @@ object TextField extends logging.Loggable {
             onChange: Option[String=>Unit]     = None,
             size: Int,
             initialText: String = "",
-            abbreviations: org.sufrin.utility.TextAbbreviations = null
+            abbreviations: org.sufrin.utility.TextAbbreviations = null,
+            glyphcountData: GlyphcountData = GlyphcountData()
            ): TextField =
       new TextField(fg, bg, font,
             onEnter=onEnter,
@@ -842,7 +921,13 @@ object TextField extends logging.Loggable {
             onChange=onChange,
             size=size,
             initialText=initialText,
-            abbreviations=abbreviations)
+            abbreviations=abbreviations,
+            glyphCountData = glyphcountData)
 }
+
+case class GlyphcountData(
+  leftGlyphCodepointCount: PrefixCodePointMap[Boolean] = new PrefixCodePointMap[Boolean],
+  rightGlyphCodepointCount: PrefixCodePointMap[Boolean] = new PrefixCodePointMap[Boolean]
+)
 
 
