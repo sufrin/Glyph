@@ -1,6 +1,8 @@
 package org.sufrin.glyph
 package tests
 
+import tests.StockAbbreviations.greekUpper
+
 object StockAbbreviations {
 
 
@@ -12,34 +14,7 @@ object StockAbbreviations {
       ("}}" -> "\u23ac"), // # ⎬
     )
 
-    val greek = List(
-      ("alpha" -> "\u03B1"), //
-      ("beta" -> "\u03B2"), //
-      ("gamma" -> "\u03B3"), //
-      ("delta" -> "\u03B4"), //
-      ("epsilon" -> "\u03B5"), //
-      ("zeta" -> "\u03B6"), //
-      ("eta" -> "\u03B7"), //
-      ("theta" -> "\u03B8"), //
-      ("iota" -> "\u03B9"), //
-      ("kappa" -> "\u03BA"), //
-      ("lambda" -> "\u03BB"), //
-      ("mu" -> "\u03BC"), //           # μ
-      ("nu" -> "\u03BD"), //
-      ("xi" -> "\u03BE"), //           # ξ
-      ("omicron" -> "\u03BF"), //
-      ("pi" -> "\u03C0"), //
-      ("rho" -> "\u03C1"), //
-      ("finalsigma" -> "\u03C2"), //         # ς
-      ("sigma" -> "\u03C3"), //
-      ("tau" -> "\u03C4"), //
-      ("upsilon" -> "\u03C5"), //           # υ
-      ("xphi" -> "\u03C6"), //           # φ
-      ("phi" -> "\u03D5"), //           # ϕ
-      ("chi" -> "\u03C7"), //           # χ
-      ("psi" -> "\u03C8"), //           # ψ
-      ("omega" -> "\u03C9"), //
-
+    val greekUpper = List(
       ("Alpha" -> "\u0391"), //
       ("Beta" -> "\u0392"), //
       ("Gamma" -> "\u0393"), //
@@ -57,7 +32,7 @@ object StockAbbreviations {
       ("Omicron" -> "\u039F"), //
       ("Pi" -> "\u03A0"), //
       ("Rho" -> "\u03A1"), //
-      ("Finalsigma" -> "\u03A2"), //
+      ("Sigma" -> "\u03A2"), //
       ("Sigma" -> "\u03A3"), //
       ("Tau" -> "\u03A4"), //
       ("Upsilon" -> "\u03A5"), //
@@ -250,23 +225,43 @@ object StockAbbreviations {
       val LRI=0x2066
       val PDI=0x2069
 
-    val bidi = List(
+      val bidi = List(
         ("LRI" -> "\u2066"),
         ("RLI" -> "\u2067"),
         ("PDI" -> "\u2069")
       )
 
-      // hebrew letters as unicode bidi isolates
+      def sloshName(s: String): String = s"\\$s"
+      def sloshLowerCaseName(s: String): String = s"\\${s.toLowerCase}"
+
+      /** hebrew letters as unicode bidi isolates */
       val hebrew = {
-        val names="alef/bet/gimel/dalet/he/vav/zayin/het/tet/yod/.kaf/kaf/lamed/.mem/mem/.nun/nun/samekh/ayin/.pe/pe/.tsadi/tsadi/qof/resh/shin/tav".split('/').toSeq
+        val names="alef/beth/gimel/dalet/he/vav/zayin/het/tet/yod/.kaf/kaf/lamed/.mem/mem/.nun/nun/samekh/ayin/.pe/pe/.tsadi/tsadi/qof/resh/shin/tav".split('/').toSeq
         val start = 0X05D0
         val codes = start until (start+names.length)
-        names.zip(codes.map(code=>f"$LRI%c$code%c$PDI%c"))
+        names.map(sloshName).zip(codes.map(code=>f"$LRI%c$code%c$PDI%c"))
       }
 
-      lazy val all = bidi++hebrew++complex++abbreviations
+      /** greek letters (upper and lower) */
+      val greek = {
+        val names = "Alpha/Beta/Gamma/Delta/Epsilon/Zeta/Eta/Theta/Iota/Kappa/Lambda/Mu/Nu/Xi/Omicron/Pi/Rho/.Sigma/Sigma/Tau/Upsilon/Phi/Chi/Psi/Omega".split('/').toSeq
+        def codes(start: Int): Seq[Int] = start until (start+names.length)
+        val exception: ((String,String))=>Boolean = {
+          case ("\\.Sigma", _) => true
+          case other => false
+        }
+        val uppercase = names.map(sloshName).zip(codes(0X0391).map(code=>f"$code%c")).filterNot(exception) // there's no final capital Sigma
+        val lowercase = names.map(sloshLowerCaseName).zip(codes(0X03B1).map(code=>f"$code%c"))
+        uppercase++lowercase
+      }
 
-      locally { // check hebrew
+      lazy val all = bidi++hebrew++complex++abbreviations++greek
+
+      if (false) locally { // check hebrew and greek
         for { (a, l)<-hebrew } println(a, l)
+        for { (a, l)<-greek } println(a, l)
       }
+
+
 }
+

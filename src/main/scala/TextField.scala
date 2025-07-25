@@ -413,9 +413,9 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     var lastTextLine: io.github.humbleui.skija.TextLine = null
+    var lastVisiblePointArray: Array[CodePoint] = null         // the codepoints from which `lastTextLine` was constructed
 
     /**
-     * [only used by width-calculation workaround]
      * True iff all CodePoints in the last-displayed line were in the BMP
      */
     var allBMP: Boolean = true
@@ -425,9 +425,9 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
      * POST: `allBMP` iff all codePoints are in the BMP
      */
     @inline private def allTextLine(from: Int): (TextLine, Scalar, Scalar) = {
-      val codePoints = visiblePointArray(from)
-      val leftWidth = TextLine.make(new String(codePoints, 0, left-from), font).getWidth
-      lastTextLine = TextLine.make(new String(codePoints, 0, length-from), font)
+      lastVisiblePointArray = visiblePointArray(from)
+      val leftWidth = TextLine.make(new String(lastVisiblePointArray, 0, left-from), font).getWidth
+      lastTextLine = TextLine.make(new String(lastVisiblePointArray, 0, length-from), font)
       (lastTextLine, leftWidth, lastTextLine.getWidth)
     }
 
@@ -451,13 +451,34 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     /**
      * Implementation of cursor motion to a horizontal location.
+     * Heavy-duty when outside `allBMP`
      */
     def moveTo(x: GlyphTypes.Scalar): Unit = {
-      val nudgex = x + nudge
-      val index = indexOfVisible(nudgex) + panBy
-      //println(x, left, panBy, index)
-      while (left < index && left != right) mvRight()
-      while (left > index && left != 0) mvLeft()
+      val nudgex = x - nudge
+      if (allBMP) {
+        val index = lastTextLine.getLeftOffsetAtCoord(x) + panBy
+        while (left < index && left != right) mvRight()
+        while (left > index && left != 0) mvLeft()
+      } else {
+        // Very inefficient way to deal with widths of nonBMP material
+        val codePoints = lastVisiblePointArray // visiblePointArray(panBy)
+
+        @inline def rightWidth: Scalar = {
+          val n = rightGlyph2Codepoints
+          if (n == 1)
+            codePointWidth(buffer(right))
+          else {
+            TextLine.make(new String(codePoints, 0, n), font).getWidth
+          }
+        }
+
+        var xPos = 0f
+        while (panBy < left) MVLEFT() // left visible end
+        while (xPos < nudgex && hasRight) {
+          xPos += rightWidth
+          mvRight()
+        }
+      }
     }
 
     // MARK MANIPULATION
@@ -474,9 +495,11 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     def hasMark: Boolean = mark>0
 
     def markTo(x: GlyphTypes.Scalar): Unit = {
-      val nudgex = x + nudge
-      val index = indexOfVisible(nudgex) + panBy
-      mark = index
+      val l=left
+      moveTo(x)
+      mark=left
+      while (left<l && hasRight) mvRight()
+      while (left>l && hasLeft) mvLeft()
     }
 
     def markToCursor(): Unit = {
@@ -543,11 +566,20 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     def swap2(): Unit = { // TODO: count glyphs
       mark = -1
-      if (left > 1) {
-        val c = buffer(left - 2)
-        buffer(left - 2) = buffer(left - 1)
-        buffer(left - 1) = c
-      }
+      if (left>1) {
+        mvLeft()
+        val lc = leftGlyph2Codepoints
+        val rc = rightGlyph2Codepoints
+        if (lc == 1 && rc == 1) {
+          val c = buffer(right)
+          buffer(right) = buffer(left-1)
+          buffer(left - 1) = c
+          mvRight()
+        } else {
+          TextField.beep()
+        }
+      } else
+        TextField.beep()
     }
 
     private var pendingDeletions: Int = 0
@@ -813,7 +845,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       //println("V", visibleBoundaries().toList)
       //println("U", unsafeVisibleBoundaries().toList)
       if (allBMP) {
-        if (lastTextLine eq null) 0 else lastTextLine.getLeftOffsetAtCoord(distance)
+        if (lastTextLine eq null) 0 else lastTextLine.getLeftOffsetAtCoord(distance) + panBy
       } else {
         // linear search up a nonDecreasing iterator.
         val positions = visibleBoundaries()
@@ -895,6 +927,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 object TextField extends logging.Loggable {
   import Location._
   val bell = Sound.Clip("WAV/tonk.wav")
+  def beep() = bell.play()
   def popupError(key: EventKey, glyph: Glyph): Unit = {
     import Modifiers._
     implicit object Style extends StyleSheet

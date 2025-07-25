@@ -75,8 +75,8 @@ object Modifiers {
   implicit def BitmapOfEvent(event: Event) : Bitmap = Bitmap(Modifiers(event))
 
   implicit class LegibleEvent(val event: EventKey) extends AnyVal {
-    def asString: String = s"${event.getKey} ${event.toLongString}"
-    def asShortString: String = s"${event.getKey} ${event.toShortString}"
+    def asString: String = s"${event.toLongString} ${event.getKey} "
+    def asShortString: String = s"${event.toShortString} ${event.getKey} "
   }
 
   implicit class Bitmap(val modifiers: Int) extends AnyVal {
@@ -86,19 +86,13 @@ object Modifiers {
           var s = ""
           for {shift <- 0 until modString.size} {
             val bit: Int = 1 << shift
-            if ((bit & modifiers) != 0) s = s"$s ${shortModString(shift)}"
+            lazy val str = shortModString(shift)
+            if ((bit & modifiers) != 0 && str!="") s = s"$s $str"
           }
           s
         }
 
-        def toLongString: String = {
-          var s = ""
-          for {shift <- 0 until modString.size} {
-            val bit: Int = 1 << shift
-            if ((bit & modifiers) != 0) s = s"$s ${modString(shift)}"
-          }
-          s++ f" (0x${modifiers}%04x)"
-        }
+        def toLongString: String = f"$toShortString (0x${modifiers}%04x)"
 
 
     @inline def includeAll(mask: Int): Boolean = mask == (modifiers & mask)
@@ -181,7 +175,7 @@ object Modifiers {
       |Opt
       |Fn
       |Released
-      |Pressed
+      |
       |
       |KeyPad
       |RHS
