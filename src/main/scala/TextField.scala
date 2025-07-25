@@ -34,9 +34,9 @@ import org.sufrin.utility.TextAbbreviations
  * other things there is not a 1-1 correspondence between UTF32 codepoints and glyphs as displayed. So although I chose
  * a representation consisting of codepoints, working out the details of glyph widths (for navigation) has been a bit
  * of a trial.  Skia/Skija doesn't treat non-BMP codepoints as first-class citizens; and that makes measuring (so as
- * to implement mouse-pointing) quite difficult. At the moment the presence of glyphs represented by more than a
- * single (UTF32) codepoint mucks up mouse-pointing. I have a workaround in mind that will (quite inefficiently)
- * deal with these cases.
+ * to implement mouse-pointing) quite tricky. Earlier the presence of glyphs represented by more than a
+ * single (UTF32) codepoint ("polycoded glyphs") mucked up mouse-pointing, but I have a workaround in mind that (quite inefficiently)
+ * deals with these cases.
  *
  * 2-Our method of constructing the glyph to codepointcount mappings is designed to make it unnecessary to
  * preload data for glyphs that are the (sole)-targets of abbreviations, or inserted (as singleton glyphs) from
@@ -200,12 +200,12 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
 
       case DELETE     => TextModel.mvRight(); TextModel.del()
 
-      // two successive presses on the same shift key triggers an abbreviation
+      // two successive presses on the SHIFT key triggers an abbreviation
       case CONTROL | MAC_COMMAND | SHIFT | LINUX_SUPER | ALT | MAC_OPTION =>
         if (abbreviationTrigger eq Key.MAC_OPTION) {
           println(TextModel.reverseLeftCodePoints().take(4).map(c=>f"$c%xu+").toList.reverse.mkString(" "))
         }
-        else if (abbreviationTrigger eq key._key) {
+        else if ((abbreviationTrigger eq key._key) && (abbreviationTrigger==SHIFT)) {
           TextModel.abbreviation()
           resetAbbreviationTrigger()
         } else {
@@ -384,10 +384,10 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       builder.toString
     }
 
-    /**  Set the string represented by the buffer */
+    /**  Set the string represented by the buffer (don't unabbreviate) */
     def string_=(newText: String): Unit = {
       clear()
-      ins(newText)
+      newText.codePoints.forEach(insCodePoint(_))
     }
 
     def leftString: String = leftString(0)
@@ -564,20 +564,22 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       if (left >=n ) left -= n
     }
 
-    def swap2(): Unit = { // TODO: count glyphs
+    @inline private def leftGlyphRep: CodePointSequence = reverseLeftCodePoints().take(leftGlyph2Codepoints).toSeq.reverse
+    @inline private def rightGlyphRep: CodePointSequence = rightCodePoints.take(rightGlyph2Codepoints).toSeq
+
+    /**
+     * Swap the last two glyphs to the left of the cursor
+     */
+    def swap2(): Unit = {
       mark = -1
       if (left>1) {
         mvLeft()
-        val lc = leftGlyph2Codepoints
-        val rc = rightGlyph2Codepoints
-        if (lc == 1 && rc == 1) {
-          val c = buffer(right)
-          buffer(right) = buffer(left-1)
-          buffer(left - 1) = c
+        val ls=leftGlyphRep
+        val rs=rightGlyphRep
           mvRight()
-        } else {
-          TextField.beep()
-        }
+          left -=(ls.length+rs.length)   // delete both glyphs
+          rs.foreach(insCodePoint(_))    // reinsert in the opposite order
+          ls.foreach(insCodePoint(_))
       } else
         TextField.beep()
     }
@@ -729,7 +731,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     /** codepoints at the right of the cursor */
     private def rightCodePoints: Seq[CodePoint] = new Seq[CodePoint] {
-      def apply(i: Int): CodePoint = buffer(i)
+      def apply(i: Int): CodePoint = buffer(right+i)
       def length: CodePoint = N - right
       def iterator: Iterator[CodePoint] = new Iterator[CodePoint] {
         var ix: Int = right

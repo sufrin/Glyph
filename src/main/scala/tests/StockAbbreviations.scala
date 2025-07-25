@@ -257,7 +257,7 @@ object StockAbbreviations {
 
       lazy val all = bidi++hebrew++complex++abbreviations++greek
 
-      if (false) locally { // check hebrew and greek
+      if (true) locally { // check hebrew and greek
         for { (a, l)<-hebrew } println(a, l)
         for { (a, l)<-greek } println(a, l)
       }

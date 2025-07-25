@@ -48,7 +48,8 @@ class TextTool(implicit style: StyleSheet)  {
                            import Modifiers._
                            logging.SourceDefault.warn(s"Undefined keystroke: ${eventKey.asShortString}")},
                        abbreviations = abbrev,
-                       onNewGlyph = TextField.reportNewGlyph(_,_))(style.copy(fontScale = 1.5f))
+                       onNewGlyph = TextField.reportNewGlyph(_,_),
+                       initialText = "Æsop’s Φabulous \uD83C\uDF08 φαβλ")(style.copy(fontScale = 1.5f))
   defs("TEXTFIELD") = _=>textField.framed()
 
 
@@ -56,11 +57,11 @@ class TextTool(implicit style: StyleSheet)  {
     anchor,
     <body width="70em" align="justify" fg="blue" parSkip="0.75em" itemwidth="60em" itemindent="2em" itemalign="justify" source={SOURCE}>
       <p>
-        This is an example of a TextField that has been set up by mapping stock abbreviations to symbols or pictographs, for example:
+        This is an example of a TextField that has been set up by mapping some abbreviations to symbols or pictographs, for example:
       </p>
       <fill/>
       <p align="center" bg="transparent" fontFamily="Courier" source={SOURCE}>
-        <![CDATA[(c) (r) :) :O <3 :-| rainbow=🌈 ukflag=🇬🇧 ae=ᴂ Ae=ᴁ alef bet ...]]>
+        <![CDATA[(c) (r) :) :O <3 :-| \aleph \Alpha rainbow=🌈 ukflag=🇬🇧 ae=ᴂ Ae=Æ]]>
       </p>
       <fill/>
       <p align="center">
@@ -77,8 +78,9 @@ class TextTool(implicit style: StyleSheet)  {
       </itemize>
       <itemize itemIndent="2em" hang="•">
         <item>Home, End, Left, Right, and Backspace - usual effect</item>
+        <item>Ctrl/Cmd Backspace - swaps the two characters before the cursor </item>
         <item>Ctrl/Cmd C - copy the selection (default all) to clipboard</item>
-        <item>Ctrl/Cmd X - cut the selection (default all) all to clipboard</item>
+        <item>Ctrl/Cmd X - cut the selection (default all) to clipboard</item>
         <item>Ctrl/Cmd V - insert from clipboard</item>
         <item>Mousebutton - set the cursor here</item>
         <item>The selection is between the mark (if any) and the cursor)</item>
@@ -92,14 +94,15 @@ class TextTool(implicit style: StyleSheet)  {
 
       <p>
         When "Live abbreviations" is set, typing the last character of an abbreviation results in the insertion of the
-        sequence or symbol it abbreviates, otherwise typing the same shift key twice in succession when the cursor is at the end of
+        sequence or symbol it abbreviates, otherwise typing the SHIFT key twice in succession when the cursor is at the end of
         an abbreviation has the same result. If "u+" is set then sequences of the form <i>hex digits</i><b>u+</b> are
         implicitly taken as abbreviations for the corresponding unicode character. Here the symbols have also been mapped
-        back to their original abbreviations, so an abbreviation can (usually) be undone by typing the same shift key twice in succession.
+        back to their original abbreviations, so an abbreviation can (usually) be undone by typing the SHIFT key twice in succession.
       </p>
       <fill/>
       <p>
-        <b>Practice (with live abbreviations enabled): </b>type <i>help</i>; pause, then the same shift key twice in succession. Type <i>tickgreen</i>
+        <b>Practice (with live abbreviations enabled): </b>type <i>help</i>; pause, then the SHIFT key twice in succession. Type <i>tickgreen</i>,
+        amd see what happens if you paste in (singly) pictograms.
       </p>
       <fill/>
       </body>
