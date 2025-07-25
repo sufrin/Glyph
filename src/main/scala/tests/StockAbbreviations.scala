@@ -78,7 +78,7 @@ object StockAbbreviations {
       "]=" -> "\u2292", // ⊒
       "[[" -> "\u228f", // ⊏
       "]]" -> "\u2290", // ⊐
-      "nand" -> "\u22bc", // ⊼
+      "\\nand" -> "\u22bc", // ⊼
 
       ("[|" -> "\u27e6"), // # ⟦
       ("|]" -> "\u27e7"), // # ⟧
@@ -87,11 +87,11 @@ object StockAbbreviations {
       ("{|" -> "\u2774"), // # ❴
       ("|}" -> "\u2775"), // # ❵
 
-      ("exists" -> "\u2203"), //  # ∃
-      ("notexists" -> "\u2204"), //  # ∄
+      ("\\ex" -> "\u2203"), //  # ∃
+      ("\\notex" -> "\u2204"), //  # ∄
       ("∃/" -> "\u2204"), //  # ∄
-      ("in" -> "\u2208"), //  # ∈
-      ("notin" -> "\u2209"), //  # ∉
+      ("\\in" -> "\u2208"), //  # ∈
+      ("\\notin" -> "\u2209"), //  # ∉
       ("∈/" -> "\u2209"), //  # ∉
       ("<-" -> "\u2190"), //
       ("^^" -> "\u2191"), //  # ↑
@@ -124,20 +124,20 @@ object StockAbbreviations {
       ("++>" -> "\u21fb"), //          # ⇻
       ("->>" -> "\u21a0"), //          # ↠
       (">->" -> "\u21a3"), //          # ↣
-      ("to" -> "\u21a6"), //          # ↦
+      ("\\to" -> "\u21a6"), //          # ↦
       ("|->" -> "\u21a6"), //          # ↦
 
-      ("zz" -> "\u21af"), //          # ↯
+      ("\\zap" -> "\u21af"), //          # ↯
 
-      ("Ua" -> "\u21D1"), //          # ⇑
-      ("Da" -> "\u21D3"), //          # ⇓
+      ("\\uaa" -> "\u21D1"), //          # ⇑
+      ("\\daa" -> "\u21D3"), //          # ⇓
       ("<->" -> "\u2194"), //          # ↔
       ("<=>" -> "\u21D4"), //          # ⇔
 
-      ("sub" -> "\u2282"), //          # ⊂
-      ("sup" -> "\u2283"), //          # ⊃
-      ("sub=" -> "\u2286"), //          # ⊆
-      ("sup=" -> "\u2287"), //          # ⊇
+      ("\\sub" -> "\u2282"), //          # ⊂
+      ("\\sup" -> "\u2283"), //          # ⊃
+      ("\\=sub" -> "\u2286"), //          # ⊆
+      ("\\=sup" -> "\u2287"), //          # ⊇
 
       ("<==" -> "\u21DA"), //          # ⇚
       ("==>" -> "\u21DB"), //          # ⇛
@@ -167,8 +167,8 @@ object StockAbbreviations {
       ("cap" ->     "\u2229"),  //       # ∩
       ("cup" -> "\u222a"), //         # ∪
 
-      ("so" -> "\u2234"), //          # ∴
-      ("cos" -> "\u2235"), //          # ∵
+      ("\\so" -> "\u2234"), //          # ∴
+      ("\\cos" -> "\u2235"), //          # ∵
 
       (":=" -> "\u2254"), //          # ≔
       ("Defs" -> "\u225c"), //          # ≜
@@ -223,17 +223,50 @@ object StockAbbreviations {
 
       ("So" -> "\u2042"), //  # ⁂
       ("--" -> "\u2014"), //  # — (wide minus)
-
-      ("(c)", "©"),
-      ("(r)", "\u00AE"),
-      ("<3", "❤"),
-      (":-|", "\uD83D\uDE10"),
-      (":)", "\uD83D\uDE00"),
-      (":O",  "\uD83D\uDE2E"),
-      ("ukflag" -> "\uD83C\uDDEC\uD83C\uDDE7"),
-      ("family" -> "\uD83E\uDDD1"),
-      ("footprints" -> "\uD83D\uDC63"),
-      ("faceinclouds" -> "\uD83D\uDE36\u200D\uD83C\uDF2B\uFE0F"),
-      ("testing" -> "testing")
       )
+
+      val complex = List(
+        ("(c)", "©"),
+        ("(r)", "\u00AE"),
+        ("<3", "❤"),
+        (":-|", "\uD83D\uDE10"),
+        (":)", "\uD83D\uDE00"),
+        (":O",  "\uD83D\uDE2E"),
+        ("ukflag" -> "\uD83C\uDDEC\uD83C\uDDE7"),
+        ("rainbow" -> "\uD83C\uDF08"),
+        ("xgreen" -> "❎"),
+        ("xred" -> "❌"),
+        ("√green" -> "✅"),
+        ("ored" -> "⭕"),
+        ("star"->"⭐"),
+        ("family" -> "\uD83E\uDDD1"),
+        ("footprints" -> "\uD83D\uDC63"),
+        ("faceinclouds" -> "\uD83D\uDE36\u200D\uD83C\uDF2B\uFE0F"),
+        ("ae" -> "æ"), // ᴂ
+        ("Ae" -> "Æ"), // ᴂ
+        ("genocide" -> "רֶצַח עַם")
+      )
+
+      val LRI=0x2066
+      val PDI=0x2069
+
+    val bidi = List(
+        ("LRI" -> "\u2066"),
+        ("RLI" -> "\u2067"),
+        ("PDI" -> "\u2069")
+      )
+
+      // hebrew letters as unicode bidi isolates
+      val hebrew = {
+        val names="alef/bet/gimel/dalet/he/vav/zayin/het/tet/yod/.kaf/kaf/lamed/.mem/mem/.nun/nun/samekh/ayin/.pe/pe/.tsadi/tsadi/qof/resh/shin/tav".split('/').toSeq
+        val start = 0X05D0
+        val codes = start until (start+names.length)
+        names.zip(codes.map(code=>f"$LRI%c$code%c$PDI%c"))
+      }
+
+      lazy val all = bidi++hebrew++complex++abbreviations
+
+      locally { // check hebrew
+        for { (a, l)<-hebrew } println(a, l)
+      }
 }

@@ -3,10 +3,11 @@ package glyph
 
 import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked, Key}
 import io.github.humbleui.skija.TextLine
-import org.sufrin
 import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.unstyled.Text
-import org.sufrin.logging.FINER
+import org.sufrin.glyph.PrefixCodePointMap.CodePointSequence
+import org.sufrin.logging
+import org.sufrin.logging.{FINER, SourceDefault}
 import org.sufrin.utility.TextAbbreviations
 
 
@@ -53,11 +54,12 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 val size: Int,
                 initialText: String,
                 val abbreviations: org.sufrin.utility.TextAbbreviations,
-                val glyphCountData: GlyphcountData
+                val glyphCountData: GlyphcountData,
+                var onNewGlyph: (String, CodePointSequence) => Unit
                ) extends ReactiveGlyph
 {
   /** A copy of this glyph; perhaps with different foreground/background */
-  def copy(fg: Brush, bg: Brush): Glyph = new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations, glyphCountData)
+  def copy(fg: Brush, bg: Brush): Glyph = new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations, glyphCountData, onNewGlyph)
 
   import io.github.humbleui.jwm.{EventMouseButton, Window}
   private val em         = Text("M", font)
@@ -97,13 +99,13 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
    * Accept input denoting a diacritical that will become part of a composite character.
    *
    * TODO: Clarify whether _selection..., _replacement... fields denote anything useable
-   *       It's not clear from the example programs
+   *       It's not clear from the examples in the documentation.
    */
   override def accept(key: EventTextInputMarked, location: Vec, window: Window): Unit = {
     val start= key.getReplacementStart
     val end  = key.getReplacementEnd
     // Cases I know of are for single accent characters
-    TextModel.insForReplacement(key.getText, 1+end-start) // pending characters to delete
+    TextModel.insToReplace(key.getText, 1+end-start) // pending characters to delete
     if (onChange.isDefined) onChange.get.apply(string)
     reDraw()
     resetAbbreviationTrigger()
@@ -177,6 +179,9 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
           else
             while (TextModel.hasLeft) TextModel.del()
 
+      case TAB  =>
+        TextModel.ins("0123456789|")
+
       case V if mods.includeSome(ANYCONTROL) =>
         val text = Clipboard.get(ClipboardFormat.TEXT).getString
         TextModel.ins(text)
@@ -211,7 +216,9 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
         TextModel.abbreviation()
 
       case other  =>
-        if (mods.includeSome(ANYSHIFT)) onError(key, this)
+        if (mods.includeSome(ANYSHIFT)) {
+          onError(key, this)
+        }
     }
     if (onChange.isDefined) onChange.get.apply(string)
     reDraw()
@@ -530,7 +537,6 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     def del(): Unit = {
       mark = -1
-      //if (ATFLAGRIGHT) left-=2 else
       val n = leftGlyph2Codepoints
       if (left >=n ) left -= n
     }
@@ -559,8 +565,8 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     /**
-     * Insert a string that may contain "surrogate pairs" arising from
-     * characters (for example Smileys, Kanji, ...) outside the BMP
+     * Insert the given `string`. It may contain "surrogate pairs" arising from
+     * characters (for example Smileys, Kanji, ...) outside the BMP.
      */
     def ins(string: String): Unit = {
       doPendingDeletions()
@@ -569,12 +575,11 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     /**
-     * Insert a string that may contain "surrogate pairs" arising from
-     * characters (for example Smileys, Kanji, ...) outside the BMP.
+     * Insert the given `string` at `left`.
      * `toReplace` characters are marked for replacement at the
-     * following keystroke.
+     * following `ins`, `move..`, `del`.
      */
-    def insForReplacement(string: String, toReplace: Int): Unit = {
+    def insToReplace(string: String, toReplace: Int): Unit = {
       pendingDeletions = toReplace
       string.codePoints.forEach(insCodePoint(_))
       if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
@@ -590,18 +595,6 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       buffer(left) = buffer(right)
       right += 1
       left += 1
-    }
-
-    @inline private def ISREGIONAL(cp: CodePoint): Boolean = 0X1F1E6 <= cp && cp <= 0X1F1FF
-
-    @inline private def ATFLAG: Boolean =
-      (left>0&&right<N) && ISREGIONAL(buffer(right)) && ISREGIONAL(buffer(left-1))
-
-    @inline private def ATZWJ: Boolean =
-      (left>1) && buffer(left-1)==0X200D
-
-    @inline private def ATFLAGRIGHT: Boolean = {
-      (left>=2) && ISREGIONAL(buffer(left-1)) && ISREGIONAL(buffer(left-2))
     }
 
     def mvLeft(): Unit = if (left != 0) {
@@ -633,7 +626,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     var pan: Int = 0
 
     // Define a sensible margin for panning
-    val marginChars: Int = size / 5 max 2
+    val marginChars: Int = size / 10 max 3
     val margin: Scalar = Text("M" * (marginChars), font).width
 
     def rePan(): Unit = {
@@ -803,11 +796,6 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
      */
     @inline private def visibleBoundaries(): Iterator[Scalar] = visiblePoints().map(codePointWidth(_)).scanLeft(0f)(_+_)
 
-    def glyphCount(multiCode: String): Int = {
-      val line = TextLine.make(new String(multiCode), font)
-      line.getGlyphs.length
-    }
-
 
     final val workaround = false
     /**
@@ -855,19 +843,27 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
         case Some((_, n)) => n
       }
 
+    def glyphCount(multiCode: String): Int = {
+      val line = TextLine.make(new String(multiCode), font)
+      line.getGlyphs.length
+    }
+
+
     /**
-     * Count the GLYPHS yielded by `insertion`, and bring the
+     * Count the GLYPHS yielded by `string`, and bring the
      * left and right glyph size  mappings up to date.
-     * This should be applied when any (individual) glyph (represented as `insertion`)
-     * is introduced to the TextLine from the outside.
+     *
+     * This should be applied when any (individual) glyph (represented as `string`)
+     * is introduced to this  `TextLine`  from "outside".
      */
-    def accountForCodePointCounts(insertion: String): Unit = {
-      if (insertion.size>1) {
-        val cps = TextAbbreviations.toCodePoints(insertion)
-        //println(s"$repl (${repl.length}) => ${glyphCount(repl)}")
-        if (glyphCount(insertion)==1 && cps.length>1) {
-          glyphCountData.leftGlyphCodepointCount.reverseUpdate(cps, true)
+    def accountForCodePointCounts(string: String): Unit = {
+      @inline def glyphCount = TextLine.make(new String(string), font).getGlyphs.length
+      if (string.size>1) {
+        val cps = TextAbbreviations.toCodePoints(string)
+        if ((glyphCount==1 && cps.length>1) || (cps.startsWith(List(0X2066)) && cps.endsWith(List(0x2069)))) {
+          val novelty = glyphCountData.leftGlyphCodepointCount.reverseChange(cps, true).isEmpty
           glyphCountData.rightGlyphCodepointCount.update(cps, true)
+          if (novelty) onNewGlyph(string, cps)
           //for { (codes, _) <- leftGlyphCodepointCount } println("L", codes.map{_.toHexString}.mkString(", "))
           //for { (codes, _) <- rightGlyphCodepointCount } println("R", codes.map{_.toHexString}.mkString(", "))
         }
@@ -898,10 +894,16 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
  */
 object TextField extends logging.Loggable {
   import Location._
+  val bell = Sound.Clip("WAV/tonk.wav")
   def popupError(key: EventKey, glyph: Glyph): Unit = {
     import Modifiers._
     implicit object Style extends StyleSheet
+    bell.play()
     styled.windowdialogues.Dialogue.OK(unstyled.static.Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
+  }
+
+  def reportNewGlyph(glyph: String, codePoints: CodePointSequence): Unit = {
+    SourceDefault.info(s"New polycoded glyph: $glyph ")
   }
 
   def apply(fg: Brush = fallback.textForeground, bg: Brush = fallback.textBackground, font: Font=fallback.textFont,
@@ -912,7 +914,8 @@ object TextField extends logging.Loggable {
             size: Int,
             initialText: String = "",
             abbreviations: org.sufrin.utility.TextAbbreviations = null,
-            glyphcountData: GlyphcountData = GlyphcountData()
+            glyphcountData: GlyphcountData = GlyphcountData(),
+            onNewGlyph: (String, CodePointSequence) => Unit = reportNewGlyph(_,_)
            ): TextField =
       new TextField(fg, bg, font,
             onEnter=onEnter,
@@ -922,7 +925,8 @@ object TextField extends logging.Loggable {
             size=size,
             initialText=initialText,
             abbreviations=abbreviations,
-            glyphCountData = glyphcountData)
+            glyphCountData = glyphcountData,
+            onNewGlyph = onNewGlyph)
 }
 
 case class GlyphcountData(

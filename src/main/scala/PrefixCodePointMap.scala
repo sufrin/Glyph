@@ -90,19 +90,48 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
     def prefixed(s: CodePointSequence): PrefixCodePointMap[T] =
       prefixed(forwardIterator(s))
 
+    var updated: Boolean = false
+
     /**
      * Post: map=map0 + s -> v
      */
-    override def update(s: CodePointSequence, t: T) =
-      prefixed(s).value = Some(t)
+    override def update(s: CodePointSequence, t: T) = {
+      val path = prefixed(s)
+      path.value = Some(t)
+    }
 
-    /**
+
+   /**
      * Post: map=map0 + s.reverse -> v
      */
     def reverseUpdate(s: CodePointSequence, t: T) =
       prefixed(reversedIterator(s)).value = Some(t)
 
-    /**
+  /**
+   * @see update
+   * @return previous value
+   */
+    def change(s: CodePointSequence, t: T): Option[T] = {
+      val path = prefixed(s)
+      val result = path.value
+      path.value = Some(t)
+      result
+    }
+
+  /**
+   * @see reverseUpdate
+   * @return previous value
+   */
+    def reverseChange(s: CodePointSequence, t: T): Option[T] = {
+      val path = prefixed(reversedIterator(s))
+      val result = path.value
+      path.value = Some(t)
+      result
+    }
+
+
+
+  /**
      * Post:   map = map0 \ {s}
      * Return: if s in dom(map0) then Some(map0(s)) else None
      */

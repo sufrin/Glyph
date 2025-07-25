@@ -74,6 +74,11 @@ object Modifiers {
 
   implicit def BitmapOfEvent(event: Event) : Bitmap = Bitmap(Modifiers(event))
 
+  implicit class LegibleEvent(val event: EventKey) extends AnyVal {
+    def asString: String = s"${event.getKey} ${event.toLongString}"
+    def asShortString: String = s"${event.getKey} ${event.toShortString}"
+  }
+
   implicit class Bitmap(val modifiers: Int) extends AnyVal {
         override def toString: String =  toShortString
 
@@ -104,7 +109,6 @@ object Modifiers {
   }
 
     def toBitmap(event: Event): Bitmap = Modifiers.apply(event)
-
 
 
   /** Modifier bits with the same encoding in Skija event.*/
@@ -144,48 +148,48 @@ object Modifiers {
 
   /** Maps `shift` to the name of the modifier encoded as `(1<<shift)` */
   val modString: Array[String] =
-    """CapsLock
-      |Shift
-      |Control
-      |Alt
-      |Windows
-      |Meta
-      |Super
-      |Command
-      |Option
-      |Fn
-      |Released
-      |Pressed
-      |Default
-      |KeyPad
-      |Right
-      |Primary
-      |Secondary
-      |Middle
-      |Back
-      |Forward""".stripMargin.split('\n')
-
-  val shortModString:  Array[String] =
     """Lock
-      |Shi
+      |Shift
       |Ctrl
       |Alt
       |Win
       |Meta
-      |Supr
+      |Super
       |Cmd
       |Opt
       |Fn
-      |Rel
-      |Prs
-      |Dflt
-      |Kpad
-      |Rght
-      |Pri
-      |Sec
-      |Mid
-      |Back
-      |Frwd""".stripMargin.split('\n')
+      |Released
+      |Pressed
+      |Default
+      |Pad
+      |RHS
+      |MP
+      |MS
+      |MM
+      |MB
+      |MF""".stripMargin.split('\n')
+
+  val shortModString:  Array[String] =
+    """Lock
+      |Shift
+      |Ctrl
+      |Alt
+      |Win
+      |Meta
+      |Super
+      |Cmd
+      |Opt
+      |Fn
+      |Released
+      |Pressed
+      |
+      |KeyPad
+      |RHS
+      |MP
+      |MS
+      |MM
+      |MB
+      |MF""".stripMargin.split('\n')
 }
 
 

@@ -10,9 +10,11 @@ import org.sufrin.glyph.PrefixCodePointMap.{CodePoint, CodePointSequence}
  *
  * @param onLineTrigger abbreviations are triggered automatically
  * @param implicitUnicode unicode character encodings are implicit abbreviations for those characters
+ *
+ * TODO: Implement (prioritised) an API for named abbreviation tables that can be individually enabled.
  */
 
-class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode: Boolean=false) {
+class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode: Boolean=false, var onAmbiguous: (String, String, String) => Unit = { (abbr, oldRep, newRep) => logging.SourceDefault.warn(s"$abbr was $oldRep now $newRep")}) {
   import org.sufrin.glyph.PrefixCodePointMap
   val trie: PrefixCodePointMap[String] = new PrefixCodePointMap[String]
 
@@ -54,7 +56,13 @@ class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode:
 
   def mapTo(abbrev: String, result: String): Unit = trie.reverseUpdate(toCodePoints(abbrev), result)
 
-  def update(abbreviation: String, replacement: String): Unit = trie.reverseUpdate(toCodePoints(abbreviation), replacement)
+  def update(abbreviation: String, replacement: String): Unit =
+    trie.reverseChange(toCodePoints(abbreviation), replacement) match {
+      case None =>
+      case Some(oldReplacement) =>
+        if (oldReplacement != replacement)
+        onAmbiguous(abbreviation, oldReplacement, replacement)
+    }
 
 
 }
@@ -64,5 +72,8 @@ object TextAbbreviations {
     val a = new collection.mutable.ArrayBuffer[CodePoint]()
     str.codePoints.forEach { cp: Int => a.append(cp) }
     a.toSeq
+  }
+  def reportNewGlyph(glyph: String, codePoints: CodePointSequence): Unit = {
+    logging.SourceDefault.info(s"New polycoded glyph: $glyph ")
   }
 }

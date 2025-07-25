@@ -7,28 +7,20 @@ import unstyled.static
 
 import org.sufrin.utility.TextAbbreviations
 import org.sufrin.SourceLocation.SourceLocation
+import org.sufrin.glyph.tests.StockAbbreviations
+import org.sufrin.glyph.PrefixCodePointMap.CodePointSequence
+import org.sufrin.logging
 
 
 class TextTool(implicit style: StyleSheet)  {
   implicit val pageStyle: BookSheet = BookSheet(style, style)
   val anchor = static.INVISIBLE()
   val abbrev = new TextAbbreviations(onLineTrigger = true, implicitUnicode = false)
-  abbrev("(c)") = "\u00A9"
-  abbrev("\u00A9") = "(c)"
-  abbrev("(r)") = "\u00AE"
-  abbrev("<3")  = "❤"
-  abbrev("❤")  =  "<3"
-  // translations to strings including surrogate pairs
-  abbrev(":-|") = "\uD83D\uDE10"
-  abbrev(":|")  = "\uD83D\uDE11"
-  abbrev(":)")  = "\uD83D\uDE00"
-  abbrev(":O")  = "\uD83D\uDE2E"
-  // translations from strings including surrogate pairs
-  abbrev("\uD83D\uDE11")   = ":|"   // unabbreviate
-  abbrev("\uD83D\uDE10")   = ":-|"  // unabbreviate
-  abbrev("\uD83D\uDE00)")  = "\uD83D\uDE00\uD83D\uDE00" // double-up a smiley
-  abbrev("\uD83D\uDE00\uD83D\uDE00") = ":))"
-  abbrev("\uD83D\uDE2E") = ":O"
+  locally {
+    def dabbrev(a:String, s: String): Unit = { abbrev(a)=s; abbrev(s)=a }
+    for {  (abbr, symb) <- StockAbbreviations.all } dabbrev(abbr, symb)
+    dabbrev("help", "type \"tick\" or \"rainbow\"")
+  }
 
 
   import glyphXML.Language._
@@ -42,7 +34,7 @@ class TextTool(implicit style: StyleSheet)  {
       Label(" Live abbreviations") beside styled.CheckBox(initially=abbrev.onLineTrigger) {
       state => abbrev.onLineTrigger=state
     } beside
-      Label(" u+.....") beside styled.CheckBox(initially=abbrev.implicitUnicode) {
+      Label(" u+") beside styled.CheckBox(initially=abbrev.implicitUnicode) {
         state => abbrev.implicitUnicode=state
   }
 
@@ -51,8 +43,12 @@ class TextTool(implicit style: StyleSheet)  {
       styled.TextField(size = 40,
                        onEnter = { _ =>  },
                        onCursorLeave = { _ => anchor.guiRoot.giveupFocus() },
-                       onError = { case (eventKey, _) => println(eventKey)},
-                       abbreviations = abbrev)(style.copy(fontScale = 1.5f))
+                       onError = {
+                         case (eventKey, _) =>
+                           import Modifiers._
+                           logging.SourceDefault.warn(s"Undefined keystroke: ${eventKey.asShortString}")},
+                       abbreviations = abbrev,
+                       onNewGlyph = TextField.reportNewGlyph(_,_))(style.copy(fontScale = 1.5f))
   defs("TEXTFIELD") = _=>textField.framed()
 
 
@@ -60,12 +56,11 @@ class TextTool(implicit style: StyleSheet)  {
     anchor,
     <body width="70em" align="justify" fg="blue" parSkip="0.75em" itemwidth="60em" itemindent="2em" itemalign="justify" source={SOURCE}>
       <p>
-        This is an example of a TextField that has been set up by mapping a few abbreviations to emojis,
-        namely:
+        This is an example of a TextField that has been set up by mapping stock abbreviations to symbols or pictographs, for example:
       </p>
       <fill/>
       <p align="center" bg="transparent" fontFamily="Courier" source={SOURCE}>
-        <![CDATA[(c) (r) :) :O <3 :-| :|]]>
+        <![CDATA[(c) (r) :) :O <3 :-| rainbow=🌈 ukflag=🇬🇧 ae=ᴂ Ae=ᴁ alef bet ...]]>
       </p>
       <fill/>
       <p align="center">
@@ -97,14 +92,14 @@ class TextTool(implicit style: StyleSheet)  {
 
       <p>
         When "Live abbreviations" is set, typing the last character of an abbreviation results in the insertion of the
-        sequence it abbreviates, otherwise typing the same shift key twice in succession when the cursor is at the end of
-        an abbreviation has the same result. If "u+....." is set then sequences of the form <b>u+</b><i>5 hex digits</i> are
-        implicitly taken as abbreviations for the corresponding unicode character.
+        sequence or symbol it abbreviates, otherwise typing the same shift key twice in succession when the cursor is at the end of
+        an abbreviation has the same result. If "u+" is set then sequences of the form <i>hex digits</i><b>u+</b> are
+        implicitly taken as abbreviations for the corresponding unicode character. Here the symbols have also been mapped
+        back to their original abbreviations, so an abbreviation can (usually) be undone by typing the same shift key twice in succession.
       </p>
       <fill/>
       <p>
-        Some of the emojis are also mapped back to their original abbreviations: something you can check
-        by using the "any-shift-key-twice" method.
+        <b>Practice (with live abbreviations enabled): </b>type <i>help</i>; pause, then the same shift key twice in succession. Type <i>tickgreen</i>
       </p>
       <fill/>
       </body>

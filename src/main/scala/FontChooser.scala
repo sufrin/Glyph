@@ -108,18 +108,18 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
     example.string=s"${example.string} ${key._key} ${mods.toString} "
   }
 
-  val abbrs = new TextAbbreviations(onLineTrigger = false)
+  val abbrs = new TextAbbreviations(onLineTrigger = false, implicitUnicode = false)
   locally {
-    for {(a, s) <- StockAbbreviations.abbreviations } {
-      abbrs.mapTo(a, s)
-      abbrs.mapTo(s, a)
+    for {(a, s) <- StockAbbreviations.all } {
+      abbrs(a) = s
+      abbrs(s) = a
     }
   }
   
   lazy val brush: Brush = initialBrush
   lazy val example      = styled.TextField(size=60,
                                            onChange=Some(showExample),
-                                           onError=interpretSpecialKey,
+                                           onError={ (_,_) => TextField.bell.play() },
                                            initialText = "This editable text is shown in the dashed frame in Font",
                                            abbreviations = abbrs).withAbbreviationKey(Key.ESCAPE)
 
