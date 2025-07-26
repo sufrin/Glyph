@@ -219,7 +219,10 @@ object StockAbbreviations {
         ("faceinclouds" -> "\uD83D\uDE36\u200D\uD83C\uDF2B\uFE0F"),
         ("ae" -> "æ"), // ᴂ
         ("Ae" -> "Æ"), // ᴂ
-        ("genocide" -> "רֶצַח עַם")
+        // offensive to some, but I'm jewish myself
+        ("רֶצַח עַם"+" "-> "bibi's war crimes and crimes against humanity "),
+        ("\u2066י\u2069\u2066ב\u2069\u2066י\u2069\u2066ב\u2069 " -> "רֶצַח עַם"),
+        ("bibi " -> "\u2066י\u2069\u2066ב\u2069\u2066י\u2069\u2066ב\u2069")
       )
 
       val LRI=0x2066
