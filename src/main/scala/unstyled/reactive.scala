@@ -17,11 +17,14 @@ object reactive {
   /**
    *  A mixin for reactive glyphs that can make nonstandard responses to
    *  the cursor entering or leaving them. `HintManager`s can be
-   *  declared for such glyphs; and
+   *  declared for such glyphs.
    */
-  trait Enterable {
+  trait Enterable { thisGlyph =>
     def guiRoot:  RootGlyph
     def reDraw(): Unit
+
+    def where: Vec = thisGlyph.asInstanceOf[Glyph].rootDistance
+    def size:  Vec = thisGlyph.asInstanceOf[Glyph].diagonal
 
     protected var _onGlyphEvent: Option[(RootGlyph, Boolean, Vec)=>Unit] = None
 

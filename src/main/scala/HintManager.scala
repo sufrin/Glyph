@@ -33,6 +33,9 @@ class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Doubl
    * before it is entered and its `guiRoot` will by then be meaningful. The glyph that the layer
    * will show is computed only after it is determined that the layer is visible, and this makes
    * it feasible to generate hints dynamically.
+   *
+   * The hint glyph is located at the left edge of the reactive glyph if this increases
+   * the chance of it being visible.
    */
   def getLayer(guiRoot: RootGlyph): RootLayer =
     guiRoot.Overlay.annotations.getOrElse(id, guiRoot.Overlay.newAnnotation(id, glyph=INVISIBLE(), isModal = false, visible = false, strictHiding = false, active = false))
@@ -45,10 +48,12 @@ class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Doubl
     target.onGlyphEvent {
       case (rootGlyph, true, where) =>
         val layer = getLayer(target.guiRoot)
+        def locX =
+          if (target.where.x + layer.glyph.w < target.size.x) where.x else target.where.x
         if (_allow() && !layer.visible && seconds>=0) {
           layer.visible = true
           layer.glyph = hintCache.getOrElse(hint())
-          layer.glyph @@ where
+          layer.glyph @@ Vec(locX, where.y)
           schedule.once((seconds * 1000L).toLong) {
             layer.visible = false
             target.reDraw()
@@ -83,7 +88,7 @@ object HintManager {
   def apply(target: Enterable, seconds: Double, hint: ()=>String, constant: Boolean = true)(implicit style: StyleSheet): HintManager = {
       new HintManager(
       target,
-        ()=>styled.Label(hint())(style.copy(labelForegroundBrush = Brushes.red, labelBackgroundBrush = Brushes.white)).enlarged(10).framed(),
+        ()=>styled.Label(hint())(style.copy(labelForegroundBrush = Brushes.black, labelBackgroundBrush = Brushes.white)).enlarged(10).framed(),
       seconds,
       constant)
   }
