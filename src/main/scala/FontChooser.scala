@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import styled.{ActiveString, Label, MenuButton}
+import styled.{ActiveString, CheckBox, Label, MenuButton, ToggleVariable}
 import unstyled.reactive.{Enterable, Reaction}
 
 import io.github.humbleui.jwm.Key
@@ -129,18 +129,22 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
 
   val frameGrey = Brushes.darkGrey(width=2)
 
-  val hintSheet = sheet.copy(fontScale=0.6f, buttonDecoration = styles.decoration.RoundFramed(frameGrey, radius=20, enlarge=10))
+  val hintSheet   = sheet.copy(fontScale=0.6f, buttonDecoration = styles.decoration.RoundFramed(frameGrey, radius=20, enlarge=10))
+  val buttonSheet = sheet.copy(fontScale=0.8f, buttonDecoration = styles.decoration.RoundFramed(frameGrey, radius=20, enlarge=10))
+
+  val onLine: ToggleVariable = ToggleVariable(false) { state => abbrs.onLineTrigger = state }
+  val implicitUnicode =  ToggleVariable(false) { state => abbrs.implicitUnicode=state }
 
   val triggerButton: Glyph =
     styled.CheckBox(initially=abbrs.onLineTrigger,
-                    hint=Hint(5, "Enable/disable automatic substitution for abbreviations\n(when disabled the 'abbreviate' key can be used)")(hintSheet)){ state => abbrs.onLineTrigger=state }
+                    hint=Hint(5, "Enable/disable automatic substitution for abbreviations\nas they are typed.\nWhen disabled, SHIFT-SHIFT is used\nto make a substitution.")(hintSheet))(onLine)(buttonSheet)
 
   val implicitButton: Glyph =
     styled.CheckBox(initially=abbrs.onLineTrigger,
-                      hint=Hint(5, "Enable/disable implicit unicode abbreviations of the form HHHHHu+ ")(hintSheet)){ state => abbrs.implicitUnicode=state }
+                      hint=Hint(5, "Enable/disable implicit abbreviations\nof unicode glyphs\nexpressed as hex digit sequences\n followed by \"u+\" ")(hintSheet))(implicitUnicode)(buttonSheet)
 
-  val tryoutButton =
-    styled.TextButton("Popup an Edit Field", hint=Hint(5, "The popup uses the current font")(hintSheet)){
+  val tryoutButton: Glyph =
+    styled.TextButton("Popup an Edit Field", hint=Hint(5, "The popup edits\nthe editable text\nusing the\ncurrent font.")(hintSheet)){
       _ =>
         val playGUI = NaturalSize.Col(align=Center)(
           TextField(font       =  _font,
@@ -152,7 +156,7 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
                     glyphcountData = example.glyphCountData).enlarged(20).framed().enlarged(10) //share the count data
           )
         styled.windowdialogues.Dialogue.FLASH(playGUI,null,s"Play TextField ${_font.asString}").OnRootOf(GUI).start()
-    }
+    }(buttonSheet)
 
   import styled.Decorate
 
@@ -171,9 +175,9 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
   lazy val GUI: Glyph = Col(align=Center, bg=sheet.backgroundBrush,skip = 20)(
     Row(align=Mid)(familyChooser, em, styleChooser.framed(), em,  sizeChooser.framed()), ex,
     labelledFields,
-    FixedSize.Row(labelledFields.w, align=Mid)(Label("Live abbr substitutions: "), triggerButton.roundFramed(frameGrey, radius=20), sheet.hFill(2),
-                                               Label("Implicit unicode abbrs: "), implicitButton.roundFramed(frameGrey, radius=20), sheet.hFill(2, stretch=1.2f),
-                                               tryoutButton.roundFramed(frameGrey, radius=20)),
+    FixedSize.Row(labelledFields.w, align=Mid)(Label("Live abbrs: "),       triggerButton, sheet.hFill(2),
+                                               Label("Implicit unicode: "), implicitButton, sheet.hFill(2, stretch=1.2f),
+                                               tryoutButton),
     exampleDisplay.framed(Brushes.darkGrey(width=3).dashed(10, 10)),
     )
 

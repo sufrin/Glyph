@@ -59,26 +59,39 @@ trait DetailedButton {
  *  a button-like reactive glyph that responds to a click of a mouse (or other pointer) button on the
  *  screen.
  *
- *  The generated button has the physical appearance of a `StyledButton`, but its state is supplemented by
- *  a boolean that determines which of its appearances is shown. Clicking on the button inverts the boolean (thereby changing
- *  the button's appearance) and applies the `reaction` to the inverted boolean.
+ *  The state of the generated button is supplemented by a boolean that determines which of its appearances is shown.
+ *  Clicking on the button inverts the boolean (thereby changing the button's appearance) and applies the `reaction` to the inverted boolean.
  *
- *  If the button is made with a `BooleanVariable` rather than a direct reaction,
- *  then it is registered with the variable, and clicking the button changes
- *  the variable's value, and sets the states of all registered buttons. This
- *  is the way to generate several buttons that show and control a single boolean.
+ *  If the button is made with a `ToggleVariable` then it is styled and associated with the variable.
+ *  Clicking the button changes the variable's value, and sets the states of all
+ *  buttons associated with the variable.
+ *  This is the way to generate several buttons that show and control a single boolean.
  */
 trait ToggleButton { thisToggle =>
-  def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton
-  def apply(variable: BooleanVariable[OnOffButton])(implicit sheet: StyleSheet): OnOffButton = {
+  /**
+   *  Yield a styled  `OnOffButton` associated with this `variable`. This
+   *  is the preferred usage.
+   */
+  def apply(variable: ToggleVariable)(implicit sheet: StyleSheet): Glyph = {
     val button = thisToggle.apply {
       state =>
         variable.value = state
         for { button <- variable.registered} button.set(state)
     }
     variable.register(button)
-    button
+    Decorate(button)
   }
+
+  /**
+   *  Yield the UNSTYLED  `OnOffButton`, with the given `reaction`. This
+   *  is used only by implementations of `ToggleButton`.
+   */
+  protected def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton
+}
+
+class ToggleVariable(initially: Boolean, reaction: Boolean=>Unit) extends  BooleanVariable[OnOffButton](initially = initially, reaction = reaction)
+object ToggleVariable {
+  def apply(initially: Boolean)(reaction: Boolean=>Unit): ToggleVariable = new ToggleVariable(initially, reaction)
 }
 
 /**

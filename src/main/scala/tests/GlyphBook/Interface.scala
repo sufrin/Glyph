@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 package tests.GlyphBook
-import styled.{Book, BookSheet, CheckBox}
+import styled.{Book, BookSheet, CheckBox, ToggleVariable}
 import NaturalSize.Col
 import glyphXML.Macro
 import styles.decoration
@@ -14,12 +14,12 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
   val button: StyleSheet = style.buttonSheet
 
   var enableSave: Boolean = false
-  val saveEnable = BooleanVariable[OnOffButton](initially=enableSave){
+  val saveEnable = ToggleVariable(initially=enableSave){
     state => enableSave = state
   }
 
   /** Checkbox indicating whether the write bar is enabled. */
-  val enableSaveCheckBox: OnOffButton =
+  val enableSaveCheckBox =
     CheckBox(initially=saveEnable.value) (saveEnable)
 
 

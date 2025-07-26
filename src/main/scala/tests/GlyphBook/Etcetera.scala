@@ -165,7 +165,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
 
       Col(fg=transparent, bg=white, align=Center)(
-        Paragraph(60, Left)(
+        Paragraph(60, Justify, Label("* "))(
           """
             |The background of a OneOf can be specified. If left unspecified it
             |is taken to be the background
@@ -188,8 +188,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     Page("Sliders", "") {
       import org.sufrin.glyph.unstyled.reactive.Slider
       import Slider.{Horizontal, Vertical}
-      val trackh = Rect(500f, 55f, bg=yellowHuge, fg=black)
-      val trackv = Rect(15f, 250f, bg=yellowHuge, fg=black)
+      val trackh = Rect(500f, 55f, bg=yellow, fg=black)
+      val trackv = Rect(15f, 250f, bg=yellow, fg=black)
       val imageh = FilledRect(15f, 35f, fg=red)
       val imagev = FilledRect(35f, 5f, fg=red)
 
@@ -476,8 +476,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
       val b1 = new unstyled.reactive.RawButton(p1, p3, p2.rotated(2), fg=transparent, bg=transparent, { _=> }) {
         override val withDetailedShape: Boolean = true
       }
-      val b2 = unstyled.reactive.ColourButton(pDiamond(blue.sliced(2,4)), red.sliced(2,4), green.sliced(2,4), false, NoHint){ _=>}
-      Col(align=Center)(
+      val b2 = unstyled.reactive.ColourButton(pDiamond(blue.sliced(2,4)), red.sliced(2,15), green.sliced(2,10), false, NoHint){ _=>}
+      Col(align=Center, skip=20)(
         <div width="80em" align="justify">
           <p>
              This example shows shapes and buttons constructed from two
@@ -488,8 +488,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
           </p>
         </div>, ex,
         Row( Label("A Path") above p0().framed(), em, em, em, Label("A simpler path") above p1().framed()), ex, ex,
-        Label("A RawButton using three distinctly-brushed copies of the simpler path; one rotated") above b1.framed(), ex, ex,
-        Label("A ColourButton using three sliced brushes") above (b2.framed())
+        Label("A RawButton using three distinctly-brushed copies of the simpler path; one rotated."), ex, b1.framed(),
+        ex, ex,
+        Label("A ColourButton using three sliced brushes"), ex,(b2.framed())
         )
     }
 
