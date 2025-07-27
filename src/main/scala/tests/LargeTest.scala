@@ -1108,9 +1108,9 @@ object LargeTestGUI {
   private val scene21 = {
     import org.sufrin.glyph.unstyled.reactive.{TextButton => But}
 
-    val fatYellow: Brush = yellowHuge.copy strokeWidth 40
-    val fatGreen: Brush = fatYellow.copy col 0xff00ff00
-    val fatRed: Brush = fatYellow.copy col 0xffff0000
+    val fatYellow: Brush = yellow(width=40)
+    val fatGreen: Brush = green(width=40)
+    val fatRed: Brush = red(width=40)
 
     val title = textColumn(smallFont, black)(
       """(21) Reactive elements within transformed grids/rows/columns.
