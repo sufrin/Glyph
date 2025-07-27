@@ -340,7 +340,7 @@ object Paragraph {
     // avoid rounding
     val maxWidthfloor  = maxWidth.floor
     //println(s"[ov=$overallWidth,lm=$leftMargin,maxw=$maxWidthfloor]")
-    val words = new StreamIterator[Glyph](glyphs.iterator)
+    val words = new PushbackIteratorOfIterator[Glyph](glyphs.iterator)
 
     @inline def setLine(): (Scalar, Seq[Glyph]) = {
       import scala.collection.mutable
@@ -380,7 +380,7 @@ object Paragraph {
             line += breakable.hyphen()
             //line += interWord()// (from the earlier implementation
             lineWidth += breakable.hyphen.w
-            words.setElement(new BreakableGlyph(breakable.hyphen, glyphs.drop(breakPoint)))
+            words.pushBack(new BreakableGlyph(breakable.hyphen, glyphs.drop(breakPoint)))
           }
         case _ =>
       }

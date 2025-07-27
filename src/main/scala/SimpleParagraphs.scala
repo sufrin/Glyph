@@ -37,7 +37,7 @@ object SimpleParagraphs {
     val emWidth = unstyled.Text("n", font).w
 
     def paragraphLines(ems: Int, text: String, align: Alignment): Seq[Glyph] = {
-      val words = Stream[String](text.trim.split("""[ ]+"""))
+      val words = PushbackIterator[String](text.trim.split("""[ ]+"""))
       val result = ListBuffer[Glyph]()
       val line = new ListBuffer[Glyph]
       def lineLength: Scalar = line.map(_.w).sum
