@@ -33,7 +33,7 @@ import scala.collection._
  *
  *
  *   To find the datum, `t`, if any, associated with the sequence `s[0..n)`,
- *   longestPrefixMatch the path s(0), s(1), ... from the root node: this will reach
+ *   `longestPrefixMatch` the path s(0), s(1), ... from the root node: this will reach
  *   a node 'm', which has value either `None`, or `Some(t)`.
  *
  *   The methods of the trait `mutable.Map` are implemented by
@@ -47,17 +47,20 @@ import scala.collection._
  *   some constraint is placed on the ordering of its pairs.
  */
 
-class   PrefixMap[T]
+class   CharSequenceMap[T]
   extends mutable.Map[CharSequence, T]
 {
-  private var suffixes: immutable.Map[Char, PrefixMap[T]] = immutable.Map.empty
+  private var suffixes: immutable.Map[Char, CharSequenceMap[T]] = immutable.Map.empty
   private var value:    Option[T]                         = None
 
+  /**
+   * @return `if (s in dom map) then Some(map(suffix)) else None``
+   */
   def get(s: CharSequence): Option[T] = get(s, 0)
 
-  /**  Pre:    0<=from<=s.length
-   Return: if (suffix in dom map) then Some(map(suffix)) else None
-   where suffix = s drop from
+  /**
+   *   Pre:    0<=from<=s.length
+   *   @return `get(s.drop(from))`
    */
   private def get(s: CharSequence, from: Int): Option[T] =
     if (from==s.length)
@@ -96,7 +99,7 @@ class   PrefixMap[T]
 
     // if non-null, the node reached from the root by the path so far traversed
     // namely `it take edges`.
-    var node:   PrefixMap[T]   = this
+    var node:   CharSequenceMap[T]   = this
 
     // the number of edges so far traversed
     var edges                   = 0
@@ -115,7 +118,7 @@ class   PrefixMap[T]
    *  The tree is extended, if necessary, by adding additional nodes
    *  for the characters along the given path.
    */
-  private def prefixed(it: Iterator[Char]): PrefixMap[T] =
+  private def prefixed(it: Iterator[Char]): CharSequenceMap[T] =
     if (!it.hasNext)
       this
     else
@@ -133,7 +136,7 @@ class   PrefixMap[T]
    *  The tree is extended, if necessary, by adding additional nodes
    *  for the characters along the given path.
    */
-  def prefixed(s: CharSequence): PrefixMap[T] =
+  def prefixed(s: CharSequence): CharSequenceMap[T] =
     prefixed(s.forwardIterator)
 
   /**
@@ -218,21 +221,21 @@ class   PrefixMap[T]
     b.toString
   }
 
-  @inline override def empty = new PrefixMap[T]
+  @inline override def empty = new CharSequenceMap[T]
 }
 
-object PrefixMap {
+object CharSequenceMap {
 
   /**
    * Construct a new mapping from pairs provided in situ
    */
-  def apply[T](pairs:  (CharSequence, T)*): PrefixMap[T] = apply(pairs)
+  def apply[T](pairs:  (CharSequence, T)*): CharSequenceMap[T] = apply(pairs)
 
   /**
    *  Construct a new mapping from an iterable generator of pairs
    */
-  def apply[T](pairs: Iterable[(CharSequence, T)]): PrefixMap[T] =
-  { val map = new PrefixMap[T]
+  def apply[T](pairs: Iterable[(CharSequence, T)]): CharSequenceMap[T] =
+  { val map = new CharSequenceMap[T]
     for { pair <- pairs } map += pair
     map
   }
@@ -240,8 +243,8 @@ object PrefixMap {
   /**
    *  Construct a new mapping from an iterator of pairs
    */
-  def apply[T](pairs: Iterator[(CharSequence, T)]): PrefixMap[T] =
-  { val map = new PrefixMap[T]
+  def apply[T](pairs: Iterator[(CharSequence, T)]): CharSequenceMap[T] =
+  { val map = new CharSequenceMap[T]
     for { pair <- pairs } map += pair
     map
   }

@@ -8,7 +8,7 @@ import unstyled.static
 import org.sufrin.utility.TextAbbreviations
 import org.sufrin.SourceLocation.SourceLocation
 import org.sufrin.glyph.tests.StockAbbreviations
-import org.sufrin.glyph.PrefixCodePointMap.CodePointSequence
+import org.sufrin.glyph.CodePointSeqMap.CodePointSeq
 import org.sufrin.logging
 
 

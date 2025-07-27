@@ -2,19 +2,19 @@ package org.sufrin.glyph
 
 import scala.collection.{immutable, mutable, Seq}
 
-// Generalization of `PrefixMap` to support `CodePointSequence` rather than just `String`
-class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSequence, T] {
-    import PrefixCodePointMap._
-    private var suffixes: immutable.Map[CodePoint, PrefixCodePointMap[T]] = immutable.Map.empty
+/** Generalization of `CharSequenceMap` to support `CodePointSeq` rather than just `String` */
+class CodePointSeqMap[T]  extends mutable.Map[CodePointSeqMap.CodePointSeq, T] {
+    import CodePointSeqMap._
+    private var suffixes: immutable.Map[CodePoint, CodePointSeqMap[T]] = immutable.Map.empty
     private var value: Option[T] = None
 
-    def get(s: CodePointSequence): Option[T] = get(s, 0)
+    def get(s: CodePointSeq): Option[T] = get(s, 0)
 
     /** Pre:    0<=from<=s.length
      * Return: if (suffix in dom map) then Some(map(suffix)) else None
      * where suffix = s drop from
      */
-    private def get(s: CodePointSequence, from: Int): Option[T] =
+    private def get(s: CodePointSeq, from: Int): Option[T] =
       if (from == s.length)
         value
       else
@@ -25,14 +25,14 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
      * matches one of the mapping's domain elements, and `i` is the length
      * of that prefix. If there is no such prefix, yield `None`.
      */
-    def longestPrefixMatch(s: CodePointSequence): Option[(T, Int)] = longestPrefixMatch(forwardIterator(s))
+    def longestPrefixMatch(s: CodePointSeq): Option[(T, Int)] = longestPrefixMatch(forwardIterator(s))
 
     /**
      * Yield `Some(t, i)` where `t` is the value of the mapping at longest suffix of {{{s take upTo}}} that
      * matches one of the mapping's domain elements, and `i` is the length
      * of that suffix.  If there is no such prefix, yield `None`.
      */
-    def longestSuffixMatch(s: CodePointSequence, upTo: Int): Option[(T, Int)] = longestPrefixMatch(reversedIterator(s, upTo))
+    def longestSuffixMatch(s: CodePointSeq, upTo: Int): Option[(T, Int)] = longestPrefixMatch(reversedIterator(s, upTo))
 
     /**
      * Yield `Some(t, i)` where `t` is the value of the mapping at longest prefix of `it` that
@@ -50,7 +50,7 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
 
       // if non-null, the node reached from the root by the path so far traversed
       // namely `it take edges`.
-      var node: PrefixCodePointMap[T] = this
+      var node: CodePointSeqMap[T] = this
 
       // the number of edges so far traversed
       var edges = 0
@@ -69,7 +69,7 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
      * The tree is extended, if necessary, by adding additional nodes
      * for the characters along the given path.
      */
-    private def prefixed(it: Iterator[CodePoint]): PrefixCodePointMap[T] =
+    private def prefixed(it: Iterator[CodePoint]): CodePointSeqMap[T] =
       if (!it.hasNext)
         this
       else {
@@ -87,7 +87,7 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
      * The tree is extended, if necessary, by adding additional nodes
      * for the characters along the given path.
      */
-    def prefixed(s: CodePointSequence): PrefixCodePointMap[T] =
+    def prefixed(s: CodePointSeq): CodePointSeqMap[T] =
       prefixed(forwardIterator(s))
 
     var updated: Boolean = false
@@ -95,7 +95,7 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
     /**
      * Post: map=map0 + s -> v
      */
-    override def update(s: CodePointSequence, t: T) = {
+    override def update(s: CodePointSeq, t: T) = {
       val path = prefixed(s)
       path.value = Some(t)
     }
@@ -104,14 +104,14 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
    /**
      * Post: map=map0 + s.reverse -> v
      */
-    def reverseUpdate(s: CodePointSequence, t: T) =
+    def reverseUpdate(s: CodePointSeq, t: T) =
       prefixed(reversedIterator(s)).value = Some(t)
 
   /**
    * @see update
    * @return previous value
    */
-    def change(s: CodePointSequence, t: T): Option[T] = {
+    def change(s: CodePointSeq, t: T): Option[T] = {
       val path = prefixed(s)
       val result = path.value
       path.value = Some(t)
@@ -122,7 +122,7 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
    * @see reverseUpdate
    * @return previous value
    */
-    def reverseChange(s: CodePointSequence, t: T): Option[T] = {
+    def reverseChange(s: CodePointSeq, t: T): Option[T] = {
       val path = prefixed(reversedIterator(s))
       val result = path.value
       path.value = Some(t)
@@ -135,9 +135,9 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
      * Post:   map = map0 \ {s}
      * Return: if s in dom(map0) then Some(map0(s)) else None
      */
-    override def remove(s: CodePointSequence): Option[T] = remove(s, 0)
+    override def remove(s: CodePointSeq): Option[T] = remove(s, 0)
 
-    private def remove(s: CodePointSequence, from: Int): Option[T] =
+    private def remove(s: CodePointSeq, from: Int): Option[T] =
       if (from == s.length) {
         val prev = value
         value = None
@@ -148,7 +148,7 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
     /**
      * Return an iterator that yields the pairs of the maplet.
      */
-    def iterator: Iterator[(CodePointSequence, T)] =
+    def iterator: Iterator[(CodePointSeq, T)] =
       (for {v <- value.iterator} yield (Nil, v)) ++ // the value, if any
         (for {(chr: CodePoint, map) <- suffixes // the suffix mappings
               (s, v) <- map // results from the suffix mappings
@@ -158,28 +158,28 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
     /** An iterator that returns the pairs of the mapping, with
      * domain elements represented as lists of characters.
      */
-    def pathIterator: Iterator[(CodePointSequence, T)] =
+    def pathIterator: Iterator[(CodePointSeq, T)] =
       (for {v <- value.iterator} yield (Nil, v)) ++ // the value, if any
         (for {(chr, map) <- suffixes // the suffix mappings
               (s, v) <- map.pathIterator // results from the suffix mappings
               }
         yield (chr +: s, v))
 
-    def paths: Iterator[CodePointSequence] =
+    def paths: Iterator[CodePointSeq] =
       for {(path, _) <- pathIterator} yield path
 
 
     /**
      * Augment the mapping with `pair`,  and return the mapping itself.
      */
-    def addOne(pair: (CodePointSequence, T)): this.type = {
+    def addOne(pair: (CodePointSeq, T)): this.type = {
       update(pair._1, pair._2); this
     }
 
     /**
      * Diminish the mapping by removing `s` from its domain, and return the mapping itself.
      */
-    def subtractOne(s: CodePointSequence): this.type = {
+    def subtractOne(s: CodePointSeq): this.type = {
       remove(s); this
     }
 
@@ -204,39 +204,28 @@ class PrefixCodePointMap[T]  extends mutable.Map[PrefixCodePointMap.CodePointSeq
       b.toString
     }
 
-    @inline override def empty = new PrefixCodePointMap[T]
+    @inline override def empty = new CodePointSeqMap[T]
   }
 
-object PrefixCodePointMap {
+object CodePointSeqMap {
   type CodePoint = Int
-  type CodePointSequence = Seq[CodePoint]
+  type CodePointSeq = Seq[CodePoint]
 
-  def forwardIterator(s: CodePointSequence): Iterator[CodePoint] = new Iterator[CodePoint] {
-    var i: Int = 0
+  @inline def forwardIterator(s: CodePointSeq): Iterator[CodePoint] = s.iterator
 
-    def hasNext: Boolean = i < s.length
-
-    def next(): CodePoint =
-      if (hasNext) {
-        val c = s(i); i += 1; c
-      } else 0
-  }
-
-  def reversedIterator(s: CodePointSequence): Iterator[CodePoint] = new Iterator[CodePoint] {
+  /**  Reversed iterator over an unchanging `s` [EFFICIENT] */
+  def reversedIterator(s: CodePointSeq): Iterator[CodePoint] = new Iterator[CodePoint] {
     var i: Int = s.length
-
     def hasNext: Boolean = i > 0
-
     def next(): CodePoint = if (i > 0) {
       i -= 1; s(i)
     } else 0
   }
 
-  def reversedIterator(s: CodePointSequence, upTo: Int): Iterator[CodePoint] = new Iterator[CodePoint] {
+  /**  Reversed iterator over an unchanging `s[0 until upto]` [EFFICIENT]  */
+  def reversedIterator(s: CodePointSeq, upTo: Int): Iterator[CodePoint] = new Iterator[CodePoint] {
     var i: Int = upTo
-
     def hasNext: Boolean = i > 0
-
     def next(): CodePoint = if (i > 0) {
       i -= 1; s(i)
     } else 0

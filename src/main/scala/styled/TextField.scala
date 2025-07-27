@@ -2,7 +2,7 @@ package org.sufrin
 package glyph
 package styled
 
-import org.sufrin.glyph.PrefixCodePointMap.CodePointSequence
+import org.sufrin.glyph.CodePointSeqMap.CodePointSeq
 import org.sufrin.utility.TextAbbreviations
 
 
@@ -33,7 +33,7 @@ object TextField {
   import GlyphTypes.Font
   import io.github.humbleui.jwm.EventKey
 
-  val reportNewGlyph: (String, CodePointSequence) => Unit = glyph.TextField.reportNewGlyph
+  val reportNewGlyph: (String, CodePointSeq) => Unit = glyph.TextField.reportNewGlyph
 
   def apply(onEnter: String => Unit            = { case text: String => },
             onError: (EventKey, Glyph) => Unit = glyph.TextField.popupError(_,_),
@@ -43,7 +43,7 @@ object TextField {
             initialText: String = "",
             abbreviations: TextAbbreviations = null,
             glyphcountData: GlyphcountData = GlyphcountData(),
-            onNewGlyph: (String, CodePointSequence) => Unit = { (_,_) => }
+            onNewGlyph: (String, CodePointSeq) => Unit = { (_, _) => }
 
   )
            (implicit sheet: StyleSheet): TextField = {

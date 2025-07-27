@@ -5,7 +5,7 @@ import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked, K
 import io.github.humbleui.skija.TextLine
 import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.unstyled.Text
-import org.sufrin.glyph.PrefixCodePointMap.CodePointSequence
+import org.sufrin.glyph.CodePointSeqMap.CodePointSeq
 import org.sufrin.logging
 import org.sufrin.logging.{FINER, SourceDefault}
 import org.sufrin.utility.TextAbbreviations
@@ -55,7 +55,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 initialText: String,
                 val abbreviations: org.sufrin.utility.TextAbbreviations,
                 val glyphCountData: GlyphcountData,
-                var onNewGlyph: (String, CodePointSequence) => Unit
+                var onNewGlyph: (String, CodePointSeq) => Unit
                ) extends ReactiveGlyph
 {
   /** A copy of this glyph; perhaps with different foreground/background */
@@ -564,8 +564,8 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       if (left >=n ) left -= n
     }
 
-    @inline private def leftGlyphRep: CodePointSequence = reverseLeftCodePoints().take(leftGlyph2Codepoints).toSeq.reverse
-    @inline private def rightGlyphRep: CodePointSequence = rightCodePoints.take(rightGlyph2Codepoints).toSeq
+    @inline private def leftGlyphRep: CodePointSeq = reverseLeftCodePoints().take(leftGlyph2Codepoints).toSeq.reverse
+    @inline private def rightGlyphRep: CodePointSeq = rightCodePoints.take(rightGlyph2Codepoints).toSeq
 
     /**
      * Swap the last two glyphs to the left of the cursor
@@ -937,7 +937,7 @@ object TextField extends logging.Loggable {
     styled.windowdialogues.Dialogue.OK(unstyled.static.Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
   }
 
-  def reportNewGlyph(glyph: String, codePoints: CodePointSequence): Unit = {
+  def reportNewGlyph(glyph: String, codePoints: CodePointSeq): Unit = {
     SourceDefault.info(s"New polycoded glyph: $glyph ")
   }
 
@@ -950,7 +950,7 @@ object TextField extends logging.Loggable {
             initialText: String = "",
             abbreviations: org.sufrin.utility.TextAbbreviations = null,
             glyphcountData: GlyphcountData = GlyphcountData(),
-            onNewGlyph: (String, CodePointSequence) => Unit = reportNewGlyph(_,_)
+            onNewGlyph: (String, CodePointSeq) => Unit = reportNewGlyph(_, _)
            ): TextField =
       new TextField(fg, bg, font,
             onEnter=onEnter,
@@ -965,8 +965,8 @@ object TextField extends logging.Loggable {
 }
 
 case class GlyphcountData(
-  leftGlyphCodepointCount: PrefixCodePointMap[Boolean] = new PrefixCodePointMap[Boolean],
-  rightGlyphCodepointCount: PrefixCodePointMap[Boolean] = new PrefixCodePointMap[Boolean]
+                           leftGlyphCodepointCount: CodePointSeqMap[Boolean] = new CodePointSeqMap[Boolean],
+                           rightGlyphCodepointCount: CodePointSeqMap[Boolean] = new CodePointSeqMap[Boolean]
 )
 
 

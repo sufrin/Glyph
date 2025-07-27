@@ -1,7 +1,8 @@
 package org.sufrin
 package utility
 
-import org.sufrin.glyph.PrefixCodePointMap.{CodePoint, CodePointSequence}
+import org.sufrin.glyph.CodePointSeqMap.{CodePoint, CodePointSeq}
+import org.sufrin.logging.Loggable
 
 /**
  * A collection of text abbreviations and their translations. If `implicitUnicode` then
@@ -14,9 +15,9 @@ import org.sufrin.glyph.PrefixCodePointMap.{CodePoint, CodePointSequence}
  * TODO: Implement (prioritised) an API for named abbreviation tables that can be individually enabled.
  */
 
-class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode: Boolean=false, var onAmbiguous: (String, String, String) => Unit = { (abbr, oldRep, newRep) => logging.SourceDefault.warn(s"$abbr was $oldRep now $newRep")}) {
-  import org.sufrin.glyph.PrefixCodePointMap
-  val trie: PrefixCodePointMap[String] = new PrefixCodePointMap[String]
+class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode: Boolean=false, var onAmbiguous: (String, String, String) => Unit = { (abbr, oldRep, newRep) => TextAbbreviations.warn(s"$abbr was $oldRep now $newRep")}) {
+  import org.sufrin.glyph.CodePointSeqMap
+  val trie: CodePointSeqMap[String] = new CodePointSeqMap[String]
 
   def clearMapping(): Unit = trie.clear()
 
@@ -24,7 +25,7 @@ class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode:
    * `Some(t, l)`, where `t` is the translation of the longest such match, and `l` is
    * its length.
    */
-  def findAbbreviation(chars: CodePointSequence): Option[(String, Int)] =
+  def findAbbreviation(chars: CodePointSeq): Option[(String, Int)] =
     trie.longestSuffixMatch(chars, chars.length) orElse findImplicitUnicode(()=>chars.reverseIterator)
 
   def findImplicitUnicode(reverseIterator: ()=>Iterator[CodePoint]): Option[(String, Int)] =
@@ -67,13 +68,13 @@ class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode:
 
 }
 
-object TextAbbreviations {
-  def toCodePoints(str: String): CodePointSequence = {
+object TextAbbreviations extends logging.SourceLoggable {
+  def toCodePoints(str: String): CodePointSeq = {
     val a = new collection.mutable.ArrayBuffer[CodePoint]()
     str.codePoints.forEach { cp: Int => a.append(cp) }
     a.toSeq
   }
-  def reportNewGlyph(glyph: String, codePoints: CodePointSequence): Unit = {
-    logging.SourceDefault.info(s"New polycoded glyph: $glyph ")
+  def reportNewGlyph(glyph: String, codePoints: CodePointSeq): Unit = {
+    info(s"New polyencoded glyph: $glyph ")
   }
 }
