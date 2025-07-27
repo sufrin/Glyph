@@ -29,7 +29,7 @@ class Variable[T](
    * if they differ.
    */
   def value_=(value: T): Unit = {
-    if ((_theValue != null) && (_theValue != value)) onChange(_theValue, value)
+    if ((_theValue != null) /*&& (_theValue != value)*/) onChange(_theValue, value)
     _theValue = value
   }
 
