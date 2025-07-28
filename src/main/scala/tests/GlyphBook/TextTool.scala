@@ -8,7 +8,7 @@ import unstyled.static
 import org.sufrin.utility.TextAbbreviations
 import org.sufrin.SourceLocation.SourceLocation
 import org.sufrin.glyph.tests.StockAbbreviations
-import org.sufrin.glyph.Brushes.{black, blackFrame, colourName, lightGrey, red}
+import org.sufrin.glyph.Brushes.{black, blackFrame, colourName, lightGrey, red, white}
 import org.sufrin.glyph.CodePointSeqMap.CodePointSeq
 import org.sufrin.glyph.styles.decoration.RoundFramed
 import org.sufrin.logging
@@ -100,14 +100,16 @@ class TextTool(implicit style: StyleSheet)  {
   }(controlsStyle)
 
   defs("SHOWBUTTON") = _ =>  styled.TextButton("Show", hint=Hint(5, "Show all the abbreviations")){
-    _ => //windowdialogues.Dialogue.FLASH(helpText.enlarged(20, bg=lightGrey)).InFront(anchor).start()
-      val order = new Ordering[String] {
-        def compare(x: String, y: String): Int = x.compareToIgnoreCase(y)
-      }
-      val map = StockAbbreviations.all.toMap
-      val keys = StockAbbreviations.all.map(_._1).toSeq.sorted(order).map(key => Label(s"${map(key)} $key"))
-      val keysPara = NaturalSize.Grid(fg=black, padx=10, pady=5).table(keys)
-      windowdialogues.Dialogue.FLASH(keysPara.enlarged(20, bg=lightGrey)).InFront(anchor).start()
+    _ =>
+      val order = new Ordering[String] { def compare(x: String, y: String): Int = x.compareToIgnoreCase(y) }
+      val substitute =
+        StockAbbreviations.all.toMap
+      val pairs =
+        StockAbbreviations.all.map(_._1).toSeq.sorted(order).
+        flatMap{ key => List(Label(key), Label(substitute(key)))}
+      val content =
+        NaturalSize.Grid(fg=black, bg=white, padx=10, pady=5).table(width=28)(pairs)
+      windowdialogues.Dialogue.FLASH(content.enlarged(20)).InFront(anchor).start()
   }(controlsStyle)
 
 
