@@ -108,7 +108,7 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
     example.string=s"${example.string} ${key._key} ${mods.toString} "
   }
 
-  val abbrs = new TextAbbreviations(onLineTrigger = false, implicitUnicode = false)
+  val abbrs = new TextAbbreviations(onLineTrigger = true, implicitUnicode = true)
   locally {
     for {(a, s) <- StockAbbreviations.all } {
       abbrs(a) = s
@@ -132,16 +132,16 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
   val hintSheet   = sheet.copy(fontScale=0.6f, buttonDecoration = styles.decoration.RoundFramed(frameGrey, radius=20, enlarge=10))
   val buttonSheet = sheet.copy(fontScale=0.8f, buttonDecoration = styles.decoration.RoundFramed(frameGrey, radius=20, enlarge=10))
 
-  val onLine: ToggleVariable = ToggleVariable(false) { state => abbrs.onLineTrigger = state }
-  val implicitUnicode =  ToggleVariable(false) { state => abbrs.implicitUnicode=state }
+  val onLine: ToggleVariable = ToggleVariable(abbrs.onLineTrigger) { state => abbrs.onLineTrigger = state }
+  val implicitUnicode        = ToggleVariable(abbrs.implicitUnicode) { state => abbrs.implicitUnicode=state }
 
   val triggerButton: Glyph =
-    styled.CheckBox(initially=abbrs.onLineTrigger,
+    styled.CheckBox(initially=false,
                     hint=Hint(5, "Enable/disable automatic substitution for abbreviations\nas they are typed.\nWhen disabled, SHIFT-SHIFT is used\nto make a substitution.")(hintSheet))(onLine)(buttonSheet)
 
   val implicitButton: Glyph =
-    styled.CheckBox(initially=abbrs.onLineTrigger,
-                      hint=Hint(5, "Enable/disable implicit abbreviations\nof unicode glyphs\nexpressed as hex digit sequences\n followed by \"u+\" ")(hintSheet))(implicitUnicode)(buttonSheet)
+    styled.CheckBox(initially=false,
+                    hint=Hint(5, "Enable/disable implicit abbreviations\nof unicode glyphs\nexpressed as hex digit sequences\n followed by \"u+\" ")(hintSheet))(implicitUnicode)(buttonSheet)
 
   val tryoutButton: Glyph =
     styled.TextButton("Popup an Edit Field", hint=Hint(5, "The popup edits\nthe editable text\nusing the\ncurrent font.")(hintSheet)){
@@ -189,7 +189,7 @@ class FontAndBrushChooser(fontChooserFont: Font=null)(implicit val sheet: StyleS
 
   import FontFamily._
 
-  val phont =if (fontChooserFont eq null) sheet.textFont.scaled(1.5f).familied("Courier") else fontChooserFont
+  val phont = if (fontChooserFont eq null) sheet.textFont.scaled(1.5f).familied("Courier") else fontChooserFont
 
   lazy val brushName    = new ActiveString(initial=f"${brush.toString}%-50s")
   lazy val fontChooser  = new FontChooser(phont, brush, aboveDisplay = (Label("Brush ", align=Left), brushName))

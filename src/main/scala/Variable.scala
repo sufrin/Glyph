@@ -2,12 +2,12 @@ package org.sufrin.glyph
 
 /**
  *  An "active" variable that triggers a method
- *  when its value changes.
+ *  when its `value=` method is invoked .
  */
 class Variable[T](
     initially: T,
     onChange: (T, T) => Unit = { (oldv: T, newv: T) => {} }
-) {
+) extends Settable [T] {
   private var _theValue: T = initially
 
   override def toString: String = s"${_theValue}"
@@ -25,8 +25,7 @@ class Variable[T](
 
   /**
    * Set the value of the variable, and
-   * trigger `onChange(oldValue, value)`
-   * if they differ.
+   * trigger `onChange(oldValue, value)`.
    */
   def value_=(value: T): Unit = {
     if ((_theValue != null) /*&& (_theValue != value)*/) onChange(_theValue, value)

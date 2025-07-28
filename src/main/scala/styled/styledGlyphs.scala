@@ -71,6 +71,8 @@ trait ToggleButton { thisToggle =>
   /**
    *  Yield a styled  `OnOffButton` associated with this `variable`. This
    *  is the preferred usage.
+   *
+   *  The button's initial state is that of the `variable`.
    */
   def apply(variable: ToggleVariable)(implicit sheet: StyleSheet): Glyph = {
     val button = thisToggle.apply {
@@ -78,6 +80,8 @@ trait ToggleButton { thisToggle =>
         variable.value = state
         for { button <- variable.registered} button.set(state)
     }
+    button.set(variable.get) //** 28JUL
+    if (variable.get!=button.get) logging.SourceDefault.warn(s"Contradictory initial states ${variable.get} ${button.get}")
     variable.register(button)
     Decorate(button)
   }
@@ -514,7 +518,7 @@ object RadioCheckBoxes {
 
 /**
  * A group of captioned checkboxes, labelled with `captions`, and with `prefer` as the
- * caption of the to-be-checkedinitially box.  At most one box can be checked at a time:
+ * caption of the to-be-checked-initially box.  At most one box can be checked at a time:
  * so whenever one is checked all the others are unchecked. When the currently-checked box
  * is clicked and becomes unchecked, then the box (if any) captioned `prefer` is checked.
  * @param captions

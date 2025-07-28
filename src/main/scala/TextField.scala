@@ -6,6 +6,7 @@ import io.github.humbleui.skija.TextLine
 import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.unstyled.Text
 import org.sufrin.glyph.CodePointSeqMap.CodePointSeq
+import org.sufrin.glyph.TextField.isDirectional
 import org.sufrin.logging
 import org.sufrin.logging.{FINER, SourceDefault}
 import org.sufrin.utility.TextAbbreviations
@@ -201,18 +202,18 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
       case DELETE     => TextModel.mvRight(); TextModel.del()
 
       // two successive presses on the SHIFT key triggers an abbreviation
-      case CONTROL | MAC_COMMAND | SHIFT | LINUX_SUPER | ALT | MAC_OPTION =>
+      case CONTROL | MAC_COMMAND | SHIFT | LINUX_SUPER | ALT | MAC_OPTION | MAC_FN =>
         if (abbreviationTrigger eq Key.MAC_OPTION) {
           println(TextModel.reverseLeftCodePoints().take(4).map(c=>f"$c%xu+").toList.reverse.mkString(" "))
         }
-        else if ((abbreviationTrigger eq key._key) && (abbreviationTrigger==SHIFT)) {
+        else if ((abbreviationTrigger eq key._key) && ((abbreviationTrigger==SHIFT) || (abbreviationTrigger==MAC_FN))) {
           TextModel.abbreviation()
           resetAbbreviationTrigger()
         } else {
           abbreviationTrigger = key._key
         }
 
-      case other  if abbreviationKey!=UNDEFINED && other==abbreviationKey && mods ==abbreviationMods =>
+      case other  if abbreviationKey!=UNDEFINED && other==abbreviationKey && mods==abbreviationMods =>
         TextModel.abbreviation()
 
       case other  =>
@@ -894,7 +895,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       @inline def glyphCount = TextLine.make(new String(string), font).getGlyphs.length
       if (string.size>1) {
         val cps = TextAbbreviations.toCodePoints(string)
-        if ((glyphCount==1 && cps.length>1) || (cps.startsWith(List(0X2066)) && cps.endsWith(List(0x2069)))) {
+        if ((glyphCount==1 && cps.length>1) || isDirectional(cps)) {
           val novelty = glyphCountData.leftGlyphCodepointCount.reverseChange(cps, true).isEmpty
           glyphCountData.rightGlyphCodepointCount.update(cps, true)
           if (novelty) onNewGlyph(string, cps)
@@ -930,12 +931,26 @@ object TextField extends logging.Loggable {
   import Location._
   val bell = Sound.Clip("WAV/tonk.wav")
   def beep() = bell.play()
+
   def popupError(key: EventKey, glyph: Glyph): Unit = {
     import Modifiers._
     implicit object Style extends StyleSheet
     bell.play()
     styled.windowdialogues.Dialogue.OK(unstyled.static.Label(s"Unknown key: ${toBitmap(key).toShortString} ${key._key}"), RelativeTo(glyph), "Error").start()
   }
+
+  /** bidi start left-right isolate */
+  val LRI =0x2066
+  /** bidi start right-left isolate */
+  val RLI =0x2066
+  /** bidi pop  directional isolate */
+  val PDI =0x2069
+  /** bidi start LR MODE */
+  val LRM = 0x200E
+  /** bidi start RL MODE */
+  val RLM = 0x200F
+
+  def isDirectional(cps: CodePointSeq): Boolean = cps.length>2 && cps.head==RLM && cps.last==LRM
 
   def reportNewGlyph(glyph: String, codePoints: CodePointSeq): Unit = {
     SourceDefault.info(s"New polycoded glyph: $glyph ")

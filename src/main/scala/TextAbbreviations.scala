@@ -2,7 +2,7 @@ package org.sufrin
 package utility
 
 import org.sufrin.glyph.CodePointSeqMap.{CodePoint, CodePointSeq}
-import org.sufrin.logging.Loggable
+import org.sufrin.logging.{Loggable, WARN}
 
 /**
  * A collection of text abbreviations and their translations. If `implicitUnicode` then
@@ -15,7 +15,7 @@ import org.sufrin.logging.Loggable
  * TODO: Implement (prioritised) an API for named abbreviation tables that can be individually enabled.
  */
 
-class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode: Boolean=false, var onAmbiguous: (String, String, String) => Unit = { (abbr, oldRep, newRep) => TextAbbreviations.warn(s"$abbr was $oldRep now $newRep")}) {
+class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode: Boolean=false, var onAmbiguous: (String, String, String) => Unit = TextAbbreviations.ambiguous) {
   import org.sufrin.glyph.CodePointSeqMap
   val trie: CodePointSeqMap[String] = new CodePointSeqMap[String]
 
@@ -53,6 +53,7 @@ class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode:
     result orElse findImplicitUnicode(reverseIterator)
   }
 
+
   import TextAbbreviations.toCodePoints
 
   def mapTo(abbrev: String, result: String): Unit = trie.reverseUpdate(toCodePoints(abbrev), result)
@@ -68,13 +69,18 @@ class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode:
 
 }
 
-object TextAbbreviations extends logging.SourceLoggable {
+object TextAbbreviations {
+
   def toCodePoints(str: String): CodePointSeq = {
     val a = new collection.mutable.ArrayBuffer[CodePoint]()
     str.codePoints.forEach { cp: Int => a.append(cp) }
     a.toSeq
   }
+
   def reportNewGlyph(glyph: String, codePoints: CodePointSeq): Unit = {
-    info(s"New polyencoded glyph: $glyph ")
+    logging.SourceDefault.info(s"New polyencoded glyph: $glyph ")
   }
+
+  def ambiguous(abbr: String, oldRep: String, newRep: String): Unit = logging.SourceDefault.warn(s"$abbr was $oldRep now $newRep")
+
 }
