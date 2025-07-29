@@ -185,7 +185,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
 
       case V if mods.includeSome(ANYCONTROL) =>
         val text = Clipboard.get(ClipboardFormat.TEXT).getString
-        TextModel.ins(text)
+        TextModel.insPaste(text)
         TextModel.accountForCodePointCounts(text)
 
       case S if mods.includeSome(ANYCONTROL) =>
@@ -544,12 +544,18 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       }
     }
 
-    def isRight(cp: CodePoint): Boolean =
+    def isRightToLeft(cp: CodePoint): Boolean =
       (Character.getDirectionality(cp)) match {
         case Character.DIRECTIONALITY_RIGHT_TO_LEFT
              | Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC => true
         case _ => false
       }
+
+    def isRightToLeft(ch: Char): Boolean =  (Character.getDirectionality(ch)) match {
+      case Character.DIRECTIONALITY_RIGHT_TO_LEFT
+           | Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC => true
+      case _ => false
+    }
 
     def insCodePoint(cp: CodePoint): Unit = {
       mark = -1
@@ -599,13 +605,35 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
 
+    def insCorrectedCodePoint(cp: Int): Unit = {
+      import TextField._
+      if (isRightToLeft(cp)) {
+        val cps = List(RLM, cp, LRM)
+        val novelty = glyphCountData.leftGlyphCodepointCount.reverseChange(cps, true).isEmpty
+        glyphCountData.rightGlyphCodepointCount.update(cps, true)
+        cps.foreach(insCodePoint)
+      } else insCodePoint(cp)
+    }
+
+    /**
+     * Isolate pasted characters and show in the visual order
+     * TODO:further refinement for combining marks (eg Biblical Hebrew Vowels)
+     */
+    def insPaste(string: String): Unit = {
+      doPendingDeletions()
+      if (string.exists(isRightToLeft))
+          string.reverse.codePoints.forEach(insCorrectedCodePoint)
+      else
+          string.codePoints.forEach(insCodePoint)
+    }
+
     /**
      * Insert the given `string`. It may contain "surrogate pairs" arising from
      * characters (for example Smileys, Kanji, ...) outside the BMP.
      */
     def ins(string: String): Unit = {
       doPendingDeletions()
-      string.codePoints.forEach(insCodePoint(_))
+      string.codePoints.forEach{ insCodePoint(_) }
       if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
 
