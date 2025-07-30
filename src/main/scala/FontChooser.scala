@@ -153,7 +153,7 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
                     onEnter    =  { string => example.string = string },
                     initialText    = exampleDisplay.get,
                     abbreviations  = abbrs,
-                    glyphcountData = example.glyphCountData).enlarged(20).framed().enlarged(10) //share the count data
+                    polyCodings    = example.polyCodings).enlarged(20).framed().enlarged(10) //share the count data
           )
         styled.windowdialogues.Dialogue.FLASH(playGUI,null,s"Play TextField ${_font.asString}").OnRootOf(GUI).start()
     }(buttonSheet)

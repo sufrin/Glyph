@@ -42,7 +42,7 @@ object TextField {
             size:    Int,
             initialText: String = "",
             abbreviations: TextAbbreviations = null,
-            glyphcountData: GlyphcountData = GlyphcountData(),
+            glyphcountData: PolyCodings = PolyCodings(),
             onNewGlyph: (String, CodePointSeq) => Unit = { (_, _) => }
 
   )

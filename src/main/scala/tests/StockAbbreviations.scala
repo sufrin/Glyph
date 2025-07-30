@@ -225,8 +225,8 @@ object StockAbbreviations {
         ("RLM" -> "\u200F")
       )
 
-      def sloshName(s: String): String = s"$s\\"
-      def sloshLowerCaseName(s: String): String = s"${s.toLowerCase}\\"
+      def sloshName(s: String): String = s"$s/"
+      def sloshLowerCaseName(s: String): String = s"${s.toLowerCase}/"
 
       /** hebrew letters as unicode bidi isolates */
       val hebrew = {
@@ -310,7 +310,7 @@ object StockAbbreviations {
        "^)" -> "\u207E",
      )
 
-      lazy val all = arrows++bidi++hebrew++composites++abbreviations++greek++cardSuits++superscriptDigits++superscriptsigns
+      lazy val all = arrows++bidi++hebrew++composites++abbreviations++greek++cardSuits++superscriptDigits++superscriptsigns++subscripts
 
       if (false) locally { // check hebrew and greek
         for { (a, l)<-hebrew } println(a, l)

@@ -5,28 +5,22 @@ package tests.GlyphBook
 import styled._
 import unstyled.static
 
+import io.github.humbleui.jwm.Key
 import org.sufrin.utility.TextAbbreviations
 import org.sufrin.SourceLocation.SourceLocation
 import org.sufrin.glyph.tests.StockAbbreviations
 import org.sufrin.glyph.Brushes.{black, blackFrame, colourName, lightGrey, red, white}
-import org.sufrin.glyph.CodePointSeqMap.CodePointSeq
-import org.sufrin.glyph.styles.decoration.RoundFramed
 import org.sufrin.logging
-
-import scala.collection.immutable.HashMap
-import scala.math.Ordered.orderingToOrdered
-import scala.math.Ordering.Implicits.seqOrdering
 
 
 class TextTool(implicit style: StyleSheet)  {
   implicit val pageStyle: BookSheet = BookSheet(style, style)
   val anchor = static.INVISIBLE()
-  val abbrev = new TextAbbreviations(onLineTrigger = true, implicitUnicode = false, onAmbiguous = TextAbbreviations.ambiguous)
+  val abbreviations = new TextAbbreviations(onLineTrigger = true, implicitUnicode = false, onAmbiguous = TextAbbreviations.ambiguous)
 
   locally {
-    def dabbrev(a:String, s: String): Unit = { abbrev(a)=s; abbrev(s)=a }
-    for {  (abbr, symb) <- StockAbbreviations.all } dabbrev(abbr, symb)
-    dabbrev("help", "type \"tick\" or \"rainbow\"")
+    abbreviations.reversible = true
+    for {  (abbr, symb) <- StockAbbreviations.all } abbreviations.update(abbr, symb)(SOURCE)
   }
 
   val controlsStyle: StyleSheet =
@@ -42,13 +36,13 @@ class TextTool(implicit style: StyleSheet)  {
   defs("CONTROLS") =
     _=> //Label("Log events") beside styled.CheckBox(initially=false) { state => anchor.guiRoot.eventHandler.logEvents=state } beside
       NaturalSize.Row(align=Mid)(
-        Label(" Live abbreviations(")(controlsStyle),
-        CheckBox(initially=abbrev.onLineTrigger) {
-           state => abbrev.onLineTrigger=state
+        Label(" LIVE(")(controlsStyle),
+        CheckBox(initially=abbreviations.onLineTrigger) {
+           state => abbreviations.onLineTrigger=state
         }(controlsStyle),
-        Label(") u+(")(controlsStyle),
-        CheckBox(initially=abbrev.implicitUnicode) {
-          state => abbrev.implicitUnicode=state
+        Label(") UU(")(controlsStyle),
+        CheckBox(initially=abbreviations.implicitUnicode) {
+          state => abbreviations.implicitUnicode=state
     }(controlsStyle) beside  Label(")")(controlsStyle)
       )
 
@@ -61,9 +55,9 @@ class TextTool(implicit style: StyleSheet)  {
                          case (eventKey, _) =>
                            import Modifiers._
                            logging.SourceDefault.warn(s"Undefined keystroke: ${eventKey.asShortString}")},
-                       abbreviations = abbrev,
+                       abbreviations = abbreviations,
                        onNewGlyph = TextField.reportNewGlyph(_,_),
-                       initialText = "Æsop’s Φabulous \uD83C\uDF08 φαβλ")(style.copy(fontScale = 1.5f))
+                       initialText = "Æsop’s Φabulous \uD83C\uDF08 φαβλ")(style.copy(fontScale = 1.5f)).withAbbreviationKey(Key.ESCAPE)
   defs("TEXTFIELD") = _=>textField.framed()
 
 
@@ -112,7 +106,13 @@ class TextTool(implicit style: StyleSheet)  {
       windowdialogues.Dialogue.FLASH(content.enlarged(20)).InFront(anchor).start()
   }(controlsStyle)
 
+  defs("UNICODE") = _ => styled.TextButton("Unicode", hint=Hint(5, "Replace glyph at cursor left\nby unicode codepoint(s)")) {
+    _ => textField.unicode()
+  }(controlsStyle)
 
+  defs("UNABBR") = _ => styled.TextButton("Abbr", hint=Hint(5, "Replace cursor left material\nby its abbreviation\n(inverse of 'abbreviate')")) {
+    _ => textField.unabbreviation()
+  }(controlsStyle)
 
 
   val GUI: Glyph = NaturalSize.Col(align=Center)(
@@ -123,7 +123,7 @@ class TextTool(implicit style: StyleSheet)  {
       </p>
       <fill/>
       <p align="center" bg="transparent" fontFamily="Courier" source={SOURCE}>
-        <![CDATA[(c) (r) :) :O <3 :-| aleph\ Alpha\ rainbow=🌈 ukflag=🇬🇧 ae=ᴂ Ae=Æ]]>
+        <![CDATA[(c) (r) :) :O <3 :-| aleph. Alpha. rainbow=🌈 ukflag=🇬🇧 ae=ᴂ Ae=Æ]]>
       </p>
       <fill/>
       <p align="center"><glyph gid="TEXTFIELD"/></p>
@@ -132,14 +132,15 @@ class TextTool(implicit style: StyleSheet)  {
         <glyph gid="CONTROLS"/>
         <glyph gid="HELPBUTTON"/>
         <glyph gid="SHOWBUTTON"/>
+        <glyph gid="UNABBR"/>
+        <glyph gid="UNICODE"/>
       </p>
       <fill/>
-      <p>
-        When "Live abbreviations" is checked, typing the last character of an abbreviation results in the insertion of the
+      <p hang="Abbreviations: ">
+        When "LIVE" is checked, typing the last character of an abbreviation results in the insertion of the
         sequence or symbol it abbreviates, otherwise typing the SHIFT key twice in succession when the cursor is at the end of
-        an abbreviation has the same result. If "u+" is checked then sequences of the form <i>hex digits</i><b>u+</b> are
-        implicitly taken as abbreviations for the corresponding unicode character. Here the symbols have also been mapped
-        back to their original abbreviations, so an abbreviation can (usually) be undone by typing the SHIFT key twice in succession.
+        an abbreviation has the same result, as (here) does the ESC key. If "UU" is checked then sequences of the form <i>hex digits</i><b>uu</b> are
+        implicitly taken as abbreviations for the corresponding unicode character.
       </p>
       <fill/>
       <p>

@@ -5,7 +5,7 @@ import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked, K
 import io.github.humbleui.skija.TextLine
 import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.unstyled.Text
-import org.sufrin.glyph.CodePointSeqMap.CodePointSeq
+import org.sufrin.glyph.CodePointSeqMap.{CodePoint, CodePointSeq}
 import org.sufrin.glyph.TextField.isDirectional
 import org.sufrin.logging
 import org.sufrin.logging.{FINER, SourceDefault}
@@ -55,12 +55,13 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 val size: Int,
                 initialText: String,
                 val abbreviations: org.sufrin.utility.TextAbbreviations,
-                val glyphCountData: GlyphcountData,
-                var onNewGlyph: (String, CodePointSeq) => Unit
+                val polyCodings: PolyCodings,
+                var onNewGlyph: (String, CodePointSeq) => Unit,
+                var visualOrderPaste: Boolean = true // normalize RTL in pasted material
                ) extends ReactiveGlyph
 {
   /** A copy of this glyph; perhaps with different foreground/background */
-  def copy(fg: Brush, bg: Brush): Glyph = new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations, glyphCountData, onNewGlyph)
+  def copy(fg: Brush, bg: Brush): Glyph = new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations, polyCodings, onNewGlyph, visualOrderPaste)
 
   import io.github.humbleui.jwm.{EventMouseButton, Window}
   private val em         = Text("M", font)
@@ -69,7 +70,6 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   private val nudge      = em.width / 2
   private val deltaY     = emDiagonal.y*0.2f
   def diagonal: Vec      = Vec(emDiagonal.x*size, emDiagonal.y*1.2)
-
 
   var onCursorEnter: String => Unit = {
     text => takeKeyboardFocus()
@@ -142,7 +142,8 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
    */
   def withAbbreviationKey(key: Key, mods: Int=0): TextField = {
     abbreviationKey = key
-    abbreviationMods = Bitmap(mods)
+    abbreviationMods = Bitmap(mods|Pressed)
+    println(s"Abbreviation key: $key $abbreviationMods")
     this
   }
 
@@ -181,7 +182,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
             while (TextModel.hasLeft) TextModel.del()
 
       case TAB  =>
-        TextModel.ins("0123456789|")
+        TextModel.ins("\t")
 
       case V if mods.includeSome(ANYCONTROL) =>
         val text = Clipboard.get(ClipboardFormat.TEXT).getString
@@ -203,17 +204,14 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
 
       // two successive presses on the SHIFT key triggers an abbreviation
       case CONTROL | MAC_COMMAND | SHIFT | LINUX_SUPER | ALT | MAC_OPTION | MAC_FN =>
-        if (abbreviationTrigger eq Key.MAC_OPTION) {
-          println(TextModel.reverseLeftCodePoints().take(4).map(c=>f"$c%xu+").toList.reverse.mkString(" "))
-        }
-        else if ((abbreviationTrigger eq key._key) && ((abbreviationTrigger==SHIFT) || (abbreviationTrigger==MAC_FN))) {
+        if ((abbreviationTrigger eq key._key) && ((abbreviationTrigger==SHIFT) || (abbreviationTrigger==MAC_FN))) {
           TextModel.abbreviation()
           resetAbbreviationTrigger()
         } else {
           abbreviationTrigger = key._key
         }
 
-      case other  if abbreviationKey!=UNDEFINED && other==abbreviationKey && mods==abbreviationMods =>
+      case other  if abbreviationKey!=UNDEFINED && other==abbreviationKey && mods.includeAll(abbreviationMods.modifiers)=>
         TextModel.abbreviation()
 
       case other  =>
@@ -225,6 +223,12 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
     reDraw()
   }
 
+  def unicode(): Unit =
+    if (TextModel.hasLeft) {
+      TextModel.unicode()
+    }
+
+  def unabbreviation(): Unit = TextModel.unabbreviation()
 
   /** Width of the serifs of the I-beam drawn as the cursor */
   val cursorSerifWidth = 5f
@@ -307,7 +311,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
     // Indicate when there's invisible text to the left
     if (panning) surface.drawPolygon$(panWarningBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
 
-
+    def unicode(): Unit = TextModel.unicode()
 
   }
 }
@@ -391,6 +395,11 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       newText.codePoints.forEach(insCodePoint(_))
     }
 
+    def leftCodePoint: CodePoint = {
+      assert(hasLeft)
+      buffer(left-1)
+    }
+
     def leftString: String = leftString(0)
 
     def leftString(from: Int): String = if (from < 0 || left - from <= 0) "" else {
@@ -465,7 +474,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
         val codePoints = lastVisiblePointArray // visiblePointArray(panBy)
 
         @inline def rightWidth: Scalar = {
-          val n = rightGlyph2Codepoints
+          val n = rightCodepoints
           if (n == 1)
             codePointWidth(buffer(right))
           else {
@@ -567,12 +576,21 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     def del(): Unit = {
       mark = -1
-      val n = leftGlyph2Codepoints
+      val n = leftCodepoints
       if (left >=n ) left -= n
     }
 
-    @inline private def leftGlyphRep: CodePointSeq = reverseLeftCodePoints().take(leftGlyph2Codepoints).toSeq.reverse
-    @inline private def rightGlyphRep: CodePointSeq = rightCodePoints.take(rightGlyph2Codepoints).toSeq
+    def unicode(): Unit = {
+      mark = -1
+      val n = leftCodepoints
+      if (left >=n ) left -= n
+      val lcps = for { i<-0 until n } yield buffer(left+i)
+      println(lcps.map(_.toChar))
+      for { cp <- lcps } insPaste(TextAbbreviations.decodeUnicode(cp))
+    }
+
+    @inline private def leftGlyphRep: CodePointSeq = reverseLeftCodePoints().take(leftCodepoints).toSeq.reverse
+    @inline private def rightGlyphRep: CodePointSeq = rightCodePoints.take(rightCodepoints).toSeq
 
     /**
      * Swap the last two glyphs to the left of the cursor
@@ -609,8 +627,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       import TextField._
       if (isRightToLeft(cp)) {
         val cps = List(RLM, cp, LRM)
-        val novelty = glyphCountData.leftGlyphCodepointCount.reverseChange(cps, true).isEmpty
-        glyphCountData.rightGlyphCodepointCount.update(cps, true)
+        polyCodings.set(cps)
         cps.foreach(insCodePoint)
       } else insCodePoint(cp)
     }
@@ -621,7 +638,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
      */
     def insPaste(string: String): Unit = {
       doPendingDeletions()
-      if (string.exists(isRightToLeft))
+      if (visualOrderPaste && string.exists(isRightToLeft))
           string.reverse.codePoints.forEach(insCorrectedCodePoint)
       else
           string.codePoints.forEach(insCodePoint)
@@ -661,12 +678,12 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     def mvLeft(): Unit = if (left != 0) {
-      val n = leftGlyph2Codepoints
+      val n = leftCodepoints
       for { i<-0 until n} MVLEFT()
     }
 
     def mvRight(): Unit = if (right != N) {
-      val n = rightGlyph2Codepoints
+      val n = rightCodepoints
       for { i<-0 until n } MVRIGHT()
     }
 
@@ -893,18 +910,10 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
 
     /** Map the GLYPH at the left of the cursor to the number of codepoints that represent it */
-    def leftGlyph2Codepoints: Int =
-      glyphCountData.leftGlyphCodepointCount.longestPrefixMatch(reverseLeftCodePoints()) match {
-        case None => 1
-        case Some((_, n)) => n
-      }
+    @inline private def leftCodepoints: Int = polyCodings.leftCodepoints(reverseLeftCodePoints())
 
     /** Map the GLYPH at the right of the cursor to the number of codepoints that represent it */
-    def rightGlyph2Codepoints: Int =
-      glyphCountData.rightGlyphCodepointCount.longestPrefixMatch(rightCodePoints.iterator) match {
-        case None => 1
-        case Some((_, n)) => n
-      }
+    @inline private def rightCodepoints: Int = polyCodings.rightCodepoints(rightCodePoints.iterator)
 
     def glyphCount(multiCode: String): Int = {
       val line = TextLine.make(new String(multiCode), font)
@@ -924,8 +933,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       if (string.size>1) {
         val cps = TextAbbreviations.toCodePoints(string)
         if ((glyphCount==1 && cps.length>1) || isDirectional(cps)) {
-          val novelty = glyphCountData.leftGlyphCodepointCount.reverseChange(cps, true).isEmpty
-          glyphCountData.rightGlyphCodepointCount.update(cps, true)
+          val novelty = polyCodings.set(cps)
           if (novelty) onNewGlyph(string, cps)
           //for { (codes, _) <- leftGlyphCodepointCount } println("L", codes.map{_.toHexString}.mkString(", "))
           //for { (codes, _) <- rightGlyphCodepointCount } println("R", codes.map{_.toHexString}.mkString(", "))
@@ -934,6 +942,21 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     def abbreviation(): Unit = if (abbreviations!=null) {
+      abbreviations.reverseFindSubstitution(reverseLeftCodePoints) match {
+        case None =>
+
+        case Some((repl, size)) =>
+          if (!abbreviating) {
+            abbreviating = true
+            if (left >= size) left -= size
+            ins(repl)
+            accountForCodePointCounts(repl)
+            abbreviating = false
+          }
+      }
+    } else ()
+
+    def unabbreviation(): Unit = if (abbreviations!=null) {
       abbreviations.reverseFindAbbreviation(reverseLeftCodePoints) match {
         case None =>
 
@@ -992,8 +1015,9 @@ object TextField extends logging.Loggable {
             size: Int,
             initialText: String = "",
             abbreviations: org.sufrin.utility.TextAbbreviations = null,
-            glyphcountData: GlyphcountData = GlyphcountData(),
-            onNewGlyph: (String, CodePointSeq) => Unit = reportNewGlyph(_, _)
+            polyCodings: PolyCodings = PolyCodings(),
+            onNewGlyph: (String, CodePointSeq) => Unit = reportNewGlyph(_, _),
+            visualOrderPaste: Boolean = true // normalize RTL in pasted material
            ): TextField =
       new TextField(fg, bg, font,
             onEnter=onEnter,
@@ -1003,13 +1027,43 @@ object TextField extends logging.Loggable {
             size=size,
             initialText=initialText,
             abbreviations=abbreviations,
-            glyphCountData = glyphcountData,
-            onNewGlyph = onNewGlyph)
+            polyCodings = polyCodings,
+            onNewGlyph = onNewGlyph,
+            visualOrderPaste = visualOrderPaste  // normalize RTL in pasted material
+  )
 }
 
-case class GlyphcountData(
-                           leftGlyphCodepointCount: CodePointSeqMap[Boolean] = new CodePointSeqMap[Boolean],
-                           rightGlyphCodepointCount: CodePointSeqMap[Boolean] = new CodePointSeqMap[Boolean]
-)
+/**
+ * Data representing polycoded glyphs.
+ */
+case class PolyCodings() {
+          /** domain: the (reversed) sequences of codepoints (known to us) that represent a single glyph */
+          private val leftGlyphCodepointCount: CodePointSeqMap[Boolean] = new CodePointSeqMap[Boolean]
+          /** domain: the (forward) sequences of codepoints (known to us) that represent a single glyph */
+          private val rightGlyphCodepointCount: CodePointSeqMap[Boolean] = new CodePointSeqMap[Boolean]
+
+          /**
+           *  Declare that the given codepoint sequence represents a single glyph
+           * @return is this sequence being seen for the first time
+           */
+          def set(cps: CodePointSeq) = {
+            rightGlyphCodepointCount.update(cps, true)
+            leftGlyphCodepointCount.reverseChange(cps, true).isEmpty
+          }
+
+          /** Map the GLYPH at the left of the cursor to the number of codepoints that represent it */
+          def leftCodepoints(reverseLeft: Iterator[CodePoint]): Int =
+            leftGlyphCodepointCount.longestPrefixMatch(reverseLeft) match {
+              case None => 1
+              case Some((_, n)) => n
+            }
+
+          /** Map the GLYPH at the right of the cursor to the number of codepoints that represent it */
+          def rightCodepoints(right: Iterator[CodePoint]): Int =
+            rightGlyphCodepointCount.longestPrefixMatch(right.iterator) match {
+              case None => 1
+              case Some((_, n)) => n
+            }
+      }
 
 
