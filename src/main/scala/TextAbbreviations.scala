@@ -95,11 +95,7 @@ class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode:
         if (oldAbbreviation != abbreviation)
           onAmbiguous(replacement, oldAbbreviation, abbreviation, loc ++ " unabbreviation")
     }
-
-
   }
-
-
 }
 
 object TextAbbreviations {

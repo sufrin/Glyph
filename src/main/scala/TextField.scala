@@ -16,20 +16,34 @@ import org.sufrin.utility.TextAbbreviations
 /**
  *  A fixed-width reactive glyph that can be edited from the keyboard. The width of
  *  the glyph is `size * em`, where `em` is the size of an "m" in the specified font.
+ *
  *  The text being edited can be of any length.
  *  It is panned, if necessary, to keep the cursor in view.
- *  Simple visual indications are given at each end of the glyph
+ *  Simple visual indications are given at each if its ends
  *  when there is non-visible text at that end.
  *
- *  When the mouse cursor enters this glyph, it grabs the keyboard focus, and this
+ *  When the mouse cursor enters this component, it grabs the keyboard focus, and this
  *  directs subsequent keystrokes to it.
  *
- *  When the mouse cursor leaves this glyph, it gives up the keyboard focus.
- *
- *  TODO: styled colouration of cursor
+ *  When the mouse cursor enters this reactive glyph, the method `onCursorLeave` is invoked.
  *
  *
- * NOTES:
+ * CODEPOINTS, UNIGLYPHS, POLYCODED UNIGLYPHS
+ *
+ * A-The text is represented internally as a sequence of unicode codepoints ("Unicodes"). In general each codepoint corresponds to a single
+ * visible letter in the given font ("unicode glyph", or "uniglyph"), in some circumstances what is shown as a single visible letter may be represented by more than just one codepoint.
+ * Below these are knpwn as "polycoded uniglyphs". For example a national flag such as 🇬🇧 is represented as the two adjacent uniglyphs  🇬 🇧 that are themselves represented as
+ * `1f1ec` `1f1e7`. Other examples (including the ZWJ sequences) require several adjacent codepoints punctuated with ZWJ (zero-width join: 200d) codepoints. Thus 🧑‍🤝‍🧑 is
+ * represented as 1f9d1 200d 1f91d 200d 1f9d1 -- the non-ZWJ codepoints themselves represent individual uniglyphs (🧑🤝🧑). The rational for this in
+ * the unicode standard is that as a fallback, the ZWJ sequences can be rendered as their individual uniglyphs.
+ *
+ * B-The bottom line here is that  polycoded uniglyphs are treated in this component as if they were represented as single codepoints: PROVIDED that they
+ * are defined as subsitutions for abbreviations, or that they are pasted into the component as single entitites.
+ *
+ * C-Pasteing a right-to-left piece of text usually inserts each of its unicodepoints in the text in such a way that its visual appearance is
+ * maintained, and it can be edited "logically". THis behaviour is suppressed if `visualOrderPaste` is false.
+ *
+ * NOTES
  *
  * 1-This served as a serious exercise in understanding the ramificatons of unicode representations of glyphs. Among
  * other things there is not a 1-1 correspondence between UTF32 codepoints and glyphs as displayed. So although I chose
@@ -45,7 +59,21 @@ import org.sufrin.utility.TextAbbreviations
  *
  * 3-Tests (OS/X) suggest correct functioning for left-to-right material, including polycoded emoji glyphs.
  *
+
  *
+ * @param fg  brush for text
+ * @param bg brush for background
+ * @param font font for text
+ * @param onEnter invoked when an `ENTER` key is pressed
+ * @param onError invoked when an unknown key is pressed
+ * @param onCursorLeave invoked when the cursor leaves the reactive
+ * @param onChange  invoked when the text being edited changes
+ * @param size number of unicodepoints
+ * @param initialText the initial text (as a string)
+ * @param abbreviations mapping from abbreviations to their substitutions (and vice-versa)
+ * @param polyCodings data representing polycoded glyphs
+ * @param onNewGlyph invoked when a new polycoded glyph is "discovered"
+ * @param visualOrderPaste see (C) above
  */
 class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 var onEnter: String => Unit,
@@ -311,15 +339,15 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
     // Indicate when there's invisible text to the left
     if (panning) surface.drawPolygon$(panWarningBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
 
-    def unicode(): Unit = TextModel.unicode()
 
   }
 }
 
+/** The component takes the keyboard focus */
 def takeKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.grabKeyboard(this)
+
+/** The component gives up the keyboard focus unconditionally */
 def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
-
-
 
 
   /** Seize focus on entry [prototype only] */
@@ -331,7 +359,6 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       reDraw() // window.requestFrame()
     case _: GlyphLeave =>
       onCursorLeave(string)
-      if (hasGuiRoot) guiRoot.freeKeyboard()
   }
 
   override def accept(mouse: EventMouseButton, location: Vec, window: Window): Unit = {
@@ -580,12 +607,13 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       if (left >=n ) left -= n
     }
 
+    /**  translate the glyph at the left of the cursor to its unicode (or unicode-sequence, if it is polycoded) equivalent */
     def unicode(): Unit = {
       mark = -1
       val n = leftCodepoints
       if (left >=n ) left -= n
       val lcps = for { i<-0 until n } yield buffer(left+i)
-      println(lcps.map(_.toChar))
+      //println(lcps.map(_.toChar))
       for { cp <- lcps } insPaste(TextAbbreviations.decodeUnicode(cp))
     }
 
@@ -976,7 +1004,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 /**
  * Unstyled TextField companion object.
  *
- * @see styled.TextField
+ * @see TextField
  */
 object TextField extends logging.Loggable {
   import Location._
@@ -1007,6 +1035,10 @@ object TextField extends logging.Loggable {
     SourceDefault.info(s"New polycoded glyph: $glyph ")
   }
 
+  /**
+   *
+   * @see TextField
+   */
   def apply(fg: Brush = fallback.textForeground, bg: Brush = fallback.textBackground, font: Font=fallback.textFont,
             onEnter: String=>Unit              = { case text: String => },
             onError: (EventKey, Glyph) => Unit = popupError(_,_),
@@ -1034,7 +1066,8 @@ object TextField extends logging.Loggable {
 }
 
 /**
- * Data representing polycoded glyphs.
+ * Data representing polycoded glyphs. Enables a uniglyph adjacent to the cursor to divulge the
+ * length of its polycoding.
  */
 case class PolyCodings() {
           /** domain: the (reversed) sequences of codepoints (known to us) that represent a single glyph */
