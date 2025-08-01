@@ -285,7 +285,8 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
    */
   val panWarningOffset = panWarningBrush.strokeWidth
 
-  val markBrush: Brush = Brushes.red(width=diagonal.y, alpha=0.3f)
+  val markBrush: Brush = Brushes.green(width=diagonal.y, alpha=0.3f)
+  val r2lBrush: Brush = Brushes.red(width=diagonal.y, alpha=0.3f)
 
   /** The most recent origin of the displayed textlayout */
   def panBy: Int = TextModel.pan
@@ -295,6 +296,8 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
    * editing position.
    */
   def draw(surface: Surface): Unit = {
+
+
     drawBackground(surface)
     surface.declareCurrentTransform(this)
     var panning = panBy>0
@@ -311,21 +314,44 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
         val cursorBrush: Brush = if (focussed) focussedBrush else unfocussedBrush
         val cursorBottom = diagonal.y-cursorHeightDelta-deltaY
 
+
+        @inline def drawCursor(brush: Brush, position: Scalar): Unit = {
+          surface.drawLines$(brush, position, cursorHeightDelta-deltaY, position, cursorBottom) // vertical
+          surface.drawLines$(brush, position - cursorSerifWidth, cursorHeightDelta-deltaY, position + cursorSerifWidth, cursorHeightDelta-deltaY) // top bar
+          surface.drawLines$(brush, position - cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY, position + cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY) // bottom bar
+        }
+
         // show the text margins when logging
         if (TextField.loggingLevel(FINER)) {
           surface.drawPolygon$(cursorBrush(color=0XFFFF0000), w-TextModel.margin, 0, w-TextModel.margin, diagonal.y)
           surface.drawPolygon$(cursorBrush(color=0XFFFF0000), TextModel.margin, 0, TextModel.margin, diagonal.y)
         }
-        // Draw the cursor as an I-Beam
-        surface.drawLines$(cursorBrush, cursorLeft, cursorHeightDelta-deltaY, cursorLeft, cursorBottom) // vertical
-        surface.drawLines$(cursorBrush, cursorLeft - cursorSerifWidth, cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, cursorHeightDelta-deltaY) // top bar
-        surface.drawLines$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY) // bottom bar
 
-        //Show the mark
+        // Draw the cursor as an I-Beam
+        //surface.drawLines$(cursorBrush, cursorLeft, cursorHeightDelta-deltaY, cursorLeft, cursorBottom) // vertical
+        //surface.drawLines$(cursorBrush, cursorLeft - cursorSerifWidth, cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, cursorHeightDelta-deltaY) // top bar
+        //surface.drawLines$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY) // bottom bar
+
+        if (visualOrderPaste)
+          drawCursor(cursorBrush, cursorLeft)
+        else
+        // Show RTL position: works
+        // TODO: inconsistent with mark, cut, etc.
+        TextModel.rtlPosition match {
+          case None =>
+            drawCursor(cursorBrush, cursorLeft)
+          case Some(position) =>
+            val r2lCursorBrush: Brush = cursorBrush(color=r2lBrush.color)
+            drawCursor(r2lCursorBrush, position)
+            surface.drawLines$(r2lBrush, position, cursorBottom/2, cursorLeft, cursorBottom/2)
+            drawCursor(cursorBrush, cursorLeft)
+        }
+
+        //Show the mark position
           TextModel.markPosition match {
           case None =>
-          case Some(markPosition) =>
-            surface.drawLines$(markBrush, markPosition min cursorLeft, cursorBottom/2, markPosition max cursorLeft, cursorBottom/2)
+          case Some(position) =>
+            surface.drawLines$(markBrush, position min cursorLeft, cursorBottom/2, position max cursorLeft, cursorBottom/2)
           //if (overflow && markPosition>w) surface.drawPolygon$(markBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
           //if (panning && markPosition==0f) surface.drawPolygon$(markBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
         }
@@ -477,7 +503,25 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     def markPosition: Option[Scalar] = {
       if (mark>=0) {
-        Some(visiblePoints(pan).take(mark-pan).map(codePointWidth(_)).sum)
+        //Some(visiblePoints(pan).take(mark-pan).map(codePointWidth(_)).sum)
+        Some(lateralPosition(mark-pan))
+      } else None
+    }
+
+    /** Only reliable way of determining the lateral position of the `pos`th character*/
+    def lateralPosition(pos: Int): Scalar = {
+      TextLine.make(new String(lastVisiblePointArray, 0, pos), font).getWidth
+    }
+
+    /** Offset from the left of the next place where r2l material becomes l2r material */
+    def rtlPosition: Option[Scalar] = {
+      if (hasLeft && isRightToLeft(leftCodePoint)) {
+        val points = leftCodePoints
+        var pos = points.length
+        while (pos>0 && (isRightToLeft(points(pos-1)) || Character.isSpaceChar(points(pos-1)))) { pos -= 1 }
+        val delta = if (Character.isSpaceChar(points(pos))) 1 else 0 // omit a leading spoace
+        //Some(visiblePoints(pan).take(pos-delta-pan).map(codePointWidth(_)).sum)
+        Some(lateralPosition(pos+delta-pan))
       } else None
     }
 
@@ -651,12 +695,13 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
 
-    def insCorrectedCodePoint(cp: Int): Unit = {
+    def insRightToLeftCodepoint(cp: Int, atRight: Boolean=false): Unit = {
       import TextField._
       if (isRightToLeft(cp)) {
         val cps = List(RLM, cp, LRM)
         polyCodings.set(cps)
         cps.foreach(insCodePoint)
+        if (atRight) for  { c<-cps } MVLEFT()
       } else insCodePoint(cp)
     }
 
@@ -667,7 +712,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     def insPaste(string: String): Unit = {
       doPendingDeletions()
       if (visualOrderPaste && string.exists(isRightToLeft))
-          string.reverse.codePoints.forEach(insCorrectedCodePoint)
+          string.reverse.codePoints.forEach(insRightToLeftCodepoint(_, false))
       else
           string.codePoints.forEach(insCodePoint)
     }
