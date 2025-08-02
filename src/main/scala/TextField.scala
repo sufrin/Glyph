@@ -6,6 +6,7 @@ import io.github.humbleui.skija.TextLine
 import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.unstyled.Text
 import org.sufrin.glyph.CodePointSeqMap.{CodePoint, CodePointSeq}
+import org.sufrin.glyph.Modifiers.{toBitmap, Bitmap}
 import org.sufrin.glyph.TextField.isDirectional
 import org.sufrin.logging
 import org.sufrin.logging.{FINER, SourceDefault}
@@ -118,11 +119,10 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   /** text.length  */
   def length: Int = TextModel.length
 
-
-
-
   private def focussed: Boolean =
     if (hasGuiRoot) guiRoot.hasKeyboardFocus(this) else false
+
+
 
   /**
    * Accept input denoting a diacritical that will become part of a composite character.
@@ -131,10 +131,12 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
    *       It's not clear from the examples in the documentation.
    */
   override def accept(key: EventTextInputMarked, location: Vec, window: Window): Unit = {
-    val start= key.getReplacementStart
-    val end  = key.getReplacementEnd
+    val start       = key.getReplacementStart
+    val end         = key.getReplacementEnd
+    var deleteLater = 1+end-start
+    val text        = key.getText
     // Cases I know of are for single accent characters
-    TextModel.insToReplace(key.getText, 1+end-start) // pending characters to delete
+    TextModel.insToReplace(text, deleteLater) // pending characters to delete
     if (onChange.isDefined) onChange.get.apply(string)
     reDraw()
     resetAbbreviationTrigger()
@@ -718,12 +720,39 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     /**
+     * The Skia/Skija machine may be treating non-escaping grave
+     * accents incorrectly. This variable controls whether
+     * or not we react to this.
+     */
+    var graveHack:    Boolean = true
+
+    /**
+     * A grave accent (non-escaping) has been typed at the keyboard; and
+     * the underlying Skia/Skija state-machine has immediately followed it
+     * with \u2018 (which doesn't even resemble a grave accent) rather than
+     * awaiting the next character.
+     */
+    var gravePending: Boolean = false
+
+    /**
      * Insert the given `string`. It may contain "surrogate pairs" arising from
      * characters (for example Smileys, Kanji, ...) outside the BMP.
      */
     def ins(string: String): Unit = {
+      //
+      // A ' has appeared immediately following a grave accent
+      //
+      if (graveHack && gravePending && string=="\u2018") {
+        insCodePoint('\u0060')
+        gravePending=false
+        return
+      }
+      //
+      //
+      //
       doPendingDeletions()
       string.codePoints.forEach{ insCodePoint(_) }
+      string.codePoints.forEach{  cp => println(cp.toHexString, cp.toChar) }
       if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
 
@@ -731,10 +760,16 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
      * Insert the given `string` at `left`.
      * `toReplace` characters are marked for replacement at the
      * following `ins`, `move..`, `del`.
+     *
+     * @see gravePending
      */
     def insToReplace(string: String, toReplace: Int): Unit = {
+      //
+      if (graveHack && string=="\u0060") gravePending=true
+      //
       pendingDeletions = toReplace
       string.codePoints.forEach(insCodePoint(_))
+      string.codePoints.forEach{  cp => println(toReplace, cp.toHexString, cp.toChar) }
       if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
 
@@ -1038,7 +1073,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
             abbreviating = true
             if (left >= size) left -= size
             ins(repl)
-            accountForCodePointCounts(repl)
+            //accountForCodePointCounts(repl)
             abbreviating = false
           }
       }
