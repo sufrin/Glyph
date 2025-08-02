@@ -29,20 +29,26 @@ import org.sufrin.utility.TextAbbreviations
  *  When the mouse cursor enters this reactive glyph, the method `onCursorLeave` is invoked.
  *
  *
- * CODEPOINTS, UNIGLYPHS, POLYCODED UNIGLYPHS
+ * CODEPOINTS, UNIGLYPHS, POLYCODED UNIGLYPHS, RIGHT-TO-LEFT
  *
- * A-The text is represented internally as a sequence of unicode codepoints ("Unicodes"). In general each codepoint corresponds to a single
- * visible letter in the given font ("unicode glyph", or "uniglyph"), in some circumstances what is shown as a single visible letter may be represented by more than just one codepoint.
+ * A-The text is represented internally as a sequence of unicode codepoints ("Unicodes"). Usually each codepoint corresponds to a single
+ * visible letter in the given font ("unicode glyph", or "uniglyph"); but in some circumstances what is shown as a single visible letter may be represented by more than just one codepoint.
  * Below these are knpwn as "polycoded uniglyphs". For example a national flag such as 🇬🇧 is represented as the two adjacent uniglyphs  🇬 🇧 that are themselves represented as
  * `1f1ec` `1f1e7`. Other examples (including the ZWJ sequences) require several adjacent codepoints punctuated with ZWJ (zero-width join: 200d) codepoints. Thus 🧑‍🤝‍🧑 is
- * represented as 1f9d1 200d 1f91d 200d 1f9d1 -- the non-ZWJ codepoints themselves represent individual uniglyphs (🧑🤝🧑). The rational for this in
+ * represented as 1f9d1 200d 1f91d 200d 1f9d1 -- the non-ZWJ codepoints themselves represent individual uniglyphs (🧑🤝🧑). The rationale for this in
  * the unicode standard is that as a fallback, the ZWJ sequences can be rendered as their individual uniglyphs.
  *
- * B-The bottom line here is that  polycoded uniglyphs are treated in this component as if they were represented as single codepoints: PROVIDED that they
- * are defined as subsitutions for abbreviations, or that they are pasted into the component as single entitites.
+ * Finally, right-To-left codepoints  (`cp`) are usually represented
+ * as triples: `(RLM, cp, LRM)` -- where RLM, LRM are the Unicode directional marks RIGHT-TO-LEFT MARK and LEFT-TO-RIGHT MARK.
  *
- * C-Pasteing a right-to-left piece of text usually inserts each of its unicodepoints in the text in such a way that its visual appearance is
- * maintained, and it can be edited "logically". THis behaviour is suppressed if `visualOrderPaste` is false.
+ * B-Pasteing a right-to-left piece of text usually inserts each of its unicodepoints in the text in such a way that its visual appearance is
+ * maintained, and it can be edited "logically"; likewise inserting a right-to-left character places the three codepoints representing it to the right of the
+ * cursor; and henceforth treats the triple as a single character so that it can be edited. This behaviour is suppressed if `normalizeRightToLeft` is false.
+ *
+ * https://en.wikipedia.org/wiki/Bidirectional_text#Unicode_bidi_support
+ *
+ * C-The bottom line here is that  polycoded uniglyphs are treated in this component as if they were represented as single codepoints: PROVIDED that they
+ * * are defined as subsitutions for abbreviations, or that they are pasted into the component as single entitites, or typed at the keyboard.
  *
  * NOTES
  *
@@ -51,16 +57,14 @@ import org.sufrin.utility.TextAbbreviations
  * a representation consisting of codepoints, working out the details of glyph widths (for navigation) has been a bit
  * of a trial.  Skia/Skija doesn't treat non-BMP codepoints as first-class citizens; and that makes measuring (so as
  * to implement mouse-pointing) quite tricky. Earlier the presence of glyphs represented by more than a
- * single (UTF32) codepoint ("polycoded glyphs") mucked up mouse-pointing, but I have a workaround in mind that (quite inefficiently)
- * deals with these cases.
+ * single (UTF32) codepoint ("polycoded glyphs") mucked up mouse-pointing, there is now a workaround that (quite inefficiently)
+ * deals with these cases -- but only when they occur.
  *
  * 2-Our method of constructing the glyph to codepointcount mappings is designed to make it unnecessary to
  * preload data for glyphs that are the (sole)-targets of abbreviations, or inserted (as singleton glyphs) from
- * the clipboard (ctrl-V), though data-preloading is possible.
+ * the clipboard (ctrl-V), or as right-to-left characters from the keyboard (though data-preloading is possible).
  *
- * 3-Tests (OS/X) suggest correct functioning for left-to-right material, including polycoded emoji glyphs.
- *
-
+ * 3-Tests (OS/X) suggest correct functioning for left-to-right material, including polycoded emoji glyphs. Arabic and modern Hebrew also seem to work.
  *
  * @param fg  brush for text
  * @param bg brush for background
@@ -74,7 +78,7 @@ import org.sufrin.utility.TextAbbreviations
  * @param abbreviations mapping from abbreviations to their substitutions (and vice-versa)
  * @param polyCodings data representing polycoded glyphs
  * @param onNewGlyph invoked when a new polycoded glyph is "discovered"
- * @param visualOrderPaste see (C) above
+ * @param normalizeRightToLeft see (C) above
  */
 class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 var onEnter: String => Unit,
@@ -86,11 +90,11 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 val abbreviations: org.sufrin.utility.TextAbbreviations,
                 val polyCodings: PolyCodings,
                 var onNewGlyph: (String, CodePointSeq) => Unit,
-                var visualOrderPaste: Boolean = true // normalize RTL in pasted material
+                var normalizeRightToLeft: Boolean = true // normalize RTL in pasted material
                ) extends ReactiveGlyph
 {
   /** A copy of this glyph; perhaps with different foreground/background */
-  def copy(fg: Brush, bg: Brush): Glyph = new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations, polyCodings, onNewGlyph, visualOrderPaste)
+  def copy(fg: Brush, bg: Brush): Glyph = new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations, polyCodings, onNewGlyph, normalizeRightToLeft)
 
   import io.github.humbleui.jwm.{EventMouseButton, Window}
   private val em         = Text("M", font)
@@ -334,7 +338,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
         //surface.drawLines$(cursorBrush, cursorLeft - cursorSerifWidth, cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, cursorHeightDelta-deltaY) // top bar
         //surface.drawLines$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY) // bottom bar
 
-        if (visualOrderPaste)
+        if (normalizeRightToLeft)
           drawCursor(cursorBrush, cursorLeft)
         else
         // Show RTL position: works
@@ -647,6 +651,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       left += 1
     }
 
+
     def del(): Unit = {
       mark = -1
       val n = leftCodepoints
@@ -697,6 +702,11 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
 
+    /**
+     * Insert the codepoint `cp`. If it's an RTL codepoint then embed it in RLM/LRM marks
+     * and mark it as a (single) polycoded glyph; and if `atRight` then let it appear
+     * to the right of the cursor.
+     */
     def insRightToLeftCodepoint(cp: Int, atRight: Boolean=false): Unit = {
       import TextField._
       if (isRightToLeft(cp)) {
@@ -708,12 +718,20 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     /**
+     * Insert the codepoint `cp` at the appropriate (according to its directionality)
+     * side of the cursor.
+     */
+    @inline private def insDirectedCodepoint(cp: Int): Unit = {
+      if (normalizeRightToLeft) insRightToLeftCodepoint(cp, true) else insCodePoint(cp)
+    }
+
+    /**
      * Isolate pasted characters and show in the visual order
      * TODO:further refinement for combining marks (eg Biblical Hebrew Vowels)
      */
     def insPaste(string: String): Unit = {
       doPendingDeletions()
-      if (visualOrderPaste && string.exists(isRightToLeft))
+      if (normalizeRightToLeft && string.exists(isRightToLeft))
           string.reverse.codePoints.forEach(insRightToLeftCodepoint(_, false))
       else
           string.codePoints.forEach(insCodePoint)
@@ -751,7 +769,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       //
       //
       doPendingDeletions()
-      string.codePoints.forEach{ insCodePoint(_) }
+      string.codePoints.forEach{ insDirectedCodepoint(_) }
       string.codePoints.forEach{  cp => println(cp.toHexString, cp.toChar) }
       if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
@@ -1132,17 +1150,17 @@ object TextField extends logging.Loggable {
             visualOrderPaste: Boolean = true // normalize RTL in pasted material
            ): TextField =
       new TextField(fg, bg, font,
-            onEnter=onEnter,
-            onError=onError,
-            onCursorLeave=onCursorLeave,
-            onChange=onChange,
-            size=size,
-            initialText=initialText,
-            abbreviations=abbreviations,
-            polyCodings = polyCodings,
-            onNewGlyph = onNewGlyph,
-            visualOrderPaste = visualOrderPaste  // normalize RTL in pasted material
-  )
+                    onEnter=onEnter,
+                    onError=onError,
+                    onCursorLeave=onCursorLeave,
+                    onChange=onChange,
+                    size=size,
+                    initialText=initialText,
+                    abbreviations=abbreviations,
+                    polyCodings = polyCodings,
+                    onNewGlyph = onNewGlyph,
+                    normalizeRightToLeft = visualOrderPaste // normalize RTL in pasted material
+                    )
 }
 
 /**
