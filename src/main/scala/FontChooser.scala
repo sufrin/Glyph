@@ -110,10 +110,8 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
 
   val abbrs = new TextAbbreviations(onLineTrigger = true, implicitUnicode = true)
   locally {
-    for {(a, s) <- StockAbbreviations.all } {
-      abbrs(a) = s
-      abbrs(s) = a
-    }
+    abbrs.reversible = true
+    for {  (abbr, symb) <- StockAbbreviations.all } abbrs.update(abbr, symb)
   }
   
   lazy val brush: Brush = initialBrush

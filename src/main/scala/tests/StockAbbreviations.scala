@@ -44,8 +44,12 @@ object StockAbbreviations {
       "->" -> "→",
       //"<->" -> "↔",
       "│-" -> "\u251C",
-      "<=" -> "\u21D0",       //
-      "=>" -> "\u21D2",       //
+      "<=" -> "\u21D0",       // left double ⇐
+      "^=>" -> "\u21D1",      // up double
+      "=>" -> "\u21D2",       // right double
+      "_=>" -> "\u21D3",      // down double
+      //"<=>" -> "\u21D4",    // left right double
+      ("⇐>" -> "\u21D4"),     //
       ("<-" -> "\u2190"),     //
       ("->" -> "\u2192"),     //  # →
       ("<-" -> "\u2190"),     //
@@ -53,8 +57,8 @@ object StockAbbreviations {
       ("->" -> "\u2192"),     //   # →
       ("_->" -> "\u2193"),    //   # ↓
       ("←>" -> "\u2194"),     //  # type <-> when live
-      (".->->" -> "⇉"),          //  # double right arrow
-      (".<-<-" -> "⇇"),          //  # type <-<-
+      (".→→" -> "⇉"),          //  # double right arrow
+      (".\u2190\u2190" -> "⇇"),          //  # type <-<-
 
       ("+/>" -> "\u219b"),    //          # ↛
       ("+>" -> "\u21f8"),     //          # ⇸
@@ -67,10 +71,13 @@ object StockAbbreviations {
       ("\\uaa" -> "\u21D1"),  //          # ⇑
       ("\\daa" -> "\u21D3"),  //          # ⇓
       //("<->" -> "\u2194"),  //          # ↔
-      ("⇐>" -> "\u21D4"),     //          # ⇔
 
-      ("<===" -> "\u21DA"), //          # ⇚
+      ("\u21D0==" -> "\u21DA"), //      #  <===
       ("===>" -> "\u21DB"), //          # ⇛
+      ("\u21DA=" -> "\u27f8"), //       # <====
+      "===>" -> "\u21DB" , //          # ⇛
+      ("<====" -> "\u27f8"), //          #
+      ("====>" -> "\u27f9"), //          # ⇛
       ("<~~" -> "\u21DC"), //          # ⇜
       ("~~>" -> "\u21DD"), //          # ⇝
 
@@ -228,12 +235,19 @@ object StockAbbreviations {
       def sloshName(s: String): String = s"$s/"
       def sloshLowerCaseName(s: String): String = s"${s.toLowerCase}/"
 
+      def toNonRLM(string: String): String = {
+        if (string.length>2 && string(0)==RLM && string.last==LRM)
+          string.substring(1, string.length-1)
+        else
+          string
+      }
+
       /** hebrew letters as unicode bidi isolates */
       val hebrew = {
         val names="alef/bet/gimel/dalet/he/vav/zayin/het/tet/yod/.kaf/kaf/lamed/.mem/mem/.nun/nun/samekh/ayin/.pe/pe/.tsadi/tsadi/qof/resh/shin/tav".split('/').toSeq
         val start = 0X05D0
         val codes = start until (start+names.length)
-        names.map(sloshName).zip(codes.map(code=>f"$RLM%c$code%c$LRM%c"))
+        names.map(sloshName).zip(codes.map(code=>f"$code%c"))
       }
 
       /** greek letters (upper and lower) */
@@ -310,7 +324,7 @@ object StockAbbreviations {
        "^)" -> "\u207E",
      )
 
-      lazy val all = arrows++bidi++hebrew++composites++abbreviations++greek++cardSuits++superscriptDigits++superscriptsigns++subscripts
+      lazy val all = arrows++hebrew++composites++abbreviations++greek++cardSuits++superscriptDigits++superscriptsigns++subscripts
 
       if (false) locally { // check hebrew and greek
         for { (a, l)<-hebrew } println(a, l)

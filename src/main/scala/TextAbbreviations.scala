@@ -2,6 +2,7 @@ package org.sufrin
 package utility
 
 import org.sufrin.glyph.CodePointSeqMap.{CodePoint, CodePointSeq}
+import org.sufrin.glyph.TextField
 import org.sufrin.logging.{Loggable, WARN}
 
 /**
@@ -88,12 +89,17 @@ class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode:
           onAmbiguous(abbreviation, oldReplacement, replacement, loc ++ " abbreviation")
     }
 
-    if (reversible)
-      reverse.reverseChange(toCodePoints(replacement), abbreviation) match {
+    if (reversible) {
+      val cps  = toCodePoints(replacement)
+      val cpss = cps.flatMap {
+        cp => if (TextField.isRightToLeft(cp)) TextField.forceRightToLeft(cp) else List(cp)
+      }
+      reverse.reverseChange(cpss, abbreviation) match {
       case None =>
       case Some(oldAbbreviation) =>
         if (oldAbbreviation != abbreviation)
           onAmbiguous(replacement, oldAbbreviation, abbreviation, loc ++ " unabbreviation")
+    }
     }
   }
 }

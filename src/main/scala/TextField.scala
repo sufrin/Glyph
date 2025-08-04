@@ -8,6 +8,7 @@ import org.sufrin.glyph.unstyled.Text
 import org.sufrin.glyph.CodePointSeqMap.{CodePoint, CodePointSeq}
 import org.sufrin.glyph.Modifiers.{toBitmap, Bitmap}
 import org.sufrin.glyph.TextField.isDirectional
+import org.sufrin.glyph.tests.StockAbbreviations
 import org.sufrin.logging
 import org.sufrin.logging.{FINER, SourceDefault}
 import org.sufrin.utility.TextAbbreviations
@@ -93,6 +94,8 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 var normalizeRightToLeft: Boolean = true // normalize RTL in pasted material
                ) extends ReactiveGlyph
 {
+  import TextField._
+
   /** A copy of this glyph; perhaps with different foreground/background */
   def copy(fg: Brush, bg: Brush): Glyph = new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations, polyCodings, onNewGlyph, normalizeRightToLeft)
 
@@ -503,7 +506,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     /** Delegated to by the main `draw` */
     def draw(surface: Surface): (Scalar, Scalar) =
     { val (tl, cursor, width) = allTextLine(pan: Int)
-      surface.drawTextLine(fg, tl, 0, tl.getHeight)
+      surface.drawTextLine(fg, tl, 0, tl.getHeight-tl.getDescent)
       (cursor, width)
     }
 
@@ -630,18 +633,6 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       }
     }
 
-    def isRightToLeft(cp: CodePoint): Boolean =
-      (Character.getDirectionality(cp)) match {
-        case Character.DIRECTIONALITY_RIGHT_TO_LEFT
-             | Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC => true
-        case _ => false
-      }
-
-    def isRightToLeft(ch: Char): Boolean =  (Character.getDirectionality(ch)) match {
-      case Character.DIRECTIONALITY_RIGHT_TO_LEFT
-           | Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC => true
-      case _ => false
-    }
 
     def insCodePoint(cp: CodePoint): Unit = {
       mark = -1
@@ -710,12 +701,20 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     def insRightToLeftCodepoint(cp: Int, atRight: Boolean=false): Unit = {
       import TextField._
       if (isRightToLeft(cp)) {
-        val cps = List(RLM, cp, LRM)
+        val cps = forceRightToLeft(cp)
         polyCodings.set(cps)
         cps.foreach(insCodePoint)
         if (atRight) for  { c<-cps } MVLEFT()
-      } else insCodePoint(cp)
+      }
+      else {
+        insCodePoint(cp)
+        correctDirection(cp)
+      }
+
     }
+
+    @inline private def correctDirection(cp: CodePoint): Unit =
+            if (normalizeRightToLeft && Character.isSpaceChar((cp)) && hasRight && rightCodepoints==3 && isRightToLeft(buffer(right+1))) MVLEFT()
 
     /**
      * Insert the codepoint `cp` at the appropriate (according to its directionality)
@@ -770,7 +769,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       //
       doPendingDeletions()
       string.codePoints.forEach{ insDirectedCodepoint(_) }
-      string.codePoints.forEach{  cp => println(cp.toHexString, cp.toChar) }
+      // string.codePoints.forEach{  cp => println(cp.toHexString, cp.toChar) }
       if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
     }
 
@@ -1075,8 +1074,12 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
           if (!abbreviating) {
             abbreviating = true
             if (left >= size) left -= size
-            ins(repl)
             accountForCodePointCounts(repl)
+            if (normalizeRightToLeft&&repl(0)==StockAbbreviations.RLM) {
+              ins(StockAbbreviations.toNonRLM(repl))
+            }
+            else
+              ins(repl)
             abbreviating = false
           }
       }
@@ -1132,6 +1135,21 @@ object TextField extends logging.Loggable {
   def reportNewGlyph(glyph: String, codePoints: CodePointSeq): Unit = {
     SourceDefault.info(s"New polycoded glyph: $glyph ")
   }
+
+  def isRightToLeft(cp: CodePoint): Boolean =
+    (Character.getDirectionality(cp)) match {
+      case Character.DIRECTIONALITY_RIGHT_TO_LEFT
+           | Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC => true
+      case _ => false
+    }
+
+  def isRightToLeft(ch: Char): Boolean =  (Character.getDirectionality(ch)) match {
+    case Character.DIRECTIONALITY_RIGHT_TO_LEFT
+         | Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC => true
+    case _ => false
+  }
+
+  def forceRightToLeft(cp: CodePoint): CodePointSeq = List(RLM, cp, LRM)
 
   /**
    *
@@ -1196,5 +1214,6 @@ case class PolyCodings() {
               case Some((_, n)) => n
             }
       }
+
 
 
