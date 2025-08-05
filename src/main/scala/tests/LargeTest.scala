@@ -306,9 +306,10 @@ object LargeTestGUI {
   import Location._
 
   private val scene6 = {
+    import org.sufrin.glyph.TextField
     val anchor1 = Label("")
 
-    val theText = TextField(
+    val theText =  TextField(
       blue,
       white,
       buttonFont,
@@ -329,7 +330,7 @@ object LargeTestGUI {
     )
 
     Col(align=Center)(
-      Label("(6) TextField: a textlayout-entry field"),
+      Label("(6) TextField: a text entry field"),
       medex,
       medex,
       medex,

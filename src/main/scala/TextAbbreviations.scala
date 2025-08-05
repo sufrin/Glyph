@@ -76,6 +76,8 @@ class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode:
     result orElse findImplicitUnicode(reverseIterator)
   }
 
+  def abbreviations: Seq[String] = reverse.values.toSeq
+
 
   import TextAbbreviations.toCodePoints
 

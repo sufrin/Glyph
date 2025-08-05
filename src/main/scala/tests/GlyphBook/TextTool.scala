@@ -31,6 +31,7 @@ class TextTool(implicit style: StyleSheet)  {
   import styled._
   def SOURCE(implicit source: SourceLocation): String = source.toString()
 
+
   val defs = translation.meaning
 
   defs("CONTROLS") =
@@ -48,7 +49,7 @@ class TextTool(implicit style: StyleSheet)  {
 
 
   val textField: TextField =
-      styled.TextField(size = 40,
+      styled.TextField(size = 20,
                        onEnter = { _ =>  },
                        onCursorLeave = { _ => anchor.guiRoot.giveupFocus() },
                        onError = {
@@ -58,6 +59,7 @@ class TextTool(implicit style: StyleSheet)  {
                        abbreviations = abbreviations,
                        onNewGlyph = TextField.reportNewGlyph(_,_),
                        initialText = "Æsop’s Φabulous \uD83C\uDF08 φαβλ")(style.copy(fontScale = 1.5f)).withAbbreviationKey(Key.ESCAPE)
+
   defs("TEXTFIELD") = _=>textField.framed()
 
 

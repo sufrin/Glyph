@@ -987,7 +987,6 @@ class Translation(val primitives: Primitives=new Primitives) {
 
           case "div" | "body" =>
             val children$ = children.filterNot(Translation.isBlank(_))
-
             Decorated(ColTarget(sheet.backgroundBrush, chunks = translate(tags$, false, attributes$, sheet$, children$)))
 
           case "col" =>

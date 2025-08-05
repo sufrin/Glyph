@@ -100,15 +100,21 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   def copy(fg: Brush, bg: Brush): Glyph = new TextField(fg, bg, font, onEnter, onError, onCursorLeave, onChange, size, initialText, abbreviations, polyCodings, onNewGlyph, normalizeRightToLeft)
 
   import io.github.humbleui.jwm.{EventMouseButton, Window}
+  private val metrics = font.getMetrics
+  private val fontHeight = metrics.getHeight
+  private val emWidth    = metrics.getMaxCharWidth
+  private val spacing    = metrics.getDescent + metrics.getAscent + metrics.getLeading
+  private val emDrop     = fontHeight - spacing
+
   private val em         = Text("M", font)
-  private val emDiagonal = Vec(em.width, em.drop)
-  private val atBaseLine = em.height
-  private val nudge      = em.width / 2
+  private val emDiagonal = Vec(emWidth, emDrop)
+  private val atBaseLine = fontHeight
+  private val nudge      = emWidth / 2
   private val deltaY     = emDiagonal.y*0.2f
-  def diagonal: Vec      = Vec(emDiagonal.x*size, emDiagonal.y*1.2)
+  def diagonal: Vec      = Vec(emWidth*size, emDrop)//emDiagonal.y*1.2)
 
   var onCursorEnter: String => Unit = {
-    text => takeKeyboardFocus()
+    text => takeKeyboardFocus(); reDraw()
   }
 
   locally { TextModel.string = initialText }
@@ -266,13 +272,14 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
     }
 
   def unabbreviation(): Unit = TextModel.unabbreviation()
+  def tryAbbreviation(): Unit = TextModel.tryAbbreviation()
 
   /** Width of the serifs of the I-beam drawn as the cursor */
   val cursorSerifWidth = 5f
   /**
    *  Top and bottom vertical shrink of the I-beam serifs
    */
-  val cursorHeightDelta = 6.0f
+  val cursorHeightDelta = 1.0f
 
   /**
    * Brush used to show the cursor when focussed
@@ -431,6 +438,10 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     @inline private def N = buffer.size
 
+    def tryAbbreviation(): Unit = {
+      if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
+    }
+
     var left = 0
     var right = N
 
@@ -503,10 +514,11 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       (lastTextLine, leftWidth, lastTextLine.getWidth)
     }
 
+
     /** Delegated to by the main `draw` */
     def draw(surface: Surface): (Scalar, Scalar) =
     { val (tl, cursor, width) = allTextLine(pan: Int)
-      surface.drawTextLine(fg, tl, 0, tl.getHeight-tl.getDescent)
+      surface.drawTextLine(fg, tl, 0, fontHeight)
       (cursor, width)
     }
 
@@ -550,8 +562,8 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
         while (left < index && left != right) mvRight()
         while (left > index && left != 0) mvLeft()
       } else {
-        // Very inefficient way to deal with widths of nonBMP material
-        val codePoints = lastVisiblePointArray // visiblePointArray(panBy)
+        // An inefficient way to deal with widths of nonBMP material; because Skia/Skija doesn't do the accounting properly
+        val codePoints = lastVisiblePointArray
 
         @inline def rightWidth: Scalar = {
           val n = rightCodepoints
@@ -690,7 +702,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     def ins(ch: Char): Unit = {
       doPendingDeletions()
       insCodePoint(ch)
-      if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
+      tryAbbreviation()
     }
 
     /**
@@ -753,7 +765,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
 
     /**
      * Insert the given `string`. It may contain "surrogate pairs" arising from
-     * characters (for example Smileys, Kanji, ...) outside the BMP.
+     * characters (for editText Smileys, Kanji, ...) outside the BMP.
      */
     def ins(string: String): Unit = {
       //
@@ -770,7 +782,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       doPendingDeletions()
       string.codePoints.forEach{ insDirectedCodepoint(_) }
       // string.codePoints.forEach{  cp => println(cp.toHexString, cp.toChar) }
-      if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
+      tryAbbreviation()
     }
 
     /**
@@ -787,7 +799,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       pendingDeletions = toReplace
       string.codePoints.forEach(insCodePoint(_))
       string.codePoints.forEach{  cp => println(toReplace, cp.toHexString, cp.toChar) }
-      if (abbreviations != null && abbreviations.onLineTrigger) abbreviation()
+      tryAbbreviation()
     }
 
     @inline private def MVLEFT(): Unit = {
@@ -935,7 +947,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     /**
-     * POST: `allBMP = allBMP && buffer(i).isBMPCodePoint`
+     * POST: `allBMP = all (about to be) visible codepoints are in the BMP`
      */
     private def visiblePointArray(pan: Int): Array[CodePoint] = {
       allBMP = true
@@ -1060,8 +1072,6 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
         if ((glyphCount==1 && cps.length>1) || isDirectional(cps)) {
           val novelty = polyCodings.set(cps)
           if (novelty) onNewGlyph(string, cps)
-          //for { (codes, _) <- leftGlyphCodepointCount } println("L", codes.map{_.toHexString}.mkString(", "))
-          //for { (codes, _) <- rightGlyphCodepointCount } println("R", codes.map{_.toHexString}.mkString(", "))
         }
       }
     }

@@ -74,13 +74,12 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     onChoose(resultBrush)
   }
 
-  protected lazy val brushField = styled.TextField(size=50, onEnter=setResultBrush(_), initialText=resultBrush.toString)(hintSheet)
+  protected lazy val brushField = styled.TextField(size=25, onEnter=setResultBrush(_), initialText=resultBrush.toString)(hintSheet)
 
   protected def ColourPaletteButton(label: String, hint: String="", colour: Brush)(action: Reaction): Glyph = {
     val hover: Hint = if (hint.nonEmpty)  Hint(5, hint)(hintSheet) else NoHint
     unstyled.reactive.UniformlyColouredButton(Vec(sheet.emWidth*2, sheet.exHeight*2), colour, hover)(action)
   }
-
 
   protected def brushFieldChooserMenu(fieldname: String, choices: String*)(choose: String => Unit)(implicit sheet: StyleSheet): Glyph = {
     val buttons = choices.map {
@@ -171,8 +170,8 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
     styled.windowdialogues.Dialogue.FLASH(<div width="50em" align="justify" parskip="1.5ex">
       <p>
         This brush selection palette offers several ways of
-        specifying a Brush. Visual feedback is provided by a
-        showing couple of glyphs -- their foreground is painted
+        specifying a Brush. Visual feedback is provided by one or
+        two glyphs whose foreground is painted
         with the brush.
       </p>
       <p>
@@ -201,13 +200,14 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
       (model ~~~ rectangle(30+model.w,30+model.h)(transparent)).asGlyph.framed(black)
     }
 
+    lazy val SMALLSAMPLE: Glyph = brushField.enlarged(10).framed(protoBrush) // rectangle(textModel.w, textModel.h)(protoBrush).asGlyph
 
     /** The comprehensive GUI that has all forms of brush property selection, together with the `Sample` that shows
      * the effects of the current choices.
      */
     lazy val GUI: Glyph = Col(align=Center, bg=lightGrey)(COLOURGUI, ex, PROPERTYGUI, ex, SAMPLE: Glyph, ex, HSVGUI).enlarged(30, bg=sheet.backgroundBrush)
 
-    lazy val NOTEXTGUI: Glyph = Col(align=Center, bg=lightGrey)(colourGrid, ex, PROPERTYGUI, ex, SAMPLE: Glyph, ex, HSVGUI).enlarged(30, bg=sheet.backgroundBrush)
+    lazy val NOTEXTGUI: Glyph = Col(align=Center, bg=lightGrey)(colourGrid, ex, PROPERTYGUI, ex, HSVGUI, ex, SMALLSAMPLE).enlarged(30, bg=sheet.backgroundBrush)
 
     /** A GUI for choosing among named colours */
     lazy val COLOURGUI: Glyph = Col(align=Center, bg=lightGrey)(

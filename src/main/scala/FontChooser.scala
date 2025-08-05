@@ -28,7 +28,7 @@ import org.sufrin.utility.TextAbbreviations
  * @param aboveDisplay
  * @param sheet
  */
-class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, Glyph) = (INVISIBLE(), INVISIBLE()))(implicit sheet: StyleSheet) {
+class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, Glyph) = (INVISIBLE(), INVISIBLE()), abbreviations: TextAbbreviations = null)(implicit sheet: StyleSheet) {
 
   protected def chooserMenu(fieldname: String, choices: Seq[String])(choose: String => Unit)(implicit sheet: StyleSheet): Glyph = {
     val buttons = choices.map {
@@ -47,7 +47,7 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
 
   var fontString: String = FontFamily.fontString(initialFont)
   var _font: Font = initialFont
-  val fontText = styled.TextField(size=60, initialText=fontString, onEnter=setFontFrom)
+  val fontText = styled.TextField(size=editText.size, initialText=fontString, onEnter=setFontFrom)
 
   import FontFamily._
 
@@ -55,7 +55,7 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
     _font = newFont
     fontString = _font.asString
     fontText.string=fontString
-    showExample(example.string)
+    showExample(editText.string)
   }
 
   @inline def isFloat(s: String): Boolean = s.toFloatOption.isDefined
@@ -100,26 +100,23 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
   }(chooserStyle)
 
 
-  def showExample(text: String=example.string): Unit = exampleDisplay.set(text)
+  def showExample(text: String=editText.string): Unit = {} //exampleDisplay.set(text)
 
 
   def interpretSpecialKey(key: GlyphTypes.EventKey, glyph: Glyph): Unit = {
     val mods: Bitmap = toBitmap(key)
-    example.string=s"${example.string} ${key._key} ${mods.toString} "
+    editText.string=s"${editText.string} ${key._key} ${mods.toString} "
   }
 
-  val abbrs = new TextAbbreviations(onLineTrigger = true, implicitUnicode = true)
-  locally {
-    abbrs.reversible = true
-    for {  (abbr, symb) <- StockAbbreviations.all } abbrs.update(abbr, symb)
-  }
-  
+  lazy val abbrs = if (abbreviations ne null) abbreviations else new TextAbbreviations(onLineTrigger = true, implicitUnicode = true)
+
   lazy val brush: Brush = initialBrush
-  lazy val example      = styled.TextField(size=60,
-                                           onChange=Some(showExample),
-                                           onError={ (_,_) => TextField.bell.play() },
-                                           initialText = "This editable text is shown in the dashed frame in Font",
-                                           abbreviations = abbrs).withAbbreviationKey(Key.ESCAPE)
+  lazy val editText: TextField = styled.TextField(size=45,
+                                                  onChange=Some(showExample),
+                                                  onError={ (_,_) => TextField.bell.play() },
+                                                  initialText = "\uD83C\uDF08 this text can be edited \uD83C\uDF08",
+                                                  onCursorLeave  = { _ => GUI.guiRoot.giveupFocus() },
+                                                  abbreviations = abbrs)(sheet.copy(textForegroundBrush = initialBrush)).withAbbreviationKey(Key.ESCAPE)
 
 
   import sheet.{em, ex}
@@ -130,67 +127,81 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
   val hintSheet   = sheet.copy(fontScale=0.6f, buttonDecoration = styles.decoration.RoundFramed(frameGrey, radius=20, enlarge=10))
   val buttonSheet = sheet.copy(fontScale=0.8f, buttonDecoration = styles.decoration.RoundFramed(frameGrey, radius=20, enlarge=10))
 
-  val onLine: ToggleVariable = ToggleVariable(abbrs.onLineTrigger) { state => abbrs.onLineTrigger = state }
-  val implicitUnicode        = ToggleVariable(abbrs.implicitUnicode) { state => abbrs.implicitUnicode=state }
+  val liveSubstitution: ToggleVariable = ToggleVariable(abbrs.onLineTrigger)   { state => abbrs.onLineTrigger = state }
+  val implicitUnicode: ToggleVariable  = ToggleVariable(abbrs.implicitUnicode) { state => abbrs.implicitUnicode=state }
 
-  val triggerButton: Glyph =
+  def triggerButton: Glyph =
     styled.CheckBox(initially=false,
-                    hint=Hint(5, "Enable/disable automatic substitution for abbreviations\nas they are typed.\nWhen disabled, SHIFT-SHIFT is used\nto make a substitution.")(hintSheet))(onLine)(buttonSheet)
+                    hint=Hint(5, "Enable automatic substitution for abbreviations\nas they are typed.\n(SHIFT-SHIFT substitutes when disabled)")(hintSheet))(liveSubstitution)(buttonSheet)
 
-  val implicitButton: Glyph =
+  def implicitButton: Glyph =
     styled.CheckBox(initially=false,
-                    hint=Hint(5, "Enable/disable implicit abbreviations\nof unicode glyphs\nexpressed as hex digit sequences\n followed by \"u+\" ")(hintSheet))(implicitUnicode)(buttonSheet)
+                    hint=Hint(5, "Enable implicit abbreviations\nof unicode glyphs\nexpressed as hex digit sequences\n followed by \"uu\" ")(hintSheet))(implicitUnicode)(buttonSheet)
 
-  val tryoutButton: Glyph =
-    styled.TextButton("Popup an Edit Field", hint=Hint(5, "The popup edits\nthe editable text\nusing the\ncurrent font.")(hintSheet)){
+  lazy val popupAnchor: Glyph = INVISIBLE()
+
+  lazy val tryoutButton: Glyph =
+    styled.TextButton("Popup an Editor", hint=Hint(5, "Edits the current text\nin the current font\nand colour")(hintSheet)){
       _ =>
-        val playGUI = NaturalSize.Col(align=Center)(
-          TextField(font       =  _font,
-                    size       =  example.size,
-                    onChange   =  Some(showExample),
-                    onEnter    =  { string => example.string = string },
-                    initialText    = exampleDisplay.get,
-                    abbreviations  = abbrs,
-                    polyCodings    = example.polyCodings).enlarged(20).framed().enlarged(10) //share the count data
-          )
-        styled.windowdialogues.Dialogue.FLASH(playGUI,null,s"Play TextField ${_font.asString}").OnRootOf(GUI).start()
+        lazy val localText: TextField = TextField(
+                  font       =  _font,
+                  fg         =  brush,
+                  size       =  (fontText.w/_font.getMetrics.getAvgCharWidth).toInt,
+                  onChange   =  Some(showExample),
+                  onEnter    =  { string => editText.string = string },
+                  initialText    = editText.string,
+                  abbreviations  = abbrs,
+                  onCursorLeave  = { _ => playGUI.guiRoot.giveupFocus() },
+                  polyCodings    = editText.polyCodings)//
+
+        lazy val unicodebutton = styled.TextButton("Unicode", hint=Hint(5, "Replace glyph at cursor left\nby its unicode codepoint(s)")(hintSheet)) {
+          _ => localText.unicode()
+        }(buttonSheet)
+
+        lazy val unabbreviatebutton = styled.TextButton("Unsubstitute", hint=Hint(5, "Replace substitution at\ncursor left\nby its abbreviation")(hintSheet)) {
+          _ => localText.unabbreviation()
+        }(buttonSheet)
+
+        lazy val substitutebutton = styled.TextButton("Substitute", hint=Hint(5, "Replace abbreviation at cursor left\nby its substitution (SHIFT-SHIFT has the same effect)")(hintSheet)) {
+          _ => localText.tryAbbreviation()
+        }(buttonSheet)
+
+
+        lazy val playGUI: Glyph = NaturalSize.Col(align=Left)(
+          FixedSize.Row(align=Mid, width=localText.w)(unabbreviatebutton, unicodebutton, substitutebutton, sheet.hFill(), Label(" Live substitution: "), triggerButton, em, Label("Implicit unicode: "), implicitButton),
+          localText.enlarged(2).framed().enlarged(10),
+        )
+        styled.windowdialogues.Dialogue.FLASH(playGUI,null,s"[${_font.asString}]").South(popupAnchor).start()
     }(buttonSheet)
 
   import styled.Decorate
 
   lazy val labelledFields = Grid(width=2, pady=15).rows(
-        Label("Edit "), example.framed(frameGrey),
-        Label("Font "), fontText.framed(frameGrey).cellFit(ShiftWest),
-        aboveDisplay._1.cellFit(ShiftWest), aboveDisplay._2.cellFit(ShiftWest)
+    Label("Font "), fontText.framed(frameGrey).cellFit(ShiftWest),
+    Label("Text "), editText.framed(frameGrey),
     )
 
-  lazy val exampleDisplay: ActiveGlyph[String] = new ActiveGlyph[String]("", Rect(1.1f*labelledFields.w, 2*fontText.h, black)) {
-    override val forcedSet: Boolean = true
-    def toGlyph(t: String): Glyph = Text(t, _font, fg=brush)
-    def copy(fg: Brush, bg: Brush): Glyph = this
-  }
-
-  lazy val GUI: Glyph = Col(align=Center, bg=sheet.backgroundBrush,skip = 20)(
+  lazy val GUI: Glyph = Col(align=Center, bg=sheet.backgroundBrush,skip = 4)(
     Row(align=Mid)(familyChooser, em, styleChooser.framed(), em,  sizeChooser.framed()), ex,
     labelledFields,
-    FixedSize.Row(labelledFields.w, align=Mid)(Label("Live abbrs: "),       triggerButton, sheet.hFill(2),
-                                               Label("Implicit unicode: "), implicitButton, sheet.hFill(2, stretch=1.2f),
+    FixedSize.Row(labelledFields.w, align=Mid)(Label("Live substitution: "), triggerButton, sheet.hFill(2),
+                                               Label("Implicit  unicode: "), implicitButton, sheet.hFill(2, stretch=1.2f),
                                                tryoutButton),
-    exampleDisplay.framed(Brushes.darkGrey(width=3).dashed(10, 10)),
-    )
+    popupAnchor
+  )
 
 }
 
-class FontAndBrushChooser(fontChooserFont: Font=null)(implicit val sheet: StyleSheet) {
+class FontAndBrushChooser(fontChooserFont: Font=null, abbreviations: TextAbbreviations=null)(implicit val sheet: StyleSheet) {
 
   val brush: Brush = Brush("black.1.fill").copy()
 
   import FontFamily._
 
-  val phont = if (fontChooserFont eq null) sheet.textFont.scaled(1.5f).familied("Courier") else fontChooserFont
+  val phont = if (fontChooserFont eq null) sheet.textFont.scaled(1.5f) else fontChooserFont
 
   lazy val brushName    = new ActiveString(initial=f"${brush.toString}%-50s")
-  lazy val fontChooser  = new FontChooser(phont, brush, aboveDisplay = (Label("Brush ", align=Left), brushName))
+  lazy val fontChooser  = new FontChooser(phont, brush, abbreviations=abbreviations)
   lazy val brushChooser = new BrushChooser(brush, brush, {_=>}, { brush => brushName.set(brush.toString)})
 
   locally {
@@ -199,17 +210,23 @@ class FontAndBrushChooser(fontChooserFont: Font=null)(implicit val sheet: StyleS
 
 
   lazy val GUI: Glyph = NaturalSize.Col(align=Center, bg=sheet.backgroundBrush)(
-    fontChooser.GUI,
+    brushChooser.NOTEXTGUI,
     sheet.vSpace(2),
-    brushChooser.GUI
-    )
+    fontChooser.GUI,
+  ) .enlargedBy(20, 60)
 
 }
 
 object FontChooserTest extends Application {
   implicit val sheet: StyleSheet = StyleSheet(backgroundBrush = lightGrey)
 
-  val chooser = new FontAndBrushChooser(sheet.textFont.scaled(1.5f).familied("Courier"))
+  val abbreviations = new TextAbbreviations(true, true)
+  locally {
+    abbreviations.reversible=true
+    for { (abbr, repl) <- StockAbbreviations.all } abbreviations.update(abbr, repl)
+  }
+
+  val chooser = new FontAndBrushChooser(sheet.textFont.scaled(1.5f), abbreviations)
 
   val GUI: Glyph = chooser.GUI.enlarged(5).framed(red(width=1))
 

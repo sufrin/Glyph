@@ -11,7 +11,7 @@ object BooleanGlyphs {
     { val oneOf = dynamic.OneOf(bg=Brushes.transparent, enableBG = false)(whenFalse, whenTrue)
 
       /** Set the state */
-      def set(state: Boolean): Unit = { oneOf.select(if (state) 1 else 0) }
+      def set(state: Boolean): Unit = { oneOf.select(if (state) 1 else 0); oneOf.reDraw() }
 
       /** Get the state */
       def get: Boolean = if (oneOf.selection == 0) false else true
