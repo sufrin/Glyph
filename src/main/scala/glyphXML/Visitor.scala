@@ -40,6 +40,30 @@ trait Visitor {
 
 object Visitor {
   type AttributeMap = Map[String, String]
+
+  implicit class ExtendedAttributeMap(val map: AttributeMap) extends AnyVal {
+    def over(r: AttributeMap): AttributeMap = Visitor.over(map, r)
+  }
+
+  def over(l: AttributeMap, r: AttributeMap): AttributeMap = new AttributeMap {
+
+    def removed(key: String): Map[String, String] = over(l.removed(key), r.removed(key))
+
+    def removedAll(keys: String*): Map[String, String] = over(l.removedAll(keys), r.removedAll(keys))
+
+    def get(key: String): Option[String] = l.get(key) orElse(r.get(key))
+
+    override def contains(d: String): Boolean = l.contains(d) || r.contains(d)
+
+    override def keysIterator: Iterator[String] =
+      l.keysIterator.concat(r.keysIterator.filterNot(l.contains(_)))
+
+    def iterator: Iterator[(String, String)] =
+      l.iterator.concat(r.filterNot{ case (d, r) => l.contains(d) })
+
+    def updated[V1 >: String](key: String, value: V1): Map[String, V1] = ???
+  }
+
   def toString(attributes: AttributeMap): String = attributes.map { case (k,d) => s"$k->$d"}.mkString(", ")
 
   def showNode(node: Node): Unit = {
