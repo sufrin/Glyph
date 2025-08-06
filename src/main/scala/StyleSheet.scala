@@ -27,10 +27,10 @@ case class StyleSheet
  labelForegroundBrush: Brush = Brushes("blue"), // blue
  textBackgroundBrush: Brush = Brushes("transparent"), // transparent
  textForegroundBrush: Brush = Brushes("blue"), // blue
- popupBackgroundBrush: Brush = Brushes("0xFFeeeeee"),
- popupForegroundBrush: Brush = Brushes("0xFF000000.1"),
- backgroundBrush: Brush = Brushes("0XFFBBBBBB"),
- foregroundBrush: Brush = Brushes("0XFFBBBBBB"),
+ popupBackgroundBrush: Brush = Brushes("white"), //Brushes("0xFFeeeeee"),
+ popupForegroundBrush: Brush = Brushes("transparent"),
+ backgroundBrush: Brush = Brushes("lightGrey"),
+ foregroundBrush: Brush = Brushes("darkGrey"),
  // Paragraph layout properties
  parAlign:    Alignment = Left,
  parSkip:     Scalar    = 5f,
