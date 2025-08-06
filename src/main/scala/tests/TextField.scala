@@ -16,9 +16,9 @@ object TextField extends Application {
   val title: String = "TextField test"
 
   implicit val style: StyleSheet =
-    StyleSheet(textFontSize=25,
-               textFontFamily=FontFamily("Menlo"),
-               textBackgroundBrush = Brushes.white
+    StyleSheet(textFontSize    = 25,
+               textFontFamily  = FontFamily("Menlo"),
+               backgroundBrush = Brushes.transparent
                )
 
   lazy val anchor = static.INVISIBLE()
@@ -26,92 +26,12 @@ object TextField extends Application {
   val abbreviations = new TextAbbreviations(onLineTrigger = true, implicitUnicode = false, onAmbiguous = TextAbbreviations.ambiguous)
   locally {
     abbreviations.reversible = true
-    for {  (abbr, symb) <- StockAbbreviations.all } abbreviations.update(abbr, symb)(SOURCE)
+    for {  (abbr, symb) <- StockAbbreviations.all } abbreviations.update(abbr, symb)
   }
 
   import glyphXML.Language._
   import styled._
-  def SOURCE(implicit source: SourceLocation): String = source.toString()
-  locally {
-    translation("anchor") = { _ => static.INVISIBLE() }
-    translation("caption") =
-      new Macro(<p align="center"><b>&BODY;</b></p>)
-
-    /*
-     *  A simple implementation of <itemize> blocks containing <item>s.
-     *  {{{
-     *    <itemize logging[=false]
-     *             leftMargin[=5em]
-     *             hang[=" * "]
-     *             itemIndent[=2em]
-     *             itemAlign[=justify]>
-     *
-     *            <item>...<item>
-     *            <item>...<item>
-     *              ...
-     *            <item>...<item>
-     *
-     *    </itemize>
-     *  }}
-     *
-     *  Each <item> can specify its own hang, itemAlign, and itemWidth attributes, but otherwise inherits them from
-     *  the closest lexically enclosing <itemize>
-     *
-     *  <itemize> environments may not (at present) be nested, but the appearance of
-     *  nesting can be given by changing hang text and increasing the itemIndent.
-     */
-
-    translation("item") =
-      new Macro(
-        <row inheritwidth="true">
-          <!--attributes AT="ITEM" id="tag:item"/-->
-          <fill width="$itemindent"/>
-          <p hang="$hang" width="$itemwidth" align="$itemalign">
-            &BODY;
-          </p>
-        </row>)
-
-    translation("itemize") =
-      new Macro(
-        <SCOPE>
-          <ATTRIBUTES key="tag:item" logging="$logging(false)" leftmargin="$leftmargin(5em)" hang="$hang( * )"  itemindent="$itemindent(2em)"  itemwidth="$itemwidth(70em)" itemalign="$itemalign(justify)"/>
-          <span itemindent="$itemindent(2em)">
-            <col align="left">
-              <!--attributes AT="ITEMIZE" /-->
-              &BODY;
-            </col>
-          </span>
-        </SCOPE>
-        )
-  }
-
-  val helpText: Glyph =
-    <body width="70em" align="justify" fg="darkGrey" background="white" parSkip="0.75em" itemwidth="60em" itemindent="2em" itemalign="justify" source={SOURCE}>
-      <div enlarged="10px" frame="lightgrey.4.sliced(4,4)">
-      <p>Interaction is more-or-less standard.</p>
-      <itemize itemIndent="2em"  hang="•" >
-        <item>The cursor is shown as an I-beam and always kept in view</item>
-        <item>The selection has a coloured background</item>
-        <item>Visual cues are given when there is out-of-sight text</item>
-        <item>The usual cut, copy, paste, and navigate keys are provided:</item>
-      </itemize>
-      <itemize itemIndent="2em" hang="•">
-        <item>Home, End, Left, Right, and Backspace - usual effect</item>
-        <item>Ctrl/Cmd Backspace - swaps the two characters before the cursor </item>
-        <item>Ctrl/Cmd C - copy the selection (default all) to clipboard</item>
-        <item>Ctrl/Cmd X - cut the selection (default all) to clipboard</item>
-        <item>Ctrl/Cmd V - insert from clipboard</item>
-        <item>Mousebutton - set the cursor here</item>
-        <item>The selection is between the mark (if any) and the cursor)</item>
-        <itemize itemIndent="4em" hang="•">
-          <item>Secondary mousebutton - set the mark here</item>
-          <item>Ctrl/Cmd mousebutton - set the mark here</item>
-          <item>Ctrl/Cmd . - set the mark at the cursor</item>
-          <item>Ctrl/Cmd S - swap the mark and cursor</item>
-        </itemize>
-      </itemize>
-      </div>
-    </body>
+  val helpText: Glyph = styled.TextField.helpText(style)
 
   val defs = translation.meaning
   val frameGrey = Brushes.darkGrey(width=2)
@@ -186,8 +106,9 @@ object TextField extends Application {
     //println(s"$text(${t.w},${t.h}) height=${t.height} a=${t.ascent}, desc=${t.descent} l=${t.leading} s=${t.spacing} drop=${t.drop}")
   }
 
+  def SOURCE(implicit source: SourceLocation): String = source.toString()
 
-  lazy val GUI: Glyph = NaturalSize.Col(align=Center, bg=Brushes.white)(
+  lazy val GUI: Glyph = NaturalSize.Col(align=Center, bg=Brushes.white)(anchor above
     <body width={s"${20+textField.w}px"} align="center"  parskip="2ex" itemwidth="60em" itemindent="2em" itemalign="justify" source={SOURCE}>
       <p><glyph gid="TEXTFIELD"/></p>
       <p>

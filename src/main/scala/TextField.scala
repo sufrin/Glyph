@@ -12,6 +12,7 @@ import org.sufrin.glyph.tests.StockAbbreviations
 import org.sufrin.logging
 import org.sufrin.logging.{FINER, SourceDefault}
 import org.sufrin.utility.TextAbbreviations
+import org.sufrin.SourceLocation.SourceLocation
 
 
 
@@ -229,14 +230,22 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
 
       case V if mods.includeSome(ANYCONTROL) =>
         val text = Clipboard.get(ClipboardFormat.TEXT).getString
-        TextModel.insPaste(text)
-        TextModel.accountForCodePointCounts(text)
+        if (text ne null) {
+          TextModel.insPaste(text)
+          TextModel.accountForCodePointCounts(text)
+        } else beep()
 
       case S if mods.includeSome(ANYCONTROL) =>
         TextModel.swapMark()
 
+      case PERIOD if mods.includeSome(ANYCONTROL) =>
+        TextModel.swapMark()
+
       case Key.DOWN if mods.includeSome(ANYCONTROL) =>
-        TextModel.markToCursor()
+        if (mods.includeSome(Shift))
+          TextModel.mark = -1
+        else
+          TextModel.markToCursor()
 
       case BACKSPACE  if mods.includeSome(ANYCONTROL) =>
         TextModel.swap2()
@@ -301,7 +310,8 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
    */
   val panWarningOffset = panWarningBrush.strokeWidth
 
-  val markBrush: Brush = Brushes.green(width=diagonal.y, alpha=0.3f)
+  val markBrush:   Brush = Brushes.green(width=3)
+  val markedBrush: Brush = markBrush(width=diagonal.y, alpha=0.2f)
   val r2lBrush: Brush = Brushes.red(width=diagonal.y, alpha=0.3f)
 
   /** The most recent origin of the displayed textlayout */
@@ -367,7 +377,8 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
           TextModel.markPosition match {
           case None =>
           case Some(position) =>
-            surface.drawLines$(markBrush, position min cursorLeft, cursorBottom/2, position max cursorLeft, cursorBottom/2)
+            surface.drawLines$(markedBrush, position min cursorLeft, cursorBottom/2, position max cursorLeft, cursorBottom/2)
+            drawCursor(markBrush, position)
           //if (overflow && markPosition>w) surface.drawPolygon$(markBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
           //if (panning && markPosition==0f) surface.drawPolygon$(markBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)
         }
@@ -523,13 +534,13 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     }
 
     def markPosition: Option[Scalar] = {
-      if (mark>=0) {
+      if (mark>=pan) {
         //Some(visiblePoints(pan).take(mark-pan).map(codePointWidth(_)).sum)
         Some(lateralPosition(mark-pan))
       } else None
     }
 
-    /** Only reliable way of determining the lateral position of the `pos`th character*/
+    /** Only reliable way of determining the lateral position of the `pos`th glyph */
     def lateralPosition(pos: Int): Scalar = {
       TextLine.make(new String(lastVisiblePointArray, 0, pos), font).getWidth
     }
@@ -940,14 +951,19 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
       }
     }
 
+
     @inline private def bufferedPointAt(i: Int): CodePoint = {
       val cp = buffer(i)
       if (!Character.isBmpCodePoint(cp)) allBMP = false
-      cp
+      if (cp=='\u0020') THINSPACE else cp // thin spaces
     }
 
     /**
-     * POST: `allBMP = all (about to be) visible codepoints are in the BMP`
+     * POST: `allBMP = all (about to be) visible codepoints are in the BMP`. Used only
+     * while `draw`ing.
+     *
+     * All ordinary (`'\u0020'`) spaces are represented as `THINSPACE` to correct the Skija/Skia
+     * problem of overestimating the widths of ordinary spaces that follow emojis.
      */
     private def visiblePointArray(pan: Int): Array[CodePoint] = {
       allBMP = true
@@ -1140,6 +1156,14 @@ object TextField extends logging.Loggable {
   /** bidi start RL MODE */
   val RLM = 0x200F
 
+  /**
+   * Internal representation of a regular space: DURING DRAWING.
+   *
+   * @see visiblePointArray
+   */
+  val THINSPACE = '\u2009'
+
+
   def isDirectional(cps: CodePointSeq): Boolean = cps.length>2 && cps.head==RLM && cps.last==LRM
 
   def reportNewGlyph(glyph: String, codePoints: CodePointSeq): Unit = {
@@ -1189,6 +1213,7 @@ object TextField extends logging.Loggable {
                     onNewGlyph = onNewGlyph,
                     normalizeRightToLeft = visualOrderPaste // normalize RTL in pasted material
                     )
+
 }
 
 /**

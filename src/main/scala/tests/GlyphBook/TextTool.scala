@@ -37,11 +37,11 @@ class TextTool(implicit style: StyleSheet)  {
   defs("CONTROLS") =
     _=> //Label("Log events") beside styled.CheckBox(initially=false) { state => anchor.guiRoot.eventHandler.logEvents=state } beside
       NaturalSize.Row(align=Mid)(
-        Label(" LIVE(")(controlsStyle),
+        Label(" Live substitution(")(controlsStyle),
         CheckBox(initially=abbreviations.onLineTrigger) {
            state => abbreviations.onLineTrigger=state
         }(controlsStyle),
-        Label(") UU(")(controlsStyle),
+        Label(") Implicit Unicode(")(controlsStyle),
         CheckBox(initially=abbreviations.implicitUnicode) {
           state => abbreviations.implicitUnicode=state
     }(controlsStyle) beside  Label(")")(controlsStyle)
@@ -63,32 +63,7 @@ class TextTool(implicit style: StyleSheet)  {
   defs("TEXTFIELD") = _=>textField.framed()
 
 
-  val helpText: Glyph =
-    <body width="70em" align="justify" fg="blue" parSkip="0.75em" itemwidth="60em" itemindent="2em" itemalign="justify" source={SOURCE}>
-    <p>Interaction is more-or-less standard.</p>
-    <itemize itemIndent="2em"  hang="•" >
-      <item>The cursor is shown as an I-beam and always kept in view</item>
-      <item>The selection has a coloured background</item>
-      <item>Visual cues are given when there is out-of-sight text</item>
-      <item>The usual cut, copy, paste, and navigate keys are provided:</item>
-    </itemize>
-    <itemize itemIndent="2em" hang="•">
-      <item>Home, End, Left, Right, and Backspace - usual effect</item>
-      <item>Ctrl/Cmd Backspace - swaps the two characters before the cursor </item>
-      <item>Ctrl/Cmd C - copy the selection (default all) to clipboard</item>
-      <item>Ctrl/Cmd X - cut the selection (default all) to clipboard</item>
-      <item>Ctrl/Cmd V - insert from clipboard</item>
-      <item>Mousebutton - set the cursor here</item>
-      <item>The selection is between the mark (if any) and the cursor)</item>
-      <itemize itemIndent="4em" hang="•">
-        <item>Secondary mousebutton - set the mark here</item>
-        <item>Ctrl/Cmd mousebutton - set the mark here</item>
-        <item>Ctrl/Cmd . - set the mark at the cursor</item>
-        <item>Ctrl/Cmd S - swap the mark and cursor</item>
-      </itemize>
-    </itemize>
-  </body>
-
+  val helpText: Glyph = TextField.helpText(style)
 
 
   defs("HELPBUTTON") = _ =>  styled.TextButton("Help"){
@@ -108,46 +83,55 @@ class TextTool(implicit style: StyleSheet)  {
       windowdialogues.Dialogue.FLASH(content.enlarged(20)).InFront(anchor).start()
   }(controlsStyle)
 
-  defs("UNICODE") = _ => styled.TextButton("Unicode", hint=Hint(5, "Replace glyph at cursor left\nby unicode codepoint(s)")) {
+  defs("UNICODE") = _ => styled.TextButton("Unicode", hint=Hint(5, "Replace glyph at left of cursor\nby its unicode codepoint(s)")) {
     _ => textField.unicode()
   }(controlsStyle)
 
-  defs("UNABBR") = _ => styled.TextButton("Abbr", hint=Hint(5, "Replace cursor left material\nby its abbreviation\n(inverse of 'abbreviate')")) {
+  defs("UNABBR") = _ => styled.TextButton("Substitution", hint=Hint(5, "Replace substitution at left of cursor\nby its abbreviation")) {
     _ => textField.unabbreviation()
   }(controlsStyle)
 
 
   val GUI: Glyph = NaturalSize.Col(align=Center)(
     anchor,
-    <body width="70em" align="justify" fg="blue" parSkip="0.75em" itemwidth="60em" itemindent="2em" itemalign="justify" source={SOURCE}>
+    <body width="70em" align="left" fg="blue" parSkip="0.75em" itemwidth="60em" itemindent="2em" itemalign="justify" source={SOURCE}>
       <p>
-        This is an example of a TextField that has been set up by mapping some abbreviations (see <tt>StockAbbreviations.scala</tt>) to symbols or pictographs, for example:
+        This is an example of a TextField that has been set up by map_ping abbrev_iations (see <tt>StockAbbreviations.scala</tt>) to sym_bols or pict_ographs, for example:
       </p>
       <fill/>
       <p align="center" bg="transparent" fontFamily="Courier" source={SOURCE}>
-        <![CDATA[(c) (r) :) :O <3 :-| aleph. Alpha. rainbow=🌈 ukflag=🇬🇧 ae=ᴂ Ae=Æ]]>
+        <![CDATA[(c) (r) :) :O <3 :-| alef/ alpha/ rainbow=🌈 ukflag=🇬🇧 ae=ᴂ Ae=Æ]]>
       </p>
       <fill/>
       <p align="center"><glyph gid="TEXTFIELD"/></p>
       <fill/>
       <p align="center">
         <glyph gid="CONTROLS"/>
-        <glyph gid="HELPBUTTON"/>
+      </p>
+      <p align="center">
         <glyph gid="SHOWBUTTON"/>
         <glyph gid="UNABBR"/>
         <glyph gid="UNICODE"/>
+        <glyph gid="HELPBUTTON"/>
       </p>
       <fill/>
       <p hang="Abbreviations: ">
-        When "LIVE" is checked, typing the last character of an abbreviation results in the insertion of the
-        sequence or symbol it abbreviates, otherwise typing the SHIFT key twice in succession when the cursor is at the end of
-        an abbreviation has the same result, as (here) does the ESC key. If "UU" is checked then sequences of the form <i>hex digits</i><b>uu</b> are
-        implicitly taken as abbreviations for the corresponding unicode character.
+        When "Live..." is checked, typing the last character of an abbrev_iation results in the insertion of the
+        sequence or symbol it abbrev_iates, otherwise typing the SHIFT key twice in succ_ession when the cursor is at the end of
+        an abb_rev_iation has the same result, as (here) does the ESC key. If "Implicit ..." is checked then sequ_ences of <i>hex digits</i> immediately
+        followed by <b>uu</b> are
+        imp_licitly taken as abb_rev_iations for the corr_esponding unicode character.
       </p>
-      <fill/>
-      <p>
-        <b>Practice (with live abbreviations enabled): </b>type <i>help</i>; pause, then the SHIFT key twice in succession. Type <i>tickgreen</i>,
-        amd see what happens if you paste in (singly) pictograms.
+      <p hang="Right-to-Left: ">
+        The field handles  keys mapped to right-to-left characters (eg non-vowelled Hebrew or Arabic).
+        The underlying rep_resent_ation of such a char_acter with codepoint  <i>c</i> is as a "mixed direction"
+        composite: <tt>RLM<i> c </i>LRM</tt>.</p>
+      <p align="center">
+        (See <tt>https://www.w3.org/TR/WCAG20-TECHS/H34.html</tt>)
+      </p>
+      <p hang="Emojis:        ">
+        The field handles emojis -- including ZWJ emojis -- whether defined as abbreviated substitutions or introduced by paste_ing as a <i>single
+        element</i>.
       </p>
       <fill/>
       </body>

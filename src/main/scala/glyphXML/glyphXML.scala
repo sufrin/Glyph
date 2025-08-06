@@ -1248,6 +1248,56 @@ object Language {
       }
       meaning("center")  = new Macro(<row width="1*width"><fill/>&BODY;<fill/></row>)
       meaning("caption") = new Macro(<p align="center"><b>&BODY;</b></p>)
+      meaning("anchor") = { _ => static.INVISIBLE() }
+
+
+      /*
+       *  A simple implementation of <itemize> blocks containing <item>s.
+       *  {{{
+       *    <itemize logging[=false]
+       *             leftMargin[=5em]
+       *             hang[=" * "]
+       *             itemIndent[=2em]
+       *             itemAlign[=justify]>
+       *
+       *            <item>...<item>
+       *            <item>...<item>
+       *              ...
+       *            <item>...<item>
+       *
+       *    </itemize>
+       *  }}
+       *
+       *  Each <item> can specify its own hang, itemAlign, and itemWidth attributes, but otherwise inherits them from
+       *  the closest lexically enclosing <itemize>
+       *
+       *  <itemize> environments may not (at present) be nested, but the appearance of
+       *  nesting can be given by changing hang text and increasing the itemIndent.
+       */
+
+      meaning("item") =
+        new Macro(
+          <row inheritwidth="true">
+            <!--attributes AT="ITEM" id="tag:item"/-->
+            <fill width="$itemindent"/>
+            <p hang="$hang" width="$itemwidth" align="$itemalign">
+              &BODY;
+            </p>
+          </row>)
+
+      meaning("itemize") =
+        new Macro(
+          <SCOPE>
+            <ATTRIBUTES key="tag:item" logging="$logging(false)" leftmargin="$leftmargin(5em)" hang="$hang( * )"  itemindent="$itemindent(2em)"  itemwidth="$itemwidth(70em)" itemalign="$itemalign(justify)"/>
+            <span itemindent="$itemindent(2em)">
+              <col align="left">
+                <!--attributes AT="ITEMIZE" /-->
+                &BODY;
+              </col>
+            </span>
+          </SCOPE>
+          )
+
   }
 
   /** Implicit coercion from an `xml.Node` to the `Glyph` it represents with the given `StyleSheet`*/
