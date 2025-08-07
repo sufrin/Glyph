@@ -1,13 +1,11 @@
 package org.sufrin.glyph
-package glyphXML
+package glyphML
 
-import glyphXML.Translation.AttributeMap
 
 import org.sufrin.logging
 import org.sufrin.logging.Default
 import org.sufrin.logging.Default.warn
 import org.sufrin.SourceLocation._
-import org.sufrin.glyph.glyphXML.Context.AttributeMap
 
 object Context {
   type AttributeMap = Map[String, String]
@@ -42,10 +40,7 @@ object Context {
     import logging.Default.warn
 
     /** Show as a mapping with pairs in the form `k->d` */
-    override def toString: String = Visitor.toString(attributes)
-
-    /** Show as a mapping with pairs in the form `k->d` */
-    def asString: String = Visitor.toString(attributes)
+    override def toString: String = attributes.map { case (k,d) => s"$k->$d"}.mkString(", ")
 
     /**
      * Yields the string with key `key`, or `alt`
@@ -254,73 +249,3 @@ object Context {
 }
 
 
-object Translator {
-  import AbstractSyntax._
-  import Context._
-
-  def translate(context: Env)(tree: Tree): Seq[Glyph] = {
-    implicit val style: StyleSheet = context.derivedSheet
-    def toText(text: String): unstyled.Text = unstyled.Text(text, style.textFont, fg=style.textForegroundBrush, bg=style.textBackgroundBrush)
-    tree match {
-      case Element(tag: String, attributes: AttributeMap, child: Seq[Tree]) => translateElement(context)(tag, attributes, child)
-      case Text(text: String)       => List(toText(text))
-      case Para(texts: Seq[String]) => texts.map(toText(_))
-      case Quoted(text: String)     => List(unstyled.Label(text, style.cdataFont, fg=style.cdataForegroundBrush, bg=style.cdataBackgroundBrush, align=Left))
-      case Entity(name: String)     => Nil
-      case Comment(target: String, text: String) =>
-        (target, text) match {
-          case ("", "SHEET") =>
-            List(toText(style.toString))
-          case _ => Nil
-        }
-    }
-  }
-
-  def emptyText(tree: Tree): Boolean = tree match {
-    case Text(text) => text.forall(_.isSpaceChar)
-    case Para(texts) => texts.forall(_.forall(_.isSpaceChar))
-    case _ => false
-  }
-
-  def translateElement(context: Env)(tag: String, attributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
-      tag match {
-        case "div" | "body" =>
-          val derivedContext = context.updated(attributes)
-          child.filterNot(emptyText).flatMap(translate(derivedContext))
-
-        case "p" =>
-          val derivedContext = context.updated(attributes)
-          child.flatMap(translate(derivedContext))
-
-        case _ => Nil
-      }
-  }
-
-  val rootContext = Context.Env(Map.empty, StyleSheet())
-
-  def fromXML(source: scala.xml.Node): Glyph = {
-    import PrettyPrint._
-    val ast = AbstractSyntax.fromXML(source)
-    ast.prettyPrint()
-    val tr = translate(rootContext)(ast)
-    println(tr)
-    NaturalSize.Col(align=Center)(tr)
-  }
-}
-
-object TestTranslator extends Application {
-
-  val source =
-    <div fontfamily="Times New Roman" textforeground="red">
-      <p align="center">obnoxiously the rain in spain</p>
-      <p align="center"  fontFamily="Menlo" fontScale="0.7" textforeground="black">obnoxiously the rain in spain</p>
-      <![CDATA[
-      this < is
-      quoted text >
-      ]]>
-    </div>
-
-  val GUI: Glyph = Translator.fromXML(source)
-
-  def title: String = "Test Translator"
-}

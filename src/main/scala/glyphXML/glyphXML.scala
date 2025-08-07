@@ -1,6 +1,4 @@
 package org.sufrin
-
-
 package glyph
 package glyphXML
 
@@ -427,7 +425,7 @@ object Paragraph {
 
 object Translation {
 
-  type AttributeMap=Context.AttributeMap
+  type AttributeMap=glyphML.Context.AttributeMap
 
   def normalizeKeys(map: AttributeMap): AttributeMap = map
 
@@ -833,7 +831,7 @@ class TypedAttributeMap(unNormalized: AttributeMap) {
  */
 class Translation(val primitives: Primitives=new Primitives) {
   import Translation.Target._
-  import Context.AttributeMap
+  import glyphML.Context.AttributeMap
   import primitives._
   implicit class TypedMap(attributes: AttributeMap) extends TypedAttributeMap(attributes)
   val meaning: Translation = this

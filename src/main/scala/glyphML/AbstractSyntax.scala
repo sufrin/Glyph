@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package glyphXML
+package glyphML
 
 
 import scala.util.matching.Regex
@@ -72,16 +72,20 @@ object AbstractSyntax {
     source match {
       case xml.EntityRef(name)                            => Entity(name)
       case xml.Elem(str, tag, attrs, binding, child@_*)   =>
-        val localAttrs = refuse.get(tag) match {
-          case None           => attrs.asAttrMap.map{ case (k, d) => (k.toLowerCase, d) }
-          case Some(refused)  =>
-            attrs.asAttrMap.map{ case (k, d) => (k.toLowerCase, d) }.removedAll(refused)
-        }
-        val legacy = contain.get(tag) match {
-          case None            => localAttrs.supersede(inherited)
-          case Some(keepLocal) => localAttrs.supersede(inherited).removedAll(keepLocal)
-        }
-        Element(tag, localAttrs, child.map(fromXML(refuse, contain, legacy)))
+        if (false) {
+          val localAttrs = refuse.get(tag) match {
+            case None => attrs.asAttrMap.map { case (k, d) => (k.toLowerCase, d) }
+            case Some(refused) =>
+              attrs.asAttrMap.map { case (k, d) => (k.toLowerCase, d) }.removedAll(refused)
+          }
+          val legacy = contain.get(tag) match {
+            case None => localAttrs.supersede(inherited)
+            case Some(keepLocal) => localAttrs.supersede(inherited).removedAll(keepLocal)
+          }
+          Element(tag, localAttrs, child.map(fromXML(refuse, contain, legacy)))
+        } else
+          Element(tag, attrs.asAttrMap, child.map(fromXML(refuse, contain, Map.empty)))
+
       case xml.PCData(text: String)                       => Quoted(text)
       case xml.Text(text)                                 => sliceText(text)//Text(text)
       case xml.PCData(text: String)                       => Quoted(text)
@@ -100,7 +104,9 @@ object AbstractSyntax {
     val contain: Map[String, Seq[String]] =  collection.immutable.Map(
       "p" -> List("width", "height")
       )
-    import PrettyPrint.AnyPretty
+
+    import glyphXML.PrettyPrint._
+
     def t(source: xml.Node): Unit = fromXML(refuse, contain, Map.empty)(source).prettyPrint()
     t(
       <outer ouTer="outer">

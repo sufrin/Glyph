@@ -1,12 +1,11 @@
 package org.sufrin.glyph
 package glyphXML
 
-import org.sufrin.glyph.glyphXML.Translation.AttributeMap
 
 import scala.xml.Node
 
 trait Visitor {
-  import Context.AttributeMap
+  import glyphML.Context.AttributeMap
 
   def visitText(attributes: AttributeMap, text: String): Unit
   def visitElement(attributes: AttributeMap, tag: String, child: Seq[Node]): Unit = for {node <- child} visit(attributes, node)
@@ -42,27 +41,8 @@ trait Visitor {
 }
 
 object Visitor {
-  import Context.AttributeMap
+  import glyphML.Context.AttributeMap
 
-
-  def over(l: AttributeMap, r: AttributeMap): AttributeMap = new AttributeMap {
-
-    def removed(key: String): Map[String, String] = over(l.removed(key), r.removed(key))
-
-    def removedAll(keys: String*): Map[String, String] = over(l.removedAll(keys), r.removedAll(keys))
-
-    def get(key: String): Option[String] = l.get(key) orElse(r.get(key))
-
-    override def contains(d: String): Boolean = l.contains(d) || r.contains(d)
-
-    override def keysIterator: Iterator[String] =
-      l.keysIterator.concat(r.keysIterator.filterNot(l.contains(_)))
-
-    def iterator: Iterator[(String, String)] =
-      l.iterator.concat(r.filterNot{ case (d, r) => l.contains(d) })
-
-    def updated[V1 >: String](key: String, value: V1): Map[String, V1] = ???
-  }
 
   def toString(attributes: AttributeMap): String = attributes.map { case (k,d) => s"$k->$d"}.mkString(", ")
 
