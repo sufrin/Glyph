@@ -23,12 +23,12 @@ import scala.util.matching.Regex
 
 object AbstractSyntax {
 
-  case class Context(attributes: Visitor.AttributeMap, sheet: StyleSheet, text: Boolean)
+  import Context.AttributeMap
 
   trait Tree {
   }
 
-  case class Element(tag: String, attributes: Visitor.AttributeMap, child: Seq[Tree]) extends Tree
+  case class Element(tag: String, attributes: AttributeMap, child: Seq[Tree]) extends Tree
 
   sealed trait Textual extends Tree
   case class Text(text: String)   extends Textual
@@ -39,8 +39,6 @@ object AbstractSyntax {
   case class Entity(name: String) extends Tree
 
   case class Comment(target: String, text: String) extends Tree
-
-
 
   private val atSpace: Regex = """[^\n\s]+""".r
 
@@ -61,7 +59,7 @@ object AbstractSyntax {
 
   /**
    * Maps a `scala.xml.Node` to a `Tree`, decorating each `Elem` with an appropriate
-   * attribute mapping.
+   * attribute mapping, and normalizing attribute names to lowercase.
    *
    * Each `Elem` is decorated with its own attributes over the inherited attributes its tag
    * does not require it to refuse.
@@ -69,19 +67,19 @@ object AbstractSyntax {
    * Its legacy to its descendants is its decoration, excluding any attributes its tag requires it to
    * contain.
    */
-  def fromXML(refuse: Map[String, Seq[String]], contain: Map[String, Seq[String]], inherited: Visitor.AttributeMap)(source: xml.Node): Tree = {
-    import Visitor.ExtendedAttributeMap
+  def fromXML(refuse: Map[String, Seq[String]], contain: Map[String, Seq[String]], inherited: AttributeMap)(source: xml.Node): Tree = {
+    import Context.ExtendedAttributeMap
     source match {
       case xml.EntityRef(name)                            => Entity(name)
       case xml.Elem(str, tag, attrs, binding, child@_*)   =>
         val localAttrs = refuse.get(tag) match {
-          case None           => attrs.asAttrMap
+          case None           => attrs.asAttrMap.map{ case (k, d) => (k.toLowerCase, d) }
           case Some(refused)  =>
-            attrs.asAttrMap.removedAll(refused)
+            attrs.asAttrMap.map{ case (k, d) => (k.toLowerCase, d) }.removedAll(refused)
         }
         val legacy = contain.get(tag) match {
-          case None            => localAttrs.over(inherited)
-          case Some(keepLocal) => localAttrs.over(inherited).removedAll(keepLocal)
+          case None            => localAttrs.supersede(inherited)
+          case Some(keepLocal) => localAttrs.supersede(inherited).removedAll(keepLocal)
         }
         Element(tag, localAttrs, child.map(fromXML(refuse, contain, legacy)))
       case xml.PCData(text: String)                       => Quoted(text)
@@ -105,10 +103,10 @@ object AbstractSyntax {
     import PrettyPrint.AnyPretty
     def t(source: xml.Node): Unit = fromXML(refuse, contain, Map.empty)(source).prettyPrint()
     t(
-      <outer outer="outer">
+      <outer ouTer="outer">
         The outer is outer
-        <inner inner="inner">outer and inner</inner>in the plain
-        <inner outer="inner" inner="outer">outer=inner inner=outer
+        <inner Inner="inner">outer and inner</inner>in the plain
+        <inner Outer="inner" inner="outer">outer=inner inner=outer
           <furtherin further="further"/>
         </inner>
       </outer>

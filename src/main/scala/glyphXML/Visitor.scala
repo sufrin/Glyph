@@ -1,10 +1,13 @@
 package org.sufrin.glyph
 package glyphXML
 
+import org.sufrin.glyph.glyphXML.Translation.AttributeMap
+
 import scala.xml.Node
 
 trait Visitor {
-  import Visitor.AttributeMap
+  import Context.AttributeMap
+
   def visitText(attributes: AttributeMap, text: String): Unit
   def visitElement(attributes: AttributeMap, tag: String, child: Seq[Node]): Unit = for {node <- child} visit(attributes, node)
   def visitEntity(attributes: AttributeMap, name: String): Unit
@@ -39,11 +42,8 @@ trait Visitor {
 }
 
 object Visitor {
-  type AttributeMap = Map[String, String]
+  import Context.AttributeMap
 
-  implicit class ExtendedAttributeMap(val map: AttributeMap) extends AnyVal {
-    def over(r: AttributeMap): AttributeMap = Visitor.over(map, r)
-  }
 
   def over(l: AttributeMap, r: AttributeMap): AttributeMap = new AttributeMap {
 

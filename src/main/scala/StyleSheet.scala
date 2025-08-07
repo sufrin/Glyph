@@ -12,22 +12,27 @@ case class StyleSheet
  labelFontFamily: FontFamily  = FontFamily(),
  labelFontStyle: FontStyle = FontStyle.NORMAL,
  labelFontSize: Scalar  = 22f,
+ cdataFontFamily: FontFamily  = FontFamily("Courier"),
+ cdataFontStyle: FontStyle = FontStyle.NORMAL,
+ cdataFontSize: Scalar  = 22f,
  buttonFontFamily: FontFamily  = FontFamily(),
  buttonFontStyle: FontStyle = FontStyle.NORMAL,
  buttonFontSize: Scalar  = 22f,
  buttonBorderBrush: Brush = Brushes("red.5.round.stroke"),
- buttonBackgroundBrush: Brush = Brushes("transparent"), // transparent
- buttonForegroundBrush: Brush = Brushes("blue"), // blue
- buttonHoverBrush: Brush = Brushes("green"), // green
- buttonDownBrush: Brush = Brushes("red"), // red
- toggleBackgroundBrush: Brush = Brushes("transparent"), // transparent
- toggleOnBrush: Brush = Brushes("red"), // red
- toggleOffBrush: Brush = Brushes("blue"), // blue
- labelBackgroundBrush: Brush = Brushes("transparent"), // transparent
- labelForegroundBrush: Brush = Brushes("blue"), // blue
- textBackgroundBrush: Brush = Brushes("transparent"), // transparent
- textForegroundBrush: Brush = Brushes("blue"), // blue
- popupBackgroundBrush: Brush = Brushes("white"), //Brushes("0xFFeeeeee"),
+ buttonBackgroundBrush: Brush = Brushes("transparent"),
+ buttonForegroundBrush: Brush = Brushes("blue"),
+ buttonHoverBrush: Brush = Brushes("green"),
+ buttonDownBrush: Brush = Brushes("red"),
+ toggleBackgroundBrush: Brush = Brushes("transparent"),
+ toggleOnBrush: Brush = Brushes("red"),
+ toggleOffBrush: Brush = Brushes("blue"),
+ labelBackgroundBrush: Brush = Brushes("transparent"),
+ labelForegroundBrush: Brush = Brushes("blue"),
+ cdataBackgroundBrush: Brush = Brushes("transparent"),
+ cdataForegroundBrush: Brush = Brushes("black"),
+ textBackgroundBrush: Brush = Brushes("transparent"),
+ textForegroundBrush: Brush = Brushes("blue"),
+ popupBackgroundBrush: Brush = Brushes("white"),
  popupForegroundBrush: Brush = Brushes("transparent"),
  backgroundBrush: Brush = Brushes("lightGrey"),
  foregroundBrush: Brush = Brushes("darkGrey"),
@@ -69,6 +74,7 @@ case class StyleSheet
   }
 
   def labelFont: Font = labelFontFamily.makeFont(labelFontStyle, labelFontSize*fontScale)
+  def cdataFont: Font = cdataFontFamily.makeFont(cdataFontStyle, cdataFontSize*fontScale)
   def textFont: Font = textFontFamily.makeFont(textFontStyle, textFontSize*fontScale)
   def buttonFont: Font = buttonFontFamily.makeFont(buttonFontStyle, buttonFontSize*fontScale)
   def buttonBorderWidth: Scalar = buttonBorderBrush.strokeWidth
