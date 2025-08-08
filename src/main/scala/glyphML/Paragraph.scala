@@ -5,6 +5,8 @@ import GlyphTypes.Scalar
 import unstyled.static
 import unstyled.static.BreakableGlyph
 
+import org.sufrin.logging.SourceDefault
+
 import scala.collection.mutable.ArrayBuffer
 
 object Paragraph {
@@ -72,8 +74,9 @@ object Paragraph {
     val maxWidthfloor  = maxWidth.floor
     //println(s"[ov=$overallWidth,lm=$leftMargin,maxw=$maxWidthfloor]")
     val words = new PushbackIteratorOfIterator[Glyph](glyphs.iterator)
+    var setting = true
 
-    @inline def setLine(): (Scalar, Seq[Glyph]) = {
+    @inline def composeLineGlyphs(): (Scalar, Seq[Glyph]) = {
       import scala.collection.mutable
       val line = mutable.IndexedBuffer[Glyph]()
       var lineWidth = 0f
@@ -98,7 +101,7 @@ object Paragraph {
         }
       }
 
-      // squeeze an extra chunk on by splitting a breakable?
+      // squeeze an extra chunk on by splitting a breakable, if possible?
       if (words.hasElement) words.element match {
         case breakable: BreakableGlyph =>
           val breakPoint: Int = breakable.maximal(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w) //??
@@ -112,6 +115,8 @@ object Paragraph {
             //line += interWord()// (from the earlier implementation
             lineWidth += breakable.hyphen.w
             words.pushBack(new BreakableGlyph(breakable.hyphen, glyphs.drop(breakPoint)))
+          } else {
+            //SourceDefault.finest(s"Infeasible fit at EOL: $breakable")
           }
         case _ =>
       }
@@ -128,30 +133,56 @@ object Paragraph {
       (lineWidth, line.toSeq)
     }
 
-    var setting = true
-    while (setting && words.hasElement) {
-      // Maybe we have an overlong word
-      if (words.hasElement && words.element.w.ceil >= maxWidthfloor) {
-        // Shrink it somehow
-        words.element match {
-          // cram in as much as possible, and omit the rest
-          case breakableGlyph: BreakableGlyph if false  =>
-            val glyphs = breakableGlyph.glyphs
-            val breakPoint: Int = breakableGlyph.maximal(maxWidthfloor)
-            galley += NaturalSize.Row(Top)(glyphs.take(breakPoint)).framed(fg = Brushes.red(width=2))
-          case other =>
-            galley += NaturalSize.Row(static.FilledRect(maxWidthfloor, other.h, fg = Brushes.red(width=2)))
-        }
-        words.nextElement()
+    @inline def composeLine(): Unit = {
+      val (width, glyphs) = composeLineGlyphs()
+      if (glyphs.length == 1 && width == 0) {
+        // A line with exactly its leftFill() present
+        setting = false
       } else {
-        val (width, glyphs) = setLine()
-        // the line had only its starting alignment glyph; transparent else to do
-        if (glyphs.length == 1 && width == 0) {
-          setting = false
-        } else
-          galley += FixedSize.Row(maxWidth, align=Baseline)(glyphs)
+        galley += FixedSize.Row(maxWidth, align=Baseline)(glyphs)
+      }
+    }
+
+    while (setting && words.hasElement) {
+      // At the start of a line: perhaps we have an overlong but splittable element
+      if (words.hasElement && words.element.w.ceil >= maxWidthfloor) {
+        words.element match {
+          case breakable: BreakableGlyph =>
+            val breakPoint: Int = breakable.maximal(maxWidthfloor-interWordWidth-breakable.hyphen.w)
+            if (breakPoint==0)  {
+              // element splitting is infeasible: just clip
+              SourceDefault.warn(s"Clipped at infeasible split: $breakable")
+              galley += CLIPWIDTH(maxWidthfloor)(NaturalSize.Row(align=Mid, bg=Brushes.pink)(breakable.glyphs))
+              words.nextElement()
+            }
+            else {
+             // element splitting is feasible: just compose the line starting with it
+             composeLine()
+            }
+
+          case other =>
+            // element is unfittable: just clip it
+            SourceDefault.warn(s"Unfittable: $other")
+            galley += CLIPWIDTH(maxWidthfloor)(other).framed(Brushes.red, bg=Brushes.pink)
+            words.nextElement()
+        }
+      } else {
+        composeLine()
       }
     }
     galley
   }
+
+  def CLIPWIDTH(width: Scalar)(g: Glyph): Glyph = new GlyphShape {
+
+    def draw(surface: Surface): Unit =
+      surface.withClip(Vec(width, g.h)) {
+        g.draw(surface)
+      }
+
+    def diagonal: Vec = Vec(width, g.h)
+
+    def withBrushes(fg: Brush, bg: Brush): GlyphShape = ???
+  }.asGlyph
+
 }

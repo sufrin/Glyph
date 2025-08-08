@@ -5,7 +5,8 @@ package glyphML
 import scala.util.matching.Regex
 
 /**
- * Heading towards a clearer method of translating `glyphXML`.
+ * Heading towards a clearer method of translating our XML dialect to `Glyph`s.
+ * Started, and good progress made (Aug '25 BS)
  *
  * The big idea is to do the semantic translation from
  * abstract syntax `Tree`s (as defined here) rather than
@@ -18,7 +19,12 @@ import scala.util.matching.Regex
  * a XML in general (but whose parser doesn't have
  * any way of tracking source locations).
  *
- * Unfinished (Aug '25 BS)
+ * Texts are preprocessed into `Textual` trees by
+ * splitting them into distinct chunks (of solid and whitespace characters), and
+ * separating punctuation from "solid" chunks. The latter makes hyphenation
+ * very straightforward
+ *
+ *
  */
 
 object AbstractSyntax {
@@ -26,12 +32,13 @@ object AbstractSyntax {
   import Context.AttributeMap
 
   trait Tree {
+    
   }
 
   case class Element(tag: String, attributes: AttributeMap, child: Seq[Tree]) extends Tree
 
   sealed trait Textual extends Tree
-  case class Text(text: String)   extends Textual
+  case class Text(text: String)        extends Textual
   case class Para(texts: Seq[String])  extends Textual
 
   case class Quoted(text: String) extends Tree
@@ -40,75 +47,49 @@ object AbstractSyntax {
 
   case class Comment(target: String, text: String) extends Tree
 
-  private val atSpace: Regex = """[^\n\s]+|[\n\s]+""".r
+  private val chunk: Regex = """[^\n\s]+|[\n\s]+""".r
+  private val punct: Regex = """[^\.\";:',!?]+|[\.\";:',!?]+""".r
+  private val punctuation  = ".\";:',!?".toList.map(_.toString)
+  private def isPunctuated(word: String): Boolean = { // pre: word.nonEmpty
+    !word.head.isWhitespace && punctuation.exists{p => word.startsWith(p) ||  word.endsWith(p) }
+  }
 
-  def sliceText(text: String): Textual = {
-      if (text.exists(_.isWhitespace)) {
-        //val first = text.head.isSpaceChar
-        //val last  = text.last.isSpaceChar
-        val words: Seq[String] = atSpace.findAllIn(text).toSeq
-        //val w1: Seq[String] = if (first) f"${text.head}%c" +: words else words
-        //val lastString: String = f"${text.last}%c"
-        //val w2: Seq[String] = if (last) w1 :+ lastString else w1
-        //if (w2.length==1) Text(w2.head) else Para(w2)
+  /**
+   * Slice a text into its chunks, unpacking punctuation adjacent to non-space chunks.
+   *
+   * TODO: make this more efficient.
+   */
+  def fromText(text: String): Textual = {
+        val chunks: Seq[String] = chunk.findAllIn(text).toSeq
+        val words =
+          chunks.flatMap {
+            chunk => if (isPunctuated(chunk)) punct.findAllIn(chunk).toSeq else List(chunk)
+        }
         if (words.length==1) Text(words.head) else Para(words)
       }
-      else
-        Text(text)
-  }
+
 
 
   /**
    * Maps a `scala.xml.Node` to a `Tree`, decorating each `Elem` with an appropriate
    * attribute mapping, and normalizing attribute names to lowercase.
-   *
-   * Each `Elem` is decorated with its own attributes over the inherited attributes its tag
-   * does not require it to refuse.
-   *
-   * Its legacy to its descendants is its decoration, excluding any attributes its tag requires it to
-   * contain.
    */
-  def fromXML(refuse: Map[String, Seq[String]], contain: Map[String, Seq[String]], inherited: AttributeMap)(source: xml.Node): Tree = {
+  def fromXML(source: xml.Node): Tree = {
     import Context.ExtendedAttributeMap
     source match {
       case xml.EntityRef(name)                            => Entity(name)
-      case xml.Elem(str, tag, attrs, binding, child@_*)   =>
-        if (false) {
-          val localAttrs = refuse.get(tag) match {
-            case None => attrs.asAttrMap.map { case (k, d) => (k.toLowerCase, d) }
-            case Some(refused) =>
-              attrs.asAttrMap.map { case (k, d) => (k.toLowerCase, d) }.removedAll(refused)
-          }
-          val legacy = contain.get(tag) match {
-            case None => localAttrs.supersede(inherited)
-            case Some(keepLocal) => localAttrs.supersede(inherited).removedAll(keepLocal)
-          }
-          Element(tag, localAttrs, child.map(fromXML(refuse, contain, legacy)))
-        } else
-          Element(tag, attrs.asAttrMap, child.map(fromXML(refuse, contain, Map.empty)))
-
+      case xml.Elem(str, tag, attrs, binding, child@_*)   => Element(tag, attrs.asAttrMap.map { case (k, d) => (k.toLowerCase, d) }, child.map(fromXML))
       case xml.PCData(text: String)                       => Quoted(text)
-      case xml.Text(text)                                 => sliceText(text)//Text(text)
+      case xml.Text(text)                                 => fromText(text)
       case xml.PCData(text: String)                       => Quoted(text)
       case xml.Comment(text: String)                      => Comment("", text)
       case xml.ProcInstr(target, text)                    => Comment(target, text)
     }
   }
 
-  def fromXML(source: xml.Node): Tree = fromXML(Map.empty, Map.empty, Map.empty)(source)
-
   def main(args: Array[String]): Unit = {
-    val refuse: Map[String, Seq[String]] =  collection.immutable.Map(
-      "p" -> List("local"),
-      "i" -> List("width", "align")
-      )
-    val contain: Map[String, Seq[String]] =  collection.immutable.Map(
-      "p" -> List("width", "height")
-      )
-
-    import glyphXML.PrettyPrint._
-
-    def t(source: xml.Node): Unit = fromXML(refuse, contain, Map.empty)(source).prettyPrint()
+    import org.sufrin.glyph.glyphXML.PrettyPrint._
+    def t(source: xml.Node): Unit = fromXML(source).prettyPrint()
     t(
       <outer ouTer="outer">
         The outer is outer

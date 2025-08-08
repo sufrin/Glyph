@@ -201,7 +201,7 @@ object Context {
       val fontDetail: StyleSheet =
         sheet
           .copy(
-            fontScale       = Float("fontScale", 1.0f),
+            fontScale       = Float("fontscale", 1.0f),
 
             textFontStyle   = FontFamily.styleNamed(String("textstyle", "")),
             textFontFamily  = FontFamily(String("fontfamily", String("textfontfamily", sheet.textFontFamily.family))),
@@ -214,6 +214,10 @@ object Context {
             buttonFontStyle  = FontFamily.styleNamed(String("buttonstyle", "")),
             buttonFontFamily = FontFamily(String("fontfamily", String("buttonfontfamily", sheet.buttonFontFamily.family))),
             buttonFontSize   = Float("fontsize", Float("buttonfontsize", sheet.buttonFontSize)),
+
+            cdataFontStyle  = FontFamily.styleNamed(String("cdatastyle", "")),
+            cdataFontFamily = FontFamily(String("fontfamily", String("cdatafontfamily", sheet.cdataFontFamily.family))),
+            cdataFontSize   = Float("fontsize", Float("cdatafontsize", sheet.cdataFontSize)),
             )
 
       // Units are computed relative to the font details, which may have been redeclared
@@ -241,12 +245,15 @@ object Context {
 
   }
 
-  /** Invariant: sheet consistent with attributes */
+  /**  */
   case class Env(attributes: AttributeMap, sheet: StyleSheet) {
-    //lazy val derivedSheet: StyleSheet = attributes.deriveSheet(sheet)
-    //lazy val derived:      Env    = Env(attributes,derivedSheet)
-    def updated(newAttributes: AttributeMap): Env = {
-        val updatedAttributes = newAttributes supersede attributes
+    /**
+     *  Yield a new `Env`  whose `attributes` are superseded by those
+     *  specified by `localAttributes`, and whose `sheet` derived
+     *  from those attributes.
+     */
+    def updated(localAttributes: AttributeMap): Env = {
+        val updatedAttributes = localAttributes supersede attributes
         Env(updatedAttributes, updatedAttributes.deriveSheet(sheet))
     }
   }

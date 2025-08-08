@@ -110,7 +110,6 @@ case class StyleSheet
 
   lazy val emWidth: Scalar = textFont.measureTextWidth("m") // textFont.getMetrics.getMaxCharWidth//
   lazy val exHeight: Scalar = textFont.getMetrics.getXHeight //textFont.measureText("X").getHeight
-  lazy val interWordWidth: Scalar = emWidth*0.4f
   lazy val baseLine: Scalar = {
     val m = textFont.getMetrics
     m.getHeight+m.getDescent
@@ -122,6 +121,9 @@ case class StyleSheet
   def  vFill(exs: Int=1, stretch: Scalar=1): Glyph = new FixedSize.Space(emWidth, exs*exHeight, 0, stretch)
   def  hSpace(ems: Int=1): Glyph = new FixedSize.Space(ems*emWidth, exHeight, 0, 0)
   def  vSpace(exs: Int=1): Glyph = new FixedSize.Space(emWidth, exs*exHeight, 0, 0)
+
+  lazy val interWordWidth: Scalar = emWidth*0.4f
+  def  textWordFill(stretch: Scalar): Glyph = new FixedSize.Space(interWordWidth, exHeight, stretch, 0)
 
   @inline private def styled(fontStyle: FontStyle): StyleSheet =
     copy(
