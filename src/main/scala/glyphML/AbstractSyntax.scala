@@ -40,17 +40,18 @@ object AbstractSyntax {
 
   case class Comment(target: String, text: String) extends Tree
 
-  private val atSpace: Regex = """[^\n\s]+""".r
+  private val atSpace: Regex = """[^\n\s]+|[\n\s]+""".r
 
   def sliceText(text: String): Textual = {
-      if (text.exists(_.isSpaceChar)) {
-        val first = text.head.isSpaceChar
-        val last  = text.last.isSpaceChar
+      if (text.exists(_.isWhitespace)) {
+        //val first = text.head.isSpaceChar
+        //val last  = text.last.isSpaceChar
         val words: Seq[String] = atSpace.findAllIn(text).toSeq
-        val w1: Seq[String] = if (first) f"${text.head}%c" +: words else words
-        val lastString: String = f"${text.last}%c"
-        val w2: Seq[String] = if (last) w1 :+ lastString else w1
-        if (w2.length==1) Text(w2.head) else Para(w2)
+        //val w1: Seq[String] = if (first) f"${text.head}%c" +: words else words
+        //val lastString: String = f"${text.last}%c"
+        //val w2: Seq[String] = if (last) w1 :+ lastString else w1
+        //if (w2.length==1) Text(w2.head) else Para(w2)
+        if (words.length==1) Text(words.head) else Para(words)
       }
       else
         Text(text)

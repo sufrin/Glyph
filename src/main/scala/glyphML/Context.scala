@@ -33,6 +33,7 @@ object Context {
 
   implicit class ExtendedAttributeMap(val map: AttributeMap) extends AnyVal {
     def supersede(r: AttributeMap): AttributeMap = SUPERSEDE(map, r)
+    def without(keys: String*): AttributeMap = map.removedAll(keys)
   }
 
   implicit class TypedAttributeMap(val attributes: AttributeMap) extends AnyVal {
@@ -240,10 +241,14 @@ object Context {
 
   }
 
+  /** Invariant: sheet consistent with attributes */
   case class Env(attributes: AttributeMap, sheet: StyleSheet) {
-    lazy val derivedSheet: StyleSheet = attributes.deriveSheet(sheet)
-    lazy val derived:      Env    = Env(attributes,derivedSheet)
-    def updated(newAttributes: AttributeMap): Env = Env(newAttributes supersede attributes, derivedSheet)
+    //lazy val derivedSheet: StyleSheet = attributes.deriveSheet(sheet)
+    //lazy val derived:      Env    = Env(attributes,derivedSheet)
+    def updated(newAttributes: AttributeMap): Env = {
+        val updatedAttributes = newAttributes supersede attributes
+        Env(updatedAttributes, updatedAttributes.deriveSheet(sheet))
+    }
   }
 
 }

@@ -99,7 +99,6 @@ case class StyleSheet
     checkbox = CheckboxStyle(tick = "✔", cross = "✖", on = toggleOn, off = toggleOff)
   )
 
-
   lazy val menuStyle: MenuStyle = MenuStyle(
     button = buttonStyle,
     nestedButton = buttonStyle.copy(frame = decoration.Edged(fg = Brushes.black(width = 0))),
