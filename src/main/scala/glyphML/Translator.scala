@@ -4,6 +4,10 @@ package glyphML
 import glyphXML.PrettyPrint
 
 import org.sufrin.glyph.unstyled.static.BreakableGlyph
+import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
+import org.sufrin.glyph.glyphML.TestTranslator.source
+
+import scala.sys.process.ProcessBuilder.Source
 
 object Translator {
   import org.sufrin.glyph.glyphML.AbstractSyntax._
@@ -68,7 +72,7 @@ object Translator {
     }
 
     tree match {
-      case Element(tag: String, attributes: AttributeMap, child: Seq[Tree]) => translateElement(context)(tag, attributes, child)
+      case Element(scope: Scope, tag: String, attributes: AttributeMap, child: Seq[Tree]) => translateElement(context)(scope, tag, attributes, child)
 
       case Text(text: String)       => List(toText(text))
       case Para(texts: Seq[String]) => texts.map(toText(_))
@@ -77,12 +81,8 @@ object Translator {
 
       case Entity(name: String)     => Nil
 
-      case Comment(target: String, text: String) =>
-        (target, text) match {
-          case ("", "SHEET") =>
-            List(toText(style.toString))
-          case _ => Nil
-        }
+      case Comment(target: String, text: String) => Nil
+
     }
   }
 
@@ -124,7 +124,7 @@ object Translator {
     case _ => false
   }
 
-  def translateElement(context: Env)(tag: String, localAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
+  def translateElement(context: Env)(scope: Scope, tag: String, localAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
     import Context.TypedAttributeMap
     tag match {
       case "div" | "body" =>
@@ -165,12 +165,16 @@ object Translator {
         val tree = localAttributes.Bool("tree", false)
         val env = localAttributes.Bool("env", false)
         val att = localAttributes.Bool("local", false)
+        val mark = localAttributes.String("mark", "")
         val title = localAttributes.String("caption", "debug")
-        if (tree || env || att) println(title)
+        val framed = localAttributes.Brush("framed", Brushes.transparent)
+        if (tree || env || att) println(title, scope)
         if (env) println(PrettyPrint.prettyPrint(derivedContext)) else if (att) println(PrettyPrint.prettyPrint(derivedContext.attributes)) else {}
         if (tree && child.nonEmpty)
           child.filterNot(isEmptyText).foreach{ tree => println(PrettyPrint.prettyPrint(tree)) }
-        child.flatMap(translate(derivedContext))
+        val body0 = child.flatMap(translate(context)) // do the body in the existing context
+        val body = if (body0.size==1) body0.map(_.framed(framed)) else body0
+        (if (mark=="") Nil else List(styled.Label(mark)(derivedContext.sheet).framed(framed))) ++  body
 
       case _ => Nil
     }
@@ -178,31 +182,35 @@ object Translator {
 
   val rootContext = Context.Env(Map.empty, StyleSheet())
 
-  def fromXML(source: scala.xml.Node): Glyph = {
+  def fromXML(source: scala.xml.Node)(implicit location: SourceLocation = sourcePath): Glyph = {
     import glyphXML.PrettyPrint._
-    val ast = AbstractSyntax.fromXML(source)
+    val ast = AbstractSyntax.fromXML(source)(location)
     //ast.prettyPrint()
     val tr = translate(rootContext)(ast)
     NaturalSize.Col(align=Left)(tr)
   }
+
+  implicit def toGlyph(source: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Glyph = Translator.fromXML(source)(location)
+
 }
 
 object TestTranslator extends Application {
+  import Translator._
 
-  Translator.HYPHENATION("flocci/nauci/nihil/ipil/ifica/tion")("/")
-  Translator.HYPHENATION("anti_dis_estab_lish_men_t_arian_ism")("_")
-  Translator.HYPHENATION("averywidewordwithaninfeasible/breakpoint")("/")
+  HYPHENATION("flocci/nauci/nihil/ipil/ifica/tion")("/")
+  HYPHENATION("anti_dis_estab_lish_men_t_arian_ism")("_")
+  HYPHENATION("averywidewordwithaninfeasible/breakpoint")("/")
 
-  val source =
+  val source: Glyph =
     <div fontfamily="Menlo" width="40em" textforeground="red" cdatabackground="pink" cdataforeground="red" frameparagraphs="red.0.dashed(3,3)">
       <p align="justify" hang=" * ">Menlo the rain in spain <span textforeground="green">falls mainly</span> in the plain, and may go further.</p>
       <p align="justify"  fontFamily="Courier" fontscale="0.9" textforeground="black">Courier the <i>italic font</i> rain in spain may well spill over two lines if I am not mistaken.</p>
-      <p align="center"  fontFamily="Arial" fontScale="0.5" textforeground="black">Arial the rain in spain may well spill over two lines if I am not mistaken.</p>
-      <debug xlocal="t" xtree="t"  xcaption="DEBUG1">
-      <!--![CDATA[
+      <p align="center"  fontFamily="Arial" fontScale="0.75" textforeground="black">Arial the rain in spain may well spill over two lines if I am not mistaken.</p>
+      <debug local="t" tree="t" caption="DEBUG1" mark="HERE IS DEBUG1" fontscale="0.9" labelforeground="red" framed="blue.4.dashed(10,10)">
+      <![CDATA[
             this < is
         quoted text >
-      ]]-->
+      ]]>
       </debug>
       <p align="justify"  width="400px" fontFamily="Arial" fontscale="1" textforeground="black">
         This is going to be a long, hyphen_at_able antidisestablishmentarianism tract_ified text <tt textbackground="pink" fontscale="1.1">tele_type font</tt>
@@ -210,20 +218,20 @@ object TestTranslator extends Application {
       </p>
 
       <p align="justify"  width="300px" fontFamily="Menlo" fontscale="0.8" textforeground="black">
-        <debug tree="t">This is going to be a long, hyphen_at_able "antidisestablishmentarianism" tract_ified text that spills ov_er a nar_row mar_gin un_less I am mis_tak_enly in_formed
-        </debug>
+        This is going to be a long, hyphen_at_able "antidisestablishmentarianism" tract_ified text that spills ov_er a nar_row mar_gin un_less I am mis_tak_enly in_formed
       </p>
       <p align="justify"  width="300px" fontFamily="Arial" fontscale="0.8" textforeground="black">
-        This is going to be a long, goddam, floccinaucinihilipilification text that spills ov_er a nar_row mar_gin un_less I am mis_tak_enly in_formed
+        This is going to be a long, goddam, floccinaucinihilipilification text that spills ov_er a  nar_row mar_gin un_less I am mis_tak_enly in_formed
         by the fans of antidisestablishmentarianism or floccinaucinihilipilification at the end of a sen_tence.
       </p>
-      <p align="justify"  width="20em" fontFamily="Arial" fontscale="0.8" textforeground="black">
+      <p align="justify"  width="200px" fontFamily="Arial" fontscale="0.8" textforeground="black">
         This is going to be a long, goddam, floccinaucinihilipilification text that spills ov_er a nar_row mar_gin un_less I am mis_tak_enly in_formed
         by the fans of antidisestablishmentarianism or floccinaucinihilipilification or averywidewordwithaninfeasiblebreakpoint at the end of a sen_tence.
       </p>
     </div>
 
-  val GUI: Glyph = Translator.fromXML(source).enlarged(20).framed(Brushes.blackFrame)
+
+  val GUI: Glyph = source.enlarged(20).framed(Brushes.blackFrame)
 
   def title: String = "Test Translator"
 }

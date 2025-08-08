@@ -2,6 +2,8 @@ package org.sufrin.glyph
 package glyphML
 
 
+import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
+
 import scala.util.matching.Regex
 
 /**
@@ -31,11 +33,16 @@ object AbstractSyntax {
 
   import Context.AttributeMap
 
-  trait Tree {
-    
+  case class Scope(tags: List[String]=Nil) {
+    def nest(tag: String): Scope = Scope(tag::tags)
+    override val toString: String = tags.reverse.mkString("<")
   }
 
-  case class Element(tag: String, attributes: AttributeMap, child: Seq[Tree]) extends Tree
+  trait Tree {
+    val scope: Scope=Scope(Nil)
+  }
+
+  case class Element(override val scope: Scope, tag: String, attributes: AttributeMap, child: Seq[Tree]) extends Tree
 
   sealed trait Textual extends Tree
   case class Text(text: String)        extends Textual
@@ -74,11 +81,12 @@ object AbstractSyntax {
    * Maps a `scala.xml.Node` to a `Tree`, decorating each `Elem` with an appropriate
    * attribute mapping, and normalizing attribute names to lowercase.
    */
-  def fromXML(source: xml.Node): Tree = {
+  def fromXML(outerScope: Scope) (source: xml.Node): Tree = {
     import Context.ExtendedAttributeMap
     source match {
+      case xml.Elem(str, tag, attrs, binding, child@_*)   =>
+           Element(outerScope, tag, attrs.asAttrMap.map { case (k, d) => (k.toLowerCase, d) }, child.map(fromXML(outerScope nest tag)))
       case xml.EntityRef(name)                            => Entity(name)
-      case xml.Elem(str, tag, attrs, binding, child@_*)   => Element(tag, attrs.asAttrMap.map { case (k, d) => (k.toLowerCase, d) }, child.map(fromXML))
       case xml.PCData(text: String)                       => Quoted(text)
       case xml.Text(text)                                 => fromText(text)
       case xml.PCData(text: String)                       => Quoted(text)
@@ -87,9 +95,11 @@ object AbstractSyntax {
     }
   }
 
+  def fromXML(source: xml.Node)(implicit location: SourceLocation = sourcePath): Tree = fromXML(Scope(List(location.toString)))(source)
+
   def main(args: Array[String]): Unit = {
     import org.sufrin.glyph.glyphXML.PrettyPrint._
-    def t(source: xml.Node): Unit = fromXML(source).prettyPrint()
+    def t(source: xml.Node): Unit = fromXML(Scope())(source).prettyPrint()
     t(
       <outer ouTer="outer">
         The outer is outer
