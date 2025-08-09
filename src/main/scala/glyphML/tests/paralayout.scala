@@ -4,21 +4,32 @@ package tests
 
 import glyphML.Translator
 
+import scala.collection.immutable.ListMap
+
 object paralayout extends Application {
     import Translator._
-    val translator = new Translator
+
+    val primitives= new ValueStore {}
+
+    primitives("tag:debug") = Attributes(ListMap("local"->"t", "tree"->"t", "mark"->"generic debug mark", "labelforeground"->"red"))
+    primitives("class:debug") = Attributes(ListMap("a"->"aa", "b"->"bb", "caption" -> "class caption"))
+    primitives("stupid") = Attributes(ListMap())
+
+    locally { println(primitives)}
+
+    val translator = new Translator(primitives)
     import translator._
 
     HYPHENATION("flocci/nauci/nihil/ipil/ifica/tion")("/")
     HYPHENATION("anti_dis_estab_lish_men_t_arian_ism")("_")
     HYPHENATION("averywidewordwithaninfeasible/breakpoint")("/")
 
-    val source: Glyph =
+    lazy val source: Glyph =
       <div fontfamily="Menlo" width="40em" textforeground="red" cdatabackground="pink" cdataforeground="red" frameparagraphs="red.0.dashed(3,3)">
         <p align="justify" hang=" * ">Menlo the rain in spain <span textforeground="green">falls mainly</span> in the plain, and may go further.</p>
         <p align="justify"  fontFamily="Courier" fontscale="0.9" textforeground="black">Courier the <i>italic font</i> rain in spain may well spill over two lines if I am not mistaken.</p>
         <p align="center"  fontFamily="Arial" fontScale="0.75" textforeground="black">Arial the rain in spain may well spill over two lines if I am not mistaken.</p>
-        <debug local="t" tree="t" caption="DEBUG1" mark="HERE IS DEBUG1" fontscale="0.9" labelforeground="red" framed="blue.4.dashed(10,10)">
+        <debug fontscale="0.9"  class="debug" framed="blue.4.dashed(10,10)">
           <![CDATA[
             this < is
         quoted text >
@@ -43,7 +54,7 @@ object paralayout extends Application {
       </div>
 
 
-    val GUI: Glyph = source.enlarged(20).framed(Brushes.blackFrame)
+    lazy val GUI: Glyph = source.enlarged(20).framed(Brushes.blackFrame)
 
     def title: String = "Test Translator"
 

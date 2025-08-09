@@ -51,35 +51,7 @@ object Translator {
 
 import Context.AttributeMap
 
-trait Value {
-  val kind = this.getClass.getSimpleName
-}
 
-object Empty {
-  val attributes = Attributes(Map.empty)
-}
-
-case class Attributes(attributes: AttributeMap) extends Value
-
-class ValueStore {
-  val store = collection.mutable.LinkedHashMap[(String, String), Value]()
-  def update_(name: String, value: Value): Unit = store((name, value.kind)) = value
-
-  def apply(name: String, kind: String): Value = store((name, kind))
-  def getOrElseUpdate(name: String)(value: Value): Value = store.getOrElseUpdate((name, value.kind), value)
-
-  def get(like: Value): String=>Option[Value] = {
-    val kind = like.kind
-    (name: String)=>store.get(name, kind)
-  }
-
-  def getElse(like: Value)(value: => Value): String=>Value =  {
-    get(like) andThen {
-      case None        => value
-      case Some(value) => value
-    }
-  }
-}
 
 class Translator (primitives: ValueStore) {
   import org.sufrin.glyph.glyphML.AbstractSyntax._
@@ -162,10 +134,14 @@ class Translator (primitives: ValueStore) {
 
   def translateElement(context: Env)(scope: Scope, tag: String, givenAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
     import Context.TypedAttributeMap
+    // Calculate effective local attributes: given supersedes self supersedes class supersedes tag:$tag
     val selfid   = givenAttributes.String("id", "")
-    val selfattributes = if (selfid.isEmpty) givenAttributes else primitives.getElse(Empty.attributes)(Empty.attributes)(selfid)
-    val classid = givenAttributes.String("class", "")
-    val localAttributes: AttributeMap
+    val Attributes(selfattributes) = if (selfid.isEmpty) Attributes(givenAttributes) else primitives.getLikeElse(Empty.attributes)(selfid)
+    val classid = selfattributes.String("class", "")
+    val Attributes(classattributes) = if (classid.isEmpty) Attributes(selfattributes) else primitives.getLikeElse(Empty.attributes)(s"class:$classid")
+    val Attributes(tagattributes) =  primitives.getLikeElse(Empty.attributes)(s"tag:$tag")
+
+    val localAttributes: AttributeMap = (givenAttributes supersede selfattributes supersede classattributes supersede tagattributes).without("id", "class")
     tag match {
       case "div" | "body" =>
         val derivedContext = context.updated(localAttributes)
@@ -201,13 +177,13 @@ class Translator (primitives: ValueStore) {
         child.flatMap(translate(derivedContext))
 
       case "debug" =>
-        val derivedContext = context.updated(localAttributes.without("tree", "env", "caption"))
         val tree = localAttributes.Bool("tree", false)
         val env = localAttributes.Bool("env", false)
         val att = localAttributes.Bool("local", false)
         val mark = localAttributes.String("mark", "")
         val title = localAttributes.String("caption", "debug")
         val framed = localAttributes.Brush("framed", Brushes.transparent)
+        val derivedContext = context.updated(localAttributes.without("tree","env", "local","mark","caption"))
         if (tree || env || att) println(title, scope)
         if (env) println(PrettyPrint.prettyPrint(derivedContext)) else if (att) println(PrettyPrint.prettyPrint(derivedContext.attributes)) else {}
         if (tree && child.nonEmpty)
