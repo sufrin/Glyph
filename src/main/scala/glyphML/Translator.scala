@@ -5,23 +5,20 @@ import glyphXML.PrettyPrint
 
 import org.sufrin.glyph.unstyled.static.BreakableGlyph
 import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
-import org.sufrin.glyph.glyphML.TestTranslator.source
 
 import scala.sys.process.ProcessBuilder.Source
 
 object Translator {
-  import org.sufrin.glyph.glyphML.AbstractSyntax._
-  import Context._
   implicit class SemanticStyleSheet(val style: StyleSheet) extends AnyVal {
     def makeText(text: String): Glyph = unstyled.Text(text, style.textFont, fg=style.textForegroundBrush, bg=style.textBackgroundBrush)
   }
 
   object HYPHENATION {
-    // TODO: memoization, automation, ...
+    // TODO: polyglot, automation, ...
     def forText(text: String, style: StyleSheet): Option[Glyph] = {
       val discretionaryWordBreak = style.discretionaryWordBreak
 
-      @inline def discretionary(text: String): Option[Glyph] =
+      @inline def discretionary: Option[Glyph] =
         if (text.contains(discretionaryWordBreak)) {
           val parts = text.split(discretionaryWordBreak)
           val glyphs = parts.toSeq.map(style.makeText(_))
@@ -32,15 +29,14 @@ object Translator {
 
       hyphenation.get(text) match {
         case Some(parts) =>
-          println(s"$text->${parts.toList}")
+          println(s"$text->[${parts.toList.mkString(", ")}]")
           val glyphs = parts.toSeq.map(style.makeText(_))
           val hyphen = style.makeText("-")
           Some(new BreakableGlyph(hyphen, glyphs))
 
         case None =>
-          discretionary(text)
+          discretionary
       }
-
 
     }
 
@@ -50,6 +46,46 @@ object Translator {
       hyphenation.update(word.replaceAll(punct,""), word.split(punct))
 
   }
+
+}
+
+import Context.AttributeMap
+
+trait Value {
+  val kind = this.getClass.getSimpleName
+}
+
+object Empty {
+  val attributes = Attributes(Map.empty)
+}
+
+case class Attributes(attributes: AttributeMap) extends Value
+
+class ValueStore {
+  val store = collection.mutable.LinkedHashMap[(String, String), Value]()
+  def update_(name: String, value: Value): Unit = store((name, value.kind)) = value
+
+  def apply(name: String, kind: String): Value = store((name, kind))
+  def getOrElseUpdate(name: String)(value: Value): Value = store.getOrElseUpdate((name, value.kind), value)
+
+  def get(like: Value): String=>Option[Value] = {
+    val kind = like.kind
+    (name: String)=>store.get(name, kind)
+  }
+
+  def getElse(like: Value)(value: => Value): String=>Value =  {
+    get(like) andThen {
+      case None        => value
+      case Some(value) => value
+    }
+  }
+}
+
+class Translator (primitives: ValueStore) {
+  import org.sufrin.glyph.glyphML.AbstractSyntax._
+  import Context._
+  import Translator._
+
 
   /**
    *  Translate this tree (and its descendants, if any) to `Glyph`s
@@ -124,8 +160,12 @@ object Translator {
     case _ => false
   }
 
-  def translateElement(context: Env)(scope: Scope, tag: String, localAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
+  def translateElement(context: Env)(scope: Scope, tag: String, givenAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
     import Context.TypedAttributeMap
+    val selfid   = givenAttributes.String("id", "")
+    val selfattributes = if (selfid.isEmpty) givenAttributes else primitives.getElse(Empty.attributes)(Empty.attributes)(selfid)
+    val classid = givenAttributes.String("class", "")
+    val localAttributes: AttributeMap
     tag match {
       case "div" | "body" =>
         val derivedContext = context.updated(localAttributes)
@@ -190,48 +230,7 @@ object Translator {
     NaturalSize.Col(align=Left)(tr)
   }
 
-  implicit def toGlyph(source: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Glyph = Translator.fromXML(source)(location)
+  implicit def toGlyph(source: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Glyph = fromXML(source)(location)
 
 }
 
-object TestTranslator extends Application {
-  import Translator._
-
-  HYPHENATION("flocci/nauci/nihil/ipil/ifica/tion")("/")
-  HYPHENATION("anti_dis_estab_lish_men_t_arian_ism")("_")
-  HYPHENATION("averywidewordwithaninfeasible/breakpoint")("/")
-
-  val source: Glyph =
-    <div fontfamily="Menlo" width="40em" textforeground="red" cdatabackground="pink" cdataforeground="red" frameparagraphs="red.0.dashed(3,3)">
-      <p align="justify" hang=" * ">Menlo the rain in spain <span textforeground="green">falls mainly</span> in the plain, and may go further.</p>
-      <p align="justify"  fontFamily="Courier" fontscale="0.9" textforeground="black">Courier the <i>italic font</i> rain in spain may well spill over two lines if I am not mistaken.</p>
-      <p align="center"  fontFamily="Arial" fontScale="0.75" textforeground="black">Arial the rain in spain may well spill over two lines if I am not mistaken.</p>
-      <debug local="t" tree="t" caption="DEBUG1" mark="HERE IS DEBUG1" fontscale="0.9" labelforeground="red" framed="blue.4.dashed(10,10)">
-      <![CDATA[
-            this < is
-        quoted text >
-      ]]>
-      </debug>
-      <p align="justify"  width="400px" fontFamily="Arial" fontscale="1" textforeground="black">
-        This is going to be a long, hyphen_at_able antidisestablishmentarianism tract_ified text <tt textbackground="pink" fontscale="1.1">tele_type font</tt>
-        that spills ov_er a nar_row mar_gin un_less I am mis_tak_enly in_formed.
-      </p>
-
-      <p align="justify"  width="300px" fontFamily="Menlo" fontscale="0.8" textforeground="black">
-        This is going to be a long, hyphen_at_able "antidisestablishmentarianism" tract_ified text that spills ov_er a nar_row mar_gin un_less I am mis_tak_enly in_formed
-      </p>
-      <p align="justify"  width="300px" fontFamily="Arial" fontscale="0.8" textforeground="black">
-        This is going to be a long, goddam, floccinaucinihilipilification text that spills ov_er a  nar_row mar_gin un_less I am mis_tak_enly in_formed
-        by the fans of antidisestablishmentarianism or floccinaucinihilipilification at the end of a sen_tence.
-      </p>
-      <p align="justify"  width="200px" fontFamily="Arial" fontscale="0.8" textforeground="black">
-        This is going to be a long, goddam, floccinaucinihilipilification text that spills ov_er a nar_row mar_gin un_less I am mis_tak_enly in_formed
-        by the fans of antidisestablishmentarianism or floccinaucinihilipilification or averywidewordwithaninfeasiblebreakpoint at the end of a sen_tence.
-      </p>
-    </div>
-
-
-  val GUI: Glyph = source.enlarged(20).framed(Brushes.blackFrame)
-
-  def title: String = "Test Translator"
-}
