@@ -150,9 +150,8 @@ class Translator (val primitives: ValueStore) {
         val hang = derivedContext.attributes.String("hang", "")
         val hangGlyph = if (hang.isEmpty) None else Some(styled.Label(hang)(derivedContext.sheet))
         val theGlyph = Paragraph.fromGlyphs(derivedContext.sheet, words, hangGlyph).enlargedBy(0f, derivedContext.sheet.parSkip)
-        val frame = derivedContext.attributes.Brush("frameparagraphs", Brushes.transparent)
+        val frame = derivedContext.attributes.Brush("framed", Brushes.transparent)
         List(if (frame.getAlpha==0) theGlyph else theGlyph.framed(frame))
-      //Paragraph.fromGlyphs(sheet, targets.map(_.asGlyph), parHang).enlargedBy(0f, sheet.parSkip)
 
       case "span" =>
         val derivedContext = context.updated(localAttributes)

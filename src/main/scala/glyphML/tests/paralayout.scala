@@ -24,7 +24,7 @@ object paralayout extends Application {
       def Column(glyphs: Seq[(StyleSheet=>Glyph)]): StyleSheet=>Glyph =
       {case style: StyleSheet  => {
         val refied = glyphs.map(_.apply(style))
-        Col(align=Center)(refied)
+        Col(align=Left)(refied)
       }}
 
     }
@@ -37,10 +37,10 @@ object paralayout extends Application {
     HYPHENATION("anti_dis_estab_lish_men_t_arian_ism")("_")
     HYPHENATION("averywidewordwithaninfeasible/breakpoint")("/")
 
-    //Define("tag:debug",   ListMap("local"->"t", "tree"->"t", "mark"->"generic debug mark", "labelforeground"->"red"))
-    Define("class:debug", ListMap("a"->"aa", "b"->"bb", "caption" -> "class caption"))
-    //Define("class:but",   ListMap("buttonbackground"->"yellow", "fontscale"->"0.7"))
-    Define("class:but",   <attributes buttonbackground="yellow" fontscale="0.7"/>)
+    // Define("tag:debug",   ListMap("local"->"t", "tree"->"t", "mark"->"generic debug mark", "labelforeground"->"red"))
+    // Define("class:debug", ListMap("a"->"aa", "b"->"bb", "caption" -> "class caption"))
+    // Define("class:but",   ListMap("buttonbackground"->"yellow", "fontscale"->"0.7"))
+    // Define("class:but",   <attributes buttonbackground="yellow" fontscale="0.7"/>)
 
     locally { for { num<-1 to 8} Define(s"B$num", delayed.TextButton(s"B$num"){_=>})}
     locally { for { num<-1 to 5} Define(s"L$num", delayed.Label(s"L$num"))}
@@ -53,22 +53,21 @@ object paralayout extends Application {
                         delayed.TextButton("Nothing"){_=>})))
 
   lazy val source: Glyph =
-      <div fontfamily="Menlo" width="40em" textforeground="red" cdatabackground="pink" cdataforeground="red" frameparagraphs="red.0.dashed(3,3)">
-        <attributes id="tag:debug" a="aaaaa" b="bbbbb" caption="The wage of Sin is Death" local="t" mark="locally defined mark"/>
-        <attributes id="class:debug" a="aaaaa" b="bbbbb" caption="Class caption" local="t" mark="locally defined mark"/>
+      <div fontfamily="Menlo" width="40em" textforeground="red" cdatabackground="pink" cdataforeground="red">
+        <attributes id="class:but" buttonbackground="yellow" buttonforeground="red" fontscale="0.7"/>
+        <attributes id="tag:debug" caption="Debugging" local="t" mark="MARK #1"/>
+        <attributes id="tag:p" framed="red"/>
+
         <p align="justify" hang=" * ">Menlo the rain in spain <span textforeground="green">falls mainly</span> in the plain, and may go further.</p>
         <p align="justify"  fontFamily="Courier" fontscale="0.9" textforeground="black">Courier the <i>italic font</i> rain in spain may well spill over two lines if I am not mistaken.</p>
         <p align="center"  fontFamily="Arial" fontScale="0.75" textforeground="black">Arial the rain in spain may well spill over two lines if I am not mistaken.</p>
         <debug fontscale="0.9"  framed="blue.4.dashed(10,10)">
-          <![CDATA[
-            this < is
-        quoted text >
-      ]]>
           <glyph gid="B1" class="but"/>
           <glyph gid="B4" id="herebut"/>
-          <glyph gid="buttoncol"/>
+          <glyph gid="buttoncol" class="but"/>
           <glyph gid="unk"/>
         </debug>
+
         <attributes id="tag:p" align="right" width="400px" fontFamily="Courier" >
           <p  fontscale="1" textforeground="black">
             This is going to be a long, hyphen_at_able antidisestablishmentarianism tract_ified text <tt textbackground="pink" fontscale="1.1">tele_type font</tt>
