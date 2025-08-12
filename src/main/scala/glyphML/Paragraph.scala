@@ -151,7 +151,7 @@ object Paragraph {
             val breakPoint: Int = breakable.maximal(maxWidthfloor-interWordWidth-breakable.hyphen.w)
             if (breakPoint==0)  {
               // element splitting is infeasible: just clip
-              SourceDefault.warn(s"Clipped at infeasible split: $breakable")
+              SourceDefault.fine(s"Clipped at infeasible split: $breakable")
               galley += CLIPWIDTH(maxWidthfloor)(NaturalSize.Row(align=Mid, bg=Brushes.pink)(breakable.glyphs))
               words.nextElement()
             }
@@ -162,7 +162,7 @@ object Paragraph {
 
           case other =>
             // element is unfittable: just clip it
-            SourceDefault.warn(s"Unfittable: $other")
+            SourceDefault.fine(s"Unfittable: $other")
             galley += CLIPWIDTH(maxWidthfloor)(other).framed(Brushes.red, bg=Brushes.pink)
             words.nextElement()
         }

@@ -11,16 +11,23 @@ trait Value {
   val kind = this.getClass.getSimpleName
 }
 
-object Empty {
-  val attributes = Attributes(Map.empty)
-  val glyphValue = GlyphValue{ cxt => INVISIBLE() }
+/**
+ * Prototypes/default values
+ */
+
+object StoreType {
+  val AttributeMap = StoredAttributeMap(Map.empty)
+  val GlyphGenerator = StoredGlyphGenerator{ cxt => INVISIBLE() }
+  val GlyphConstant = StoredGlyphConstant{ INVISIBLE() }
 }
 
-case class Attributes(attributes: AttributeMap) extends Value
-case class GlyphValue(apply: Env => Glyph) extends Value
-case class StringValue(string: String) extends Value
+case class StoredAttributeMap(attributes: AttributeMap) extends Value
+case class StoredGlyphGenerator(apply: StyleSheet => Glyph) extends Value  { override val kind: String="Glyph"}
+case class StoredGlyphConstant(glyph: Glyph)                extends Value  { override val kind: String="Glyph"}
+case class StoredString(string: String) extends Value
 
-class ValueStore {
+
+class ValueStore { thisStore =>
   private val store = collection.mutable.LinkedHashMap[(String, String), Value]()
 
   def update(name: String, value: Value): Unit = store((name, value.kind)) = value
@@ -30,17 +37,32 @@ class ValueStore {
   def apply(name: Regex, kind: Regex): Iterator[((String, String), Value)] =
       store.iterator.filter{ case ((n,k),v) => name.matches(n) }.filter{ case ((n,k),v) => kind.matches(k) }
 
-  def getLikeOrUpdate(value: Value)(name: String): Value = store.getOrElseUpdate((name, value.kind), value)
+  def getKindElseUpdate(value: Value)(name: String): Value = store.getOrElseUpdate((name, value.kind), value)
 
-  def getLike(like: Value): String=>Option[Value] = {
+  def getKind(like: Value): String=>Option[Value] = {
     val kind = like.kind
     (name: String)=>store.get(name, kind)
   }
 
-  def getLikeElse(value: Value): String=>Value =  {
-    getLike(value) andThen {
+  def getKindElse(value: Value): String=>Value =  {
+    getKind(value) andThen {
       case None        => value
       case Some(value) => value
     }
   }
+
+  def remove(like: Value)(name: String): Unit = {
+    store.remove((like.kind, name))
+  }
+
+  def Define(name: String, elem: scala.xml.Elem): Unit =
+  { val thing = elem.attributes.asAttrMap
+    thisStore(name) = StoredAttributeMap(thing)
+    import org.sufrin.glyph.glyphXML.PrettyPrint._;store.prettyPrint()
+  }
+  def Define(name: String, thing: AttributeMap): Unit      = thisStore(name) = StoredAttributeMap(thing)
+  def Define(name: String, thing: Glyph): Unit             = thisStore(name) = StoredGlyphConstant(thing)
+  def Define(name: String, thing: StyleSheet=>Glyph): Unit = thisStore(name) = StoredGlyphGenerator(thing)
+  def Define(name: String, thing: String): Unit            = thisStore(name) = StoredString(thing)
+
 }

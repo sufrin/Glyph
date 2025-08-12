@@ -5,12 +5,18 @@ import glyphXML.PrettyPrint
 
 import org.sufrin.glyph.unstyled.static.BreakableGlyph
 import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
+import org.sufrin.glyph.GlyphTypes.Scalar
+import org.sufrin.glyph.glyphXML.Translation.AttributeMap
+import org.sufrin.logging.SourceDefault
 
-import scala.sys.process.ProcessBuilder.Source
 
 object Translator {
   implicit class SemanticStyleSheet(val style: StyleSheet) extends AnyVal {
     def makeText(text: String): Glyph = unstyled.Text(text, style.textFont, fg=style.textForegroundBrush, bg=style.textBackgroundBrush)
+  }
+
+  implicit class IntelligibleAttributeMap(val attrs: AttributeMap) extends AnyVal {
+    def toSource: String = attrs.toSeq.map{case (k: String,d: String)=>s"$k=\"$d\"" }.mkString(" ")
   }
 
   object HYPHENATION {
@@ -49,15 +55,11 @@ object Translator {
 
 }
 
-import Context.AttributeMap
 
-
-
-class Translator (primitives: ValueStore) {
+class Translator (val primitives: ValueStore) {
   import org.sufrin.glyph.glyphML.AbstractSyntax._
   import Context._
   import Translator._
-
 
   /**
    *  Translate this tree (and its descendants, if any) to `Glyph`s
@@ -81,16 +83,11 @@ class Translator (primitives: ValueStore) {
 
     tree match {
       case Element(scope: Scope, tag: String, attributes: AttributeMap, child: Seq[Tree]) => translateElement(context)(scope, tag, attributes, child)
-
       case Text(text: String)       => List(toText(text))
       case Para(texts: Seq[String]) => texts.map(toText(_))
-
       case Quoted(text: String)     => List(translateQuoted(context)(text))
-
       case Entity(name: String)     => Nil
-
       case Comment(target: String, text: String) => Nil
-
     }
   }
 
@@ -136,10 +133,10 @@ class Translator (primitives: ValueStore) {
     import Context.TypedAttributeMap
     // Calculate effective local attributes: given supersedes self supersedes class supersedes tag:$tag
     val selfid   = givenAttributes.String("id", "")
-    val Attributes(selfattributes) = if (selfid.isEmpty) Attributes(givenAttributes) else primitives.getLikeElse(Empty.attributes)(selfid)
+    val StoredAttributeMap(selfattributes) = if (selfid.isEmpty) StoredAttributeMap(givenAttributes) else primitives.getKindElse(StoreType.AttributeMap)(selfid)
     val classid = selfattributes.String("class", "")
-    val Attributes(classattributes) = if (classid.isEmpty) Attributes(selfattributes) else primitives.getLikeElse(Empty.attributes)(s"class:$classid")
-    val Attributes(tagattributes) =  primitives.getLikeElse(Empty.attributes)(s"tag:$tag")
+    val StoredAttributeMap(classattributes) = if (classid.isEmpty) StoredAttributeMap(selfattributes) else primitives.getKindElse(StoreType.AttributeMap)(s"class:$classid")
+    val StoredAttributeMap(tagattributes) =  primitives.getKindElse(StoreType.AttributeMap)(s"tag:$tag")
 
     val localAttributes: AttributeMap = (givenAttributes supersede selfattributes supersede classattributes supersede tagattributes).without("id", "class")
     tag match {
@@ -192,6 +189,55 @@ class Translator (primitives: ValueStore) {
         val body = if (body0.size==1) body0.map(_.framed(framed)) else body0
         (if (mark=="") Nil else List(styled.Label(mark)(derivedContext.sheet).framed(framed))) ++  body
 
+      case "glyph" =>
+        // Shown as the named (by `gid`) glyph, with baseline as the average of the ambient textFont baseline and the height of the named glyph
+        val derivedContext = context.updated(localAttributes)
+        val ambientHeight = derivedContext.sheet.textFont.getMetrics.getHeight
+        @inline def raiseBy(by: Scalar)(glyph: Glyph): Glyph = glyph.withBaseline(by)
+        val id = givenAttributes.String("gid", "")
+        primitives.getKind(StoreType.GlyphGenerator)(id) match {
+          case Some(StoredGlyphGenerator(generator)) =>
+            val glyph = generator(derivedContext.sheet)
+            List(raiseBy((ambientHeight+glyph.h)*0.5f)(glyph))
+          case Some(StoredGlyphConstant(glyph)) =>
+            List(raiseBy((ambientHeight+glyph.h)*0.5f)(glyph))
+          case Some(other) =>
+            SourceDefault.error(s"Unexpected stored value at $scope<glyph gid=\"$id\" ...")
+            Nil
+          case None =>
+            SourceDefault.warn(s"No such glyph at $scope<glyph gid=\"$id\" ...")
+            Nil
+        }
+
+      case "attributes" =>
+        val attrId = givenAttributes.String("id", "")
+        val warn = givenAttributes.Bool("warn", true)
+
+        if (attrId.nonEmpty) {
+          val before =  primitives.getKind(StoreType.AttributeMap)(attrId)
+          if (child.isEmpty) {// global definition
+            if (warn && before.isDefined) SourceDefault.warn(s"Overriding primitive assignment $scope<attributes ${givenAttributes.toSource}")
+            primitives(attrId) = StoredAttributeMap(givenAttributes.without("id"))
+            Nil
+          } else // scoped definition
+          { before match {
+              case None =>
+                primitives(attrId) = StoredAttributeMap(givenAttributes.without("id"))
+                val body = child.flatMap(translate(context))
+                primitives.remove(StoreType.AttributeMap)(attrId)
+                body
+              case Some(restore) =>
+                if (warn) SourceDefault.warn(s"Overriding scoped primitive $scope<attributes ${givenAttributes.toSource}")
+                primitives(attrId) = StoredAttributeMap(givenAttributes.without("id"))
+                val body = child.flatMap(translate(context))
+                primitives(attrId) = restore
+                body
+            }
+          }
+        }
+        else Nil
+
+
       case _ => Nil
     }
   }
@@ -208,5 +254,8 @@ class Translator (primitives: ValueStore) {
 
   implicit def toGlyph(source: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Glyph = fromXML(source)(location)
 
+
 }
+
+
 
