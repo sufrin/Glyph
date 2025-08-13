@@ -55,11 +55,6 @@ object AbstractSyntax {
   case class Comment(target: String, text: String) extends Tree
 
   private val chunk: Regex = """[^\n\s]+|[\n\s]+""".r
-  private val punct: Regex = """[^\.\";:',!?]+|[\.\";:',!?]+""".r
-  private val punctuation  = ".\";:',!?".toList.map(_.toString)
-  private def isPunctuated(word: String): Boolean = { // pre: word.nonEmpty
-    !word.head.isWhitespace && punctuation.exists{p => word.startsWith(p) ||  word.endsWith(p) }
-  }
 
   /**
    * Slice a text into its chunks, unpacking punctuation adjacent to non-space chunks.
@@ -67,11 +62,7 @@ object AbstractSyntax {
    * TODO: make this more efficient.
    */
   def fromText(text: String): Textual = {
-        val chunks: Seq[String] = chunk.findAllIn(text).toSeq
-        val words =
-          chunks.flatMap {
-            chunk => if (isPunctuated(chunk)) punct.findAllIn(chunk).toSeq else List(chunk)
-        }
+        val words: Seq[String] = chunk.findAllIn(text).toSeq
         if (words.length==1) Text(words.head) else Para(words)
       }
 

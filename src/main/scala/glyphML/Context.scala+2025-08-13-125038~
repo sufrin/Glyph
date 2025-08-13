@@ -203,20 +203,20 @@ object Context {
           .copy(
             fontScale       = Float("fontscale", 1.0f),
 
-            textFontStyle   = FontFamily.styleNamed(String("textstyle", String("fontstyle", ""))),
-            textFontFamily  = FontFamily(String("textfontfamily", String("fontfamily", sheet.textFontFamily.family))),
-            textFontSize    = Float("textfontsize", Float("fontsize", sheet.textFontSize)),
+            textFontStyle   = FontFamily.styleNamed(String("fontstyle", String("textstyle", ""))),
+            textFontFamily  = FontFamily(String("fontfamily", String("textfontfamily", sheet.textFontFamily.family))),
+            textFontSize    = Float("fontsize", Float("textfontsize", sheet.textFontSize)),
 
-            labelFontStyle  = FontFamily.styleNamed(String("labelstyle", String("fontstyle", ""))),
-            labelFontFamily = FontFamily(String("labelfontfamily", String("fontfamily", sheet.labelFontFamily.family))),
-            labelFontSize   = Float("labelfontsize", Float("fontsize", sheet.labelFontSize)),
+            labelFontStyle  = FontFamily.styleNamed(String("fontstyle", String("labelstyle", ""))),
+            labelFontFamily = FontFamily(String("fontfamily", String("labelfontfamily", sheet.labelFontFamily.family))),
+            labelFontSize   = Float("fontsize", Float("labelfontsize", sheet.labelFontSize)),
 
-            buttonFontStyle  = FontFamily.styleNamed(String("buttonstyle", String("fontstyle", ""))),
-            buttonFontFamily = FontFamily(String("buttonfontfamily", String("fontfamily", sheet.buttonFontFamily.family))),
-            buttonFontSize   = Float("buttonfontsize", Float("fontsize", sheet.buttonFontSize)),
+            buttonFontStyle  = FontFamily.styleNamed(String("fontstyle", String("buttonstyle", ""))),,
+            buttonFontFamily = FontFamily(String("fontfamily", String("buttonfontfamily", sheet.buttonFontFamily.family))),
+            buttonFontSize   = Float("fontsize", Float("buttonfontsize", sheet.buttonFontSize)),
 
-            cdataFontStyle  = FontFamily.styleNamed(String("cdatastyle", String("fontstyle", ""))),
-            cdataFontFamily = FontFamily(String("cdatafontfamily", String("fontfamily", sheet.cdataFontFamily.family))),
+            cdataFontStyle  = FontFamily.styleNamed(String("fontstyle", String("cdatastyle", ""))),
+            cdataFontFamily = FontFamily(String("fontfamily", String("cdatafontfamily", sheet.cdataFontFamily.family))),
             cdataFontSize   = Float("fontsize", Float("cdatafontsize", sheet.cdataFontSize)),
             )
 

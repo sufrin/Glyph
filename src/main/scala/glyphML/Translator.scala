@@ -7,7 +7,9 @@ import org.sufrin.glyph.unstyled.static.BreakableGlyph
 import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
 import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.glyph.glyphXML.Translation.AttributeMap
-import org.sufrin.logging.SourceDefault
+import org.sufrin.logging.{Loggable, SourceDefault}
+
+import scala.util.matching.Regex
 
 
 object Translator {
@@ -19,29 +21,64 @@ object Translator {
     def toSource: String = attrs.toSeq.map{case (k: String,d: String)=>s"$k=\"$d\"" }.mkString(" ")
   }
 
-  object HYPHENATION {
+
+  private val punctChar  = ".\";:',!?".toList
+
+  private def isPunctuated(text: String): Boolean = // pre: word.nonEmpty
+    !text.head.isWhitespace && punctChar.contains(text.head) || punctChar.contains(text.last)
+
+  private def punctSplit(text: String): (String, String, String) = {
+    val pre = text.takeWhile{punctChar.contains(_)}.mkString("")
+    val mid = text.dropWhile{punctChar.contains(_)}
+    val quoted = mid.takeWhile{ p => !punctChar.contains(p)}.mkString("")
+    val suff = mid.dropWhile{ p => !punctChar.contains(p)}.mkString("")
+    (pre, quoted, suff)
+  }
+
+
+  object HYPHENATION extends Loggable {
     // TODO: polyglot, automation, ...
     def forText(text: String, style: StyleSheet): Option[Glyph] = {
       val discretionaryWordBreak = style.discretionaryWordBreak
 
-      @inline def discretionary: Option[Glyph] =
+      @inline def discretionary: Option[Seq[String]] =
         if (text.contains(discretionaryWordBreak)) {
-          val parts = text.split(discretionaryWordBreak)
-          val glyphs = parts.toSeq.map(style.makeText(_))
-          val hyphen = style.makeText("-")
-          Some(new BreakableGlyph(hyphen, glyphs))
+          val parts = text.split(discretionaryWordBreak).toSeq
+          Some(parts)
         }
         else None
 
-      hyphenation.get(text) match {
+      discretionary match {
         case Some(parts) =>
-          println(s"$text->[${parts.toList.mkString(", ")}]")
-          val glyphs = parts.toSeq.map(style.makeText(_))
           val hyphen = style.makeText("-")
+          val glyphs = parts.toSeq.map(style.makeText(_))
           Some(new BreakableGlyph(hyphen, glyphs))
 
         case None =>
-          discretionary
+          hyphenation.get(text) match {
+          case Some(parts) =>
+            finest(s"$text->[${parts.toList.mkString(", ")}]")
+            val glyphs = parts.toSeq.map(style.makeText(_))
+            val hyphen = style.makeText("-")
+            Some(new BreakableGlyph(hyphen, glyphs))
+
+          case None =>
+            val (pre, quoted, suff) = punctSplit(text)
+            hyphenation.get(quoted) match {
+              case Some(parts) =>
+                val last = parts.length - 1
+                finest(s"$text->($pre,$quoted,$suff) ==>")
+                val pieces =
+                  for {i <- 0 to last} yield
+                      if (i == 0) pre + parts(i) else if (i == last) parts(i) + suff else parts(i)
+                finest(s"  $text->[${pieces.toList.mkString(", ")}]")
+                val glyphs = pieces.map(style.makeText(_))
+                val hyphen = style.makeText("-")
+                Some(new BreakableGlyph(hyphen, glyphs))
+
+              case None => None
+            }
+        }
       }
 
     }
@@ -147,7 +184,7 @@ class Translator (val primitives: ValueStore) {
       case "p" =>
         val derivedContext = context.updated(localAttributes)
         val words = child.flatMap(translate(derivedContext))
-        val hang = derivedContext.attributes.String("hang", "")
+        val hang  = derivedContext.attributes.String("hang", "")
         val hangGlyph = if (hang.isEmpty) None else Some(styled.Label(hang)(derivedContext.sheet))
         val theGlyph = Paragraph.fromGlyphs(derivedContext.sheet, words, hangGlyph).enlargedBy(0f, derivedContext.sheet.parSkip)
         val frame = derivedContext.attributes.Brush("framed", Brushes.transparent)
@@ -179,7 +216,7 @@ class Translator (val primitives: ValueStore) {
         val mark = localAttributes.String("mark", "")
         val title = localAttributes.String("caption", "debug")
         val framed = localAttributes.Brush("framed", Brushes.transparent)
-        val derivedContext = context.updated(localAttributes.without("tree","env", "local","mark","caption"))
+        val derivedContext = context.updated(localAttributes.without("tree", "env", "local", "mark", "caption"))
         if (tree || env || att) println(title, scope)
         if (env) println(PrettyPrint.prettyPrint(derivedContext)) else if (att) println(PrettyPrint.prettyPrint(derivedContext.attributes)) else {}
         if (tree && child.nonEmpty)

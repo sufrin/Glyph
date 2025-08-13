@@ -55,14 +55,14 @@ class ValueStore { thisStore =>
     store.remove((like.kind, name))
   }
 
-  def Define(name: String, elem: scala.xml.Elem): Unit =
+  def update(name: String, elem: scala.xml.Elem): Unit =
   { val thing = elem.attributes.asAttrMap
     thisStore(name) = StoredAttributeMap(thing)
-    import org.sufrin.glyph.glyphXML.PrettyPrint._;store.prettyPrint()
+    //import org.sufrin.glyph.glyphXML.PrettyPrint._;store.prettyPrint()
   }
-  def Define(name: String, thing: AttributeMap): Unit      = thisStore(name) = StoredAttributeMap(thing)
-  def Define(name: String, thing: Glyph): Unit             = thisStore(name) = StoredGlyphConstant(thing)
-  def Define(name: String, thing: StyleSheet=>Glyph): Unit = thisStore(name) = StoredGlyphGenerator(thing)
-  def Define(name: String, thing: String): Unit            = thisStore(name) = StoredString(thing)
+  def update(name: String, thing: AttributeMap): Unit      = thisStore(name) = StoredAttributeMap(thing)
+  def update(name: String, thing: Glyph): Unit             = thisStore(name) = StoredGlyphConstant(thing)
+  def update(name: String, thing: StyleSheet=>Glyph): Unit = thisStore(name) = StoredGlyphGenerator(thing)
+  def update(name: String, thing: String): Unit            = thisStore(name) = StoredString(thing)
 
 }
