@@ -62,7 +62,7 @@ object paralayout extends Application {
         <attributes id="class:fat"  fontscale="1.4"  align="justify"/>
         <attributes id="class:narrow"  align="justify"  width="200px"  textforeground="black"/>
         <macro tag="mymacro" p1="default1" p2="default2">
-          Here is the body
+          <debug local="t"/><p>Here is the body of mymacro</p><?a beebee?>
         </macro>
 
         <p hang=" * ">
@@ -102,7 +102,7 @@ object paralayout extends Application {
 
 
     lazy val GUI: Glyph = {
-      logging.SourceDefault.level=WARN
+      logging.SourceDefault.level=INFO
       Translator.HYPHENATION.level=WARN
       source.enlarged(20).framed(Brushes.blackFrame)
     }

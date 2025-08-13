@@ -136,6 +136,9 @@ class Translator (val primitives: ValueStore) {
         val StoredString(text) = primitives.getKindElse(StoreType.String)(name)
         List(style.makeText(text))
       case Comment(target: String, text: String) => Nil
+      case MacroParam(target, text) =>
+        SourceDefault.warn(s"Free flying <?$target $text?>")
+        Nil
     }
   }
 
@@ -293,34 +296,37 @@ class Translator (val primitives: ValueStore) {
         Nil
 
       case _ =>
-        def evalMacro(tag: String): Option[Seq[Glyph]] =
+        @inline def translateMacro(tag: String): Option[Seq[Glyph]] =
             primitives.getKind(StoreType.Macro)(tag) match {
               case None => None
-              case Some(StoredMacro(Macro(scope, mtag, attributes, body))) =>
-                SourceDefault.warn(s"Invoking $mtag at $scope<$tag ...\n")
-                Some(Nil)
-              case other => None
+              case Some(StoredMacro(abstraction)) =>
+                val derivedContext = context.updated(localAttributes)
+                SourceDefault.info(s"Invoking ${abstraction.tag} at $scope<$tag ...\n")
+                Some(abstraction.expansion(localAttributes, child).flatMap(translate(derivedContext)))
+              case _ =>
+                SourceDefault.error(s"Internal error at $scope<$tag ...\n")
+                None
             }
 
-        def evalElement(tag: String): Option[Seq[Glyph]] =
+        @inline def translateElement(tag: String): Option[Seq[Glyph]] =
             primitives.getKind(StoreType.Element)(tag) match {
               case None => None
               case Some(StoredElement(element)) =>
                 val derivedContext = context.updated(localAttributes)
                 Some(translate(derivedContext)(element))
-              case other => None
+              case _ =>
+                SourceDefault.error(s"Internal error at $scope<$tag ...\n")
+                None
             }
 
-       def evalMistake(tag: String): Option[Seq[Glyph]] = {
-           SourceDefault.warn(s"No such tag at $scope<$tag ...\n")
+        @inline def mistake(tag: String): Option[Seq[Glyph]] = {
+           SourceDefault.warn(s"No such tag at $scope<$tag ...")
            Some(Nil)
-       }
+        }
 
-       (evalMacro(tag) orElse evalElement(tag) orElse evalMistake(tag)).get
+       (translateMacro(tag) orElse translateElement(tag) orElse mistake(tag)).get
     }
   }
-
-
 
   val rootContext = Context.Env(Map.empty, StyleSheet())
 

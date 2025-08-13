@@ -48,6 +48,8 @@ object AbstractSyntax {
   case class Text(text: String)        extends Textual
   case class Para(texts: Seq[String])  extends Textual
 
+  case class MacroParam(target: String, text: String)  extends Textual // we want to experiment with naming conventions
+
   case class Quoted(text: String) extends Tree
 
   case class Entity(name: String) extends Tree
@@ -79,9 +81,8 @@ object AbstractSyntax {
       case xml.EntityRef(name)                            => Entity(name)
       case xml.PCData(text: String)                       => Quoted(text)
       case xml.Text(text)                                 => fromText(text)
-      case xml.PCData(text: String)                       => Quoted(text)
       case xml.Comment(text: String)                      => Comment("", text)
-      case xml.ProcInstr(target, text)                    => Comment(target, text)
+      case xml.ProcInstr(target, text)                    => MacroParam(target, text)
     }
   }
 
