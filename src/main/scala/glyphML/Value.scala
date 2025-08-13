@@ -23,14 +23,16 @@ object StoreType {
   val GlyphConstant   = StoredGlyphConstant{ INVISIBLE() }
   val String          = StoredString("")
   val Element         = StoredElement(AbstractSyntax.Element(scope=Scope(List(sourcePath.toString)), tag="", attributes=Map.empty, child=Nil))
+  val Macro           = StoredMacro(null)
 }
 
 
-case class StoredElement(element: AbstractSyntax.Element) extends Value
-case class StoredAttributeMap(attributes: AttributeMap) extends Value
+case class StoredElement(element: AbstractSyntax.Element)   extends Value
+case class StoredAttributeMap(attributes: AttributeMap)     extends Value
 case class StoredGlyphGenerator(apply: StyleSheet => Glyph) extends Value  { override val kind: String="Glyph"}
 case class StoredGlyphConstant(glyph: Glyph)                extends Value  { override val kind: String="Glyph"}
-case class StoredString(string: String) extends Value
+case class StoredString(string: String)                     extends Value
+case class StoredMacro(theMacro: Macro)                     extends Value
 
 
 class ValueStore { thisStore =>
@@ -72,6 +74,8 @@ class ValueStore { thisStore =>
         }
     }
   }
+
+  def update(name: String, thing: Macro): Unit             = thisStore(name) = StoredMacro(thing)
   def update(name: String, thing: AttributeMap): Unit      = thisStore(name) = StoredAttributeMap(thing)
   def update(name: String, thing: Glyph): Unit             = thisStore(name) = StoredGlyphConstant(thing)
   def update(name: String, thing: StyleSheet=>Glyph): Unit = thisStore(name) = StoredGlyphGenerator(thing)

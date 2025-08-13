@@ -284,20 +284,43 @@ class Translator (val primitives: ValueStore) {
         }
         else Nil
 
-      case _ =>
-        primitives.getKind(StoreType.Element)(tag) match {
-          case None =>
-            SourceDefault.warn(s"No such tag at $scope<$tag ...")
-            Nil
-          case Some(StoredElement(element)) =>
-            val derivedContext = context.updated(localAttributes)
-            translate(derivedContext)(element)
-          case Some(other) =>
-            SourceDefault.warn(s"Internal error at $scope<$tag ...\n   which maps to $other")
-            Nil
+      case "macro" =>
+        val tag = givenAttributes.String("tag", "")
+        println(s"Macro $tag")
+        if (tag.nonEmpty) {
+          primitives(tag) = Macro(scope, tag, localAttributes, child)
         }
+        Nil
+
+      case _ =>
+        def evalMacro(tag: String): Option[Seq[Glyph]] =
+            primitives.getKind(StoreType.Macro)(tag) match {
+              case None => None
+              case Some(StoredMacro(Macro(scope, mtag, attributes, body))) =>
+                SourceDefault.warn(s"Invoking $mtag at $scope<$tag ...\n")
+                Some(Nil)
+              case other => None
+            }
+
+        def evalElement(tag: String): Option[Seq[Glyph]] =
+            primitives.getKind(StoreType.Element)(tag) match {
+              case None => None
+              case Some(StoredElement(element)) =>
+                val derivedContext = context.updated(localAttributes)
+                Some(translate(derivedContext)(element))
+              case other => None
+            }
+
+       def evalMistake(tag: String): Option[Seq[Glyph]] = {
+           SourceDefault.warn(s"No such tag at $scope<$tag ...\n")
+           Some(Nil)
+       }
+
+       (evalMacro(tag) orElse evalElement(tag) orElse evalMistake(tag)).get
     }
   }
+
+
 
   val rootContext = Context.Env(Map.empty, StyleSheet())
 

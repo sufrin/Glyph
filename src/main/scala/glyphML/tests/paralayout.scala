@@ -61,6 +61,9 @@ object paralayout extends Application {
         <attributes id="tag:p" framed="red" align="justify" />
         <attributes id="class:fat"  fontscale="1.4"  align="justify"/>
         <attributes id="class:narrow"  align="justify"  width="200px"  textforeground="black"/>
+        <macro tag="mymacro" p1="default1" p2="default2">
+          Here is the body
+        </macro>
 
         <p hang=" * ">
           This application tests a combination of <span textforeground="green">local_ization of attributes</span>, <tt fontscale="1.2">text layout</tt>,
@@ -94,6 +97,7 @@ object paralayout extends Application {
           This piece of text contains floccinaucinihilipilification averywidewordwithaninfeasiblebreakpoint, but nothing else.
         </p>
         <deliberatelyundefinedtag/>
+        <mymacro p1="nondefault p1">the invocation</mymacro>
       </div>
 
 

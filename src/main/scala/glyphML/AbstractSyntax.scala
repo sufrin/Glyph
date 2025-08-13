@@ -70,10 +70,9 @@ object AbstractSyntax {
 
   /**
    * Maps a `scala.xml.Node` to a `Tree`, decorating each `Elem` with an appropriate
-   * attribute mapping, and normalizing attribute names to lowercase.
+   * scope nest and attribute mapping, and normalizing attribute names to lowercase.
    */
   def fromXML(outerScope: Scope) (source: xml.Node): Tree = {
-    import Context.ExtendedAttributeMap
     source match {
       case xml.Elem(str, tag, attrs, binding, child@_*)   =>
            Element(outerScope, tag, attrs.asAttrMap.map { case (k, d) => (k.toLowerCase, d) }, child.map(fromXML(outerScope nest tag)))
