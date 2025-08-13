@@ -187,7 +187,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   def withAbbreviationKey(key: Key, mods: Int=0): TextField = {
     abbreviationKey = key
     abbreviationMods = Bitmap(mods|Pressed)
-    println(s"Abbreviation key: $key $abbreviationMods")
+    SourceDefault.info(s"Abbreviation key: $key $abbreviationMods")
     this
   }
 

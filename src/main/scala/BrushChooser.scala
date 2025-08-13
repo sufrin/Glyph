@@ -159,8 +159,10 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
         }
       }
 
-  protected lazy val colourGrid = Grid(fg=black).table(width=12)(colButs.toList)
-  protected lazy val hueGrid = Grid(fg=black).table(width=12)(hueButs.toList)
+  @inline def half(n: Int): Int = (if ((n&1)==1) (n+1) else n)/2
+
+  protected lazy val colourGrid = Grid(fg=black).table(width=half(colButs.size))(colButs.toList)
+  protected lazy val hueGrid = Grid(fg=black).table(width=half(hueButs.size))(hueButs.toList)
   protected lazy val satGrid = Grid(fg=black).table(width=11)(satButs.toList)
   protected lazy val briGrid = Grid(fg=black).table(width=11)(briButs.toList)
   protected lazy val textModel = unstyled.Text(" Text example ", sheet.labelFont.makeWithSize(36), protoBrush)

@@ -7,8 +7,6 @@ import org.sufrin.glyph.Colour.HSV
 import org.sufrin.glyph.GlyphShape.{FILL, STROKE, STROKE_AND_FILL}
 import org.sufrin.glyph.GlyphTypes.Scalar
 
-import scala.annotation.tailrec
-import scala.util.matching.Regex.{MatchData, MatchIterator}
 
 /**
  * A convenience trait that defines several brushes.
@@ -238,29 +236,31 @@ object Brushes extends DefaultBrushes {
   lazy val namedColours: collection.mutable.Map[String, Int] = collection.mutable.LinkedHashMap[String, Int](
       "red" ->  0xFFFF0000,
       "rose" -> 0xFFFE28A2,
+      "fuchsia" -> 0xFFFE4164,
       "pink" -> 0xFFFFC0CB,
       "purple" -> 0xFFA020F0,
       "green" ->  0xFF00FF00,
+      "aqua" -> 0X7700FFFF,
+      "teal" -> 0X77008080,
       "blue" -> 0XFF0000FF,
       "persianblue" -> 0xFF1C39BB,
       "cornflower" -> 0xFF6495ED,
       "periwinkle" -> 0xFFCCCCFF,
       "yellow" -> 0XFFFFFF00,
       "yellow+pantone" -> 0xFFFEDF00,
-      "yellow+ryb" -> 0xFFFEFE33,
-      "fuchsia" -> 0xFFFE4164,
       "orange" -> 0xFFFFAE42,
       "brown" ->0xFF964b00,
       "black+warm" -> 0XFF004242,
       "black" -> 0XFF000000,
       "white" -> 0XFFFFFFFF,
+      "olive" -> 0X77808000,
       "grey1" -> 0XFFaaaaaa,
       "grey2" -> 0XFF999999,
       "grey3" -> 0XFF888888,
       "darkgrey" -> 0XFF777777,
       "lightgrey" -> 0XFFBBBBBB,
       "transparent" -> 0X000000,
-    )
+      )
 
   def colourName(colour: Int): String = {
     import Colour._
