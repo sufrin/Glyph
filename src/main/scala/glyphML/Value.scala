@@ -4,6 +4,8 @@ package glyphML
 import glyphML.Context.{AttributeMap, Env}
 
 import org.sufrin.glyph.unstyled.static.INVISIBLE
+import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
+import org.sufrin.glyph.glyphML.AbstractSyntax.Scope
 
 import scala.util.matching.Regex
 
@@ -16,11 +18,15 @@ trait Value {
  */
 
 object StoreType {
-  val AttributeMap = StoredAttributeMap(Map.empty)
-  val GlyphGenerator = StoredGlyphGenerator{ cxt => INVISIBLE() }
-  val GlyphConstant = StoredGlyphConstant{ INVISIBLE() }
+  val AttributeMap    = StoredAttributeMap(Map.empty)
+  val GlyphGenerator  = StoredGlyphGenerator{ cxt => INVISIBLE() }
+  val GlyphConstant   = StoredGlyphConstant{ INVISIBLE() }
+  val String          = StoredString("")
+  val Element         = StoredElement(AbstractSyntax.Element(scope=Scope(List(sourcePath.toString)), tag="", attributes=Map.empty, child=Nil))
 }
 
+
+case class StoredElement(element: AbstractSyntax.Element) extends Value
 case class StoredAttributeMap(attributes: AttributeMap) extends Value
 case class StoredGlyphGenerator(apply: StyleSheet => Glyph) extends Value  { override val kind: String="Glyph"}
 case class StoredGlyphConstant(glyph: Glyph)                extends Value  { override val kind: String="Glyph"}
@@ -55,10 +61,16 @@ class ValueStore { thisStore =>
     store.remove((like.kind, name))
   }
 
-  def update(name: String, elem: scala.xml.Elem): Unit =
-  { val thing = elem.attributes.asAttrMap
-    thisStore(name) = StoredAttributeMap(thing)
-    //import org.sufrin.glyph.glyphXML.PrettyPrint._;store.prettyPrint()
+  /** Storing an element or some attributes */
+  def update(name: String, scalaelem: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Unit = {
+    scalaelem.label match {
+      case "attributes" =>
+        thisStore (name) = StoredAttributeMap ( scalaelem.attributes.asAttrMap )
+      case _  =>
+        AbstractSyntax.fromXML(scalaelem)((location))  match {
+          case elem: AbstractSyntax.Element => thisStore (name) = StoredElement (elem)
+        }
+    }
   }
   def update(name: String, thing: AttributeMap): Unit      = thisStore(name) = StoredAttributeMap(thing)
   def update(name: String, thing: Glyph): Unit             = thisStore(name) = StoredGlyphConstant(thing)

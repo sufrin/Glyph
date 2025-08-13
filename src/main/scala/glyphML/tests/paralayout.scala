@@ -44,6 +44,8 @@ object paralayout extends Application {
     locally { for { num<-1 to 8} primitives(s"B$num")=delayed.TextButton(s"B$num"){_=> println(num) } }
     locally { for { num<-1 to 5} primitives(s"L$num")=delayed.Label(s"L$num") }
 
+    primitives("pfft") = <span>as well as some tag-extending features</span>
+
     primitives("col")=delayed.Column(List(delayed.Label("C1"), delayed.Label("C2")))
     primitives("row")=style => NaturalSize.Row(styled.Label("This is a")(style).framed(), styled.Label(" long row")(style))
     primitives("buttoncol") =
@@ -62,11 +64,11 @@ object paralayout extends Application {
 
         <p hang=" * ">
           This application tests a combination of <span textforeground="green">local_ization of attributes</span>, <tt fontscale="1.2">text layout</tt>,
-          hy_phenation, and the plugging in of <b>reactive glyphs.</b>
+          hy_phenation, and the plugging in of <b>reactive glyphs,</b> <pfft/>.
         </p>
 
         <p fontFamily="Courier" textforeground="black">
-          This is Courier, and  <i>this is italic.</i> The text may well spill over two lines, but everything
+          This is Courier, and  <i>this is italic.</i> The text may well spill over &gt; one lines, &amp; everything
           depends on the width of the entire <tt>div</tt>.
         </p>
 
@@ -89,8 +91,9 @@ object paralayout extends Application {
           ov_er a nar_row mar_gin un_less I am mis_tak_enly in_formed.
         </p>
         <p class="narrow">
-          This piece of text contains floccinaucinihilipilification and averywidewordwithaninfeasiblebreakpoint, but nothing else.
+          This piece of text contains floccinaucinihilipilification averywidewordwithaninfeasiblebreakpoint, but nothing else.
         </p>
+        <deliberatelyundefinedtag/>
       </div>
 
 

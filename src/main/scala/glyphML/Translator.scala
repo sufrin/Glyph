@@ -99,6 +99,15 @@ class Translator (val primitives: ValueStore) {
   import Translator._
 
   /**
+   *  Add stock entitites
+   */
+  locally {
+    primitives("amp") = "&"
+    primitives("lt") = "<"
+    primitives("gt") = ">"
+  }
+
+  /**
    *  Translate this tree (and its descendants, if any) to `Glyph`s
    *  derived from it in the given environment.
    */
@@ -123,7 +132,9 @@ class Translator (val primitives: ValueStore) {
       case Text(text: String)       => List(toText(text))
       case Para(texts: Seq[String]) => texts.map(toText(_))
       case Quoted(text: String)     => List(translateQuoted(context)(text))
-      case Entity(name: String)     => Nil
+      case Entity(name: String)     =>
+        val StoredString(text) = primitives.getKindElse(StoreType.String)(name)
+        List(style.makeText(text))
       case Comment(target: String, text: String) => Nil
     }
   }
@@ -273,8 +284,18 @@ class Translator (val primitives: ValueStore) {
         }
         else Nil
 
-
-      case _ => Nil
+      case _ =>
+        primitives.getKind(StoreType.Element)(tag) match {
+          case None =>
+            SourceDefault.warn(s"No such tag at $scope<$tag ...")
+            Nil
+          case Some(StoredElement(element)) =>
+            val derivedContext = context.updated(localAttributes)
+            translate(derivedContext)(element)
+          case Some(other) =>
+            SourceDefault.warn(s"Internal error at $scope<$tag ...\n   which maps to $other")
+            Nil
+        }
     }
   }
 
