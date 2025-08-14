@@ -46,6 +46,16 @@ object para extends Application {
 
   primitives("pfft") = <span>as well as some tag-extending features</span>
 
+  /* Add
+   * primitives(<attributes id=.../>)
+   * primitives(<macro tag=.../>)
+   * primitives(<entity name=.../>)
+   *
+   * If an element has a ref="name" attribute, then it's stored under "name"
+   * Unit expressions need generalised
+   *
+   * */
+
   primitives("col")=delayed.Column(List(delayed.Label("C1"), delayed.Label("C2")))
   primitives("row")=style => NaturalSize.Row(styled.Label("This is a")(style).framed(), styled.Label(" long row")(style))
   primitives("buttoncol") =
@@ -60,7 +70,7 @@ object para extends Application {
     >
       <attributes id="class:but" buttonbackground="yellow" buttonforeground="red" fontscale="0.7"/>
       <attributes id="tag:debug" caption="Debugging" local="t" mark="MARK #1"/>
-      <attributes id="tag:p" framed="red" align="justify" />
+      <attributes id="tag:p" framed="yellow" align="justify" />
       <attributes id="class:fat"  fontscale="1.4"  align="justify"/>
       <attributes id="class:narrow"  align="justify"  width="280px"  textforeground="black"/>
 
@@ -88,18 +98,23 @@ object para extends Application {
         </p>
       </attributes>
 
-      <p class="narrow">
-        This is a long, possibly hyphenatable, "antidisestablishmentarianism" tract_ified text that spills
-        ov_er a nar_row mar_gin un_less I am mis_tak_enly in_formed.
-      </p>
-      <p class="narrow">
-        This piece of text contains floccinaucinihilipilification averywidewordwithaninfeasiblebreakpoint, but nothing else.
-      </p>
+      <table cols="2" padx="1em" pady="1ex" foreground="green.2" background="yellow">
+          <p class="narrow">
+            This is a long, possibly hyphenatable, "antidisestablishmentarianism" tract_ified text that spills
+            ov_er a nar_row mar_gin un_less I am mis_tak_enly in_formed.
+          </p>
+        <p class="narrow">
+          This piece of text contains floccinaucinihilipilification averywidewordwithaninfeasiblebreakpoint, but nothing else.
+        </p>
+        <p class="narrow" align="center">
+        She is another donkey.
+        </p>
+      </table>
       <deliberatelyundefinedtag/>
       <mymacro p1="nondefault p1">
         the invocation <tt>SS</tt> <i>TT</i>
       </mymacro>
-    </div>
+    </div>.scaled(0.7f)
 
 
   lazy val GUI: Glyph = {

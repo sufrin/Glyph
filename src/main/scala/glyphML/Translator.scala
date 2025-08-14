@@ -345,6 +345,18 @@ class Translator (val primitives: ValueStore) { thisTranslator =>
         }
         Nil
 
+      case "table" =>
+        val width     = localAttributes.Int("columns", localAttributes.Int("cols", 0))
+        val height    = localAttributes.Int("rows", 0)
+        val uniform   = localAttributes.Bool("uniform", false)
+        val derivedContext = context.updated(localAttributes.without("columns", "cols", "uniform"))
+        val glyphs    =
+          children.filterNot(isEmptyText).flatMap(translate(derivedContext))
+        import derivedContext.sheet.{foregroundBrush=>fg, backgroundBrush=>bg, padX, padY}
+        val Grid      = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY)
+        val buildFrom = if (uniform) Grid.grid(height=height, width=width)(_) else Grid.table(height=height, width=width)(_)
+        List(buildFrom(glyphs))
+
       case _ =>
         @inline def translateMacro(tag: String): Option[Seq[Glyph]] =
             primitives.getKind(StoreType.Macro)(tag) match {
