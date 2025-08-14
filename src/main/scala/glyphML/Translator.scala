@@ -6,6 +6,7 @@ import glyphXML.PrettyPrint
 import org.sufrin.glyph.unstyled.static.BreakableGlyph
 import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
 import org.sufrin.glyph.GlyphTypes.Scalar
+import org.sufrin.glyph.glyphXML.PrettyPrint.AnyPretty
 import org.sufrin.glyph.glyphXML.Translation.AttributeMap
 import org.sufrin.logging.{Loggable, SourceDefault}
 
@@ -93,7 +94,7 @@ object Translator {
 }
 
 
-class Translator (val primitives: ValueStore) {
+class Translator (val primitives: ValueStore) { thisTranslator =>
   import org.sufrin.glyph.glyphML.AbstractSyntax._
   import Context._
   import Translator._
@@ -136,8 +137,8 @@ class Translator (val primitives: ValueStore) {
         val StoredString(text) = primitives.getKindElse(StoreType.String)(name)
         List(style.makeText(text))
       case Comment(target: String, text: String) => Nil
-      case MacroParam(target, text) =>
-        SourceDefault.warn(s"Free flying <?$target $text?>")
+      case MacroParam(name) =>
+        SourceDefault.warn(s"Unbound macro parameter: <?$name?>")
         Nil
     }
   }
@@ -174,11 +175,46 @@ class Translator (val primitives: ValueStore) {
     NaturalSize.Col(align=Left, bg = sheet.cdataBackgroundBrush)(lines.map(unstyled.Text(_, font=sheet.cdataFont, fg=sheet.cdataForegroundBrush)))
   }
 
-  def isEmptyText(tree: Tree): Boolean = tree match {
-    case Text(text) => text.forall(_.isWhitespace)
-    case Para(texts) => texts.forall(_.forall(_.isWhitespace))
-    case _ => false
-  }
+  /**
+   * In general the for an element is:  `<tag `*givenAttributes*`>`*child*`</tag>`
+   *  or (when *child* is empty)
+   *  `<tag `*givenAttributes*`/>`
+   *
+   *
+   * CODING STANDARD:
+   *
+   *  `localAttributes` -- all element kinds are translated with this attribute map defined as
+   *  {{{(
+   *      givenAttributes   supersede
+   *      selfattributes    supersede
+   *      classattributes   supersede
+   *      tagattributes).without("id", "class")
+   *  }}}
+   *
+   *  where
+   *
+   *  `selfattributes` is the attribute map defined for *x* if `id=`*x* appears in `givenAttributes`
+   *
+   *  `classattributes` is the attribute map defined for `class:*x*`` if `class=`*x* appears in `givenAttributes`
+   *
+   *  `tagattributes` is the attribute map defined for `tag:*x*`` (`tag` is the element tag)
+   *
+   *  The children of such elements are (usually) translated in the inherited `context` updated by the
+   *  `localAttributes`. Its `attributes` is  `localattributes supersede context.attributes`, and its
+   *  style sheet, `sheet` is derived from its `context.sheet` by setting properties defined
+   *  by its `attributes`.
+   *
+   * @see Context
+   * @see Context.Env
+   * @see Context.deriveSheet
+   *
+   * @param context inherited attribute mapping and style sheet
+   * @param scope the location (as a stack of element tags, source code locations) of the element
+   * @param tag the element is of form `<tag ...>...</tag>`
+   * @param givenAttributes the attributes explicitly given at the tag
+   * @param children the subtrees of the element (if any)
+   * @return translation of the subtrees
+   */
 
   def translateElement(context: Env)(scope: Scope, tag: String, givenAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
     import Context.TypedAttributeMap
@@ -189,15 +225,21 @@ class Translator (val primitives: ValueStore) {
     val StoredAttributeMap(classattributes) = if (classid.isEmpty) StoredAttributeMap(selfattributes) else primitives.getKindElse(StoreType.AttributeMap)(s"class:$classid")
     val StoredAttributeMap(tagattributes) =  primitives.getKindElse(StoreType.AttributeMap)(s"tag:$tag")
 
-    val localAttributes: AttributeMap = (givenAttributes supersede selfattributes supersede classattributes supersede tagattributes).without("id", "class")
+    //  attributes effective after inheritance
+    val inheritedAttributes: AttributeMap = (givenAttributes supersede selfattributes supersede classattributes supersede tagattributes).without("id", "class")
+    //  should THIS element filter blank spaces?
+    val keepSpace = inheritedAttributes.Bool("keepspace", false)
+    val children = if (keepSpace) child else child.filterNot(isEmptyText)
+    val localAttributes = inheritedAttributes
+
     tag match {
       case "div" | "body" =>
         val derivedContext = context.updated(localAttributes)
-        child.filterNot(isEmptyText).flatMap(translate(derivedContext))
+        children.filterNot(isEmptyText).flatMap(translate(derivedContext))
 
       case "p" =>
         val derivedContext = context.updated(localAttributes)
-        val words = child.flatMap(translate(derivedContext))
+        val words = children.flatMap(translate(derivedContext))
         val hang  = derivedContext.attributes.String("hang", "")
         val hangGlyph = if (hang.isEmpty) None else Some(styled.Label(hang)(derivedContext.sheet))
         val theGlyph = Paragraph.fromGlyphs(derivedContext.sheet, words, hangGlyph).enlargedBy(0f, derivedContext.sheet.parSkip)
@@ -206,22 +248,22 @@ class Translator (val primitives: ValueStore) {
 
       case "span" =>
         val derivedContext = context.updated(localAttributes)
-        child.flatMap(translate(derivedContext))
+        children.flatMap(translate(derivedContext))
 
       case "i" =>
         val style = Map("textstyle"->"italic")
         val derivedContext = context.updated(style supersede localAttributes)
-        child.flatMap(translate(derivedContext))
+        children.flatMap(translate(derivedContext))
 
       case "b" =>
         val style = Map("textstyle"->"bold")
         val derivedContext = context.updated(style supersede localAttributes)
-        child.flatMap(translate(derivedContext))
+        children.flatMap(translate(derivedContext))
 
       case "tt" =>
         val style = Map("fontfamily"->"courier")
         val derivedContext = context.updated(style supersede localAttributes)
-        child.flatMap(translate(derivedContext))
+        children.flatMap(translate(derivedContext))
 
       case "debug" =>
         val tree = localAttributes.Bool("tree", false)
@@ -231,11 +273,11 @@ class Translator (val primitives: ValueStore) {
         val title = localAttributes.String("caption", "debug")
         val framed = localAttributes.Brush("framed", Brushes.transparent)
         val derivedContext = context.updated(localAttributes.without("tree", "env", "local", "mark", "caption"))
-        if (tree || env || att) println(title, scope)
+        if (tree || env || att) println(s"$title $scope")
         if (env) println(PrettyPrint.prettyPrint(derivedContext)) else if (att) println(PrettyPrint.prettyPrint(derivedContext.attributes)) else {}
-        if (tree && child.nonEmpty)
-          child.filterNot(isEmptyText).foreach{ tree => println(PrettyPrint.prettyPrint(tree)) }
-        val body0 = child.flatMap(translate(context)) // do the body in the existing context
+        if (tree && children.nonEmpty)
+          children.filterNot(isEmptyText).foreach{ tree => println(PrettyPrint.prettyPrint(tree)) }
+        val body0 = children.flatMap(translate(context)) // do the body in the existing context
         val body = if (body0.size==1) body0.map(_.framed(framed)) else body0
         (if (mark=="") Nil else List(styled.Label(mark)(derivedContext.sheet).framed(framed))) ++  body
 
@@ -260,12 +302,14 @@ class Translator (val primitives: ValueStore) {
         }
 
       case "attributes" =>
+        // Give the name denoted by "id" to the remaining attributes, and
+        // treat the collection as a primitive: globally if
+        // there is no body; otherwise for the scope of the evaluation of the body.
         val attrId = givenAttributes.String("id", "")
-        val warn = givenAttributes.Bool("warn", true)
-
+        val warn   = localAttributes.Bool("warn", context.attributes.Bool("attributeswarning", true))
         if (attrId.nonEmpty) {
           val before =  primitives.getKind(StoreType.AttributeMap)(attrId)
-          if (child.isEmpty) {// global definition
+          if (children.isEmpty) {// global definition
             if (warn && before.isDefined) SourceDefault.warn(s"Overriding primitive assignment $scope<attributes ${givenAttributes.toSource}")
             primitives(attrId) = StoredAttributeMap(givenAttributes.without("id"))
             Nil
@@ -273,13 +317,13 @@ class Translator (val primitives: ValueStore) {
           { before match {
               case None =>
                 primitives(attrId) = StoredAttributeMap(givenAttributes.without("id"))
-                val body = child.flatMap(translate(context))
+                val body = children.flatMap(translate(context))
                 primitives.remove(StoreType.AttributeMap)(attrId)
                 body
               case Some(restore) =>
                 if (warn) SourceDefault.warn(s"Overriding scoped primitive $scope<attributes ${givenAttributes.toSource}")
                 primitives(attrId) = StoredAttributeMap(givenAttributes.without("id"))
-                val body = child.flatMap(translate(context))
+                val body = children.filterNot(isEmptyText).flatMap(translate(context))
                 primitives(attrId) = restore
                 body
             }
@@ -289,9 +333,15 @@ class Translator (val primitives: ValueStore) {
 
       case "macro" =>
         val tag = givenAttributes.String("tag", "")
-        println(s"Macro $tag")
+        val warn   = localAttributes.Bool("warn", context.attributes.Bool("macrowarning", true))
         if (tag.nonEmpty) {
-          primitives(tag) = Macro(scope, tag, localAttributes, child)
+          // The given attributes are the defaults for upcoming applications of the macro.
+          // The context binds the current free attributes.
+          // Attributes inherited by class or by id or by tag:macro are ignored.
+          if (warn && primitives.getKind(StoreType.Macro)(tag).isDefined) {
+             SourceDefault.warn(s"Overriding macro definition $scope<attributes ${givenAttributes.toSource}")
+          }
+          primitives(tag) = Macro(scope, tag, givenAttributes.without("tag", "warn"), context, children)
         }
         Nil
 
@@ -300,9 +350,7 @@ class Translator (val primitives: ValueStore) {
             primitives.getKind(StoreType.Macro)(tag) match {
               case None => None
               case Some(StoredMacro(abstraction)) =>
-                val derivedContext = context.updated(localAttributes)
-                SourceDefault.info(s"Invoking ${abstraction.tag} at $scope<$tag ...\n")
-                Some(abstraction.expansion(localAttributes, child).flatMap(translate(derivedContext)))
+                Some(abstraction.expanded(thisTranslator, localAttributes, children))
               case _ =>
                 SourceDefault.error(s"Internal error at $scope<$tag ...\n")
                 None

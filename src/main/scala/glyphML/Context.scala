@@ -34,8 +34,15 @@ object Context {
   implicit class ExtendedAttributeMap(val map: AttributeMap) extends AnyVal {
     def supersede(r: AttributeMap): AttributeMap = SUPERSEDE(map, r)
     def without(keys: String*): AttributeMap = map.removedAll(keys)
+    def mkString(sep: String = ", "): String =
+      (for { (k, d) <- map } yield s"$k=\"$d\"").mkString(sep)
   }
 
+  /**
+   *
+   * An extension to provides type-specific interpretations of properties specified in an `AttributeMap`
+   *
+   */
   implicit class TypedAttributeMap(val attributes: AttributeMap) extends AnyVal {
 
     import logging.Default.warn
@@ -249,7 +256,7 @@ object Context {
   case class Env(attributes: AttributeMap, sheet: StyleSheet) {
     /**
      *  Yield a new `Env`  whose `attributes` are superseded by those
-     *  specified by `localAttributes`, and whose `sheet` derived
+     *  specified by `localAttributes`, and whose `sheet` is derived
      *  from those attributes.
      */
     def updated(localAttributes: AttributeMap): Env = {

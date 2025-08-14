@@ -27,10 +27,24 @@ object StoreType {
 }
 
 
-case class StoredElement(element: AbstractSyntax.Element)   extends Value
-case class StoredAttributeMap(attributes: AttributeMap)     extends Value
-case class StoredGlyphGenerator(apply: StyleSheet => Glyph) extends Value  { override val kind: String="Glyph"}
-case class StoredGlyphConstant(glyph: Glyph)                extends Value  { override val kind: String="Glyph"}
+case class StoredElement(element: AbstractSyntax.Element)   extends Value {
+  override val toString: String = element.toString
+}
+
+case class StoredAttributeMap(attributes: AttributeMap)     extends Value {
+  import Context._
+  override val toString: String = s"[${attributes.mkString()}]"
+}
+
+case class StoredGlyphGenerator(apply: StyleSheet => Glyph) extends Value  {
+  override val kind: String="Glyph"
+  override val toString: String = "StoredGenerator"
+}
+case class StoredGlyphConstant(glyph: Glyph)                extends Value  {
+  override val kind: String="Glyph"
+  override val toString: String = "StoredConstant"
+}
+
 case class StoredString(string: String)                     extends Value
 case class StoredMacro(theMacro: Macro)                     extends Value
 
@@ -44,6 +58,9 @@ class ValueStore { thisStore =>
 
   def apply(name: Regex, kind: Regex): Iterator[((String, String), Value)] =
       store.iterator.filter{ case ((n,k),v) => name.matches(n) }.filter{ case ((n,k),v) => kind.matches(k) }
+
+  def show(name: Regex = ".*".r, kind: Regex=".*".r): Seq[String] =
+      apply(name, kind).map{ case ((n,k),v) => s"$n: $k = $v" } . toSeq
 
   def getKindElseUpdate(value: Value)(name: String): Value = store.getOrElseUpdate((name, value.kind), value)
 
