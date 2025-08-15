@@ -306,6 +306,8 @@ import io.github.humbleui.jwm.App
     val boundingRect = Vec(glyphs.map(_.w).max, glyphs.map(_.h).max)+(inset, inset)
     val diagonal = boundingRect+(inset, inset)
 
+    //println(boundingRect, diagonal)
+
     // Locate the subglyphs.
     // Link subglyphs into the glyph tree
     // TODO: (why didn't this happen in Composite?)

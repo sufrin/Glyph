@@ -4,58 +4,16 @@ package tests
 
 import glyphML.Translator
 import styled.ToggleVariable
-import styles.decoration.RoundFramed
-import unstyled.reactive.Reaction
 
 import org.sufrin.logging.{INFO, WARN}
 import org.sufrin.logging
-/**
- * An experiment in providing idiomatic support for building style-dependent (mostly reactive) glyphs to add to
- * translation definitions.
- */
-object idioms {
-
-  def Label(text: String): StyleSheet => Glyph =
-      {style: StyleSheet => styled.Label(text)(style)}
-
-  def TextButton(name: String): Reaction=>StyleSheet=>Glyph  =
-    (reaction: Reaction) => {style: StyleSheet=>styled.TextButton(name)(reaction)(style)}
-
-  def TextToggle(whenTrue: String="❎", whenFalse: String="✅", hint: Hint=NoHint): ToggleVariable => StyleSheet => Glyph =
-    (variable: ToggleVariable) => {style: StyleSheet=>styled.TextToggle(whenTrue, whenFalse, variable.value, hint)(variable)(style)}
-
-  def Table(cols: Int=0, rows: Int=0, uniform: Boolean=false)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Table(cols, rows, uniform)(glyphs)
-  def Col(align: Alignment=Center)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Col(align)(glyphs)
-  def Row(align: VAlignment=Mid)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Row(align)(glyphs)
-
-  /** Constructions for `Row, Col, Table` that take `Seq[Glyph]` arguments  */
-  object fromSequence {
-    def Col(align: Alignment=Center)(glyphs: Seq[StyleSheet => Glyph]): StyleSheet => Glyph = {
-      style: StyleSheet =>
-        val reified = glyphs.map(_.apply(style))
-        NaturalSize.Col(align = align)(reified)
-    }
-
-    def Row(align: VAlignment=Mid)(glyphs: Seq[StyleSheet => Glyph]): StyleSheet => Glyph = {
-      style: StyleSheet =>
-        val reified = glyphs.map(_.apply(style))
-        NaturalSize.Row(align = align)(reified)
-    }
-
-    def Table(cols: Int=0, rows: Int=0, uniform: Boolean=false)(glyphs: Seq[StyleSheet => Glyph]): StyleSheet => Glyph = { style: StyleSheet =>
-      import style.{padX, padY, backgroundBrush => bg, foregroundBrush => fg}
-      val reified = glyphs.map(_.apply(style))
-      val Grid = NaturalSize.Grid(fg = fg, bg = bg, padX, padY)
-      val buildFrom = if (uniform) Grid.grid(height = rows, width = cols)(_) else Grid.table(height = rows, width = cols)(_)
-      buildFrom(reified)
-    }
-  }
-
-}
 
 object para extends Application {
   import Translator._
-  private val style = StyleSheet(buttonDecoration = RoundFramed(enlarge=0.6f, radius=4, fg=Brushes.blackFrame, bg=Brushes.lightGrey))
+  private val style = StyleSheet(
+    buttonDecoration = styles.decoration.RoundFramed(fg=Brushes.red(width=4)),
+    buttonForegroundBrush = Brushes.black
+    )
   private val translator = new Translator(new ValueStore {})(style)
   import translator._
 
@@ -67,8 +25,7 @@ object para extends Application {
   HYPHENATION("averywidewordwithaninfeasible-breakpoint")("-")
 
 
-  locally { for { num<-1 to 8} primitives(s"B$num")=idioms.TextButton(s"B$num"){_=> println(num) } }
-  locally { for { num<-1 to 5} primitives(s"L$num")=idioms.Label(s"L$num") }
+
 
   primitives("aswell") = <span> as well as some tag-extending features</span>
 
@@ -89,10 +46,15 @@ object para extends Application {
   locally {
     import idioms._
       primitives("buttons") =
-        Table(uniform=true) (
-          TextButton("Show all Primitives") { _ => println(primitives.show(".*".r, ".*".r).mkString("\n")) },
+        Row(align=Mid) (
+          TextButton("Show Primitives") { _ => println(primitives.show(".*".r, ".*".r).mkString("\n")) },
           TextButton("Show Attributes")     { _ => println(primitives.show(".*".r, "StoredAttributeMap".r).mkString("\n")) },
-          TextToggle(whenFalse = "Autoscale: ✅", whenTrue = "Autoscale: ❎")(autoScale))
+          CheckBox(autoScale, "Scale window by dragging edges"),
+          TextToggle(whenFalse="Turn it\nOn",whenTrue="Turn it\nOff")(autoScale)
+          )
+
+      for { num<-1 to 8} primitives(s"B$num")= TextButton(s"B$num"){_=> println(num) }
+      for { num<-1 to 5} primitives(s"L$num")= Label(s"L$num")
   }
 
 
@@ -104,12 +66,13 @@ object para extends Application {
       <attributes id="tag:p"        framed="yellow" align="justify" />
       <attributes id="class:fat"    fontscale="1.4"  align="justify"/>
       <attributes id="class:narrow" align="justify"  width="280px"  textforeground="black"/>
-      <macro tag="fw" fontfamily="Courier"><?body?></macro>
+      <macro tag="courier" fontfamily="Courier"><?body?></macro>
 
+      <span foreground="transparent" background="transparent"><glyph gid="buttons"/></span>
 
       <p hang=" * ">
         This application tests a combination of <span textforeground="green">local_ization of attributes</span>, <tt fontscale="1.2">text layout</tt>,
-        hy_phenation, and the <fw>plugging</fw> in of <b>reactive glyphs,</b>  <aswell/>.
+        hy_phenation, and the <courier fontscale="1.3">plugging</courier> in of <b>reactive glyphs,</b>  <aswell/>.
       </p>
 
       <p fontFamily="Courier" textforeground="black">
@@ -121,8 +84,6 @@ object para extends Application {
         This is centred text in a small scale bold-italic font.
       </p>
 
-      <span foreground="transparent" background="transparent"><glyph gid="buttons"/></span>
-      <glyph gid="unk"/>
 
       <attributes id="tag:p" fontFamily="Courier" framed="blue">
         <p class="fat">
@@ -143,10 +104,6 @@ object para extends Application {
         She is another donkey.
         </p>
       </table>
-      <deliberatelyundefinedtag/>
-      <mymacro p1="nondefault p1">
-        the invocation <tt>SS</tt> <i>TT</i>
-      </mymacro>
     </div>
 
 

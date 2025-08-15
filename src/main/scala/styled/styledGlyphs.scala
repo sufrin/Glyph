@@ -2,7 +2,6 @@ package org.sufrin
 package glyph
 package styled
 import org.sufrin.glyph.unstyled.{dynamic, reactive}
-import org.sufrin.glyph.unstyled.reactive.Enterable
 
 /** Intermediate definitions refactored from `styled` by (more or less) substitution */
 
@@ -340,13 +339,14 @@ case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean, h
     val onFG = detail.toggle.on.fg
     val onBG = detail.toggle.on.bg
 
-    val whenTTrue: Glyph  = unstyled.Label(whenTrue, sheet.labelFont,  fg=onFG, bg=onBG)
-    val whenFFalse: Glyph = unstyled.Label(whenFalse, sheet.labelFont, fg=offFG, bg=offBG)
+    val whenTTrue: Glyph  = unstyled.Label(whenTrue, sheet.buttonFont,  fg=onFG, bg=onBG)
+    val whenFFalse: Glyph = unstyled.Label(whenFalse, sheet.buttonFont, fg=offFG, bg=offBG)
     val Vec(w, h) = (whenTTrue.diagonal union whenFFalse.diagonal)
 
     unstyled.BooleanGlyphs(
       new OnOff(whenTrue  = whenTTrue.enlargedTo(w, h),
-                whenFalse = whenFFalse.enlargedTo(w, h), initially = initially, fg = offFG, bg = offBG),
+                whenFalse = whenFFalse.enlargedTo(w, h),
+                            initially = initially, fg = offFG, bg = offBG),
       initially = initially,
       fg = detail.toggle.off.fg,
       bg = detail.toggle.off.bg,

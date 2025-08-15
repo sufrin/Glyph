@@ -21,6 +21,7 @@ object BooleanGlyphs {
 
       locally {
         set(initially)
+        println(whenTrue.diagonal, whenFalse.diagonal) //**
       }
     }
 

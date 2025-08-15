@@ -94,7 +94,7 @@ case class StyleSheet
     down   = GlyphStyle(font = buttonFont, fg = buttonDownBrush, bg = buttonBackgroundBrush),
     hover  = GlyphStyle(font = buttonFont, fg = buttonHoverBrush, bg = buttonBackgroundBrush),
     frame  = buttonDecoration,
-    border = 6f,
+    border = 10f,
     toggle = ToggleStyle(on = toggleOn, off = toggleOff),
     checkbox = CheckboxStyle(tick = "✔", cross = "✖", on = toggleOn, off = toggleOff)
   )
