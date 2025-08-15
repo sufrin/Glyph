@@ -1,11 +1,11 @@
 package org.sufrin.glyph
 package glyphML
 
-import glyphML.Context.{AttributeMap, Env}
+import glyphML.AbstractSyntax.Scope
+import glyphML.Context.AttributeMap
+import unstyled.static.INVISIBLE
 
-import org.sufrin.glyph.unstyled.static.INVISIBLE
 import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
-import org.sufrin.glyph.glyphML.AbstractSyntax.Scope
 
 import scala.util.matching.Regex
 
@@ -98,4 +98,9 @@ class ValueStore { thisStore =>
   def update(name: String, thing: StyleSheet=>Glyph): Unit = thisStore(name) = StoredGlyphGenerator(thing)
   def update(name: String, thing: String): Unit            = thisStore(name) = StoredString(thing)
 
+
+  override def toString: String = {
+    store.toSeq.map{case ((k: String, t: String), d: Value)=>s"$k: $t -> $d"}.mkString(" ")
+
+  }
 }

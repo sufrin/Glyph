@@ -3,34 +3,60 @@ package glyphML
 package tests
 
 import glyphML.Translator
+import styled.ToggleVariable
+import styles.decoration.RoundFramed
+import unstyled.reactive.Reaction
 
-import org.sufrin.glyph.NaturalSize.Col
-import org.sufrin.glyph.glyphXML.PrettyPrint
-import org.sufrin.glyph.unstyled.reactive.Reaction
-import org.sufrin.logging.{FINE, FINEST, INFO, OFF, SourceDefault, WARN}
+import org.sufrin.logging.{INFO, WARN}
 import org.sufrin.logging
+/**
+ * An experiment in providing idiomatic support for building style-dependent (mostly reactive) glyphs to add to
+ * translation definitions.
+ */
+object idioms {
 
-import scala.collection.immutable.ListMap
+  def Label(text: String): StyleSheet => Glyph =
+      {style: StyleSheet => styled.Label(text)(style)}
+
+  def TextButton(name: String): Reaction=>StyleSheet=>Glyph  =
+    (reaction: Reaction) => {style: StyleSheet=>styled.TextButton(name)(reaction)(style)}
+
+  def TextToggle(whenTrue: String="❎", whenFalse: String="✅", hint: Hint=NoHint): ToggleVariable => StyleSheet => Glyph =
+    (variable: ToggleVariable) => {style: StyleSheet=>styled.TextToggle(whenTrue, whenFalse, variable.value, hint)(variable)(style)}
+
+  def Table(cols: Int=0, rows: Int=0, uniform: Boolean=false)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Table(cols, rows, uniform)(glyphs)
+  def Col(align: Alignment=Center)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Col(align)(glyphs)
+  def Row(align: VAlignment=Mid)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Row(align)(glyphs)
+
+  /** Constructions for `Row, Col, Table` that take `Seq[Glyph]` arguments  */
+  object fromSequence {
+    def Col(align: Alignment=Center)(glyphs: Seq[StyleSheet => Glyph]): StyleSheet => Glyph = {
+      style: StyleSheet =>
+        val reified = glyphs.map(_.apply(style))
+        NaturalSize.Col(align = align)(reified)
+    }
+
+    def Row(align: VAlignment=Mid)(glyphs: Seq[StyleSheet => Glyph]): StyleSheet => Glyph = {
+      style: StyleSheet =>
+        val reified = glyphs.map(_.apply(style))
+        NaturalSize.Row(align = align)(reified)
+    }
+
+    def Table(cols: Int=0, rows: Int=0, uniform: Boolean=false)(glyphs: Seq[StyleSheet => Glyph]): StyleSheet => Glyph = { style: StyleSheet =>
+      import style.{padX, padY, backgroundBrush => bg, foregroundBrush => fg}
+      val reified = glyphs.map(_.apply(style))
+      val Grid = NaturalSize.Grid(fg = fg, bg = bg, padX, padY)
+      val buildFrom = if (uniform) Grid.grid(height = rows, width = cols)(_) else Grid.table(height = rows, width = cols)(_)
+      buildFrom(reified)
+    }
+  }
+
+}
 
 object para extends Application {
   import Translator._
-
-
-
-  object delayed {
-
-    def Label(text: String): StyleSheet=>Glyph  = (style: StyleSheet)=>styled.Label(text)(style)
-    def TextButton(name: String)(reaction: Reaction) = (style: StyleSheet)=>styled.TextButton(name)(reaction)(style)
-
-    def Column(glyphs: Seq[(StyleSheet=>Glyph)]): StyleSheet=>Glyph =
-    {case style: StyleSheet  => {
-      val refied = glyphs.map(_.apply(style))
-      Col(align=Left)(refied)
-    }}
-
-  }
-
-  val translator = new Translator(new ValueStore {})
+  private val style = StyleSheet(buttonDecoration = RoundFramed(enlarge=0.6f, radius=4, fg=Brushes.blackFrame, bg=Brushes.lightGrey))
+  private val translator = new Translator(new ValueStore {})(style)
   import translator._
 
   HYPHENATION("flocci-nauci-nihil-ipil-ifica-tion")("-")
@@ -41,10 +67,10 @@ object para extends Application {
   HYPHENATION("averywidewordwithaninfeasible-breakpoint")("-")
 
 
-  locally { for { num<-1 to 8} primitives(s"B$num")=delayed.TextButton(s"B$num"){_=> println(num) } }
-  locally { for { num<-1 to 5} primitives(s"L$num")=delayed.Label(s"L$num") }
+  locally { for { num<-1 to 8} primitives(s"B$num")=idioms.TextButton(s"B$num"){_=> println(num) } }
+  locally { for { num<-1 to 5} primitives(s"L$num")=idioms.Label(s"L$num") }
 
-  primitives("pfft") = <span>as well as some tag-extending features</span>
+  primitives("aswell") = <span> as well as some tag-extending features</span>
 
   /* Add
    * primitives(<attributes id=.../>)
@@ -56,27 +82,34 @@ object para extends Application {
    *
    * */
 
-  primitives("col")=delayed.Column(List(delayed.Label("C1"), delayed.Label("C2")))
+  private val autoScale = ToggleVariable(initially = false){ state => source.guiRoot.autoScale = state }
+
   primitives("row")=style => NaturalSize.Row(styled.Label("This is a")(style).framed(), styled.Label(" long row")(style))
-  primitives("buttoncol") =
-    delayed.Column(List(
-      delayed.TextButton("Show all Primitives"){_=> println(primitives.show(".*".r, ".*".r).mkString("\n"))},
-      delayed.TextButton("Show Attributes"){_=> println(primitives.show(".*".r, "StoredAttributeMap".r).mkString("\n"))},
-      delayed.TextButton("Nothing"){_=>}))
+
+  locally {
+    import idioms._
+      primitives("buttons") =
+        Table(uniform=true) (
+          TextButton("Show all Primitives") { _ => println(primitives.show(".*".r, ".*".r).mkString("\n")) },
+          TextButton("Show Attributes")     { _ => println(primitives.show(".*".r, "StoredAttributeMap".r).mkString("\n")) },
+          TextToggle(whenFalse = "Autoscale: ✅", whenTrue = "Autoscale: ❎")(autoScale))
+  }
+
 
   lazy val source: Glyph =
     <div fontfamily="Times" width="400px" labelforeground="black" textforeground="black" cdatabackground="pink" cdataforeground="red"
-         attributeswarning="f"
-    >
-      <attributes id="class:but" buttonbackground="yellow" buttonforeground="red" fontscale="0.7"/>
-      <attributes id="tag:debug" caption="Debugging" local="t" mark="MARK #1"/>
-      <attributes id="tag:p" framed="yellow" align="justify" />
-      <attributes id="class:fat"  fontscale="1.4"  align="justify"/>
-      <attributes id="class:narrow"  align="justify"  width="280px"  textforeground="black"/>
+         attributeswarning="f">
+      <attributes id="class:but"    buttonbackground="yellow" buttonforeground="red" fontscale="0.9"/>
+      <attributes id="tag:debug"    caption="Debugging" local="t" mark="MARK #1"/>
+      <attributes id="tag:p"        framed="yellow" align="justify" />
+      <attributes id="class:fat"    fontscale="1.4"  align="justify"/>
+      <attributes id="class:narrow" align="justify"  width="280px"  textforeground="black"/>
+      <macro tag="fw" fontfamily="Courier"><?body?></macro>
+
 
       <p hang=" * ">
         This application tests a combination of <span textforeground="green">local_ization of attributes</span>, <tt fontscale="1.2">text layout</tt>,
-        hy_phenation, and the plugging in of <b>reactive glyphs,</b> <pfft/>.
+        hy_phenation, and the <fw>plugging</fw> in of <b>reactive glyphs,</b>  <aswell/>.
       </p>
 
       <p fontFamily="Courier" textforeground="black">
@@ -88,7 +121,7 @@ object para extends Application {
         This is centred text in a small scale bold-italic font.
       </p>
 
-      <glyph gid="buttoncol" class="but"/>
+      <span foreground="transparent" background="transparent"><glyph gid="buttons"/></span>
       <glyph gid="unk"/>
 
       <attributes id="tag:p" fontFamily="Courier" framed="blue">
@@ -114,7 +147,7 @@ object para extends Application {
       <mymacro p1="nondefault p1">
         the invocation <tt>SS</tt> <i>TT</i>
       </mymacro>
-    </div>.scaled(0.7f)
+    </div>
 
 
   lazy val GUI: Glyph = {
@@ -129,43 +162,12 @@ object para extends Application {
 
 object abstraction extends Application {
   import Translator._
-
-  object delayed {
-
-    def Label(text: String): StyleSheet=>Glyph  = (style: StyleSheet)=>styled.Label(text)(style)
-    def TextButton(name: String)(reaction: Reaction) = (style: StyleSheet)=>styled.TextButton(name)(reaction)(style)
-
-    def Column(glyphs: Seq[(StyleSheet=>Glyph)]): StyleSheet=>Glyph =
-    {case style: StyleSheet  => {
-      val refied = glyphs.map(_.apply(style))
-      Col(align=Left)(refied)
-    }}
-
-  }
-
-  val translator = new Translator(new ValueStore {})
+  val translator = new Translator(new ValueStore {})(StyleSheet())
   import translator._
 
-  HYPHENATION("flocci-nauci-nihil-ipil-ifica-tion")("-")
-  HYPHENATION("hyphen-at-able")("-")
-  HYPHENATION("in-formed")("-")
-  HYPHENATION("mis-tak-enly")("-")
-  HYPHENATION("anti-dis-estab-lish-men-t-arian-ism")("-")
-  HYPHENATION("averywidewordwithaninfeasible-breakpoint")("-")
 
-
-  locally { for { num<-1 to 8} primitives(s"B$num")=delayed.TextButton(s"B$num"){_=> println(num) } }
-  locally { for { num<-1 to 5} primitives(s"L$num")=delayed.Label(s"L$num") }
-
-  primitives("pfft") = <span>as well as some tag-extending features</span>
-
-  primitives("col")=delayed.Column(List(delayed.Label("C1"), delayed.Label("C2")))
-  primitives("row")=style => NaturalSize.Row(styled.Label("This is a")(style).framed(), styled.Label(" long row")(style))
-  primitives("buttoncol") =
-    delayed.Column(List(
-      delayed.TextButton("Show all Primitives"){_=> println(primitives.show(".*".r, ".*".r).mkString("\n"))},
-      delayed.TextButton("Show Attributes"){_=> println(primitives.show(".*".r, "StoredAttributeMap".r).mkString("\n"))},
-      delayed.TextButton("Nothing"){_=>}))
+  primitives("definefoo") = // <definefoo/> defines the macro foo in the current scope
+    <macro tag="foo"><p><debug local="t"/>FOO</p></macro>
 
   lazy val source: Glyph =
     <div fontfamily="Times" width="400px" labelforeground="black" textforeground="black" cdatabackground="pink" cdataforeground="red"
@@ -196,7 +198,9 @@ object abstraction extends Application {
       </nested>
       <nested textbackground="pink">
         default (=right) alignment, textbackground pink
+        <definefoo/>
       </nested>
+      <foo/>
     </div>
 
 

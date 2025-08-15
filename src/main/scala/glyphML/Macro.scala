@@ -42,7 +42,7 @@ import org.sufrin.logging.SourceDefault
  * @param macroBody the body of the macro
  */
 
-case class Macro(val scope: Scope, tag: String, val defaultAttributes: AttributeMap, context: Env, macroBody: Seq[Tree])  {
+case class Macro(val scope: Scope, tag: String, val defaultAttributes: AttributeMap, context: Context, macroBody: Seq[Tree])  {
 
   /**
    *  substitute invocation attributes and invocation body parts in appropriate places in the abstraction body

@@ -94,7 +94,7 @@ object Translator {
 }
 
 
-class Translator (val primitives: ValueStore) { thisTranslator =>
+class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTranslator =>
   import org.sufrin.glyph.glyphML.AbstractSyntax._
   import Context._
   import Translator._
@@ -112,7 +112,7 @@ class Translator (val primitives: ValueStore) { thisTranslator =>
    *  Translate this tree (and its descendants, if any) to `Glyph`s
    *  derived from it in the given environment.
    */
-  def translate(context: Env)(tree: Tree): Seq[Glyph] = {
+  def translate(context: Context)(tree: Tree): Seq[Glyph] = {
     implicit val style: StyleSheet = context.sheet
 
     def interWordSpace() = style.textWordFill(0.5f)
@@ -168,7 +168,7 @@ class Translator (val primitives: ValueStore) { thisTranslator =>
   }
 
 
-  def translateQuoted(context: Env)(text: String): Glyph = {
+  def translateQuoted(context: Context)(text: String): Glyph = {
     val sheet=context.sheet
     val rawLines = text.split('\n').toSeq
     val lines = PCDATA.stripCommonIndentation(rawLines)
@@ -216,8 +216,8 @@ class Translator (val primitives: ValueStore) { thisTranslator =>
    * @return translation of the subtrees
    */
 
-  def translateElement(context: Env)(scope: Scope, tag: String, givenAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
-    import Context.TypedAttributeMap
+  def translateElement(context: Context)(scope: Scope, tag: String, givenAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
+    import Context._
     // Calculate effective local attributes: given supersedes self supersedes class supersedes tag:$tag
     val selfid   = givenAttributes.String("id", "")
     val StoredAttributeMap(selfattributes) = if (selfid.isEmpty) StoredAttributeMap(givenAttributes) else primitives.getKindElse(StoreType.AttributeMap)(selfid)
@@ -305,8 +305,8 @@ class Translator (val primitives: ValueStore) { thisTranslator =>
         // Give the name denoted by "id" to the remaining attributes, and
         // treat the collection as a primitive: globally if
         // there is no body; otherwise for the scope of the evaluation of the body.
-        val attrId = givenAttributes.String("id", "")
-        val warn   = localAttributes.Bool("warn", context.attributes.Bool("attributeswarning", true))
+        val attrId: String  = givenAttributes.String("id", "")
+        val warn:   Boolean = localAttributes.Bool("warn", context.attributes.Bool("attributeswarning", true))
         if (attrId.nonEmpty) {
           val before =  primitives.getKind(StoreType.AttributeMap)(attrId)
           if (children.isEmpty) {// global definition
@@ -388,7 +388,7 @@ class Translator (val primitives: ValueStore) { thisTranslator =>
     }
   }
 
-  val rootContext = Context.Env(Map.empty, StyleSheet())
+  val rootContext = Context(Map.empty, rootStyle)
 
   def fromXML(source: scala.xml.Node)(implicit location: SourceLocation = sourcePath): Glyph = {
     import glyphXML.PrettyPrint._

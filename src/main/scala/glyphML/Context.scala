@@ -4,7 +4,6 @@ package glyphML
 
 import org.sufrin.logging
 import org.sufrin.logging.Default
-import org.sufrin.logging.Default.warn
 import org.sufrin.SourceLocation._
 
 object Context {
@@ -253,15 +252,15 @@ object Context {
   }
 
   /**  */
-  case class Env(attributes: AttributeMap, sheet: StyleSheet) {
+  case class Context(attributes: AttributeMap, sheet: StyleSheet) {
     /**
      *  Yield a new `Env`  whose `attributes` are superseded by those
      *  specified by `localAttributes`, and whose `sheet` is derived
      *  from those attributes.
      */
-    def updated(localAttributes: AttributeMap): Env = {
+    def updated(localAttributes: AttributeMap): Context = {
         val updatedAttributes = localAttributes supersede attributes
-        Env(updatedAttributes, updatedAttributes.deriveSheet(sheet))
+        Context(updatedAttributes, updatedAttributes.deriveSheet(sheet))
     }
   }
 
