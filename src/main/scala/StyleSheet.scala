@@ -24,7 +24,7 @@ case class StyleSheet
  buttonHoverBrush: Brush = Brushes("green"),
  buttonDownBrush: Brush = Brushes("red"),
  toggleBackgroundBrush: Brush = Brushes("transparent"),
- toggleOnBrush: Brush = Brushes("red"),
+ toggleOnBrush: Brush = Brushes("blue"),
  toggleOffBrush: Brush = Brushes("blue"),
  labelBackgroundBrush: Brush = Brushes("transparent"),
  labelForegroundBrush: Brush = Brushes("blue"),

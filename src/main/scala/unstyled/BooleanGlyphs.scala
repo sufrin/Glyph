@@ -8,7 +8,7 @@ object BooleanGlyphs {
 
     /** A settable `OneOf`  showing `whenTrue` if on, and `whenFalse` if off */
     class OnOff(whenTrue: Glyph, whenFalse: Glyph, initially: Boolean, fg: Brush, bg: Brush) extends Settable[Boolean]
-    { val oneOf = dynamic.OneOf(bg=Brushes.transparent, enableBG = false)(whenFalse, whenTrue)
+    { val oneOf = dynamic.OneOf(fg=Brushes.transparent, bg=Brushes.transparent, enableBG = false)(whenFalse, whenTrue)
 
       /** Set the state */
       def set(state: Boolean): Unit = { oneOf.select(if (state) 1 else 0); oneOf.reDraw() }
@@ -21,7 +21,6 @@ object BooleanGlyphs {
 
       locally {
         set(initially)
-        println(whenTrue.diagonal, whenFalse.diagonal) //**
       }
     }
 

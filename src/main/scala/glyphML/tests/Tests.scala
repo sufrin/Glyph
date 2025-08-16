@@ -9,10 +9,13 @@ import org.sufrin.logging.{INFO, WARN}
 import org.sufrin.logging
 
 object para extends Application {
+  val frameColor = Brushes.red(width=2)
   import Translator._
   private val style = StyleSheet(
-    buttonDecoration = styles.decoration.RoundFramed(fg=Brushes.red(width=4)),
-    buttonForegroundBrush = Brushes.black
+    buttonDecoration = styles.decoration.Edged(fg=frameColor, enlarge=0f),
+    buttonForegroundBrush = Brushes.black,
+    toggleOnBrush = Brushes.black,
+    toggleOffBrush = Brushes.black
     )
   private val translator = new Translator(new ValueStore {})(style)
   import translator._
@@ -45,13 +48,17 @@ object para extends Application {
 
   locally {
     import idioms._
+
       primitives("buttons") =
         Row(align=Mid) (
           TextButton("Show Primitives") { _ => println(primitives.show(".*".r, ".*".r).mkString("\n")) },
           TextButton("Show Attributes")     { _ => println(primitives.show(".*".r, "StoredAttributeMap".r).mkString("\n")) },
-          CheckBox(autoScale, "Scale window by dragging edges"),
-          TextToggle(whenFalse="Turn it\nOn",whenTrue="Turn it\nOff")(autoScale)
-          )
+          //TextButton("{}"){ _ => idioms.edgeColor.col(Brushes.blue.color)},
+          //TextButton("}{"){ _ => idioms.edgeColor.col(0)},
+          //TextButton("<>"){ _ => frameColor.col(0)},
+          //TextButton("><"){ _ => frameColor.col(Brushes.red.color)},
+          CaptionedCheckBox("Scaleable ", "Scale window by dragging edges")(autoScale),
+        )
 
       for { num<-1 to 8} primitives(s"B$num")= TextButton(s"B$num"){_=> println(num) }
       for { num<-1 to 5} primitives(s"L$num")= Label(s"L$num")

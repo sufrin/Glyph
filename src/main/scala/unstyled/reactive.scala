@@ -1,8 +1,9 @@
 package org.sufrin.glyph
 package unstyled
 
+import unstyled.static.FilledRect
+
 import io.github.humbleui.jwm.{EventMouseScroll, Window}
-import org.sufrin.glyph.unstyled.static.{FilledRect, INVISIBLE}
 
 /**
  *  A collection of `Reactive` glyph types.
@@ -410,8 +411,8 @@ object reactive {
     def apply(text: String, fg: Brush = fallback.buttonForeground, bg: Brush = fallback.buttonBackground, background: Boolean = true)
              (reaction: Reaction): ReactiveGlyph = {
          val up = fallback.buttonText(text, fg, bg).enlarged(fallback.upFrame.strokeWidth * 4)
-         new RawButton(up, up(fg = red), up(fg = green), up.fg, up.bg, reaction)
-         //new ColourButton(up, fg, bg, background, reaction)
+         //new RawButton(up, up(fg = red), up(fg = green), up.fg, up.bg, reaction)
+         new ColourButton(up, fg, bg, background, reaction)
        }
 
 

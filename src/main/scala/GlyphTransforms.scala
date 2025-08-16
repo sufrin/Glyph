@@ -6,8 +6,6 @@ import NaturalSize.{Col, Row}
 import unstyled.static
 import GlyphTransforms.{Framed, WithBaseline}
 
-import org.sufrin.glyph.GlyphShape.FILL
-
 /**
  *  As a notational convenience. `Glyphs` have intrinsic transforms that correspond to the external transformers implemented
  *  by the classes nested within the object `GlyphTransforms`. The trait `GlyphTransforms` is a mixin used to define the
@@ -300,7 +298,7 @@ object GlyphTransforms {
       }
 
       def toSize(w: Scalar, h: Scalar, _fg: Brush = null, _bg: Brush = null)(glyph: Glyph): Glyph =
-        Enlarged(w - glyph.w, h - glyph.h, _fg, _bg)(glyph)
+        Enlarged((w - glyph.w) max 0, (h - glyph.h) max 0, _fg, _bg)(glyph)
 
       def bySize(dw: Scalar, dh: Scalar, _fg: Brush = null, _bg: Brush = null)(glyph: Glyph): Glyph =
         Enlarged(dw, dh, _fg, _bg)(glyph)

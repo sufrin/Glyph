@@ -82,7 +82,7 @@ trait ToggleButton { thisToggle =>
     button.set(variable.get) //** 28JUL
     if (variable.get!=button.get) logging.SourceDefault.warn(s"Contradictory initial states ${variable.get} ${button.get}")
     variable.register(button)
-    Decorate(button)
+    Decorate(button)(sheet)
   }
 
   /**
@@ -355,6 +355,9 @@ case class TextToggle(whenTrue: String, whenFalse: String, initially: Boolean, h
   }
 }
 
+
+
+
 /**
  *  As TextToggle but destined for am menu; hence defer decoration
  */
@@ -425,9 +428,19 @@ case class CheckBox(initially: Boolean, hint: Hint = NoHint) extends ToggleButto
     val detail = sheet.buttonStyle
     val tick = detail.checkbox.tick
     val cross = detail.checkbox.cross
-    TextToggle(whenFalse=cross, whenTrue=tick, initially=initially, hint=hint)(reaction)
+    TextToggle(whenFalse = cross, whenTrue = tick, initially = initially, hint = hint)(reaction)
   }
 }
+
+
+  case class CaptionedCheckBox(caption: String, initially: Boolean, hint: Hint = NoHint) extends ToggleButton {
+    def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
+      val detail = sheet.buttonStyle
+      val tick = detail.checkbox.tick
+      val cross = detail.checkbox.cross
+      TextToggle(whenFalse = s"$caption $cross", whenTrue = s"$caption $tick", initially = initially, hint = hint)(reaction)
+    }
+  }
 
 case class ActiveString(initial: String)(implicit style: StyleSheet) extends dynamic.ActiveString(style.labelStyle.font, style.labelStyle.fg, style.labelStyle.bg, initial)
 
