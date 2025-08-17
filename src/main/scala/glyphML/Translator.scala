@@ -125,8 +125,8 @@ class ResolveScopedAttributes(primitives: ValueStore, scope: Scope, tag: String,
 }
 
 class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTranslator =>
-  import org.sufrin.glyph.glyphML.AbstractSyntax._
-  import Context._
+  import glyphML.AbstractSyntax._
+  import glyphML.Context._
   import Translator._
 
   /**
@@ -387,6 +387,17 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
         val background = localAttributes.Brush("background", localAttributes.Brush("bg", Brushes.transparent))
         val foreground = localAttributes.Brush("foreground", localAttributes.Brush("fg", Brushes.transparent))
         List(FixedSize.Space(width, height, stretch, fg=foreground, bg=background))
+
+      case "fixedwidth" =>
+        val resolved = new ResolveScopedAttributes(primitives, scope, tag, givenAttributes, child)
+        import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
+        import resolved._
+        val width: Scalar = inheritedAttributes.Units("width", 0)(context.sheet)
+        val fg  = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
+        val bg  = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
+        val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "width"))
+        val glyph = FixedSize.Row(align=Mid, width=width)(children.flatMap(translate(derivedContext)))
+        List(glyph)
 
       case _ =>
         // (Context, AbstractSyntax.Scope, String, AttributeMap, Seq[AbstractSyntax.Tree])

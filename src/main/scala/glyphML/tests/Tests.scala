@@ -2,11 +2,9 @@ package org.sufrin.glyph
 package glyphML
 package tests
 
-import glyphML.Context.Context
 import glyphML.Translator
 import styled.ToggleVariable
 
-import org.sufrin.glyph.GlyphTypes.Scalar
 import org.sufrin.logging.{INFO, WARN}
 import org.sufrin.logging
 
@@ -38,6 +36,14 @@ object para extends Application {
   primitives("row")=style => NaturalSize.Row(styled.Label("This is a")(style).framed(), styled.Label(" long row")(style))
 
   locally {
+
+    val extend = DecorativeExtensions(primitives)
+    import extend._
+    primitives("turn") = StoredExtension (turn)
+    primitives("rotate") = StoredExtension(turn)
+    primitives("scale") = StoredExtension(scale)
+    primitives("frame") = StoredExtension(frame)
+
     val autoScale = ToggleVariable(initially = false){ state => source.guiRoot.autoScale = state }
 
     import idioms._
@@ -51,66 +57,6 @@ object para extends Application {
 
       for { num<-1 to 8} primitives(s"B$num")= TextButton(s"B$num"){_=> println(num) }
       for { num<-1 to 5} primitives(s"L$num")= Label(s"L$num")
-
-    def turn(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
-        val resolved = new ResolveScopedAttributes(primitives, element.scope, element.tag, element.attributes, element.child)
-        import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
-        import resolved._
-        val degrees: Int = inheritedAttributes.Int("degrees", inheritedAttributes.Int("deg", 90*inheritedAttributes.Int("quads", 0)))
-        def turn(glyph: Glyph): Glyph =
-         degrees match {
-          case 0 => glyph
-          case d =>
-            val glyph$ = glyph.turned(d.toFloat, false)
-            glyph$
-        }
-        val derivedContext: Context = context.updated(inheritedAttributes.without("deg", "degrees", "quads"))
-        val glyph = turn(NaturalSize.Row(align=Mid)(children.flatMap(translator.translate(derivedContext))))
-        List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
-      }
-
-    def scale(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
-      val resolved = new ResolveScopedAttributes(primitives, element.scope, element.tag, element.attributes, element.child)
-      import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
-      import resolved._
-      val proportion = inheritedAttributes.Float("scale", 0)
-      val derivedContext: Context = context.updated(inheritedAttributes.without("proportion"))
-      val glyph = NaturalSize.Row(align=Mid)(children.flatMap(translator.translate(derivedContext))).scaled(proportion)
-      List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
-    }
-
-    def frame(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
-      val resolved = new ResolveScopedAttributes(primitives, element.scope, element.tag, element.attributes, element.child)
-      import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
-      import resolved._
-      val radius: Scalar = inheritedAttributes.Float("radius", 0)
-      val fg  = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("frameforeground", Brushes.black))
-      val bg  = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("framebackground", Brushes.transparent))
-      val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg"))
-      val unframed = NaturalSize.Row(align=Mid)(children.flatMap(translator.translate(derivedContext)))
-      val glyph = if (radius==0f) unframed.framed(fg, bg, radius = radius) else unframed.roundFramed(fg, bg, radius = radius)
-      List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
-    }
-
-    def fixedWidth(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
-      val resolved = new ResolveScopedAttributes(primitives, element.scope, element.tag, element.attributes, element.child)
-      import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
-      import resolved._
-      val width: Scalar = inheritedAttributes.Units("width", 0)(context.sheet)
-      val fg  = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
-      val bg  = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
-      val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "width"))
-      val glyph = FixedSize.Row(align=Mid, width=width)(children.flatMap(translator.translate(derivedContext)))
-      List(glyph)
-    }
-
-
-
-    primitives("turn") = StoredExtension (turn)
-    primitives("rotate") = StoredExtension(turn)
-    primitives("scale") = StoredExtension(scale)
-    primitives("frame") = StoredExtension(frame)
-    primitives("fixedwidth") = StoredExtension(fixedWidth)
   }
 
 
