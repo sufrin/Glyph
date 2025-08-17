@@ -99,20 +99,20 @@ object Translator {
 
 /**
  * Resolve the given attributes of an element using the scoping rules
- * @param primitives
+ * @param definitions
  * @param scope
  * @param tag
  * @param givenAttributes
  * @param child
  */
-class ResolveScopedAttributes(primitives: ValueStore, scope: Scope, tag: String, givenAttributes: glyphML.Context.AttributeMap, child: Seq[Tree]) {
+class ResolveScopedAttributes(definitions: Definitions, scope: Scope, tag: String, givenAttributes: glyphML.Context.AttributeMap, child: Seq[Tree]) {
   import glyphML.Context._
   val selfid   = givenAttributes.String("id", "")
-  val StoredAttributeMap(selfattributes) = if (selfid.isEmpty) StoredAttributeMap(givenAttributes) else primitives.getKindElse(StoreType.AttributeMap)(selfid)
+  val StoredAttributeMap(selfattributes) = if (selfid.isEmpty) StoredAttributeMap(givenAttributes) else definitions.getKindElse(StoreType.AttributeMap)(selfid)
 
   val classid = selfattributes.String("class", "")
-  val StoredAttributeMap(classattributes) = if (classid.isEmpty) StoredAttributeMap(selfattributes) else primitives.getKindElse(StoreType.AttributeMap)(s"class:$classid")
-  val StoredAttributeMap(tagattributes) =  primitives.getKindElse(StoreType.AttributeMap)(s"tag:$tag")
+  val StoredAttributeMap(classattributes) = if (classid.isEmpty) StoredAttributeMap(selfattributes) else definitions.getKindElse(StoreType.AttributeMap)(s"class:$classid")
+  val StoredAttributeMap(tagattributes) =  definitions.getKindElse(StoreType.AttributeMap)(s"tag:$tag")
 
   /** Effective attributes after inheritance */
   val inheritedAttributes: AttributeMap = (givenAttributes supersede selfattributes supersede classattributes supersede tagattributes).without("id", "class")
@@ -124,7 +124,7 @@ class ResolveScopedAttributes(primitives: ValueStore, scope: Scope, tag: String,
   val children = if (keepEmpty) child else child.filterNot(isEmptyText)
 }
 
-class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTranslator =>
+class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTranslator =>
   import glyphML.AbstractSyntax._
   import glyphML.Context._
   import Translator._
@@ -133,9 +133,9 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
    *  Add stock entitites
    */
   locally {
-    primitives("amp") = "&"
-    primitives("lt") = "<"
-    primitives("gt") = ">"
+    definitions("amp") = "&"
+    definitions("lt") = "<"
+    definitions("gt") = ">"
   }
 
   /**
@@ -164,7 +164,7 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
       case Para(texts: Seq[String]) => texts.map(toText(_))
       case Quoted(text: String)     => List(translateQuoted(context)(text))
       case Entity(name: String)     =>
-        val StoredString(text) = primitives.getKindElse(StoreType.String)(name)
+        val StoredString(text) = definitions.getKindElse(StoreType.String)(name)
         List(style.makeText(text))
       case Comment(target: String, text: String) => Nil
       case MacroParam(name) =>
@@ -250,7 +250,7 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
     import glyphML.Context.TypedAttributeMap
 
 
-    val resolved = new ResolveScopedAttributes(primitives, scope, tag, givenAttributes, child)
+    val resolved = new ResolveScopedAttributes(definitions, scope, tag, givenAttributes, child)
     import resolved._
 
     val localAttributes = inheritedAttributes
@@ -310,7 +310,7 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
         val ambientHeight = derivedContext.sheet.textFont.getMetrics.getHeight
         @inline def raiseBy(by: Scalar)(glyph: Glyph): Glyph = glyph.withBaseline(by)
         val id = givenAttributes.String("gid", "")
-        primitives.getKind(StoreType.GlyphGenerator)(id) match {
+        definitions.getKind(StoreType.GlyphGenerator)(id) match {
           case Some(StoredGlyphGenerator(generator)) =>
             val glyph = generator(derivedContext.sheet)
             List(raiseBy((ambientHeight+glyph.h)*0.5f)(glyph))
@@ -331,23 +331,23 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
         val attrId: String  = givenAttributes.String("id", "")
         val warn:   Boolean = localAttributes.Bool("warn", context.attributes.Bool("attributeswarning", true))
         if (attrId.nonEmpty) {
-          val before =  primitives.getKind(StoreType.AttributeMap)(attrId)
+          val before =  definitions.getKind(StoreType.AttributeMap)(attrId)
           if (children.isEmpty) {// global definition
             if (warn && before.isDefined) SourceDefault.warn(s"Overriding primitive assignment $scope<attributes ${givenAttributes.toSource}")
-            primitives(attrId) = StoredAttributeMap(givenAttributes.without("id"))
+            definitions(attrId) = StoredAttributeMap(givenAttributes.without("id"))
             Nil
           } else // scoped definition
           { before match {
               case None =>
-                primitives(attrId) = StoredAttributeMap(givenAttributes.without("id"))
+                definitions(attrId) = StoredAttributeMap(givenAttributes.without("id"))
                 val body = children.flatMap(translate(context))
-                primitives.remove(StoreType.AttributeMap)(attrId)
+                definitions.remove(StoreType.AttributeMap)(attrId)
                 body
               case Some(restore) =>
                 if (warn) SourceDefault.warn(s"Overriding scoped primitive $scope<attributes ${givenAttributes.toSource}")
-                primitives(attrId) = StoredAttributeMap(givenAttributes.without("id"))
+                definitions(attrId) = StoredAttributeMap(givenAttributes.without("id"))
                 val body = children.filterNot(isEmptyText).flatMap(translate(context))
-                primitives(attrId) = restore
+                definitions(attrId) = restore
                 body
             }
           }
@@ -361,10 +361,10 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
           // The given attributes are the defaults for upcoming applications of the macro.
           // The context binds the current free attributes.
           // Attributes inherited by class or by id or by tag:macro are ignored.
-          if (warn && primitives.getKind(StoreType.Macro)(tag).isDefined) {
+          if (warn && definitions.getKind(StoreType.Macro)(tag).isDefined) {
              SourceDefault.warn(s"Overriding macro definition $scope<attributes ${givenAttributes.toSource}")
           }
-          primitives(tag) = Macro(scope, tag, givenAttributes.without("tag", "warn"), context, children)
+          definitions(tag) = Macro(scope, tag, givenAttributes.without("tag", "warn"), context, children)
         }
         Nil
 
@@ -389,7 +389,7 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
         List(FixedSize.Space(width, height, stretch, fg=foreground, bg=background))
 
       case "fixedwidth" =>
-        val resolved = new ResolveScopedAttributes(primitives, scope, tag, givenAttributes, child)
+        val resolved = new ResolveScopedAttributes(definitions, scope, tag, givenAttributes, child)
         import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
         import resolved._
         val width: Scalar = inheritedAttributes.Units("width", 0)(context.sheet)
@@ -403,7 +403,7 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
         // (Context, AbstractSyntax.Scope, String, AttributeMap, Seq[AbstractSyntax.Tree])
 
         @inline def translateExtension(tag: String): Option[Seq[Glyph]] =
-          primitives.getKind(StoreType.Extension)(tag) match {
+          definitions.getKind(StoreType.Extension)(tag) match {
             case None => None
             case Some(StoredExtension(translate)) =>
               Some(translate(thisTranslator)(context)(Element(scope, tag, givenAttributes, child)))
@@ -413,7 +413,7 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
           }
 
         @inline def translateMacro(tag: String): Option[Seq[Glyph]] =
-            primitives.getKind(StoreType.Macro)(tag) match {
+            definitions.getKind(StoreType.Macro)(tag) match {
               case None => None
               case Some(StoredMacro(abstraction)) =>
                 Some(abstraction.expanded(thisTranslator, localAttributes, children))
@@ -423,7 +423,7 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
             }
 
         @inline def translateElement(tag: String): Option[Seq[Glyph]] =
-            primitives.getKind(StoreType.Element)(tag) match {
+            definitions.getKind(StoreType.Element)(tag) match {
               case None => None
               case Some(StoredElement(element)) =>
                 val derivedContext = context.updated(localAttributes)

@@ -5,10 +5,10 @@ import glyphML.Context.Context
 import GlyphTypes.Scalar
 
 object DecorativeExtensions {
-  def apply(implicit primitives: ValueStore): DecorativeExtensions = new DecorativeExtensions(primitives)
+  def apply(implicit primitives: Definitions): DecorativeExtensions = new DecorativeExtensions(primitives)
 }
 
-class DecorativeExtensions(primitives: ValueStore) {
+class DecorativeExtensions(primitives: Definitions) {
 
   def turn(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
     val resolved = new ResolveScopedAttributes(primitives, element.scope, element.tag, element.attributes, element.child)

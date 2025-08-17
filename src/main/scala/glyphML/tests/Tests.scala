@@ -17,7 +17,7 @@ object para extends Application {
     toggleOnBrush = Brushes.black,
     toggleOffBrush = Brushes.black
     )
-  private val translator = new Translator(new ValueStore {})(style)
+  private val translator = new Translator(new Definitions {})(style)
   import translator._
 
   HYPHENATION("flocci-nauci-nihil-ipil-ifica-tion")("-")
@@ -30,33 +30,33 @@ object para extends Application {
   HYPHENATION("alter-/ego")("/")
 
 
-  primitives("aswell") = <span> as well as some tag-extending features</span>
+  definitions("aswell") = <span> as well as some tag-extending features</span>
 
 
-  primitives("row")=style => NaturalSize.Row(styled.Label("This is a")(style).framed(), styled.Label(" long row")(style))
+  definitions("row")= style => NaturalSize.Row(styled.Label("This is a")(style).framed(), styled.Label(" long row")(style))
 
   locally {
 
-    val extend = DecorativeExtensions(primitives)
+    val extend = DecorativeExtensions(definitions)
     import extend._
-    primitives("turn") = StoredExtension (turn)
-    primitives("rotate") = StoredExtension(turn)
-    primitives("scale") = StoredExtension(scale)
-    primitives("frame") = StoredExtension(frame)
+    definitions("turn") = StoredExtension (turn)
+    definitions("rotate") = StoredExtension(turn)
+    definitions("scale") = StoredExtension(scale)
+    definitions("frame") = StoredExtension(frame)
 
     val autoScale = ToggleVariable(initially = false){ state => source.guiRoot.autoScale = state }
 
     import idioms._
 
-      primitives("buttons") =
+      definitions("buttons") =
         Row(align=Mid, skip=10) (
-          TextButton("Show Primitives") { _ => println(primitives.show(".*".r, ".*".r).mkString("\n")) },
-          TextButton("Show Attributes")     { _ => println(primitives.show(".*".r, "StoredAttributeMap".r).mkString("\n")) },
+          TextButton("Show Primitives") { _ => println(definitions.show(".*".r, ".*".r).mkString("\n")) },
+          TextButton("Show Attributes")     { _ => println(definitions.show(".*".r, "StoredAttributeMap".r).mkString("\n")) },
           CaptionedCheckBox("Scaleable ", "Scale window by dragging edges")(autoScale),
-        )
+          )
 
-      for { num<-1 to 8} primitives(s"B$num")= TextButton(s"B$num"){_=> println(num) }
-      for { num<-1 to 5} primitives(s"L$num")= Label(s"L$num")
+      for { num<-1 to 8} definitions(s"B$num")= TextButton(s"B$num"){ _=> println(num) }
+      for { num<-1 to 5} definitions(s"L$num")= Label(s"L$num")
   }
 
 
@@ -136,11 +136,11 @@ object para extends Application {
 
 object abstraction extends Application {
   import Translator._
-  val translator = new Translator(new ValueStore {})(StyleSheet())
+  val translator = new Translator(new Definitions {})(StyleSheet())
   import translator._
 
 
-  primitives("definefoo") = // <definefoo/> defines the macro foo in the current scope
+  definitions("definefoo") = // <definefoo/> defines the macro foo in the current scope
     <macro tag="foo"><p><debug local="t"/>FOO</p></macro>
 
   lazy val source: Glyph =

@@ -54,7 +54,7 @@ case class StoredString(string: String)                     extends Value
 case class StoredMacro(theMacro: Macro)                     extends Value
 
 
-class ValueStore { thisStore =>
+class Definitions { thisStore =>
   private val store = collection.mutable.LinkedHashMap[(String, String), Value]()
 
   def update(name: String, value: Value): Unit = store((name, value.kind)) = value
