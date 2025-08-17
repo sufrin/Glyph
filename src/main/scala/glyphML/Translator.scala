@@ -6,6 +6,8 @@ import glyphXML.PrettyPrint
 import org.sufrin.glyph.unstyled.static.BreakableGlyph
 import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
 import org.sufrin.glyph.GlyphTypes.Scalar
+import org.sufrin.glyph.glyphML.AbstractSyntax.{isEmptyText, Scope, Tree}
+import org.sufrin.glyph.glyphML.Context.{AttributeMap, Context, ExtendedAttributeMap}
 import org.sufrin.glyph.glyphXML.PrettyPrint.AnyPretty
 import org.sufrin.glyph.glyphXML.Translation.AttributeMap
 import org.sufrin.logging.{Loggable, SourceDefault}
@@ -22,6 +24,8 @@ object Translator {
     def toSource: String = attrs.toSeq.map{case (k: String,d: String)=>s"$k=\"$d\"" }.mkString(" ")
   }
 
+
+  type Extension = Translator => Context => AbstractSyntax.Element => Seq[Glyph]
 
   private val punctChar  = ".\";:',!?".toList
 
@@ -93,6 +97,32 @@ object Translator {
 
 }
 
+/**
+ * Resolve the given attributes of an element using the scoping rules
+ * @param primitives
+ * @param scope
+ * @param tag
+ * @param givenAttributes
+ * @param child
+ */
+class ResolveScopedAttributes(primitives: ValueStore, scope: Scope, tag: String, givenAttributes: glyphML.Context.AttributeMap, child: Seq[Tree]) {
+  import glyphML.Context._
+  val selfid   = givenAttributes.String("id", "")
+  val StoredAttributeMap(selfattributes) = if (selfid.isEmpty) StoredAttributeMap(givenAttributes) else primitives.getKindElse(StoreType.AttributeMap)(selfid)
+
+  val classid = selfattributes.String("class", "")
+  val StoredAttributeMap(classattributes) = if (classid.isEmpty) StoredAttributeMap(selfattributes) else primitives.getKindElse(StoreType.AttributeMap)(s"class:$classid")
+  val StoredAttributeMap(tagattributes) =  primitives.getKindElse(StoreType.AttributeMap)(s"tag:$tag")
+
+  /** Effective attributes after inheritance */
+  val inheritedAttributes: AttributeMap = (givenAttributes supersede selfattributes supersede classattributes supersede tagattributes).without("id", "class")
+
+  /** Should subtrees that are empty be translated */
+  val keepEmpty = inheritedAttributes.Bool("keepempty", false)
+
+  /** Subtrees: with empty texts filtered out unless `keepEmpty` */
+  val children = if (keepEmpty) child else child.filterNot(isEmptyText)
+}
 
 class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTranslator =>
   import org.sufrin.glyph.glyphML.AbstractSyntax._
@@ -177,19 +207,19 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
 
   /**
    * In general the for an element is:  `<tag `*givenAttributes*`>`*child*`</tag>`
-   *  or (when *child* is empty)
-   *  `<tag `*givenAttributes*`/>`
+   * or (when *child* is empty)
+   * `<tag `*givenAttributes*`/>`
    *
    *
    * CODING STANDARD:
    *
-   *  `localAttributes` -- all element kinds are translated with this attribute map defined as
-   *  {{{(
+   * `localAttributes` -- all element kinds are translated with this attribute map defined as
+   * {{{(
    *      givenAttributes   supersede
    *      selfattributes    supersede
    *      classattributes   supersede
    *      tagattributes).without("id", "class")
-   *  }}}
+   *   }}}
    *
    *  where
    *
@@ -207,29 +237,22 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
    * @see Context
    * @see Context.Env
    * @see Context.deriveSheet
-   *
    * @param context inherited attribute mapping and style sheet
    * @param scope the location (as a stack of element tags, source code locations) of the element
    * @param tag the element is of form `<tag ...>...</tag>`
    * @param givenAttributes the attributes explicitly given at the tag
-   * @param children the subtrees of the element (if any)
+   * @param child the subtrees of the element (if any)
    * @return translation of the subtrees
    */
 
-  def translateElement(context: Context)(scope: Scope, tag: String, givenAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
-    import Context._
-    // Calculate effective local attributes: given supersedes self supersedes class supersedes tag:$tag
-    val selfid   = givenAttributes.String("id", "")
-    val StoredAttributeMap(selfattributes) = if (selfid.isEmpty) StoredAttributeMap(givenAttributes) else primitives.getKindElse(StoreType.AttributeMap)(selfid)
-    val classid = selfattributes.String("class", "")
-    val StoredAttributeMap(classattributes) = if (classid.isEmpty) StoredAttributeMap(selfattributes) else primitives.getKindElse(StoreType.AttributeMap)(s"class:$classid")
-    val StoredAttributeMap(tagattributes) =  primitives.getKindElse(StoreType.AttributeMap)(s"tag:$tag")
 
-    //  attributes effective after inheritance
-    val inheritedAttributes: AttributeMap = (givenAttributes supersede selfattributes supersede classattributes supersede tagattributes).without("id", "class")
-    //  should THIS element filter blank spaces?
-    val keepSpace = inheritedAttributes.Bool("keepspace", false)
-    val children = if (keepSpace) child else child.filterNot(isEmptyText)
+  def translateElement(context: Context)(scope: Scope, tag: String, givenAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
+    import glyphML.Context.TypedAttributeMap
+
+
+    val resolved = new ResolveScopedAttributes(primitives, scope, tag, givenAttributes, child)
+    import resolved._
+
     val localAttributes = inheritedAttributes
 
     tag match {
@@ -357,7 +380,27 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
         val buildFrom = if (uniform) Grid.grid(height=height, width=width)(_) else Grid.table(height=height, width=width)(_)
         List(buildFrom(glyphs))
 
+      case "fill" =>
+        val width  = localAttributes.Units("width", context.sheet.emWidth)(context.sheet)
+        val height = localAttributes.Units("height", context.sheet.exHeight)(context.sheet)
+        val stretch = localAttributes.Float("stretch", 1f)
+        val background = localAttributes.Brush("background", localAttributes.Brush("bg", Brushes.transparent))
+        val foreground = localAttributes.Brush("foreground", localAttributes.Brush("fg", Brushes.transparent))
+        List(FixedSize.Space(width, height, stretch, fg=foreground, bg=background))
+
       case _ =>
+        // (Context, AbstractSyntax.Scope, String, AttributeMap, Seq[AbstractSyntax.Tree])
+
+        @inline def translateExtension(tag: String): Option[Seq[Glyph]] =
+          primitives.getKind(StoreType.Extension)(tag) match {
+            case None => None
+            case Some(StoredExtension(translate)) =>
+              Some(translate(thisTranslator)(context)(Element(scope, tag, givenAttributes, child)))
+            case _ =>
+              SourceDefault.error(s"Internal error at $scope<$tag ...\n")
+              None
+          }
+
         @inline def translateMacro(tag: String): Option[Seq[Glyph]] =
             primitives.getKind(StoreType.Macro)(tag) match {
               case None => None
@@ -384,7 +427,11 @@ class Translator (val primitives: ValueStore)(rootStyle: StyleSheet) { thisTrans
            Some(Nil)
         }
 
-       (translateMacro(tag) orElse translateElement(tag) orElse mistake(tag)).get
+       ( translateExtension(tag) orElse
+         translateMacro(tag)    orElse
+         translateElement(tag)  orElse
+         mistake(tag)
+       ).get
     }
   }
 

@@ -24,11 +24,16 @@ object StoreType {
   val String          = StoredString("")
   val Element         = StoredElement(AbstractSyntax.Element(scope=Scope(List(sourcePath.toString)), tag="", attributes=Map.empty, child=Nil))
   val Macro           = StoredMacro(null)
+  val Extension       = StoredExtension(null)
 }
 
 
 case class StoredElement(element: AbstractSyntax.Element)   extends Value {
   override val toString: String = element.toString
+}
+
+case class StoredExtension(extension: Translator.Extension) extends Value {
+  override val toString: String = "StoredExtension"
 }
 
 case class StoredAttributeMap(attributes: AttributeMap)     extends Value {

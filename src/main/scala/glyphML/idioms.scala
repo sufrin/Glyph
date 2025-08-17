@@ -5,6 +5,7 @@ import styled.ToggleVariable
 import unstyled.reactive.Reaction
 
 import org.sufrin.glyph.styles.decoration.unDecorated
+import org.sufrin.glyph.GlyphTypes.Scalar
 
 /**
  * An experiment in providing idiomatic support for building style-dependent (mostly reactive) glyphs to add to
@@ -40,8 +41,8 @@ object idioms {
 
 
   def Table(cols: Int=0, rows: Int=0, uniform: Boolean=false)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Table(cols, rows, uniform)(glyphs)
-  def Col(align: Alignment=Center, uniformWidth: Boolean=true)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Col(align, uniformWidth)(glyphs)
-  def Row(align: VAlignment=Mid, uniformHeight: Boolean=true)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Row(align, uniformHeight)(glyphs)
+  def Col(align: Alignment=Center, uniformWidth: Boolean=true, skip:Scalar=0)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Col(align, uniformWidth, skip)(glyphs)
+  def Row(align: VAlignment=Mid, uniformHeight: Boolean=true, skip:Scalar=0)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Row(align, uniformHeight, skip)(glyphs)
 
   /** Constructions for `Row, Col, Table` that take `Seq[Glyph]` arguments  */
   object fromSequence {
@@ -72,16 +73,16 @@ object idioms {
       uniform.map(style.buttonDecoration.decorate)
     }
 
-    def Row(align: VAlignment=Mid, uniformHeight: Boolean=true)(glyphs: Seq[StyleSheet => Glyph]): StyleSheet => Glyph = {
+    def Row(align: VAlignment=Mid, uniformHeight: Boolean=true, skip:Scalar=0)(glyphs: Seq[StyleSheet => Glyph]): StyleSheet => Glyph = {
       style: StyleSheet =>
         val reified = if (uniformHeight) decorateUniformHeight(glyphs)(style) else glyphs.map(_.apply(style))
-        NaturalSize.Row(align = align)(reified)
+        NaturalSize.Row(align = align, skip=skip)(reified)
     }
 
-    def Col(align: Alignment=Center, uniformWidth: Boolean=true)(glyphs: Seq[StyleSheet => Glyph]): StyleSheet => Glyph = {
+    def Col(align: Alignment=Center, uniformWidth: Boolean=true, skip:Scalar=0)(glyphs: Seq[StyleSheet => Glyph]): StyleSheet => Glyph = {
       style: StyleSheet =>
         val reified = if (uniformWidth) decorateUniformWidth(glyphs)(style) else glyphs.map(_.apply(style))
-        NaturalSize.Col(align = align)(reified)
+        NaturalSize.Col(align = align, skip=skip)(reified)
     }
 
     def Table(cols: Int=0, rows: Int=0, uniform: Boolean=false)(glyphs: Seq[StyleSheet => Glyph]): StyleSheet => Glyph = { style: StyleSheet =>
