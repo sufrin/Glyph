@@ -105,8 +105,10 @@ object Translator {
  * @param givenAttributes
  * @param child
  */
-class ResolveScopedAttributes(definitions: Definitions, scope: Scope, tag: String, givenAttributes: glyphML.Context.AttributeMap, child: Seq[Tree]) {
+class ResolveScopedAttributes(definitions: Definitions, element: AbstractSyntax.Element) {
   import glyphML.Context._
+  import element._
+  val givenAttributes=attributes
   val selfid   = givenAttributes.String("id", "")
   val StoredAttributeMap(selfattributes) = if (selfid.isEmpty) StoredAttributeMap(givenAttributes) else definitions.getKindElse(StoreType.AttributeMap)(selfid)
 
@@ -159,7 +161,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
     }
 
     tree match {
-      case Element(scope: Scope, tag: String, attributes: AttributeMap, child: Seq[Tree]) => translateElement(context)(scope, tag, attributes, child)
+      case element: Element         => translateElement(context)(element)
       case Text(text: String)       => List(toText(text))
       case Para(texts: Seq[String]) => texts.map(toText(_))
       case Quoted(text: String)     => List(translateQuoted(context)(text))
@@ -246,11 +248,12 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
    */
 
 
-  def translateElement(context: Context)(scope: Scope, tag: String, givenAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
+  def translateElement(context: Context)(element: Element) = {//(scope: Scope, tag: String, givenAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
     import glyphML.Context.TypedAttributeMap
+    import element._
+    val givenAttributes=attributes
 
-
-    val resolved = new ResolveScopedAttributes(definitions, scope, tag, givenAttributes, child)
+    val resolved = new ResolveScopedAttributes(definitions, element)
     import resolved._
 
     val localAttributes = inheritedAttributes
@@ -389,7 +392,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         List(FixedSize.Space(width, height, stretch, fg=foreground, bg=background))
 
       case "fixedwidth" =>
-        val resolved = new ResolveScopedAttributes(definitions, scope, tag, givenAttributes, child)
+        val resolved = new ResolveScopedAttributes(definitions, element)
         import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
         import resolved._
         val width: Scalar = inheritedAttributes.Units("width", 0)(context.sheet)

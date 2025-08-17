@@ -8,10 +8,10 @@ object DecorativeExtensions {
   def apply(implicit primitives: Definitions): DecorativeExtensions = new DecorativeExtensions(primitives)
 }
 
-class DecorativeExtensions(primitives: Definitions) {
+class DecorativeExtensions(definitions: Definitions) {
 
   def turn(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
-    val resolved = new ResolveScopedAttributes(primitives, element.scope, element.tag, element.attributes, element.child)
+    val resolved = new ResolveScopedAttributes(definitions, element)
     import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
     import resolved._
     val degrees: Int = inheritedAttributes.Int("degrees", inheritedAttributes.Int("deg", 90*inheritedAttributes.Int("quads", 0)))
@@ -28,7 +28,7 @@ class DecorativeExtensions(primitives: Definitions) {
   }
 
   def scale(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
-    val resolved = new ResolveScopedAttributes(primitives, element.scope, element.tag, element.attributes, element.child)
+    val resolved = new ResolveScopedAttributes(definitions, element)
     import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
     import resolved._
     val proportion = inheritedAttributes.Float("scale", 0)
@@ -38,7 +38,7 @@ class DecorativeExtensions(primitives: Definitions) {
   }
 
   def frame(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
-    val resolved = new ResolveScopedAttributes(primitives, element.scope, element.tag, element.attributes, element.child)
+    val resolved = new ResolveScopedAttributes(definitions, element)
     import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
     import resolved._
     val radius: Scalar = inheritedAttributes.Float("radius", 0)
