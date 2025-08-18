@@ -41,6 +41,7 @@ object para extends Application {
   HYPHENATION("anti-dis-estab-lish-men-t-arian-ism")("-")
   HYPHENATION("averywidewordwithaninfeasible-breakpoint")("-")
   HYPHENATION("pro-gramm-ing")("-")
+  HYPHENATION("tr-act-if-ied")("-")
   HYPHENATION("alter-/ego")("/")
 
 
@@ -72,13 +73,16 @@ object para extends Application {
       for { num<-1 to 8} definitions(s"B$num")= TextButton(s"B$num"){ _=> println(num) }
       for { num<-1 to 5} definitions(s"L$num")= Label(s"L$num")
 
+      definitions("BIGBUTTON")  = TextButton("😀"){ _=> println("BIG BUTTON") }
+      definitions("CHECKBOXES") = Col()(CheckBox(autoScale), CheckBox(autoScale), CheckBox(autoScale))
+
       global(
          <definitions tag="DEFINITIONS">
            <element    tag="aswell">     as well as other things.</element>
            <attributes id="class:but"    buttonbackground="yellow" buttonforeground="red" fontscale="0.9"/>
            <attributes id="tag:debug"    caption="Debugging" local="t" mark="MARK #1"/>
            <attributes id="tag:p"        align="justify" />
-           <attributes id="class:fat"    fontscale="1.4"  align="justify"/>
+           <attributes id="class:fat"    fontscale="1.3"  align="justify"/>
            <attributes id="class:narrow" align="justify"  width="280px"  textforeground="black"/>
            <attributes id="tag:scope"    trace=""/>
            <macro tag="courier" fontfamily="Courier"><?body?></macro>
@@ -91,21 +95,25 @@ object para extends Application {
 
 
   lazy val source: Glyph =
-    <div fontfamily="Times" width="400px" labelforeground="black" textforeground="black" cdatabackground="pink" cdataforeground="red"
+    <div fontfamily="Arial" width="400px" labelforeground="black" textforeground="black"  cdataforeground="red"
+         hangwidth="3em"
          attributeswarning="on">
       <DEFINITIONS/>
       <centred>
       <glyph gid="buttons" refid="buttonsbar"/>
-      <p hang=" 😀 ">
+      <p hang="😀">
         This application tests a combination of <span textforeground="green">local_ization of attributes</span>, <tt fontscale="1.2">text layout</tt>,
         hy_phenation, and the <courier fontscale="1.3">plugging</courier> in of <b>reactive glyphs,</b>  <aswell/>
+        The hanging smiley is specified by the <tt>hang="😀"</tt> attribute of this paragraph.
       </p>
 
-      <p fontFamily="Courier" textforeground="black">
-        This is Courier, and  <i>this is italic.</i> The text may well spill over &gt; one lines, &amp; everything
-        depends on the width of the entire <tt>div</tt>.
+      <p hangref ="CHECKBOXES"  textforeground="black">
+        This is the running font family, and  <i>this is italic.</i> The text may well spill over &gt; one lines, &amp; everything
+        depends on the width of the entire <tt>div</tt>. The hanging checkboxes were specified by the
+        <tt>hangref="CHECKBOXES"</tt> attribute of this paragraph: it refers to a globally-defined (active) glyph.
       </p>
-      <turn degrees="15">Things can be turned</turn>
+
+      <turn degrees="5">Anything embedded in <![CDATA[<turn>]]> gets "turned".</turn>
 
       <p align="center"  fontFamily="Times" fontstyle="BOLDITALIC" fontScale="0.75" textforeground="black">
         This is centred text in a small scale bold-italic font.
@@ -129,7 +137,7 @@ object para extends Application {
 
       <table cols="2" padx="1em" pady="1ex" foreground="green.2" background="yellow">
           <p class="narrow">
-            This is a long, possibly hyphenatable, "antidisestablishmentarianism" tract_ified text that spills
+            This is a long, possibly hyphenatable, "antidisestablishmentarianism" tractified text that spills
             ov_er a nar_row <frame fg="red.2" bg="pink" radius="0.1">margin</frame> un_less I am mis_tak_enly in_formed.
           </p>
         <p class="narrow">

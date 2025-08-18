@@ -274,9 +274,28 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
 
       case "p" =>
         val derivedContext = context.updated(localAttributes)
+        val ambientHeight = derivedContext.sheet.textFont.getMetrics.getHeight
+        @inline def raiseBy(by: Scalar)(glyph: Glyph): Glyph = glyph.withBaseline(by)
         val words = children.flatMap(translate(derivedContext))
         val hang  = derivedContext.attributes.String("hang", "")
-        val hangGlyph = if (hang.isEmpty) None else Some(styled.Label(hang)(derivedContext.sheet))
+        val hangref = derivedContext.attributes.String("hangref", "")
+        val hangWidth = derivedContext.attributes.Units("hangwidth", 0)(context.sheet)
+
+        val hangGlyph =
+          if (hang.isEmpty)
+              if (hangref.isEmpty)
+                None
+              else
+                definitions.getKind(StoreType.GlyphGenerator)(hangref) match {
+                  case Some(StoredGlyphGenerator(generator)) =>
+                    val rawGlyph: Glyph = generator(derivedContext.sheet)
+                    val glyph: Glyph    = raiseBy((ambientHeight+rawGlyph.h)*0.5f)(rawGlyph).enlargedTo(hangWidth, 0)
+                    Some(glyph)
+
+                  case _ => None
+              }
+            else
+                Some(styled.Label(hang)(derivedContext.sheet).enlargedTo(hangWidth, 0))
         val theGlyph = Paragraph.fromGlyphs(derivedContext.sheet, words, hangGlyph).enlargedBy(0f, derivedContext.sheet.parSkip)
         val frame = derivedContext.attributes.Brush("framed", Brushes.transparent)
         List(if (frame.getAlpha==0) theGlyph else theGlyph.framed(frame))
