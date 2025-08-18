@@ -68,7 +68,7 @@ object Translator {
              println(spaceLeft, candidates, solutions)
              if (solutions.isEmpty) Unbreakable else {
                val (word, _) = solutions.head
-               Hyphenated(unstyled.Text(word, font, fg, bg, transient), unstyled.Text(string.substring(word.length), font, fg, bg, transient))
+               Hyphenated(unstyled.Text(word, font, fg, bg, transient), new HyphenatableText(string.substring(word.length+1), font, fg, bg, transient))
              }
          }
        }

@@ -15,7 +15,7 @@ object trivial extends Application {
 
   HYPHENATION("flocci-nauci-nihil-ipil-ifica-tion")("-")
   HYPHENATION("hyphen-at-able")("-")
-  HYPHENATION("in-formed")("-")
+  HYPHENATION("in-form-ed")("-")
   HYPHENATION("mis-tak-enly")("-")
   HYPHENATION("anti-dis-estab-lish-men-t-arian-ism")("-")
   HYPHENATION("averywidewordwithaninfeasible-breakpoint")("-")
@@ -24,9 +24,8 @@ object trivial extends Application {
   HYPHENATION("alter-/ego")("/")
 
   def GUI: Glyph =
-    <div width="200px" textbackground="yellow" align="center">
-      <attributes id="tag:p" textbackground="lightgrey"/>
-      <p>are we well in_formed</p>
+    <div width="11em" fontfamily="Courier" textbackground="yellow" align="left">
+      <p>are we well trans_lation_ally mort_if_ied</p>
     </div>
 
   def title: String = "trivial"
