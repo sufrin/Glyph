@@ -6,6 +6,7 @@ import glyphXML.PrettyPrint
 import org.sufrin.glyph.unstyled.static.BreakableGlyph
 import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
 import org.sufrin.glyph.GlyphTypes.Scalar
+import org.sufrin.glyph.glyphML
 import org.sufrin.glyph.glyphML.AbstractSyntax.{isEmptyText, Scope, Tree}
 import org.sufrin.glyph.glyphML.Context.{AttributeMap, Context, ExtendedAttributeMap}
 import org.sufrin.glyph.glyphXML.PrettyPrint.AnyPretty
@@ -124,6 +125,11 @@ class ResolveScopedAttributes(definitions: Definitions, element: AbstractSyntax.
 
   /** Subtrees: with empty texts filtered out unless `keepEmpty` */
   val children = if (keepEmpty) child else child.filterNot(isEmptyText)
+
+  override def toString: String = {
+    val pairs = inheritedAttributes
+    s"""ResolveScoped inherited: ${pairs}"""
+  }
 }
 
 class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTranslator =>
@@ -248,7 +254,8 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
    */
 
 
-  def translateElement(context: Context)(element: Element) = {//(scope: Scope, tag: String, givenAttributes: AttributeMap, child: Seq[Tree]): Seq[Glyph] = {
+
+  def translateElement(context: Context)(element: Element) = {
     import glyphML.Context.TypedAttributeMap
     import element._
     val givenAttributes=attributes
@@ -257,6 +264,8 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
     import resolved._
 
     val localAttributes = inheritedAttributes
+
+    implicit val globalDefinitions: Definitions = definitions
 
     tag match {
       case "div" | "body" =>
@@ -313,12 +322,17 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         val ambientHeight = derivedContext.sheet.textFont.getMetrics.getHeight
         @inline def raiseBy(by: Scalar)(glyph: Glyph): Glyph = glyph.withBaseline(by)
         val id = givenAttributes.String("gid", "")
+        val refid: String = givenAttributes.String("refid", "")
         definitions.getKind(StoreType.GlyphGenerator)(id) match {
           case Some(StoredGlyphGenerator(generator)) =>
-            val glyph = generator(derivedContext.sheet)
-            List(raiseBy((ambientHeight+glyph.h)*0.5f)(glyph))
-          case Some(StoredGlyphConstant(glyph)) =>
-            List(raiseBy((ambientHeight+glyph.h)*0.5f)(glyph))
+            val rawGlyph = generator(derivedContext.sheet)
+            val glyph    = raiseBy((ambientHeight+rawGlyph.h)*0.5f)(rawGlyph)
+            if (refid.nonEmpty) definitions(refid) = StoredGlyphConstant(glyph)
+            List(glyph)
+          case Some(StoredGlyphConstant(rawGlyph)) =>
+            val glyph    = rawGlyph.copy()
+            if (refid.nonEmpty) definitions(refid) = StoredGlyphConstant(glyph)
+            List(glyph)
           case Some(other) =>
             SourceDefault.error(s"Unexpected stored value at $scope<glyph gid=\"$id\" ...")
             Nil
@@ -326,6 +340,22 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
             SourceDefault.warn(s"No such glyph at $scope<glyph gid=\"$id\" ...")
             Nil
         }
+
+      // Store the body of this as  <SPLICE>...</SPLICE>, named `tag` so that it can be spliced into any situation with context.
+      case "element" | "definitions" =>
+        val elementTag: String  = givenAttributes.String("tag", "")
+        if (elementTag.nonEmpty) {
+           val before = definitions.getKind(StoreType.Element)(elementTag)
+           if (before.isDefined) {
+              SourceDefault.warn(s"Overriding element definition: $scope<element<$elementTag ${givenAttributes.toSource}")
+           }
+           definitions(elementTag) = glyphML.StoredElement(Element(scope, "SPLICE", attributes.without("tag"), if (tag=="definitions") children else child))
+        } else
+           SourceDefault.warn(s"No name for an element: $scope<element tag=\"...\"")
+        Nil
+
+      case "SPLICE" =>
+        children.flatMap(translate(context))
 
       case "attributes" =>
         // Give the name denoted by "id" to the remaining attributes, and
@@ -336,23 +366,15 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         if (attrId.nonEmpty) {
           val before =  definitions.getKind(StoreType.AttributeMap)(attrId)
           if (children.isEmpty) {// global definition
-            if (warn && before.isDefined) SourceDefault.warn(s"Overriding primitive assignment $scope<attributes ${givenAttributes.toSource}")
+            if (warn && before.isDefined) {
+              SourceDefault.warn(s"Overriding attribute definition: $scope<attributes ${givenAttributes.toSource}")
+            }
             definitions(attrId) = StoredAttributeMap(givenAttributes.without("id"))
             Nil
-          } else // scoped definition
-          { before match {
-              case None =>
-                definitions(attrId) = StoredAttributeMap(givenAttributes.without("id"))
-                val body = children.flatMap(translate(context))
-                definitions.remove(StoreType.AttributeMap)(attrId)
-                body
-              case Some(restore) =>
-                if (warn) SourceDefault.warn(s"Overriding scoped primitive $scope<attributes ${givenAttributes.toSource}")
-                definitions(attrId) = StoredAttributeMap(givenAttributes.without("id"))
-                val body = children.filterNot(isEmptyText).flatMap(translate(context))
-                definitions(attrId) = restore
-                body
-            }
+          }
+          else {
+            SourceDefault.warn(s"attributes declaration has subtrees $scope<attributes ${givenAttributes.toSource}")
+            Nil
           }
         }
         else Nil
@@ -370,6 +392,11 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
           definitions(tag) = Macro(scope, tag, givenAttributes.without("tag", "warn"), context, children)
         }
         Nil
+
+      case "scope" =>
+        definitions.inScope(localAttributes.String("trace", "")){
+          child.flatMap(translate(context))
+        }
 
       case "table" =>
         val width     = localAttributes.Int("columns", localAttributes.Int("cols", 0))
@@ -450,6 +477,13 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
   }
 
   val rootContext = Context(Map.empty, rootStyle)
+
+  /** Make global definitions */
+  def global(trees: scala.xml.Node*)(implicit location: SourceLocation = sourcePath): Unit = {
+    for {tree <- trees} {
+      translate(rootContext)(AbstractSyntax.fromXML(tree)(location))
+    }
+  }
 
   def fromXML(source: scala.xml.Node)(implicit location: SourceLocation = sourcePath): Glyph = {
     import glyphXML.PrettyPrint._

@@ -8,6 +8,20 @@ import styled.ToggleVariable
 import org.sufrin.logging.{INFO, WARN}
 import org.sufrin.logging
 
+object trivial extends Application {
+  import Translator._
+  private val translator = new Translator(new Definitions {})(StyleSheet())
+  import translator._
+
+  def GUI: Glyph =
+    <div width="200px" textbackground="yellow" align="center">
+      <attributes id="tag:p" textbackground="lightgrey"/>
+      <p>FOO</p>
+    </div>
+
+  def title: String = "trivial"
+}
+
 object para extends Application {
   val frameColor = Brushes.red(width=2)
   import Translator._
@@ -30,7 +44,7 @@ object para extends Application {
   HYPHENATION("alter-/ego")("/")
 
 
-  definitions("aswell") = <span> as well as some tag-extending features</span>
+  //definitions("aswell") = <span> as well as some tag-extending features.</span>
 
 
   definitions("row")= style => NaturalSize.Row(styled.Label("This is a")(style).framed(), styled.Label(" long row")(style))
@@ -50,35 +64,42 @@ object para extends Application {
 
       definitions("buttons") =
         Row(align=Mid, skip=10) (
-          TextButton("Show Primitives") { _ => println(definitions.show(".*".r, ".*".r).mkString("\n")) },
+          TextButton("Show Primitives")     { _ => println(definitions.show(".*".r, ".*".r).toList.sorted.mkString("\n")) },
           TextButton("Show Attributes")     { _ => println(definitions.show(".*".r, "StoredAttributeMap".r).mkString("\n")) },
           CaptionedCheckBox("Scaleable ", "Scale window by dragging edges")(autoScale),
           )
 
       for { num<-1 to 8} definitions(s"B$num")= TextButton(s"B$num"){ _=> println(num) }
       for { num<-1 to 5} definitions(s"L$num")= Label(s"L$num")
+
+      global(
+         <definitions tag="DEFINITIONS">
+           <element    tag="aswell">     as well as other things.</element>
+           <attributes id="class:but"    buttonbackground="yellow" buttonforeground="red" fontscale="0.9"/>
+           <attributes id="tag:debug"    caption="Debugging" local="t" mark="MARK #1"/>
+           <attributes id="tag:p"        align="justify" />
+           <attributes id="class:fat"    fontscale="1.4"  align="justify"/>
+           <attributes id="class:narrow" align="justify"  width="280px"  textforeground="black"/>
+           <attributes id="tag:scope"    trace=""/>
+           <macro tag="courier" fontfamily="Courier"><?body?></macro>
+           <attributes id="tag:centred"  width="800px"/>
+           <macro tag="centred"><table cols="1" foreground="transparent" background="transparent"><?body?></table></macro>
+         </definitions>
+      )
+
   }
 
 
   lazy val source: Glyph =
     <div fontfamily="Times" width="400px" labelforeground="black" textforeground="black" cdatabackground="pink" cdataforeground="red"
-         attributeswarning="f">
-      <attributes id="class:but"    buttonbackground="yellow" buttonforeground="red" fontscale="0.9"/>
-      <attributes id="tag:debug"    caption="Debugging" local="t" mark="MARK #1"/>
-      <attributes id="tag:p"        align="justify" />
-      <attributes id="class:fat"    fontscale="1.4"  align="justify"/>
-      <attributes id="class:narrow" align="justify"  width="280px"  textforeground="black"/>
-
-      <macro tag="courier" fontfamily="Courier"><?body?></macro>
-      <macro tag="centred"><table cols="1" foreground="transparent" background="transparent"><?body?></table></macro>
-
+         attributeswarning="on">
+      <DEFINITIONS/>
       <centred>
-        <glyph gid="buttons"/>
-      <p hang=" * ">
+      <glyph gid="buttons" refid="buttonsbar"/>
+      <p hang=" 😀 ">
         This application tests a combination of <span textforeground="green">local_ization of attributes</span>, <tt fontscale="1.2">text layout</tt>,
-        hy_phenation, and the <courier fontscale="1.3">plugging</courier> in of <b>reactive glyphs,</b>  <aswell/>.
+        hy_phenation, and the <courier fontscale="1.3">plugging</courier> in of <b>reactive glyphs,</b>  <aswell/>
       </p>
-
 
       <p fontFamily="Courier" textforeground="black">
         This is Courier, and  <i>this is italic.</i> The text may well spill over &gt; one lines, &amp; everything
@@ -93,12 +114,15 @@ object para extends Application {
       <frame fg="red.2"><fixedwidth width="0.9*width">this text <fill fg="red" stretch="2"/> is spread</fixedwidth></frame>
 
       <scale scale=".6">
-      <attributes id="tag:p" fontFamily="Courier">
-        <p class="fat">
-          This is a long, hyphen_at_able antidisestablishmentarianism tract_ified text concerning floccinaucinihilipilification. The text, in teletype font,
-          spills ov_er a nar_row mar_gin un_less I have been <turn degrees="-5">mistakenly</turn><turn degrees="5">informed</turn> by my programming alter-ego.
-        </p>
-      </attributes>
+        <scope trace="for this experiment">
+        <macro tag="SPURIOUS">SPURIOUS</macro>
+        <attributes id="tag:p" fontFamily="Courier"/>
+          <p class="fat">
+            This is a long, hyphen_at_able antidisestablishmentarianism tract_ified text concerning floccinaucinihilipilification. The text, in teletype font,
+            spills ov_er a nar_row mar_gin un_less I have been <turn degrees="-5">mistakenly</turn><turn degrees="5">informed</turn> by my programming alter-ego.
+          </p>
+        </scope>
+        <SPURIOUS></SPURIOUS>
       </scale>
 
 
@@ -119,6 +143,8 @@ object para extends Application {
         </p>
         </turn>
       </table>
+
+      <glyph gid="buttonsbar" />
 
       </centred>
     </div>

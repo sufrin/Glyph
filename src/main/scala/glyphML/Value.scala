@@ -103,6 +103,21 @@ class Definitions { thisStore =>
   def update(name: String, thing: StyleSheet=>Glyph): Unit = thisStore(name) = StoredGlyphGenerator(thing)
   def update(name: String, thing: String): Unit            = thisStore(name) = StoredString(thing)
 
+  def inScope[T](caption: String="")(effect: => T): T = {
+    val saved = store.toSeq
+    val scope = saved.map(_._1)
+    ////
+    val result = effect
+    ////
+    lazy val newDefinitions = store.keysIterator.filterNot(scope.contains(_)).toSeq.map{ case (k: String, t: String) => s"$k: $t"}.mkString("\n  ")
+    if (caption.nonEmpty) {
+      print(s"New definitions leaving scope ($caption):\n  ")
+      println(newDefinitions)
+    }
+    store.clear()
+    store.addAll(saved)
+    result
+  }
 
   override def toString: String = {
     store.toSeq.map{case ((k: String, t: String), d: Value)=>s"$k: $t -> $d"}.mkString(" ")

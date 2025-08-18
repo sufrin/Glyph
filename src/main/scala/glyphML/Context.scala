@@ -202,8 +202,9 @@ object Context {
       case Some(name) => Brushes(name)
     }
 
-    /** Derive a new `StyleSheet` from `sheet`, using `attributes` */
-    def deriveSheet(sheet: StyleSheet): StyleSheet = {
+    /** Derive a new `StyleSheet` from `context.sheet`, using `attributes` */
+    def deriveSheet(context: Context): StyleSheet = {
+      val sheet = context.sheet
       val fontDetail: StyleSheet =
         sheet
           .copy(
@@ -260,7 +261,7 @@ object Context {
      */
     def updated(localAttributes: AttributeMap): Context = {
         val updatedAttributes = localAttributes supersede attributes
-        Context(updatedAttributes, updatedAttributes.deriveSheet(sheet))
+        Context(updatedAttributes, updatedAttributes.deriveSheet(this))
     }
   }
 

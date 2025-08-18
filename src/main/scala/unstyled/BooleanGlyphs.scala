@@ -36,6 +36,8 @@ object BooleanGlyphs {
       locally {
         set(initially)
       }
+
+      override def copy(fg: Brush=fg, bg: Brush=bg): reactive.RawButton = new OnOffButton(tickBox, initially, fg, bg, reaction)
     }
 
     def apply(tickBox:    OnOff,
