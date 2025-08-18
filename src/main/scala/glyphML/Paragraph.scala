@@ -5,6 +5,7 @@ import GlyphTypes.Scalar
 import unstyled.static
 import unstyled.static.BreakableGlyph
 
+import org.sufrin.glyph.glyphML.Translator.HYPHENATION.{HyphenatableText, Hyphenated, Unbreakable}
 import org.sufrin.logging.SourceDefault
 
 import scala.collection.mutable.ArrayBuffer
@@ -118,6 +119,18 @@ object Paragraph {
           } else {
             //SourceDefault.finest(s"Infeasible fit at EOL: $breakable")
           }
+
+        case breakable: HyphenatableText =>
+          breakable.hyphenate(maxWidthfloor-interWordWidth) match {
+            case Unbreakable =>
+              SourceDefault.finest(s"Infeasible fit at EOL: $breakable")
+              words.nextElement()
+
+            case Hyphenated(left, right) =>
+              line += left
+              words.pushBack(right)
+          }
+
         case _ =>
       }
 
@@ -147,18 +160,19 @@ object Paragraph {
       // At the start of a line: perhaps we have an overlong but splittable element
       if (words.hasElement && words.element.w.ceil >= maxWidthfloor) {
         words.element match {
-          case breakable: BreakableGlyph =>
-            val breakPoint: Int = breakable.maximal(maxWidthfloor-interWordWidth-breakable.hyphen.w)
-            if (breakPoint==0)  {
-              // element splitting is infeasible: just clip
-              SourceDefault.fine(s"Clipped at infeasible split: $breakable")
-              galley += CLIPWIDTH(maxWidthfloor)(NaturalSize.Row(align=Mid, bg=Brushes.pink)(breakable.glyphs))
-              words.nextElement()
+          case breakable: HyphenatableText =>
+            breakable.hyphenate(maxWidthfloor-interWordWidth) match {
+              case Unbreakable =>
+                SourceDefault.fine(s"Clipped unbreakable: $breakable")
+                galley += CLIPWIDTH(maxWidthfloor)(breakable)
+                words.nextElement()
+
+              case _ : Hyphenated =>
+                // element splitting is feasible: just compose the line
+                // with this starting on it
+                composeLine()
             }
-            else {
-             // element splitting is feasible: just compose the line starting with it
-             composeLine()
-            }
+
 
           case other =>
             // element is unfittable: just clip it

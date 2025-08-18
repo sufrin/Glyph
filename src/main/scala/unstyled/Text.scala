@@ -27,7 +27,6 @@ object Text  {
 }
 
 
-
 class Text(val string: String, val font: Font, override val fg: Brush, override val bg: Brush, transient: Boolean) extends TextInterface {
     theText: Text =>
     import io.github.humbleui.skija.TextLine

@@ -5,10 +5,11 @@ import glyphXML.PrettyPrint
 
 import org.sufrin.glyph.unstyled.static.BreakableGlyph
 import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
-import org.sufrin.glyph.GlyphTypes.Scalar
+import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.glyphML
 import org.sufrin.glyph.glyphML.AbstractSyntax.{isEmptyText, Scope, Tree}
 import org.sufrin.glyph.glyphML.Context.{AttributeMap, Context, ExtendedAttributeMap}
+import org.sufrin.glyph.glyphML.Translator.HYPHENATION.HyphenatableText
 import org.sufrin.glyph.glyphXML.PrettyPrint.AnyPretty
 import org.sufrin.glyph.glyphXML.Translation.AttributeMap
 import org.sufrin.logging.{Loggable, SourceDefault}
@@ -18,7 +19,7 @@ import scala.util.matching.Regex
 
 object Translator {
   implicit class SemanticStyleSheet(val style: StyleSheet) extends AnyVal {
-    def makeText(text: String): Glyph = unstyled.Text(text, style.textFont, fg=style.textForegroundBrush, bg=style.textBackgroundBrush)
+    def makeHyphenatableText(text: String): Glyph = new HyphenatableText(text, style.textFont, fg=style.textForegroundBrush, bg=style.textBackgroundBrush, transient=false)
   }
 
   implicit class IntelligibleAttributeMap(val attrs: AttributeMap) extends AnyVal {
@@ -41,53 +42,45 @@ object Translator {
     (pre, quoted, suff)
   }
 
-
   object HYPHENATION extends Loggable {
+
+    trait Hyphenation
+    case class Hyphenated(left: Glyph, right: Glyph) extends Hyphenation
+    case object Unbreakable extends Hyphenation
+
+    class HyphenatableText(string: String, font: Font, fg: Brush, bg: Brush, transient: Boolean) extends unstyled.Text(string, font, fg, bg, transient) {
+       def hyphenate(spaceLeft: Scalar): Hyphenation = {
+         val discretionaryWordBreak = "_"
+         @inline def discretionary: Option[Seq[String]] =
+           if (string.contains(discretionaryWordBreak)) {
+             val parts = string.split(discretionaryWordBreak).toSeq
+             Some(parts)
+           }
+           else None
+
+         discretionary match {
+           case None => Unbreakable
+           case Some(parts: Seq[String]) =>
+             val widths  = parts.map{ s=>font.measureTextWidth(s,fg) }.scanLeft(0f)(_.+(_)).tail.reverse
+             val strings = parts.scanLeft("")(_.+(_)).tail.reverse
+             val candidates: Seq[(String, Scalar)] = strings.zip(widths)
+             val solutions = candidates.filter { case (_, w)=> w<=spaceLeft}
+             println(spaceLeft, candidates, solutions)
+             if (solutions.isEmpty) Unbreakable else {
+               val (word, _) = solutions.head
+               Hyphenated(unstyled.Text(word, font, fg, bg, transient), unstyled.Text(string.substring(word.length), font, fg, bg, transient))
+             }
+         }
+       }
+    }
+
+
+
+
     // TODO: polyglot, automation, ...
     def forText(text: String, style: StyleSheet): Option[Glyph] = {
-      val discretionaryWordBreak = style.discretionaryWordBreak
-
-      @inline def discretionary: Option[Seq[String]] =
-        if (text.contains(discretionaryWordBreak)) {
-          val parts = text.split(discretionaryWordBreak).toSeq
-          Some(parts)
+          Some(new HyphenatableText(text, style.textFont, style.textForegroundBrush, style.textBackgroundBrush, false))
         }
-        else None
-
-      discretionary match {
-        case Some(parts) =>
-          val hyphen = style.makeText("-")
-          val glyphs = parts.toSeq.map(style.makeText(_))
-          Some(new BreakableGlyph(hyphen, glyphs))
-
-        case None =>
-          hyphenation.get(text) match {
-          case Some(parts) =>
-            finest(s"$text->[${parts.toList.mkString(", ")}]")
-            val glyphs = parts.toSeq.map(style.makeText(_))
-            val hyphen = style.makeText("-")
-            Some(new BreakableGlyph(hyphen, glyphs))
-
-          case None =>
-            val (pre, quoted, suff) = punctSplit(text)
-            hyphenation.get(quoted) match {
-              case Some(parts) =>
-                val last = parts.length - 1
-                finest(s"$text->($pre,$quoted,$suff) ==>")
-                val pieces =
-                  for {i <- 0 to last} yield
-                      if (i == 0) pre + parts(i) else if (i == last) parts(i) + suff else parts(i)
-                finest(s"  $text->[${pieces.toList.mkString(", ")}]")
-                val glyphs = pieces.map(style.makeText(_))
-                val hyphen = style.makeText("-")
-                Some(new BreakableGlyph(hyphen, glyphs))
-
-              case None => None
-            }
-        }
-      }
-
-    }
 
     val hyphenation: collection.mutable.Map[String, Array[String]] = collection.mutable.Map[String, Array[String]]()
 
@@ -159,10 +152,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
       if (text.isEmpty || text(0).isWhitespace)
         interWordSpace()
       else {
-        HYPHENATION.forText(text, style) match {
-          case None             => style.makeText(text)
-          case Some(hyphenated) => hyphenated
-        }
+        style.makeHyphenatableText(text)
       }
     }
 
@@ -173,7 +163,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
       case Quoted(text: String)     => List(translateQuoted(context)(text))
       case Entity(name: String)     =>
         val StoredString(text) = definitions.getKindElse(StoreType.String)(name)
-        List(style.makeText(text))
+        List(style.makeHyphenatableText(text))
       case Comment(target: String, text: String) => Nil
       case MacroParam(name) =>
         SourceDefault.warn(s"Unbound macro parameter: <?$name?>")

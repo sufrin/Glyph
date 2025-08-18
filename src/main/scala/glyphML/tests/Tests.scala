@@ -13,10 +13,20 @@ object trivial extends Application {
   private val translator = new Translator(new Definitions {})(StyleSheet())
   import translator._
 
+  HYPHENATION("flocci-nauci-nihil-ipil-ifica-tion")("-")
+  HYPHENATION("hyphen-at-able")("-")
+  HYPHENATION("in-formed")("-")
+  HYPHENATION("mis-tak-enly")("-")
+  HYPHENATION("anti-dis-estab-lish-men-t-arian-ism")("-")
+  HYPHENATION("averywidewordwithaninfeasible-breakpoint")("-")
+  HYPHENATION("pro-gramm-ing")("-")
+  HYPHENATION("tr-act-if-ied")("-")
+  HYPHENATION("alter-/ego")("/")
+
   def GUI: Glyph =
     <div width="200px" textbackground="yellow" align="center">
       <attributes id="tag:p" textbackground="lightgrey"/>
-      <p>FOO</p>
+      <p>are we well in_formed</p>
     </div>
 
   def title: String = "trivial"
