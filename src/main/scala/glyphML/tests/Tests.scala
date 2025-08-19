@@ -19,6 +19,7 @@ object trivial extends Application {
   HYPHENATION("mis-tak-enly")("-")
   HYPHENATION("anti-dis-estab-lish-men-t-arian-ism")("-")
   HYPHENATION("a-very-wide-word-with-a-feasible-break-point")("-")
+  HYPHENATION("averywideword-withoutafeasiblebreakpoint")("-")
   HYPHENATION("pro-gramm-ing")("-")
   HYPHENATION("tr-act-if-ied")("-")
   HYPHENATION("tr-ans-lat-ion-al-ly")("-")
@@ -29,7 +30,7 @@ object trivial extends Application {
     <p>
       are we well translationally mort_if_ied and hyphenatable and
       antidisestablishmentarianism averywidewordwithafeasiblebreakpoint
-      and here is some_thing un_us_ual: na_me_ly more words
+      and here is some_thing un_us_ual: na_me_ly more words. averywidewordwithoutafeasiblebreakpoint
     </p>
   </div>
 

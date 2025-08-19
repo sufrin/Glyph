@@ -11,45 +11,54 @@ object HYPHENATION extends SourceLoggable {
     def makeHyphenatableText(text: String, parts: Seq[String]): Glyph = new HyphenatableText(text, parts, style.textFont, fg=style.textForegroundBrush, bg=style.textBackgroundBrush, transient=false)
     def makeText(text: String): Glyph = unstyled.Text(text, style.textFont, fg=style.textForegroundBrush, bg=style.textBackgroundBrush, transient=false)
   }
+
   trait Hyphenation
   case class  Hyphenated(left: Glyph, right: Glyph) extends Hyphenation
   case class  Unbroken(glyph: Glyph) extends Hyphenation
   case object Unbreakable extends Hyphenation
 
   implicit class ExtendedSeq[T](val s: Seq[T]) extends AnyVal {
-    def properTails: Seq[Seq[T]]  = s.tails.drop(1).toSeq
+    def properTails:  Seq[Seq[T]] = s.tails.drop(1).toSeq
     def properFronts: Seq[Seq[T]] = s.reverse.properTails.map(_.reverse)
-    def front: Seq[T] = s.reverse.tail.reverse
+    def front: Seq[T] = s.dropRight(1) // s.reverse.tail.reverse
   }
 
   class HyphenatableText(string: String, val parts: Seq[String], font: Font, fg: Brush, bg: Brush, transient: Boolean) extends unstyled.Text(string, font, fg, bg, transient) {
     val hyphen = unstyled.Text("\u2010", font, fg, bg, false)
 
+    /**
+     * Yields the best feasible hyphenationfor the space left,  for this string as `Hyphenated(front, rest)` (where `rest` may itself be hyphenatable), or `Unbreakable`
+     * if the string can't be broken to fit in the space left. If the string fits in the space without needing to be broken, then return `Unbroken(string)`. The
+     * latter may happen when parts of texts are too wide for their column.
+     *
+     * @param spaceLeft
+     * @return
+     */
     def hyphenate(spaceLeft: Scalar): Hyphenation = {
       def width(parts: Seq[String]): Scalar = parts.map(font.measureTextWidth(_,fg)).sum
 
-      //val tails  = parts.properTails // .map(_.toSeq).toSeq.tail // without the last
-
-      val fronts = parts.properFronts.front //reverse.tails.map(_.toSeq.reverse).toSeq.tail
+      val fronts = parts.properFronts.front
 
       val annotated = fronts.map { s=> (s, width(s))}
 
-      val solutions = annotated.filter{ case (s, w) => w<spaceLeft}.toList
+      val solutions = annotated.find{ case (s, w) => w<spaceLeft}
 
       if (HYPHENATION.level<=org.sufrin.logging.FINEST) {
         finest(s"Space: $spaceLeft")
         println(s"  Fronts:    ${fronts.toList.mkString(", ")}")
         println(s"  Annotated: ${annotated.toList.mkString(", ")}")
-        //println(s"  Tails:     ${tails.toList.mkString(", ")}")
-        println(s"  Solutions: ${solutions.toList.mkString(", ")}")
+        println(s"  Solution:  ${solutions.toList.mkString(", ")}")
       }
 
-      if (solutions.isEmpty) Unbreakable else
+      if (solutions.isEmpty)
+        Unbreakable
+      else
       {
-        val (front, _) = solutions.head
-        if (front.length==parts.length)
+        val (front, _) = solutions.get
+        if (front.length==parts.length) {
+          warn(s"Unbroken $string")
           Unbroken(unstyled.Text(string, font, fg, bg, transient))
-        else {
+        } else {
           val rest = parts.drop(front.length)
           Hyphenated(unstyled.Text(front.mkString(""), font, fg, bg, transient),
                      new HyphenatableText(rest.mkString(""), rest, font, fg, bg, transient))
