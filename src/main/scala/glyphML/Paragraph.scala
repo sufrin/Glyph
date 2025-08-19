@@ -2,10 +2,9 @@ package org.sufrin.glyph
 package glyphML
 
 import GlyphTypes.Scalar
+import glyphML.HYPHENATION.{HyphenatableText, Hyphenated, Unbreakable, Unbroken}
 import unstyled.static
-import unstyled.static.BreakableGlyph
 
-import org.sufrin.glyph.glyphML.Translator.HYPHENATION.{HyphenatableText, Hyphenated, Unbreakable}
 import org.sufrin.logging.SourceDefault
 
 import scala.collection.mutable.ArrayBuffer
@@ -90,10 +89,10 @@ object Paragraph {
       // add words and interword spaces while there is room
       while (words.hasElement && (lineWidth + words.element.w < maxWidthfloor)) {
         words.element match {
-          case BreakableGlyph(_, glyphs) =>
-            for { glyph <- glyphs } line += glyph
-            lineWidth += words.element.w
-            words.nextElement()
+//          case BreakableGlyph(_, glyphs) =>
+//            for { glyph <- glyphs } line += glyph
+//            lineWidth += words.element.w
+//            words.nextElement()
 
           case other =>
             line += other
@@ -104,31 +103,35 @@ object Paragraph {
 
       // squeeze an extra chunk on by splitting a breakable, if possible?
       if (words.hasElement) words.element match {
-        case breakable: BreakableGlyph =>
-          val breakPoint: Int = breakable.maximal(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w) //??
-          if (breakPoint!=0) {
-            val glyphs = breakable.glyphs
-            for { i <- 0 until breakPoint } {
-              lineWidth += glyphs(i).w
-              line += glyphs(i)
-            }
-            line += breakable.hyphen()
-            //line += interWord()// (from the earlier implementation
-            lineWidth += breakable.hyphen.w
-            words.pushBack(new BreakableGlyph(breakable.hyphen, glyphs.drop(breakPoint)))
-          } else {
-            //SourceDefault.finest(s"Infeasible fit at EOL: $breakable")
-          }
+//        case breakable: BreakableGlyph =>
+//          val breakPoint: Int = breakable.maximal(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w) //??
+//          if (breakPoint!=0) {
+//            val glyphs = breakable.glyphs
+//            for { i <- 0 until breakPoint } {
+//              lineWidth += glyphs(i).w
+//              line += glyphs(i)
+//            }
+//            line += breakable.hyphen()
+//            //line += interWord()// (from the earlier implementation
+//            lineWidth += breakable.hyphen.w
+//            words.pushBack(new BreakableGlyph(breakable.hyphen, glyphs.drop(breakPoint)))
+//          } else {
+//            //SourceDefault.finest(s"Infeasible fit at EOL: $breakable")
+//          }
 
         case breakable: HyphenatableText =>
-          breakable.hyphenate(maxWidthfloor-interWordWidth) match {
+          breakable.hyphenate(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w) match {
             case Unbreakable =>
-              SourceDefault.finest(s"Infeasible fit at EOL: $breakable")
-              words.nextElement()
+              SourceDefault.finest(s"Infeasible fit at EOL: ${breakable.string}")
 
             case Hyphenated(left, right) =>
               line += left
+              line += breakable.hyphen.copy()
               words.pushBack(right)
+
+            case Unbroken(glyph)  =>
+              line += glyph
+              words.nextElement()
           }
 
         case _ =>
@@ -161,11 +164,12 @@ object Paragraph {
       if (words.hasElement && words.element.w.ceil >= maxWidthfloor) {
         words.element match {
           case breakable: HyphenatableText =>
-            breakable.hyphenate(maxWidthfloor-interWordWidth) match {
-              case Unbreakable =>
-                SourceDefault.fine(s"Clipped unbreakable: $breakable")
+            breakable.hyphenate(maxWidthfloor-interWordWidth-breakable.hyphen.w) match {
+              case Unbreakable | Unbroken(_) =>
+                SourceDefault.fine(s"Clipped unbreakable: ${breakable.string}")
                 galley += CLIPWIDTH(maxWidthfloor)(breakable)
                 words.nextElement()
+
 
               case _ : Hyphenated =>
                 // element splitting is feasible: just compose the line
@@ -173,10 +177,26 @@ object Paragraph {
                 composeLine()
             }
 
+//          case breakable: BreakableGlyph =>
+//            val breakPoint: Int = breakable.maximal(maxWidthfloor-interWordWidth-breakable.hyphen.w)
+//            if (breakPoint==0)  {
+//              // element splitting is infeasible: just clip
+//              SourceDefault.fine(s"Clipped at infeasible split: $breakable")
+//              galley += CLIPWIDTH(maxWidthfloor)(NaturalSize.Row(align=Mid, bg=Brushes.pink)(breakable.glyphs))
+//              words.nextElement()
+//            }
+//            else {
+//              // element splitting is feasible: just compose the line starting with it
+//              composeLine()
+//            }
 
           case other =>
             // element is unfittable: just clip it
-            SourceDefault.fine(s"Unfittable: $other")
+            other match {
+              case other: HyphenatableText => SourceDefault.fine(s"Unfittable Hyphenatable: ${other.parts.mkString("-")}")
+              case other: unstyled.Text => SourceDefault.fine(s"Unfittable Text: ${other.string}")
+              case _                    => SourceDefault.fine(s"Unfittable: ${other.getClass}")
+            }
             galley += CLIPWIDTH(maxWidthfloor)(other).framed(Brushes.red, bg=Brushes.pink)
             words.nextElement()
         }
@@ -192,6 +212,7 @@ object Paragraph {
     def draw(surface: Surface): Unit =
       surface.withClip(Vec(width, g.h)) {
         g.draw(surface)
+        surface.drawLines$(Brushes.black(width=2), 0,g.h/2, width, g.h/2)
       }
 
     def diagonal: Vec = Vec(width, g.h)

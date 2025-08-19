@@ -730,6 +730,15 @@ class Path(override val fg: Brush, override val bg: Brush, strictContains: Boole
 }
 
 
+/**.
+ * (Obsolete but retained) class that was used to support hyphenation in a prototype
+ * of glyphXML. Superseded by various class defined in the `HYPHENATION` module.
+ *
+ * @param hyphen
+ * @param glyphs
+ *
+ * @see HYPHENATION
+ */
   case class BreakableGlyph(hyphen: Glyph, glyphs: Seq[Glyph]) extends Glyph {
     val rep = NaturalSize.Row(Top)(glyphs)
     override val baseLine = glyphs.head.baseLine

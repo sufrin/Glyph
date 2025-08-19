@@ -10,6 +10,11 @@ object DecorativeExtensions {
 
 class DecorativeExtensions(definitions: Definitions) {
 
+  def makeRow(glyphs: Seq[Glyph]): Glyph = glyphs.length match {
+    case 1 => glyphs.head
+    case _ => NaturalSize.Row(align=Mid)(glyphs)
+  }
+
   def turn(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
     val resolved = new ResolveScopedAttributes(definitions, element)
     import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
@@ -23,7 +28,7 @@ class DecorativeExtensions(definitions: Definitions) {
           glyph$
       }
     val derivedContext: Context = context.updated(inheritedAttributes.without("deg", "degrees", "quads"))
-    val glyph = turn(NaturalSize.Row(align=Mid)(children.flatMap(translator.translate(derivedContext))))
+    val glyph = turn(makeRow(children.flatMap(translator.translate(derivedContext))))
     List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
   }
 
@@ -33,7 +38,7 @@ class DecorativeExtensions(definitions: Definitions) {
     import resolved._
     val proportion = inheritedAttributes.Float("scale", 0)
     val derivedContext: Context = context.updated(inheritedAttributes.without("proportion"))
-    val glyph = NaturalSize.Row(align=Mid)(children.flatMap(translator.translate(derivedContext))).scaled(proportion)
+    val glyph = makeRow(children.flatMap(translator.translate(derivedContext))).scaled(proportion)
     List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
   }
 
@@ -45,7 +50,7 @@ class DecorativeExtensions(definitions: Definitions) {
     val fg  = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("frameforeground", Brushes.black))
     val bg  = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("framebackground", Brushes.transparent))
     val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg"))
-    val unframed = NaturalSize.Row(align=Mid)(children.flatMap(translator.translate(derivedContext)))
+    val unframed = makeRow(children.flatMap(translator.translate(derivedContext)))
     val glyph = if (radius==0f) unframed.framed(fg, bg, radius = radius) else unframed.roundFramed(fg, bg, radius = radius)
     List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
   }

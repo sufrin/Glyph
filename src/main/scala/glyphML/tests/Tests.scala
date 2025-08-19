@@ -5,8 +5,8 @@ package tests
 import glyphML.Translator
 import styled.ToggleVariable
 
-import org.sufrin.logging.{INFO, WARN}
 import org.sufrin.logging
+import org.sufrin.logging.FINEST
 
 object trivial extends Application {
   import Translator._
@@ -18,15 +18,27 @@ object trivial extends Application {
   HYPHENATION("in-form-ed")("-")
   HYPHENATION("mis-tak-enly")("-")
   HYPHENATION("anti-dis-estab-lish-men-t-arian-ism")("-")
-  HYPHENATION("averywidewordwithaninfeasible-breakpoint")("-")
+  HYPHENATION("a-very-wide-word-with-a-feasible-break-point")("-")
   HYPHENATION("pro-gramm-ing")("-")
   HYPHENATION("tr-act-if-ied")("-")
+  HYPHENATION("tr-ans-lat-ion-al-ly")("-")
+  HYPHENATION("mor-tif-ied")("-")
   HYPHENATION("alter-/ego")("/")
 
-  def GUI: Glyph =
-    <div width="11em" fontfamily="Courier" textbackground="yellow" align="left">
-      <p>are we well trans_lation_ally mort_if_ied</p>
-    </div>
+  lazy val source: Glyph =  <div width="18em" fontfamily="Courier" textbackground="yellow" align="justify">
+    <p>
+      are we well translationally mort_if_ied and hyphenatable and
+      antidisestablishmentarianism averywidewordwithafeasiblebreakpoint
+      and here is some_thing un_us_ual: na_me_ly more words
+    </p>
+  </div>
+
+  val GUI: Glyph = {
+    logging.SourceDefault.level=FINEST // INFO
+    HYPHENATION.level=FINEST           // INFO
+    source.enlarged(20).framed(Brushes.blackFrame)
+
+  }
 
   def title: String = "trivial"
 }
@@ -48,7 +60,7 @@ object para extends Application {
   HYPHENATION("in-formed")("-")
   HYPHENATION("mis-tak-enly")("-")
   HYPHENATION("anti-dis-estab-lish-men-t-arian-ism")("-")
-  HYPHENATION("averywidewordwithaninfeasible-breakpoint")("-")
+  HYPHENATION("averywidewordwithaninfeasiblebreak-point")("-")
   HYPHENATION("pro-gramm-ing")("-")
   HYPHENATION("tr-act-if-ied")("-")
   HYPHENATION("alter-/ego")("/")
@@ -93,6 +105,7 @@ object para extends Application {
            <attributes id="tag:p"        align="justify" />
            <attributes id="class:fat"    fontscale="1.3"  align="justify"/>
            <attributes id="class:narrow" align="justify"  width="280px"  textforeground="black"/>
+           <attributes id="class:narrower" align="justify"  width="240px"  textforeground="black"/>
            <attributes id="tag:scope"    trace=""/>
            <macro tag="courier" fontfamily="Courier"><?body?></macro>
            <attributes id="tag:centred"  width="800px"/>
@@ -111,14 +124,14 @@ object para extends Application {
       <centred>
       <glyph gid="buttons" refid="buttonsbar"/>
       <p hang="😀">
-        This application tests a combination of <span textforeground="green">local_ization of attributes</span>, <tt fontscale="1.2">text layout</tt>,
+        This application tests a variety of features, including <span textforeground="blue">local_ization of attributes,</span>  <tt fontscale="1.2">text layout</tt>,
         hy_phenation, and the <courier fontscale="1.3">plugging</courier> in of <b>reactive glyphs,</b>  <aswell/>
         The hanging smiley is specified by the <tt>hang="😀"</tt> attribute of this paragraph.
       </p>
 
       <p hangref ="CHECKBOXES"  textforeground="black">
-        This is the running font family, and  <i>this is italic.</i> The text may well spill over &gt; one lines, &amp; everything
-        depends on the width of the entire <tt>div</tt>. The hanging checkboxes were specified by the
+        This is the running font family &mdash; and  <i>this is italic.</i> The text may well spill over &gt; one lines, &amp; everything
+        depends on the width of the entire <![CDATA[div]]>. The hanging checkboxes were specified by the
         <tt>hangref="CHECKBOXES"</tt> attribute of this paragraph: it refers to a globally-defined (active) glyph.
       </p>
 
@@ -135,8 +148,8 @@ object para extends Application {
         <macro tag="SPURIOUS">SPURIOUS</macro>
         <attributes id="tag:p" fontFamily="Courier"/>
           <p class="fat">
-            This is a long, hyphen_at_able antidisestablishmentarianism tract_ified text concerning floccinaucinihilipilification. The text, in teletype font,
-            spills ov_er a nar_row mar_gin un_less I have been <turn degrees="-5">mistakenly</turn><turn degrees="5">informed</turn> by my programming alter-ego.
+            This is a long, hyphen_at_able antidisestablishmentarianism tract_ified text con_cerning floccinaucinihilipilification. The text, in teletype font,
+            spills ov_er a nar_row mar_gin un_less I <frame fg="red.2" bg="pink" radius="0.1">have</frame>  been <turn degrees="-5">mis_takenly</turn><turn degrees="5">informed</turn> by my programming alter-ego.
           </p>
         </scope>
         <SPURIOUS></SPURIOUS>
@@ -147,10 +160,10 @@ object para extends Application {
       <table cols="2" padx="1em" pady="1ex" foreground="green.2" background="yellow">
           <p class="narrow">
             This is a long, possibly hyphenatable, "antidisestablishmentarianism" tractified text that spills
-            ov_er a nar_row <frame fg="red.2" bg="pink" radius="0.1">margin</frame> un_less I am mis_tak_enly in_formed.
+            ov_er a nar_row margin un_less I am mis_tak_enly in_formed.
           </p>
-        <p class="narrow">
-          This piece of text contains floccinaucinihilipilification averywidewordwithaninfeasiblebreakpoint, but nothing else.
+        <p class="narrower">
+          This piece of text contains "floccinaucinihilipilification" averywidewordwithaninfeasiblebreakpoint, but nothing else.
         </p>
         <p class="narrow" align="center">
           Donkeys led by a Dodo.
@@ -168,8 +181,7 @@ object para extends Application {
 
 
   lazy val GUI: Glyph = {
-    logging.SourceDefault.level=INFO
-    Translator.HYPHENATION.level=WARN
+    logging.SourceDefault.level=FINEST // INFO
     source.enlarged(20).framed(Brushes.blackFrame)
   }
 
@@ -222,8 +234,7 @@ object abstraction extends Application {
 
 
   lazy val GUI: Glyph = {
-    logging.SourceDefault.level=INFO
-    Translator.HYPHENATION.level=WARN
+    logging.SourceDefault.level=FINEST // INFO
     source.enlarged(20).framed(Brushes.blackFrame)
   }
 
