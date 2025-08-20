@@ -332,9 +332,9 @@ object NaturalSize {
       val core = new Composite(theGlyphs) {
         override val kind: String = "TabulateRows"
         val glyphs   = theGlyphs
-        val diagonal = Vec(maxw, y)
         override val fg = theseGenerators.fg
         override val bg = theseGenerators.bg
+        val diagonal = Vec(maxw, y)
         locally {
           setParents()
         }
@@ -420,13 +420,14 @@ object NaturalSize {
           y += maxh
         }
       }
+      val edgeX, edgeY = fg.strokeWidth*2
       val theGlyphs = locatedGlyphs.toSeq
       val core: Glyph = new Composite(theGlyphs) {
         override val kind: String = "Grid.asCols"
         val glyphs   = theGlyphs
-        val diagonal = Vec(x+(if (i==0) 0 else maxw), height*maxh)
         override val fg = theseGenerators.fg
         override val bg = theseGenerators.bg
+        val diagonal = Vec(edgeX+x+(if (i==0) 0 else maxw), edgeY+height*maxh)
         locally {
           setParents()
         }

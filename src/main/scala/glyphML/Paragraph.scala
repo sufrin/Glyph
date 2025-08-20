@@ -5,13 +5,14 @@ import GlyphTypes.Scalar
 import glyphML.HYPHENATION.{HyphenatableText, Hyphenated, Unbreakable, Unbroken}
 import unstyled.static
 
-import org.sufrin.logging.SourceDefault
+import org.sufrin.glyph.glyphML.AbstractSyntax.Scope
+import org.sufrin.logging.{SourceDefault, SourceLoggable}
 
 import scala.collection.mutable.ArrayBuffer
 
-object Paragraph {
+object Paragraph extends SourceLoggable {
 
-  def fromGlyphs(sheet: StyleSheet, glyphs: Seq[Glyph], parHang: Option[Glyph]): Glyph = {
+  def fromGlyphs(sheet: StyleSheet, glyphs: Seq[Glyph], parHang: Option[Glyph], scope: Scope=Scope(Nil)): Glyph = {
     val glyphs$   =
       (if (sheet.parIndent>0) List(static.Rect(sheet.parIndent, 1f, fg=Brushes.transparent)) else Nil) ++ glyphs
 
@@ -32,7 +33,8 @@ object Paragraph {
         leftMargin     = sheet.leftMargin,
         rightMargin    = sheet.rightMargin,
         interWordWidth = sheet.emWidth,
-        glyphs$
+        glyphs$,
+        scope
         )
 
     val column = NaturalSize.Col(bg = sheet.textBackgroundBrush, align=Left)(galley.toSeq)
@@ -65,7 +67,8 @@ object Paragraph {
                       leftMargin:     Scalar,
                       rightMargin:    Scalar,
                       interWordWidth: Scalar,
-                      glyphs:         Seq[Glyph]) = {
+                      glyphs:         Seq[Glyph],
+                      scope: Scope) = {
     // As each line of the paragraph is assembled it is added to the galley
     val galley = ArrayBuffer[Glyph]()
     // maximum width of this paragraph: invariant
@@ -122,7 +125,7 @@ object Paragraph {
         case breakable: HyphenatableText =>
           breakable.hyphenate(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w) match {
             case Unbreakable =>
-              SourceDefault.finest(s"Infeasible fit at EOL: ${breakable.string}")
+              Paragraph.finest(s"Infeasible fit at EOL: ${breakable.string}")
 
             case Hyphenated(left, right) =>
               line += left
@@ -166,7 +169,7 @@ object Paragraph {
           case breakable: HyphenatableText =>
             breakable.hyphenate(maxWidthfloor-interWordWidth-breakable.hyphen.w) match {
               case Unbreakable | Unbroken(_) =>
-                SourceDefault.fine(s"Clipped unbreakable: ${breakable.string}")
+                SourceDefault.warn(s"Clipped unbreakable: ${breakable.string} [at $scope]")
                 galley += CLIPWIDTH(maxWidthfloor)(breakable)
                 words.nextElement()
 
@@ -193,9 +196,9 @@ object Paragraph {
           case other =>
             // element is unfittable: just clip it
             other match {
-              case other: HyphenatableText => SourceDefault.fine(s"Unfittable Hyphenatable: ${other.parts.mkString("-")}")
-              case other: unstyled.Text => SourceDefault.fine(s"Unfittable Text: ${other.string}")
-              case _                    => SourceDefault.fine(s"Unfittable: ${other.getClass}")
+              case other: HyphenatableText => Paragraph.fine(s"Unfittable Hyphenatable: ${other.parts.mkString("-")}")
+              case other: unstyled.Text    => Paragraph.fine(s"Unfittable Text: ${other.string}")
+              case _                       => Paragraph.fine(s"Unfittable: ${other.getClass}")
             }
             galley += CLIPWIDTH(maxWidthfloor)(other).framed(Brushes.red, bg=Brushes.pink)
             words.nextElement()

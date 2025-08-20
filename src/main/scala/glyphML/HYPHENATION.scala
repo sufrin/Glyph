@@ -98,6 +98,7 @@ object HYPHENATION extends SourceLoggable {
         case None =>
           punctuated.findPrefixMatchOf(text) match {
             case Some(matched) =>
+              //println(s"PUNCT: ${(matched.group(1), matched.group(2))}")
               ("", matched.group(1), matched.group(2))
             case None =>
               ("", text, "")
@@ -111,7 +112,7 @@ object HYPHENATION extends SourceLoggable {
       if (pre.isEmpty && post.isEmpty) parts else {
         val newHead = pre+parts.head
         val newLast = parts.last+post
-        if (logging) info(s"$pre/$post $newHead ... $newLast")
+        HYPHENATION.finest(s"$pre/$post $newHead ... $newLast")
         parts.tail.take(parts.length-2).prepended(newHead).appended(newLast)
       }
     }
@@ -130,7 +131,7 @@ object HYPHENATION extends SourceLoggable {
         hyphenation.get(word) match {
           case None =>
             if (logging) finest(s"No hyphenation for: $word")
-            (style.makeText(word))
+            (style.makeText(text))
           case Some(parts) =>
             val redecorated = repunctuate(pre, parts, post)
             if (logging) finer(s"$text -> ${redecorated.toList.mkString(", ")}")

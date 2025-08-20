@@ -6,6 +6,7 @@ import glyphML.Context.AttributeMap
 import unstyled.static.INVISIBLE
 
 import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
+import org.sufrin.logging
 
 import scala.util.matching.Regex
 
@@ -109,10 +110,17 @@ class Definitions { thisStore =>
     ////
     val result = effect
     ////
-    lazy val newDefinitions = store.keysIterator.filterNot(scope.contains(_)).toSeq.map{ case (k: String, t: String) => s"$k: $t"}.mkString("\n  ")
-    if (caption.nonEmpty) {
-      print(s"New definitions leaving scope ($caption):\n  ")
-      println(newDefinitions)
+    lazy val changedDefinitions = store.toSet.diff(saved.toSet)
+    if (changedDefinitions.nonEmpty) {
+      val changed = changedDefinitions.map(_._1)
+      val widest = changed.map{ case (k:String,_t: String)=>k.length}.max
+      def pad(k: String): String = s"$k${" "*(widest-k.length)}"
+      def show(defn: (String,String)): String = {
+        val ((k, t)) = defn
+        val desc = if (scope.contains(defn)) "   " else "[+]"
+        s"$desc ${pad(k)}: $t"
+      }
+      logging.SourceDefault.info(s"Changed within $caption:\n\t\t${changed.map(show).mkString("\n\t\t")}")
     }
     store.clear()
     store.addAll(saved)

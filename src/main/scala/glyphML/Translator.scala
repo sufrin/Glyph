@@ -12,12 +12,12 @@ import org.sufrin.glyph.glyphML.Context.{AttributeMap, Context, ExtendedAttribut
 import org.sufrin.glyph.glyphML.HYPHENATION.SemanticStyleSheet
 import org.sufrin.glyph.glyphXML.PrettyPrint.AnyPretty
 import org.sufrin.glyph.glyphXML.Translation.AttributeMap
-import org.sufrin.logging.{Loggable, SourceDefault}
+import org.sufrin.logging.{Loggable, SourceDefault, SourceLoggable}
 
 import scala.util.matching.Regex
 
 
-object Translator {
+object Translator extends SourceLoggable {
 
 
   implicit class IntelligibleAttributeMap(val attrs: AttributeMap) extends AnyVal {
@@ -241,7 +241,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
               }
             else
                 Some(styled.Label(hang)(derivedContext.sheet).enlargedTo(hangWidth, 0))
-        val theGlyph = Paragraph.fromGlyphs(derivedContext.sheet, words, hangGlyph).enlargedBy(0f, derivedContext.sheet.parSkip)
+        val theGlyph = Paragraph.fromGlyphs(derivedContext.sheet, words, hangGlyph, scope).enlargedBy(0f, derivedContext.sheet.parSkip)
         val frame = derivedContext.attributes.Brush("framed", Brushes.transparent)
         List(if (frame.getAlpha==0) theGlyph else theGlyph.framed(frame))
 
@@ -311,7 +311,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         if (elementTag.nonEmpty) {
            val before = definitions.getKind(StoreType.Element)(elementTag)
            if (before.isDefined) {
-              SourceDefault.warn(s"Overriding element definition: $scope<element<$elementTag ${givenAttributes.toSource}")
+              SourceDefault.warn(s"Overriding spliceable definition: $scope<$tag<$elementTag ${givenAttributes.without("tag").toSource}")
            }
            definitions(elementTag) = glyphML.StoredElement(Element(scope, "SPLICE", attributes.without("tag"), if (tag=="definitions") children else child))
         } else
@@ -320,6 +320,14 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
 
       case "SPLICE" =>
         children.flatMap(translate(context))
+
+      case "insert" =>
+        val attribute: String = localAttributes.String("attribute", "")
+        val units: String  = localAttributes.String("units", "")
+        (if (attribute.nonEmpty) translate(context.updated(localAttributes.without("attribute")))(Text(localAttributes.String(attribute, s"?$attribute?"))) else Nil)++
+        (if (units.nonEmpty) translate(context.updated(localAttributes.without("units")))(Text(s"=${localAttributes.Units(units, Float.NaN)(context.sheet).toInt}px")) else Nil)
+
+
 
       case "attributes" =>
         // Give the name denoted by "id" to the remaining attributes, and
@@ -358,15 +366,15 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         Nil
 
       case "scope" =>
-        definitions.inScope(localAttributes.String("trace", "")){
+        definitions.inScope(scope.toString){
           child.flatMap(translate(context))
         }
 
       case "table" =>
         val width     = localAttributes.Int("columns", localAttributes.Int("cols", 0))
-        val height    = localAttributes.Int("rows", 0)
+        val height    = localAttributes.Int("rows", localAttributes.Int("height", 0))
         val uniform   = localAttributes.Bool("uniform", false)
-        val derivedContext = context.updated(localAttributes.without("columns", "cols", "uniform"))
+        val derivedContext = context.updated(localAttributes.without("columns", "cols", "uniform", "width", "height"))
         val glyphs    =
           children.filterNot(isEmptyText).flatMap(translate(derivedContext))
         import derivedContext.sheet.{foregroundBrush=>fg, backgroundBrush=>bg, padX, padY}
@@ -382,16 +390,20 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         val foreground = localAttributes.Brush("foreground", localAttributes.Brush("fg", Brushes.transparent))
         List(FixedSize.Space(width, height, stretch, fg=foreground, bg=background))
 
-      case "fixedwidth" =>
-        val resolved = new ResolveScopedAttributes(definitions, element)
-        import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
-        import resolved._
-        val width: Scalar = inheritedAttributes.Units("width", 0)(context.sheet)
-        val fg  = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
-        val bg  = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
+      case "fixedwidth" | "fixedsize" =>
+        var width: Scalar = inheritedAttributes.Units("width", context.sheet.parWidth)(context.sheet)
+        val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
+        val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
         val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "width"))
-        val glyph = FixedSize.Row(align=Mid, width=width)(children.flatMap(translate(derivedContext)))
+        val glyph = if (width==0) {
+               Translator.warn(s"No width for $scope [using natural width]")
+               NaturalSize.Row(align = Mid)(children.flatMap(translate(derivedContext)))
+            }
+            else {
+               FixedSize.Row(align = Mid, width = width)(children.flatMap(translate(derivedContext)))
+            }
         List(glyph)
+
 
       case _ =>
         // (Context, AbstractSyntax.Scope, String, AttributeMap, Seq[AbstractSyntax.Tree])
@@ -442,8 +454,14 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
 
   val rootContext = Context(Map.empty, rootStyle)
 
-  /** Make global definitions */
-  def global(trees: scala.xml.Node*)(implicit location: SourceLocation = sourcePath): Unit = {
+
+  /** A single global declaration in the metalanguage */
+  def initialDeclaration(tree: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Unit = {
+      translate(rootContext)(AbstractSyntax.fromXML(tree)(location))
+  }
+
+  /** A collection of (more than one) global declaration in the metalanguage */
+  def initialDeclarations(trees: scala.xml.NodeBuffer)(implicit location: SourceLocation = sourcePath): Unit = {
     for {tree <- trees} {
       translate(rootContext)(AbstractSyntax.fromXML(tree)(location))
     }
