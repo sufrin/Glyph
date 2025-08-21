@@ -12,6 +12,42 @@ import scala.collection.mutable.ArrayBuffer
 
 object Paragraph extends SourceLoggable {
 
+  trait Shaper {
+    def nextWidth(lineNo: Int): Scalar
+    def firstGlyph(lineNo: Int): Glyph
+  }
+
+  case class RectangularShaper(firstGlyph: ()=>Glyph, width: Scalar) extends Shaper {
+    def nextWidth(lineNo: Int): Scalar = width
+    def firstGlyph(lineNo: Int): Glyph = firstGlyph()
+  }
+
+  case class IndentShaper(firstGlyph: ()=>Glyph, width: Scalar, firstIndent: Scalar) extends Shaper {
+    def nextWidth(lineNo: Int): Scalar = lineNo match {
+      case 0 => width - firstIndent
+      case _ => width
+    }
+
+    def firstGlyph(lineNo: Int): Glyph = lineNo match {
+      case 0 => FixedSize.Space(firstIndent, 1, 0)
+      case _ => firstGlyph()
+    }
+  }
+
+  case class OrnamentShaper(firstGlyph: ()=>Glyph, width: Scalar, firstIndent: Scalar, lastIndent: Scalar, lines: Int) extends Shaper {
+
+      def nextWidth(lineNo: Int): Scalar = lineNo match {
+        case n if n<lines  => width-firstIndent
+        case _ => width
+      }
+
+      def firstGlyph(lineNo: Int): Glyph = lineNo match {
+        case n if n<lines  => FixedSize.Space(firstIndent, 1, 0)
+        case _ => firstGlyph()
+      }
+
+  }
+
   def fromGlyphs(sheet: StyleSheet, glyphs: Seq[Glyph], parHang: Option[Glyph], scope: Scope=Scope(Nil)): Glyph = {
     val glyphs$   =
       (if (sheet.parIndent>0) List(static.Rect(sheet.parIndent, 1f, fg=Brushes.transparent)) else Nil) ++ glyphs
@@ -23,7 +59,8 @@ object Paragraph extends SourceLoggable {
 
     val leftMargin = sheet.leftMargin max hangWidth
 
-
+    def makeShaper(galleyWidth: Scalar): Shaper = RectangularShaper(sheet.parAlign.leftFill, galleyWidth)
+    
     // The overall width is determined by the context
     // If the bounding box is unspecified, then use the column width
     val galley =
@@ -34,7 +71,8 @@ object Paragraph extends SourceLoggable {
         rightMargin    = sheet.rightMargin,
         interWordWidth = sheet.emWidth,
         glyphs$,
-        scope
+        scope,
+        makeShaper
         )
 
     val column = NaturalSize.Col(bg = sheet.textBackgroundBrush, align=Left)(galley.toSeq)
@@ -68,62 +106,46 @@ object Paragraph extends SourceLoggable {
                       rightMargin:    Scalar,
                       interWordWidth: Scalar,
                       glyphs:         Seq[Glyph],
-                      scope: Scope) = {
+                      scope:          Scope,
+                      mkShaper:       Scalar=>Shaper) = {
     // As each line of the paragraph is assembled it is added to the galley
     val galley = ArrayBuffer[Glyph]()
     // maximum width of this paragraph: invariant
     val maxWidth       = overallWidth - (leftMargin + rightMargin)
     // avoid rounding
-    val maxWidthfloor  = maxWidth.floor
+    var galleyWidth  = maxWidth.floor
     //println(s"[ov=$overallWidth,lm=$leftMargin,maxw=$maxWidthfloor]")
     val words = new PushbackIteratorOfIterator[Glyph](glyphs.iterator)
     var setting = true
+
+    val shaper = mkShaper(galleyWidth)
 
     @inline def composeLineGlyphs(): (Scalar, Seq[Glyph]) = {
       import scala.collection.mutable
       val line = mutable.IndexedBuffer[Glyph]()
       var lineWidth = 0f
 
+      galleyWidth = shaper.nextWidth(galley.length)
+
       // Skip any leading interwordspaces left over from a previous line.
       while (words.hasElement && words.element.isInstanceOf[FixedSize.Space]) words.nextElement()
 
       // start the line
-      line += align.leftFill()
-      // add words and interword spaces while there is room
-      while (words.hasElement && (lineWidth + words.element.w < maxWidthfloor)) {
-        words.element match {
-//          case BreakableGlyph(_, glyphs) =>
-//            for { glyph <- glyphs } line += glyph
-//            lineWidth += words.element.w
-//            words.nextElement()
+      line += shaper.firstGlyph(galley.length)
 
-          case other =>
-            line += other
+      // add words and interword spaces while there is room
+      while (words.hasElement && (lineWidth + words.element.w < galleyWidth)) {
+            line += words.element
             lineWidth += words.element.w
             words.nextElement()
-        }
       }
+      // end of words, or line about to overflow
 
-      // squeeze an extra chunk on by splitting a breakable, if possible?
+      // squeeze an extra chunk on by splitting a breakable, if possible
       if (words.hasElement) words.element match {
-//        case breakable: BreakableGlyph =>
-//          val breakPoint: Int = breakable.maximal(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w) //??
-//          if (breakPoint!=0) {
-//            val glyphs = breakable.glyphs
-//            for { i <- 0 until breakPoint } {
-//              lineWidth += glyphs(i).w
-//              line += glyphs(i)
-//            }
-//            line += breakable.hyphen()
-//            //line += interWord()// (from the earlier implementation
-//            lineWidth += breakable.hyphen.w
-//            words.pushBack(new BreakableGlyph(breakable.hyphen, glyphs.drop(breakPoint)))
-//          } else {
-//            //SourceDefault.finest(s"Infeasible fit at EOL: $breakable")
-//          }
 
         case breakable: HyphenatableText =>
-          breakable.hyphenate(maxWidthfloor-lineWidth-interWordWidth-breakable.hyphen.w) match {
+          breakable.hyphenate(galleyWidth-lineWidth-interWordWidth-breakable.hyphen.w) match {
             case Unbreakable =>
               Paragraph.finest(s"Infeasible fit at EOL: ${breakable.string}")
 
@@ -164,13 +186,13 @@ object Paragraph extends SourceLoggable {
 
     while (setting && words.hasElement) {
       // At the start of a line: perhaps we have an overlong but splittable element
-      if (words.hasElement && words.element.w.ceil >= maxWidthfloor) {
+      if (words.hasElement && words.element.w.ceil >= galleyWidth) {
         words.element match {
           case breakable: HyphenatableText =>
-            breakable.hyphenate(maxWidthfloor-interWordWidth-breakable.hyphen.w) match {
+            breakable.hyphenate(galleyWidth-interWordWidth-breakable.hyphen.w) match {
               case Unbreakable | Unbroken(_) =>
                 SourceDefault.warn(s"Clipped unbreakable: ${breakable.string} [at $scope]")
-                galley += CLIPWIDTH(maxWidthfloor)(breakable)
+                galley += CLIPWIDTH(galleyWidth)(breakable)
                 words.nextElement()
 
 
@@ -180,18 +202,6 @@ object Paragraph extends SourceLoggable {
                 composeLine()
             }
 
-//          case breakable: BreakableGlyph =>
-//            val breakPoint: Int = breakable.maximal(maxWidthfloor-interWordWidth-breakable.hyphen.w)
-//            if (breakPoint==0)  {
-//              // element splitting is infeasible: just clip
-//              SourceDefault.fine(s"Clipped at infeasible split: $breakable")
-//              galley += CLIPWIDTH(maxWidthfloor)(NaturalSize.Row(align=Mid, bg=Brushes.pink)(breakable.glyphs))
-//              words.nextElement()
-//            }
-//            else {
-//              // element splitting is feasible: just compose the line starting with it
-//              composeLine()
-//            }
 
           case other =>
             // element is unfittable: just clip it
@@ -200,7 +210,7 @@ object Paragraph extends SourceLoggable {
               case other: unstyled.Text    => Paragraph.fine(s"Unfittable Text: ${other.string}")
               case _                       => Paragraph.fine(s"Unfittable: ${other.getClass}")
             }
-            galley += CLIPWIDTH(maxWidthfloor)(other).framed(Brushes.red, bg=Brushes.pink)
+            galley += CLIPWIDTH(galleyWidth)(other).framed(Brushes.red, bg=Brushes.pink)
             words.nextElement()
         }
       } else {
