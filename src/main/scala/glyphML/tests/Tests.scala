@@ -34,6 +34,7 @@ object trivial extends Application {
   HYPHENATION("ex-erc-itat-ion")("-")
   HYPHENATION("con-se-qu-at")("-")
   HYPHENATION("cu-pid-a-tat")("-")
+  HYPHENATION("ad-ip-isc-ing")("-")
 
   initialDeclarations(
     <element tag="para">

@@ -12,39 +12,45 @@ import scala.collection.mutable.ArrayBuffer
 
 object Paragraph extends SourceLoggable {
 
+  case class Shape(lineStartGlyph: ()=>Glyph, lineEndGlyph: ()=>Glyph, galleyWidth: Scalar)
+
   trait Shaper {
-    def nextWidth(lineNo: Int): Scalar
-    def firstGlyph(lineNo: Int): Glyph
+    def nextShape(lineNo: Int): Shape
   }
 
-  case class RectangularShaper(firstGlyph: ()=>Glyph, width: Scalar) extends Shaper {
-    def nextWidth(lineNo: Int): Scalar = width
-    def firstGlyph(lineNo: Int): Glyph = firstGlyph()
+  case class RectangularShaper(align: Alignment, galleyWidth: Scalar) extends Shaper {
+    def nextShape(lineNo: Int): Shape = Shape(align.leftFill, align.rightFill, galleyWidth)
   }
 
-  case class IndentShaper(firstGlyph: ()=>Glyph, width: Scalar, firstIndent: Scalar) extends Shaper {
-    def nextWidth(lineNo: Int): Scalar = lineNo match {
-      case 0 => width - firstIndent
-      case _ => width
-    }
-
-    def firstGlyph(lineNo: Int): Glyph = lineNo match {
-      case 0 => FixedSize.Space(firstIndent, 1, 0)
-      case _ => firstGlyph()
-    }
+  case class DiminishingShaper(align: Alignment, galleyWidth: Scalar, lastLine: Int, proportion: Scalar,  minWidth: Scalar) extends Shaper {
+    var currentWidth: Scalar = galleyWidth
+    def nextShape(lineNo: Int): Shape = if (lineNo<=lastLine  && currentWidth>=minWidth) {
+        var currentLeft = galleyWidth*proportion*lineNo
+        currentWidth = galleyWidth-currentLeft max minWidth
+        val left = FixedSize.Space(currentLeft, 1, 0)
+        Shape(()=>left, align.rightFill, currentWidth)
+    } else nextShape(0)
   }
 
-  case class OrnamentShaper(firstGlyph: ()=>Glyph, width: Scalar, firstIndent: Scalar, lastIndent: Scalar, lines: Int) extends Shaper {
+  case class PyramidShaper(align: Alignment, galleyWidth: Scalar, lastLine: Int, leftProportion: Scalar,  rightProportion: Scalar, minWidth: Scalar) extends Shaper {
+    var currentWidth: Scalar = minWidth
+    def nextShape(lineNo: Int): Shape = if (lineNo<=lastLine && currentWidth<=galleyWidth) {
+      var currentLeft = galleyWidth*leftProportion*(lastLine-lineNo)
+      var currentRight = galleyWidth*rightProportion*(lastLine-lineNo)
+      currentWidth = galleyWidth-(currentLeft+currentRight) max minWidth
+      val left = FixedSize.Space(currentLeft, 1, 0)
+      val right = FixedSize.Space(currentRight, 1, 0)
+      Shape(()=>left, ()=>right, currentWidth)
+    } else
+      Shape(align.leftFill, align.rightFill, galleyWidth)
+  }
 
-      def nextWidth(lineNo: Int): Scalar = lineNo match {
-        case n if n<lines  => width-firstIndent
-        case _ => width
-      }
-
-      def firstGlyph(lineNo: Int): Glyph = lineNo match {
-        case n if n<lines  => FixedSize.Space(firstIndent, 1, 0)
-        case _ => firstGlyph()
-      }
+  case class PrefixIndentShaper(align: Alignment, galleyWidth: Scalar, prefixIndent: Scalar, prefixLines: Int) extends Shaper  {
+    def nextShape(lineNo: Int): Shape =
+      if (lineNo<prefixLines)
+        Shape(()=>FixedSize.Space(prefixIndent, 1, 0), align.rightFill, galleyWidth-prefixIndent)
+      else
+        Shape(align.leftFill, align.rightFill, galleyWidth-prefixIndent)
 
   }
 
@@ -59,8 +65,14 @@ object Paragraph extends SourceLoggable {
 
     val leftMargin = sheet.leftMargin max hangWidth
 
-    def makeShaper(galleyWidth: Scalar): Shaper = RectangularShaper(sheet.parAlign.leftFill, galleyWidth)
-    
+    def buildShaper(galleyWidth: Scalar): Shaper = RectangularShaper(sheet.parAlign, galleyWidth)
+      // TODO: move the choice of shaper outside the invocation
+      //       probably not as a sheet feature: perhaps only settable from glyphML
+      // TODO: an "Illuminated" first letter feature? Probably uncalled-for in a GUI
+      // PyramidShaper(sheet.parAlign, galleyWidth, lastLine = 6, leftProportion = .05f, rightProportion = .05f,  galleyWidth/2)
+      // PrefixIndentShaper(sheet.parAlign, galleyWidth, prefixIndent = 2*sheet.textFont.getSpacing, prefixLines = 2)
+      // DiminishingShaper(sheet.parAlign, galleyWidth, 10, 0.05f, galleyWidth/6) //
+
     // The overall width is determined by the context
     // If the bounding box is unspecified, then use the column width
     val galley =
@@ -72,7 +84,7 @@ object Paragraph extends SourceLoggable {
         interWordWidth = sheet.emWidth,
         glyphs$,
         scope,
-        makeShaper
+        buildShaper
         )
 
     val column = NaturalSize.Col(bg = sheet.textBackgroundBrush, align=Left)(galley.toSeq)
@@ -107,7 +119,7 @@ object Paragraph extends SourceLoggable {
                       interWordWidth: Scalar,
                       glyphs:         Seq[Glyph],
                       scope:          Scope,
-                      mkShaper:       Scalar=>Shaper) = {
+                      buildShaper:    Scalar=>Shaper) = {
     // As each line of the paragraph is assembled it is added to the galley
     val galley = ArrayBuffer[Glyph]()
     // maximum width of this paragraph: invariant
@@ -118,20 +130,22 @@ object Paragraph extends SourceLoggable {
     val words = new PushbackIteratorOfIterator[Glyph](glyphs.iterator)
     var setting = true
 
-    val shaper = mkShaper(galleyWidth)
+    val shaper = buildShaper(galleyWidth)
+
 
     @inline def composeLineGlyphs(): (Scalar, Seq[Glyph]) = {
       import scala.collection.mutable
       val line = mutable.IndexedBuffer[Glyph]()
       var lineWidth = 0f
 
-      galleyWidth = shaper.nextWidth(galley.length)
+      val thisShape = shaper.nextShape(galley.length)
+      galleyWidth = thisShape.galleyWidth
 
       // Skip any leading interwordspaces left over from a previous line.
       while (words.hasElement && words.element.isInstanceOf[FixedSize.Space]) words.nextElement()
 
       // start the line
-      line += shaper.firstGlyph(galley.length)
+      line += thisShape.lineStartGlyph()
 
       // add words and interword spaces while there is room
       while (words.hasElement && (lineWidth + words.element.w < galleyWidth)) {
@@ -164,7 +178,7 @@ object Paragraph extends SourceLoggable {
 
 
       // line is full
-      val endLine = if (words.hasElement) align.rightFill() else align.lastFill()
+      val endLine = if (words.hasElement) thisShape.lineEndGlyph() else align.lastFill()
       // terminate the made-up line with a line-ending stretchy space
       if (line.last.isInstanceOf[FixedSize.Space])
         line.update(line.length - 1, endLine)
