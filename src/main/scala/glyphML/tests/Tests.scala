@@ -237,6 +237,17 @@ object abstraction extends Application {
   val translator = new Translator(new Definitions {})(StyleSheet())
   import translator._
 
+initialDeclarations(
+    <macro tag="paratag" fontscale="1.2" framed="red">
+      <?body?>
+      <table>a<deliberatemistake/>b</table>
+    </macro>
+
+      <macro tag="nested" align="right" whocares="not me" keepempty="false" >
+        <table cols="1" uniform="false" background="white"><?body?></table>
+      </macro>
+  )
+
   lazy val source: Glyph =
     <div fontfamily="Times" width="25em" labelforeground="black"  textforeground="black" cdatabackground="transparent" cdataforeground="red"
          attributeswarning="f"
@@ -244,15 +255,6 @@ object abstraction extends Application {
 
       <attributes id="tag:debug" caption="Debugging" local="t"/>
       <attributes id="xtag:p" framed="red" align="justify" />
-
-
-      <macro tag="paratag" fontscale="1.2" framed="red">
-        <attributes id="xtag:p"><?body?></attributes>
-      </macro>
-
-      <macro tag="nested" align="right" whocares="not me" keepempty="false" >
-        <table cols="1" uniform="false" background="white"><?body?></table>
-      </macro>
 
      <measured refid="virtual" visible="off" orientation="row" background="transparent">
          <table cols="1" uniform="f">
@@ -268,6 +270,12 @@ object abstraction extends Application {
       </fixedwidth>
 
       <glyph gid="virtual"/>
+
+      <nested>
+        <paratag>
+           <glyph gid="virtual"/>
+        </paratag>
+      </nested>
     </div>
 
 
