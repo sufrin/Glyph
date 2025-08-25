@@ -12,6 +12,7 @@ import org.sufrin.glyph.glyphML.Context.{AttributeMap, Context, ExtendedAttribut
 import org.sufrin.glyph.glyphML.HYPHENATION.SemanticStyleSheet
 import org.sufrin.glyph.glyphXML.PrettyPrint.AnyPretty
 import org.sufrin.glyph.glyphXML.Translation.AttributeMap
+import org.sufrin.glyph.NaturalSize.Row
 import org.sufrin.logging.{Loggable, SourceDefault, SourceLoggable}
 
 import scala.util.matching.Regex
@@ -90,6 +91,8 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
     definitions("lt") = "<"
     definitions("gt") = ">"
     definitions("mdash") = "\u2014"
+
+    glyphML.Context.definitions = definitions // PRO TEM
   }
 
   /**
@@ -226,6 +229,10 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         val hangref = derivedContext.attributes.String("hangref", "")
         val hangWidth = derivedContext.attributes.Units("hangwidth", 0)(context.sheet)
 
+        if (scope.hasNested("p")) {
+          Translator.warn(s"Paragraph nested with paragraph: $scope<p")
+        }
+
         val hangGlyph =
           if (hang.isEmpty)
               if (hangref.isEmpty)
@@ -287,20 +294,22 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         @inline def raiseBy(by: Scalar)(glyph: Glyph): Glyph = glyph.withBaseline(by)
         val id = givenAttributes.String("gid", "")
         val refid: String = givenAttributes.String("refid", "")
-        definitions.getKind(StoreType.GlyphGenerator)(id) match {
-          case Some(StoredGlyphGenerator(generator)) =>
+        val stored = definitions.getKind(StoreType.GlyphGenerator)(id)
+        if (stored.isDefined)
+        stored.get match {
+          case StoredGlyphGenerator(generator) =>
             val rawGlyph = generator(derivedContext.sheet)
-            val glyph    = raiseBy((ambientHeight+rawGlyph.h)*0.5f)(rawGlyph)
+            val glyph = raiseBy((ambientHeight + rawGlyph.h) * 0.5f)(rawGlyph)
             if (refid.nonEmpty) definitions(refid) = StoredGlyphConstant(glyph)
             List(glyph)
-          case Some(StoredGlyphConstant(rawGlyph)) =>
-            val glyph    = rawGlyph.copy()
+          case constant: StoredGlyphConstant =>
+            val glyph = constant.instance()
             if (refid.nonEmpty) definitions(refid) = StoredGlyphConstant(glyph)
             List(glyph)
-          case Some(other) =>
+          case other =>
             SourceDefault.error(s"Unexpected stored value at $scope<glyph gid=\"$id\" ...")
             Nil
-          case None =>
+        } else {
             SourceDefault.warn(s"No such glyph at $scope<glyph gid=\"$id\" ...")
             Nil
         }
@@ -323,10 +332,39 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
 
       case "insert" =>
         val attribute: String = localAttributes.String("attribute", "")
-        val units: String  = localAttributes.String("units", "")
-        (if (attribute.nonEmpty) translate(context.updated(localAttributes.without("attribute")))(Text(localAttributes.String(attribute, s"?$attribute?"))) else Nil)++
-        (if (units.nonEmpty) translate(context.updated(localAttributes.without("units")))(Text(s"=${localAttributes.Units(units, Float.NaN)(context.sheet).toInt}px")) else Nil)
+        val expr: String   = localAttributes.String("evaluate", "")
+        val attr: String   = if (attribute.nonEmpty) context.attributes.String(attribute, s"?$attribute?") else ""
+        val value: String  = if (expr.nonEmpty) context.attributes.Eval(expr, Float.NaN)(context.sheet).toInt.toString else ""
+        val stuff = (attr.nonEmpty, value.nonEmpty) match {
+          case (true, true) => Para(List(attr,value))
+          case (true, false) => Text(attr)
+          case (false, true) => Text(value)
+          case (_,_) => Text("?")
+        }
 
+        List(stuff).flatMap(translate(context.updated(localAttributes.without("attribute", "evaluate"))))
+
+
+      case "measured" =>
+        // Measure the first child
+        val refid   = localAttributes.String("refid", "")
+        val visible = localAttributes.Bool("visible", false)
+        val row     = localAttributes.String("orientation", "row")=="row"
+        val derivedContext = context.updated(localAttributes.without("refid", "visible", "orientation"))
+        val derived = children.flatMap(translate(derivedContext))
+        val glyph =
+          derived.length match {
+            case 1 => derived(0)
+            case _ => if (row) NaturalSize.Row()(derived) else NaturalSize.Col(derived)
+          }
+
+          if (refid!="") {
+            val stored = StoredGlyphConstant(glyph)
+            definitions(refid) = stored
+            if (visible) stored.instance() // bump the copy-count
+          }
+
+          if (visible) List(glyph) else Nil
 
 
       case "attributes" =>

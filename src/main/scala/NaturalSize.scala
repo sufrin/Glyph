@@ -270,8 +270,10 @@ object NaturalSize {
     def grid(width: Int=0, height: Int=0)(glyphs: Seq[Glyph]): Glyph = {
       //require(glyphs.nonEmpty, "Grid glyph sequence is empty")
       (width>0, height>0) match {
-        case (true, false) => uniformlyByRows(width)(glyphs)
-        case (false, true) => uniformlyByCols(height)(glyphs)
+        case (true, false) =>
+          uniformlyByRows(width)(glyphs)
+        case (false, true) =>
+          uniformlyByCols(height)(glyphs)
         case (_, _) =>
           val width: Int = Math.sqrt(glyphs.length).ceil.toInt
           uniformlyByRows(width)(glyphs)
@@ -338,7 +340,7 @@ object NaturalSize {
         locally {
           setParents()
         }
-        def copy(fg: Brush = fg, bg: Brush = bg): Glyph = table(height)(theGlyphs.map(_.copy(fg, bg)))
+        def copy(fg: Brush = fg, bg: Brush = bg): Glyph = table(width=width,height=height)(theGlyphs.map(_.copy(fg, bg)))
       }
       if (fg.getAlpha!=0 && fg.strokeWidth<=2) core.edged(fg) else core
     }

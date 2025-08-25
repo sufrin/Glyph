@@ -46,9 +46,16 @@ case class StoredGlyphGenerator(apply: StyleSheet => Glyph) extends Value  {
   override val kind: String="Glyph"
   override val toString: String = "StoredGenerator"
 }
-case class StoredGlyphConstant(glyph: Glyph)                extends Value  {
+case class StoredGlyphConstant(glyph: Glyph) extends Value  {
+  var count: Int  = 0
   override val kind: String="Glyph"
-  override val toString: String = "StoredConstant"
+  override val toString: String = s"StoredConstant(#$count)"
+  /**  Use an instance (a copy, unless it's the first) of `glyph` */
+  def instance(): Glyph = {
+    count += 1
+    if (count==1) glyph else glyph.copy()
+  }
+
 }
 
 case class StoredString(string: String)                     extends Value

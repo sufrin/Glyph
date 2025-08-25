@@ -220,9 +220,9 @@ object Paragraph extends SourceLoggable {
           case other =>
             // element is unfittable: just clip it
             other match {
-              case other: HyphenatableText => Paragraph.fine(s"Unfittable Hyphenatable: ${other.parts.mkString("-")}")
-              case other: unstyled.Text    => Paragraph.fine(s"Unfittable Text: ${other.string}")
-              case _                       => Paragraph.fine(s"Unfittable: ${other.getClass}")
+              case other: HyphenatableText => SourceDefault.warn(s"Unfittable Hyphenatable: ${other.parts.mkString("-")}")
+              case other: unstyled.Text    => SourceDefault.warn(s"Unfittable Text: ${other.string}")
+              case _                       => SourceDefault.warn(s"Unfittable: ${other.getClass}")
             }
             galley += CLIPWIDTH(galleyWidth)(other).framed(Brushes.red, bg=Brushes.pink)
             words.nextElement()
@@ -239,7 +239,7 @@ object Paragraph extends SourceLoggable {
     def draw(surface: Surface): Unit =
       surface.withClip(Vec(width, g.h)) {
         g.draw(surface)
-        surface.drawLines$(Brushes.black(width=2), 0,g.h/2, width, g.h/2)
+        surface.drawLines$(Brushes.black(width=2), 0,0, width, g.h)
       }
 
     def diagonal: Vec = Vec(width, g.h)

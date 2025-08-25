@@ -6,7 +6,7 @@ import glyphML.Translator
 import styled.ToggleVariable
 
 import org.sufrin.logging
-import org.sufrin.logging.{FINER, FINEST, INFO}
+import org.sufrin.logging.{FINER, FINEST, INFO, WARN}
 
 object trivial extends Application {
   locally{
@@ -230,47 +230,44 @@ object abstraction extends Application {
   locally {
     logging.SourceDefault.level=FINEST // INFO
     HYPHENATION.level=FINER// INFO
+    Translator.level=WARN
+    Paragraph.level=WARN
   }
   import Translator._
   val translator = new Translator(new Definitions {})(StyleSheet())
   import translator._
 
-
-  definitions("definefoo") = // <definefoo/> defines the macro foo in the current scope
-    <macro tag="foo"><p><debug local="t"/>FOO</p></macro>
-
   lazy val source: Glyph =
-    <div fontfamily="Times" width="400px" labelforeground="black" textforeground="black" cdatabackground="pink" cdataforeground="red"
+    <div fontfamily="Times" width="25em" labelforeground="black"  textforeground="black" cdatabackground="transparent" cdataforeground="red"
          attributeswarning="f"
     >
 
-      <attributes id="class:but" buttonbackground="yellow" buttonforeground="red" fontscale="0.7"/>
       <attributes id="tag:debug" caption="Debugging" local="t"/>
-      <attributes id="tag:p" framed="red" align="justify" />
-      <attributes id="class:narrow"  align="justify"  width="280px"  textforeground="black"/>
+      <attributes id="xtag:p" framed="red" align="justify" />
+
 
       <macro tag="paratag" fontscale="1.2" framed="red">
-        <attributes id="tag:p"><?body?></attributes>
+        <attributes id="xtag:p"><?body?></attributes>
       </macro>
 
-      <paratag>
-        <p framed="blue">explicitly <tt>framed="blue"</tt> in the invocation of paratag
-           <macro tag="nested" align="right" whocares="not me" keepempty="false">
-             <attributes id="tag:p">
-               <p><?body?></p>
-             </attributes>
-           </macro>
-        </p>
-        <p>within the invocation of paratag <tt>fontscale="1.5" framed="red"</tt></p>
-      </paratag>
-      <nested align="left">
-        left aligned, prevailing frame colour
-      </nested>
-      <nested textbackground="pink">
-        default (=right) alignment, textbackground pink
-        <definefoo/>
-      </nested>
-      <foo/>
+      <macro tag="nested" align="right" whocares="not me" keepempty="false" >
+        <table cols="1" uniform="false" background="white"><?body?></table>
+      </macro>
+
+     <measured refid="virtual" visible="off" orientation="row" background="transparent">
+         <table cols="1" uniform="f">
+            <p framed="blue">explicitly <tt>framed="blue"</tt> in the invocation of paratag</p>
+            <p>within the invocation of paratag <tt>fontscale="1.5" framed="red"</tt>
+            </p><![CDATA[PINK DATA]]>
+         </table>
+     </measured>
+      <fixedwidth width="width">
+        <fill stretch="200" fg="red"/>
+        <fixedwidth width="0.5*virtual.width" bg="pink"><insert evaluate="virtual.width"/>x<insert evaluate="virtual.height"/></fixedwidth>
+        <fill stretch="200" fg="red"/>
+      </fixedwidth>
+
+      <glyph gid="virtual"/>
     </div>
 
 
@@ -281,4 +278,18 @@ object abstraction extends Application {
 
   def title: String = "Test Translator"
 
+}
+
+object table extends Application {
+  implicit val style: StyleSheet = StyleSheet()
+  import NaturalSize._
+
+  lazy val data = (0 until 50).map{ n => styled.Label(s"$n")}
+
+  def GUI: Glyph = Row(
+    Grid.grid(width=1)(data),
+    Grid.table(width=1)(data)
+  )
+
+  def title: String = "Table"
 }

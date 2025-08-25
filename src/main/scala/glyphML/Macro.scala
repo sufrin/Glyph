@@ -4,7 +4,6 @@ package glyphML
 import glyphML.AbstractSyntax.{Element, MacroParam, Scope, Tree}
 import glyphML.Context._
 
-import org.sufrin.glyph.glyphXML.PrettyPrint.AnyPretty
 import org.sufrin.logging.SourceDefault
 
 /**
@@ -46,6 +45,8 @@ case class Macro(val scope: Scope, tag: String, val defaultAttributes: Attribute
 
   /**
    *  substitute invocation attributes and invocation body parts in appropriate places in the abstraction body
+   *
+   *  // TODO: get the scope right in macro expansions
    */
   def expansion(invocationAttributes: AttributeMap, invocationBody: Seq[Tree]): Seq[Tree] = {
 

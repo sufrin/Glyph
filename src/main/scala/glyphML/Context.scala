@@ -3,11 +3,14 @@ package glyphML
 
 
 import org.sufrin.logging
-import org.sufrin.logging.Default
+import org.sufrin.logging.{Default, SourceDefault}
 import org.sufrin.SourceLocation._
+import org.sufrin.glyph.GlyphTypes.Scalar
 
 object Context {
   type AttributeMap = Map[String, String]
+
+  var definitions: Definitions = null
 
   private def SUPERSEDE(l: AttributeMap, r: AttributeMap): AttributeMap = new AttributeMap {
 
@@ -81,63 +84,102 @@ object Context {
     }
 
     /**
-     * Yields the Float with key `key` if is expressed in one of the following forms:
-     *
-     * 1. A floating point number, `factor`, immediately followed by one of
-     * {{{
-     *  em => factor*sheet.emWidth
-     *  ex => factor*sheet.exHeight
-     * }}}
-     *
-     * {{{
-     *   px => factor
-     *   pt => factor
-     * }}}
-     *
-     * 2. a floating point factor, `factor`, immediately followed by `*` then by one of the following:
-     * {{{
-     *    width => factor*sheet.parWidth
-     *    indent => factor*sheet.parIndent
-     *    leftmargin => factor*sheet.leftMargin
-     *    rightmargin => factor*sheet.rightMargin
-     *    container.width => factor*sheet.containerWidth
-     *    container.height => factor*sheet.containerHeight
-     *    window.width => factor*sheet.windowWidth
-     *    window.height => factor*sheet.windowHeight
-     *    screen.width => factor*sheet.screenWidth
-     *    screen.height => factor*sheet.screenHeight
-     * }}}
-     *
+     *  Evaluate an expression
      */
-    def Units(key: String, alt: Float)(sheet: StyleSheet)(implicit at: SourceLocation = sourceLocation): Float = {
-      attributes.get(key.toLowerCase) match {
-        case Some(spec) =>
-          spec.toLowerCase match {
-            case (s"${s}em") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.emWidth
-            case (s"${s}ex") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.exHeight
-            case (s"${s}px") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
-            case (s"${s}pt") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
-            case (s"${m}*${dim}") if m.isEmpty || m.matches("[0-9]+(\\.([0-9]+)?)?") =>
-              val factor = if (m.isEmpty) 1f else m.toFloat
-              dim.toLowerCase match {
-                case "width" => factor * sheet.parWidth
-                case "indent" => factor * sheet.parIndent
-                case "leftmargin" => factor * sheet.leftMargin
-                case "rightmargin" => factor * sheet.rightMargin
-                case "container.width" => factor * sheet.containerWidth
-                case "container.height" => factor * sheet.containerHeight
-                case "window.width" => factor * sheet.windowWidth
-                case "window.height" => factor * sheet.windowHeight
-                case "screen.width" => factor * sheet.screenWidth
-                case "screen.height" => factor * sheet.screenHeight
-                case other =>
-                  warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt, or as a <float>*(width/indent/leftmargin/rightmargin/windowwidth/windowheight). ($at)")
-                  alt
-              }
-            case (other) =>
-              warn(s"$key(=$other) should specify its unit of measure in em/ex/px/pt, or as a fractional multiple of width/indent/leftmargin/rightmargin/etc. ($at)")
+    def Eval(spec: String, alt: Float)(sheet: StyleSheet)(implicit at: SourceLocation = sourceLocation): Float = {
+      val Rfactor = "([0-9]+(\\.([0-9]+)?)?)(em|ex|px|pt|us)".r
+      val RId     = "[a-zA-Z.]+".r
+      val RNum    = "([0-9]+(\\.([0-9]+)?)?)".r
+
+      def fetchGlyphDiagonal(id: String): Vec = {
+        val stored = definitions.getKind(StoreType.GlyphConstant)(id)
+        val result =
+          stored match {
+              case Some(StoredGlyphConstant(glyph)) =>
+                glyph.diagonal
+              case _ =>
+                SourceDefault.warn(s"Unknown glyph: $id in ($spec)")(at)
+                Vec.Zero
+            }
+        result
+      }
+      def evalGlobal(factor: Scalar, id: String): Scalar = {
+        id match {
+          case "width" => factor * sheet.parWidth
+          case "indent" => factor * sheet.parIndent
+          case "leftmargin" => factor * sheet.leftMargin
+          case "rightmargin" => factor * sheet.rightMargin
+          case "container.width" => factor * sheet.containerWidth
+          case "container.height" => factor * sheet.containerHeight
+          case "window.width" => factor * sheet.windowWidth
+          case "window.height" => factor * sheet.windowHeight
+          case "screen.width" => factor * sheet.screenWidth
+          case "screen.height" => factor * sheet.screenHeight
+          case s"$id.width"  => factor*fetchGlyphDiagonal(id).x
+          case s"$id.height" => factor*fetchGlyphDiagonal(id).y
+          case other =>
+            alt
+        }
+      }
+      if (Rfactor.matches(spec))
+        spec.toLowerCase match {
+          case (s"${s}em") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.emWidth
+          case (s"${s}ex") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.exHeight
+          case (s"${s}px") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
+          case (s"${s}pt") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
+          case other =>
+            SourceDefault.warn(s"$spec should specify its unit of measure in em/ex/px/pt, or as a <float>*(width/indent/leftmargin/rightmargin/windowwidth/windowheight).")(at)
+            alt
+        }
+      else
+        if (RId.matches(spec)) {
+          evalGlobal(1f, spec)
+        } else {
+          spec match {
+            case s"$multiplier*$global" if (RNum.matches(multiplier)) =>
+              evalGlobal(multiplier.toFloat, global)
+            case other =>
+              SourceDefault.warn(s"Ill-formed expression $spec ).")(at)
               alt
           }
+        }
+    }
+
+    /**
+     * Yields the Float with key `key` and value expressed as one of
+     *
+     * float(`em`|`ex`|`px`|`pt`|`ux`)
+     *
+     * float*symbolic
+     *
+     * symbolic
+     *
+     *
+     * where symbolic is one of
+     *
+     * {{{
+     *   width           |
+     *   indent          |
+     *   leftmargin      |
+     *   rightmargin     |
+     *   window.width    |
+     *   window.height   |
+     *   container.width |
+     *   container.height|
+     *   screen.width    |
+     *   screen.height
+     * }}}
+     *
+     * or
+     *
+     *  *gid*`.width | `*gid*`.height`
+     *
+     * where *gid* is the refid of a glyph, or something that has been "measured".
+     */
+    def Units(key: String, alt: Float)(sheet: StyleSheet)(implicit at: SourceLocation = sourceLocation): Float = {
+      attributes.get(key.toLowerCase)  match {
+        case Some(spec) =>
+          Eval(spec, alt)(sheet)(at)
         case None =>
           alt
       }

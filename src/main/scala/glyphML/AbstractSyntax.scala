@@ -36,6 +36,7 @@ object AbstractSyntax {
   case class Scope(tags: List[String]=Nil) {
     def nest(tag: String): Scope = Scope(tag::tags)
     override val toString: String = tags.reverse.mkString("<")
+    def hasNested(tag: String): Boolean = tags.contains(tag)
   }
 
   trait Tree {
@@ -69,6 +70,7 @@ object AbstractSyntax {
   def isEmptyText(tree: Tree): Boolean = tree match {
     case Text(text) => text.forall(_.isWhitespace)
     case Para(texts) => texts.forall(_.forall(_.isWhitespace))
+    case Comment(_,_) => true
     case _ => false
   }
 
