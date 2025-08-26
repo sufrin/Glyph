@@ -89,6 +89,7 @@ object AbstractSyntax {
       case xml.Comment(text: String)                      => Comment("", text)
       case xml.ProcInstr(target, "")                      => MacroParam(target)
       case xml.ProcInstr(target, text)                    => Comment(target, text)
+      case atom: xml.Atom[Any]                            => fromText(atom.data.toString)
     }
   }
 
