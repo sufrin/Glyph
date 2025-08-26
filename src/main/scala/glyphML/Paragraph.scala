@@ -238,8 +238,10 @@ object Paragraph extends SourceLoggable {
 
     def draw(surface: Surface): Unit =
       surface.withClip(Vec(width, g.h)) {
-        g.draw(surface)
-        surface.drawLines$(Brushes.black(width=2), 0,0, width, g.h)
+        surface.withAlpha(g.diagonal, 0.7f) {
+          surface.fillRect(Brushes.darkGrey, g.diagonal)
+          g.draw(surface)
+        }
       }
 
     def diagonal: Vec = Vec(width, g.h)

@@ -33,10 +33,11 @@ object AbstractSyntax {
 
   import Context.AttributeMap
 
-  case class Scope(tags: List[String]=Nil) {
+  case class Scope(tags: List[String]=Nil, definitionScope: Option[Scope]=None) {
     def nest(tag: String): Scope = Scope(tag::tags)
-    override val toString: String = tags.reverse.mkString("<")
+    override val toString: String = s"${tags.reverse.mkString("<")} ${if (definitionScope.isEmpty) "" else s"/ ${definitionScope.get}"}"
     def hasNested(tag: String): Boolean = tags.contains(tag)
+    def definedIn(defn: Scope): Scope = Scope(tags, Some(defn))
   }
 
   trait Tree {

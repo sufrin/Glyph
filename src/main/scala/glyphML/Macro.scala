@@ -41,8 +41,9 @@ import org.sufrin.logging.SourceDefault
  * @param macroBody the body of the macro
  */
 
-case class Macro(val scope: Scope, tag: String, val defaultAttributes: AttributeMap, context: Context, macroBody: Seq[Tree])  {
-
+case class Macro(val definitionScope: Scope, tag: String, val defaultAttributes: AttributeMap, context: Context, macroBody: Seq[Tree])  {
+  import ExtendedAttributeMap._
+  override def toString: String = s"Macro $tag $definitionScope ${defaultAttributes.mkString})"
   /**
    *  substitute invocation attributes and invocation body parts in appropriate places in the abstraction body
    *
@@ -56,13 +57,13 @@ case class Macro(val scope: Scope, tag: String, val defaultAttributes: Attribute
       if (i<nonEmptyBody.length)
         List(nonEmptyBody(i))
       else {
-        SourceDefault.warn(s"No such nonempty element <?body$i?> expanding macro defined at $scope<$tag")
+        SourceDefault.warn(s"No such nonempty element <?body$i?> expanding macro defined at $definitionScope<$tag")
         Nil
       }
 
     def substitute(tree: Tree): Seq[Tree] = tree match {
       case Element(scope, tag, attrs, body) =>
-        List(Element(scope, tag, attrs supersede invocationAttributes supersede defaultAttributes, body.flatMap(substitute)))
+        List(Element(definitionScope.definedIn(scope), tag, attrs supersede invocationAttributes supersede defaultAttributes, body.flatMap(substitute)))
       case MacroParam("body") =>
             invocationBody
       case MacroParam(s"body$name") if name.matches("[0-9]+") =>

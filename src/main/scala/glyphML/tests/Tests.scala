@@ -238,42 +238,60 @@ object abstraction extends Application {
   import translator._
 
 initialDeclarations(
-    <macro tag="paratag" fontscale="1.2" framed="red">
-      <?body?>
-      <table>a<deliberatemistake/>b</table>
-    </macro>
+      <macro tag="makeamistake"><measured refid="makeamistake"><deliberatemistake/></measured></macro>
+      <macro tag="makeanothermistake"><measured refid="makeanotheramistake"><anothermistake/></measured></macro>
 
-      <macro tag="nested" align="right" whocares="not me" keepempty="false" >
-        <table cols="1" uniform="false" background="white"><?body?></table>
-      </macro>
-  )
+        <macro tag="paratag" framed="red" >
+          <?body?>
+          <makeamistake/>
+        </macro>
+
+        <macro tag="nested" align="right" whocares="not me" keepempty="true" width="virtual.width">
+          <table cols="1" uniform="false" background="yellow"><?body?></table>
+        </macro>
+    )
 
   lazy val source: Glyph =
-    <div fontfamily="Times" width="25em" labelforeground="black"  textforeground="black" cdatabackground="transparent" cdataforeground="red"
+    <div fontfamily="Times" width="15em" labelforeground="black"  textforeground="black" cdatabackground="transparent" cdataforeground="red"
          attributeswarning="f"
     >
 
-      <attributes id="tag:debug" caption="Debugging" local="t"/>
-      <attributes id="xtag:p" framed="red" align="justify" />
 
-     <measured refid="virtual" visible="f" orientation="baseline" background="transparent">
 
-            <p framed="blue">explicitly <tt>framed="blue"</tt> in the invocation of paratag</p>
-            <p>within the invocation of paratag <tt>fontscale="1.5" framed="red"</tt>
-            </p><![CDATA[PINK DATA]]>
+     <attributes id="tag:debug" caption="Debugging" local="t"/>
+      <attributes id="tag:p" align="justify" width="width" textforeground="black" fontfamily="Times"/>
+      <attributes id="tag:paratag" align="justify" width="virtual.width" textforeground="black" fontfamily="Times"/>
 
+     <measured refid="virtual" visible="off" orientation="col" background="transparent">
+           <p>
+             This section will be inserted after the line containing its
+             dimensions.
+           </p>
+           <p>
+              Here we check the functionality of &lt;measured visible="false",
+              and the reporting of errors during macro expansion
+           </p>
      </measured>
+
       <fixedwidth width="virtual.width">
         <fill stretch="200" fg="red"/>
-        <fixedwidth width="0.75*virtual.width" bg="pink"><insert evaluate="virtual.width"/>x<insert evaluate="virtual.height"/></fixedwidth>
+        <fixedwidth width="0.75*width" bg="pink"><insert evaluate="virtual.width"/>x<insert evaluate="virtual.height"/></fixedwidth>
         <fill stretch="200" fg="red"/>
       </fixedwidth>
 
-      <glyph gid="virtual"/>
+      <glyph gid="virtual"/><insert evaluate="width"/>
+
+      <p>
+        Nothing to see here, but the next paragraph dem_on_strat_es some
+        matters of attribute inheritance.
+      </p>
 
       <nested>
+        <insert attribute="width"/>
         <paratag>
-           <glyph gid="virtual"/>
+          <insert attribute="width"/>
+           <p>This is a paragraph set in the context /nested /paratag /p Its width is <insert evaluate="width"/></p>
+           <anotherdeliberate/>
         </paratag>
       </nested>
     </div>

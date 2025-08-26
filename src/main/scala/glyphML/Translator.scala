@@ -372,7 +372,11 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
             if (visible) stored.instance() // bump the copy-count
           }
 
-          if (visible) List(glyph) else Nil
+          if (refid=="" && !visible) {
+            import glyphML.Context.ExtendedAttributeMap
+            SourceDefault.warn(s"No refid attribute for $scope<measured ${localAttributes.mkString()} body")
+          }
+        if (visible) List(glyph) else Nil
 
 
       case "attributes" =>
@@ -408,10 +412,11 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
           // The context binds the current free attributes.
           // Attributes inherited by class or by id or by tag:macro are ignored.
           if (warn && definitions.getKind(StoreType.Macro)(tag).isDefined) {
-             SourceDefault.warn(s"Overriding macro definition $scope<attributes ${givenAttributes.toSource}")
+             SourceDefault.warn(s"Overriding macro definition $scope<macro ${givenAttributes.toSource}")
           }
-          definitions(tag) = Macro(scope, tag, givenAttributes.without("tag", "warn"), context, children)
-        } else SourceDefault.error(s"Macro definition without tag attribute$scope<macro ")
+          definitions(tag) = Macro(scope.nest(s"macro:$tag"), tag, givenAttributes.without("tag", "warn"), context, children)
+        } else
+          SourceDefault.error(s"Macro definition without tag attribute$scope<macro ")
         Nil
 
       case "scope" =>
@@ -489,7 +494,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
             }
 
         @inline def mistake(tag: String): Option[Seq[Glyph]] = {
-           SourceDefault.warn(s"No such tag at $scope<$tag ...")
+           SourceDefault.warn(s"No such tag <$tag at $scope ...")
            Some(Nil)
         }
 
@@ -526,7 +531,19 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
 
   implicit def toGlyph(source: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Glyph = fromXML(source)(location)
 
-
+  object language {
+    def fromXML(source: scala.xml.Node)(implicit location: SourceLocation = sourcePath): AbstractSyntax.Tree = {
+      import glyphXML.PrettyPrint._
+      val ast = AbstractSyntax.fromXML(source)(location)
+      ast
+    }
+    implicit def toGlyph(source: scala.xml.Elem)(implicit style: StyleSheet=StyleSheet()): Glyph = {
+      val ast = fromXML(source)(sourcePath)
+      //ast.prettyPrint()
+      val tr = translate(Context(Map.empty, style, definitions))(ast)
+      NaturalSize.Col(align=Left)(tr)
+    }
+  }
 }
 
 

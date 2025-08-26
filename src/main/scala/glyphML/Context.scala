@@ -35,7 +35,7 @@ object Context {
   implicit class ExtendedAttributeMap(val map: AttributeMap) extends AnyVal {
     def supersede(r: AttributeMap): AttributeMap = SUPERSEDE(map, r)
     def without(keys: String*): AttributeMap = map.removedAll(keys)
-    def mkString(sep: String = ", "): String =
+    def mkString(sep: String = " "): String =
       (for { (k, d) <- map } yield s"$k=\"$d\"").mkString(sep)
   }
 
@@ -48,8 +48,8 @@ object Context {
 
     import logging.Default.warn
 
-    /** Show as a mapping with pairs in the form `k->d` */
-    override def toString: String = attributes.map { case (k,d) => s"$k->$d"}.mkString(", ")
+    /** Show as a mapping with pairs in the form `k="d"` */
+    override def toString: String = attributes.map { case (k,d) => s"$k=\"$d\""}.mkString(" ")
 
     /**
      * Yields the string with key `key`, or `alt`
