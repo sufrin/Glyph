@@ -349,13 +349,20 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         // Measure the first child
         val refid   = localAttributes.String("refid", "")
         val visible = localAttributes.Bool("visible", false)
-        val row     = localAttributes.String("orientation", "row")=="row"
+        val orient  = localAttributes.String("orientation", "")
         val derivedContext = context.updated(localAttributes.without("refid", "visible", "orientation"))
         val derived = children.flatMap(translate(derivedContext))
         val glyph =
           derived.length match {
             case 1 => derived(0)
-            case _ => if (row) NaturalSize.Row()(derived) else NaturalSize.Col(derived)
+            case _ =>
+              orient match {
+                case "row" =>  NaturalSize.Row () (derived)
+                case "col" =>  NaturalSize.Col () (derived)
+                case _ =>
+                  SourceDefault.warn(s"No orientation attribute for composite $scope<measured body (row assumed)")
+                  NaturalSize.Row () (derived)
+              }
           }
 
           if (refid!="") {
@@ -383,11 +390,14 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
             Nil
           }
           else {
-            SourceDefault.warn(s"attributes declaration has subtrees $scope<attributes ${givenAttributes.toSource}")
+            SourceDefault.warn(s"attributes declaration has subtrees (ignored) $scope<attributes ${givenAttributes.toSource}")
             Nil
           }
         }
-        else Nil
+        else {
+          SourceDefault.error(s"attributes declaration without id attribute")
+          Nil
+        }
 
       case "macro" =>
         val tag = givenAttributes.String("tag", "")
@@ -400,7 +410,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
              SourceDefault.warn(s"Overriding macro definition $scope<attributes ${givenAttributes.toSource}")
           }
           definitions(tag) = Macro(scope, tag, givenAttributes.without("tag", "warn"), context, children)
-        }
+        } else SourceDefault.error(s"Macro definition without tag attribute$scope<macro ")
         Nil
 
       case "scope" =>

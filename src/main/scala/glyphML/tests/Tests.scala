@@ -257,15 +257,16 @@ initialDeclarations(
       <attributes id="xtag:p" framed="red" align="justify" />
 
      <measured refid="virtual" visible="off" orientation="row" background="transparent">
-         <table cols="1" uniform="f">
+
+
             <p framed="blue">explicitly <tt>framed="blue"</tt> in the invocation of paratag</p>
             <p>within the invocation of paratag <tt>fontscale="1.5" framed="red"</tt>
             </p><![CDATA[PINK DATA]]>
-         </table>
+
      </measured>
-      <fixedwidth width="width">
+      <fixedwidth width="virtual.width">
         <fill stretch="200" fg="red"/>
-        <fixedwidth width="0.5*virtual.width" bg="pink"><insert evaluate="virtual.width"/>x<insert evaluate="virtual.height"/></fixedwidth>
+        <fixedwidth width="0.75*virtual.width" bg="pink"><insert evaluate="virtual.width"/>x<insert evaluate="virtual.height"/></fixedwidth>
         <fill stretch="200" fg="red"/>
       </fixedwidth>
 
