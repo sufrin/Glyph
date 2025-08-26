@@ -256,8 +256,7 @@ initialDeclarations(
       <attributes id="tag:debug" caption="Debugging" local="t"/>
       <attributes id="xtag:p" framed="red" align="justify" />
 
-     <measured refid="virtual" visible="off" orientation="row" background="transparent">
-
+     <measured refid="virtual" visible="f" orientation="baseline" background="transparent">
 
             <p framed="blue">explicitly <tt>framed="blue"</tt> in the invocation of paratag</p>
             <p>within the invocation of paratag <tt>fontscale="1.5" framed="red"</tt>

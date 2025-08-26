@@ -92,7 +92,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
     definitions("gt") = ">"
     definitions("mdash") = "\u2014"
 
-    glyphML.Context.definitions = definitions // PRO TEM
+    //glyphML.Context.definitions = definitions // PRO TEM
   }
 
   /**
@@ -227,7 +227,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         val words = children.flatMap(translate(derivedContext))
         val hang  = derivedContext.attributes.String("hang", "")
         val hangref = derivedContext.attributes.String("hangref", "")
-        val hangWidth = derivedContext.attributes.Units("hangwidth", 0)(context.sheet)
+        val hangWidth = derivedContext.attributes.Units("hangwidth", 0)(context)
 
         if (scope.hasNested("p")) {
           Translator.warn(s"Paragraph nested with paragraph: $scope<p")
@@ -334,7 +334,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         val attribute: String = localAttributes.String("attribute", "")
         val expr: String   = localAttributes.String("evaluate", "")
         val attr: String   = if (attribute.nonEmpty) context.attributes.String(attribute, s"?$attribute?") else ""
-        val value: String  = if (expr.nonEmpty) context.attributes.Eval(expr, Float.NaN)(context.sheet).toInt.toString else ""
+        val value: String  = if (expr.nonEmpty) context.attributes.Eval(expr, Float.NaN)(context).toInt.toString else ""
         val stuff = (attr.nonEmpty, value.nonEmpty) match {
           case (true, true) => Para(List(attr,value))
           case (true, false) => Text(attr)
@@ -357,11 +357,12 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
             case 1 => derived(0)
             case _ =>
               orient match {
-                case "row" =>  NaturalSize.Row () (derived)
-                case "col" =>  NaturalSize.Col () (derived)
+                case "row"      =>  NaturalSize.Row (align=Mid) (derived)
+                case "baseline" =>  NaturalSize.Row (align=Baseline) (derived)
+                case "col"      =>  NaturalSize.Col (align=Center) (derived)
                 case _ =>
                   SourceDefault.warn(s"No orientation attribute for composite $scope<measured body (row assumed)")
-                  NaturalSize.Row () (derived)
+                  NaturalSize.Row (align=Mid) (derived)
               }
           }
 
@@ -431,15 +432,15 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         List(buildFrom(glyphs))
 
       case "fill" =>
-        val width  = localAttributes.Units("width", context.sheet.emWidth)(context.sheet)
-        val height = localAttributes.Units("height", context.sheet.exHeight)(context.sheet)
+        val width  = localAttributes.Units("width", context.sheet.emWidth)(context)
+        val height = localAttributes.Units("height", context.sheet.exHeight)(context)
         val stretch = localAttributes.Float("stretch", 1f)
         val background = localAttributes.Brush("background", localAttributes.Brush("bg", Brushes.transparent))
         val foreground = localAttributes.Brush("foreground", localAttributes.Brush("fg", Brushes.transparent))
         List(FixedSize.Space(width, height, stretch, fg=foreground, bg=background))
 
       case "fixedwidth" | "fixedsize" =>
-        var width: Scalar = inheritedAttributes.Units("width", context.sheet.parWidth)(context.sheet)
+        var width: Scalar = inheritedAttributes.Units("width", context.sheet.parWidth)(context)
         val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
         val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
         val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "width"))
@@ -500,7 +501,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
     }
   }
 
-  val rootContext = Context(Map.empty, rootStyle)
+  val rootContext = Context(Map.empty, rootStyle, definitions)
 
 
   /** A single global declaration in the metalanguage */

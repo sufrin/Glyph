@@ -10,7 +10,6 @@ import org.sufrin.glyph.GlyphTypes.Scalar
 object Context {
   type AttributeMap = Map[String, String]
 
-  var definitions: Definitions = null
 
   private def SUPERSEDE(l: AttributeMap, r: AttributeMap): AttributeMap = new AttributeMap {
 
@@ -86,11 +85,11 @@ object Context {
     /**
      *  Evaluate an expression
      */
-    def Eval(spec: String, alt: Float)(sheet: StyleSheet)(implicit at: SourceLocation = sourceLocation): Float = {
+    def Eval(spec: String, alt: Float)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
       val Rfactor = "([0-9]+(\\.([0-9]+)?)?)(em|ex|px|pt|us)".r
       val RId     = "[a-zA-Z.]+".r
       val RNum    = "([0-9]+(\\.([0-9]+)?)?)".r
-
+      import context.{sheet, definitions}
       def fetchGlyphDiagonal(id: String): Vec = {
         val stored = definitions.getKind(StoreType.GlyphConstant)(id)
         val result =
@@ -176,10 +175,10 @@ object Context {
      *
      * where *gid* is the refid of a glyph, or something that has been "measured".
      */
-    def Units(key: String, alt: Float)(sheet: StyleSheet)(implicit at: SourceLocation = sourceLocation): Float = {
+    def Units(key: String, alt: Float)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
       attributes.get(key.toLowerCase)  match {
         case Some(spec) =>
-          Eval(spec, alt)(sheet)(at)
+          Eval(spec, alt)(context)(at)
         case None =>
           alt
       }
@@ -247,7 +246,7 @@ object Context {
     /** Derive a new `StyleSheet` from `context.sheet`, using `attributes` */
     def deriveSheet(context: Context): StyleSheet = {
       val sheet = context.sheet
-      val fontDetail: StyleSheet =
+      val fontDetailSheet: StyleSheet =
         sheet
           .copy(
             fontScale       = Float("fontscale", 1.0f),
@@ -269,8 +268,10 @@ object Context {
             cdataFontSize   = Float("fontsize", Float("cdatafontsize", sheet.cdataFontSize)),
             )
 
+      val fontDetail = context.copy(sheet=fontDetailSheet)
+
       // Units are computed relative to the font details, which may have been redeclared
-      fontDetail.copy(
+      fontDetailSheet.copy(
         padX                  = Units("padx",           sheet.padX)         (fontDetail),
         padY                  = Units("pady",           sheet.padY)         (fontDetail),
         parWidth              = Units("width",          sheet.parWidth)     (fontDetail),
@@ -295,7 +296,7 @@ object Context {
   }
 
   /**  */
-  case class Context(attributes: AttributeMap, sheet: StyleSheet) {
+  case class Context(attributes: AttributeMap, sheet: StyleSheet, definitions: Definitions) {
     /**
      *  Yield a new `Env`  whose `attributes` are superseded by those
      *  specified by `localAttributes`, and whose `sheet` is derived
@@ -303,7 +304,7 @@ object Context {
      */
     def updated(localAttributes: AttributeMap): Context = {
         val updatedAttributes = localAttributes supersede attributes
-        Context(updatedAttributes, updatedAttributes.deriveSheet(this))
+        Context(updatedAttributes, updatedAttributes.deriveSheet(this), definitions)
     }
   }
 
