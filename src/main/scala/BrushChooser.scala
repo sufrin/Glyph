@@ -1,17 +1,14 @@
 package org.sufrin.glyph
 
 import styled.MenuButton
-import unstyled.reactive.{Enterable, Reaction}
-
-import org.sufrin.glyph.Brush.{BUTT, ROUND, SQUARE}
-import org.sufrin.glyph.Brushes.{black, lightGrey, NonBrush}
-import org.sufrin.glyph.Colour.{ARGB, HSV}
-import org.sufrin.glyph.GlyphShape.{FILL, STROKE}
-import org.sufrin.glyph.NaturalSize.{transparent, Col, Grid, Row}
-import org.sufrin.glyph.styles.decoration.Framed
-import org.sufrin.glyph.GlyphTypes.Scalar
-import org.sufrin.glyph.styled.windowdialogues.Dialogue
-import org.sufrin.logging
+import unstyled.reactive.Reaction
+import Brush.{BUTT, ROUND, SQUARE}
+import Brushes.{black, lightGrey, NonBrush}
+import Colour.{ARGB, HSV}
+import NaturalSize.{transparent, Col, Grid}
+import styles.decoration.Framed
+import GlyphTypes.Scalar
+import styled.windowdialogues.Dialogue
 
 /**
  * Provides several `Glyph`s for use as user interfaces that support 
@@ -22,9 +19,12 @@ import org.sufrin.logging
  */
 class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: NonBrush=>Unit, onChoose: Brush => Unit = {_ => })(implicit sheet: StyleSheet) {
   thisChooser =>
-  
+
+  val translator = glyphML.Translator()
+  val language   = translator()
+
   protected def brushWarning(anchor: Glyph) = {
-    import glyphXML.Language._
+    import language._
     styled.windowdialogues.Dialogue.FLASH(
       <p width="80em" leftMargin="1em" rightMargin="1em">
         The brush specification is erroneous. Specification syntax is:
@@ -90,8 +90,9 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
   }
 
 
-    import sheet.{em,ex}
     import GlyphShape._
+
+    import sheet.{em, ex}
 
   protected def brushFeedback(): Unit = setResultBrush(protoBrush.copy())
   
@@ -168,7 +169,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
   protected lazy val textModel = unstyled.Text(" Text example ", sheet.labelFont.makeWithSize(36), protoBrush)
 
   protected lazy val helpDialogue: Dialogue[Unit] = {
-    import glyphXML.Language._
+    import language._
     styled.windowdialogues.Dialogue.FLASH(<div width="50em" align="justify" parskip="1.5ex">
       <p>
         This brush selection palette offers several ways of

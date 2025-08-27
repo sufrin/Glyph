@@ -5,7 +5,7 @@ import NaturalSize.Col
 import styled.{Label, Resizeable}
 import styles.decoration.Edged
 import Location.East
-import glyphML.{Definitions, Translator}
+import glyphML.{DecorativeExtensions, StoredExtension, Translator}
 import unstyled.static
 
 object ResizeableWindowTest extends Application {
@@ -20,10 +20,29 @@ object ResizeableWindowTest extends Application {
     backgroundBrush       = white,
     parSkip               = 10f
     )
-  val translator = new Translator(new Definitions {})(StyleSheet())
+
+  val translator = Translator()
+
+  locally {
+    import translator.definitions
+    val extend = DecorativeExtensions(definitions)
+    import extend._
+    definitions("turn") = StoredExtension (turn)
+    definitions("rotate") = StoredExtension(turn)
+    definitions("scale") = StoredExtension(scale)
+    definitions("frame") = StoredExtension(frame)
+    definitions("skew") = StoredExtension(skew)
+    definitions("dagger") = "\u2020"
+    definitions("ddagger") = "\u2021"
+    definitions("dddagger") = "\u2e38"
+  }
+
+  val superscripts = "¹²³⁴⁵⁶⁷⁸⁹⁰⁽⁾"
 
   val helpText: Glyph = {
-    import translator.language._
+    val language = translator(style)
+    import language._
+
     <div width="50em" align="justify" fontScale="0.8" frame="white/16">
       <p>
         This application is designed to demonstrate the <b>Resizeable</b> glyph constructor
@@ -49,7 +68,8 @@ object ResizeableWindowTest extends Application {
   }
 
   def guiSpec(implicit style: StyleSheet): Glyph = {
-    import translator.language._
+    val language = translator(style)
+    import language._
     val buttons = {
       import style.{em, hFill}
       val Vec(w, h) = style.containerDiagonal
@@ -91,7 +111,11 @@ object ResizeableWindowTest extends Application {
         )
     }
     val text: Glyph =
-      <div width="container.width" align="justify">
+      <div width="container.width" align="justify" macrowarning="off">
+        <macro tag="strut"><fill width="0em" stretch="0" height="3ex"/></macro>
+        <macro tag="emfill"><fill width="0em" stretch="20"/></macro>
+        <macro tag="sup"><row alignment="top"><strut/><span textforeground="red" fontscale="0.6"><b><?body?></b></span></row></macro>
+        <macro tag="centered"><row width="width"><emfill/><?body?><emfill/></row></macro>
          <p align="center" fontScale="2">De Rerum Natura</p>
          <p>
            De Rerum Natura is a beau_tiful small yarn producer in France
@@ -100,23 +124,25 @@ object ResizeableWindowTest extends Application {
            The res_ult is yarns that are as soft and beau_tiful to knit with as they are to wear.
          </p>
          <p>
-           All De Rerum Natura bases are mule_sing
-           <row>
-             <span textForeground="red" fontScale="0.5">(*)</span>
-           </row>
-           free, and eth_ical_ly and sus_tain_ably produced.
+           All De Rerum Natura bases are free of mule_sing<sup>&ddagger;</sup> and are eth_ical_ly   and sus_tain_ably produced.
          </p>
-         <p fontScale="0.7" labelForeground="red" textForeground="red" hang="* " decorate="enlarge;frame;enlarge" frame="red.2.sliced(2,1)" enlarged="0.65em">
-           Mulesing is the removal of strips of wool-bearing skin from around the breech of a
-           sheep to prevent the parasitic infection
-           <i>flystrike</i>
-           . The wool around the buttocks can retain feces and urine, which attracts flies.
-         </p>
+
          <p>
            <i>Try changing the
              <bi>width</bi>
              of this window by dragging a vertical edge.</i>
          </p>
+         <strut/>
+         <centered>
+          <frame fg="blue.2" radius="0.05" enlarge="30">
+            <p width="0.7*width" fontScale="0.7" hang="‡ " labelForeground="red" textForeground="red">
+              Mulesing is the removal of strips of wool-bearing skin from around the breech of
+              sheep to prevent the parasitic infection
+              <i>flystrike.</i>
+              The wool around the buttocks can retain faeces and urine, which attracts flies.
+            </p>
+          </frame>
+         </centered>
        </div>
        Col(align=Center)(buttons, text) enlarged 10 edged (black(width = 2)) enlarged 20
      }
@@ -142,7 +168,6 @@ object ResizeableWindowTest extends Application {
       Col(align=Center)(wider).edged(red(width=4))
 
     case context: StyleSheet =>
-      println(s"${context.containerDiagonal}")
       guiSpec(context)
   }(style)
 
