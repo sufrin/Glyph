@@ -291,7 +291,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
         sheet.hFill(),
         styled.TextButton("Help"){
           _=> if (helpDialogue.running.isEmpty) {
-            helpDialogue.InFront(PROPERTYGUI).start()
+            helpDialogue.OnRootOf(PROPERTYGUI).start()
           }
         }(menuSheet)
       ),
