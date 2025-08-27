@@ -42,16 +42,33 @@ class DecorativeExtensions(definitions: Definitions) {
     List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
   }
 
+  def skew(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
+    val resolved = new ResolveScopedAttributes(definitions, element)
+    import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
+    import resolved._
+    val sky = inheritedAttributes.Float("skewy", 0)
+    val skx = inheritedAttributes.Float("skewx", 0)
+    val derivedContext: Context = context.updated(inheritedAttributes.without("skewx", "skewy"))
+    val glyph = makeRow(children.flatMap(translator.translate(derivedContext))).skewed(skewX=skx, skewY=sky)
+    List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
+  }
+
   def frame(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
     val resolved = new ResolveScopedAttributes(definitions, element)
     import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
     import resolved._
+    val enlarge: Scalar = inheritedAttributes.Float("enlarge", 0.14f)
     val radius: Scalar = inheritedAttributes.Float("radius", 0)
     val fg  = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("frameforeground", Brushes.black))
     val bg  = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("framebackground", Brushes.transparent))
-    val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg"))
+    val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "radius", "enlarge"))
     val unframed = makeRow(children.flatMap(translator.translate(derivedContext)))
-    val glyph = if (radius==0f) unframed.framed(fg, bg, radius = radius) else unframed.roundFramed(fg, bg, radius = radius)
+    val glyph =
+      if (radius==0f)
+        unframed.framed(fg, bg, radius = radius)
+       else
+         styles.decoration.RoundFramed(fg, bg, enlarge, radius).decorate(unframed)
+         //unframed.roundFramed(fg, bg, radius = radius)
     List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
   }
 

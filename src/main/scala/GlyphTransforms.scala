@@ -128,7 +128,7 @@ trait GlyphTransforms {
   def aboveRight(g: Glyph): Glyph = above(g, align=Right)
 
   /** behaves as this glyph with the specified baseLine */
-  def withBaseline(baseLine: Scalar): Glyph = WithBaseline(thisGlyph, baseLine)
+  def withBaseline(baseLine: Scalar, delta: Scalar=0): Glyph = WithBaseline(thisGlyph, baseLine, delta)
 }
 
 object GlyphTransforms {
@@ -722,7 +722,7 @@ object GlyphTransforms {
   }
 
   object WithBaseline {
-    def apply(glyph: Glyph, baseLine$: Scalar): Glyph = new Glyph { thisGlyph =>
+    def apply(glyph: Glyph, baseLine$: Scalar, delta: Scalar): Glyph = new Glyph { thisGlyph =>
 
       locally { glyph.parent=thisGlyph }
 
@@ -734,16 +734,17 @@ object GlyphTransforms {
 
       override def baseLine: Scalar = baseLine$
 
-      def diagonal: Vec = Vec(glyph.w, glyph.h)
+      def diagonal: Vec = Vec(glyph.w, glyph.h+delta)
 
       def copy(fg: Brush=fg, bg: Brush=bg): Glyph = {
-        WithBaseline(glyph.copy(fg, bg), baseLine$)
+        WithBaseline(glyph.copy(fg, bg), baseLine$, delta)
       }
 
       override val fg: Brush = glyph.fg
       override val bg: Brush = glyph.bg
 
-      def draw(surface: Surface): Unit = glyph.draw(surface)
+      def draw(surface: Surface): Unit =
+        surface.withOrigin(0, delta) { glyph.draw(surface) }
     }
   }
 }

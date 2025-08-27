@@ -86,9 +86,9 @@ object Context {
      *  Evaluate an expression
      */
     def Eval(spec: String, alt: Float)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
-      val Rfactor = "([0-9]+(\\.([0-9]+)?)?)(em|ex|px|pt|us)".r
+      val Rfactor = "(-?[0-9]+(\\.([0-9]+)?)?)(em|ex|px|pt|us)".r
       val RId     = "[a-zA-Z.]+".r
-      val RNum    = "([0-9]+(\\.([0-9]+)?)?)".r
+      val RNum    = "-?([0-9]+(\\.([0-9]+)?)?)".r
       import context.{sheet, definitions}
       def fetchGlyphDiagonal(id: String): Vec = {
         val stored = definitions.getKind(StoreType.GlyphConstant)(id)
@@ -122,10 +122,10 @@ object Context {
       }
       if (Rfactor.matches(spec))
         spec.toLowerCase match {
-          case (s"${s}em") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.emWidth
-          case (s"${s}ex") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat * sheet.exHeight
-          case (s"${s}px") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
-          case (s"${s}pt") if s.matches("[0-9]+(\\.([0-9]+)?)?") => s.toFloat
+          case (s"${s}em") if RNum.matches(s) => s.toFloat * sheet.emWidth
+          case (s"${s}ex") if RNum.matches(s) => s.toFloat * sheet.exHeight
+          case (s"${s}px") if RNum.matches(s) => s.toFloat
+          case (s"${s}pt") if RNum.matches(s) => s.toFloat
           case other =>
             SourceDefault.warn(s"$spec should specify its unit of measure in em/ex/px/pt, or as a <float>*(width/indent/leftmargin/rightmargin/windowwidth/windowheight).")(at)
             alt
@@ -138,7 +138,7 @@ object Context {
             case s"$multiplier*$global" if (RNum.matches(multiplier)) =>
               evalGlobal(multiplier.toFloat, global)
             case other =>
-              SourceDefault.warn(s"Ill-formed expression $spec ).")(at)
+              SourceDefault.warn(s"Ill-formed expression $spec ")(at)
               alt
           }
         }

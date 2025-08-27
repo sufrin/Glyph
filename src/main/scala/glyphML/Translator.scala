@@ -20,6 +20,8 @@ import scala.util.matching.Regex
 
 object Translator extends SourceLoggable {
 
+  def apply(definitions: Definitions=new Definitions): Translator = new Translator(definitions)
+
 
   implicit class IntelligibleAttributeMap(val attrs: AttributeMap) extends AnyVal {
     def toSource: String = attrs.toSeq.map{case (k: String,d: String)=>s"$k=\"$d\"" }.mkString(" ")
@@ -78,7 +80,7 @@ class ResolveScopedAttributes(definitions: Definitions, element: AbstractSyntax.
   }
 }
 
-class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTranslator =>
+class Translator(val definitions: Definitions = new Definitions) { thisTranslator =>
   import glyphML.AbstractSyntax._
   import glyphML.Context._
   import Translator._
@@ -220,6 +222,13 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         val derivedContext = context.updated(localAttributes)
         children.filterNot(isEmptyText).flatMap(translate(derivedContext))
 
+      case "sub" =>
+        val delta: Scalar = localAttributes.Units("delta", context.sheet.exHeight)(context)
+        val base: Scalar = localAttributes.Units("baseline", 0)(context)
+        val derivedContext = context.updated(localAttributes.without("delta", "baseline"))
+        child.flatMap(translate(derivedContext)).map(_.withBaseline(base, delta))
+
+
       case "p" =>
         val derivedContext = context.updated(localAttributes)
         val ambientHeight = derivedContext.sheet.textFont.getMetrics.getHeight
@@ -263,6 +272,11 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
 
       case "b" =>
         val style = Map("textstyle"->"bold")
+        val derivedContext = context.updated(style supersede localAttributes)
+        children.flatMap(translate(derivedContext))
+
+      case "bi" =>
+        val style = Map("textstyle"->"bolditalic")
         val derivedContext = context.updated(style supersede localAttributes)
         children.flatMap(translate(derivedContext))
 
@@ -444,7 +458,7 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
         val foreground = localAttributes.Brush("foreground", localAttributes.Brush("fg", Brushes.transparent))
         List(FixedSize.Space(width, height, stretch, fg=foreground, bg=background))
 
-      case "fixedwidth" | "fixedsize" =>
+      case "fixedwidth" =>
         var width: Scalar = inheritedAttributes.Units("width", context.sheet.parWidth)(context)
         val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
         val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
@@ -456,6 +470,36 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
             else {
                FixedSize.Row(align = Mid, width = width)(children.flatMap(translate(derivedContext)))
             }
+        List(glyph)
+
+      case "row" =>
+        var width: Scalar = inheritedAttributes.Units("width", 0)(context)
+        val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
+        val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
+        val alignment: String = inheritedAttributes.String("alignment", "baseline")
+        val align: VAlignment = inheritedAttributes.VAlign("alignment", Top)
+        val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "width", "alignment"))
+        val glyph = if (width==0) {
+          NaturalSize.Row(align = align)(children.flatMap(translate(derivedContext)))
+        }
+        else {
+          Translator.warn(s"Width specified for $scope ${inheritedAttributes.mkString} ...")
+          FixedSize.Row(align = Mid, width = width)(children.flatMap(translate(derivedContext)))
+        }
+        List(glyph)
+
+      case "col" =>
+        var height: Scalar = inheritedAttributes.Units("height", 0)(context)
+        val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
+        val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
+        val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "height"))
+        val glyph = if (height==0) {
+          NaturalSize.Col(align = Center)(children.flatMap(translate(derivedContext)))
+        }
+        else {
+          Translator.warn(s"Height specified for $scope ${inheritedAttributes.mkString} ...")
+          FixedSize.Col(height = height)(children.flatMap(translate(derivedContext)))
+        }
         List(glyph)
 
 
@@ -506,44 +550,57 @@ class Translator(val definitions: Definitions)(rootStyle: StyleSheet) { thisTran
     }
   }
 
-  val rootContext = Context(Map.empty, rootStyle, definitions)
-
 
   /** A single global declaration in the metalanguage */
-  def initialDeclaration(tree: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Unit = {
+  def makeInitialDeclaration(rootContext: Context)(tree: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Unit = {
       translate(rootContext)(AbstractSyntax.fromXML(tree)(location))
   }
 
   /** A collection of (more than one) global declaration in the metalanguage */
-  def initialDeclarations(trees: scala.xml.NodeBuffer)(implicit location: SourceLocation = sourcePath): Unit = {
+  def makeInitialDeclarations(rootContext: Context)(trees: scala.xml.NodeBuffer)(implicit location: SourceLocation = sourcePath): Unit = {
     for {tree <- trees} {
       translate(rootContext)(AbstractSyntax.fromXML(tree)(location))
     }
   }
 
-  def fromXML(source: scala.xml.Node)(implicit location: SourceLocation = sourcePath): Glyph = {
-    import glyphXML.PrettyPrint._
-    val ast = AbstractSyntax.fromXML(source)(location)
-    //ast.prettyPrint()
-    val tr = translate(rootContext)(ast)
-    NaturalSize.Col(align=Left)(tr)
-  }
+  /** Generate an instance of the translator that translates using the given `StyleSheet` */
+  def apply(implicit languageStyle: StyleSheet=StyleSheet()): this.language = new language(languageStyle)
 
-  implicit def toGlyph(source: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Glyph = fromXML(source)(location)
-
-  object language {
-    def fromXML(source: scala.xml.Node)(implicit location: SourceLocation = sourcePath): AbstractSyntax.Tree = {
+  class language(val languageStyle: StyleSheet) {
+    /** Translates the scala.xml.Node to the corresponding `glyphML.AbstractSyntaxTree` */
+    private def fromXML(source: scala.xml.Node, location: SourceLocation): AbstractSyntax.Tree = {
       import glyphXML.PrettyPrint._
       val ast = AbstractSyntax.fromXML(source)(location)
       ast
     }
-    implicit def toGlyph(source: scala.xml.Elem)(implicit style: StyleSheet=StyleSheet()): Glyph = {
-      val ast = fromXML(source)(sourcePath)
-      //ast.prettyPrint()
-      val tr = translate(Context(Map.empty, style, definitions))(ast)
+
+    /**
+     * Translates the scala.xml.Element to the `Glyph` that it denotes with the already-given `languageStyle`
+     */
+    implicit def toGlyph(source: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Glyph = {
+      val ast = fromXML(source, location)
+      val tr = translate(Context(Map.empty, languageStyle, definitions))(ast)
       NaturalSize.Col(align=Left)(tr)
     }
+
+    /**
+     * Incorporate the given glyphML declaration as definitions in the translator
+     */
+    def initialDeclaration(tree: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Unit = {
+      translate(Context(Map.empty, languageStyle, definitions))(AbstractSyntax.fromXML(tree)(location))
+    }
+
+    /**
+     * Incorporate the given glyphML declarations as definitions in the translator
+     */
+    def initialDeclarations(trees: scala.xml.NodeBuffer)(implicit location: SourceLocation = sourcePath): Unit = {
+      for {tree <- trees} {
+        translate(Context(Map.empty, languageStyle, definitions))(AbstractSyntax.fromXML(tree)(location))
+      }
+    }
+
   }
+
 }
 
 

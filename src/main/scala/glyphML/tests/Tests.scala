@@ -16,9 +16,11 @@ object trivial extends Application {
     Paragraph.level=INFO
   }
 
-  import Translator._
-  private val translator = new Translator(new Definitions {})(StyleSheet())
-  import translator._
+  implicit val style: StyleSheet = StyleSheet()
+  val translator = new Translator(new Definitions {})
+  val language = translator()
+  import language._
+
 
   HYPHENATION("flocci-nauci-nihil-ipil-ifica-tion")("-")
   HYPHENATION("hyphen-at-able")("-")
@@ -75,15 +77,18 @@ object trivial extends Application {
 
 object para extends Application {
   val frameColor = Brushes.red(width=2)
-  import Translator._
-  private val style = StyleSheet(
+
+  implicit val style: StyleSheet = StyleSheet(
     buttonDecoration = styles.decoration.Edged(fg=frameColor, enlarge=0f),
     buttonForegroundBrush = Brushes.black,
     toggleOnBrush = Brushes.black,
     toggleOffBrush = Brushes.black
     )
-  private val translator = new Translator(new Definitions {})(style)
-  import translator._
+
+  val translator = new Translator(new Definitions {})
+  import translator.definitions
+  val language = translator()
+  import language._
 
   HYPHENATION("flocci-nauci-nihil-ipil-ifica-tion")("-")
   HYPHENATION("hyphen-at-able")("-")
@@ -237,7 +242,7 @@ object abstraction extends Application {
   val translator = new Translator(new Definitions {})(StyleSheet())
   import translator._
 
-initialDeclarations(
+  initialDeclarations(
       <macro tag="makeamistake"><measured refid="makeamistake"><deliberatemistake/></measured></macro>
       <macro tag="makeanothermistake"><measured refid="makeanotheramistake"><anothermistake/></measured></macro>
 
@@ -251,7 +256,7 @@ initialDeclarations(
         </macro>
     )
 
-  lazy val source: Glyph =
+  lazy val source: Glyph = {
     <div fontfamily="Times" width="15em" labelforeground="black"  textforeground="black" cdatabackground="transparent" cdataforeground="red"
          attributeswarning="f"
     >
@@ -295,7 +300,7 @@ initialDeclarations(
         </paratag>
       </nested>
     </div>
-
+  }
 
 
   lazy val GUI: Glyph = {
