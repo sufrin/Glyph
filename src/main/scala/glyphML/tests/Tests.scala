@@ -7,6 +7,7 @@ import styled.ToggleVariable
 
 import org.sufrin.logging
 import org.sufrin.logging.{FINER, FINEST, INFO, WARN}
+import org.sufrin.SourceLocation._
 
 object trivial extends Application {
   locally{
@@ -315,11 +316,11 @@ object table extends Application {
   implicit val style: StyleSheet = StyleSheet()
   import NaturalSize._
 
-  lazy val data = (0 until 50).map{ n => styled.Label(s"$n")}
+  lazy val data = (0 until 20).map{ n => styled.Label(s" $n ")}
 
-  def GUI: Glyph = Row(
-    Grid.grid(width=1)(data),
-    Grid.table(width=1)(data)
+  def GUI: Glyph = Col(
+    Grid(fg=Brushes.black).grid(height=10)(data.map(_.copy())),
+    Grid(fg=Brushes.black).table(width=10)(data),
   )
 
   def title: String = "Table"
