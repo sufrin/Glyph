@@ -86,7 +86,7 @@ object para extends Application {
     toggleOffBrush = Brushes.black
     )
 
-  val translator = new Translator(new Definitions {})
+  val translator = Translator().withPackage(TransformsPackage)
   import translator.definitions
   val language = translator()
   import language._
@@ -108,13 +108,6 @@ object para extends Application {
   definitions("row")= style => NaturalSize.Row(styled.Label("This is a")(style).framed(), styled.Label(" long row")(style))
 
   locally {
-
-    val extend = DecorativeExtensions(definitions)
-    import extend._
-    definitions("turn") = StoredExtension (turn)
-    definitions("rotate") = StoredExtension(turn)
-    definitions("scale") = StoredExtension(scale)
-    definitions("frame") = StoredExtension(frame)
 
     val autoScale = ToggleVariable(initially = false){ state => source.guiRoot.autoScale = state }
 

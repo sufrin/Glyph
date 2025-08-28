@@ -1,14 +1,17 @@
 package org.sufrin.glyph
 package glyphML
-
-import glyphML.Context.Context
+import Context.Context
 import GlyphTypes.Scalar
 
-object DecorativeExtensions {
-  def apply(implicit primitives: Definitions): DecorativeExtensions = new DecorativeExtensions(primitives)
+/** Geometric transforms and framing package */
+object TransformsPackage extends Package {
+  def define(primitives: Definitions): Unit = {
+    new TransformsPackage(primitives).define()
+  }
 }
 
-class DecorativeExtensions(definitions: Definitions) {
+
+class TransformsPackage(definitions: Definitions) {
 
   def makeRow(glyphs: Seq[Glyph]): Glyph = glyphs.length match {
     case 1 => glyphs.head
@@ -19,7 +22,7 @@ class DecorativeExtensions(definitions: Definitions) {
     val resolved = new ResolveScopedAttributes(definitions, element)
     import glyphML.Context.{TypedAttributeMap,ExtendedAttributeMap}
     import resolved._
-    val degrees: Int = inheritedAttributes.Int("degrees", inheritedAttributes.Int("deg", 90*inheritedAttributes.Int("quads", 0)))
+    val degrees: Int = inheritedAttributes.Int("degrees", inheritedAttributes.Int("deg", 90*inheritedAttributes.Int("quadrants", 0)))
     def turn(glyph: Glyph): Glyph =
       degrees match {
         case 0 => glyph
@@ -65,11 +68,18 @@ class DecorativeExtensions(definitions: Definitions) {
     val unframed = makeRow(children.flatMap(translator.translate(derivedContext)))
     val glyph =
       if (radius==0f)
-        unframed.framed(fg, bg, radius = radius)
+         styles.decoration.Edged(fg, bg, enlarge, radius).decorate(unframed)
        else
          styles.decoration.RoundFramed(fg, bg, enlarge, radius).decorate(unframed)
          //unframed.roundFramed(fg, bg, radius = radius)
     List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
   }
 
+  def define(): Unit = {
+    definitions("turn") = StoredExtension (turn)
+    definitions("rotate") = StoredExtension(turn)
+    definitions("scale") = StoredExtension(scale)
+    definitions("skew") = StoredExtension(skew)
+    definitions("frame") = StoredExtension(frame)
+  }
 }

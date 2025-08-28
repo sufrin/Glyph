@@ -19,8 +19,14 @@ import scala.util.matching.Regex
 
 
 object Translator extends SourceLoggable {
-
+  /** A new `Translator` using the given definitions  */
   def apply(definitions: Definitions=new Definitions): Translator = new Translator(definitions)
+
+  /**
+   * A new `language` translated with a new `Translator` with fresh `Definitions` and using the given `StyleSheet` as
+   * root style.
+   */
+  def apply(style: StyleSheet): language = new Translator(new Definitions)(style)
 
 
   implicit class IntelligibleAttributeMap(val attrs: AttributeMap) extends AnyVal {
@@ -90,11 +96,19 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
    */
   locally {
     definitions("amp") = "&"
+    definitions("nbsp") = "\u00A0"
+    definitions("emdash") = "\u2014"
+    definitions("ndash") = "\u2013"
     definitions("lt") = "<"
     definitions("gt") = ">"
     definitions("mdash") = "\u2014"
-
     //glyphML.Context.definitions = definitions // PRO TEM
+  }
+
+  /** Incorporate the given package members as primitives */
+  def withPackage(pack: Package): Translator = {
+    pack.define(definitions)
+    this
   }
 
   /**
@@ -564,44 +578,46 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
   }
 
   /** Generate an instance of the translator that translates using the given `StyleSheet` */
-  def apply(implicit languageStyle: StyleSheet=StyleSheet()): this.language = new language(languageStyle)
+  def apply(implicit languageStyle: StyleSheet=StyleSheet()): language = new language(this, languageStyle)
 
-  class language(val languageStyle: StyleSheet) {
-    /** Translates the scala.xml.Node to the corresponding `glyphML.AbstractSyntaxTree` */
-    private def fromXML(source: scala.xml.Node, location: SourceLocation): AbstractSyntax.Tree = {
-      import glyphXML.PrettyPrint._
-      val ast = AbstractSyntax.fromXML(source)(location)
-      ast
-    }
+}
 
-    /**
-     * Translates the scala.xml.Element to the `Glyph` that it denotes with the already-given `languageStyle`
-     */
-    implicit def toGlyph(source: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Glyph = {
-      val ast = fromXML(source, location)
-      val tr = translate(Context(Map.empty, languageStyle, definitions))(ast)
-      NaturalSize.Col(align=Left)(tr)
-    }
+class language(val translator: Translator, val languageStyle: StyleSheet) {
+  import translator.{translate, definitions}
+  /** Translates the scala.xml.Node to the corresponding `glyphML.AbstractSyntaxTree` */
+  private def fromXML(source: scala.xml.Node, location: SourceLocation): AbstractSyntax.Tree = {
+    import glyphXML.PrettyPrint._
+    val ast = AbstractSyntax.fromXML(source)(location)
+    ast
+  }
 
-    /**
-     * Incorporate the given glyphML declaration as definitions in the translator
-     */
-    def initialDeclaration(tree: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Unit = {
+  /**
+   * Translates the scala.xml.Element to the `Glyph` that it denotes with the already-given `languageStyle`
+   */
+  implicit def toGlyph(source: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Glyph = {
+    val ast = fromXML(source, location)
+    val tr = translate(Context(Map.empty, languageStyle, definitions))(ast)
+    NaturalSize.Col(align=Left)(tr)
+  }
+
+  /**
+   * Incorporate the given glyphML declaration as definitions in the translator
+   */
+  def initialDeclaration(tree: scala.xml.Elem)(implicit location: SourceLocation = sourcePath): Unit = {
+    translate(Context(Map.empty, languageStyle, definitions))(AbstractSyntax.fromXML(tree)(location))
+  }
+
+  /**
+   * Incorporate the given glyphML declarations as definitions in the translator
+   */
+  def initialDeclarations(trees: scala.xml.NodeBuffer)(implicit location: SourceLocation = sourcePath): Unit = {
+    for {tree <- trees} {
       translate(Context(Map.empty, languageStyle, definitions))(AbstractSyntax.fromXML(tree)(location))
     }
-
-    /**
-     * Incorporate the given glyphML declarations as definitions in the translator
-     */
-    def initialDeclarations(trees: scala.xml.NodeBuffer)(implicit location: SourceLocation = sourcePath): Unit = {
-      for {tree <- trees} {
-        translate(Context(Map.empty, languageStyle, definitions))(AbstractSyntax.fromXML(tree)(location))
-      }
-    }
-
   }
 
 }
+
 
 
 

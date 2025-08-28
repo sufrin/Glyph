@@ -258,28 +258,33 @@ object DocumentationDiagrams {
 
 
     {
-      import glyphXML.Language._
       implicit val style: StyleSheet = StyleSheet(fontScale=0.6f)
-      val declare: Glyph = <ATTRIBUTES key="tag:p" enlarged="20px"/>
-      val gxml1: Glyph= <p width="20em" align="left" frame="red/3" rotated="2">Hello world</p>
-      val gxml2: Glyph= <p width="20em" align="left" frame="black.3.dashed(5,5)">Hello world! Is this the very best you can do?</p>
-      val gxml3: Glyph =
+      import glyphML._
+      val language = Translator().withPackage(TransformsPackage)(style)
+      import language._
+      val gxml1: Glyph=
+        <frame enlarge="10" fg="black.round.4.dashed(8,8)">
+          <p width="20em" align="justify">Hello world! Is this the very best you can do?</p>
+        </frame>
+      val gxml2: Glyph =
         <div width="27em" align="justify">
+          <macro tag="roundframe"> <frame enlarge="30" radius="30" fg="black.4.dashed(5,5)"><?body?></frame></macro>
+          <roundframe>
           <p>
             The <b>brain</b> in <i>pain</i> feels with_out ex_ception as if it is going
             down an uninhibitedly con_voluted drain.
           </p>
-          <p>
-            But when not in pain, it is some_what sensitive to <bi>rain.</bi>
-          </p>
-          <p textForeground="red">
-            Whatever else you do, try to remember that not_with_stand_ing that <b>glyphXML</b> may
+          </roundframe>
+          <fill/>
+            <roundframe>
+              <p textForeground="red">
+            Whatever else you do, try to remember that not_with_stand_ing that <b>glyphML</b> may
             some_what resemble HTML, it is a completely different lang_uage.
           </p>
+          </roundframe>
         </div>
-      write("gxml1.png")(gxml1, "gxml1: Glyph")
+      write("gxml1.png")(gxml1 enlarged(10), "gxml1: Glyph")
       write("gxml2.png")(gxml2, "gxml2: Glyph")
-      write("gxml3.png")(gxml3, "gxml3: Glyph")
     }
 
     val down = Variable(false)

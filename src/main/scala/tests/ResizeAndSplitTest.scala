@@ -29,12 +29,15 @@ object ResizeAndSplitTest extends Application {
   )
   implicit val  style: StyleSheet = protoStyle.copy(containerDiagonal = Vec(70*protoStyle.emWidth, 0))
 
-  import glyphXML.Language._
+  import glyphML._
 
   import style.ex
   val title: String = "Resize and Split Tests"
 
   val SplitTest: Glyph = {
+    val language = Translator(style)
+    import language._
+
 
     val enlargement: Scalar = 30f
 
@@ -98,7 +101,10 @@ object ResizeAndSplitTest extends Application {
 
   val ResizeTest: Glyph = {
 
-    def theText(implicit style: StyleSheet): Glyph= <div width="1*container.width" align="justify">
+    def theText(implicit style: StyleSheet): Glyph= {
+      val language = Translator(style)
+      import language._
+      <div width="1*container.width" align="justify">
       <p align="center" fontScale="0.7">{s"${new java.util.Date()}"}</p>
       <p align="center" fontScale="2">De Rerum Natura</p>
       <p>
@@ -108,10 +114,10 @@ object ResizeAndSplitTest extends Application {
         The res_ult is yarns that are as soft and beau_tiful to knit with as they are to wear.
       </p>
       <p>
-        All De Rerum Natura bases are mule_sing<row><span textForeground="red" fontScale="0.5">(*)</span></row> free, and eth_ical_ly and sus_tain_ably produced.
+        All De Rerum Natura bases are mule_sing¹ free, and eth_ical_ly and sus_tain_ably produced.
       </p>
       <fill width="1*container.width" foreground="red.sliced(1,5)"  height="0.7ex"/>
-      <p fontScale="0.7" labelForeground="red" textForeground="red" hang="* ">
+      <p fontScale="0.7" labelForeground="red" textForeground="red" hang="⁽¹⁾ ">
         Mulesing is the removal of strips of wool-bearing skin from around the breech of a
         sheep to prevent the parasitic infection flystrike. The wool around the buttocks can retain feces and urine, which attracts flies.
       </p>
@@ -122,6 +128,7 @@ object ResizeAndSplitTest extends Application {
       <p fontScale="0.4" >{s"screen: ${style.screenDiagonal}"}</p>
       </div>
     </div>
+    }
 
     lazy val resizeable = styled.Resizeable {
       case context: StyleSheet =>
@@ -146,6 +153,16 @@ object ResizeAndSplitTest extends Application {
         resizeable.currentStyle = resizeable.currentStyle.copy(textFontSize=protoStyle.textFontSize*scales(index))
         resizeable.atSize(resizeable.currentStyle.containerDiagonal)
     }
+    val text: Glyph = {
+      val language = Translator(style)
+      import language._
+      <p width={s"${SplitTest.w}px"} align="justify">
+        This page demonstrates the interaction between a viewport and a dynamically resizeable glyph. The subject matter of
+        the text is rendered afresh whenever a width checkbox is selected, or a multiple of the original font size is clicked.
+        The viewport can be navigated by using the mousewheel or directional arrows.
+        (Widths are expressed in ems in the original font size).
+      </p>
+    }
     Col(align=Center)(
         FixedSize.Row(width=SplitTest.w, align=Mid)(
           Col(align=Center)(radioWidths.glyphButtons()),
@@ -155,12 +172,7 @@ object ResizeAndSplitTest extends Application {
           Col(align=Center)(radioScales.glyphButtons(align=Left)),
         ),
         style.vFill(3),
-      <p width={s"${SplitTest.w}px"} align="justify">
-        This page demonstrates the interaction between a viewport and a dynamically resizeable glyph. The subject matter of
-        the text is rendered afresh whenever a width checkbox is selected, or a multiple of the original font size is clicked.
-        The viewport can be navigated by using the mousewheel or directional arrows.
-        (Widths are expressed in ems in the original font size).
-      </p> enlarged 20 edged(red(width=1).sliced(5,5)) enlarged 10
+        text enlarged 20 edged(red(width=1).sliced(5,5)) enlarged 10
     )
   }
 

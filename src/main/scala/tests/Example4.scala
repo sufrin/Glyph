@@ -7,7 +7,9 @@ import styled.overlaydialogues.Dialogue.OK
 class Example4Interface(sheet: StyleSheet) {
   implicit val style: StyleSheet = sheet
 
-  import glyphXML.Language._
+  import glyphML._
+  val language=Translator(style)
+  import language._
 
   val help: Glyph =
     <div width="45em" align="justify">

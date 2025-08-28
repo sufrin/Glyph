@@ -5,11 +5,10 @@ import NaturalSize.Col
 import styled.{Label, Resizeable}
 import styles.decoration.Edged
 import Location.East
-import glyphML.{DecorativeExtensions, StoredExtension, Translator}
+import glyphML.{TransformsPackage, Translator}
 import unstyled.static
 
 object ResizeableWindowTest extends Application {
-  //import glyphXML.Language._
   import Brushes._
 
   implicit val style: StyleSheet = StyleSheet(
@@ -21,17 +20,10 @@ object ResizeableWindowTest extends Application {
     parSkip               = 10f
     )
 
-  val translator = Translator()
+  val translator = Translator().withPackage(TransformsPackage)
 
   locally {
     import translator.definitions
-    val extend = DecorativeExtensions(definitions)
-    import extend._
-    definitions("turn") = StoredExtension (turn)
-    definitions("rotate") = StoredExtension(turn)
-    definitions("scale") = StoredExtension(scale)
-    definitions("frame") = StoredExtension(frame)
-    definitions("skew") = StoredExtension(skew)
     definitions("dagger") = "\u2020"
     definitions("ddagger") = "\u2021"
     definitions("dddagger") = "\u2e38"
@@ -68,13 +60,11 @@ object ResizeableWindowTest extends Application {
   }
 
   def guiSpec(implicit style: StyleSheet): Glyph = {
-    val language = translator(style)
-    import language._
+
     val buttons = {
       import style.{em, hFill}
-      val Vec(w, h) = style.containerDiagonal
       lazy val wider: Glyph = styled.TextButton("10%\n⭅⭆", Hint(1, "column wider")) {
-        _ => wider.guiRoot.setContentSize(Vec(w * 1.1f, h))
+        _ => wider.guiRoot.setContentSize(Vec(style.containerWidth * 1.1f, style.containerHeight))
       }
       lazy val bigger = styled.TextButton("+10%", Hint(1, "font size")) {
         _ =>
@@ -100,22 +90,27 @@ object ResizeableWindowTest extends Application {
           }
       }
       lazy val narrower: Glyph = styled.TextButton("10%\n⭆⭅", Hint(1, "column narrower")) {
-        _ => narrower.guiRoot.setContentSize(Vec(w * 0.9f, h))
+        _ => narrower.guiRoot.setContentSize(Vec(style.containerWidth * 0.9f, style.containerHeight))
       }
       Col(align = Center)(
-        FixedSize.Row(w).Mid(wider, em, narrower, hFill(), Label(s"[${
-          (w / style.emWidth).toInt
+        FixedSize.Row(style.containerWidth).Mid(wider, em, narrower, hFill(),
+                                                Label(s"[${
+          (style.containerWidth / style.emWidth).toInt
         }ems]"), hFill(), bigger, em, smaller, em, about),
-        style.vSpace(),
-        static.Rect(w, 2, fg = black)
+        style.ex,
+        static.Rect(style.containerWidth, 2, fg = black)
         )
     }
-    val text: Glyph =
+
+    val text: Glyph = {
+      val language = translator(style)
+      import language._
       <div width="container.width" align="justify" macrowarning="off">
         <macro tag="strut"><fill width="0em" stretch="0" height="3ex"/></macro>
         <macro tag="emfill"><fill width="0em" stretch="20"/></macro>
         <macro tag="sup"><row alignment="top"><strut/><span textforeground="red" fontscale="0.6"><b><?body?></b></span></row></macro>
         <macro tag="centered"><row width="width"><emfill/><?body?><emfill/></row></macro>
+
          <p align="center" fontScale="2">De Rerum Natura</p>
          <p>
            De Rerum Natura is a beau_tiful small yarn producer in France
@@ -144,8 +139,9 @@ object ResizeableWindowTest extends Application {
           </frame>
          </centered>
        </div>
-       Col(align=Center)(buttons, text) enlarged 10 edged (black(width = 2)) enlarged 20
-     }
+    }
+    Col(align=Center)(buttons, text) enlarged 10 edged (black(width = 2)) enlarged 20
+  }
 
 
 
