@@ -1,22 +1,21 @@
 package org.sufrin.glyph
 package tests.GlyphBook
 
-import styled.{Book, BookSheet, RadioCheckBoxes, TextButton}
-import NaturalSize.{transparent, Col, Grid, Row}
+import styled.{Book, BookSheet, TextButton}
+import NaturalSize.{transparent, Col, Grid}
 import unstyled.static.INVISIBLE
 import GlyphTypes.Scalar
+import styled.windowdialogues.Dialogue
+import styles.decoration.{Blurred, Decoration, Shaded}
 import unstyled.reactive.Reaction
-
-import io.github.humbleui.skija.paragraph.Alignment
-import org.sufrin.glyph.styled.windowdialogues.Dialogue
-import org.sufrin.glyph.styles.decoration.{Blurred, Decoration, Shaded}
-import org.sufrin.glyph.Brushes.black
-import org.sufrin.glyph.unstyled.dynamic.OneOf
+import Brushes.black
+import unstyled.dynamic.OneOf
 
 
-class ButtonStyles (implicit val style: BookSheet, implicit val translation: glyphXML.Translation) {
+class ButtonStyles (implicit val style: BookSheet, implicit val translator: glyphML.Translator) {
   implicit val styleSheet: StyleSheet = style.pageSheet
-  import translation._
+  val language = translator(styleSheet)
+  import language._
   val book = Book()
   val Page = book.DefinePage
   val anchor = INVISIBLE()
@@ -27,18 +26,16 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translation: gly
   }
 
   locally {
-    translation("CENTERCODE") = new glyphXML.Macro(
-      <div width="$width(75em)" textFontFamily="Courier" ><row width="1*width"><fill/>&BODY;<fill/></row></div>
-    )
-
-    translation("SOURCECODE") = new glyphXML.Macro(
-      <div width="$width(75em)">
-        <CENTERCODE width="$width">
-          &BODY0;
-        </CENTERCODE>
-        <fill/>
-        &BODY1..;
-      </div>
+    language.initialDeclarations(
+      <macro tag="CENTERCODE"> <div width="$width(75em)" textFontFamily="Courier" ><row width="1*width"><fill/><?body?><fill/></row></div></macro>
+      <macro tag="SOURCECODE">
+        <div width="$width(75em)">
+          <CENTERCODE width="$width">
+            <?body0?>
+          </CENTERCODE>
+          <fill/>
+          <?body1?>
+        </div></macro>
     )
   }
 

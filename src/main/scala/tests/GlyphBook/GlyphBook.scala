@@ -21,9 +21,9 @@ object GlyphBook extends Application  {
     BookSheet(buttonSheet=interfaceStyle,
               pageSheet=interfaceStyle.copy(buttonDecoration=decoration.unDecorated, fontScale=0.9f))
 
-  import glyphXML.Language.translation
+  val translator = glyphML.Translator()
 
-  lazy val GUI = new SplashScreen().GUI.enlarged(20)
+  lazy val GUI = new SplashScreen()(bookSheet, translator).GUI.enlarged(20)
 
   def title = s"""Glyph Book"""
 

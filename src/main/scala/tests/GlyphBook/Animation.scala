@@ -1,29 +1,29 @@
 package org.sufrin.glyph
 package tests.GlyphBook
 
-import styled.{ActiveString, Book, BookSheet, MenuButton, TextButton, TextToggle}
+import styled._
+import GlyphShape.{circle, composite, lineBetween, rect, superimposed, AnimatedShapeGlyph, FILL, PathShape, STROKE}
+import GlyphTypes.Scalar
+import NaturalSize.{Col, Grid, Row}
+import unstyled.{reactive, static}
+import unstyled.static.{FilledOval, FilledRect, Label, Rect}
 
 import io.github.humbleui.skija.{PaintMode, PaintStrokeCap}
-import org.sufrin.glyph.GlyphShape.{circle, composite, line, lineBetween, oval, rect, superimposed, AnimatedShape, AnimatedShapeGlyph, FILL, PathShape, STROKE}
-import org.sufrin.glyph.GlyphTypes.Scalar
-import org.sufrin.glyph.NaturalSize.{Col, Grid, Row}
-import org.sufrin.glyph.unstyled.{reactive, static}
-import org.sufrin.glyph.unstyled.dynamic.Animateable
-import org.sufrin.glyph.unstyled.static.{FilledOval, FilledRect, Label, Rect}
 
-import java.lang.Math.{cos, log, log1p, sin}
-import scala.math.{ceil, floor}
+import java.lang.Math.{cos, log1p, sin}
+import scala.math.floor
 
-class Animation(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
+class Animation(implicit val style: BookSheet, implicit val translator: glyphML.Translator)  {
   implicit val pageSheet: StyleSheet = style.pageSheet
   import pageSheet.{em, ex}
-  import translation._
+  val language = translator(pageSheet)
+  import language._
   val book = Book()
   val Page = book.Page
   import Brushes._
 
   val Mechanism = Page("Mechanism", "") {
-    import unstyled.dynamic.{Periodic, ActiveGlyph}
+    import unstyled.dynamic.{ActiveGlyph, Periodic}
 
     trait SpokedWheel extends GlyphShape {
       val radius: Scalar
@@ -186,7 +186,7 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
 
 
   val Rhodonea = Page("Rhodonea", "") {
-    import unstyled.dynamic.{Periodic, ActiveGlyph}
+    import unstyled.dynamic.{ActiveGlyph, Periodic}
 
 
     val blueString  = blueLine.sliced(5f, 3f)
@@ -241,7 +241,7 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
        */
       def toGlyph(degrees: Double): Glyph = {
         locally
-        { import Math.{sin,cos}
+        { import Math.{cos, sin}
           val θ = degrees * D2R
           val pos = cartesian(cos((n/d) * θ) * orbit, θ)
           if (degrees<1) path.moveTo(pos) else path.lineTo(pos)
@@ -354,7 +354,7 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
   }
 
   val Spiral = Page("Spiral", "") {
-    import unstyled.dynamic.{Periodic, ActiveGlyph}
+    import unstyled.dynamic.{ActiveGlyph, Periodic}
 
 
     /*
@@ -516,16 +516,17 @@ class Animation(implicit val style: BookSheet, implicit val translation: glyphXM
 
     val DFIELDR = Menus.scalarMenu("D(>0)", 0.4f, 0.3f , 0.2f, 0.1f, 0.09f, 0.07f, 0.05f, 0.03f, 0.01f, 0.009f)(setD)
 
+    // TODO: rows and columns in text don't align to the middle of the text
     Col(align=Center)(
       <div width="60em" align="center">
         <p >
-          Drawing curves of the form: <i>r(θ) = K . D<col><i>θ</i><b>&nbsp;</b></col>)</i>,
+          Drawing curves of the form: <i>r(θ) = K . D<row alignment="top" fontscale="0.8"><fill height="4ex" width="0pt"/>θ</row></i>,
         </p>
         <p>
-          scaled by <b>log</b><col sep="black" align="center"><i>1+turns</i><i>2</i></col> (inversely when <i>D>0</i>)
+          scaled by <b>log</b>(<i>(1+turns</i>)/<i>2)</i> (inversely when <i>D>0</i>)
         </p>
         <p>
-          where <i>turns=<b>floor</b><col sep="black" align="center"><i>θ</i><i>2π</i></col></i>.
+          where <i>turns</i>=<b>floor</b>(<i>θ</i>/<i>2π</i>).
         </p>
         <p>
           Draw by choosing D; or use <b>Start/Stop</b>

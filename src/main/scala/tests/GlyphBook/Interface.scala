@@ -2,16 +2,16 @@ package org.sufrin.glyph
 package tests.GlyphBook
 import styled.{Book, BookSheet, CheckBox, ToggleVariable}
 import NaturalSize.Col
-import glyphXML.Macro
 import styles.decoration
-import unstyled.BooleanGlyphs.OnOffButton
 import unstyled.static
 
-class Interface(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
+class Interface(implicit val style: BookSheet, implicit val translator: glyphML.Translator)  {
   val book = Book()
   val Page = book.Page
   implicit val content: StyleSheet = style.pageSheet
   val button: StyleSheet = style.buttonSheet
+  val language = translator(content)
+  import language._
 
   var enableSave: Boolean = false
   val saveEnable = ToggleVariable(initially=enableSave){
@@ -23,12 +23,10 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
     CheckBox(initially=saveEnable.value) (saveEnable)
 
 
-  locally {
-    translation("anchor") = { _ => static.INVISIBLE() }
-    translation("caption") =
-      new Macro(<p align="center"><b>&BODY;</b></p>)
 
-    /*
+  locally {
+    translator.definitions("anchor") = { _ => static.INVISIBLE() }
+    /*  EXCISED HERE BECAUSE UNUSED (make it a package)
      *  A simple implementation of <itemize> blocks containing <item>s.
      *  {{{
      *    <itemize logging[=false]
@@ -52,28 +50,6 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
      *  nesting can be given by changing hang text and increasing the itemIndent.
      */
 
-    translation("item") =
-      new Macro(
-        <row inheritwidth="true">
-          <!--attributes AT="ITEM" id="tag:item"/-->
-          <fill width="$itemindent"/>
-          <p hang="$hang" width="$itemwidth" align="$itemalign">
-            &BODY;
-          </p>
-        </row>)
-
-    translation("itemize") =
-      new Macro(
-        <SCOPE>
-        <ATTRIBUTES key="tag:item" logging="$logging(false)" leftmargin="$leftmargin(5em)" hang="$hang( * )"  itemindent="$itemindent(2em)"  itemwidth="$itemwidth(70em)" itemalign="$itemalign(justify)"/>
-        <span itemindent="$itemindent(2em)">
-          <col align="left" >
-            <!--attributes AT="ITEMIZE" /-->
-            &BODY;
-          </col>
-        </span>
-        </SCOPE>
-      )
   }
 
   Page("Welcome", "") {
@@ -99,19 +75,20 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
     ).enlarged(20)
   }
 
-  Page("Window Menu Support*", "") (new WindowMenus().GUI)
+  //Page("Window Menu Support*", "") (new WindowMenus().GUI)
 
   Page("Button styles*", "") (new ButtonStyles().GUI)
 
   Page("Glyph Framing*", "") (new Framing().GUI)
 
-  Page("Using Overlays*", "") (new OverlayUses().GUI)
+  //Page("Using Overlays*", "") (new OverlayUses().GUI)
 
   Page("Text Tool", "") (new TextTool().GUI)
 
   Page("Fonts", "Font families\n(available on this computer)\n\n\n") {
     val chooser = new FontAndBrushChooser()
     import glyphXML.Language._
+
     import content.ex
     chooser.fontChooser.showExample()
     Col(align=Center)(
@@ -129,7 +106,7 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
 
   Page("Events/Windows*", "") (new EventsAndWindows().GUI)
 
-  Page("Glyph Transforms*", "") (new Transforms().GUI)
+  //Page("Glyph Transforms*", "") (new Transforms().GUI)
 
   Page("Animation*", "")(new Animation().GUI)
 
@@ -141,7 +118,6 @@ class Interface(implicit val style: BookSheet, implicit val translation: glyphXM
   import utils.Output.withWriteBar
 
   import book.Layout
-  import translation._
 
 
   val hint: Glyph =

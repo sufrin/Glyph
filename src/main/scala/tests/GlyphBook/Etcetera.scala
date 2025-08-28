@@ -8,22 +8,20 @@ import styles.decoration.{Edged, Framed, RoundFramed}
 import unstyled.{reactive, static}
 import unstyled.dynamic.SplitScreen
 import unstyled.static._
+import GlyphShape.STROKE
 
 import io.github.humbleui.skija.{PaintMode, PathFillMode}
-import org.sufrin.glyph.GlyphShape.{arc, circle, rect, FILL, PathShape, STROKE}
 
 import java.util.Date
 
-class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
+class Etcetera(implicit val style: BookSheet, implicit val translator: glyphML.Translator)  {
   implicit val pageSheet: StyleSheet = style.pageSheet
   import pageSheet.{em, ex}
-  import translation._
+  val language = translator(pageSheet)
+  import language._
   val book = Book()
   val Page = book.Page
   import Brushes._
-
-
-
 
 
     Page("Grid", "") {
@@ -77,7 +75,6 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
 
       nested.Layout.leftCheckBoxes(buttonAlign=Right, pageAlign=Center)
     }
-
 
     Page("Scroll", "Scrolling and Scaling with ViewPort"){
 
@@ -590,8 +587,9 @@ class Etcetera(implicit val style: BookSheet, implicit val translation: glyphXML
     }
 
     Page ("Sound", "Buttons bound to sounds"){
-      import java.io.File
       import Sound._
+
+      import java.io.File
       def filesInDir(path: String): Seq[File] = {
         val dir = new File(path)
         if (dir.exists && dir.isDirectory) {

@@ -6,9 +6,7 @@ import NaturalSize._
 import styles.decoration
 import Location.South
 
-import org.sufrin.glyph.unstyled.Text
-
-class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyphXML.Translation) {
+class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyphML.Translator) {
   implicit val  buttons: StyleSheet =
                 sheet.pageSheet.copy(
                   buttonDecoration =
@@ -96,17 +94,18 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
       case Some(i) => screen = screens(i)
     }(selectButtonStyle)
 
-    import translator._
+    val language = translator()
+    import language._
 
     val help: Glyph =
     <div width="65em" parSkip="1ex" align="justify" labelBackground="lightGrey" background="lightGrey" textBackground="lightGrey" textForeground="black">
-      <SCOPE>
-        <MACRO key="strut"><fill width="1*width" bg="lightGrey"/></MACRO>
-        <MACRO key="centered"><row width="1*width"><fill/>&BODY;<fill/></row></MACRO>
+      <scope>
+        <macro tag="strut"><fill  bg="lightGrey"/></macro>
+        <macro tag="centered"><row><fill/><?body?><fill/></row></macro>
         <p>
-        The <b>Glyph Book</b> button starts a completely new instance of the GUI.
-        The checkboxes below it determine what tab layout and scale the new instance will have; as well
-        as what screen (if there are many) it will be shown on at first.
+          The <b>Glyph Book</b> button starts a completely new instance of the GUI.
+          The checkboxes below it determine what tab layout and scale the new instance will have; as well
+          as what screen (if there are many) it will be shown on at first.
       </p>
       <p>
          The digits denote the screens offered by the system window manager, and <tt textForeground="blue">"p"</tt>
@@ -114,8 +113,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
       </p>
       <p>All pages will change size and rescale themselves if their window is resized.</p>
       <strut/>
-      <centered>
-        <div width="0.95*width" parSkip="0ex" parIndent="2em">
+      <col parindent="2em">
           <p hang="-notebook ">buttons on the left</p>
           <p hang="-cnotebook">checkboxes on the left</p>
           <p hang="-rnotebook">buttons on the right</p>
@@ -123,14 +121,13 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
           <p hang="-vnotebook">buttons vertically along the top</p>
           <p hang="-tnotebook">buttons horizontally along the top</p>
           <p hang="-menu     ">individual pages are on a menu</p>
-        </div>
-      </centered>
+      </col>
       <strut/>
       <p align="justify">
         There is no artificial limit to the number of instances that can be running at once within a single JVM,
         (though space constraints within the JVM will impose a natural limit).
       </p>
-      </SCOPE>
+      </scope>
     </div>.enlarged(20).framed(Brushes.black.sliced(10, 5)).enlarged(25)
 
 

@@ -6,11 +6,12 @@ import styled._
 import NaturalSize.{Col, Row}
 
 
-class EventsAndWindows(implicit val style: BookSheet, implicit val translation: glyphXML.Translation){
+class EventsAndWindows(implicit val style: BookSheet, implicit val translator: glyphML.Translator){
 
   implicit val pageSheet: StyleSheet = style.buttonSheet
   import pageSheet.{em, ex}
-  import translation._
+  val language = translator(pageSheet)
+  import language._
     val nested = Book()
     val Page = nested.Page
 
@@ -123,13 +124,15 @@ class EventsAndWindows(implicit val style: BookSheet, implicit val translation: 
              in a sequence are usually for physically close locations. Checking the box below suppresses the second
              and subsequent <tt>Move</tt> reports in such a sequence of moves.</p>
         </div>,
-        ex scaled 2,
+        pageSheet.vSpace(4),
         Row(align=Mid)(Label("Shorten the log of Move sequences: "), CheckBox(initially = CatchEvents.elideAdjacentMoves) {
           state =>
             CatchEvents.elideAdjacentMoves = state
             theLog.println(if (state) "You are now eliding adjacent move events" else "You are now showing adjacent move events")
-        }), ex scaled 2,
-        CatchEvents.framed(), ex scaled 2,
+        }),
+        pageSheet.vSpace(4),
+        CatchEvents.framed(),
+        pageSheet.vSpace(4),
         theLog
       ).enlarged(20).edged()
 

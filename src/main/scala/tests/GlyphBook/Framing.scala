@@ -5,16 +5,17 @@ import styled.{Book, BookSheet, Label}
 import GlyphTypes.Scalar
 import NaturalSize.{Col, Grid, Row}
 import unstyled.static.{INVISIBLE, Polygon}
+import GlyphShape.FILL
+import styled.windowdialogues.Dialogue
+import unstyled.dynamic.OneOf
 
 import io.github.humbleui.skija.{PaintMode, PaintStrokeCap}
-import org.sufrin.glyph.GlyphShape.FILL
-import org.sufrin.glyph.styled.windowdialogues.Dialogue
-import org.sufrin.glyph.unstyled.dynamic.OneOf
 
-class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
+class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Translator)  {
   implicit val pageSheet: StyleSheet = style.buttonSheet.copy(fontScale = 0.8f)
   import pageSheet.{em, ex}
-  import translation._
+  val language = translator(pageSheet)
+  import language._
   val book = Book()
   val Page = book.Page
   import Brushes._
@@ -139,7 +140,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
 
   if (false) Page("Sampler", "") {
     import styled.TextButton
-    import styles.decoration.{Decoration, Blurred, Shaded}
+    import styles.decoration.{Blurred, Decoration, Shaded}
     val styleSheet = pageSheet
     val anchor = INVISIBLE()
 
@@ -351,7 +352,7 @@ class Framing(implicit val style: BookSheet, implicit val translation: glyphXML.
 
   Page("GlyphXML", "") {
     // TODO: decoration implemntations for round framed need checking
-    translation("star") = { style => PolygonLibrary.filledStargon(9, fg=blue(width=4)).scaled(.5f) }
+    language.translator.definitions("star") = { style => PolygonLibrary.filledStargon(9, fg=blue(width=4)).scaled(.5f) }
     <div width="70em" >
       <col align="center">
       <p align="center">
