@@ -2,29 +2,21 @@ package org.sufrin.glyph
 package tests
 
 
-import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, Key, MouseButton}
-import GlyphTypes.{EventKey, Scalar, Window}
-
-import io.github.humbleui.skija.{BlendMode, PaintMode, PaintStrokeCap, PathFillMode}
-import org.sufrin.glyph.Modifiers.{Alt, Bitmap, Command, Control, Pressed, Primary, Released, Secondary, Shift}
+import GlyphTypes.Scalar
+import Modifiers.{Bitmap, Command, Control, Pressed, Primary, Secondary, Shift}
 import gesture._
+import Brushes._
+import GlyphShape.{arrow, circle, polygon, PathShape, STROKE}
+import styled.{Book, BookSheet}
+import unstyled.reactive.{Enterable, Reaction}
+import NaturalSize.transparent
+import styled.windowdialogues.Dialogue.OK
+import unstyled.Text
 
-import org.sufrin.{glyph, logging}
-import org.sufrin.glyph.Brushes.{black, blue, green, lightGrey, red, white, yellow, NonBrush}
-import org.sufrin.glyph.GlyphShape.{arrow, circle, composite, lineBetween, polygon, rect, FILL, PathShape, STROKE}
-import org.sufrin.glyph.styled.{Book, BookSheet, GlyphButton, MenuButton, RadioCheckBoxes}
-import org.sufrin.glyph.styles.decoration.{unDecorated, Framed}
-import org.sufrin.glyph.unstyled.reactive.{Enterable, Reaction}
-import org.sufrin.glyph.unstyled.static.{FilledPolygon, INVISIBLE}
-import org.sufrin.glyph.Brush.{BUTT, ROUND, SQUARE}
-import org.sufrin.glyph.Colour.HSV
-import org.sufrin.glyph.NaturalSize.{transparent, Col, Grid, Row}
-import org.sufrin.glyph.NaturalSize.Grid.table
-import org.sufrin.glyph.styled.windowdialogues.Dialogue.OK
-import org.sufrin.glyph.unstyled.Text
+import io.github.humbleui.jwm.Key
+import io.github.humbleui.skija.{BlendMode, PaintMode, PaintStrokeCap}
+import org.sufrin.logging
 
-import java.io.File
-import java.lang.IllegalArgumentException
 import scala.collection.mutable
 
 
@@ -154,7 +146,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     }
   } // UndoRedo
 
-  import UndoRedo.{undo, redo, runUndoably}
+  import UndoRedo.{redo, runUndoably, undo}
 
   def undoHint() = UndoRedo.undoHint
   def redoHint() = UndoRedo.redoHint
@@ -558,7 +550,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
 class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleSheet) {
 
-    import sheet.{ex,em}
+    import sheet.{em, ex}
     val left, right = styled.ActiveString("   ")
     val done: Variable[Int]   = Variable(0){ case n => left.set(f"$n%03d") }
     val undone: Variable[Int] = Variable(0){ case n => right.set(f"$n%03d") }
@@ -650,8 +642,8 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
     )
 
 
-  lazy val dimField: TextField = styled.TextField(onEnter = setDims, onCursorLeave = setDims, size = 50, initialText=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices")
-  lazy val textField: TextField = styled.TextField(size = 50, onEnter = addText(_), initialText=s"this is text")
+  lazy val dimField: TextField = styled.TextField(onEnter = setDims, onCursorLeave = setDims, size = 30, initialText=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices")
+  lazy val textField: TextField = styled.TextField(size = 30, onEnter = addText(_), initialText=s"this is text")
 
 
     def setDims(specification: String): Unit = {
@@ -738,10 +730,12 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       ex,
       FixedSize.Row(width=drawingBoard.w, align=Mid)(shapes),
       ex,
-      dimField.framed() beside em beside
-          Col(HintedButton("?", "fetch the selected text")(editTextSelection(_)),
+          dimField.framed() above
+          NaturalSize.Row(align=Mid)(
+              HintedButton("?", "fetch the selected text")(editTextSelection(_)),
+              textField.framed(),
               HintedButton("!", "replace the selected text")(storeTextSelection(_))
-          ) beside textField.framed()
+             )
     ).enlarged(20)
 }
 
@@ -775,11 +769,15 @@ object Play extends Application {
   val help: Glyph = {
     implicit val helpSheet = interfaceStyle.copy(textFontSize=16, labelFontSize = 16, buttonFontSize = 16)
     implicit val bookSheet: BookSheet = BookSheet(helpSheet, helpSheet)
-    import glyphXML.Language._
+    import glyphML.Translator
+    val translator=Translator()
+    val language = translator()
+    import language._
     val book = Book()
     val Page = book.Page
     Page("Diagram", "")(
     <div width="70em"  align="justify" leftMargin="3em" rightMargin="3em">
+      <macro tag="caption"><p align="center"><b><?body?></b></p></macro>
       <caption>The Diagram</caption>
       <p>
         The diagram consists of a collection of geometric or textual objects.
