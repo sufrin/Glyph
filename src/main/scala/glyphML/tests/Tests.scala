@@ -233,8 +233,11 @@ object abstraction extends Application {
     Paragraph.level=WARN
   }
   import Translator._
-  val translator = new Translator(new Definitions {})(StyleSheet())
-  import translator._
+  val language = new Translator(new Definitions {})(StyleSheet())
+  import language._
+  import idioms._
+
+  translator.definitions("over") = Col(uniformWidth = false)(Label("a"), Label("b+c"))
 
   initialDeclarations(
       <macro tag="makeamistake"><measured refid="makeamistake"><deliberatemistake/></measured></macro>
@@ -257,7 +260,7 @@ object abstraction extends Application {
 
 
 
-     <attributes id="tag:debug" caption="Debugging" local="t"/>
+      <attributes id="tag:debug" caption="Debugging" local="t"/>
       <attributes id="tag:p" align="justify" width="width" textforeground="black" fontfamily="Times"/>
       <attributes id="tag:paratag" align="justify" width="virtual.width" textforeground="black" fontfamily="Times"/>
 
@@ -272,6 +275,10 @@ object abstraction extends Application {
            </p>
      </measured>
 
+      <measured refid="xover" visible="off">
+        <sub><col><i>a</i><b>b+c</b></col></sub>
+      </measured>
+
       <fixedwidth width="virtual.width">
         <fill stretch="200" fg="red"/>
         <fixedwidth width="0.75*width" bg="pink"><insert evaluate="virtual.width"/>x<insert evaluate="virtual.height"/></fixedwidth>
@@ -281,7 +288,7 @@ object abstraction extends Application {
       <glyph gid="virtual"/><insert evaluate="width"/>
 
       <p>
-        Nothing to see here, but the next paragraph dem_on_strat_es some
+        Nothing to see here, <glyph gid="over"/>but the next paragraph dem_on_strat_es some
         matters of attribute inheritance.
       </p>
 
