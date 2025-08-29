@@ -370,7 +370,9 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
           case (true, true) => Para(List(attr,value))
           case (true, false) => Text(attr)
           case (false, true) => Text(value)
-          case (_,_) => Text("?")
+          case (_,_) =>
+            Translator.warn(s"No attribute= or evaluate= $scope<insert ${localAttributes.mkString()}")
+            Text("<insert ...>")
         }
 
         List(stuff).flatMap(translate(context.updated(localAttributes.without("attribute", "evaluate"))))

@@ -69,7 +69,8 @@ case class Macro(val definitionScope: Scope, tag: String, val defaultAttributes:
       case MacroParam(s"body$name") if name.matches("[0-9]+") =>
             nonEmpty(name.toInt)
       case MacroParam(name) =>
-            List(tree)
+            val s = (invocationAttributes supersede defaultAttributes).String(name, "")
+            if (s.isEmpty) List(tree) else List(AbstractSyntax.Text(s))
       case other =>
             List(other)
     }
