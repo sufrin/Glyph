@@ -233,23 +233,23 @@ object abstraction extends Application {
     Paragraph.level=WARN
   }
   import Translator._
-  val language = new Translator(new Definitions {})(StyleSheet())
+  val language = Translator().withPackage(TransformsPackage)(StyleSheet())
   import idioms._
   import language._
 
-  translator.definitions("over") = Col(uniformWidth = false)(Label("a"), Label("b+c"))
+  translator.definitions("over") = Col()(Label("A"), Label("B+C"))
 
   initialDeclarations(
       <macro tag="makeamistake"><measured refid="makeamistake"><deliberatemistake/></measured></macro>
       <macro tag="makeanothermistake"><measured refid="makeanotheramistake"><anothermistake/></measured></macro>
 
-        <macro tag="paratag" framed="red" >
+        <macro tag="paratag" framed="red" nonempty="true">
           <?body?>
           <makeamistake/>
         </macro>
 
-        <macro tag="nested" align="right" whocares="not me" keepempty="true" width="virtual.width">
-          <table cols="1" uniform="false" background="yellow"><?body?></table>
+        <macro tag="nested" align="right" whocares="not me" nonempty="true" width="virtual.width">
+          <table cols="1" uniform="false" background="yellow" nonempty="true"><debug tree="true"/><?body?></table>
         </macro>
     )
 
@@ -262,7 +262,7 @@ object abstraction extends Application {
 
       <attributes id="tag:debug" caption="Debugging" local="t"/>
       <attributes id="tag:p" align="justify" width="width" textforeground="black" fontfamily="Times"/>
-      <attributes id="tag:paratag" align="justify" width="virtual.width" textforeground="black" fontfamily="Times"/>
+      <attributes id="tag:paratag" align="justify" width="virtual.width" textforeground="black" fontfamily="Times" nonempty="true"/>
 
      <measured refid="virtual" visible="off" orientation="col" background="transparent">
            <p>
@@ -275,9 +275,13 @@ object abstraction extends Application {
            </p>
      </measured>
 
-      <measured refid="xover" visible="off">
-        <sub><col><i>a</i><b>b+c</b></col></sub>
-      </measured>
+      <macro tag="strut"><space width="0em" stretch="0" height="50px"/></macro>
+      <macro tag="emfill"><fill width="0em" stretch="20"/></macro>
+
+      <macro tag="math" fontscale="0.85" nonempty="true"><row fg="transparent"><?body?></row></macro>
+      <macro tag="pow" fontscale="0.85" nonempty="true"><sub delta="-3ex"><row><?body?></row></sub></macro>
+      <macro tag="over" fontscale="0.85"><frame fg="transparent"><col uniform="false" nonempty="true"><?body?></col></frame></macro>
+
 
       <fixedwidth width="virtual.width">
         <fill stretch="200" fg="red"/>
@@ -288,8 +292,8 @@ object abstraction extends Application {
       <glyph gid="virtual"/><insert evaluate="width"/>
 
       <p>
-        Nothing to see here, <glyph gid="over"/>but the next paragraph dem_on_strat_es some
-        matters of attribute inheritance.
+        Here we explore simple notations like <over>A <row>B + C</row></over> and <math>B<pow>A*B</pow></math>. And the next paragraph dem_on_strat_es some
+        matters of importance: namely attribute inheritance.
       </p>
 
       <nested>

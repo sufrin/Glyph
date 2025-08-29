@@ -6,7 +6,7 @@ import org.sufrin.glyph.unstyled.static.BreakableGlyph
 import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
 import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.glyphML
-import org.sufrin.glyph.glyphML.AbstractSyntax.{isEmptyText, Scope, Tree}
+import org.sufrin.glyph.glyphML.AbstractSyntax.{ifNonempty, isEmptyText,  Scope, Tree}
 import org.sufrin.glyph.glyphML.Context.{AttributeMap, Context, ExtendedAttributeMap}
 import org.sufrin.glyph.glyphML.HYPHENATION.SemanticStyleSheet
 import org.sufrin.glyph.NaturalSize.Row
@@ -72,10 +72,16 @@ class ResolveScopedAttributes(definitions: Definitions, element: AbstractSyntax.
   val inheritedAttributes: AttributeMap = (givenAttributes supersede selfattributes supersede classattributes supersede tagattributes).without("id", "class")
 
   /** Should subtrees that are empty be translated */
-  val keepEmpty = inheritedAttributes.Bool("keepempty", false)
+  val nonEmpty = inheritedAttributes.Bool("nonempty", !inheritedAttributes.Bool("keepempty", true))
 
-  /** Subtrees: with empty texts filtered out unless `keepEmpty` */
-  val children = if (keepEmpty) child else child.filterNot(isEmptyText)
+  /**
+   * Subtrees: with empty texts filtered out if `nonempty` is true, or `keepempty` is false.
+   *
+   * It's still possible to access all child subtrees in
+   * the implementation of specific elements.
+   *
+   */
+  val children = if (nonEmpty) child.flatMap(ifNonempty) else child
 
   override def toString: String = {
     val pairs = inheritedAttributes
@@ -234,8 +240,8 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         children.filterNot(isEmptyText).flatMap(translate(derivedContext))
 
       case "sub" =>
-        val delta: Scalar = localAttributes.Units("delta", context.sheet.exHeight)(context)
-        val base: Scalar = localAttributes.Units("baseline", 0)(context)
+        val delta: Scalar = localAttributes.Units("delta", 0)(context)
+        val base: Scalar = localAttributes.Units("baseline", context.sheet.exHeight/2)(context)
         val derivedContext = context.updated(localAttributes.without("delta", "baseline"))
         child.flatMap(translate(derivedContext)).map(_.withBaseline(base, delta))
 
@@ -531,7 +537,8 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
             definitions.getKind(StoreType.Macro)(tag) match {
               case None => None
               case Some(StoredMacro(abstraction)) =>
-                Some(abstraction.expanded(thisTranslator, localAttributes, children))
+                val expanded = abstraction.expanded(thisTranslator, localAttributes, children)
+                Some(expanded)
               case _ =>
                 SourceDefault.error(s"Internal error at $scope<$tag ...\n")
                 None

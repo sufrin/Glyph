@@ -75,6 +75,14 @@ object AbstractSyntax {
     case _ => false
   }
 
+  def ifNonempty(tree: Tree): Option[Tree] =
+    if (isEmptyText(tree)) None else tree match {
+    case Text(_)      => Some(tree)
+    case Para(texts)  => Some(Para(texts.filterNot(_.forall(_.isWhitespace))))
+    case Comment(_,_) => None
+    case _ => Some(tree)
+  }
+
   /**
    * Maps a `scala.xml.Node` to a `Tree`, decorating each `Elem` with an appropriate
    * scope nest and attribute mapping, and normalizing attribute names to lowercase.

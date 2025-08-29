@@ -40,9 +40,14 @@ object idioms {
         styled.CheckBox(initially=variable.value, hint=hint)(variable)(style).edged(edgeColor) }
 
 
-  def Table(cols: Int=0, rows: Int=0, uniform: Boolean=false)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Table(cols, rows, uniform)(glyphs)
-  def Col(align: Alignment=Center, uniformWidth: Boolean=true, skip:Scalar=0)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Col(align, uniformWidth, skip)(glyphs)
-  def Row(align: VAlignment=Mid, uniformHeight: Boolean=true, skip:Scalar=0)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph = fromSequence.Row(align, uniformHeight, skip)(glyphs)
+  def Table(cols: Int=0, rows: Int=0, uniform: Boolean=false)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph =
+        fromSequence.Table(cols, rows, uniform)(glyphs)
+
+  def Col(align: Alignment=Center, uniformWidth: Boolean=true, skip:Scalar=0)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph =
+        fromSequence.Col(align, uniformWidth, skip)(glyphs)
+
+  def Row(align: VAlignment=Mid, uniformHeight: Boolean=true, skip:Scalar=0)(glyphs: (StyleSheet => Glyph)*): StyleSheet => Glyph =
+        fromSequence.Row(align, uniformHeight, skip)(glyphs)
 
   /** Constructions for `Row, Col, Table` that take `Seq[Glyph]` arguments  */
   object fromSequence {

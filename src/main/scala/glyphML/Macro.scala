@@ -74,13 +74,19 @@ case class Macro(val definitionScope: Scope, tag: String, val defaultAttributes:
             List(other)
     }
 
-
     macroBody.flatMap(substitute)
   }
 
   def expanded(translator: Translator, invocationAttributes: AttributeMap, invocationBody: Seq[Tree]): Seq[Glyph] = {
+    import glyphML.Context.ExtendedAttributeMap
+    val trace = invocationAttributes.Bool("trace", false)
     val substituted = expansion(invocationAttributes, invocationBody)
-    val derivedContext = context.updated(invocationAttributes supersede defaultAttributes)
+    if (trace) {
+      println(s"EXPANDED  <$tag ${invocationAttributes.mkString()} >")
+      //println(PrettyPrint.prettyPrint(invocationBody))
+      println(PrettyPrint.prettyPrint(substituted))
+    }
+    val derivedContext = context.updated(invocationAttributes.without("trace") supersede defaultAttributes)
     substituted.flatMap(translator.translate(derivedContext))
   }
 
