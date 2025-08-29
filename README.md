@@ -60,7 +60,7 @@ and can be used to build the package as a whole, as well as  to run individual t
 applications. The following are available:
 
     [info] * org.sufrin.glyph.GridUtils
-    [info] * org.sufrin.glyph.glyphXML.AbstractSyntax
+    [info] * org.sufrin.glyph.glyphXMLDeprecated.AbstractSyntax
     [info] * org.sufrin.glyph.osBridge.SwingMain
     [info] * org.sufrin.glyph.tests.CalculatorExample
     [info] * org.sufrin.glyph.tests.DocumentationDiagrams
@@ -79,7 +79,7 @@ applications. The following are available:
     [info] * org.sufrin.glyph.tests.ResizeAndSplitTest
     [info] * org.sufrin.glyph.tests.ResizeableWindowTest
     [info] * org.sufrin.glyph.tests.GlyphBook.GlyphBook
-    [info] * org.sufrin.glyph.tests.glyphXMLTest
+    [info] * org.sufrin.glyph.tests.glyphXMLTestDeprecated
 
 You can run any of them with (eg)
 

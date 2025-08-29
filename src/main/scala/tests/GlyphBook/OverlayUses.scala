@@ -9,12 +9,13 @@ import unstyled.static._
 import Brushes.{blue, red, redLine, yellow}
 import styles.decoration
 
-class OverlayUses(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
+class OverlayUses(implicit val style: BookSheet, implicit val translator: glyphML.Translator)  {
   private val noteBook = Book()
   private val Page = noteBook.DefinePage
   implicit val pageStyle: StyleSheet = style.buttonSheet
   import pageStyle.{em, ex}
-  import translation._
+  val language = translator(pageStyle)
+  import language._
 
   // Each subpage of this page declares its own style,
   // usually the standard application style, except for

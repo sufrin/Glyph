@@ -1,6 +1,7 @@
 package org.sufrin.glyph
 package tests
 
+
 import unstyled.static._
 import GlyphTypes._
 import Location._
@@ -8,12 +9,20 @@ import unstyled.windowdialogues.Dialogue.OK
 import PolygonLibrary._
 import styled.TextToggle
 import unstyled.{reactive, static, BooleanButton, Text}
+import NaturalSize.Col
 
 import io.github.humbleui.jwm.EventKey
-import io.github.humbleui.skija.{BlendMode, PaintMode}
-import org.sufrin.glyph.NaturalSize.Col
-import org.sufrin.glyph.tests.Example2.font
-import org.sufrin.glyph.GlyphTransforms.Enlarged
+import io.github.humbleui.skija.BlendMode
+
+/**
+ * A test of mostly-primitive glyphs and reactive glyphs. Now mostly useful
+ * for detecting catastrophic mistakes during development.
+ *
+ * It evolved in the early stages of `Glyph` development; so has some redundant "scenes",
+ * imports, etc. The tedium  of maintaining the monolithic scene model gave rise to the book-and-pages model
+ * exemplified by the `GlyphBook` test.
+ *
+ */
 
 object LargeTestGUI {
 
@@ -38,7 +47,7 @@ object LargeTestGUI {
   private val hugeFont: Font = family.makeFont(size=50)//new Font(face, 50)
   private val giantFont: Font = family.makeFont(size=75)//new Font(face, 75)
   private val buttonFont: Font = family.makeFont(size=28)//new Font(face, 28)
-  private val exg = Text(" ", medFont)
+  private val exg = unstyled.Text(" ", medFont)
 
   private val trup =
     FilledPolygon(100, 100, fg = blue)((100, 0), (0, 0), (100, 100), (100, 0))
@@ -805,7 +814,7 @@ object LargeTestGUI {
         measure(textG, bodyG),
         measure(
           textG,
-          RawButton(bodyG(blue), bodyG(red), bodyG(yellowHuge)) { _ => }
+          RawButton(bodyG(blue), bodyG(red), bodyG(yellow)) { _ => }
         )
       ),
       medex,
@@ -814,7 +823,7 @@ object LargeTestGUI {
         measure(textG, bodyG),
         measure(
           textG,
-          RawButton.exact(bodyG(blue), bodyG(red), bodyG(yellowHuge)) { _ => }
+          RawButton.exact(bodyG(blue), bodyG(red), bodyG(yellow)) { _ => }
         )
       ),
       medex,
@@ -822,7 +831,7 @@ object LargeTestGUI {
         Label("RawButton.exact"),
         measure(textA, bodyA),
         medex,
-        measure(textA, RawButton.exact(bodyA(blue), red, yellowHuge) { _ => })
+        measure(textA, RawButton.exact(bodyA(blue), red, yellow) { _ => })
       )
     )
   }
@@ -1232,7 +1241,13 @@ object LargeTestGUI {
   private val scene0 = {
     Col(align=Center)(helpGUI)
   } // the preferred scene
-  /** All the scenes in the test */
+
+
+  /**
+   *
+   * All the scenes in the test
+   *
+   */
   private val scenes = List(
     scene0,
     scene1,
@@ -1312,8 +1327,10 @@ object LargeTestGUI {
 
   private def polyStar7(brush: Brush) = openStargon(7, fg = brush)
 
-  private def sceneButton(i: Int): Glyph =
-    Framed(fg=black(width=0))(Enlarged(10,5)(reactive.TextButton(s"$i", blue) { _ => oneOf.select(i) }))
+  private def sceneButton(i: Int): Glyph = {
+    val glyph: Glyph = unstyled.Label(f"$i%02d", font=fallback.buttonFont, fg=blue).enlargedBy(10,5)
+    reactive.FramedButton(glyph) { _ => oneOf.select(i) }
+  }
 
   private object Toggles extends BooleanButton {
     override val bg: Brush = yellowHuge

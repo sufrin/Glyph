@@ -7,7 +7,7 @@ import NaturalSize.{Col, Row}
 import scala.collection.mutable.ListBuffer
 
 /**
- *  Implements a much simpler notation than `glyphXML` to describe texts that need
+ *  Implements a much simpler notation than `glyphML` to describe texts that need
  *  justification, centering, etc; but need no colour or font  changes.
  */
 

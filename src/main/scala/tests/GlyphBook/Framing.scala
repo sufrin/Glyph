@@ -350,9 +350,9 @@ class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Tr
       ).scaled(0.7f).enlarged(40)
     }
 
-  Page("GlyphXML", "") {
+  Page("GlyphML", "") {
     // TODO: decoration implemntations for round framed need checking
-    language.translator.definitions("star") = { style => PolygonLibrary.filledStargon(9, fg=blue(width=4)).scaled(.5f) }
+    language.definitions("star") = { style => PolygonLibrary.filledStargon(9, fg=blue(width=4)).scaled(.5f) }
     <div width="70em" >
       <col align="center">
       <p align="center">
@@ -369,7 +369,7 @@ class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Tr
       ]]>
       </div>
       <fill height="3ex"/>
-      <rows foreground="darkGrey.3" padX="2em" padY="2em" cols="3">
+      <table foreground="darkGrey.3" padX="2em" padY="2em" cols="3">
           <glyph gid="star"/>
           <glyph gid="star" scaled="0.5"/>
           <glyph gid="star" frame="red.2.sliced(3,2)" />
@@ -387,7 +387,7 @@ class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Tr
             <glyph gid="star"/>
             <glyph gid="star"/>
           </div>
-      </rows>
+      </table>
       <fill height="3ex"/>
       <div normalizePCData="true" fontFamily="Courier" fontScale="0.9" textForeground="black" textBackground="transparent" background="lightGrey">
       <![CDATA[

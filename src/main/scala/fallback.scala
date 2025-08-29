@@ -1,23 +1,38 @@
 package org.sufrin.glyph
 
-import unstyled.Text
-
+/**
+ * Default attributes for some unstyled glyphs. These are
+ * all derived from the current `StyleSheet`, which is initially the "stock"
+ * stylesheet with default attributes. Changes can be "wholesale" or
+ * differential.
+ *
+ * {{{
+ *   fallback.StyleSheet =
+ *      ... // another sheet
+ *
+ *   fallback.StyleSheet =
+ *      fallback.StyleSheet(
+ *           buttonDownBrush=Brushes.yellow,
+ *           buttonBackgroundBrush=Brushes.lightGrey
+ *      )
+ * }}}
+ *
+ */
 object fallback {
 
-  //
-  // The following are used to set the default attributes of some unstyled glyphs
-  //
-  private var sheet: StyleSheet = StyleSheet()
-  def StyleSheet_(sheet: StyleSheet): Unit = this.sheet=sheet
 
-  def upFrame: Brush = sheet.buttonForegroundBrush              // was Brush("black.2.round.fill")
-  def downFrame: Brush = sheet.buttonDownBrush                  // was ("red.2.round.fill")
-  def hoverFrame: Brush = sheet.buttonHoverBrush                // was ("green.2.round.fill")
+  private var sheet: StyleSheet = org.sufrin.glyph.StyleSheet()
+  def StyleSheet_(sheet: StyleSheet): Unit = this.sheet=sheet
+  def StyleSheet: StyleSheet = this.sheet
+
+  def upFrame: Brush = sheet.buttonForegroundBrush(width=2)
+  def downFrame: Brush = sheet.buttonDownBrush(width=2)
+  def hoverFrame: Brush = sheet.buttonHoverBrush(width=2)
 
   def buttonFamily: FontFamily = sheet.buttonFontFamily         // was FontFamily("Menlo")
   def buttonPointSize: Float = sheet.buttonFontSize             // was 22.0f
   def buttonFont = sheet.buttonFont            // was buttonFamily.makeFont(GlyphTypes.FontStyle.NORMAL, buttonPointSize)
-  def buttonText(s: String, fg: Brush=buttonForeground, bg: Brush=buttonBackground): Text = Text(s, buttonFont, fg, bg)
+  def buttonText(s: String, fg: Brush=buttonForeground, bg: Brush=buttonBackground): unstyled.Text = unstyled.Text(s, buttonFont, fg, bg)
 
   def buttonForeground: Brush = sheet.buttonForegroundBrush
   def buttonBackground: Brush = sheet.buttonBackgroundBrush

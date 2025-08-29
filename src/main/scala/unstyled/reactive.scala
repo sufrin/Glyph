@@ -452,11 +452,12 @@ object reactive {
     /**
      *   A framed button whose up, down, and hover glyphs are all `up`, and whose action is
      *   independent of the state of the keyboard modifiers or the mouse button that was pressed.
-     */
+
     def apply(up: Glyph)(action: => Unit): RawButton = new RawButton(
       up.framed(fallback.upFrame),
       up().framed(fallback.downFrame),
       up().framed(fallback.hoverFrame), up.fg, up.bg, { _ => action })
+    */
 
   }
 

@@ -9,7 +9,7 @@ import unstyled.dynamic.ActiveGlyph
  * A paragraph of width `ems` ems, formed by `text` using `style` to determine font. The words of the paragraph
  * are separated by sequences of space or newline.
  *
- * @see glyphXML.Paragraph.fromGlyphs
+ * @see glyphML.Paragraph.fromGlyphs
  */
 object Paragraph {
   def apply(ems: Scalar, align: Alignment, parHang: Glyph=null)(text: String)(implicit style: StyleSheet): Glyph = {
@@ -17,7 +17,7 @@ object Paragraph {
     val glyphs = text.split("[\n ]+").filter(_.nonEmpty).toList.flatMap{
       w => List(unstyled.Text(w, style.textFont, style.textForegroundBrush, style.textBackgroundBrush), new FixedSize.Space(style.interWordWidth, 1f, 1f, 0f))
     }
-    glyphXML.Paragraph.fromGlyphs(localSheet, glyphs, if (parHang==null) None else Some(parHang))
+    glyphML.Paragraph.fromGlyphs(localSheet, glyphs, if (parHang==null) None else Some(parHang))
   }
 
 }

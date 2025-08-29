@@ -3,13 +3,13 @@ package tests.GlyphBook
 
 
 import styled._
+import tests.StockAbbreviations
 import unstyled.static
+import Brushes.{black, blackFrame, lightGrey, white}
 
 import io.github.humbleui.jwm.Key
 import org.sufrin.utility.TextAbbreviations
 import org.sufrin.SourceLocation.SourceLocation
-import org.sufrin.glyph.tests.StockAbbreviations
-import org.sufrin.glyph.Brushes.{black, blackFrame, colourName, lightGrey, red, white}
 import org.sufrin.logging
 
 
@@ -27,12 +27,12 @@ class TextTool(implicit style: StyleSheet)  {
       pageStyle.pageSheet.copy(labelFontSize = 30, buttonFontSize = 30, buttonDecoration = styles.decoration.Shaded(fg=blackFrame, enlarge=0.2f))
 
 
-  import glyphXML.Language._
-  import styled._
+  val language = glyphML.Translator(style)
+  import language._
   def SOURCE(implicit source: SourceLocation): String = source.toString()
 
 
-  val defs = translation.meaning
+  val defs = language.definitions
 
   defs("CONTROLS") =
     _=> //Label("Log events") beside styled.CheckBox(initially=false) { state => anchor.guiRoot.eventHandler.logEvents=state } beside
@@ -94,12 +94,12 @@ class TextTool(implicit style: StyleSheet)  {
 
   val GUI: Glyph = NaturalSize.Col(align=Center)(
     anchor,
-    <body width="70em" align="left" fg="blue" parSkip="0.75em" itemwidth="60em" itemindent="2em" itemalign="justify" source={SOURCE}>
+    <body width="80em" align="justify" fg="blue" parSkip="0.75em" itemwidth="60em" itemindent="2em" itemalign="justify" source={SOURCE}>
       <p>
         This is an example of a TextField that has been set up by map_ping abbrev_iations (see <tt>StockAbbreviations.scala</tt>) to sym_bols or pict_ographs, for example:
       </p>
       <fill/>
-      <p align="center" bg="transparent" fontFamily="Courier" source={SOURCE}>
+      <p align="center" bg="transparent" fontFamily="Courier" source={SOURCE} >
         <![CDATA[(c) (r) :) :O <3 :-| alef/ alpha/ rainbow=🌈 ukflag=🇬🇧 ae=ᴂ Ae=Æ]]>
       </p>
       <fill/>

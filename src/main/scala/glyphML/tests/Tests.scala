@@ -234,8 +234,8 @@ object abstraction extends Application {
   }
   import Translator._
   val language = new Translator(new Definitions {})(StyleSheet())
-  import language._
   import idioms._
+  import language._
 
   translator.definitions("over") = Col(uniformWidth = false)(Label("a"), Label("b+c"))
 

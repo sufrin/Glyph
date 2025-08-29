@@ -1,7 +1,6 @@
 package org.sufrin.glyph
 package glyphML
 
-import glyphXML.PrettyPrint
 
 import org.sufrin.glyph.unstyled.static.BreakableGlyph
 import org.sufrin.SourceLocation.{sourcePath, SourceLocation}
@@ -10,8 +9,6 @@ import org.sufrin.glyph.glyphML
 import org.sufrin.glyph.glyphML.AbstractSyntax.{isEmptyText, Scope, Tree}
 import org.sufrin.glyph.glyphML.Context.{AttributeMap, Context, ExtendedAttributeMap}
 import org.sufrin.glyph.glyphML.HYPHENATION.SemanticStyleSheet
-import org.sufrin.glyph.glyphXML.PrettyPrint.AnyPretty
-import org.sufrin.glyph.glyphXML.Translation.AttributeMap
 import org.sufrin.glyph.NaturalSize.Row
 import org.sufrin.logging.{Loggable, SourceDefault, SourceLoggable}
 
@@ -586,7 +583,7 @@ class language(val translator: Translator, val languageStyle: StyleSheet) {
   import translator.{translate, definitions}
   /** Translates the scala.xml.Node to the corresponding `glyphML.AbstractSyntaxTree` */
   private def fromXML(source: scala.xml.Node, location: SourceLocation): AbstractSyntax.Tree = {
-    import glyphXML.PrettyPrint._
+    import PrettyPrint._
     val ast = AbstractSyntax.fromXML(source)(location)
     ast
   }
@@ -615,6 +612,8 @@ class language(val translator: Translator, val languageStyle: StyleSheet) {
       translate(Context(Map.empty, languageStyle, definitions))(AbstractSyntax.fromXML(tree)(location))
     }
   }
+
+  val definitions: Definitions = translator.definitions
 
 }
 

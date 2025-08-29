@@ -53,7 +53,6 @@ class Interface(implicit val style: BookSheet, implicit val translator: glyphML.
   }
 
   Page("Welcome", "") {
-    import glyphXML.Language._
     val anchor = static.INVISIBLE()
     Col(align=Center)(
     <body align="justify" width="65em">
@@ -75,19 +74,18 @@ class Interface(implicit val style: BookSheet, implicit val translator: glyphML.
     ).enlarged(20)
   }
 
-  //Page("Window Menu Support*", "") (new WindowMenus().GUI)
+  Page("Window Menu Support*", "") (new WindowMenus().GUI)
 
   Page("Button styles*", "") (new ButtonStyles().GUI)
 
   Page("Glyph Framing*", "") (new Framing().GUI)
 
-  //Page("Using Overlays*", "") (new OverlayUses().GUI)
+  Page("Using Overlays*", "") (new OverlayUses().GUI)
 
   Page("Text Tool", "") (new TextTool().GUI)
 
   Page("Fonts", "Font families\n(available on this computer)\n\n\n") {
     val chooser = new FontAndBrushChooser()
-    import glyphXML.Language._
 
     import content.ex
     chooser.fontChooser.showExample()
@@ -106,7 +104,7 @@ class Interface(implicit val style: BookSheet, implicit val translator: glyphML.
 
   Page("Events/Windows*", "") (new EventsAndWindows().GUI)
 
-  //Page("Glyph Transforms*", "") (new Transforms().GUI)
+  Page("Glyph Transforms*", "") (new Transforms().GUI)
 
   Page("Animation*", "")(new Animation().GUI)
 

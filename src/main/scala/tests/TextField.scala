@@ -1,15 +1,12 @@
 package org.sufrin.glyph
 package tests
 
-import styled.BookSheet
 import unstyled.static
-import Brushes.{black, blackFrame, lightGrey, white}
+import Brushes.{black, white}
 
 import io.github.humbleui.jwm.Key
 import org.sufrin.utility.TextAbbreviations
 import org.sufrin.SourceLocation.SourceLocation
-import org.sufrin.glyph.glyphXML.Macro
-import org.sufrin.glyph.styles.decoration.RoundFramed
 import org.sufrin.logging
 
 object TextField extends Application {
@@ -29,11 +26,13 @@ object TextField extends Application {
     for {  (abbr, symb) <- StockAbbreviations.all } abbreviations.update(abbr, symb)
   }
 
-  import glyphXML.Language._
-  import styled._
+  import glyphML.Translator
+  val language = Translator(style)
+  import language._
+  val defs = language.definitions
+
   val helpText: Glyph = styled.TextField.helpText(style)
 
-  val defs = translation.meaning
   val frameGrey = Brushes.darkGrey(width=2)
 
   val hintSheet   = style.copy(fontScale=0.6f, buttonDecoration = styles.decoration.RoundFramed(frameGrey, radius=20, enlarge=10))
@@ -41,8 +40,8 @@ object TextField extends Application {
   val controlsStyle: StyleSheet =
     buttonSheet//style.copy(fontScale=0.85f, buttonDecoration = RoundFramed(fg=Brushes.darkGrey(width=4), bg=Brushes.lightGrey, enlarge=0.3f, radius=10))
 
-  val liveSubstitution: ToggleVariable = ToggleVariable(abbreviations.onLineTrigger)   { state => abbreviations.onLineTrigger = state }
-  val implicitUnicode: ToggleVariable  = ToggleVariable(abbreviations.implicitUnicode) { state => abbreviations.implicitUnicode=state }
+  val liveSubstitution: styled.ToggleVariable = styled.ToggleVariable(abbreviations.onLineTrigger)   { state => abbreviations.onLineTrigger = state }
+  val implicitUnicode: styled.ToggleVariable  = styled.ToggleVariable(abbreviations.implicitUnicode) { state => abbreviations.implicitUnicode=state }
 
   def triggerButton: Glyph =
     styled.CheckBox(initially=false,
@@ -56,8 +55,8 @@ object TextField extends Application {
   defs("CONTROLS") =
     _=>
       NaturalSize.Row(align=Mid)(
-        Label("Live substitution: ")(controlsStyle), triggerButton,
-        Label("  Implicit unicode: ")(controlsStyle), implicitButton
+        styled.Label("Live substitution: ")(controlsStyle), triggerButton,
+        styled.Label("  Implicit unicode: ")(controlsStyle), implicitButton
       )
 
 
@@ -75,7 +74,7 @@ object TextField extends Application {
   defs("TEXTFIELD") = _=>textField.framed()
 
   lazy val helpButton: Glyph = styled.TextButton("Help"){
-    _ => windowdialogues.Dialogue.FLASH(helpText.enlarged(20)).South(helpButton).start()
+    _ => styled.windowdialogues.Dialogue.FLASH(helpText.enlarged(20)).South(helpButton).start()
   }(controlsStyle)
 
   defs("HELPBUTTON") = _ => helpButton
@@ -87,10 +86,10 @@ object TextField extends Application {
         StockAbbreviations.all.toMap
       val pairs =
         StockAbbreviations.all.map(_._1).toSeq.sorted(order).
-          flatMap{ key => List(Label(key), Label(substitute(key)))}
+          flatMap{ key => List(styled.Label(key), styled.Label(substitute(key)))}
       val content =
         NaturalSize.Grid(fg=black, bg=white, padx=10, pady=5).table(width=28)(pairs)
-      windowdialogues.Dialogue.FLASH(content.enlarged(20)).OnRootOf(anchor, Vec(50,50)).start()
+      styled.windowdialogues.Dialogue.FLASH(content.enlarged(20)).OnRootOf(anchor, Vec(50,50)).start()
   }(controlsStyle)
 
   defs("UNICODE") = _ => styled.TextButton("Unicode", hint=Hint(5, "Replace glyph at cursor left\nby its unicode codepoint(s)")(hintSheet)) {

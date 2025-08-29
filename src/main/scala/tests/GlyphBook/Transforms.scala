@@ -3,7 +3,7 @@ package tests.GlyphBook
 import styled.{Book, BookSheet}
 import NaturalSize._
 
-class Transforms(implicit val style: BookSheet, implicit val translation: glyphXML.Translation)  {
+class Transforms(implicit val style: BookSheet, implicit val translator: glyphML.Translator)  {
 
     implicit val pageSheet: StyleSheet = style.pageSheet
     import Brushes.{black, blue, blueLine, brown, green, lightGrey, red, redLine, transparent, BUTT, SQUARE}
@@ -12,7 +12,8 @@ class Transforms(implicit val style: BookSheet, implicit val translation: glyphX
 
     import org.sufrin.glyph.unstyled.static._
     import pageSheet.{em, ex}
-    import translation._
+    val language = translator(pageSheet)
+    import language._
     val nested = Book()
     val Page = nested.Page
 

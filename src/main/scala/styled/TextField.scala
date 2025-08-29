@@ -5,8 +5,6 @@ package styled
 import org.sufrin.glyph.CodePointSeqMap.CodePointSeq
 import org.sufrin.utility.TextAbbreviations
 import org.sufrin.SourceLocation.SourceLocation
-import org.sufrin.glyph.glyphXML.Macro
-import org.sufrin.glyph.unstyled.static
 
 
 /**
@@ -57,30 +55,33 @@ object TextField {
   }
 
   def helpText(style: StyleSheet): Glyph = {
-    import glyphXML.Language._
-    import styled._
+    import glyphML._
+    val language: language = Translator().withPackage(TransformsPackage)(style)
+    import language._
     def SOURCE(implicit source: SourceLocation): String = source.toString()
     implicit val thisStyle: StyleSheet = style
 
-
-    <body width="70em" align="justify" fg="blue" parSkip="0.75em" itemwidth="60em" itemindent="2em" itemalign="justify" source={SOURCE}>
-      <div>
-      <p>Interaction is more-or-less standard.</p>
-      <itemize itemIndent="2em"  hang="•" >
+    <body width="70em" align="justify" fg="blue" source={SOURCE} fontScale="0.7">
+      <macro tag="itemize"><row>&nbsp;<col><?body?></col></row></macro>
+      <macro tag="item" ><p hang="•" parIndent="1em"><?body?></p></macro>
+      <p>
+        Interaction with a simple text field is (more or less) standard, except for setting the text selection.
+      </p>
+      <itemize>
         <item>The cursor is shown as an I-beam and always kept in view</item>
         <item>The selection has a coloured background</item>
         <item>Visual cues are given when there is out-of-sight text</item>
         <item>The usual cut, copy, paste, and navigate keys are provided:</item>
-      </itemize>
-      <itemize itemIndent="2em" hang="•">
+      <itemize>
         <item>Home, End, Left, Right, and Backspace - usual effect</item>
         <item>Ctrl/Cmd Backspace - swaps the two characters before the cursor </item>
         <item>Ctrl/Cmd C - copy the selection (default all) to clipboard</item>
         <item>Ctrl/Cmd X - cut the selection (default all) to clipboard</item>
         <item>Ctrl/Cmd V - insert from clipboard</item>
         <item>Mousebutton - set the cursor here</item>
-        <item>The selection is between the mark (if any) and the cursor)</item>
-        <itemize itemIndent="4em" hang="•">
+        <item>The text selection is between the <b>mark</b> (if any) and the cursor)</item>
+        <p align="center"><b>Setting the mark</b></p>
+        <itemize>
           <item>Secondary mousebutton - set the mark here</item>
           <item>Ctrl/Cmd mousebutton - set the mark here</item>
           <item>Ctrl/Cmd down - set the mark at the cursor</item>
@@ -88,7 +89,7 @@ object TextField {
           <item>Ctrl/Cmd S - swap the mark and cursor</item>
         </itemize>
       </itemize>
-      </div>
+      </itemize>
     </body>
   }
 

@@ -6,13 +6,10 @@ import io.github.humbleui.skija.TextLine
 import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.unstyled.Text
 import org.sufrin.glyph.CodePointSeqMap.{CodePoint, CodePointSeq}
-import org.sufrin.glyph.Modifiers.{toBitmap, Bitmap}
-import org.sufrin.glyph.TextField.isDirectional
 import org.sufrin.glyph.tests.StockAbbreviations
 import org.sufrin.logging
 import org.sufrin.logging.{FINER, SourceDefault}
 import org.sufrin.utility.TextAbbreviations
-import org.sufrin.SourceLocation.SourceLocation
 
 
 
@@ -187,7 +184,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   def withAbbreviationKey(key: Key, mods: Int=0): TextField = {
     abbreviationKey = key
     abbreviationMods = Bitmap(mods|Pressed)
-    SourceDefault.info(s"Abbreviation key: $key $abbreviationMods")
+    TextField.info(s"Abbreviation key: $key $abbreviationMods")
     this
   }
 
@@ -1133,7 +1130,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
  *
  * @see TextField
  */
-object TextField extends logging.Loggable {
+object TextField extends logging.SourceLoggable {
   import Location._
   val bell = Sound.Clip("WAV/tonk.wav")
   def beep() = bell.play()

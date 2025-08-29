@@ -14,7 +14,7 @@ object Text  {
    * @param fg
    * @param bg
    * @param transient true if there is no point in sharing this `(string,font)`'s IMPLEMENTATION with those of
-   *                  others. The space saving afforded by sharing can be considerable when using `glyphXML` constructs or
+   *                  others. The space saving afforded by sharing can be considerable when using `glyphML` constructs or
    *                  `SimpleParagraphs` constructs, because each "word" is represented by an individual `Text`, whose
    *                  implementation is a `skija.TextLine`.
    * @return

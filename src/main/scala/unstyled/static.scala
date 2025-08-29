@@ -732,7 +732,7 @@ class Path(override val fg: Brush, override val bg: Brush, strictContains: Boole
 
 /**.
  * (Obsolete but retained) class that was used to support hyphenation in a prototype
- * of glyphXML. Superseded by various class defined in the `HYPHENATION` module.
+ * of `glyphML` (now `GlyphXMLDeprecated`. Superseded by classes defined in the `HYPHENATION` module.
  *
  * @param hyphen
  * @param glyphs
