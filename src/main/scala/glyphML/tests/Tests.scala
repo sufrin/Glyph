@@ -280,8 +280,8 @@ object abstraction extends Application {
 
       <macro tag="math" fontscale="0.75" nonempty="true"><row fg="transparent"><?body?></row></macro>
       <macro tag="pow" fontscale="0.7" nonempty="true"><sub delta="-1ex"><row><?body?></row></sub></macro>
-      <macro tag="over" bar="" fontscale="0.75"><frame fg="transparent"><col nonempty="true"><?body0?><?bar?><?body1?></col></frame></macro>
-
+      <macro tag="over" bar="" fontscale="0.75"><frame fg="transparent"><col fg="black.2" nonempty="true"><?body0?><?bar?><?body1?></col></frame></macro>
+      <macro tag="r" fontstyle="italic" fontscale="0.75"><row><?body?></row></macro>
 
       <fixedwidth width="virtual.width">
         <fill stretch="200" fg="red"/>
@@ -292,7 +292,7 @@ object abstraction extends Application {
       <glyph gid="virtual"/><insert evaluate="width"/>
 
       <p>
-        Here we explore simple notations like <over bar="---------"><row>A</row><row>B + C</row></over> and <math>B<pow>A*B</pow></math>. And the next paragraph dem_on_strat_es some
+        Here we explore simple notations like <over><r>A</r><r>B + C</r></over> and <math>B<pow>A*B</pow></math>. And the next paragraph dem_on_strat_es some
         matters of importance: namely attribute inheritance.<insert/>
       </p>
 

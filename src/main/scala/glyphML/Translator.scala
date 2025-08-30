@@ -513,7 +513,7 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "height"))
         val glyph =
           if (height==0) {
-             NaturalSize.Col(align = Center, fg=fg, bg=bg)(children.flatMap(translate(derivedContext)))
+             NaturalSize.Col(align = Center, fg=fg, bg=bg, frame = fg)(children.flatMap(translate(derivedContext)))
           }
           else {
             Translator.warn(s"Height specified for $scope ${inheritedAttributes.mkString} ...")
