@@ -177,9 +177,10 @@ object para extends Application {
       <frame fg="red.2"><fixedwidth width="0.9*width">this text <fill fg="red" stretch="200"/> is spread</fixedwidth></frame>
 
         <element tag="blether">
-          This is a long, hyphen_at_able "antidisestablishmentarianism" tract_ified text con_cerning floccinaucinihilipilification. The text, in teletype font,
-          spills ov_er a nar_row mar_gin un_less I <frame fg="red.1" bg="pink" fontFamily="Courier">have</frame>  been <turn degrees="-5">mis_takenly</turn><turn degrees="5">informed</turn>
-          by my programming alter-ego.
+          This is a long, hy_phen_at_able "antidisestablishmentarianism" tract_ified text con_cerning floccinaucinihilipilification. The text may
+          spill ov_er a nar_row mar_gin but be hyphen_ated un_less I
+          <sub baseline="-1em" fontFamily="Courier"><frame fg="red.1" bg="pink" >have</frame></sub>  been mis_tak_enly in_form_ed
+          by my alter ego -- a pro_gramm_er.
         </element>
 
       <scale scale=".6">
@@ -211,7 +212,7 @@ object para extends Application {
         </turn>
       </table>
 
-      <glyph gid="buttonsbar" />
+      <glyph gid="buttons" />
 
       </centred>
     </div>
@@ -279,8 +280,8 @@ object abstraction extends Application {
       <macro tag="emfill"><fill width="0em" stretch="20"/></macro>
 
       <macro tag="math" fontscale="0.75" nonempty="true"><row fg="transparent"><?body?></row></macro>
-      <macro tag="pow" fontscale="0.7" nonempty="true"><sub delta="-1ex"><row><?body?></row></sub></macro>
-      <macro tag="over" bar="" fontscale="0.75"><frame fg="transparent"><col fg="black.2" nonempty="true"><?body0?><?bar?><?body1?></col></frame></macro>
+      <macro tag="pow" fontscale="0.7" nonempty="true"><sub baseline="" height="3em" offset="-0.5em"><frame fg="transparent"><row><?body?></row></frame></sub></macro>
+      <macro tag="over" bar="" fontscale="0.75"><sub baseline="" height="3em" offset="-0.5em"><frame fg="transparent"><col fg="black.2" nonempty="true"><?body0?><?bar?><?body1?></col></frame></sub></macro>
       <macro tag="r" fontstyle="italic" fontscale="0.75"><row><?body?></row></macro>
 
       <fixedwidth width="virtual.width">
@@ -289,10 +290,12 @@ object abstraction extends Application {
         <fill stretch="200" fg="red"/>
       </fixedwidth>
 
-      <glyph gid="virtual"/><insert evaluate="width"/>
+      <glyph gid="virtual"/><!--insert evaluate="width"/-->
 
       <p>
-        Here we explore simple notations like <over><r>A</r><r>B + C</r></over> and <math>B<pow>A*B</pow></math>. And the next paragraph dem_on_strat_es some
+        Here we explore simple notations <over><r>A</r><r>B + C</r></over> and <math>B<pow><r>A*B</r></pow>*<r>c</r></math>.
+        The implementation is by complex and fragile macros: just because one <i>can</i> do it this way doesn't mean one <i>should</i>.
+        And the next paragraph dem_on_strat_es some
         matters of importance: namely attribute inheritance.<insert/>
       </p>
 
@@ -300,7 +303,10 @@ object abstraction extends Application {
         <insert attribute="width"/>
         <paratag>
           <insert attribute="width"/>
-           <p>This is a paragraph set in the context /nested /paratag /p Its width is <insert evaluate="width"/></p>
+           <p>
+             This is a paragraph set in the context /nested /paratag /p Its width is <insert evaluate="width"/> and it has
+             deliberate mistakes in both context and macros.
+           </p>
            <anotherdeliberate/>
         </paratag>
       </nested>

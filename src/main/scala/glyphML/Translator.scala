@@ -240,10 +240,11 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         children.filterNot(isEmptyText).flatMap(translate(derivedContext))
 
       case "sub" =>
-        val delta: Scalar = localAttributes.Units("delta", 0)(context)
-        val base: Scalar = localAttributes.Units("baseline", context.sheet.exHeight/2)(context)
-        val derivedContext = context.updated(localAttributes.without("delta", "baseline"))
-        child.flatMap(translate(derivedContext)).map(_.withBaseline(base, delta))
+        val height: Scalar = localAttributes.Units("height", 0)(context)
+        val base: Scalar = localAttributes.Units("baseline", 0)(context)
+        val offset: Scalar = localAttributes.Units("offset", 0)(context)
+        val derivedContext = context.updated(localAttributes.without("height", "baseline", "offset"))
+        child.flatMap(translate(derivedContext)).map(_.withBaseline(base, height, offset))
 
 
       case "p" =>

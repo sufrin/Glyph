@@ -127,8 +127,8 @@ trait GlyphTransforms {
   def aboveLeft(g: Glyph): Glyph = above(g, align=Left)
   def aboveRight(g: Glyph): Glyph = above(g, align=Right)
 
-  /** behaves as this glyph with the specified baseLine */
-  def withBaseline(baseLine: Scalar, delta: Scalar=0): Glyph = WithBaseline(thisGlyph, baseLine, delta)
+  /** behaves as this glyph with the specified baseLine, height, offset */
+  def withBaseline(baseLine: Scalar, height: Scalar=0, offset: Scalar=0): Glyph = WithBaseline(thisGlyph, baseLine, height, offset)
 }
 
 object GlyphTransforms {
@@ -722,11 +722,11 @@ object GlyphTransforms {
   }
 
   object WithBaseline {
-    def apply(glyph: Glyph, baseLine$: Scalar, delta: Scalar): Glyph = new Glyph { thisGlyph =>
+    def apply(glyph: Glyph, baseLine$: Scalar, height: Scalar, offset: Scalar): Glyph = new Glyph { thisGlyph =>
 
       locally { glyph.parent=thisGlyph }
 
-      override def toString: String = s"$glyph.withBaseline(${baseLine$})"
+      override def toString: String = s"$glyph.withBaseline(${baseLine}, $height, $offset)"
 
       override def reactiveContaining(p: Vec): Option[ReactiveGlyph] = glyph.reactiveContaining(p)
 
@@ -734,17 +734,17 @@ object GlyphTransforms {
 
       override def baseLine: Scalar = baseLine$
 
-      def diagonal: Vec = Vec(glyph.w, glyph.h+delta)
+      def diagonal: Vec = Vec(glyph.w, if (height==0) glyph.h else height)
 
       def copy(fg: Brush=fg, bg: Brush=bg): Glyph = {
-        WithBaseline(glyph.copy(fg, bg), baseLine$, delta)
+        WithBaseline(glyph.copy(fg, bg), baseLine$, height, offset)
       }
 
       override val fg: Brush = glyph.fg
       override val bg: Brush = glyph.bg
 
       def draw(surface: Surface): Unit =
-        surface.withOrigin(0, delta) { glyph.draw(surface) }
+        surface.withOrigin(0, offset) { glyph.draw(surface) }
     }
   }
 }
