@@ -146,6 +146,7 @@ object para extends Application {
               <?body?>
             </table>
           </macro>
+          <macro tag="pink"><sub offset="-2pt"><frame bg="pink"><?body?></frame></sub></macro>
       }
   }
 
@@ -180,7 +181,7 @@ object para extends Application {
         <element tag="blether">
           This is a long, hy_phen_at_able "antidisestablishmentarianism" tract_ified text con_cerning floccinaucinihilipilification. The text may
           spill ov_er a nar_row mar_gin but be hyphen_ated un_less I
-          <sub baseline="-1em" fontFamily="Courier"><frame fg="red.1" bg="pink" >have</frame></sub>  been mis_tak_enly in_form_ed
+          <pink>have</pink> been mis_tak_enly in_form_ed
           by my alter ego -- a pro_gramm_er.
         </element>
 
@@ -257,15 +258,12 @@ object abstraction extends Application {
     )
 
   lazy val source: Glyph = {
-    <div fontfamily="Times" width="15em" labelforeground="black"  textforeground="black" cdatabackground="transparent" cdataforeground="red"
+    <div fontfamily="Times" width="25em" labelforeground="black"  textforeground="black" cdatabackground="transparent" cdataforeground="red"
          attributeswarning="f"
     >
-
-
-
       <attributes id="tag:debug" caption="Debugging" local="t"/>
       <attributes id="tag:p" align="justify" width="width" textforeground="black" fontfamily="Times"/>
-      <attributes id="tag:paratag" align="justify" width="virtual.width" textforeground="black" fontfamily="Times" nonempty="true"/>
+      <attributes id="tag:paratag" trace="true" align="justify" width="virtual.width" textforeground="black" fontfamily="Times" nonempty="true"/>
 
      <measured refid="virtual" visible="off" orientation="col" background="transparent">
            <p>
@@ -288,12 +286,13 @@ object abstraction extends Application {
 
 
 
-      <nested>
-        <insert attribute="width"/>
+      <nested width="2*width">
+        «nested <row>width = <insert attribute="width" /> == <insert evaluate="width"/></row>
         <paratag>
-          <insert attribute="width"/>
+          «paratag <row>width = <insert attribute="width"/> == <insert evaluate="width"/> </row>
            <p>
-             This is a paragraph set in the context /nested /paratag /p Its width is <insert evaluate="width"/> and it has
+             This is a paragraph set in scope «nested«paratag«p Its width was specified (in paratag) as
+             "virtual.width" and it has
              deliberate mistakes in both context and macros.
            </p>
            <anotherdeliberate/>
@@ -333,41 +332,46 @@ object superscripts extends Application {
   val language: language = glyphML.Translator().withPackage(TransformsPackage)()
   import language._
 
+  initialDeclarations(
+    <macro tag="math" nonempty="true">
+      <scope name="math"  fontstyle="italic">
+        <attributes id="tag:r" fontscale="1" fontstyle="italic"/>
+        <?body?>
+      </scope>
+    </macro>
+
+      <macro tag="r" ><row alignment="top"><span><?body?></span></row></macro>
+
+      <macro tag="sup" nonempty="true">
+        <sub height="1.3ex" offset="-1ex"><i fontscale="0.7*fontscale" ><?body?></i></sub>
+      </macro>
+
+      <macro tag="over" fontscale="0.5*fontscale" nonempty="true">
+        <frame fg="transparent">
+          <scope name="over">
+            <attributes id="tag:r" fontscale="0.9*fontscale" fontstyle="italic"/>
+            <col fg="black.2" nonempty="true" >
+              <?body0?><?body1?>
+            </col>
+          </scope>
+        </frame>
+      </macro>
+  )
+
   val GUI: Glyph = Col()(
       <div width="20em" align="justify" textfontsize="24">
-        <macro tag="math" nonempty="true">
-          <scope name="math"  fontstyle="italic">
-            <attributes id="tag:r" fontscale="1*fontscale" fontstyle="italic"/>
-            <?body?>
-          </scope>
-        </macro>
 
-        <macro tag="r" fontscale="1*fontscale"><row alignment="top"><span><?body?></span></row></macro>
-
-        <macro tag="sup" fontscale="0.7*fontscale" nonempty="true">
-          <i><?body?></i>
-        </macro>
-
-        <macro tag="over" fontscale="0.5*fontscale" nonempty="true">
-            <frame fg="transparent">
-              <scope name="over">
-              <attributes id="tag:r" fontscale="0.9*fontscale" fontstyle="italic"/>
-               <col fg="black.2" nonempty="true" >
-                 <?body0?><?body1?>
-               </col>
-              </scope>
-            </frame>
-        </macro>
 
 
         <p>The simplest way to place superscripts in mathematical text is exemplified
           here:
-          <math><r>B<sup>x*Y*z</sup></r></math> and
+          <math><r>B<sup>x*Y*z</sup></r></math> and here
           <math><r>A<sup>B</sup>C</r></math>
         </p>
         <p>
           The simplest way to place fractions in mathematical text is exemplified
-          here: <math><r><over><r>A</r><r>B+C</r></over></r></math>  and <r><over><r>A<sup>34</sup></r><r>B+C</r></over></r> but sadly it
+          here: <math><r><over><r>A</r><r>B+C</r></over></r></math>  and here
+          <math><r><over><r>A<sup>4x₃</sup></r><r>B+C<sup>D</sup></r></over></r></math>but sadly it
           is all a little fragile.
         </p>
       </div>

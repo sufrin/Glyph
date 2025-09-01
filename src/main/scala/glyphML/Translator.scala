@@ -541,7 +541,7 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
             definitions.getKind(StoreType.Macro)(tag) match {
               case None => None
               case Some(StoredMacro(abstraction)) =>
-                val expanded = abstraction.expanded(thisTranslator, localAttributes, children)
+                val expanded = abstraction.expanded(thisTranslator, context.updated(localAttributes), children)
                 Some(expanded)
               case _ =>
                 SourceDefault.error(s"Internal error at $scope<$tag ...\n")
