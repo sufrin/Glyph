@@ -9,6 +9,8 @@ import org.sufrin.logging
 import org.sufrin.logging.{FINER, FINEST, INFO, WARN}
 import org.sufrin.SourceLocation._
 
+import javax.swing.plaf.ColorUIResource
+
 object trivial extends Application {
   locally{
     logging.SourceDefault.level=FINEST
@@ -434,4 +436,32 @@ object superscripts extends Application {
 
   val title = "superscripts"
 
+}
+
+
+object baselines extends Application {
+  import org.sufrin.glyph.GlyphTypes.Font
+  import org.sufrin.glyph.NaturalSize.Row
+
+  val font1:Font = FontFamily("Courier")(36)
+  val font2:Font = FontFamily("Courier")(24)
+  val h1 = font2.getMetrics.getHeight
+  val b1 = font2.getMetrics.getDescent
+  val h2 = font2.getMetrics.getHeight
+  val b2 = font2.getMetrics.getDescent
+  def t1(s: String): Glyph = unstyled.Text(s, font1)
+  def t2(s: String): Glyph = unstyled.Text(s, font2)
+  def t3(s: String): Glyph = unstyled.Text(s, font2).withBaseline(h2+h1, h2+h1+b2, h1/2-h2/2)
+
+
+  val GUI: Glyph =
+    NaturalSize.Col(align=Center, frame=Brushes.blackLine)(
+      Row(align=Baseline)(t1("FGH"), t2("xyz")),
+      Row(align=Baseline)(t1("FGH"), t3("yxyzYZ")),
+      Row(align=Baseline)(t1("FGH"), t3("yxyzYZ")),
+      Row(align=Baseline)(t1("FGH"), t3("yxyZY")).rotated(1),
+
+    )
+
+  override def title: String = "Baselines"
 }
