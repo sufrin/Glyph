@@ -489,7 +489,10 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
                NaturalSize.Row(align = Mid)(children.flatMap(translate(derivedContext)))
             }
             else {
-               FixedSize.Row(align = Mid, width = width)(children.flatMap(translate(derivedContext)))
+               println(s"FW=$width/  ${width/context.sheet.emWidth}")
+               val r = FixedSize.Row(align = Baseline, width = width)(children.flatMap(translate(derivedContext)))
+              println(s"r.w=${r.w}")
+              r
             }
         List(glyph)
 
