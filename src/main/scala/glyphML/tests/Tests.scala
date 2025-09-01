@@ -48,8 +48,8 @@ object trivial extends Application {
     <element tag="lorem">
       Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
     </element>
-    <macro tag="show" width="16em">
-        <table cols="1" foreground="transparent" background="white">
+    <macro tag="show" width="16em" >
+        <table cols="1" foreground="transparent" background="white" nonempty="true">
         <p align="center">(<insert attribute="width" units="width"/>)</p>
         <p><?body?></p>
         </table>
@@ -58,7 +58,8 @@ object trivial extends Application {
 
   lazy val source: Glyph =
     <div fontfamily="Courier"   background="white">
-      <table rows="3" padx="20px" foreground="red" >
+
+      <table cols="3" padx="20px" foreground="red" nonempty="true">
         <attributes id="tag:p" align="justify" fontfamily="Times"/>
         <show width="12em"><para/></show>
         <show width="16em"><para/></show>
@@ -124,7 +125,7 @@ object para extends Application {
       for { num<-1 to 5} definitions(s"L$num")= Label(s"L$num")
 
       definitions("BIGBUTTON")  = TextButton("😀"){ _=> println("BIG BUTTON") }
-      definitions("CHECKBOXES") = Col()(CheckBox(autoScale), CheckBox(autoScale), CheckBox(autoScale))
+      definitions("CHECKBOXES") = Col()(CheckBox(autoScale), CheckBox(autoScale))
 
       initialDeclarations {
           <element tag="aswell">as well as other things.</element>
@@ -201,7 +202,8 @@ object para extends Application {
             <blether/>
           </p>
         <p class="narrower">
-          This piece of text contains "floccinaucinihilipilification" and averywidewordwithaninfeasiblebreakpoint, but nothing else.
+          This piece of text contains "floccinaucinihilipilification" and averywidewordwithaninfeasiblebreakpoint,
+          and some framed check_box_es <frame fg="black.2"><glyph gid="CHECKBOXES"/></frame> but nothing else.
         </p>
         <p class="narrow" align="center">
           Donkeys led by a Dodo.
@@ -276,14 +278,6 @@ object abstraction extends Application {
            </p>
      </measured>
 
-      <macro tag="strut"><space width="0em" stretch="0" height="50px"/></macro>
-      <macro tag="emfill"><fill width="0em" stretch="20"/></macro>
-
-      <macro tag="math" fontscale="0.75" nonempty="true"><row fg="transparent"><?body?></row></macro>
-      <macro tag="pow" fontscale="0.7" nonempty="true"><sub baseline="" height="3em" offset="-0.5em"><frame fg="transparent"><row><?body?></row></frame></sub></macro>
-      <macro tag="over" bar="" fontscale="0.75"><sub baseline="" height="3em" offset="-0.5em"><frame fg="transparent"><col fg="black.2" nonempty="true"><?body0?><?bar?><?body1?></col></frame></sub></macro>
-      <macro tag="r" fontstyle="italic" fontscale="0.75"><row><?body?></row></macro>
-
       <fixedwidth width="virtual.width">
         <fill stretch="200" fg="red"/>
         <fixedwidth width="0.75*width" bg="pink"><insert evaluate="virtual.width"/>x<insert evaluate="virtual.height"/></fixedwidth>
@@ -292,12 +286,7 @@ object abstraction extends Application {
 
       <glyph gid="virtual"/><!--insert evaluate="width"/-->
 
-      <p>
-        Here we explore simple notations <over><r>A</r><r>B + C</r></over> and <math>B<pow><r>A*B</r></pow>*<r>c</r></math>.
-        The implementation is by complex and fragile macros: just because one <i>can</i> do it this way doesn't mean one <i>should</i>.
-        And the next paragraph dem_on_strat_es some
-        matters of importance: namely attribute inheritance.<insert/>
-      </p>
+
 
       <nested>
         <insert attribute="width"/>
@@ -334,4 +323,57 @@ object table extends Application {
   )
 
   def title: String = "Table"
+}
+
+object superscripts extends Application {
+
+  implicit val style: StyleSheet = StyleSheet()
+  import Brushes._
+  import NaturalSize._
+  val language: language = glyphML.Translator().withPackage(TransformsPackage)()
+  import language._
+
+  val GUI: Glyph = Col()(
+      <div width="20em" align="justify" textfontsize="24">
+        <macro tag="math" nonempty="true">
+          <scope name="math"  fontstyle="italic">
+            <attributes id="tag:r" fontscale="1*fontscale" fontstyle="italic"/>
+            <?body?>
+          </scope>
+        </macro>
+
+        <macro tag="r" fontscale="1*fontscale"><row alignment="top"><span><?body?></span></row></macro>
+
+        <macro tag="sup" fontscale="0.7*fontscale" nonempty="true">
+          <i><?body?></i>
+        </macro>
+
+        <macro tag="over" fontscale="0.5*fontscale" nonempty="true">
+            <frame fg="transparent">
+              <scope name="over">
+              <attributes id="tag:r" fontscale="0.9*fontscale" fontstyle="italic"/>
+               <col fg="black.2" nonempty="true" >
+                 <?body0?><?body1?>
+               </col>
+              </scope>
+            </frame>
+        </macro>
+
+
+        <p>The simplest way to place superscripts in mathematical text is exemplified
+          here:
+          <math><r>B<sup>x*Y*z</sup></r></math> and
+          <math><r>A<sup>B</sup>C</r></math>
+        </p>
+        <p>
+          The simplest way to place fractions in mathematical text is exemplified
+          here: <math><r><over><r>A</r><r>B+C</r></over></r></math>  and <r><over><r>A<sup>34</sup></r><r>B+C</r></over></r> but sadly it
+          is all a little fragile.
+        </p>
+      </div>
+  ).enlarged(10).framed(blackFrame).enlarged(5)
+
+
+  val title = "superscripts"
+
 }

@@ -448,13 +448,14 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
           if (warn && definitions.getKind(StoreType.Macro)(tag).isDefined) {
              SourceDefault.warn(s"Overriding macro definition $scope<macro ${givenAttributes.toSource}")
           }
-          definitions(tag) = Macro(scope.nest(s"macro:$tag"), tag, givenAttributes.without("tag", "warn"), context, children)
+          definitions(tag) = Macro(scope.nest(s"macro:$tag"), tag, givenAttributes.without("tag", "warn"), context, child.filterNot(isEmptyText))
         } else
           SourceDefault.error(s"Macro definition without tag attribute$scope<macro ")
         Nil
 
       case "scope" =>
-        definitions.inScope(scope.toString){
+        val blockName = localAttributes.String("name","")
+        definitions.inScope(blockName, scope.toString){
           child.flatMap(translate(context))
         }
 
@@ -470,7 +471,7 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         val buildFrom = if (uniform) Grid.grid(height=height, width=width)(_) else Grid.table(height=height, width=width)(_)
         List(buildFrom(glyphs))
 
-      case "fill" =>
+      case "fill" | "space" =>
         val width  = localAttributes.Units("width", context.sheet.emWidth)(context)
         val height = localAttributes.Units("height", context.sheet.exHeight)(context)
         val stretch = localAttributes.Float("stretch", 1f)
@@ -509,7 +510,7 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
 
       case "col" =>
         var height: Scalar = inheritedAttributes.Units("height", 0)(context)
-        val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
+        val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.transparent))
         val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
         val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "height"))
         val glyph =
