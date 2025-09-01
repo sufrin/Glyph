@@ -365,19 +365,17 @@ object superscripts extends Application {
       </macro>
 
         <macro tag="oer" nonempty="true">
-          <frame fg="red" nonempty="true">
+          <frame fg="transparent" nonempty="true">
             <scope name="oer" nonempty="true">
-            <attributes id="tag:r" fontscale="0.9*fontscale" fontstyle="italic"/>
+            <attributes id="tag:r" fontscale="1*fontscale" fontstyle="italic"/>
               <measured refid="top" visible="false"><?body0?></measured>
               <measured refid="bot" visible="false"><?body1?></measured>
-              <frame fg="blue" nonempty="true">
-                <sub  height="2*top.height" offset="-bot.height">
+                <sub  height="2*top.height" offset="-bot.height" nonempty="true">
                   <col fg="black.2" nonempty="true" >
                     <glyph gid="top"/>
                     <glyph gid="bot"/>
                   </col>
                 </sub>
-              </frame>
             </scope>
           </frame>
         </macro>
@@ -405,19 +403,22 @@ object superscripts extends Application {
         </p>
 
         <p>That being said, the simplest way to place superscripts in mathematical text is exemplified
-          here:
-
-          <math><r>B<up>x*Y*z</up></r></math> and here
-          <math><r>A<up>B</up>C</r></math>
+          below:
         </p>
+        <display><r>B<up>x*Y*z</up></r></display>
+
+        <display><r>A<up>B</up>C</r></display>
         <p>
           The simplest way to place fractions in mathematical text is exemplified
-          here: <math><r><oer><r>A</r><r>B+C</r></oer></r></math>  and <math><r><oer><r>A<up>B 2π</up></r><r>B+C</r></oer></r></math> but sadly
+          below, but sadly
           super_script_ing is fragile (for the moment). Subscripting <i>displayed</i> maths seems straight_for_ward
       </p>
 
+        <display><r><oer><r>A<up>B 2π</up></r><r>B+C</r></oer></r></display>
 
-      <display><r>A<subscript>B*C<subscript>D</subscript></subscript></r></display>
+        <display><r><oer><r>A</r><r>B+C</r></oer></r></display>
+
+        <display><r>A<subscript>B*C<subscript>D</subscript></subscript></r></display>
 
       <display><r>A*b+c*d<up>2π</up></r></display>
 
