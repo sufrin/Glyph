@@ -331,49 +331,102 @@ object superscripts extends Application {
   import NaturalSize._
   val language: language = glyphML.Translator().withPackage(TransformsPackage)()
   import language._
-
   initialDeclarations(
-    <macro tag="math" nonempty="true">
-      <scope name="math"  fontstyle="italic">
-        <attributes id="tag:r" fontscale="1" fontstyle="italic"/>
-        <?body?>
-      </scope>
-    </macro>
+      <macro tag="math" nonempty="true" fontfamily="Arial" fontscale="1" fontstyle="italic">
+        <scope name="math" fontstyle="italic">
+          <attributes id="tag:r" fontfamily="Arial" fontscale="1" fontstyle="italic"/>
+          <?body?>
+        </scope>
+      </macro>
 
       <macro tag="r" ><row alignment="top"><span><?body?></span></row></macro>
 
-      <macro tag="sup" nonempty="true">
+      <macro tag="up" nonempty="true">
         <sub height="1.3ex" offset="-1ex"><i fontscale="0.7*fontscale" ><?body?></i></sub>
       </macro>
 
-      <macro tag="over" fontscale="0.5*fontscale" nonempty="true">
-        <frame fg="transparent">
-          <scope name="over">
+      <macro tag="subscript" nonempty="true">
+        <i fontscale="0.7*fontscale" ><sub height="5ex" baseline="40ex" offset="1ex"><?body?></sub></i>
+      </macro>
+
+      <macro tag="over" nonempty="true">
+        <frame fg="red" nonempty="true">
+          <scope name="over" nonempty="true">
             <attributes id="tag:r" fontscale="0.9*fontscale" fontstyle="italic"/>
+            <frame fg="blue" nonempty="true">
+            <sub  height="3.5ex" offset="-0.75ex">
             <col fg="black.2" nonempty="true" >
               <?body0?><?body1?>
             </col>
+            </sub>
+            </frame>
           </scope>
         </frame>
+      </macro>
+
+        <macro tag="oer" nonempty="true">
+          <frame fg="red" nonempty="true">
+            <scope name="oer" nonempty="true">
+            <attributes id="tag:r" fontscale="0.9*fontscale" fontstyle="italic"/>
+              <measured refid="top" visible="false"><?body0?></measured>
+              <measured refid="bot" visible="false"><?body1?></measured>
+              <frame fg="blue" nonempty="true">
+                <sub  height="2*top.height" offset="-bot.height">
+                  <col fg="black.2" nonempty="true" >
+                    <glyph gid="top"/>
+                    <glyph gid="bot"/>
+                  </col>
+                </sub>
+              </frame>
+            </scope>
+          </frame>
+        </macro>
+
+      <macro tag="display" nonempty="true">
+        <scope name="display">
+          <attributes id="tag:r" fontfamily="Arial" fontscale="0.9*fontscale" fontstyle="italic"/>
+            <fixedwidth nonempty="true">
+                <fill width="0ex" fg="red.4" height="1ex"  stretch="20"/>
+              <math nonempty="true">
+                 <?body?>
+              </math>
+              <fill width="0ex" fg="red.4" height="1ex" stretch="20"/>
+            </fixedwidth>
+        </scope>
       </macro>
   )
 
   val GUI: Glyph = Col()(
-      <div width="20em" align="justify" textfontsize="24">
+      <div width="30em" align="justify" fontfamily="Times" textfontsize="24">
+        <p>
+          This is an experiment in using macros to defined mathematical layout. It's not something that
+          we recommend for interesting mathematics, since the macro schemes don't provide quite enough information
+          to enable decent sizing and subscripting decisions to be made.
+        </p>
 
-
-
-        <p>The simplest way to place superscripts in mathematical text is exemplified
+        <p>That being said, the simplest way to place superscripts in mathematical text is exemplified
           here:
-          <math><r>B<sup>x*Y*z</sup></r></math> and here
-          <math><r>A<sup>B</sup>C</r></math>
+
+          <math><r>B<up>x*Y*z</up></r></math> and here
+          <math><r>A<up>B</up>C</r></math>
         </p>
         <p>
           The simplest way to place fractions in mathematical text is exemplified
-          here: <math><r><over><r>A</r><r>B+C</r></over></r></math>  and here
-          <math><r><over><r>A<sup>4x₃</sup></r><r>B+C<sup>D</sup></r></over></r></math>but sadly it
-          is all a little fragile.
-        </p>
+          here: <math><r><oer><r>A</r><r>B+C</r></oer></r></math>  and <math><r><oer><r>A<up>B 2π</up></r><r>B+C</r></oer></r></math> but sadly
+          super_script_ing is fragile (for the moment). Subscripting <i>displayed</i> maths seems straight_for_ward
+      </p>
+
+
+      <display><r>A<subscript>B*C<subscript>D</subscript></subscript></r></display>
+
+      <display><r>A*b+c*d<up>2π</up></r></display>
+
+
+      <p>
+        And, of course, <span textforeground="red"> no_body in their right mind would want to use glyphML to write any but the sim_plest
+        math_ematical text within a paragraph in an interface.</span>
+      </p>
+
       </div>
   ).enlarged(10).framed(blackFrame).enlarged(5)
 
