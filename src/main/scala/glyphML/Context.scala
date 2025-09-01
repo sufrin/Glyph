@@ -85,8 +85,8 @@ object Context {
     /**
      *  Evaluate an expression
      */
-    def Eval(spec: String, alt: Float)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
-      val Rfactor = "(-?[0-9]+(\\.([0-9]+)?)?)(em|ex|px|pt|us)".r
+    def Eval(spec: String, alt: Float, scalar: Boolean=false)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
+      val Rfactor = "(-?[0-9]+(\\.([0-9]+)?)?)(em|ex|px|pt|ux)".r
       val RId     = "[a-zA-Z.]+".r
       val RNum    = "-?([0-9]+(\\.([0-9]+)?)?)".r
       import context.{sheet, definitions}
@@ -120,23 +120,35 @@ object Context {
             alt
         }
       }
+      def evalScalar(factor: Scalar, id: String): Scalar = {
+        id match {
+          case "fontscale" => factor * sheet.fontScale
+          case other =>
+            SourceDefault.warn(s"$spec should be a scalar (ie \"fontscale\")  or a <float>*scalar.")(at)
+            alt
+        }
+      }
       if (Rfactor.matches(spec))
         spec.toLowerCase match {
           case (s"${s}em") if RNum.matches(s) => s.toFloat * sheet.emWidth
           case (s"${s}ex") if RNum.matches(s) => s.toFloat * sheet.exHeight
           case (s"${s}px") if RNum.matches(s) => s.toFloat
           case (s"${s}pt") if RNum.matches(s) => s.toFloat
+          case (s"${s}ux") if RNum.matches(s) => s.toFloat
           case other =>
-            SourceDefault.warn(s"$spec should specify its unit of measure in em/ex/px/pt, or as a <float>*(width/indent/leftmargin/rightmargin/windowwidth/windowheight).")(at)
+            SourceDefault.warn(s"$spec should specify its unit of measure as <float>(em|ex|px|pt|ux) or as a <float>*<symbolicdimension>.")(at)
             alt
         }
       else
         if (RId.matches(spec)) {
-          evalGlobal(1f, spec)
+          if (scalar) evalScalar(1f, spec) else evalGlobal(1f, spec)
+        } else
+        if (RNum.matches(spec)) {
+          if (scalar) evalScalar(1f, spec) else evalGlobal(1f, spec)
         } else {
           spec match {
             case s"$multiplier*$global" if (RNum.matches(multiplier)) =>
-              evalGlobal(multiplier.toFloat, global)
+              if (scalar) evalScalar(multiplier.toFloat, global) else evalGlobal(multiplier.toFloat, global)
             case other =>
               SourceDefault.warn(s"Ill-formed expression $spec ")(at)
               alt
@@ -149,12 +161,12 @@ object Context {
      *
      * float(`em`|`ex`|`px`|`pt`|`ux`)
      *
-     * float*symbolic
+     * float*symbolicdimension
      *
      * symbolic
      *
      *
-     * where symbolic is one of
+     * where symbolicdimension is one of
      *
      * {{{
      *   width           |
@@ -178,7 +190,16 @@ object Context {
     def Units(key: String, alt: Float)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
       attributes.get(key.toLowerCase)  match {
         case Some(spec) =>
-          Eval(spec, alt)(context)(at)
+          Eval(spec, alt, scalar=false)(context)(at)
+        case None =>
+          alt
+      }
+    }
+
+    def Scale(key: String, alt: Float)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
+      attributes.get(key.toLowerCase)  match {
+        case Some(spec) =>
+          Eval(spec, alt, scalar=true)(context)(at)
         case None =>
           alt
       }
@@ -226,6 +247,7 @@ object Context {
         case ("bottom") => Bottom
         case ("mid") => Mid
         case ("center") => Mid
+        case ("baseline") => Baseline
         case (other) =>
           warn(s"$key=\"$other\" [not a vertical alignment name: using \"mid\" ($at)]")
           Mid
@@ -249,7 +271,7 @@ object Context {
       val fontDetailSheet: StyleSheet =
         sheet
           .copy(
-            fontScale       = Float("fontscale", 1.0f),
+            fontScale       = Scale("fontscale", 1.0f)(context),
 
             textFontStyle   = FontFamily.styleNamed(String("textstyle", String("fontstyle", ""))),
             textFontFamily  = FontFamily(String("textfontfamily", String("fontfamily", sheet.textFontFamily.family))),

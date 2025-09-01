@@ -106,12 +106,12 @@ object ResizeableWindowTest extends Application {
       val language = translator(style)
       import language._
       <div width="container.width" align="justify" macrowarning="off">
-        <macro tag="strut"><fill width="0em" stretch="0" height="3ex"/></macro>
+        <scope name="outer">
         <macro tag="emfill"><fill width="0em" stretch="20"/></macro>
-        <macro tag="sup"><row alignment="top"><strut/><span textforeground="red" fontscale="0.6"><b><?body?></b></span></row></macro>
+        <macro tag="sup"><row alignment="top"><span textforeground="red" fontscale="0.7"><?body?></span></row></macro>
         <macro tag="centered"><row width="width"><emfill/><?body?><emfill/></row></macro>
 
-         <p align="center" fontScale="2">De Rerum Natura</p>
+         <centered fontScale="2">De Rerum Natura</centered>
          <p>
            De Rerum Natura is a beau_tiful small yarn producer in France
            The wool used is a blend of French and Euro_pean merino raised with con_cern for the well_being of an_imals and the rec_ov_ery of their wool.
@@ -119,7 +119,7 @@ object ResizeableWindowTest extends Application {
            The res_ult is yarns that are as soft and beau_tiful to knit with as they are to wear.
          </p>
          <p>
-           All De Rerum Natura bases are free of mule_sing<sup>&ddagger;</sup> and are eth_ical_ly   and sus_tain_ably produced.
+           All De Rerum Natura bases are free of <row>mule_sing<sup>&ddagger;</sup></row> and are eth_ical_ly   and sus_tain_ably produced.
          </p>
 
          <p>
@@ -127,7 +127,7 @@ object ResizeableWindowTest extends Application {
              <bi>width</bi>
              of this window by dragging a vertical edge.</i>
          </p>
-         <strut/>
+         <space/>
          <centered>
           <frame fg="blue.2" radius="0.05" enlarge="30">
             <p width="0.7*width" fontScale="0.7" hang="‡ " labelForeground="red" textForeground="red">
@@ -138,6 +138,7 @@ object ResizeableWindowTest extends Application {
             </p>
           </frame>
          </centered>
+        </scope>
        </div>
     }
     Col(align=Center)(buttons, text) enlarged 10 edged (black(width = 2)) enlarged 20

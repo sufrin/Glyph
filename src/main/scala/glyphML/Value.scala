@@ -111,7 +111,7 @@ class Definitions { thisStore =>
   def update(name: String, thing: StyleSheet=>Glyph): Unit = thisStore(name) = StoredGlyphGenerator(thing)
   def update(name: String, thing: String): Unit            = thisStore(name) = StoredString(thing)
 
-  def inScope[T](caption: String="")(effect: => T): T = {
+  def inScope[T](blockName: String="", sourceScope: String="")(effect: => T): T = {
     val saved = store.toSeq
     val scope = saved.map(_._1)
     ////
@@ -127,7 +127,8 @@ class Definitions { thisStore =>
         val desc = if (scope.contains(defn)) "   " else "[+]"
         s"$desc ${pad(k)}: $t"
       }
-      logging.SourceDefault.info(s"Changed within $caption:\n\t\t${changed.map(show).mkString("\n\t\t")}")
+      if (blockName.nonEmpty)
+        logging.SourceDefault.info(s"Scope($blockName) $sourceScope:\n\t\t${changed.map(show).mkString("\n\t\t")}")
     }
     store.clear()
     store.addAll(saved)
