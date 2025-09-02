@@ -9,8 +9,6 @@ import org.sufrin.logging
 import org.sufrin.logging.{FINER, FINEST, INFO, WARN}
 import org.sufrin.SourceLocation._
 
-import javax.swing.plaf.ColorUIResource
-
 object trivial extends Application {
   locally{
     logging.SourceDefault.level=FINEST
@@ -334,96 +332,78 @@ object superscripts extends Application {
   val language: language = glyphML.Translator().withPackage(TransformsPackage)()
   import language._
   initialDeclarations(
-      <macro tag="math" nonempty="true" fontfamily="Arial" fontscale="1" fontstyle="italic">
-        <scope name="math" fontstyle="italic">
-          <attributes id="tag:r" fontfamily="Arial" fontscale="1" fontstyle="italic"/>
-          <?body?>
-        </scope>
+      <macro tag="math" nonempty="true" >
+          <span fontfamily="Arial" fontscale="1*fontscale" fontstyle="italic"><?body?></span>
       </macro>
 
-      <macro tag="r" ><row alignment="top"><span><?body?></span></row></macro>
+      <macro tag="r" ><row alignment="baseline" nonempty="+"><span fontfamily="Arial"><?body?></span></row></macro>
 
-      <macro tag="up" nonempty="true">
-        <sub height="1.3ex" offset="-1ex"><i fontscale="0.7*fontscale" ><?body?></i></sub>
-      </macro>
-
-      <macro tag="subscript" nonempty="true">
-        <i fontscale="0.7*fontscale" ><sub height="5ex" baseline="40ex" offset="1ex"><?body?></sub></i>
-      </macro>
-
-      <macro tag="over" nonempty="true">
-        <frame fg="red" nonempty="true">
-          <scope name="over" nonempty="true">
+      <macro tag="over" >
+        <frame fg="transparent" >
+          <scope name="over" >
             <attributes id="tag:r" fontscale="0.9*fontscale" fontstyle="italic"/>
-            <frame fg="blue" nonempty="true">
-            <sub  height="3.5ex" offset="-0.75ex">
-            <col fg="black.2" nonempty="true" >
-              <?body0?><?body1?>
-            </col>
-            </sub>
-            </frame>
+            <measured refid="top" visible="-" ><?body0?></measured><measured refid="bot" visible="-" ><?body1?></measured>
+              <sub  height="top.height" height.1="bot.height" >
+                <col fg="black.2" nonempty="+" ><glyph gid="top"/><glyph gid="bot"/></col>
+              </sub>
           </scope>
         </frame>
       </macro>
 
-        <macro tag="oer" nonempty="true">
-          <frame fg="transparent" nonempty="true">
-            <scope name="oer" nonempty="true">
-            <attributes id="tag:r" fontscale="1*fontscale" fontstyle="italic"/>
-              <measured refid="top" visible="false"><?body0?></measured>
-              <measured refid="bot" visible="false"><?body1?></measured>
-                <sub  height="2*top.height" offset="-bot.height" nonempty="true">
-                  <col fg="black.2" nonempty="true" >
-                    <glyph gid="top"/>
-                    <glyph gid="bot"/>
-                  </col>
-                </sub>
-            </scope>
-          </frame>
-        </macro>
+      <macro tag="pow" ><superscript><?body?></superscript></macro>
+      <macro tag="down" ><subscript><?body?></subscript></macro>
 
-      <macro tag="display" nonempty="true">
+      <macro tag="display" >
+        <frame fg="transparent">
         <scope name="display">
           <attributes id="tag:r" fontfamily="Arial" fontscale="0.9*fontscale" fontstyle="italic"/>
-            <fixedwidth nonempty="true">
-                <fill width="0ex" fg="red.4" height="1ex"  stretch="20"/>
-              <math nonempty="true">
+            <fixedwidth >
+                <fill width="1ex"  height="1ex"  stretch="20"/>
+              <math >
                  <?body?>
               </math>
-              <fill width="0ex" fg="red.4" height="1ex" stretch="20"/>
+              <fill width="1ex"  height="1ex" stretch="20"/>
             </fixedwidth>
         </scope>
+        </frame>
       </macro>
   )
 
   val GUI: Glyph = Col()(
-      <div width="30em" align="justify" fontfamily="Times" textfontsize="24">
+      <div width="40em" align="justify" fontfamily="Times" textfontsize="36" attributes.warning="-">
         <p>
-          This is an experiment in using macros to defined mathematical layout. It's not something that
-          we recommend for interesting mathematics, since the macro schemes don't provide quite enough information
-          to enable decent sizing and subscripting decisions to be made.
+          This is an experiment in mathematical layout. It's not something that
+          we recommend for putting interesting mathematical explanations in GUIs. The inbuilt
+          &lt;superscript> and &lt;subscript> transforms are just about ready for setting <i>nested</i> superscripts
+          and subscripts without tedious human intervention.
         </p>
 
-        <p>That being said, the simplest way to place superscripts in mathematical text is exemplified
+        <p>That being said, the simplest way to place <i>X</i>scripts -- such as  <math fontscale="0.9"><pow>A n</pow></math> and
+          <math fontscale="0.9"><down>A n</down></math> -- in mathematical text is exemplified
           below:
         </p>
-        <display><r>B<up>x*Y*z</up></r></display>
+        <display><pow>A x*Y*<pow>P z</pow></pow></display>
 
-        <display><r>A<up>B</up>C</r></display>
+        <display><pow>X Y</pow></display>
+
+        <display><r><pow>ABC DEF</pow></r></display>
+
+        <display><r><down>XYZ ZY</down></r></display>
+
+        <display><r>
+          <down>
+            A<down>B*C<down>D E</down></down></down></r></display>
+
+        <display><r><pow>A<down>b+c <pow>d 2π</pow></down></pow></r></display>
+
         <p>
           The simplest way to place fractions in mathematical text is exemplified
-          below, but sadly
-          super_script_ing is fragile (for the moment). Subscripting <i>displayed</i> maths seems straight_for_ward
+          below.
       </p>
 
-        <display><r><oer><r>A<up>B 2π</up></r><r>B+C</r></oer></r></display>
+        <display><r><over><pow>AB 2π</pow> <r>B+C</r></over></r></display>
 
-        <display><r><oer><r>A</r><r>B+C</r></oer></r></display>
-
-        <display><r>A<subscript>B*C<subscript>D</subscript></subscript></r></display>
-
-      <display><r>A*b+c*d<up>2π</up></r></display>
-
+        <display><r><over><r>A</r><r>B+C</r></over></r></display>
 
       <p>
         And, of course, <span textforeground="red"> no_body in their right mind would want to use glyphML to write any but the sim_plest
@@ -445,13 +425,13 @@ object baselines extends Application {
 
   val font1:Font = FontFamily("Courier")(36)
   val font2:Font = FontFamily("Courier")(24)
-  val h1 = font2.getMetrics.getHeight
-  val b1 = font2.getMetrics.getDescent
+  val h1 = font1.getMetrics.getHeight
+  val d1 = font1.getMetrics.getDescent
   val h2 = font2.getMetrics.getHeight
-  val b2 = font2.getMetrics.getDescent
+  val d2 = font2.getMetrics.getDescent
   def t1(s: String): Glyph = unstyled.Text(s, font1)
   def t2(s: String): Glyph = unstyled.Text(s, font2)
-  def t3(s: String): Glyph = unstyled.Text(s, font2).withBaseline(h2+h1, h2+h1+b2, h1/2-h2/2)
+  def t3(s: String): Glyph = unstyled.Text(s, font2).withBaseline(h2+h1, h2+h1+d2, h1/2-h2/2)
 
 
   val GUI: Glyph =

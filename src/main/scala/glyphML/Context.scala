@@ -212,10 +212,10 @@ object Context {
       case None => default
       case Some(boolean) =>
         boolean.toLowerCase match {
-          case "t" | "true" | "on" => true
-          case "f" | "false" | "off" => false
+          case "t" | "true" | "on" | "+" => true
+          case "f" | "false" | "off" | "-" => false
           case _ =>
-            warn(s"$key=\"$boolean\" should be t/f/true/on/false/off ($at)")
+            warn(s"$key=\"$boolean\" should be +/t/true/on -/f/false/off ($at)")
             default
         }
     }

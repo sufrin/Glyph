@@ -36,7 +36,8 @@ object AbstractSyntax {
   case class Scope(tags: List[String]=Nil, definitionScope: Option[Scope]=None) {
     def nest(tag: String): Scope = Scope(tag::tags)
     override val toString: String = s"${tags.reverse.mkString("<")} ${if (definitionScope.isEmpty) "" else s"/ ${definitionScope.get}"}"
-    def hasNested(tag: String): Boolean = tags.contains(tag)
+    def hasNested(tag: String): Boolean =
+      tags.contains(tag) || (definitionScope.nonEmpty && definitionScope.get.hasNested(tag))
     def definedIn(defn: Scope): Scope = Scope(tags, Some(defn))
   }
 
@@ -82,6 +83,14 @@ object AbstractSyntax {
     case Comment(_,_) => None
     case _ => Some(tree)
   }
+
+  def topmostNonempty(tree: Tree): Seq[Tree] =
+    if (isEmptyText(tree)) Seq.empty else tree match {
+      case Text(_)      => List(tree)
+      case Para(texts)  => texts.filterNot(_.forall(_.isWhitespace)).map(Text)
+      case Comment(_,_) => Seq.empty
+      case _ => List(tree)
+    }
 
   /**
    * Maps a `scala.xml.Node` to a `Tree`, decorating each `Elem` with an appropriate

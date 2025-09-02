@@ -50,7 +50,7 @@ object Translator extends SourceLoggable {
 }
 
 /**
- * Resolve the given attributes of an element using the scoping rules
+ * Resolve the given attributes of an element using the scoping rules.
  * @param definitions
  * @param scope
  * @param tag
@@ -72,7 +72,7 @@ class ResolveScopedAttributes(definitions: Definitions, element: AbstractSyntax.
   val inheritedAttributes: AttributeMap = (givenAttributes supersede selfattributes supersede classattributes supersede tagattributes).without("id", "class")
 
   /** Should subtrees that are empty be translated */
-  val nonEmpty = inheritedAttributes.Bool("nonempty", !inheritedAttributes.Bool("keepempty", true))
+  val nonEmpty = inheritedAttributes.Bool("nonempty", !inheritedAttributes.Bool("keepempty", element.tag=="p" || scope.hasNested("p")))
 
   /**
    * Subtrees: with empty texts filtered out if `nonempty` is true, or `keepempty` is false.
@@ -241,10 +241,13 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
 
       case "sub" =>
         val height: Scalar = localAttributes.Units("height", 0)(context)
+        val height1: Scalar = localAttributes.Units("height.1", 0)(context)
         val base: Scalar = localAttributes.Units("baseline", 0)(context)
+        val base1: Scalar = localAttributes.Units("baseline.1", 0)(context)
         val offset: Scalar = localAttributes.Units("offset", 0)(context)
-        val derivedContext = context.updated(localAttributes.without("height", "baseline", "offset"))
-        child.flatMap(translate(derivedContext)).map(_.withBaseline(base, height, offset))
+        val offset1: Scalar = localAttributes.Units("offset.1", 0)(context)
+        val derivedContext = context.updated(localAttributes.without("height", "baseline", "height.1", "baseline.1", "offset", "offset.1"))
+        child.flatMap(translate(derivedContext)).map(_.withBaseline(base+base1, height+height1, offset+offset1))
 
 
       case "p" =>
@@ -349,12 +352,13 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
       // Store the body of this as  <SPLICE>...</SPLICE>, named `tag` so that it can be spliced into any situation with context.
       case "element" | "definitions" =>
         val elementTag: String  = givenAttributes.String("tag", "")
+        val warn: Boolean  = givenAttributes.Bool("element.warning", false)
         if (elementTag.nonEmpty) {
            val before = definitions.getKind(StoreType.Element)(elementTag)
-           if (before.isDefined) {
+           if (warn && before.isDefined) {
               SourceDefault.warn(s"Overriding spliceable definition: $scope<$tag<$elementTag ${givenAttributes.without("tag").toSource}")
            }
-           definitions(elementTag) = glyphML.StoredElement(Element(scope, "SPLICE", attributes.without("tag"), if (tag=="definitions") children else child))
+           definitions(elementTag) = glyphML.StoredElement(Element(scope, "SPLICE", attributes.without("tag", "element.warning"), if (tag=="definitions") children else child))
         } else
            SourceDefault.warn(s"No name for an element: $scope<element tag=\"...\"")
         Nil
@@ -418,14 +422,14 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         // treat the collection as a primitive: globally if
         // there is no body; otherwise for the scope of the evaluation of the body.
         val attrId: String  = givenAttributes.String("id", "")
-        val warn:   Boolean = localAttributes.Bool("warn", context.attributes.Bool("attributeswarning", true))
+        val warn:   Boolean = localAttributes.Bool("warn", context.attributes.Bool("attributes.warning", true))
         if (attrId.nonEmpty) {
           val before =  definitions.getKind(StoreType.AttributeMap)(attrId)
           if (children.isEmpty) {// global definition
             if (warn && before.isDefined) {
               SourceDefault.warn(s"Overriding attribute definition: $scope<attributes ${givenAttributes.toSource}")
             }
-            definitions(attrId) = StoredAttributeMap(givenAttributes.without("id"))
+            definitions(attrId) = StoredAttributeMap(givenAttributes.without("id", "attributes.warning"))
             Nil
           }
           else {
@@ -440,7 +444,7 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
 
       case "macro" =>
         val tag = givenAttributes.String("tag", "")
-        val warn   = localAttributes.Bool("warn", context.attributes.Bool("macrowarning", true))
+        val warn   = localAttributes.Bool("warn", context.attributes.Bool("macro.warning", true))
         if (tag.nonEmpty) {
           // The given attributes are the defaults for upcoming applications of the macro.
           // The context binds the current free attributes.
@@ -448,15 +452,16 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
           if (warn && definitions.getKind(StoreType.Macro)(tag).isDefined) {
              SourceDefault.warn(s"Overriding macro definition $scope<macro ${givenAttributes.toSource}")
           }
-          definitions(tag) = Macro(scope.nest(s"macro:$tag"), tag, givenAttributes.without("tag", "warn"), context, child.filterNot(isEmptyText))
+          definitions(tag) = Macro(scope.nest(s"macro:$tag"), tag, givenAttributes.without("tag", "macro.warning"), context, child.filterNot(isEmptyText))
         } else
           SourceDefault.error(s"Macro definition without tag attribute$scope<macro ")
         Nil
 
       case "scope" =>
         val blockName = localAttributes.String("name","")
-        definitions.inScope(blockName, scope.toString){
-          child.flatMap(translate(context))
+        val warn = localAttributes.Bool("scope.warning", false)
+        definitions.inScope(if (warn) blockName else "", scope.toString){
+          children.flatMap(translate(context))
         }
 
       case "table" =>
@@ -489,9 +494,7 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
                NaturalSize.Row(align = Mid)(children.flatMap(translate(derivedContext)))
             }
             else {
-               println(s"FW=$width/  ${width/context.sheet.emWidth}")
                val r = FixedSize.Row(align = Baseline, width = width)(children.flatMap(translate(derivedContext)))
-              println(s"r.w=${r.w}")
               r
             }
         List(glyph)
