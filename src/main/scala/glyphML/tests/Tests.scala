@@ -336,22 +336,23 @@ object superscripts extends Application {
           <span fontfamily="Arial" fontscale="1*fontscale" fontstyle="italic"><?body?></span>
       </macro>
 
-      <macro tag="r" ><row alignment="baseline" nonempty="+"><span fontfamily="Arial"><?body?></span></row></macro>
+      <macro tag="r" ><row alignment="baseline" nonempty="+"><span fontstyle="italic" fontfamily="Arial"><?body?></span></row></macro>
 
       <macro tag="over" >
-        <frame fg="transparent" >
+
           <scope name="over" >
-            <attributes id="tag:r" fontscale="0.9*fontscale" fontstyle="italic"/>
-            <measured refid="top" visible="-" ><?body0?></measured><measured refid="bot" visible="-" ><?body1?></measured>
-              <sub  height="top.height" height.1="bot.height" >
-                <col fg="black.2" nonempty="+" ><glyph gid="top"/><glyph gid="bot"/></col>
-              </sub>
+            <attributes id="tag:r" fontscale="1*fontscale" fontstyle="italic"/>
+            <measured refid="top" visible="-" ><?body0?></measured>
+            <measured refid="bot" visible="-" ><?body1?></measured>
+              <withbaseline  height="top.height" height.1="bot.height" offset="-0.13*top.height">
+                <col fg="black.1" nonempty="+" ><glyph gid="top"/><glyph gid="bot"/></col>
+              </withbaseline>
           </scope>
-        </frame>
+
       </macro>
 
       <macro tag="pow" ><superscript><?body?></superscript></macro>
-      <macro tag="down" ><subscript><?body?></subscript></macro>
+      <macro tag="sub" ><subscript><?body?></subscript></macro>
 
       <macro tag="display" >
         <frame fg="transparent">
@@ -359,7 +360,7 @@ object superscripts extends Application {
           <attributes id="tag:r" fontfamily="Arial" fontscale="0.9*fontscale" fontstyle="italic"/>
             <fixedwidth >
                 <fill width="1ex"  height="1ex"  stretch="20"/>
-              <math >
+              <math>
                  <?body?>
               </math>
               <fill width="1ex"  height="1ex" stretch="20"/>
@@ -370,17 +371,18 @@ object superscripts extends Application {
   )
 
   val GUI: Glyph = Col()(
-      <div width="40em" align="justify" fontfamily="Times" textfontsize="36" attributes.warning="-">
+      <div width="40em" align="justify" fontfamily="Times" textfontsize="32" attributes.warning="-">
+        <attributes id="tag:bracket" bra="(" ket=")"/>
         <p>
           This is an experiment in mathematical layout. It's not something that
           we recommend for putting interesting mathematical explanations in GUIs. The inbuilt
           &lt;superscript> and &lt;subscript> transforms are just about ready for setting <i>nested</i> superscripts
-          and subscripts without tedious human intervention.
+          and subscripts without tedious human intervention. And &lt;bracket> draws brackets around expressions.
         </p>
 
-        <p>That being said, the simplest way to place <i>X</i>scripts -- such as  <math fontscale="0.9"><pow>A n</pow></math> and
-          <math fontscale="0.9"><down>A n</down></math> -- in mathematical text is exemplified
-          below:
+        <p>Super- and subscripted expressons -- like  <math fontscale="0.9"><pow>A n</pow></math> and
+          <math fontscale="0.9"><sub>A n</sub></math> -- can appear in plain text, or in displayed formulae, and
+          can be nested:
         </p>
         <display><pow>A x*Y*<pow>P z</pow></pow></display>
 
@@ -388,27 +390,38 @@ object superscripts extends Application {
 
         <display><r><pow>ABC DEF</pow></r></display>
 
-        <display><r><down>XYZ ZY</down></r></display>
+        <display><r><bracket bra="&lt;" ket="|"><sub>XYZ ZY</sub></bracket></r></display>
 
         <display><r>
-          <down>
-            A<down>B*C<down>D E</down></down></down></r></display>
+          <bracket bra="{" ket="}">
+          <sub>
+            A<sub>B*C<sub>D E</sub></sub></sub></bracket></r></display>
 
-        <display><r><pow>A<down>b+c <pow>d 2π</pow></down></pow></r></display>
+        <display><r><pow>A<sub>b+c <pow>d 2π</pow></sub></pow></r></display>
 
         <p>
-          The simplest way to place fractions in mathematical text is exemplified
-          below.
+          The simplest way to place fractions in mathematical text is implemented by &lt;over> and exemplified
+          below. But 'scripts don't play well with fractions.
       </p>
 
         <display><r><over><pow>AB 2π</pow> <r>B+C</r></over></r></display>
 
         <display><r><over><r>A</r><r>B+C</r></over></r></display>
 
-      <p>
-        And, of course, <span textforeground="red"> no_body in their right mind would want to use glyphML to write any but the sim_plest
-        math_ematical text within a paragraph in an interface.</span>
-      </p>
+
+
+        <display><bracket><col>A B C <row>D E F</row></col></bracket></display>
+
+
+
+
+        <p>
+        And, of course, <span textforeground="red"> no_body in their right
+        mind would want to use glyphML to write
+        any but the sim_plest
+        math_ematical text within a paragraph in an interface.</span> See
+        how horrible it can look: <math fontscale="0.9*fontscale"><bracket><over><r>A-<pow>B 2π</pow></r><r>A+B</r></over></bracket></math>!
+        </p>
 
       </div>
   ).enlarged(10).framed(blackFrame).enlarged(5)

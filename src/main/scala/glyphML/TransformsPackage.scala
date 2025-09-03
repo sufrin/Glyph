@@ -3,6 +3,7 @@ package glyphML
 import glyphML.Context.Context
 import GlyphTypes.Scalar
 import NaturalSize.Row
+import unstyled.static.Concentric
 
 import org.sufrin.logging.SourceDefault
 import org.sufrin.logging.SourceDefault._
@@ -132,6 +133,45 @@ class TransformsPackage(definitions: Definitions) {
     }
   }
 
+  def bracket(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
+    import glyphML.Context.{ExtendedAttributeMap, TypedAttributeMap}
+    val resolved = new ResolveScopedAttributes(definitions, element)
+    import resolved._
+    val fg  = inheritedAttributes.Brush("fg", context.sheet.textForegroundBrush(width=3))
+    val bg  = inheritedAttributes.Brush("bg", context.sheet.textBackgroundBrush(width=3))
+    val bra = inheritedAttributes.String("bra", "[")
+    val ket = inheritedAttributes.String("ket", "]")
+    val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg"))
+    if (children.isEmpty) {
+      SourceDefault.error(s"Not enough arguments ${element.scope}<bracket ${inheritedAttributes.mkString}")
+      Nil
+    } else {
+      val coreGlyph = makeRow(children.flatMap(translator.translate(derivedContext)))
+      val w = context.sheet.emWidth*0.75f
+      val h = coreGlyph.h
+      val d = fg.strokeWidth
+
+      def sym(symbol: String): Glyph =
+      symbol match {
+        case "(" => unstyled.static.Polygon(w=w, h=h, fg)((w/2+d, 0), (d+d,w/2),   (d+d,h-w/2), (w/2+d,h))
+        case "{" => Concentric(sym("<"), sym("|")) // TODO: draw properly
+        case "}" => Concentric(sym("|"), sym(">")) // TODO: draw properly
+        case "[" => unstyled.static.Polygon(w=w, h=h, fg)((w/2, 0), (d,0),   (d,h), (w/2,h))
+        case "<" => unstyled.static.Polygon(w=w, h=h, fg)((w/2, 0), (d,h/2), (w/2,h))
+        case "|" => unstyled.static.Polygon(w=w, h=h, fg)((w/2, 0), (w/2,h))
+        case ">" => unstyled.static.Polygon(w=w, h=h, fg)((w/2, 0), (w-d,h/2), (w/2,h))
+        case "]" => unstyled.static.Polygon(w=w, h=h, fg)((w/2,0),  (w-d, 0),  (w-d,h), (w/2,h))
+        case ")" => unstyled.static.Polygon(w=w, h=h, fg)((w/2,0),  (w-d, w/2),  (w-d,h-w/2), (w/2,h))
+        case _   => unstyled.static.Polygon(w=w*1.1f, h=h, fg)((w/2, 0), (w/2,h))
+      }
+
+      val ketGlyph = sym(ket)
+      val braGlyph = sym(bra)
+
+      val glyph = Row(align = Mid)(braGlyph, coreGlyph, ketGlyph)
+      List(glyph)
+    }
+  }
 
   def define(): Unit = {
     definitions("turn") = StoredExtension (turn)
@@ -141,5 +181,6 @@ class TransformsPackage(definitions: Definitions) {
     definitions("frame") = StoredExtension(frame)
     definitions("superscript") = StoredExtension(superscript)
     definitions("subscript") = StoredExtension(subscript)
+    definitions("bracket") = StoredExtension(bracket)
   }
 }

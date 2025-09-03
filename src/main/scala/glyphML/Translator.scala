@@ -239,7 +239,7 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         val derivedContext = context.updated(localAttributes)
         children.filterNot(isEmptyText).flatMap(translate(derivedContext))
 
-      case "sub" =>
+      case "withbaseline" =>
         val height: Scalar = localAttributes.Units("height", 0)(context)
         val height1: Scalar = localAttributes.Units("height.1", 0)(context)
         val base: Scalar = localAttributes.Units("baseline", 0)(context)
@@ -307,15 +307,15 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         children.flatMap(translate(derivedContext))
 
       case "debug" =>
-        val tree = localAttributes.Bool("tree", false)
-        val env = localAttributes.Bool("env", false)
-        val att = localAttributes.Bool("local", false)
-        val mark = localAttributes.String("mark", "")
+        val tree  = localAttributes.Bool("tree", false)
+        val env   = localAttributes.Bool("env", false)
+        val local = localAttributes.Bool("local", false)
+        val mark  = localAttributes.String("mark", "")
         val title = localAttributes.String("caption", "debug")
-        val framed = localAttributes.Brush("framed", Brushes.transparent)
+        val framed         = localAttributes.Brush("framed", Brushes.transparent)
         val derivedContext = context.updated(localAttributes.without("tree", "env", "local", "mark", "caption"))
-        if (tree || env || att) println(s"$title $scope")
-        if (env) println(PrettyPrint.prettyPrint(derivedContext)) else if (att) println(PrettyPrint.prettyPrint(derivedContext.attributes)) else {}
+        if (tree || env || local) println(s"$title $scope")
+        if (env) println(PrettyPrint.prettyPrint(derivedContext)) else if (local) println((derivedContext.attributes).toSource) else {}
         if (tree && children.nonEmpty)
           children.filterNot(isEmptyText).foreach{ tree => println(PrettyPrint.prettyPrint(tree)) }
         val body0 = children.flatMap(translate(context)) // do the body in the existing context

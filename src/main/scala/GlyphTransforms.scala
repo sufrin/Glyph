@@ -37,6 +37,12 @@ trait GlyphTransforms {
   def scaleWidth(scalex: Scale): Glyph =
     if (scalex == 1f) thisGlyph else new GlyphTransforms.Scaled(thisGlyph, Vec(scalex, 1.0), thisGlyph.fg, thisGlyph.bg)
 
+  def scaleHeight(scaley: Scale): Glyph =
+    if (scaley == 1f) thisGlyph else new GlyphTransforms.Scaled(thisGlyph, Vec(1.0, scaley), thisGlyph.fg, thisGlyph.bg)
+
+  def scaleHeightTo(height: Scale): Glyph =
+    if (thisGlyph.h==height) thisGlyph else new GlyphTransforms.Scaled(thisGlyph, Vec(1.0, height/thisGlyph.h), thisGlyph.fg, thisGlyph.bg)
+
   /**  This glyph enlarged in height and width by the given `delta`.*/
   def enlarged(delta: Scalar, fg: Brush = thisGlyph.fg, bg: Brush = null): Glyph =
     if (delta <= 0f) this else GlyphTransforms.Enlarged(delta, delta, fg, bg)(thisGlyph)
