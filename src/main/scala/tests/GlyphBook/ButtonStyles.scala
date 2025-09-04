@@ -25,19 +25,6 @@ class ButtonStyles (implicit val style: BookSheet, implicit val translator: glyp
     _ => styled.windowdialogues.Dialogue.OK(source.enlarged(20).edged().enlarged(20)).East(anchor).start()
   }
 
-  locally {
-    language.initialDeclarations(
-      <macro tag="CENTERCODE"> <div width="$width(75em)" textFontFamily="Courier" ><row width="1*width"><fill/><?body?><fill/></row></div></macro>
-      <macro tag="SOURCECODE">
-        <div width="$width(75em)">
-          <CENTERCODE width="$width">
-            <?body0?>
-          </CENTERCODE>
-          <fill/>
-          <?body1?>
-        </div></macro>
-    )
-  }
 
   Page("Sampler", "") {
     import styled.TextButton

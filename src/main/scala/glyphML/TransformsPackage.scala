@@ -3,7 +3,6 @@ package glyphML
 import glyphML.Context.Context
 import GlyphTypes.Scalar
 import NaturalSize.Row
-import unstyled.static.Concentric
 
 import org.sufrin.logging.SourceDefault
 import org.sufrin.logging.SourceDefault._
@@ -148,20 +147,22 @@ class TransformsPackage(definitions: Definitions) {
     } else {
       val coreGlyph = makeRow(children.flatMap(translator.translate(derivedContext)))
       val w = context.sheet.emWidth*0.75f
-      val h = coreGlyph.h
+      val w2 = w*0.5f
       val d = fg.strokeWidth
+      val h = coreGlyph.h -2*d
+      val dd = d
 
       def sym(symbol: String): Glyph =
       symbol match {
-        case "(" => unstyled.static.Polygon(w=w, h=h, fg)((w/2+d, 0), (d+d,w/2),   (d+d,h-w/2), (w/2+d,h))
-        case "{" => Concentric(sym("<"), sym("|")) // TODO: draw properly
-        case "}" => Concentric(sym("|"), sym(">")) // TODO: draw properly
+        case "(" => unstyled.static.Polygon(w=w, h=h, fg)((w/2+d, 0), (d+d,w/2),   (d+d,h-w/2),   (w/2+d,h))
+        case "{" => unstyled.static.Polygon(w=w, h=h, fg)((w/2+dd, 0), (d+d,w/2),  (dd+d,h/2-w/2),  (d, h/2), (dd+d,h/2+w/2), (dd+d,h-w/2), (d+w/2,h))
+        case "}" => unstyled.static.Polygon(w=w, h=h, fg)((w/2-d,0),  (w-d-d, w/2),  (w-d-d,h/2-w/2), (w-d, h/2), (w-d-d,h/2+w/2), (w-d-d, h-w/2),  (w/2-d,h))
+        case ")" => unstyled.static.Polygon(w=w, h=h, fg)((w/2,0),  (w-d, w/2),  (w-d,h-w/2),                 (w/2,h))
         case "[" => unstyled.static.Polygon(w=w, h=h, fg)((w/2, 0), (d,0),   (d,h), (w/2,h))
         case "<" => unstyled.static.Polygon(w=w, h=h, fg)((w/2, 0), (d,h/2), (w/2,h))
         case "|" => unstyled.static.Polygon(w=w, h=h, fg)((w/2, 0), (w/2,h))
         case ">" => unstyled.static.Polygon(w=w, h=h, fg)((w/2, 0), (w-d,h/2), (w/2,h))
         case "]" => unstyled.static.Polygon(w=w, h=h, fg)((w/2,0),  (w-d, 0),  (w-d,h), (w/2,h))
-        case ")" => unstyled.static.Polygon(w=w, h=h, fg)((w/2,0),  (w-d, w/2),  (w-d,h-w/2), (w/2,h))
         case _   => unstyled.static.Polygon(w=w*1.1f, h=h, fg)((w/2, 0), (w/2,h))
       }
 

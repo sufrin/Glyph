@@ -9,7 +9,50 @@ import org.sufrin.logging
 import org.sufrin.logging.{FINER, FINEST, INFO, WARN}
 import org.sufrin.SourceLocation._
 
-object trivial extends Application {
+abstract class App extends Application {
+  override val dock = new Dock() {
+    setGlyph(unstyled.Label(title))
+  }
+}
+
+object trivial extends App {
+  implicit val style: StyleSheet = StyleSheet()
+  val language = Translator(style)
+  import language._
+
+  initialDeclarations(
+    <element tag="lorem"  >
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+      Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+    </element>
+
+      <macro tag="showalign" trace="-">(<insert attribute="alignment"/>, <insert attribute="align"/>)</macro>
+
+      <macro tag="show" width="36em" alignment="justify">
+        <p align="?alignment"><showalign/></p>
+        <fill width="width" fg="red.1"/>
+      </macro>
+    )
+
+  lazy val source: Glyph =
+    <div fontfamily="Courier" background="white">
+      <show ><lorem/></show>
+      <show alignment="center"><lorem/></show>
+      <show alignment="right"><lorem/></show>
+      <show alignment="left"><lorem/></show>
+    </div>
+
+  val GUI: Glyph = {
+    source.framed(Brushes.blackFrame)
+  }
+
+  def title: String = "trivial"
+
+
+
+}
+
+object hyphenation extends App {
   locally{
     logging.SourceDefault.level=FINEST
     Translator.level=INFO
@@ -40,26 +83,25 @@ object trivial extends Application {
   HYPHENATION("ad-ip-isc-ing")("-")
 
   initialDeclarations(
-    <element tag="para">
+    <element tag="para" >
       are we well translationally mort_if_ied and hyphenatable and
       "antidisestablishmentarianism" averywidewordwithafeasiblebreakpoint
       and here is some_thing un_us_ual: na_me_ly more words, if you want. averywidewordwithoutafeasiblebreakpoint
     </element>
-    <element tag="lorem">
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-    </element>
-    <macro tag="show" width="16em" >
-        <table cols="1" foreground="transparent" background="white" nonempty="true">
-        <p align="center">(<insert attribute="width" units="width"/>)</p>
-        <p><?body?></p>
+      <element tag="lorem"  >
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+      </element>
+      <macro tag="show" width="16em" >
+        <table cols="1" foreground="transparent" background="white" >
+          <p align="center">(<insert attribute="width" units="width"/>)</p>
+          <p><?body?></p>
         </table>
       </macro>
     )
 
   lazy val source: Glyph =
-    <div fontfamily="Courier"   background="white">
-
-      <table cols="3" padx="20px" foreground="red" nonempty="true">
+    <div fontfamily="Courier"   background="white" textfontsize="20">
+      <table cols="3" padx="20px" foreground="red" >
         <attributes id="tag:p" align="justify" fontfamily="Times"/>
         <show width="12em"><para/></show>
         <show width="16em"><para/></show>
@@ -74,10 +116,11 @@ object trivial extends Application {
     source.framed(Brushes.blackFrame)
   }
 
-  def title: String = "trivial"
+  def title: String = "hyphen\nation"
 }
 
-object para extends Application {
+
+object para extends App {
   val frameColor = Brushes.red(width=2)
 
   implicit val style: StyleSheet = StyleSheet(
@@ -146,7 +189,7 @@ object para extends Application {
               <?body?>
             </table>
           </macro>
-          <macro tag="pink"><sub offset="-2pt"><frame bg="pink"><?body?></frame></sub></macro>
+          <macro tag="pink"><withbaseline offset="-2pt"><frame bg="pink"><?body?></frame></withbaseline></macro>
       }
   }
 
@@ -155,7 +198,6 @@ object para extends Application {
     <div fontfamily="Arial" width="400px" labelforeground="black"  cdataforeground="red"
          hangwidth="3em"
          attributeswarning="on">
-      <DEFINITIONS/>
       <centred>
       <glyph gid="buttons" refid="buttonsbar"/>
       <p hang="😀">
@@ -165,18 +207,18 @@ object para extends Application {
       </p>
 
       <p hangref ="CHECKBOXES"  >
-        This is the running font family &mdash; and  <i>this is italic.</i> The text may well spill over &gt; one lines, &amp; everything
-        depends on the width of the entire <![CDATA[div]]>. The hanging checkboxes were specified by the
-        <tt>hangref="CHECKBOXES"</tt> attribute of this paragraph: it refers to a globally-defined (active) glyph.
+        This is the running font family and  <i>this is italic.</i> The text may well spill over more than one line  &mdash; everything
+        depends on the width of the topmost <![CDATA[div]]>. The hanging checkboxes were specified by the
+        <tt>hangref=_"CHECKBOXES"</tt> attribute of this paragraph: it refers to a globally-defined (active) glyph.
       </p>
 
-      <turn degrees="5">Anything embedded in <![CDATA[<turn>]]> gets "turned".</turn>
+      <p align="center"><turn degrees="5">Anything embedded in <![CDATA[<turn>]]> gets "turned".</turn></p>
 
       <p align="center"  fontFamily="Times" fontstyle="BOLDITALIC" fontScale="0.75" textforeground="black">
         This is centred text in a small scale bold-italic font.
       </p>
 
-      <frame fg="red.2"><fixedwidth width="0.9*width">this text <fill fg="red" stretch="200"/> is spread</fixedwidth></frame>
+      <frame fg="red.2"><fixedwidth width="0.9*width" keepempty="+">this text <fill fg="red" stretch="200"/> is spread</fixedwidth></frame>
 
         <element tag="blether">
           This is a long, hy_phen_at_able "antidisestablishmentarianism" tract_ified text con_cerning floccinaucinihilipilification. The text may
@@ -185,7 +227,9 @@ object para extends Application {
           by my alter ego -- a pro_gramm_er.
         </element>
 
-      <scale scale=".6">
+        <space/>
+
+        <scale scale=".6">
         <scope>
         <macro tag="SPURIOUS">SPURIOUS</macro>
         <attributes id="tag:p" fontFamily="Arial"/>
@@ -196,6 +240,7 @@ object para extends Application {
         <SPURIOUS></SPURIOUS>
       </scale>
 
+      <space/>
 
 
       <table cols="2" padx="1em" pady="1ex" foreground="green.2" background="yellow">
@@ -225,11 +270,11 @@ object para extends Application {
     source.enlarged(20).framed(Brushes.blackFrame)
   }
 
-  def title: String = "Test Translator"
+  def title: String = "Para"
 
 }
 
-object abstraction extends Application {
+object measured extends App {
   locally {
     logging.SourceDefault.level=FINEST // INFO
     HYPHENATION.level=FINER// INFO
@@ -306,11 +351,11 @@ object abstraction extends Application {
     source.enlarged(20).framed(Brushes.blackFrame)
   }
 
-  def title: String = "Test Translator"
+  def title: String = "Measured"
 
 }
 
-object table extends Application {
+object table extends App {
   implicit val style: StyleSheet = StyleSheet()
   import NaturalSize._
 
@@ -324,7 +369,7 @@ object table extends Application {
   def title: String = "Table"
 }
 
-object superscripts extends Application {
+object superscripts extends App {
 
   implicit val style: StyleSheet = StyleSheet()
   import Brushes._
@@ -339,17 +384,16 @@ object superscripts extends Application {
       <macro tag="r" ><row alignment="baseline" nonempty="+"><span fontstyle="italic" fontfamily="Arial"><?body?></span></row></macro>
 
       <macro tag="over" >
-
           <scope name="over" >
             <attributes id="tag:r" fontscale="1*fontscale" fontstyle="italic"/>
-            <measured refid="top" visible="-" ><?body0?></measured>
-            <measured refid="bot" visible="-" ><?body1?></measured>
+            <measured refid="top" visible="-" orientation="row"><?body0?></measured>
+            <measured refid="bot" visible="-" orientation="row"><?body1?></measured>
               <withbaseline  height="top.height" height.1="bot.height" offset="-0.13*top.height">
-                <col fg="black.1" nonempty="+" ><glyph gid="top"/><glyph gid="bot"/></col>
+                <col fg="black.2" nonempty="+" ><glyph gid="top"/><glyph gid="bot"/></col>
               </withbaseline>
           </scope>
-
       </macro>
+
 
       <macro tag="pow" ><superscript><?body?></superscript></macro>
       <macro tag="sub" ><subscript><?body?></subscript></macro>
@@ -367,6 +411,14 @@ object superscripts extends Application {
             </fixedwidth>
         </scope>
         </frame>
+      </macro>
+
+      <macro tag="center">
+        <fixedwidth width="1*width">
+          <fill width="1ex"  height="1ex"  stretch="20"/>
+          <?body?>
+          <fill width="1ex"  height="1ex"  stretch="20"/>
+        </fixedwidth>
       </macro>
   )
 
@@ -390,7 +442,7 @@ object superscripts extends Application {
 
         <display><r><pow>ABC DEF</pow></r></display>
 
-        <display><r><bracket bra="&lt;" ket="|"><sub>XYZ ZY</sub></bracket></r></display>
+        <display><r><bracket bra="&lt;" ket="&gt;"><sub>XYZ ZY</sub></bracket></r></display>
 
         <display><r>
           <bracket bra="{" ket="}">
@@ -401,33 +453,37 @@ object superscripts extends Application {
 
         <p>
           The simplest way to place fractions in mathematical text is implemented by &lt;over> and exemplified
-          below. But 'scripts don't play well with fractions.
+          below. And 'scripts play well with brackets -- though 'scripting with a fraction does not work.
       </p>
+        <center>
+        <table padx="3em" pady="3ex" cols="3" background="transparent">
+        <display width="0.3*width"><r><over><pow>AB 2πr</pow> <r>B+C</r></over></r></display>
 
-        <display><r><over><pow>AB 2π</pow> <r>B+C</r></over></r></display>
+        <display width="0.3*width"><r><over><r>A</r><r>B+C</r></over></r></display>
 
-        <display><r><over><r>A</r><r>B+C</r></over></r></display>
+        <display width="0.3*width"><over><bracket>A B C</bracket><row>D E F</row></over></display>
 
+        <display width="0.3*width"><bracket bra="(" ket=")"><r><over><pow>AB <bracket>2πr</bracket></pow> <r>B+C</r></over></r></bracket></display>
 
+        <display width="0.3*width"><bracket><r><over><r>A</r><bracket><r>B+C</r></bracket></over></r></bracket></display>
 
-        <display><bracket><col>A B C <row>D E F</row></col></bracket></display>
-
-
+        <display width="0.3*width"><bracket bra="{" ket="}"><col>A B C <row>D E F</row></col></bracket></display>
+        </table>
+        </center>
 
 
         <p>
-        And, of course, <span textforeground="red"> no_body in their right
-        mind would want to use glyphML to write
-        any but the sim_plest
-        math_ematical text within a paragraph in an interface.</span> See
-        how horrible it can look: <math fontscale="0.9*fontscale"><bracket><over><r>A-<pow>B 2π</pow></r><r>A+B</r></over></bracket></math>!
+          Of course, <span textforeground="red"> no_body
+          with good taste would want to use glyphML to write
+          any but the sim_plest, flat_test,
+          math_ematical text within a paragraph in an interface.</span>
         </p>
 
       </div>
   ).enlarged(10).framed(blackFrame).enlarged(5)
 
 
-  val title = "superscripts"
+  def title = "Super\nscripts"
 
 }
 

@@ -1,10 +1,12 @@
 package org.sufrin.glyph
 package glyphML
 
-import glyphML.AbstractSyntax.{Element, MacroParam, Scope, Tree}
+import glyphML.AbstractSyntax._
 import glyphML.Context._
 
 import org.sufrin.logging.SourceDefault
+
+import scala.collection.immutable.ListMap
 
 /**
  * Representation of the body of a macro defined by
@@ -23,21 +25,31 @@ import org.sufrin.logging.SourceDefault
  * parameter substitutions done in it as follows:
  *
  * {{{
- * <?body?>  => body
- * <?bodyN?> => the Nth non-blank child of body (N an integer)
+ * <?body?>   => body
+ * <?body.N?> => the Nth non-blank child of body (N an integer)
  * }}}
  *
- * and each elements given `attrs` replaced by
+ * and each element's given `attrs` replaced by
  *
  * {{{
- *   attrs                supersede
+ *   expandedattrs        supersede
  *   invocationAttributes supersede
  *   defaultAttributes
  * }}}
  *
+ * where `expandedattrs` maps each `(k,v)` of attrs to itself, unless `v` is `?key'` (ie starts with a
+ * `?`; in which case it is replaced by the result of looking up `key'` in
+ * {{{
+ *     invocationAttributes supersede
+ *     defaultAttributes
+ * }}}
+ *
+ * If the lookup fails (ie there is no `key'` in the invocation or the default attributes, then
+ * the original `(k,v)` does not appear in `expandedattrs`.
+ *
  * @param scope the scope/location at which it was defined
  * @param tag the tag of elements that inoke the macro
- * @param attributes the attributes (default attributes) defined for the macro
+ * @param attributes the default attributes defined for invocations of the macro
  * @param macroBody the body of the macro
  */
 
@@ -45,13 +57,11 @@ case class Macro(val definitionScope: Scope, tag: String, val defaultAttributes:
   import ExtendedAttributeMap._
   override def toString: String = s"Macro $tag $definitionScope ${defaultAttributes.mkString})"
   /**
-   *  substitute invocation attributes and invocation body parts in appropriate places in the abstraction body
-   *
-   *  // TODO: get the scope right in macro expansions
+   *  substitute invocation and default attributes and invocation body parts in appropriate places in the abstraction body
    */
   def expansion(invocationAttributes: AttributeMap, invocationBody: Seq[Tree]): Seq[Tree] = {
 
-    lazy val nonEmptyBody: Seq[Tree] = invocationBody.filterNot(AbstractSyntax.isEmptyText(_))
+    lazy val nonEmptyBody: Seq[Tree] = invocationBody.flatMap(topmostNonempty)
 
     def nonEmpty(i: Int): Seq[Tree] =
       if (i<nonEmptyBody.length)
@@ -63,11 +73,24 @@ case class Macro(val definitionScope: Scope, tag: String, val defaultAttributes:
 
     def substitute(tree: Tree): Seq[Tree] = tree match {
       case Element(scope, tag, attrs, body) =>
-        List(Element(definitionScope.definedIn(scope), tag, attrs supersede invocationAttributes supersede defaultAttributes, body.flatMap(substitute)))
+        val contextAttributes = invocationAttributes supersede defaultAttributes
+        val expandedAttrs = attrs.flatMap {
+          case (k, s"?$v") =>
+            contextAttributes.get(v) match {
+              case None             => Nil
+              case Some(substitute) => List((k, substitute))
+            }
+          case other => List(other)
+        }
+        List(Element(definitionScope.definedIn(scope), tag, ListMap.from(expandedAttrs) supersede contextAttributes, body.flatMap(substitute)))
       case MacroParam("body") =>
             invocationBody
+      case MacroParam(s"body.$name") if name.matches("[0-9]+") =>
+           nonEmpty(name.toInt)
+      case MacroParam(s"body($name)") if name.matches("[0-9]+") =>
+           nonEmpty(name.toInt)
       case MacroParam(s"body$name") if name.matches("[0-9]+") =>
-            nonEmpty(name.toInt)
+           nonEmpty(name.toInt)
       case MacroParam(name) =>
             val s = (invocationAttributes supersede defaultAttributes).String(name, "")
             if (s.isEmpty) List(tree) else List(AbstractSyntax.Text(s))

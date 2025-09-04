@@ -350,7 +350,7 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         }
 
       // Store the body of this as  <SPLICE>...</SPLICE>, named `tag` so that it can be spliced into any situation with context.
-      case "element" | "definitions" =>
+      case "element" =>
         val elementTag: String  = givenAttributes.String("tag", "")
         val warn: Boolean  = givenAttributes.Bool("element.warning", false)
         if (elementTag.nonEmpty) {
@@ -358,19 +358,20 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
            if (warn && before.isDefined) {
               SourceDefault.warn(s"Overriding spliceable definition: $scope<$tag<$elementTag ${givenAttributes.without("tag").toSource}")
            }
-           definitions(elementTag) = glyphML.StoredElement(Element(scope, "SPLICE", attributes.without("tag", "element.warning"), if (tag=="definitions") children else child))
+           definitions(elementTag) = glyphML.StoredElement(Element(scope, "SPLICE", attributes.without("tag", "element.warning"), child))
         } else
            SourceDefault.warn(s"No name for an element: $scope<element tag=\"...\"")
         Nil
 
       case "SPLICE" =>
-        children.flatMap(translate(context))
+        child.flatMap(translate(context))
 
       case "insert" =>
         val attribute: String = localAttributes.String("attribute", "")
         val expr: String   = localAttributes.String("evaluate", "")
-        val attr: String   = if (attribute.nonEmpty) context.attributes.String(attribute, s"?$attribute?") else ""
-        val value: String  = if (expr.nonEmpty) context.attributes.Eval(expr, Float.NaN)(context).toInt.toString else ""
+        val derivedContext = context.updated(localAttributes.without("attribute", "evaluate"))
+        val attr: String   = if (attribute.nonEmpty) derivedContext.attributes.String(attribute, s"?$attribute?") else ""
+        val value: String  = if (expr.nonEmpty) derivedContext.attributes.Eval(expr, Float.NaN)(context).toInt.toString else ""
         val stuff = (attr.nonEmpty, value.nonEmpty) match {
           case (true, true) => Para(List(attr,value))
           case (true, false) => Text(attr)

@@ -104,8 +104,7 @@ object AbstractSyntax {
       case xml.PCData(text: String)                       => Quoted(text)
       case xml.Text(text)                                 => fromText(text)
       case xml.Comment(text: String)                      => Comment("", text)
-      case xml.ProcInstr(target, "")                      => MacroParam(target)
-      case xml.ProcInstr(target, text)                    => Comment(target, text)
+      case xml.ProcInstr(target, text)                    => MacroParam(s"$target$text")
       case atom: xml.Atom[Any]                            => fromText(atom.data.toString) // for scala injection phrases {}
     }
   }
@@ -113,3 +112,15 @@ object AbstractSyntax {
   def fromXML(source: xml.Node)(implicit location: SourceLocation = sourcePath): Tree = fromXML(Scope(List(location.toString)))(source)
 
 }
+
+/* To explore parser edge cases
+object abstractsyntaxtest {
+  def main(args: Array[String]): Unit = {
+    import AbstractSyntax._
+    import PrettyPrint._
+    val t1: Tree = fromXML(<foo source={sourceLocation.toString}><?bar.2?> and also {sourcePath} </foo>)
+    t1.prettyPrint()
+  }
+}
+*/
+
