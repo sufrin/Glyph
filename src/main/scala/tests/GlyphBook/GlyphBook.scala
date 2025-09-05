@@ -21,7 +21,7 @@ object GlyphBook extends Application  {
     BookSheet(buttonSheet=interfaceStyle,
               pageSheet=interfaceStyle.copy(buttonDecoration=decoration.unDecorated, fontScale=0.9f))
 
-  val translator = glyphML.Translator()
+  val translator = glyphML.Translator().withPackage(glyphML.TransformsPackage)
 
   lazy val GUI = new SplashScreen()(bookSheet, translator).GUI.enlarged(20)
 

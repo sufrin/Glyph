@@ -324,13 +324,17 @@ class Animation(implicit val style: BookSheet, implicit val translator: glyphML.
 
     Col(align=Center)(
       <div width="60em" align="center">
-        <p >
-          Drawing Rose (rhodonea) curves of the form:
-        </p>
-        <p><i>r(θ) = a . cos(n/d . θ)</i></p>
-        <p>
-          Draw by choosing N and/or D; or use <b>Start/Stop</b>
-        </p>
+        <scope>
+          <macro tag="cos"><row alignment="mid"><b>cos</b><bracket><?body?></bracket></row></macro>
+          <macro tag="math"><row alignment="mid"><?body?></row></macro>
+          <p >
+            Drawing Rose (rhodonea) curves of the form:
+          </p>
+          <p><math>r(θ) = a<cos><fraction>n d</fraction> θ</cos></math></p>
+          <p>
+            Draw by choosing N and/or D; or use <b>Start/Stop</b>
+          </p>
+        </scope>
       </div>, ex,
       FPS, ex,
       Row(
@@ -518,19 +522,22 @@ class Animation(implicit val style: BookSheet, implicit val translator: glyphML.
 
     // TODO: rows and columns in text don't align to the middle of the text
     Col(align=Center)(
-      <div width="60em" align="center">
-        <p >
-          Drawing curves of the form: <i>r(θ) = K . D<row alignment="top" fontscale="0.8"><fill height="4ex" width="0pt"/>θ</row></i>,
-        </p>
-        <p>
-          scaled by <b>log</b>(<i>(1+turns</i>)/<i>2)</i> (inversely when <i>D>0</i>)
-        </p>
-        <p>
-          where <i>turns</i>=<b>floor</b>(<i>θ</i>/<i>2π</i>).
-        </p>
-        <p>
-          Draw by choosing D; or use <b>Start/Stop</b>
-        </p>
+      <div width="80em" align="center" leftmargin="1em">
+        <scope>
+          <macro tag="log"><row alignment="mid"><b>log</b><bracket><?body?></bracket></row></macro>
+          <macro tag="floor"><row alignment="mid"><b>floor</b><bracket><?body?></bracket></row></macro>
+          <macro tag="math"><row alignment="mid"><?body?></row></macro>
+          <p>
+            Drawing scaled curves of the form:
+          </p>
+          <p><math>r(θ) = <math>K <superscript>D θ</superscript></math></math></p>
+          <p>with scale factor</p>
+          <p><math><fraction scalefactor="1">1 <log>1+<floor><fraction>θ 2π</fraction></floor></log></fraction></math></p>
+          <p align="justify">
+             when <i>D>0</i> &emdash; and its inverse when <i>D&lt;0</i>. Note that the scale factor changes at most once per complete
+             revolution. Here <i>K</i> is just about half the width of the frame. Draw by choosing D; or use <b>Start/Stop</b>
+          </p>
+          </scope>
       </div>, ex,
       FPS, ex,
       Row(
