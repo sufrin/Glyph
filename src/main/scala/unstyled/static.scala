@@ -287,15 +287,15 @@ import GlyphTypes.Scalar
   }
 
   /** A zero-diagonal empty glyph; useful in defining anchors for dialogues. Colours can be inherited, too.  */
-  class INVISIBLE(override val fg: Brush, override val bg: Brush) extends Glyph {
-    override def toString: String = s"INVISIBLE(fg=$fg, bg=$bg)"
+  class INVISIBLE(override val fg: Brush, override val bg: Brush, width: Scalar, height: Scalar) extends Glyph {
+    override def toString: String = s"INVISIBLE(fg=$fg, bg=$bg, ($w, $h))"
     def draw(surface: Surface): Unit = {}
-    def diagonal: Vec = Vec.Zero
-    def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new INVISIBLE(fg, bg)
+    def diagonal: Vec = Vec(width, height)
+    def copy(fg: Brush=fg, bg: Brush=bg): Glyph = new INVISIBLE(fg, bg, w, h)
   }
 
   object INVISIBLE {
-    def apply(fg: Brush = Brushes.invisible, bg: Brush = Brushes.invisible): Glyph = new INVISIBLE(fg, bg)
+    def apply(fg: Brush = Brushes.invisible, bg: Brush = Brushes.invisible, w: Scalar=0, h: Scalar=0): Glyph = new INVISIBLE(fg, bg, w, h)
   }
 
   /**

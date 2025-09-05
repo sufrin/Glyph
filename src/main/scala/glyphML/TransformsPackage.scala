@@ -2,7 +2,8 @@ package org.sufrin.glyph
 package glyphML
 import glyphML.Context.Context
 import GlyphTypes.Scalar
-import NaturalSize.Row
+import NaturalSize.{Col, Row}
+import unstyled.static.INVISIBLE
 
 import org.sufrin.logging.SourceDefault
 import org.sufrin.logging.SourceDefault._
@@ -88,22 +89,23 @@ class TransformsPackage(definitions: Definitions) {
     import glyphML.Context.{ExtendedAttributeMap, TypedAttributeMap}
 
     import resolved._
-
-    val topScale = inheritedAttributes.Scale("superscriptscale", 0.7f*context.sheet.fontScale)(context)
-    val botScale = inheritedAttributes.Scale("mainscale", context.sheet.fontScale)(context)
-    val attrs    = inheritedAttributes.without("superscriptscale", "mainscale")
-    val topCxt = context.updated(Map("fontscale" -> s"$topScale") supersede attrs)
-    val botCxt = context.updated(Map("fontscale" -> s"$botScale") supersede attrs)
-    val nonempties = element.child.flatMap(AbstractSyntax.topmostNonempty)
+    val scaleFactor    = inheritedAttributes.Scale("scalefactor", 0.8f)(context)
+    val scriptScale = inheritedAttributes.Scale("scriptscale", scaleFactor*context.sheet.fontScale)(context)
+    val mainScale   = inheritedAttributes.Scale("mainscale", context.sheet.fontScale)(context)
+    val attrs       = inheritedAttributes.without("scriptscale", "mainscale")
+    val scriptCxt   = context.updated(Map("fontscale" -> s"$scriptScale") supersede attrs)
+    val mainCxt     = context.updated(Map("fontscale" -> s"$mainScale") supersede attrs)
+    val nonempties  = element.child.flatMap(AbstractSyntax.topmostNonempty)
 
     if (nonempties.length<2) {
-      SourceDefault.error(s"Not enough arguments ${element.scope}")
-      Nil
+      SourceDefault.warn(s"Not enough arguments ${element.scope}<${element.tag}")
+      nonempties.flatMap(translator.translate(mainCxt))
     } else {
-      val bottom = (Row(align = Baseline)(nonempties.take(1).flatMap(translator.translate(botCxt))))
-      val top = (Row(align = Baseline)(nonempties.drop(1).flatMap(translator.translate(topCxt))))
-      val glyph = Row(align = Top)(List(bottom, top))
-
+      val main   = (Row(align = Baseline)(nonempties.take(1).flatMap(translator.translate(mainCxt))))
+      val script = (Row(align = Baseline)(nonempties.drop(1).flatMap(translator.translate(scriptCxt))))
+      val scaling = script.h / main.h > 1f
+      val scaledscript = if (scaling) Col(align=Left)(script.scaled(1.4f*main.h/script.h), INVISIBLE(w=1, h=main.h/2)) else script
+      val glyph = if (scaling) Row(align = Bottom)(List(main, scaledscript)) else Row(align = Top)(List(main, script))
       List(glyph)
     }
   }
@@ -113,33 +115,61 @@ class TransformsPackage(definitions: Definitions) {
     import glyphML.Context.{ExtendedAttributeMap, TypedAttributeMap}
 
     import resolved._
-
-    val subscriptScale = inheritedAttributes.Scale("subscriptscale", 0.7f*context.sheet.fontScale)(context)
-    val mainScale    = inheritedAttributes.Scale("mainscale", context.sheet.fontScale)(context)
-    val attrs        = inheritedAttributes.without("subscriptscale", "mainscale")
-    val subscriptCxt = context.updated(Map("fontscale" -> s"$subscriptScale") supersede attrs)
-    val mainCxt      = context.updated(Map("fontscale" -> s"$mainScale") supersede attrs)
-    val nonempties   = element.child.flatMap(AbstractSyntax.topmostNonempty)
+    val scaleFactor    = inheritedAttributes.Scale("scalefactor", 0.8f)(context)
+    val scriptScale    = inheritedAttributes.Scale("scriptscale", scaleFactor*context.sheet.fontScale)(context)
+    val mainScale      = inheritedAttributes.Scale("mainscale", context.sheet.fontScale)(context)
+    val attrs          = inheritedAttributes.without("scriptscale", "mainscale")
+    val scriptCxt      = context.updated(Map("fontscale" -> s"$scriptScale") supersede attrs)
+    val mainCxt        = context.updated(Map("fontscale" -> s"$mainScale") supersede attrs)
+    val nonempties     = element.child.flatMap(AbstractSyntax.topmostNonempty)
 
     if (nonempties.length<2) {
-      SourceDefault.error(s"Not enough arguments ${element.scope}")
-      Nil
+      SourceDefault.warn(s"Not enough arguments ${element.scope}<${element.tag}")
+      nonempties.flatMap(translator.translate(mainCxt))
     } else {
-      val main = (Row(align = Baseline)(nonempties.take(1).flatMap(translator.translate(mainCxt))))
-      val subscript = (Row(align = Baseline)(nonempties.drop(1).flatMap(translator.translate(subscriptCxt))))
-      val glyph = Row(align = Bottom)(List(main, subscript))
+      val main   = (Row(align = Baseline)(nonempties.take(1).flatMap(translator.translate(mainCxt))))
+      val script = (Row(align = Baseline)(nonempties.drop(1).flatMap(translator.translate(scriptCxt))))
+      val scaling = script.h / main.h > 1f
+      val scaledscript = if (scaling) Col(align=Left)(INVISIBLE(w=1, h=10), script.scaled(1.4f*main.h/script.h)) else script
+      val glyph = if (scaling) Row(align = Top)(List(main, scaledscript)) else Row(align = Bottom)(List(main, script))
       List(glyph)
     }
   }
+
+  def fraction(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
+    val resolved = new ResolveScopedAttributes(definitions, element)
+    import glyphML.Context.{ExtendedAttributeMap, TypedAttributeMap}
+
+    import resolved._
+
+    val scaleFactor    = inheritedAttributes.Scale("scalefactor", 0.8f)(context)
+    val scale          = inheritedAttributes.Scale("scale", scaleFactor*context.sheet.fontScale)(context)
+    val linebrush      = inheritedAttributes.Brush("fg", context.sheet.textForegroundBrush)
+    val attrs          = inheritedAttributes.without("scale", "scalefactor")
+    val derivedContext = context.updated(Map("fontscale" -> s"$scale") supersede attrs)
+    val nonempties     = element.child.flatMap(AbstractSyntax.topmostNonempty)
+    val aboveBarSkip   = derivedContext.sheet.textFont.getMetrics.getDescent
+
+    if (nonempties.length<2) {
+      SourceDefault.error(s"Not enough arguments ${element.scope}<${element.tag}")
+      nonempties.flatMap(translator.translate(context))
+    } else {
+      val top    = (Row(align = Baseline)(nonempties.take(1).flatMap(translator.translate(derivedContext))))
+      val bottom = (Row(align = Baseline)(nonempties.drop(1).flatMap(translator.translate(derivedContext))))
+      val glyph  = (top --- INVISIBLE(h=aboveBarSkip) --- GlyphShape.rect((top.w max bottom.w)*1.05f, 3*(1+linebrush.strokeWidth))(linebrush) --- bottom).asGlyph
+      List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
+    }
+  }
+
 
   def bracket(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
     import glyphML.Context.{ExtendedAttributeMap, TypedAttributeMap}
     val resolved = new ResolveScopedAttributes(definitions, element)
     import resolved._
-    val fg  = inheritedAttributes.Brush("fg", context.sheet.textForegroundBrush(width=3))
-    val bg  = inheritedAttributes.Brush("bg", context.sheet.textBackgroundBrush(width=3))
-    val bra = inheritedAttributes.String("bra", "[")
-    val ket = inheritedAttributes.String("ket", "]")
+    val fg  = inheritedAttributes.Brush("fg", context.sheet.textForegroundBrush(width=2))
+    val bg  = inheritedAttributes.Brush("bg", context.sheet.textBackgroundBrush(width=2))
+    val bra = inheritedAttributes.String("bra", "(")
+    val ket = inheritedAttributes.String("ket", ")")
     val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg"))
     if (children.isEmpty) {
       SourceDefault.error(s"Not enough arguments ${element.scope}<bracket ${inheritedAttributes.mkString}")
@@ -183,5 +213,6 @@ class TransformsPackage(definitions: Definitions) {
     definitions("superscript") = StoredExtension(superscript)
     definitions("subscript") = StoredExtension(subscript)
     definitions("bracket") = StoredExtension(bracket)
+    definitions("fraction") = StoredExtension(fraction)
   }
 }

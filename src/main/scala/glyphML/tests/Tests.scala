@@ -383,18 +383,6 @@ object superscripts extends App {
 
       <macro tag="r" ><row alignment="baseline" nonempty="+"><span fontstyle="italic" fontfamily="Arial"><?body?></span></row></macro>
 
-      <macro tag="over" >
-          <scope name="over" >
-            <attributes id="tag:r" fontscale="1*fontscale" fontstyle="italic"/>
-            <measured refid="top" visible="-" orientation="row"><?body0?></measured>
-            <measured refid="bot" visible="-" orientation="row"><?body1?></measured>
-              <withbaseline  height="top.height" height.1="bot.height" offset="-0.13*top.height">
-                <col fg="black.2" nonempty="+" ><glyph gid="top"/><glyph gid="bot"/></col>
-              </withbaseline>
-          </scope>
-      </macro>
-
-
       <macro tag="pow" ><superscript><?body?></superscript></macro>
       <macro tag="sub" ><subscript><?body?></subscript></macro>
 
@@ -420,63 +408,77 @@ object superscripts extends App {
           <fill width="1ex"  height="1ex"  stretch="20"/>
         </fixedwidth>
       </macro>
+
+    <macro tag="red">
+      <span textforeground="red"><?body?></span>
+    </macro>
+
+    <macro tag="abs"><bracket fg="black.1" bra="|" ket="|"><?body?></bracket></macro>
   )
 
   val GUI: Glyph = Col()(
-      <div width="40em" align="justify" fontfamily="Times" textfontsize="32" attributes.warning="-">
+      <div width="40em" align="justify" fontfamily="Times" textfontsize="36" attributes.warning="-" parskip="0.7ex">
         <attributes id="tag:bracket" bra="(" ket=")"/>
+        <attributes id="tag:display" width="0.3*width"/>
+        <attributes id="tag:superscript" scalefactor="0.7"/>
+        <attributes id="tag:subscript"   scalefactor="0.7"/>
         <p>
-          This is an experiment in mathematical layout. It's not something that
-          we recommend for putting interesting mathematical explanations in GUIs. The inbuilt
-          &lt;superscript> and &lt;subscript> transforms are just about ready for setting <i>nested</i> superscripts
-          and subscripts without tedious human intervention. And &lt;bracket> draws brackets around expressions.
+          This is an experiment in mathematical layout, although it's not something that
+          we recommend for putting complex mathematics in GUIs.
         </p>
 
-        <p>Super- and subscripted expressons -- like  <math fontscale="0.9"><pow>A n</pow></math> and
-          <math fontscale="0.9"><sub>A n</sub></math> -- can appear in plain text, or in displayed formulae, and
-          can be nested:
+        <p>Super- and subscripted expressons -- like  <math fontscale="0.9"><superscript>A n</superscript></math> and
+          <math fontscale="0.9"><subscript>A n</subscript></math> -- can appear in plain text or in displayed formulae; and
+          they can be nested. The inbuilt
+          <row>&lt;superscript></row> and <row>&lt;subscript></row> transforms are ready for setting <i>nested</i> 'scripts
+          without tedious human intervention; &lt;bracket> draws brackets around expressions.
         </p>
-        <display><pow>A x*Y*<pow>P z</pow></pow></display>
 
-        <display><pow>X Y</pow></display>
+        <center>
+          <table padx="1em" pady="1ex" cols="3" background="transparent">
+            <display><superscript>A x*Y*<superscript>P z</superscript></superscript></display>
 
-        <display><r><pow>ABC DEF</pow></r></display>
+            <display><superscript>X Y</superscript></display>
 
-        <display><r><bracket bra="&lt;" ket="&gt;"><sub>XYZ ZY</sub></bracket></r></display>
+            <display><r><superscript>ABC DEF</superscript></r></display>
 
-        <display><r>
-          <bracket bra="{" ket="}">
-          <sub>
-            A<sub>B*C<sub>D E</sub></sub></sub></bracket></r></display>
+            <display><r><bracket bra="&lt;" ket="&gt;"><subscript>XYZ ZY</subscript></bracket></r></display>
 
-        <display><r><pow>A<sub>b+c <pow>d 2π</pow></sub></pow></r></display>
+            <display><r><bracket bra="{" ket="}"><subscript>A<subscript>B*C<abs><subscript>D E</subscript></abs></subscript></subscript></bracket></r></display>
+
+            <display><r><superscript>A<subscript>b+c <superscript>d 2π</superscript></subscript></superscript></r></display>
+          </table>
+        </center>
 
         <p>
-          The simplest way to place fractions in mathematical text is implemented by &lt;over> and exemplified
-          below. And 'scripts play well with brackets -- though 'scripting with a fraction does not work.
+          And 'scripts play well with fractions and brackets -- though 'scripting with something substantially taller
+          than the 'scriptee is implemented somewhat sketchily.
       </p>
         <center>
-        <table padx="3em" pady="3ex" cols="3" background="transparent">
-        <display width="0.3*width"><r><over><pow>AB 2πr</pow> <r>B+C</r></over></r></display>
+          <table padx="1em" pady="1ex" cols="3" background="transparent">
+              <display><r><fraction fg="red.1.stroke"><superscript>AB 2πr</superscript> <r>B+C</r></fraction></r></display>
 
-        <display width="0.3*width"><r><over><r>A</r><r>B+C</r></over></r></display>
+              <display><r><fraction><r>A</r><r>B+C</r></fraction></r></display>
 
-        <display width="0.3*width"><over><bracket>A B C</bracket><row>D E F</row></over></display>
+              <display><fraction><bracket fg="red.3">A B C</bracket><row>D E F</row></fraction></display>
 
-        <display width="0.3*width"><bracket bra="(" ket=")"><r><over><pow>AB <bracket>2πr</bracket></pow> <r>B+C</r></over></r></bracket></display>
+              <display><bracket bra="(" ket=")"><r><fraction fg="green"><superscript>AB <bracket>2πr</bracket></superscript> <r>B+C</r></fraction></r></bracket></display>
 
-        <display width="0.3*width"><bracket><r><over><r>A</r><bracket><r>B+C</r></bracket></over></r></bracket></display>
+              <display><bracket><r><fraction><r>A</r><bracket><r>B+C</r></bracket></fraction></r></bracket></display>
 
-        <display width="0.3*width"><bracket bra="{" ket="}"><col>A B C <row>D E F</row></col></bracket></display>
-        </table>
+              <display><subscript><r>ABC</r><fraction>A B</fraction></subscript></display>
+
+              <display><superscript><r>ABC</r><bracket><fraction>A B</fraction></bracket></superscript></display>
+              <display><superscript><r>ABC</r><fraction>A <superscript>B C</superscript></fraction></superscript></display>
+              <display><r>erroneous<fraction>fraction</fraction></r></display>
+          </table>
         </center>
 
 
         <p>
-          Of course, <span textforeground="red"> no_body
-          with good taste would want to use glyphML to write
-          any but the sim_plest, flat_test,
-          math_ematical text within a paragraph in an interface.</span>
+          Of course, no_body
+          with good taste would want to use glyphML to write something like <red><math><r><fraction><subscript>X Y</subscript><superscript>ABC DEF</superscript></fraction></r></math></red>
+          in a paragraph in a GUI, if you see what I mean.
         </p>
 
       </div>
