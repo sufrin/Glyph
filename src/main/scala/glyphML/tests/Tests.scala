@@ -15,6 +15,11 @@ abstract class App extends Application {
   override val dock = new Dock() {
     setGlyph(unstyled.Label(titles))
   }
+
+  override protected def whenStarted(): Unit = {
+    super.whenStarted()
+    GUI.guiRoot.autoScale=true
+  }
 }
 
 object trivial extends App {
@@ -155,7 +160,7 @@ object para extends App {
 
   locally {
 
-    val autoScale = ToggleVariable(initially = false){ state => source.guiRoot.autoScale = state }
+    val autoScale = ToggleVariable(initially = true){ state => source.guiRoot.autoScale = state }
 
     import idioms._
 
@@ -371,7 +376,7 @@ object table extends App {
   def titles: String = "Table"
 }
 
-object superscripts extends App {
+object math extends App {
 
   implicit val style: StyleSheet = StyleSheet()
   import Brushes._
@@ -434,7 +439,6 @@ object superscripts extends App {
           they can be nested. The inbuilt
           <row>&lt;superscript></row> and <row>&lt;subscript></row> transforms are ready for setting <i>nested</i> 'scripts
           without tedious human intervention; &lt;bracket> draws brackets around expressions.
-          <SCOPE/>
         </p>
 
         <center>
@@ -489,7 +493,7 @@ object superscripts extends App {
   ).enlarged(10).framed(blackFrame).enlarged(5)
 
 
-  def titles = "Super\nscript"
+  def titles = "MATH\n----"
 
 }
 
