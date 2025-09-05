@@ -35,7 +35,7 @@ object AbstractSyntax {
 
   case class Scope(tags: List[String]=Nil, definitionScope: Option[Scope]=None) {
     def nest(tag: String): Scope = Scope(tag::tags)
-    override val toString: String = s"${tags.reverse.mkString("<")} ${if (definitionScope.isEmpty) "" else s"/ ${definitionScope.get}"}"
+    override val toString: String = s"${tags.reverse.mkString("<")}${if (definitionScope.isEmpty) "" else s"/ ${definitionScope.get}"}"
     def hasNested(tag: String): Boolean =
       tags.contains(tag) || (definitionScope.nonEmpty && definitionScope.get.hasNested(tag))
     def definedIn(defn: Scope): Scope = Scope(tags, Some(defn))
@@ -104,7 +104,7 @@ object AbstractSyntax {
       case xml.PCData(text: String)                       => Quoted(text)
       case xml.Text(text)                                 => fromText(text)
       case xml.Comment(text: String)                      => Comment("", text)
-      case xml.ProcInstr(target, text)                    => MacroParam(s"$target$text")
+      case xml.ProcInstr(target, text)                    => MacroParam(s"$target$text")  // <?target text?>
       case atom: xml.Atom[Any]                            => fromText(atom.data.toString) // for scala injection phrases {}
     }
   }

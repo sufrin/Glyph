@@ -38,7 +38,7 @@ class TransformsPackage(definitions: Definitions) {
       }
     val derivedContext: Context = context.updated(inheritedAttributes.without("deg", "degrees", "quads"))
     val glyph = turn(makeRow(children.flatMap(translator.translate(derivedContext))))
-    List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
+    List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
   }
 
   def scale(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
@@ -49,7 +49,7 @@ class TransformsPackage(definitions: Definitions) {
     val proportion = inheritedAttributes.Float("scale", 0)
     val derivedContext: Context = context.updated(inheritedAttributes.without("proportion"))
     val glyph = makeRow(children.flatMap(translator.translate(derivedContext))).scaled(proportion)
-    List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
+    List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
   }
 
   def skew(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
@@ -61,7 +61,7 @@ class TransformsPackage(definitions: Definitions) {
     val skx = inheritedAttributes.Float("skewx", 0)
     val derivedContext: Context = context.updated(inheritedAttributes.without("skewx", "skewy"))
     val glyph = makeRow(children.flatMap(translator.translate(derivedContext))).skewed(skewX=skx, skewY=sky)
-    List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
+    List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
   }
 
   def frame(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
@@ -81,7 +81,7 @@ class TransformsPackage(definitions: Definitions) {
        else
          styles.decoration.RoundFramed(fg, bg, enlarge, radius).decorate(unframed)
          //unframed.roundFramed(fg, bg, radius = radius)
-    List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
+    List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
   }
 
   def superscript(translator: Translator)(context: Context)(element: AbstractSyntax.Element): Seq[Glyph] = {
@@ -106,7 +106,7 @@ class TransformsPackage(definitions: Definitions) {
       val scaling = script.h / main.h > 1f
       val scaledscript = if (scaling) Col(align=Left)(script.scaled(1.4f*main.h/script.h), INVISIBLE(w=1, h=main.h/2)) else script
       val glyph = if (scaling) Row(align = Bottom)(List(main, scaledscript)) else Row(align = Top)(List(main, script))
-      List(glyph)
+      List(glyph.withBaseline(0.5f *(glyph.h + mainCxt.sheet.exHeight)))
     }
   }
 
@@ -132,7 +132,7 @@ class TransformsPackage(definitions: Definitions) {
       val scaling = script.h / main.h > 1f
       val scaledscript = if (scaling) Col(align=Left)(INVISIBLE(w=1, h=10), script.scaled(1.4f*main.h/script.h)) else script
       val glyph = if (scaling) Row(align = Top)(List(main, scaledscript)) else Row(align = Bottom)(List(main, script))
-      List(glyph)
+      List(glyph.withBaseline(0.5f *(glyph.h + mainCxt.sheet.exHeight)))
     }
   }
 
@@ -157,7 +157,7 @@ class TransformsPackage(definitions: Definitions) {
       val top    = (Row(align = Baseline)(nonempties.take(1).flatMap(translator.translate(derivedContext))))
       val bottom = (Row(align = Baseline)(nonempties.drop(1).flatMap(translator.translate(derivedContext))))
       val glyph  = (top --- INVISIBLE(h=aboveBarSkip) --- GlyphShape.rect((top.w max bottom.w)*1.05f, 3*(1+linebrush.strokeWidth))(linebrush) --- bottom).asGlyph
-      List(glyph.withBaseline(0.5f *(glyph.h + context.sheet.exHeight)))
+      List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
     }
   }
 
@@ -169,8 +169,17 @@ class TransformsPackage(definitions: Definitions) {
     val fg  = inheritedAttributes.Brush("fg", context.sheet.textForegroundBrush(width=2))
     val bg  = inheritedAttributes.Brush("bg", context.sheet.textBackgroundBrush(width=2))
     val bra = inheritedAttributes.String("bra", "(")
-    val ket = inheritedAttributes.String("ket", ")")
-    val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg"))
+    def mirror(symbol: String): String = symbol match {
+      case "(" => ")"
+      case "[" => "]"
+      case "{" => "}"
+      case "<" => ">"
+      case "|" => "|"
+      case ""  => ""
+      case other => other
+    }
+    val ket = inheritedAttributes.String("ket", mirror(bra))
+    val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "bra", "ket"))
     if (children.isEmpty) {
       SourceDefault.error(s"Not enough arguments ${element.scope}<bracket ${inheritedAttributes.mkString}")
       Nil
@@ -181,6 +190,7 @@ class TransformsPackage(definitions: Definitions) {
       val d = fg.strokeWidth
       val h = coreGlyph.h -2*d
       val dd = d
+
 
       def sym(symbol: String): Glyph =
       symbol match {
@@ -193,14 +203,14 @@ class TransformsPackage(definitions: Definitions) {
         case "|" => unstyled.static.Polygon(w=w, h=h, fg)((w/2, 0), (w/2,h))
         case ">" => unstyled.static.Polygon(w=w, h=h, fg)((w/2, 0), (w-d,h/2), (w/2,h))
         case "]" => unstyled.static.Polygon(w=w, h=h, fg)((w/2,0),  (w-d, 0),  (w-d,h), (w/2,h))
+        case ""  => INVISIBLE(w=w, h=h)
         case _   => unstyled.static.Polygon(w=w*1.1f, h=h, fg)((w/2, 0), (w/2,h))
       }
 
       val ketGlyph = sym(ket)
       val braGlyph = sym(bra)
-
       val glyph = Row(align = Mid)(braGlyph, coreGlyph, ketGlyph)
-      List(glyph)
+      List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
     }
   }
 

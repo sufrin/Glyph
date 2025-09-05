@@ -477,7 +477,8 @@ object superscripts extends App {
 
         <p>
           Of course, no_body
-          with good taste would want to use glyphML to write something like <red><math><r><fraction><subscript>X Y</subscript><superscript>ABC DEF</superscript></fraction></r></math></red>
+          with good taste would want to use glyphML to write something like
+          <bracket bra="" ket=""><red><math><r><fraction><subscript>X Y</subscript><superscript>ABC DEF</superscript></fraction></r></math></red></bracket>
           in a paragraph in a GUI, if you see what I mean.
         </p>
 

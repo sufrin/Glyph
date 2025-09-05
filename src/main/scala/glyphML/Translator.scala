@@ -489,7 +489,8 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         var width: Scalar = inheritedAttributes.Units("width", context.sheet.parWidth)(context)
         val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
         val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
-        val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "width"))
+        val align: VAlignment = inheritedAttributes.VAlign("alignment", Mid)
+        val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "width", "mid"))
         val glyph = if (width==0) {
                Translator.warn(s"No width for $scope [using natural width]")
                NaturalSize.Row(align = Mid)(children.flatMap(translate(derivedContext)))
@@ -504,14 +505,14 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         var width: Scalar = inheritedAttributes.Units("width", 0)(context)
         val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
         val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
-        val align: VAlignment = inheritedAttributes.VAlign("alignment", Top)
+        val align: VAlignment = inheritedAttributes.VAlign("alignment", Mid)
         val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "width", "alignment"))
         val glyph = if (width==0) {
           NaturalSize.Row(align = align)(children.flatMap(translate(derivedContext)))
         }
         else {
           Translator.warn(s"Width specified for $scope ${inheritedAttributes.mkString} ...")
-          FixedSize.Row(align = Mid, width = width)(children.flatMap(translate(derivedContext)))
+          FixedSize.Row(align = align, width = width)(children.flatMap(translate(derivedContext)))
         }
         List(glyph)
 
@@ -519,14 +520,15 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         var height: Scalar = inheritedAttributes.Units("height", 0)(context)
         val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.transparent))
         val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
-        val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "height"))
+        val align: Alignment = inheritedAttributes.Align("alignment", Center)
+        val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "height", "alignment"))
         val glyph =
           if (height==0) {
-             NaturalSize.Col(align = Center, fg=fg, bg=bg, frame = fg)(children.flatMap(translate(derivedContext)))
+             NaturalSize.Col(align = align, fg=fg, bg=bg, frame = fg)(children.flatMap(translate(derivedContext)))
           }
           else {
             Translator.warn(s"Height specified for $scope ${inheritedAttributes.mkString} ...")
-            FixedSize.Col(height = height)(children.flatMap(translate(derivedContext)))
+            FixedSize.Col(alignment=align, height = height)(children.flatMap(translate(derivedContext)))
           }
         List(glyph)
 

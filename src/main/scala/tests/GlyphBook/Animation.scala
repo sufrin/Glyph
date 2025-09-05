@@ -526,15 +526,13 @@ class Animation(implicit val style: BookSheet, implicit val translator: glyphML.
         <scope>
           <macro tag="log"><row alignment="mid"><b>log</b><bracket><?body?></bracket></row></macro>
           <macro tag="floor"><row alignment="mid"><b>floor</b><bracket><?body?></bracket></row></macro>
-          <macro tag="math"><row alignment="mid"><?body?></row></macro>
+          <macro tag="math"><bracket bra="" ><?body?></bracket></macro>
           <p>
-            Drawing scaled curves of the form:
+            Drawing scaled curves of the form: <row>r(θ) = K <superscript>D θ</superscript></row>
           </p>
-          <p><math>r(θ) = <math>K <superscript>D θ</superscript></math></math></p>
-          <p>with scale factor</p>
-          <p><math><fraction scalefactor="1">1 <log>1+<floor><fraction>θ 2π</fraction></floor></log></fraction></math></p>
+          <p>with scale factor <math><fraction scalefactor="1">1 <log>1+<floor><fraction>θ 2π</fraction></floor></log></fraction></math> when <i>D>0</i> </p>
           <p align="justify">
-             when <i>D>0</i> &emdash; and its inverse when <i>D&lt;0</i>. Note that the scale factor changes at most once per complete
+             &emdash; and its inverse when <i>D&lt;0</i>. Note that the scale factor changes at most once per complete
              revolution. Here <i>K</i> is just about half the width of the frame. Draw by choosing D; or use <b>Start/Stop</b>
           </p>
           </scope>
