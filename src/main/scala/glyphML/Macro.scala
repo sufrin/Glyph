@@ -111,7 +111,7 @@ case class Macro(val definitionScope: Scope, tag: String, val defaultAttributes:
       //println(PrettyPrint.prettyPrint(invocationBody))
       println(PrettyPrint.prettyPrint(substituted))
     }
-    val derivedContext = context.updated(invocationAttributes.without("trace") supersede defaultAttributes)
+    val derivedContext = context.updated(invocationAttributes.without("trace") supersede defaultAttributes, tag)
     substituted.flatMap(translator.translate(derivedContext))
   }
 

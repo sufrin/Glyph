@@ -6,6 +6,7 @@ import org.sufrin.logging
 import org.sufrin.logging.{Default, SourceDefault}
 import org.sufrin.SourceLocation._
 import org.sufrin.glyph.GlyphTypes.Scalar
+import org.sufrin.glyph.glyphML.AbstractSyntax.Scope
 
 object Context {
   type AttributeMap = Map[String, String]
@@ -318,15 +319,15 @@ object Context {
   }
 
   /**  */
-  case class Context(attributes: AttributeMap, sheet: StyleSheet, definitions: Definitions) {
+  case class Context(attributes: AttributeMap, sheet: StyleSheet, definitions: Definitions, scope: Scope=Scope()) {
     /**
      *  Yield a new `Env`  whose `attributes` are superseded by those
      *  specified by `localAttributes`, and whose `sheet` is derived
      *  from those attributes.
      */
-    def updated(localAttributes: AttributeMap): Context = {
+    def updated(localAttributes: AttributeMap, thisTag: String): Context = {
         val updatedAttributes = localAttributes supersede attributes
-        Context(updatedAttributes, updatedAttributes.deriveSheet(this), definitions)
+        Context(updatedAttributes, updatedAttributes.deriveSheet(this), definitions, scope.nest(thisTag))
     }
   }
 

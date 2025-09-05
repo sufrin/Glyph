@@ -36,7 +36,7 @@ class TransformsPackage(definitions: Definitions) {
           val glyph$ = glyph.turned(d.toFloat, false)
           glyph$
       }
-    val derivedContext: Context = context.updated(inheritedAttributes.without("deg", "degrees", "quads"))
+    val derivedContext: Context = context.updated(inheritedAttributes.without("deg", "degrees", "quads"), element.tag)
     val glyph = turn(makeRow(children.flatMap(translator.translate(derivedContext))))
     List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
   }
@@ -47,7 +47,7 @@ class TransformsPackage(definitions: Definitions) {
 
     import resolved._
     val proportion = inheritedAttributes.Float("scale", 0)
-    val derivedContext: Context = context.updated(inheritedAttributes.without("proportion"))
+    val derivedContext: Context = context.updated(inheritedAttributes.without("proportion"), element.tag)
     val glyph = makeRow(children.flatMap(translator.translate(derivedContext))).scaled(proportion)
     List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
   }
@@ -59,7 +59,7 @@ class TransformsPackage(definitions: Definitions) {
     import resolved._
     val sky = inheritedAttributes.Float("skewy", 0)
     val skx = inheritedAttributes.Float("skewx", 0)
-    val derivedContext: Context = context.updated(inheritedAttributes.without("skewx", "skewy"))
+    val derivedContext: Context = context.updated(inheritedAttributes.without("skewx", "skewy"), element.tag)
     val glyph = makeRow(children.flatMap(translator.translate(derivedContext))).skewed(skewX=skx, skewY=sky)
     List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
   }
@@ -73,7 +73,7 @@ class TransformsPackage(definitions: Definitions) {
     val radius: Scalar = inheritedAttributes.Float("radius", 0)
     val fg  = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("frameforeground", Brushes.black))
     val bg  = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("framebackground", Brushes.transparent))
-    val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "radius", "enlarge"))
+    val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "radius", "enlarge"), element.tag)
     val unframed = makeRow(children.flatMap(translator.translate(derivedContext)))
     val glyph =
       if (radius==0f)
@@ -93,12 +93,12 @@ class TransformsPackage(definitions: Definitions) {
     val scriptScale = inheritedAttributes.Scale("scriptscale", scaleFactor*context.sheet.fontScale)(context)
     val mainScale   = inheritedAttributes.Scale("mainscale", context.sheet.fontScale)(context)
     val attrs       = inheritedAttributes.without("scriptscale", "mainscale")
-    val scriptCxt   = context.updated(Map("fontscale" -> s"$scriptScale") supersede attrs)
-    val mainCxt     = context.updated(Map("fontscale" -> s"$mainScale") supersede attrs)
+    val scriptCxt   = context.updated(Map("fontscale" -> s"$scriptScale") supersede attrs, element.tag)
+    val mainCxt     = context.updated(Map("fontscale" -> s"$mainScale") supersede attrs, element.tag)
     val nonempties  = element.child.flatMap(AbstractSyntax.topmostNonempty)
 
     if (nonempties.length<2) {
-      SourceDefault.warn(s"Not enough arguments ${element.scope}<${element.tag}")
+      SourceDefault.warn(s"Not enough arguments ${context.scope}<${element.tag}")
       nonempties.flatMap(translator.translate(mainCxt))
     } else {
       val main   = (Row(align = Baseline)(nonempties.take(1).flatMap(translator.translate(mainCxt))))
@@ -119,12 +119,12 @@ class TransformsPackage(definitions: Definitions) {
     val scriptScale    = inheritedAttributes.Scale("scriptscale", scaleFactor*context.sheet.fontScale)(context)
     val mainScale      = inheritedAttributes.Scale("mainscale", context.sheet.fontScale)(context)
     val attrs          = inheritedAttributes.without("scriptscale", "mainscale")
-    val scriptCxt      = context.updated(Map("fontscale" -> s"$scriptScale") supersede attrs)
-    val mainCxt        = context.updated(Map("fontscale" -> s"$mainScale") supersede attrs)
+    val scriptCxt      = context.updated(Map("fontscale" -> s"$scriptScale") supersede attrs, element.tag)
+    val mainCxt        = context.updated(Map("fontscale" -> s"$mainScale") supersede attrs, element.tag)
     val nonempties     = element.child.flatMap(AbstractSyntax.topmostNonempty)
 
     if (nonempties.length<2) {
-      SourceDefault.warn(s"Not enough arguments ${element.scope}<${element.tag}")
+      SourceDefault.warn(s"Not enough arguments ${context.scope}<${element.tag}")
       nonempties.flatMap(translator.translate(mainCxt))
     } else {
       val main   = (Row(align = Baseline)(nonempties.take(1).flatMap(translator.translate(mainCxt))))
@@ -146,12 +146,12 @@ class TransformsPackage(definitions: Definitions) {
     val scale          = inheritedAttributes.Scale("scale", scaleFactor*context.sheet.fontScale)(context)
     val linebrush      = inheritedAttributes.Brush("fg", context.sheet.textForegroundBrush)
     val attrs          = inheritedAttributes.without("scale", "scalefactor")
-    val derivedContext = context.updated(Map("fontscale" -> s"$scale") supersede attrs)
+    val derivedContext = context.updated(Map("fontscale" -> s"$scale") supersede attrs, element.tag)
     val nonempties     = element.child.flatMap(AbstractSyntax.topmostNonempty)
     val aboveBarSkip   = derivedContext.sheet.textFont.getMetrics.getDescent
 
     if (nonempties.length<2) {
-      SourceDefault.error(s"Not enough arguments ${element.scope}<${element.tag}")
+      SourceDefault.error(s"Not enough arguments ${context.scope}<${element.tag}")
       nonempties.flatMap(translator.translate(context))
     } else {
       val top    = (Row(align = Baseline)(nonempties.take(1).flatMap(translator.translate(derivedContext))))
@@ -179,9 +179,9 @@ class TransformsPackage(definitions: Definitions) {
       case other => other
     }
     val ket = inheritedAttributes.String("ket", mirror(bra))
-    val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "bra", "ket"))
+    val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "bra", "ket"), element.tag)
     if (children.isEmpty) {
-      SourceDefault.error(s"Not enough arguments ${element.scope}<bracket ${inheritedAttributes.mkString}")
+      SourceDefault.error(s"Not enough arguments ${context.scope}<bracket ${inheritedAttributes.mkString}")
       Nil
     } else {
       val coreGlyph = makeRow(children.flatMap(translator.translate(derivedContext)))

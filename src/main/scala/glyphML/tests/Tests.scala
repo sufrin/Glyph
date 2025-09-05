@@ -10,8 +10,10 @@ import org.sufrin.logging.{FINER, FINEST, INFO, WARN}
 import org.sufrin.SourceLocation._
 
 abstract class App extends Application {
+  def titles: String
+  val title = titles.replace("\n", "")
   override val dock = new Dock() {
-    setGlyph(unstyled.Label(title))
+    setGlyph(unstyled.Label(titles))
   }
 }
 
@@ -46,7 +48,7 @@ object trivial extends App {
     source.framed(Brushes.blackFrame)
   }
 
-  def title: String = "trivial"
+  def titles: String = "Triv\nial"
 
 
 
@@ -116,7 +118,7 @@ object hyphenation extends App {
     source.framed(Brushes.blackFrame)
   }
 
-  def title: String = "hyphen\nation"
+  def titles: String = "hyphen\nation"
 }
 
 
@@ -270,7 +272,7 @@ object para extends App {
     source.enlarged(20).framed(Brushes.blackFrame)
   }
 
-  def title: String = "Para"
+  def titles: String = "Para\ngraph"
 
 }
 
@@ -351,7 +353,7 @@ object measured extends App {
     source.enlarged(20).framed(Brushes.blackFrame)
   }
 
-  def title: String = "Measured"
+  def titles: String = "Meas\nured"
 
 }
 
@@ -366,7 +368,7 @@ object table extends App {
     Grid(fg=Brushes.black).table(width=10)(data),
   )
 
-  def title: String = "Table"
+  def titles: String = "Table"
 }
 
 object superscripts extends App {
@@ -432,6 +434,7 @@ object superscripts extends App {
           they can be nested. The inbuilt
           <row>&lt;superscript></row> and <row>&lt;subscript></row> transforms are ready for setting <i>nested</i> 'scripts
           without tedious human intervention; &lt;bracket> draws brackets around expressions.
+          <SCOPE/>
         </p>
 
         <center>
@@ -486,12 +489,11 @@ object superscripts extends App {
   ).enlarged(10).framed(blackFrame).enlarged(5)
 
 
-  def title = "Super\nscripts"
+  def titles = "Super\nscript"
 
 }
 
-
-object baselines extends Application {
+object baselines extends App {
   import org.sufrin.glyph.GlyphTypes.Font
   import org.sufrin.glyph.NaturalSize.Row
 
@@ -515,5 +517,5 @@ object baselines extends Application {
 
     )
 
-  override def title: String = "Baselines"
+  override def titles: String = "Base\nlines"
 }
