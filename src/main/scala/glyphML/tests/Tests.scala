@@ -478,6 +478,7 @@ object math extends App {
               <display><superscript><r>ABC</r><bracket><fraction>A B</fraction></bracket></superscript></display>
               <display><superscript><r>ABC</r><fraction>A <superscript>B C</superscript></fraction></superscript></display>
               <display><r>erroneous<fraction>fraction</fraction></r></display>
+              <insert evaluate="footle"/>
           </table>
         </center>
 

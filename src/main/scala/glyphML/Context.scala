@@ -2,11 +2,12 @@ package org.sufrin.glyph
 package glyphML
 
 
+import GlyphTypes.Scalar
+import glyphML.AbstractSyntax.Scope
+
 import org.sufrin.logging
 import org.sufrin.logging.{Default, SourceDefault}
 import org.sufrin.SourceLocation._
-import org.sufrin.glyph.GlyphTypes.Scalar
-import org.sufrin.glyph.glyphML.AbstractSyntax.Scope
 
 object Context {
   type AttributeMap = Map[String, String]
@@ -38,6 +39,26 @@ object Context {
     def without(keys: String*): AttributeMap = map.removedAll(keys)
     def mkString(sep: String = " "): String =
       (for { (k, d) <- map } yield s"$k=\"$d\"").mkString(sep)
+  }
+
+  lazy val indexedFields = StyleSheet().productElementNames.zipWithIndex
+
+  implicit class ExtendedStyleSheetAsMapping(val sheet: StyleSheet) extends AnyVal {
+    def get(id: String): Option[Any] = {
+      indexedFields.find{ case (n, _) => id.equalsIgnoreCase(n)} match {
+        case Some((_, ix)) => Some(sheet.productElement(ix))
+        case _ => None
+      }
+    }
+
+    def field[T](id: String): T = {
+      get(id) match {
+        case None    =>
+          SourceDefault.error(s"StyleSheet field '$id' is not defined")
+          null.asInstanceOf[T]
+        case Some(t) => t.asInstanceOf[T]
+      }
+    }
   }
 
   /**
@@ -90,7 +111,7 @@ object Context {
       val Rfactor = "(-?[0-9]+(\\.([0-9]+)?)?)(em|ex|px|pt|ux)".r
       val RId     = "[a-zA-Z.]+".r
       val RNum    = "-?([0-9]+(\\.([0-9]+)?)?)".r
-      import context.{sheet, definitions}
+      import context.{definitions, sheet}
       def fetchGlyphDiagonal(id: String): Vec = {
         val stored = definitions.getKind(StoreType.GlyphConstant)(id)
         val result =
@@ -104,6 +125,7 @@ object Context {
         result
       }
       def evalGlobal(factor: Scalar, id: String): Scalar = {
+        import ExtendedStyleSheetAsMapping._
         id match {
           case "width" => factor * sheet.parWidth
           case "indent" => factor * sheet.parIndent
@@ -117,6 +139,11 @@ object Context {
           case "screen.height" => factor * sheet.screenHeight
           case s"$id.width"  => factor*fetchGlyphDiagonal(id).x
           case s"$id.height" => factor*fetchGlyphDiagonal(id).y
+          // the following are on a refactoring route
+          case "padx" => factor * sheet.field[Float]("padx")
+          case "pady" => factor * sheet.field[Float]("pady")
+          case "parwidth" => factor * sheet.field[Float]("parwidth")
+          case "parindent" => factor * sheet.field[Float]("parindent")
           case other =>
             alt
         }
