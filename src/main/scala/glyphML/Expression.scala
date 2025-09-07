@@ -84,7 +84,13 @@ class Expr(source: String, context: Context)(implicit at: SourceLocation = sourc
   def factor(): Value = {
     symbols.current match {
       case num(name) =>
-        result(Scale(name.toFloat))
+        val n = Scale(name.toFloat)
+        symbols.next()
+        symbols.current match {
+          case e: id => n*factor()
+          case other => n
+        }
+
       case id(name) =>
         val sheet=context.sheet
         val dim: Scalar = name match {
@@ -182,13 +188,15 @@ class Symbols(source: String) extends Iterator[Lexeme] {
 
   @inline private def result(l: Lexeme): Lexeme = { cursor.next(); l }
 
+  def isNumeric(c: Char): Boolean = c.isDigit || c=='.'
   def next(): Lexeme = if (cursor.hasCurrent) {
     val r = cursor.current match {
       case '(' => result(BRA)
       case ')' => result(KET)
       case c if c.isWhitespace => cursor.dropWhile(_.isWhitespace); next()
       case c if operators.contains(c) => result(op(s"$c"))
-      case c if c.isDigit => num(cursor.stringWhile(_.isDigit))
+      case '.' => cursor.next(); num("."+cursor.stringWhile(_.isDigit))
+      case c if c.isDigit => num(cursor.stringWhile(isNumeric))
       case c if c.isLetterOrDigit => id(cursor.stringWhile(_.isLetterOrDigit))
       case other =>
         nonsymbol(s"$other")
@@ -210,11 +218,12 @@ object testExpression {
     //while (l0.hasNext) { println(l0.next()) }
 
     val trials =
-      """ (2/3)
+      """ (.2/3.0)
         | 2*3*4+5
         |  em
         |  - - 2*em
         |  em*2
+        |  2em
         |  ( 2 + 3 ) * em
         |  em*(2+3)
         |  em
