@@ -376,7 +376,8 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         val expr: String   = localAttributes.String("evaluate", "")
         val derivedContext = context.updated(localAttributes.without("attribute", "evaluate"), tag)
         val attr: String   = if (attribute.nonEmpty) derivedContext.attributes.String(attribute, s"?$attribute?") else ""
-        val value: String  = if (expr.nonEmpty) derivedContext.attributes.Eval(expr, Float.NaN)(context).toInt.toString else ""
+        val value: String  =
+          if (expr.nonEmpty) derivedContext.attributes.AnyNumeric(expr, Float.NaN)(context).toInt.toString else ""
         val stuff = (attr.nonEmpty, value.nonEmpty) match {
           case (true, true) => Para(List(attr,value))
           case (true, false) => Text(attr)
@@ -474,10 +475,12 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
         val width     = localAttributes.Int("columns", localAttributes.Int("cols", 0))
         val height    = localAttributes.Int("rows", localAttributes.Int("height", 0))
         val uniform   = localAttributes.Bool("uniform", false)
-        val derivedContext = context.updated(localAttributes.without("columns", "cols", "uniform", "width", "height"), tag)
+        val fg = localAttributes.Brush("fg", Brushes.transparent)
+        val bg = localAttributes.Brush("bg", Brushes.transparent)
+        val derivedContext = context.updated(localAttributes.without("columns", "cols", "uniform", "width", "height", "fg", "bg"), tag)
         val glyphs    =
           children.filterNot(isEmptyText).flatMap(translate(derivedContext))
-        import derivedContext.sheet.{foregroundBrush=>fg, backgroundBrush=>bg, padX, padY}
+        import derivedContext.sheet.{padX, padY}
         val Grid      = NaturalSize.Grid(fg = fg, bg = bg, padx=padX, pady = padY)
         val buildFrom = if (uniform) Grid.grid(height=height, width=width)(_) else Grid.table(height=height, width=width)(_)
         List(buildFrom(glyphs))
@@ -485,54 +488,38 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
       case "fill" | "space" =>
         val width  = localAttributes.Units("width", context.sheet.emWidth)(context)
         val height = localAttributes.Units("height", context.sheet.exHeight)(context)
-        val stretch = localAttributes.Float("stretch", 1f)
+        val stretch = localAttributes.Scale("stretch", 1f)(context)
         val background = localAttributes.Brush("background", localAttributes.Brush("bg", Brushes.transparent))
         val foreground = localAttributes.Brush("foreground", localAttributes.Brush("fg", Brushes.transparent))
         List(FixedSize.Space(width, height, stretch, fg=foreground, bg=background))
 
-      case "fixedwidth" =>
-        var width: Scalar = inheritedAttributes.Units("width", context.sheet.parWidth)(context)
-        val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
-        val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
-        val align: VAlignment = inheritedAttributes.VAlign("alignment", Mid)
-        val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "width", "mid"), tag)
-        val glyph = if (width==0) {
-               Translator.warn(s"No width for ${context.scope} [using natural width]")
-               NaturalSize.Row(align = Mid)(children.flatMap(translate(derivedContext)))
-            }
-            else {
-               val r = FixedSize.Row(align = Baseline, width = width)(children.flatMap(translate(derivedContext)))
-              r
-            }
-        List(glyph)
 
-      case "row" =>
+      case "row" | "fixedrow" =>
         var width: Scalar = inheritedAttributes.Units("width", 0)(context)
         val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.black))
         val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
         val align: VAlignment = inheritedAttributes.VAlign("alignment", Mid)
         val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "width", "alignment"), tag)
-        val glyph = if (width==0) {
+        val glyph = if (tag=="row") {
           NaturalSize.Row(align = align)(children.flatMap(translate(derivedContext)))
         }
         else {
-          Translator.warn(s"Width specified for ${context.scope} ${inheritedAttributes.mkString} ...")
           FixedSize.Row(align = align, width = width)(children.flatMap(translate(derivedContext)))
         }
         List(glyph)
 
-      case "col" =>
+      case "col" | "fixedcol" =>
         var height: Scalar = inheritedAttributes.Units("height", 0)(context)
         val fg = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("foreground", Brushes.transparent))
         val bg = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("background", Brushes.transparent))
         val align: Alignment = inheritedAttributes.Align("alignment", Center)
         val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "height", "alignment"), tag)
         val glyph =
-          if (height==0) {
+          if (tag=="col") {
              NaturalSize.Col(align = align, fg=fg, bg=bg, frame = fg)(children.flatMap(translate(derivedContext)))
           }
           else {
-            Translator.warn(s"Height specified for ${context.scope} ${inheritedAttributes.mkString} ...")
+            if (tag=="col") Translator.warn(s"Height specified for ${context.scope}<$tag ${inheritedAttributes.mkString} ")
             FixedSize.Col(alignment=align, height = height)(children.flatMap(translate(derivedContext)))
           }
         List(glyph)
@@ -547,7 +534,7 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
             case Some(StoredExtension(translate)) =>
               Some(translate(thisTranslator)(context)(Element(scope, tag, givenAttributes, child)))
             case _ =>
-              SourceDefault.error(s"Internal error at ${context.scope}<$tag ...\n")
+              SourceDefault.error(s"Internal error at ${context.scope}<$tag ${givenAttributes.toSource}\n")
               None
           }
 
@@ -558,7 +545,7 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
                 val expanded = abstraction.expanded(thisTranslator, context.updated(localAttributes, tag), children)
                 Some(expanded)
               case _ =>
-                SourceDefault.error(s"Internal error at ${context.scope}<$tag ...\n")
+                SourceDefault.error(s"Internal error at ${context.scope}<$tag ${givenAttributes.toSource}\n")
                 None
             }
 
@@ -569,12 +556,12 @@ class Translator(val definitions: Definitions = new Definitions) { thisTranslato
                 val derivedContext = context.updated(localAttributes, tag)
                 Some(translate(derivedContext)(element))
               case _ =>
-                SourceDefault.error(s"Internal error at ${context.scope}<$tag ...\n")
+                SourceDefault.error(s"Internal error at ${context.scope}<$tag ${givenAttributes.toSource}\n")
                 None
             }
 
         @inline def mistake(tag: String): Option[Seq[Glyph]] = {
-           SourceDefault.warn(s"No such tag <$tag at ${context.scope} ...")
+           SourceDefault.warn(s"No such tag <$tag at ${context.scope} ${givenAttributes.toSource}")
            Some(Nil)
         }
 

@@ -4,6 +4,7 @@ package glyphML
 
 import GlyphTypes.Scalar
 import glyphML.AbstractSyntax.Scope
+import glyphML.expression.Expr
 
 import org.sufrin.logging
 import org.sufrin.logging.{Default, SourceDefault}
@@ -107,7 +108,7 @@ object Context {
     /**
      *  Evaluate an expression
      */
-    def Eval(spec: String, alt: Float, scalar: Boolean=false)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
+    def XEval(spec: String, alt: Float, scalar: Boolean=false)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
       val Rfactor = "(-?[0-9]+(\\.([0-9]+)?)?)(em|ex|px|pt|ux)".r
       val RId     = "[a-zA-Z.]+".r
       val RNum    = "-?([0-9]+(\\.([0-9]+)?)?)".r
@@ -215,10 +216,15 @@ object Context {
      *
      * where *gid* is the refid of a glyph, or something that has been "measured".
      */
+
     def Units(key: String, alt: Float)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
       attributes.get(key.toLowerCase)  match {
         case Some(spec) =>
-          Eval(spec, alt, scalar=false)(context)(at)
+          Expr(spec, context)(at).evaluate match {
+            case Expr.ExpressionError(why) => SourceDefault.error(why)(at); alt
+            case Expr.Pixels(n) => n
+            case other => SourceDefault.warn(s"$key field ($other) should be a measure")(at); alt
+          }
         case None =>
           alt
       }
@@ -227,10 +233,24 @@ object Context {
     def Scale(key: String, alt: Float)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
       attributes.get(key.toLowerCase)  match {
         case Some(spec) =>
-          Eval(spec, alt, scalar=true)(context)(at)
+          Expr(spec, context)(at).evaluate match {
+            case Expr.ExpressionError(why) => SourceDefault.error(why)(at); alt
+            case Expr.Scale(n) => n
+            case other => SourceDefault.warn(s"$key field ($other) should be a scale")(at); alt
+          }
         case None =>
           alt
       }
+    }
+
+    def AnyNumeric(expr: String, alt: Float)(context: Context)(implicit at: SourceLocation = sourceLocation): Float = {
+      val res = Expr(expr, context)(at).evaluate
+      val result = res match {
+            case Expr.ExpressionError(why) => SourceDefault.error(why)(at) ; alt
+            case Expr.Scale(n) => n
+            case Expr.Pixels(n) => n
+          }
+      result
     }
 
     /**

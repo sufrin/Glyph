@@ -129,7 +129,7 @@ object ResizeableWindowTest extends Application {
          </p>
          <space/>
          <centered>
-          <frame fg="blue.2" radius="0.05" enlarge="30">
+          <frame fg="blue.2" radius="0.05ux" enlarge="30px">
             <p width="0.7*width" fontScale="0.7" hang="‡ " labelForeground="red" textForeground="red">
               Mulesing is the removal of strips of wool-bearing skin from around the breech of
               sheep to prevent the parasitic infection

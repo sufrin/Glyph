@@ -11,7 +11,22 @@ import org.sufrin.logging.{ALL, SourceDefault}
 import org.sufrin.SourceLocation.{sourceLocation, SourceLocation}
 
 object Expr {
-  case class ExpressionError(why: String) extends Throwable
+
+  def apply(source: String, context: Context)(implicit at: SourceLocation = sourceLocation): Expr = new Expr(source, context)(at)
+
+  implicit class Coercion(val scalar: Scalar) extends AnyVal {
+    def asScale:  Value = Scale(scalar)
+    def asPixels: Value = Pixels(scalar)
+  }
+
+  case class ExpressionError(why: String) extends Throwable with Value {
+    def +(other: Value): Value = this
+    def *(other: Value): Value = this
+    def -(other: Value): Value = this
+    def /(other: Value): Value = this
+    def asScale: Scalar = throw this
+    def asPixels: Scalar = throw this
+  }
 
   def Erroneous(why: String): Unit = throw new ExpressionError(why)
 
@@ -50,6 +65,7 @@ object Expr {
       case _: Scale => Scale(n/other.asScale)
     }
   }
+
 }
 
 class Expr(source: String, context: Context)(implicit at: SourceLocation = sourceLocation) {
@@ -65,19 +81,20 @@ class Expr(source: String, context: Context)(implicit at: SourceLocation = sourc
   }
 
   @inline private def checkFor(symbol: Lexeme): Unit = {
-    if (symbols.current==symbol) symbols.next() else Erroneous(s"Notation error (expecting $symbol) at ${symbols.current}")
+    if (symbols.current==symbol) symbols.next() else Erroneous(s"Notation error (expecting $symbol) at ${symbols.current} at ${context.scope}")
   }
 
   def fetchGlyphDiagonal(id: String): Vec = {
     val stored = context.definitions.getKind(StoreType.GlyphConstant)(id)
-    val result =
+    val result = {
       stored match {
         case Some(StoredGlyphConstant(glyph)) =>
           glyph.diagonal
         case _ =>
-          Erroneous(s"Unknown glyph: $id in $source")
+          Erroneous(s"Unknown glyph: $id in $source  at ${context.scope}")
           Vec.Zero
       }
+    }
     result
   }
 
@@ -93,28 +110,34 @@ class Expr(source: String, context: Context)(implicit at: SourceLocation = sourc
 
       case id(name) =>
         val sheet=context.sheet
-        val dim: Scalar = name match {
-          case "width" => sheet.parWidth
-          case "indent" => sheet.parIndent
-          case "leftmargin" => sheet.leftMargin
-          case "rightmargin" => sheet.rightMargin
-          case "container.width" => sheet.containerWidth
-          case "container.height" => sheet.containerHeight
-          case "window.width" => sheet.windowWidth
-          case "window.height" => sheet.windowHeight
-          case "screen.width" => sheet.screenWidth
-          case "screen.height" => sheet.screenHeight
-          case "em" => sheet.emWidth
-          case "ex" => sheet.exHeight
-          case "px" => 1f
-          case "baseline" => sheet.baseLine
-          case s"$id.width"  => fetchGlyphDiagonal(id).x
-          case s"$id.height" => fetchGlyphDiagonal(id).y
-            // Any dimension field of the style sheet
-          case "parskip" => sheet.parSkip
-          case other => sheet.field[Scalar](other)
+        val value = name match {
+          case "width" => sheet.parWidth.asPixels
+          case "indent" => sheet.parIndent.asPixels
+          case "leftmargin" => sheet.leftMargin.asPixels
+          case "rightmargin" => sheet.rightMargin.asPixels
+          case "container.width" => sheet.containerWidth.asPixels
+          case "container.height" => sheet.containerHeight.asPixels
+          case "window.width" => sheet.windowWidth.asPixels
+          case "window.height" => sheet.windowHeight.asPixels
+          case "screen.width" => sheet.screenWidth.asPixels
+          case "screen.height" => sheet.screenHeight.asPixels
+          case "em" => sheet.emWidth.asPixels
+          case "ex" => sheet.exHeight.asPixels
+          case "px" => 1f.asPixels
+          case "ux" => 1f.asPixels
+          case "baseline" => sheet.baseLine.asPixels
+          case s"$id.width"  =>
+            fetchGlyphDiagonal(id).x.asPixels
+          case s"$id.height" =>
+            fetchGlyphDiagonal(id).y.asPixels
+          // Scalar field of the style sheet
+          case "fontscale" => sheet.fontScale.asScale
+          // Any dimension field of the style sheet
+          case "parskip" => sheet.parSkip.asPixels
+          case other =>
+            sheet.field[Scalar](other).asPixels
         }
-        result(Pixels(dim))
+        result(value)
       case BRA =>
         symbols.next()
         val s=expression()
@@ -162,6 +185,10 @@ class Expr(source: String, context: Context)(implicit at: SourceLocation = sourc
     }
   } else None
 
+  def evaluate: Value = if (symbols.hasCurrent) {
+    try { val v = expression(); checkFor(END); v } catch { case e: ExpressionError => e }
+  } else ExpressionError("Empty expression")
+
 }
 
 trait Expression {
@@ -189,6 +216,7 @@ class Symbols(source: String) extends Iterator[Lexeme] {
   @inline private def result(l: Lexeme): Lexeme = { cursor.next(); l }
 
   def isNumeric(c: Char): Boolean = c.isDigit || c=='.'
+  def isIdentifier(c: Char): Boolean = c.isLetterOrDigit || c=='.'
   def next(): Lexeme = if (cursor.hasCurrent) {
     val r = cursor.current match {
       case '(' => result(BRA)
@@ -197,7 +225,7 @@ class Symbols(source: String) extends Iterator[Lexeme] {
       case c if operators.contains(c) => result(op(s"$c"))
       case '.' => cursor.next(); num("."+cursor.stringWhile(_.isDigit))
       case c if c.isDigit => num(cursor.stringWhile(isNumeric))
-      case c if c.isLetterOrDigit => id(cursor.stringWhile(_.isLetterOrDigit))
+      case c if c.isLetterOrDigit => id(cursor.stringWhile(isIdentifier))
       case other =>
         nonsymbol(s"$other")
     }
@@ -213,7 +241,7 @@ object Lexemes {
 object testExpression {
   locally { SourceDefault.level = ALL }
   def main (args: Array[String]): Unit = {
-    val context = Context(Map.empty, StyleSheet(), new Definitions, Scope())
+    val context = Context(Map.empty, StyleSheet(fontScale=3.141f), new Definitions, Scope())
     //val l0 = new Symbols(" a * b + (c * d) ")
     //while (l0.hasNext) { println(l0.next()) }
 
@@ -221,9 +249,12 @@ object testExpression {
       """ (.2/3.0)
         | 2*3*4+5
         |  em
+        |  fontscale
         |  - - 2*em
         |  em*2
         |  2em
+        |  2px
+        |  2
         |  ( 2 + 3 ) * em
         |  em*(2+3)
         |  em

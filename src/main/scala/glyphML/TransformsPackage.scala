@@ -36,7 +36,7 @@ class TransformsPackage(definitions: Definitions) {
           val glyph$ = glyph.turned(d.toFloat, false)
           glyph$
       }
-    val derivedContext: Context = context.updated(inheritedAttributes.without("deg", "degrees", "quads"), element.tag)
+    val derivedContext: Context = context.updated(inheritedAttributes.without("deg", "degrees", "quads", "quadrants"), element.tag)
     val glyph = turn(makeRow(children.flatMap(translator.translate(derivedContext))))
     List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
   }
@@ -46,7 +46,7 @@ class TransformsPackage(definitions: Definitions) {
     import glyphML.Context.{ExtendedAttributeMap, TypedAttributeMap}
 
     import resolved._
-    val proportion = inheritedAttributes.Float("scale", 0)
+    val proportion = inheritedAttributes.Scale("scale", 1f)(context)
     val derivedContext: Context = context.updated(inheritedAttributes.without("proportion"), element.tag)
     val glyph = makeRow(children.flatMap(translator.translate(derivedContext))).scaled(proportion)
     List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
@@ -57,8 +57,8 @@ class TransformsPackage(definitions: Definitions) {
     import glyphML.Context.{ExtendedAttributeMap, TypedAttributeMap}
 
     import resolved._
-    val sky = inheritedAttributes.Float("skewy", 0)
-    val skx = inheritedAttributes.Float("skewx", 0)
+    val sky = inheritedAttributes.Scale("skewy", 0)(context)
+    val skx = inheritedAttributes.Scale("skewx", 0)(context)
     val derivedContext: Context = context.updated(inheritedAttributes.without("skewx", "skewy"), element.tag)
     val glyph = makeRow(children.flatMap(translator.translate(derivedContext))).skewed(skewX=skx, skewY=sky)
     List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
@@ -69,8 +69,8 @@ class TransformsPackage(definitions: Definitions) {
     import glyphML.Context.{ExtendedAttributeMap, TypedAttributeMap}
 
     import resolved._
-    val enlarge: Scalar = inheritedAttributes.Float("enlarge", 0.14f)
-    val radius: Scalar = inheritedAttributes.Float("radius", 0)
+    val enlarge: Scalar = inheritedAttributes.Units("enlarge", 0.14f)(context)
+    val radius: Scalar = inheritedAttributes.Units("radius", 0)(context)
     val fg  = inheritedAttributes.Brush("fg", inheritedAttributes.Brush("frameforeground", Brushes.black))
     val bg  = inheritedAttributes.Brush("bg", inheritedAttributes.Brush("framebackground", Brushes.transparent))
     val derivedContext: Context = context.updated(inheritedAttributes.without("fg", "bg", "radius", "enlarge"), element.tag)

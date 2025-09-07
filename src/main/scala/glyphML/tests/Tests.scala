@@ -10,8 +10,14 @@ import org.sufrin.logging.{FINER, FINEST, INFO, WARN}
 import org.sufrin.SourceLocation._
 
 abstract class App extends Application {
+  locally{
+    logging.SourceDefault.level=FINEST
+    Translator.level=INFO
+    HYPHENATION.level=INFO
+    Paragraph.level=INFO
+  }
   def titles: String
-  val title = titles.replace("\n", "")
+  val title = titles.replace("\n", "").replaceAll("[^A-Za-z]", "")
   override val dock = new Dock() {
     setGlyph(unstyled.Label(titles))
   }
@@ -186,7 +192,7 @@ object para extends App {
           <attributes id="class:fat" fontscale="1.3" align="justify"/>
           <attributes id="class:narrow" align="justify" width="280px" textforeground="black"/>
           <attributes id="class:narrower" align="justify" width="240px" textforeground="black"/>
-          <attributes id="tag:scope" trace=""/>
+          <attributes id="tag:scope" trace="-"/>
           <macro tag="courier" fontfamily="Courier">
             <?body?>
           </macro>
@@ -225,7 +231,7 @@ object para extends App {
         This is centred text in a small scale bold-italic font.
       </p>
 
-      <frame fg="red.2"><fixedwidth width="0.9*width" keepempty="+">this text <fill fg="red" stretch="200"/> is spread</fixedwidth></frame>
+      <frame fg="red.2"><row width="0.9*width" keepempty="+">this text <fill fg="red" stretch="200"/> is spread</row></frame>
 
         <element tag="blether">
           This is a long, hy_phen_at_able "antidisestablishmentarianism" tract_ified text con_cerning floccinaucinihilipilification. The text may
@@ -299,57 +305,67 @@ object measured extends App {
       <macro tag="makeamistake"><measured refid="makeamistake"><deliberatemistake/></measured></macro>
       <macro tag="makeanothermistake"><measured refid="makeanotheramistake"><anothermistake/></measured></macro>
 
-        <macro tag="paratag" framed="red" nonempty="true">
+        <macro tag="paratag" nonempty="+">
           <?body?>
           <makeamistake/>
         </macro>
 
         <macro tag="nested" align="right" whocares="not me" nonempty="true" width="virtual.width">
-          <table cols="1" uniform="false" background="yellow" nonempty="true"><debug tree="true"/><?body?></table>
+          <table cols="1" uniform="false" fg="transparent" bg="yellow" nonempty="true"><?body?></table>
         </macro>
     )
 
   lazy val source: Glyph = {
     <div fontfamily="Times" width="25em" labelforeground="black"  textforeground="black" cdatabackground="transparent" cdataforeground="red"
-         attributeswarning="f"
+         framed="transparent.6" attributeswarning="f"
     >
       <attributes id="tag:debug" caption="Debugging" local="t"/>
       <attributes id="tag:p" align="justify" width="width" textforeground="black" fontfamily="Times"/>
-      <attributes id="tag:paratag" trace="true" align="justify" width="virtual.width" textforeground="black" fontfamily="Times" nonempty="true"/>
+      <attributes id="tag:paratag" trace="-" align="justify" width="virtual.width" textforeground="black" fontfamily="Times" nonempty="true"/>
 
-     <measured refid="virtual" visible="off" orientation="col" background="transparent">
+     <measured refid="virtual" visible="off" orientation="col" background="transparent" bg="pink">
+       <col bg="pink">
            <p>
              This section will be inserted after the line containing its
-             dimensions.
+             dimensions; and inserted again at the bottom of the window.
            </p>
-           <p>
-              Here we check the functionality of &lt;measured visible="false",
-              and the reporting of errors during macro expansion
-           </p>
+
+         </col>
      </measured>
 
-      <fixedwidth width="virtual.width">
-        <fill stretch="200" fg="red"/>
-        <fixedwidth width="0.75*width" bg="pink"><insert evaluate="virtual.width"/>x<insert evaluate="virtual.height"/></fixedwidth>
-        <fill stretch="200" fg="red"/>
-      </fixedwidth>
+      <p>
+        Here we check the functionality of &lt;measured visible="false",
+        and the reporting of errors during macro expansion.
+      </p>
 
-      <glyph gid="virtual"/><!--insert evaluate="width"/-->
+      <row alignment="med" width="virtual.width">
+        <fill stretch="200" fg="red.2"/>
+        <frame fg="transparent" enlarge="15px">
+         <insert evaluate="virtual.width"/>x<insert evaluate="virtual.height"/>
+        </frame>
+        <fill stretch="200" fg="red.2"/>
+      </row>
 
-
+      <glyph gid="virtual"/>
 
       <nested width="2*width">
-        «nested <row>width = <insert attribute="width" /> == <insert evaluate="width"/></row>
-        <paratag>
-          «paratag <row>width = <insert attribute="width"/> == <insert evaluate="width"/> </row>
-           <p>
-             This is a paragraph set in scope «nested«paratag«p Its width was specified (in paratag) as
-             "virtual.width" and it has
-             deliberate mistakes in both context and macros.
-           </p>
-           <anotherdeliberate/>
-        </paratag>
+        <scope>
+          <attributes id="tag:row" keepempty="+"/>
+          <row >«nested <row> width = <insert attribute="width" /> == <insert evaluate="width"/></row></row>
+          <paratag>
+            <row>«paratag <row>width = <insert attribute="width"/> == <insert evaluate="width"/> </row></row>
+             <p>
+               This is a paragraph set in scope <tt>«nested«paratag«p ...</tt> Its width was specified (in paratag) as
+               "virtual.width" and it has
+               deliberate mistakes in both context and macros.
+             </p>
+             <anotherdeliberate/>
+          </paratag>
+        </scope>
       </nested>
+
+      <rotate degrees="180"><glyph gid="virtual"/></rotate>
+
     </div>
   }
 
@@ -373,7 +389,7 @@ object table extends App {
     Grid(fg=Brushes.black).table(width=10)(data),
   )
 
-  def titles: String = "Table"
+  def titles: String = "TABLE\n😀😀😀"
 }
 
 object math extends App {
@@ -397,23 +413,23 @@ object math extends App {
         <frame fg="transparent">
         <scope name="display">
           <attributes id="tag:r" fontfamily="Arial" fontscale="0.9*fontscale" fontstyle="italic"/>
-            <fixedwidth >
+            <fixedrow >
                 <fill width="1ex"  height="1ex"  stretch="20"/>
               <math>
                  <?body?>
               </math>
               <fill width="1ex"  height="1ex" stretch="20"/>
-            </fixedwidth>
+            </fixedrow>
         </scope>
         </frame>
       </macro>
 
       <macro tag="center">
-        <fixedwidth width="1*width">
+        <fixedrow width="1*width">
           <fill width="1ex"  height="1ex"  stretch="20"/>
           <?body?>
           <fill width="1ex"  height="1ex"  stretch="20"/>
-        </fixedwidth>
+        </fixedrow>
       </macro>
 
     <macro tag="red">
@@ -442,17 +458,13 @@ object math extends App {
         </p>
 
         <center>
-          <table padx="1em" pady="1ex" cols="3" background="transparent">
+          <table padx="1em" pady="1ex" cols="3" bg="transparent" fg="lightgrey">
             <display><superscript>A x*Y*<superscript>P z</superscript></superscript></display>
-
             <display><superscript>X Y</superscript></display>
-
             <display><r><superscript>ABC DEF</superscript></r></display>
 
             <display><r><bracket bra="&lt;" ket="&gt;"><subscript>XYZ ZY</subscript></bracket></r></display>
-
             <display><r><bracket bra="{" ket="}"><subscript>A<subscript>B*C<abs><subscript>D E</subscript></abs></subscript></subscript></bracket></r></display>
-
             <display><r><superscript>A<subscript>b+c <superscript>d 2π</superscript></subscript></superscript></r></display>
           </table>
         </center>
@@ -462,23 +474,18 @@ object math extends App {
           than the 'scriptee is implemented somewhat sketchily.
       </p>
         <center>
-          <table padx="1em" pady="1ex" cols="3" background="transparent">
+          <table padx="1em" pady="1ex" cols="3" bg="transparent" fg="lightgrey">
               <display><r><fraction fg="red.1.stroke"><superscript>AB 2πr</superscript> <r>B+C</r></fraction></r></display>
-
               <display><r><fraction><r>A</r><r>B+C</r></fraction></r></display>
-
               <display><fraction><bracket fg="red.3">A B C</bracket><row>D E F</row></fraction></display>
 
               <display><bracket bra="(" ket=")"><r><fraction fg="green"><superscript>AB <bracket>2πr</bracket></superscript> <r>B+C</r></fraction></r></bracket></display>
-
               <display><bracket><r><fraction><r>A</r><bracket><r>B+C</r></bracket></fraction></r></bracket></display>
-
               <display><subscript><r>ABC</r><fraction>A B</fraction></subscript></display>
 
               <display><superscript><r>ABC</r><bracket><fraction>A B</fraction></bracket></superscript></display>
               <display><superscript><r>ABC</r><fraction>A <superscript>B C</superscript></fraction></superscript></display>
               <display><r>erroneous<fraction>fraction</fraction></r></display>
-              <insert evaluate="footle"/>
           </table>
         </center>
 
@@ -494,7 +501,7 @@ object math extends App {
   ).enlarged(10).framed(blackFrame).enlarged(5)
 
 
-  def titles = "MATH\n----"
+  def titles = "MATH\n😀😀😀"
 
 }
 
