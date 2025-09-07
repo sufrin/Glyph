@@ -6,8 +6,6 @@ import Brushes._
 import styled.BookSheet
 import styles.decoration
 
-import io.github.humbleui.skija.PaintMode
-
 
 class AdderGUI()(implicit sheet: StyleSheet)  {
   import NaturalSize.{Col, Row}
@@ -161,7 +159,8 @@ object CalculatorExample extends Application {
     //override val defaultIconPath: Option[String] = Some("./PNG/redpoly.png")
     override val dock = new Dock {
       import GlyphShape._
-      setGlyph((text("=")() ~~~ rect(25,25)(red(width=1, mode=PaintMode.STROKE))).scale(1f).asGlyph)
+      val f = FontFamily("Courier", "normal", 34)
+      setGlyph((text("+ -", f)() --- text("* /", f)()).asGlyph.framed(Brushes.redFrame))
     }
 }
 
