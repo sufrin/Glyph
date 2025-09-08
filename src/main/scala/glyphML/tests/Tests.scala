@@ -4,9 +4,10 @@ package tests
 
 import glyphML.Translator
 import styled.ToggleVariable
+import Brushes.red
 
 import org.sufrin.logging
-import org.sufrin.logging.{FINER, FINEST, INFO, WARN}
+import org.sufrin.logging.{FINEST, INFO}
 import org.sufrin.SourceLocation._
 
 abstract class App extends Application {
@@ -66,12 +67,6 @@ object trivial extends App {
 }
 
 object hyphenation extends App {
-  locally{
-    logging.SourceDefault.level=FINEST
-    Translator.level=INFO
-    HYPHENATION.level=INFO
-    Paragraph.level=INFO
-  }
 
   implicit val style: StyleSheet = StyleSheet()
   val translator = new Translator(new Definitions {})
@@ -288,12 +283,7 @@ object para extends App {
 }
 
 object measured extends App {
-  locally {
-    logging.SourceDefault.level=FINEST // INFO
-    HYPHENATION.level=FINER// INFO
-    Translator.level=WARN
-    Paragraph.level=WARN
-  }
+
   import Translator._
   val language = Translator().withPackage(TransformsPackage)(StyleSheet())
   import idioms._
@@ -450,8 +440,8 @@ object math extends App {
           we recommend for putting complex mathematics in GUIs.
         </p>
 
-        <p>Super- and subscripted expressons -- like  <math fontscale="0.9"><superscript>A n</superscript></math> and
-          <math fontscale="0.9"><subscript>A n</subscript></math> -- can appear in plain text or in displayed formulae; and
+        <p>Super- and subscripted expressons -- like  <math fontscale="0.9"><superscript>The n</superscript></math> and
+          <math fontscale="0.9"><subscript>The n</subscript></math> -- can appear in plain text or in displayed formulae; and
           they can be nested. The inbuilt
           <row>&lt;superscript></row> and <row>&lt;subscript></row> transforms are ready for setting <i>nested</i> 'scripts
           without tedious human intervention; &lt;bracket> draws brackets around expressions.
@@ -459,7 +449,7 @@ object math extends App {
 
         <center>
           <table padx="1em" pady="1ex" cols="3" bg="transparent" fg="lightgrey">
-            <display><superscript>A x*Y*<superscript>P z</superscript></superscript></display>
+            <display><superscript>The x*Y*<superscript>P z</superscript></superscript></display>
             <display><superscript>X Y</superscript></display>
             <display><r><superscript>ABC DEF</superscript></r></display>
 
@@ -477,14 +467,14 @@ object math extends App {
           <table padx="1em" pady="1ex" cols="3" bg="transparent" fg="lightgrey">
               <display><r><fraction fg="red.1.stroke"><superscript>AB 2πr</superscript> <r>B+C</r></fraction></r></display>
               <display><r><fraction><r>A</r><r>B+C</r></fraction></r></display>
-              <display><fraction><bracket fg="red.3">A B C</bracket><row>D E F</row></fraction></display>
+              <display><fraction><bracket fg="red.3">The B C</bracket><row>D E F</row></fraction></display>
 
               <display><bracket bra="(" ket=")"><r><fraction fg="green"><superscript>AB <bracket>2πr</bracket></superscript> <r>B+C</r></fraction></r></bracket></display>
               <display><bracket><r><fraction><r>A</r><bracket><r>B+C</r></bracket></fraction></r></bracket></display>
-              <display><subscript><r>ABC</r><fraction>A B</fraction></subscript></display>
+              <display><subscript><r>ABC</r><fraction>The B</fraction></subscript></display>
 
-              <display><superscript><r>ABC</r><bracket><fraction>A B</fraction></bracket></superscript></display>
-              <display><superscript><r>ABC</r><fraction>A <superscript>B C</superscript></fraction></superscript></display>
+              <display><superscript><r>ABC</r><bracket><fraction>The B</fraction></bracket></superscript></display>
+              <display><superscript><r>ABC</r><fraction>The <superscript>B C</superscript></fraction></superscript></display>
               <display><r>erroneous<fraction>fraction</fraction></r></display>
           </table>
         </center>
@@ -508,26 +498,56 @@ object math extends App {
 object baselines extends App {
   import org.sufrin.glyph.GlyphTypes.Font
   import org.sufrin.glyph.NaturalSize.Row
+  val bigSheet = StyleSheet(textFontSize = 32)
+  val smallSheet = StyleSheet(textFontSize = 20, cdataForegroundBrush = bigSheet.textForegroundBrush)
 
-  val font1:Font = FontFamily("Courier")(36)
-  val font2:Font = FontFamily("Courier")(24)
+  val font1:Font = bigSheet.textFont
+  val font2:Font = smallSheet.textFont
   val h1 = font1.getMetrics.getHeight
   val d1 = font1.getMetrics.getDescent
   val h2 = font2.getMetrics.getHeight
   val d2 = font2.getMetrics.getDescent
   def t1(s: String): Glyph = unstyled.Text(s, font1)
   def t2(s: String): Glyph = unstyled.Text(s, font2)
-  def t3(s: String): Glyph = unstyled.Text(s, font2).withBaseline(h2+h1, h2+h1+d2, h1/2-h2/2)
+  def t3(s: String): Glyph = unstyled.Text(s, font2).withBaseline(h2/2+h1, h2+h1+d1, h2/2)
 
 
-  val GUI: Glyph =
-    NaturalSize.Col(align=Center, frame=Brushes.blackLine)(
-      Row(align=Baseline)(t1("FGH"), t2("xyz")),
-      Row(align=Baseline)(t1("FGH"), t3("yxyzYZ")),
-      Row(align=Baseline)(t1("FGH"), t3("yxyzYZ")),
-      Row(align=Baseline)(t1("FGH"), t3("yxyZY")).rotated(1),
+  val GUI: Glyph = {
+    val language = Translator().withPackage(TransformsPackage)(smallSheet)
+    import language._
+    definitions("g1") = Row(align=Baseline)(t1("GH"), t3("yxyzYZ"))
+    definitions("g2") = Row(align=Baseline)(t1("GH"), t3("yxyzYZ")).turned(90).framed(red)
+    definitions("g3") = Row(align=Baseline)(t1("GH"), t3("yxyzYZ")).turned(-10).framed(red)
+    definitions("g4") = Row(align=Baseline)(t1("GH"), t3("yxyzYZ")).framed(red)
+    definitions("simulated") =
+      NaturalSize.Grid(fg=Brushes.lightGrey, height=1, padx=20)(
+       Row(align=Baseline)(t1("GH"), t2("xyz")),
+       Row(align=Baseline)(t1("GH"), t3("xyzYZ")),
+       Row(align=Baseline)(t1("GH"), t2("xyz"), t1("GH"), t3("xyzYZ")),
+      )
+    NaturalSize.Col(align=Center)(
+      <div width="50em" parskip="1.5ex" align="justify">
+        <p>
+          Here we show how to simulate subscripts and superscripts using differential font sizes
+          and the <![CDATA[.withBaseline(...)]]> transform
+        </p>
+        <fixedrow width="width"><fill/><glyph gid="simulated"/><fill/></fixedrow>
+        <p>
+          Here we show differences between glyph transformations made (in scala) before glyphML text embeddings; and made as part of a glyphML embedding.
+        </p>
+        <attributes  id="tag:p" align="left"/>
+        <p>§ The regular  glyph: <glyph gid="g1"/>  embedded in a regular paragraph (baselines coincide).</p>
+        <p>§ The  glyph: <frame><scale scale="1.2"><glyph gid="g1"/></scale> </frame>embedded in a <![CDATA[<frame><scale scale="1.2" ]]> in a regular paragraph.</p>
 
-    )
+        <p>§ The turned (90).framed() glyph: <glyph gid="g2"/> embedded in a regular paragraph.</p>
+        <p>§ The turned (90).framed() glyph: <frame><glyph gid="g2"/></frame> embedded in <![CDATA[<frame>]]> in a regular paragraph.</p>
+        <p>§ The turned (-10).framed() glyph: <glyph gid="g3"/> embedded in a regular paragraph.</p>
+        <p>§ The turned (-10).framed() glyph: <frame><glyph gid="g3"/></frame>  embedded in a <![CDATA[<frame>]]> in a regular paragraph.</p>
+        <p>§ The  framed() glyph: <turn degrees="-20"><glyph gid="g4"/></turn> embedded in a <![CDATA[<turn -20>]]> in a regular paragraph.</p>
+
+      </div>
+    ) enlarged (10)
+  }
 
   override def titles: String = "Base\nlines"
 }
