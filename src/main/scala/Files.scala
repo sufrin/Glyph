@@ -1,19 +1,22 @@
 package org.sufrin.glyph
 
-import java.io.File
+import NaturalSize.Col
+import TestFiles.fileSystem
+
+import org.sufrin.glyph.GlyphTypes.FontStyle.ITALIC
+
 import java.nio.file._
-import java.nio.file.DirectoryStream.Filter
-import java.nio.file.attribute.{FileTime, GroupPrincipal, PosixFileAttributes, PosixFilePermission, PosixFilePermissions, UserPrincipal}
+import java.nio.file.attribute._
 import java.util.Comparator
-import java.util.function.Predicate
-import java.util.stream.Collectors
-import scala.collection.{mutable, IterableFactory}
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
+
+
 object System {
-  lazy val fileStores = FileSystems.getDefault.getFileStores.asScala
-  lazy val rootDirs = FileSystems.getDefault.getRootDirectories.asScala
-  lazy val supported = FileSystems.getDefault.supportedFileAttributeViews.asScala
+  lazy val fileStores: Iterable[FileStore] = FileSystems.getDefault.getFileStores.asScala
+  lazy val rootDirs:   Iterable[Path] = FileSystems.getDefault.getRootDirectories.asScala
+  lazy val supported:  mutable.Set[String] = FileSystems.getDefault.supportedFileAttributeViews.asScala
 }
 
 /**
@@ -49,7 +52,7 @@ object Cache {
  *  Proxy for the directory/folder at `path`.
  */
 class Folder(val path: Path) {
-  import java.nio.file.Files.{list,readAttributes}
+  import java.nio.file.Files.{list, readAttributes}
   private val byName = new Comparator[Path] { def compare(o1: Path, o2: Path): Int = o1.toString.compareToIgnoreCase(o2.toString) }
 
   lazy val sortedPaths: Cache[Seq[Path]] = Cache[Seq[Path]]{
@@ -173,8 +176,44 @@ object FileAttributes {
 
 }
 
-object Files extends Application {
-  import styled._
+class Explorer(folder: Folder)(val dirSheet: StyleSheet, val fileSheet: StyleSheet)  {
+  import styled.TextButton
+  val (dirs, files) = folder.splitDirs.value
+
+  val dirButtons: Seq[Glyph] =
+      for  { path <- dirs if Visible(path) } yield
+        TextButton(path.getFileName.toString){
+         _ =>
+          val folder = new Folder(path)
+          styled.windowdialogues.Dialogue.FLASH(new Explorer(folder)(dirSheet, fileSheet).GUI, title=path.toString)(dirSheet).OnRootOf(GUI).start()
+      }(dirSheet)
+
+
+  def Invisible(path: Path): Boolean = path.getFileName.toString.charAt(0)=='.'
+  def Visible(path: Path): Boolean = path.getFileName.toString.charAt(0)!='.'
+
+  val fileButtons: Seq[Glyph] =
+      for  { path <- files if Visible(path) } yield TextButton(path.getFileName.toString){ _ => }(fileSheet)
+
+  lazy val GUI: Glyph = Col()(
+       (dirButtons ++ fileButtons).prepended(styled.Label(folder.path.toString)(dirSheet))
+  )
+
+}
+
+object Explore extends Application {
+  implicit val dirSheet: StyleSheet = StyleSheet(buttonFontSize = 18, labelFontSize = 18,  labelForegroundBrush= Brushes.black)
+  implicit val fileSheet: StyleSheet = StyleSheet(buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=ITALIC, labelForegroundBrush= Brushes.black)
+
+  val root = new Folder(fileSystem.getPath("/", "Users", "sufrin"))
+
+  def GUI: Glyph = new Explorer(root)(dirSheet, fileSheet).GUI
+
+  def title: String = "Explore"
+}
+
+object TestFiles extends Application {
+  import styled.TextButton
   import NaturalSize._
   implicit val sheet: StyleSheet = StyleSheet()
   val byModification = new Ordering[Path] { def compare(o1: Path, o2: Path): Int = (o1.toFile.lastModified-o2.toFile.lastModified).sign.toInt}
@@ -235,6 +274,19 @@ object Files extends Application {
           for { (path, attrs) <- home.attributeMap.value }
             println(s"$path ${attrs.asString}")
           }
+        println("----")
+      },
+      TextButton("Filestores"){ _ =>
+        println(f"${"Volume"}%-30s ${"Size"}%-7s ${"Used"}%7s / ${"Available"}%-7s " )
+        for { store <- System.fileStores if (store.toString=="/" || !store.toString.startsWith("/System")) } {
+          val useable: Long = store.getUsableSpace
+          val total: Long   = store.getTotalSpace
+          val unallocated: Long = store.getUnallocatedSpace
+          val used: Long = total-unallocated
+          val mb: Long = 1000*1000
+          val gb: Long = 1000*mb
+          println(f"${store.toString.replaceFirst("""[(][^)]+[)]""","")}%-30s ${total/gb}%-7d ${used/gb}%7d / ${unallocated/gb}%-7d  " )
+        }
         println("----")
       },
       TextButton("[X]"){ _ =>
