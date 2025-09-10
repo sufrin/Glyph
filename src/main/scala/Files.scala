@@ -214,21 +214,30 @@ class Explorer(folder: Folder)(val dirSheet: StyleSheet, val fileSheet: StyleShe
         NaturalSize.Row(align=Mid)(selector, TextButton(path.getFileName.toString){ _ => }(fileSheet))
       }
 
+  def open(path: Path): Unit =  if (dirs contains path) {
+    val folder = new Folder(path)
+    styled.windowdialogues.Dialogue.FLASH(new Explorer(folder)(dirSheet, fileSheet).GUI, title=path.toString)(dirSheet).OnRootOf(GUI).start()
+  }
+
   lazy val thePaths: Seq[Path] = (dirs ++ files).filter(Visible)
   import unstyled.dynamic.SeqViewer
   lazy val theSeq = for { path <- thePaths } yield {
     import FileAttributes._
+    import FileTime.fromMillis
     val attrs = readAttributes(path, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS)
     val name = path.getFileName.toString.take(30)
     val legible = legibleAttributes(attrs)
     import legible._
-    f"$name%-30s $dmode%-10s $owner%s $size%n"
+    f"$name%-30s $dmode%-10s $owner%s $size%10d ${fromMillis(lastModifiedTime.toMillis).toString}%s"
   }
-  lazy val view = new SeqViewer(80, 25, fileSheet.buttonFont, fileSheet.buttonForegroundBrush, fileSheet.buttonBackgroundBrush, Brushes.red)(theSeq)
-  lazy val GUI: Glyph = NaturalSize.Row()(
-        Col()((dirButtons ++ fileButtons).prepended(styled.Label(folder.path.toString)(dirSheet))),
-        (view)
-  )
+  lazy val view = new SeqViewer(60, 30,
+                                fileSheet.buttonFont,
+                                fileSheet.buttonForegroundBrush,
+                                fileSheet.buttonBackgroundBrush,
+                                Brushes.red,
+                                theSeq)( (i, mods) => open(thePaths(i)) )
+
+  lazy val GUI: Glyph = NaturalSize.Col()(styled.Label(folder.path.toString)(dirSheet), view)
 
 }
 

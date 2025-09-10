@@ -9,8 +9,10 @@ import Modifiers.{Bitmap, Command, Control, Pressed, Primary, Secondary, Shift}
 import io.github.humbleui.jwm.Key
 import org.sufrin.glyph.unstyled.reactive.Reaction
 
-class SeqViewer(rows: Int, cols: Int, font: Font, override val fg: Brush, override val bg: Brush, val selBrush: Brush)
-                  (val seq: Seq[String])(reaction: Reaction) extends GestureBasedReactiveGlyph { thisViewer =>
+class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, override val bg: Brush,
+                val selBrush: Brush,
+                val seq: Seq[String])(
+                reaction: (Int, Bitmap)=>Unit) extends GestureBasedReactiveGlyph { thisViewer =>
   val metrics = font.getMetrics
   val charW   = metrics.getMaxCharWidth
   val charH   = metrics.getHeight+metrics.getDescent
@@ -51,7 +53,8 @@ class SeqViewer(rows: Int, cols: Int, font: Font, override val fg: Brush, overri
     }
   }
 
-  def copy(fg: Brush=fg, bg: Brush=bg): ReactiveGlyph = new SeqViewer(rows, cols, font, fg, bg, selBrush)(seq)
+  def copy(fg: Brush=fg, bg: Brush=bg): ReactiveGlyph =
+      new SeqViewer(cols, rows, font, fg, bg, selBrush, seq)(reaction)
 
 
   def handle(gesture: Gesture, location: Vec, delta: Vec): Unit = {
@@ -77,6 +80,12 @@ class SeqViewer(rows: Int, cols: Int, font: Font, override val fg: Brush, overri
 
           case Key.DOWN =>
             current += 1
+            println(current, current-rowOrigin, rows)
+            if (current-rowOrigin>=rows-1) {
+              rowOrigin += 1
+              reDraw()
+            }
+
           case Key.UP =>
             current = 0 max (current-1)
             if (current<rowOrigin) {
@@ -92,17 +101,12 @@ class SeqViewer(rows: Int, cols: Int, font: Font, override val fg: Brush, overri
 
       case MouseClick(_)  if (PRESSED && COMPLEMENT) =>
 
-      case MouseMove(_) =>
-
-      case MouseClick(_) if (PRIMARY && !CONTROL) =>
-
-      case MouseClick(_) if (SECONDARY || (PRIMARY&&CONTROL)) =>
-
-      case MouseClick(_) =>
+      case MouseClick(_) if PRESSED =>
         val row = yToRow(location.y) + rowOrigin
         current = row min seq.length-1
+        reaction(current, mods)
 
-
+      case _ =>
     }
     //println(displayList)
     //println(selection)
