@@ -28,8 +28,9 @@ class Variable[T](
    * trigger `onChange(oldValue, value)`.
    */
   def value_=(value: T): Unit = {
-    if ((_theValue != null) /*&& (_theValue != value)*/) onChange(_theValue, value)
+    val oldValue = _theValue
     _theValue = value
+    if ((_theValue != null) /*&& (_theValue != value)*/) onChange(oldValue, value)
   }
 
   def apply(changeTo: T => Unit): Variable[T] = new Variable(initially, onChange = { case (from, to) => changeTo(to) })

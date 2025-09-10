@@ -1,12 +1,13 @@
 package org.sufrin.glyph
 
+import GlyphTypes.FontStyle.ITALIC
 import NaturalSize.Col
 import TestFiles.fileSystem
-
-import org.sufrin.glyph.GlyphTypes.FontStyle.ITALIC
+import styled.ToggleVariable
 
 import java.nio.file._
 import java.nio.file.attribute._
+import java.nio.file.Files.readAttributes
 import java.util.Comparator
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
@@ -176,27 +177,57 @@ object FileAttributes {
 
 }
 
+
 class Explorer(folder: Folder)(val dirSheet: StyleSheet, val fileSheet: StyleSheet)  {
   import styled.TextButton
   val (dirs, files) = folder.splitDirs.value
 
-  val dirButtons: Seq[Glyph] =
-      for  { path <- dirs if Visible(path) } yield
-        TextButton(path.getFileName.toString){
-         _ =>
-          val folder = new Folder(path)
-          styled.windowdialogues.Dialogue.FLASH(new Explorer(folder)(dirSheet, fileSheet).GUI, title=path.toString)(dirSheet).OnRootOf(GUI).start()
-      }(dirSheet)
+  val selected = mutable.LinkedHashMap[Path, ToggleVariable]()
+  locally {
+    for { path <- dirs ++ files } selected(path) = ToggleVariable(false){ _ => onSelectionChanged() }
+  }
 
+  def onSelectionChanged(): Unit = {
+    println(selection.toSeq.mkString("\n"))
+    println("---")
+  }
+
+  def selection: mutable.Iterable[Path] = for {(path, sel) <- selected if sel.value } yield path
+
+  val dirButtons: Seq[Glyph] =
+      for  { path <- dirs if Visible(path) } yield {
+        val selector = styled.CheckBox(false)(selected(path))(fileSheet)
+        val button = TextButton(path.getFileName.toString){
+          _ =>
+            val folder = new Folder(path)
+            styled.windowdialogues.Dialogue.FLASH(new Explorer(folder)(dirSheet, fileSheet).GUI, title=path.toString)(dirSheet).OnRootOf(GUI).start()
+        }(dirSheet)
+        NaturalSize.Row(align=Mid)(selector, button)
+      }
 
   def Invisible(path: Path): Boolean = path.getFileName.toString.charAt(0)=='.'
   def Visible(path: Path): Boolean = path.getFileName.toString.charAt(0)!='.'
 
   val fileButtons: Seq[Glyph] =
-      for  { path <- files if Visible(path) } yield TextButton(path.getFileName.toString){ _ => }(fileSheet)
+      for  { path <- files if Visible(path) } yield {
+        val selector = styled.CheckBox(false)(selected(path))(fileSheet)
+        NaturalSize.Row(align=Mid)(selector, TextButton(path.getFileName.toString){ _ => }(fileSheet))
+      }
 
-  lazy val GUI: Glyph = Col()(
-       (dirButtons ++ fileButtons).prepended(styled.Label(folder.path.toString)(dirSheet))
+  lazy val thePaths: Seq[Path] = (dirs ++ files).filter(Visible)
+  import unstyled.dynamic.SeqViewer
+  lazy val theSeq = for { path <- thePaths } yield {
+    import FileAttributes._
+    val attrs = readAttributes(path, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS)
+    val name = path.getFileName.toString.take(30)
+    val legible = legibleAttributes(attrs)
+    import legible._
+    f"$name%-30s $dmode%-10s $owner%s $size%n"
+  }
+  lazy val view = new SeqViewer(80, 25, fileSheet.buttonFont, fileSheet.buttonForegroundBrush, fileSheet.buttonBackgroundBrush, Brushes.red)(theSeq)
+  lazy val GUI: Glyph = NaturalSize.Row()(
+        Col()((dirButtons ++ fileButtons).prepended(styled.Label(folder.path.toString)(dirSheet))),
+        (view)
   )
 
 }

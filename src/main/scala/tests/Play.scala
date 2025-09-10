@@ -58,7 +58,8 @@ object PathSymbols {
 /**
  * Drawing board
  */
-class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, override val bg: Brush=lightGrey)(left: Variable[Int], right: Variable[Int])(implicit style: StyleSheet) extends  GestureBasedReactiveGlyph { thisBoard =>
+class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, override val bg: Brush=lightGrey)(left: Variable[Int], right: Variable[Int])(implicit style: StyleSheet)
+      extends  GestureBasedReactiveGlyph { thisBoard =>
 
   var lastMouse, lastMouseDown: Vec = Vec(w, h) * 0.5f
 
