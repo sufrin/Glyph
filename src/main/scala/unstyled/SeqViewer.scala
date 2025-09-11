@@ -3,28 +3,38 @@ package unstyled
 package dynamic
 
 import GlyphTypes.{Font, Scalar}
-import gesture.{Gesture, GestureBasedReactiveGlyph, Keystroke, MouseClick, MouseEnters, MouseLeaves, MouseMove, MouseScroll}
+import gesture._
 import Modifiers.{Bitmap, Command, Control, Pressed, Primary, Secondary, Shift}
 
 import io.github.humbleui.jwm.Key
-import org.sufrin.glyph.unstyled.reactive.Reaction
 
 class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, override val bg: Brush,
                 val selBrush: Brush,
-                val seq: Seq[String])(
-                reaction: (Int, Bitmap)=>Unit) extends GestureBasedReactiveGlyph { thisViewer =>
+                var seq: Seq[String])  extends GestureBasedReactiveGlyph { thisViewer =>
+
+  def onClick(mods: Bitmap, selected: Int): Unit = {}
+  def onKeystroke(keystroke: Gesture): Unit = {}
+
   val metrics = font.getMetrics
-  val charW   = metrics.getMaxCharWidth
-  val charH   = metrics.getHeight+metrics.getDescent
   val descent = metrics.getDescent
+  val charW   = Text("m", font).width // getAvgCharWidth/2
+  val charH   = metrics.getHeight+descent
   val bell    = Sound.Clip("WAV/glass.wav")
 
-
-  def toForegroundBrush(i: Int): Brush = if (i==current) selBrush else fg
+  def toForegroundBrush(i: Int): Brush = if (i==current) selBrush else if (i==hovered) Brushes.green else fg
   def isUnderlined(i: Int): Boolean = true
 
+  def refresh(newSeq: Seq[String]): Unit = {
+    seq = newSeq
+    reDraw()
+  }
+
+  def current(i: Int): String = {
+    seq(i)
+  }
+
   var rowOrigin, colOrigin = 0
-  var current = 0
+  var current, hovered = 0
   val diagonal: Vec = Vec(charW*cols, charH*rows)
 
   def yToRow(y: Scalar): Int = {
@@ -45,8 +55,9 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
       while (row<lastRow && y+charH<h) {
         val string = seq(row).substring(colOrigin)                      //
         val text = io.github.humbleui.skija.TextLine.make(string, font) // todo: cache the entire TextLine
+        val width = text.getWidth
         surface.drawTextLine(toForegroundBrush(row), text, 0, y)
-        if (isUnderlined(row)) surface.drawLines$(fg, 0, y+descent, w, y+descent)
+        if (isUnderlined(row)) surface.drawLines$(fg, 0, y+descent, width, y+descent)
         row += 1
         y   += charH
       }
@@ -54,7 +65,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   }
 
   def copy(fg: Brush=fg, bg: Brush=bg): ReactiveGlyph =
-      new SeqViewer(cols, rows, font, fg, bg, selBrush, seq)(reaction)
+      new SeqViewer(cols, rows, font, fg, bg, selBrush, seq)
 
 
   def handle(gesture: Gesture, location: Vec, delta: Vec): Unit = {
@@ -68,7 +79,9 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
     val SHIFT         = mods.includeSome(Shift)
     gesture match {
       case _: MouseEnters => guiRoot.grabKeyboard(thisViewer)
-      case _: MouseLeaves => guiRoot.freeKeyboard(completely = true)
+      case _: MouseLeaves =>
+        hovered = -1
+        guiRoot.freeKeyboard(completely = true)
 
       case _: MouseScroll if !CONTROL => rowOrigin = (rowOrigin+(if (delta.x+delta.y > 0f) -1 else 1)) max 0
       case _: MouseScroll if CONTROL  => colOrigin = (colOrigin+(if (delta.x+delta.y > 0f) -1 else 1)) max 0
@@ -92,19 +105,30 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
               rowOrigin = current
               reDraw()
             }
+
+          case Key.RIGHT | Key.ENTER =>
+            onClick(mods, current)
+
           // ignore shift buttons
           case Key.SHIFT | Key.CONTROL | Key.CAPS_LOCK | Key.ALT | Key.MAC_COMMAND | Key.MAC_FN | Key.MAC_OPTION =>
+
+          case Key.W if CONTROL =>
+               onKeystroke(gesture.asInstanceOf[Keystroke])
 
           case _ =>
             bell.play()
         }
+
+      case MouseMove(modifiers) =>
+        val row = yToRow(location.y) + rowOrigin
+        hovered = row min seq.length
 
       case MouseClick(_)  if (PRESSED && COMPLEMENT) =>
 
       case MouseClick(_) if PRESSED =>
         val row = yToRow(location.y) + rowOrigin
         current = row min seq.length-1
-        reaction(current, mods)
+        onClick(mods, current)
 
       case _ =>
     }
