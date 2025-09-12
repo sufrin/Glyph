@@ -64,18 +64,12 @@ class Folder(val path: Path) {
     sortedPaths.value.filterNot(_.toFile.isDirectory)
   }
 
-  lazy val splitDirs: Cache[(Seq[Path], Seq[Path])] = {
-   val paths = sortedPaths
-   val dirs, nonDirs = new collection.mutable.ArrayBuffer[Path]
-   for { path <- sortedPaths.value }
-     (if (path.toFile.isDirectory) dirs else nonDirs).addOne(path)
-    Cache(dirs.toSeq, nonDirs.toSeq)
-  }
+  lazy val splitDirs: (Seq[Path], Seq[Path]) = (dirs.value, notDirs.value)
 
   def readPosixAttributes(path: Path): PosixFileAttributes = readAttributes(path, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS)
 
   def attributes(paths: Seq[Path]): Seq[(Path, PosixFileAttributes)] = {
-    paths.map { path => (path.getFileName, readPosixAttributes(path))}
+    paths.map { path => (path, readPosixAttributes(path))}
   }
 
   lazy val prefixPaths: Seq[Path] = {
@@ -91,7 +85,6 @@ class Folder(val path: Path) {
     val attrs = attributes(sortedPaths.value)
     val map = new mutable.LinkedHashMap[Path,PosixFileAttributes]
     for (entry <- attrs) map.addOne(entry)
-    println(map.toSeq.mkString("\n"))
     map
   }
 
@@ -99,14 +92,16 @@ class Folder(val path: Path) {
    * Invalidate all caches except the `attributeMap`.
    */
   def invalidate(): Unit = {
-    for { cache <- List(splitDirs, dirs, notDirs, sortedPaths) } cache.invalidate()
+    for { cache <- List(dirs, notDirs, sortedPaths, attributeMap) } cache.invalidate()
   }
 
-  def withValidCaches[T](expression: => T): Unit = {
+  def withValidCaches[T](expression: => T): T = {
     validate()
     expression
   }
 
+  private var _onValidate: String=>Unit = (_ =>())
+  def onValidate(response: String=>Unit): Unit = _onValidate=response
 
   /**
    *  When anything happens to this directory we invalidate all the (rarely-used)
@@ -119,6 +114,7 @@ class Folder(val path: Path) {
   }
 
   private def validate(): Unit = {
+    var lastEvent: String = "***"
     val watchKey = watching.poll
     if (watchKey ne null) {
       var changes, overflow = false
@@ -126,7 +122,6 @@ class Folder(val path: Path) {
         import StandardWatchEventKinds._
         val changedKey = event.context.asInstanceOf[Path]
         val changedPath = path.resolve(changedKey)
-        println(s"${event.kind} ${event.context} $changedPath")
         try {
           event.kind match {
             case ENTRY_CREATE =>
@@ -139,6 +134,7 @@ class Folder(val path: Path) {
               overflow = true
           }
           changes=true
+          lastEvent=(s"${event.kind} ${event.context} $changedPath")
         } catch {
           case exn: NoSuchFileException =>
           // a deletion has followed a create or a modify since the last
@@ -151,6 +147,7 @@ class Folder(val path: Path) {
       if (changes) {
         invalidate()
         if (overflow) attributeMap.invalidate()
+        _onValidate(lastEvent)
       }
     }
   }
@@ -159,7 +156,12 @@ class Folder(val path: Path) {
 
 object FileAttributes {
   import java.util.Calendar._
-  lazy val cal: java.util.Calendar = getInstance()
+  import java.util.TimeZone
+  lazy val cal: java.util.Calendar = {
+    val c = getInstance()
+    c.setTimeZone(TimeZone.getTimeZone("UTC"))
+    c
+  }
   case class LegibleTime ( year: Int, month: Int, day: Int, h:Int, m:Int, s:Int) {
     override val toString = f"$year%4d-$month%02d-$day%02d $h%02d:$m%02d:$s%02d"
   }
@@ -167,6 +169,12 @@ object FileAttributes {
     cal.setTimeInMillis(time.toMillis)
     LegibleTime(cal.get(YEAR), 1+cal.get(MONTH), cal.get(DAY_OF_MONTH), cal.get(HOUR_OF_DAY), cal.get(MINUTE), cal.get(SECOND))
   }
+  val CB  = 100d
+  val KB  = 1000d
+  val CKB = 100*1000d
+  val MB  = 1000*1000d
+  val CMB = 100*1000d
+  val GB  = 1000*MB
   implicit class legibleAttributes(attrs: PosixFileAttributes) {
     def lastModifiedTime: FileTime = attrs.lastModifiedTime()
     def lastAccessTime: FileTime = attrs.lastAccessTime()
@@ -177,11 +185,13 @@ object FileAttributes {
     def mode: String = PosixFilePermissions.toString(attrs.permissions)
     def isDirectory: Boolean = attrs.isDirectory
     def isSymbolicLink: Boolean = attrs.isSymbolicLink
-    def size: Long = attrs.size
+    val size: Long = attrs.size
+    val dsize: Double = size.toDouble
     lazy private val d = if (isDirectory) "d" else "-"
     lazy private val s = if (isSymbolicLink) "@" else " "
     def dmode: String = s"$d$mode$s"
-    def asString: String = s"$dmode $owner.$group ${timeOf(creationTime)} ${timeOf(lastModifiedTime)} ${timeOf(lastAccessTime)} $size"
+    val bkmg: String = if (dsize<KB) s"${size}b" else if (dsize<MB) f"${dsize/KB}%1.1fkb" else if (dsize<GB) f"${dsize/MB}%1.1fmb" else s"${dsize/GB}%1.2gb"
+    def asString: String = s"$dmode $owner.$group C ${timeOf(creationTime)} M ${timeOf(lastModifiedTime)} A ${timeOf(lastAccessTime)} $bkmg"
   }
 
 }

@@ -18,7 +18,7 @@ object TestFiles extends Application {
     TextButton("/Users/sufrin"){ _ =>
       println(home.path)
       home.withValidCaches {
-        val (dirs, notDirs) = home.splitDirs.value
+        val (dirs, notDirs) = home.splitDirs
         for {path <- dirs} println(path)
         for {path <- notDirs} println(path)
       }

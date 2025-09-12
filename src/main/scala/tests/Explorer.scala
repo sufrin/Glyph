@@ -8,24 +8,32 @@ import Modifiers.Bitmap
 import gesture.Gesture
 
 import java.io.File
-import java.nio.file.{FileSystems, LinkOption, Path}
-import java.nio.file.Files.readAttributes
-import java.nio.file.attribute.PosixFileAttributes
+import java.nio.file.{FileSystems, Path}
 import java.util.Date
 
 
 class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
   import styled.TextButton
 
-  val (dirs, files) = folder.splitDirs.value
-
   var showingInvisibles = true
-  def thePaths: Seq[Path] = if (showingInvisibles) (dirs ++ files) else (dirs++files).filter(_.isVisible)
 
-  def theListing: Seq[String] = for {path <- thePaths} yield {
+  locally {
+    folder.onValidate{
+      case event: String =>
+        println(event)
+        //view.refresh(theListing)
+    }
+  }
+
+  def thePaths: Seq[Path] = folder.withValidCaches {
+    val (dirs, files) = folder.splitDirs
+    if (showingInvisibles) (dirs ++ files) else (dirs++files).filter(_.isVisible)
+  }
+
+  def theListing(): Seq[String] = for {path <- thePaths} yield {
     import FileAttributes._
 
-    val attrs = readAttributes(path, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS)
+    val attrs = folder.attributeMap.value(folder.path.resolve(path)) //readAttributes(path, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS)
     val name = {
       val name = path.getFileName.toString
       if (name.length<=30) name else {
@@ -41,10 +49,10 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     val modMillis = lastModifiedTime.toMillis
     val d = new Date(modMillis)
 
-    f"$name%-30s $dmode%-10s $owner%s $size%10d ${d.toString}%s "
+    f"$name%-30s $dmode%-10s $owner%s $size%8s ${d.toString}%s "
   }
 
-  lazy val columns = theListing.prepended(folder.path.toString).map(_.length).max
+  lazy val columns = theListing().prepended(folder.path.toString).map(_.length).max
 
   lazy val view = new unstyled.dynamic.SeqViewer(
                                 columns, 30,
@@ -52,25 +60,26 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
                                 fileSheet.buttonForegroundBrush,
                                 fileSheet.buttonBackgroundBrush,
                                 Brushes.red,
-                                theListing)
+                                theListing())
   {
 
-    override def onClick(mods: Bitmap, selected: Int): Unit = Explorer.open(thePaths(selected))
-    override def onHover(mods: Bitmap, hovered: Int): Unit = try {
-      import FileAttributes._
-      val path = thePaths(hovered).getFileName
-      val attributes = folder.attributeMap.value(path)
-      println(f"$path%30s ${attributes.asString}%s")
-    } catch { case exn: NoSuchElementException => println(s"${thePaths(hovered)}")}
+    override def onClick(mods: Bitmap, selected: Int): Unit = Explorer.open((folder.path.resolve(thePaths(selected))))
+    override def onHover(mods: Bitmap, hovered: Int): Unit =
+      if (thePaths.isDefinedAt(hovered)) {
+          import FileAttributes._
+          val path = thePaths(hovered).getFileName
+          val attributes = folder.attributeMap.value(folder.path.resolve(path))
+          println(f"$path%30s ${attributes.asString}%s")
+    }
     override def onKeystroke(keystroke: Gesture): Unit = GUI.guiRoot.close()
   }
 
   val invisibilityButton = CaptionedCheckBox("Showing invisible", showingInvisibles){
     state =>
       showingInvisibles = state
-      view.refresh(theListing)
-
+      view.reDraw() // refresh(theListing)
   }
+
 
 
   val prefixDirs = folder.prefixPaths.toSeq.scanLeft(Path.of("/"))((b, p)=>b.resolve(p))
@@ -88,7 +97,6 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 object Explorer extends Application {
   import GlyphTypes.FontStyle.NORMAL
 
-val dirSheet: StyleSheet = StyleSheet(buttonFontSize = 18, labelFontSize = 18,  labelForegroundBrush= Brushes.black)
   implicit val fileSheet: StyleSheet = StyleSheet(buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.black)
 
   val root = new Folder(FileSystems.getDefault.getPath("/", "Users", "sufrin"))
@@ -127,7 +135,7 @@ val dirSheet: StyleSheet = StyleSheet(buttonFontSize = 18, labelFontSize = 18,  
 
 object PathProperties {
   implicit class PathProperty(val path: Path) extends AnyVal {
-    def isHidden: Boolean  = java.nio.file.Files.isHidden(path)
+    def isHidden: Boolean  = path.getFileName.toString.charAt(0)=='.'//java.nio.file.Files.isHidden(path)
     def isVisible: Boolean = !isHidden
     def isDir: Boolean     = java.nio.file.Files.isDirectory(path)
     def toFile: File       = path.toFile

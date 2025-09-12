@@ -10,7 +10,7 @@ import io.github.humbleui.jwm.Key
 
 class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, override val bg: Brush,
                 val selBrush: Brush,
-                var seq: Seq[String])  extends GestureBasedReactiveGlyph { thisViewer =>
+                initially: => Seq[String])  extends GestureBasedReactiveGlyph { thisViewer =>
 
   def onClick(mods: Bitmap, selected: Int): Unit = {}
   def onKeystroke(keystroke: Gesture): Unit = {}
@@ -25,8 +25,10 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   def toForegroundBrush(i: Int): Brush = if (i==current) selBrush else if (i==hovered) Brushes.green else fg
   def isUnderlined(i: Int): Boolean = true
 
-  def refresh(newSeq: Seq[String]): Unit = {
-    seq = newSeq
+  var seq: Seq[String] = initially
+
+  def refresh(current: Seq[String]): Unit = {
+    seq = current
     reDraw()
   }
 
@@ -47,6 +49,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
    * Draw the glyph on the surface at its given size (as if at the origin).
    */
   def draw(surface: Surface): Unit = {
+    seq = initially
     drawBackground(surface)
     surface.declareCurrentTransform(this)
     surface.withClip(diagonal) {
@@ -79,7 +82,9 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
     val COMPLEMENT    = mods.includeSome(Shift)
     val SHIFT         = mods.includeSome(Shift)
     gesture match {
-      case _: MouseEnters => guiRoot.grabKeyboard(thisViewer)
+      case _: MouseEnters =>
+        guiRoot.grabKeyboard(thisViewer)
+        reDraw()
       case _: MouseLeaves =>
         hovered = -1
         guiRoot.freeKeyboard(completely = true)
