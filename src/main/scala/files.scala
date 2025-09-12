@@ -91,6 +91,7 @@ class Folder(val path: Path) {
     val attrs = attributes(sortedPaths.value)
     val map = new mutable.LinkedHashMap[Path,PosixFileAttributes]
     for (entry <- attrs) map.addOne(entry)
+    println(map.toSeq.mkString("\n"))
     map
   }
 
@@ -157,6 +158,15 @@ class Folder(val path: Path) {
 }
 
 object FileAttributes {
+  import java.util.Calendar._
+  lazy val cal: java.util.Calendar = getInstance()
+  case class LegibleTime ( year: Int, month: Int, day: Int, h:Int, m:Int, s:Int) {
+    override val toString = f"$year%4d-$month%02d-$day%02d $h%02d:$m%02d:$s%02d"
+  }
+  def timeOf(time: FileTime): LegibleTime = {
+    cal.setTimeInMillis(time.toMillis)
+    LegibleTime(cal.get(YEAR), 1+cal.get(MONTH), cal.get(DAY_OF_MONTH), cal.get(HOUR_OF_DAY), cal.get(MINUTE), cal.get(SECOND))
+  }
   implicit class legibleAttributes(attrs: PosixFileAttributes) {
     def lastModifiedTime: FileTime = attrs.lastModifiedTime()
     def lastAccessTime: FileTime = attrs.lastAccessTime()
@@ -171,7 +181,7 @@ object FileAttributes {
     lazy private val d = if (isDirectory) "d" else "-"
     lazy private val s = if (isSymbolicLink) "@" else " "
     def dmode: String = s"$d$mode$s"
-    def asString: String = s"$dmode $owner.$group $size $creationTime $lastModifiedTime $lastAccessTime"
+    def asString: String = s"$dmode $owner.$group ${timeOf(creationTime)} ${timeOf(lastModifiedTime)} ${timeOf(lastAccessTime)} $size"
   }
 
 }

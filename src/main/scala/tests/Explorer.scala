@@ -56,6 +56,12 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
   {
 
     override def onClick(mods: Bitmap, selected: Int): Unit = Explorer.open(thePaths(selected))
+    override def onHover(mods: Bitmap, hovered: Int): Unit = try {
+      import FileAttributes._
+      val path = thePaths(hovered).getFileName
+      val attributes = folder.attributeMap.value(path)
+      println(f"$path%30s ${attributes.asString}%s")
+    } catch { case exn: NoSuchElementException => println(s"${thePaths(hovered)}")}
     override def onKeystroke(keystroke: Gesture): Unit = GUI.guiRoot.close()
   }
 

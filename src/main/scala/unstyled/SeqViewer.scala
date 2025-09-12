@@ -14,6 +14,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
   def onClick(mods: Bitmap, selected: Int): Unit = {}
   def onKeystroke(keystroke: Gesture): Unit = {}
+  def onHover(mods: Bitmap, hovered: Int): Unit = {}
 
   val metrics = font.getMetrics
   val descent = metrics.getDescent
@@ -93,7 +94,6 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
           case Key.DOWN =>
             current += 1
-            println(current, current-rowOrigin, rows)
             if (current-rowOrigin>=rows-1) {
               rowOrigin += 1
               reDraw()
@@ -105,6 +105,30 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
               rowOrigin = current
               reDraw()
             }
+
+          case Key.HOME =>
+            current = 0
+            rowOrigin = 0
+            reDraw()
+
+          case Key.END =>
+            current = seq.length-1
+            if (current-rowOrigin>=rows-1) {
+              rowOrigin = current-rows
+              reDraw()
+            }
+
+          case Key.PAGE_DOWN =>
+            if (rowOrigin+rows-1<seq.length) {
+              rowOrigin += rows-2
+              current = rowOrigin
+              reDraw()
+            }
+
+          case Key.PAGE_UP =>
+            rowOrigin = 0 max rowOrigin-rows
+            current = rowOrigin
+            reDraw()
 
           case Key.RIGHT | Key.ENTER =>
             onClick(mods, current)
@@ -121,14 +145,20 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
       case MouseMove(modifiers) =>
         val row = yToRow(location.y) + rowOrigin
+        val oldHovered = hovered
         hovered = row min seq.length
+        if (oldHovered!=hovered) onHover(mods, hovered)
 
       case MouseClick(_)  if (PRESSED && COMPLEMENT) =>
 
-      case MouseClick(_) if PRESSED =>
+      case MouseClick(_) if SECONDARY =>
         val row = yToRow(location.y) + rowOrigin
         current = row min seq.length-1
         onClick(mods, current)
+
+      case MouseClick(_) if PRIMARY =>
+        val row = yToRow(location.y) + rowOrigin
+        current = row min seq.length-1
 
       case _ =>
     }
