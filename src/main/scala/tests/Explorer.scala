@@ -13,33 +13,9 @@ import java.nio.file.Files.readAttributes
 import java.nio.file.attribute.PosixFileAttributes
 import java.util.Date
 
-class Explorer(folder: Folder)(val dirSheet: StyleSheet, implicit val fileSheet: StyleSheet)  {
-  import styled.TextButton
 
-  def open(path: Path): Unit =
-    if (path.isReadable) {
-        if (path.isDir) {
-          val folder = new Folder(path)
-          styled.windowdialogues.Dialogue.FLASH(new Explorer(folder)(dirSheet, fileSheet).GUI, title=path.toString)(dirSheet).OnRootOf(GUI).start()
-        } else {
-          import java.awt.Desktop
-          if (Desktop.isDesktopSupported) {
-            val desktop = Desktop.getDesktop
-            if (desktop.isSupported(Desktop.Action.OPEN))
-              try desktop.open(path.toFile) // Opens with default application
-              catch {
-                case ex: java.io.IOException =>
-                  styled.windowdialogues.Dialogue.OK(Label(s"${ex.getMessage}")).InFront(GUI).start()
-              }
-            else
-              styled.windowdialogues.Dialogue.OK(Label(s"Desktop open not supported")).InFront(GUI).start()
-          }
-          else
-            styled.windowdialogues.Dialogue.OK(Label(s"Desktop not supported on this platform")).InFront(GUI).start()
-        }
-      } else {
-    styled.windowdialogues.Dialogue.OK(Label(s"Not readable\n$path")).InFront(GUI).start()
-  }
+class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
+  import styled.TextButton
 
   val (dirs, files) = folder.splitDirs.value
 
@@ -78,7 +54,8 @@ class Explorer(folder: Folder)(val dirSheet: StyleSheet, implicit val fileSheet:
                                 Brushes.red,
                                 theListing)
   {
-    override def onClick(mods: Bitmap, selected: Int): Unit = open(thePaths(selected))
+
+    override def onClick(mods: Bitmap, selected: Int): Unit = Explorer.open(thePaths(selected))
     override def onKeystroke(keystroke: Gesture): Unit = GUI.guiRoot.close()
   }
 
@@ -86,14 +63,15 @@ class Explorer(folder: Folder)(val dirSheet: StyleSheet, implicit val fileSheet:
     state =>
       showingInvisibles = state
       view.refresh(theListing)
-  }(fileSheet)
+
+  }
 
 
   val prefixDirs = folder.prefixPaths.toSeq.scanLeft(Path.of("/"))((b, p)=>b.resolve(p))
   val buttons = prefixDirs.tail.map {
     case path => TextButton(s"/${path.getFileName.toString}"){
-      _ => open(path)
-    }(fileSheet).framed()
+      _ => Explorer.open(path)
+    }.framed()
   }
 
   lazy val GUI: Glyph = NaturalSize.Col()(
@@ -104,14 +82,41 @@ class Explorer(folder: Folder)(val dirSheet: StyleSheet, implicit val fileSheet:
 object Explorer extends Application {
   import GlyphTypes.FontStyle.NORMAL
 
-  implicit val dirSheet: StyleSheet = StyleSheet(buttonFontSize = 18, labelFontSize = 18,  labelForegroundBrush= Brushes.black)
+val dirSheet: StyleSheet = StyleSheet(buttonFontSize = 18, labelFontSize = 18,  labelForegroundBrush= Brushes.black)
   implicit val fileSheet: StyleSheet = StyleSheet(buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.black)
 
   val root = new Folder(FileSystems.getDefault.getPath("/", "Users", "sufrin"))
 
-  def GUI: Glyph = new Explorer(root)(dirSheet, fileSheet).GUI
+
+  lazy val GUI: Glyph = new Explorer(root)(fileSheet).GUI
 
   def title: String = "Explore"
+
+  def open(path: Path): Unit =
+    if (path.isReadable) {
+      if (path.isDir) {
+        val folder = new Folder(path)
+        styled.windowdialogues.Dialogue.FLASH(new Explorer(folder).GUI, title=path.toString).OnRootOf(GUI).start()
+      } else {
+        import java.awt.Desktop
+        if (Desktop.isDesktopSupported) {
+          val desktop = Desktop.getDesktop
+          if (desktop.isSupported(Desktop.Action.OPEN))
+            try desktop.open(path.toFile) // Opens with default application
+            catch {
+              case ex: java.io.IOException =>
+                styled.windowdialogues.Dialogue.OK(Label(s"${ex.getMessage}")).InFront(GUI).start()
+            }
+          else
+            styled.windowdialogues.Dialogue.OK(Label(s"Desktop open not supported")).InFront(GUI).start()
+        }
+        else
+          styled.windowdialogues.Dialogue.OK(Label(s"Desktop not supported on this platform")).InFront(GUI).start()
+      }
+    } else {
+      styled.windowdialogues.Dialogue.OK(Label(s"Not readable\n$path")).InFront(GUI).start()
+    }
+
 }
 
 object PathProperties {
