@@ -49,7 +49,6 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
    * Draw the glyph on the surface at its given size (as if at the origin).
    */
   def draw(surface: Surface): Unit = {
-    seq = initially
     drawBackground(surface)
     surface.declareCurrentTransform(this)
     surface.withClip(diagonal) {
@@ -88,6 +87,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
       case _: MouseLeaves =>
         hovered = -1
         guiRoot.freeKeyboard(completely = true)
+        refresh(initially)
 
       case _: MouseScroll if !CONTROL => rowOrigin = (rowOrigin+(if (delta.x+delta.y > 0f) -1 else 1)) max 0
       case _: MouseScroll if CONTROL  => colOrigin = (colOrigin+(if (delta.x+delta.y > 0f) -1 else 1)) max 0

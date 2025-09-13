@@ -1,6 +1,8 @@
 package org.sufrin.glyph
 package files
 
+import org.sufrin.logging.SourceLoggable
+
 import java.nio.file._
 import java.nio.file.attribute._
 import java.util.Comparator
@@ -43,15 +45,25 @@ object Cache {
   def apply[T](generate:  => T): Cache[T] = new Cache(() => generate)
 }
 
+object Folder extends SourceLoggable {
+  def apply(path: Path): Folder = new Folder(path)
+}
+
 /**
  *  Proxy for the directory/folder at `path`.
  */
 class Folder(val path: Path) {
+  import Folder._
+
   import java.nio.file.Files.{list, readAttributes}
   private val byName = new Comparator[Path] { def compare(o1: Path, o2: Path): Int = o1.toString.compareToIgnoreCase(o2.toString) }
 
   lazy val sortedPaths: Cache[Seq[Path]] = Cache[Seq[Path]]{
       require (path.toFile.isDirectory, s"$path is not a directory")
+      (s"Re-reading $path")
+      dirs.invalidate()
+      notDirs.invalidate()
+      attributeMap.invalidate()
       val stream = list(path).sorted(byName)
       stream.iterator().asScala.toSeq
   }
@@ -88,11 +100,19 @@ class Folder(val path: Path) {
     map
   }
 
+
+  def reValidate(): Unit = {
+    sortedPaths.invalidate()
+    sortedPaths.value
+    ()
+  }
+
   /**
-   * Invalidate all caches except the `attributeMap`.
+   * Invalidate cache and its dependents
    */
   def invalidate(): Unit = {
-    for { cache <- List(dirs, notDirs, sortedPaths, attributeMap) } cache.invalidate()
+    for { cache <- List(sortedPaths, dirs, notDirs) } cache.invalidate()
+    finest(s"invalidated primary caches for: $path")
   }
 
   def withValidCaches[T](expression: => T): T = {
@@ -113,8 +133,8 @@ class Folder(val path: Path) {
     path.register(watching,ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY,OVERFLOW)
   }
 
-  private def validate(): Unit = {
-    var lastEvent: String = "***"
+  def validate(): Unit = {
+    var lastEvent: String = ""
     val watchKey = watching.poll
     if (watchKey ne null) {
       var changes, overflow = false
@@ -134,7 +154,7 @@ class Folder(val path: Path) {
               overflow = true
           }
           changes=true
-          lastEvent=(s"${event.kind} ${event.context} $changedPath")
+          lastEvent=(s"${event.kind} ${event.context} $changedPath.$lastEvent")
         } catch {
           case exn: NoSuchFileException =>
           // a deletion has followed a create or a modify since the last
@@ -146,7 +166,10 @@ class Folder(val path: Path) {
       watchKey.reset()
       if (changes) {
         invalidate()
-        if (overflow) attributeMap.invalidate()
+        if (overflow) {
+          attributeMap.invalidate()
+          finest(s"invalidated attribute cache for: $path")
+        }
         _onValidate(lastEvent)
       }
     }
@@ -155,20 +178,36 @@ class Folder(val path: Path) {
 }
 
 object FileAttributes {
+  import java.time.Instant
   import java.util.Calendar._
+  import java.util.Locale.{getDefault => locale}
   import java.util.TimeZone
   lazy val cal: java.util.Calendar = {
     val c = getInstance()
-    c.setTimeZone(TimeZone.getTimeZone("UTC"))
+    c.setTimeZone(TimeZone.getDefault) // could be (eg) .getTimeZone("Europe/Paris"))
     c
   }
-  case class LegibleTime ( year: Int, month: Int, day: Int, h:Int, m:Int, s:Int) {
-    override val toString = f"$year%4d-$month%02d-$day%02d $h%02d:$m%02d:$s%02d"
+
+  def shorten(zoneID: String): String = {
+    zoneID match {
+      case "Europe/London" => "GMT"
+      case s"$continent/$city" => city
+      case other => other
+    }
   }
+
+  case class LegibleTime ( year: Int, month: Int, day: Int, h:Int, m:Int, s:Int, zoneID: String, zoneOffset: Int, dstOffset: Int) {
+    val utcOffset = zoneOffset+dstOffset
+    val offset=if (dstOffset==0) "" else if (dstOffset>0) s"(${shorten(zoneID)}+$dstOffset)" else s"(${shorten(zoneID)}-${-dstOffset})"
+    override val toString = f"$year%4d-$month%02d-$day%02d $h%02d:$m%02d:$s%02d $offset"
+  }
+
   def timeOf(time: FileTime): LegibleTime = {
     cal.setTimeInMillis(time.toMillis)
-    LegibleTime(cal.get(YEAR), 1+cal.get(MONTH), cal.get(DAY_OF_MONTH), cal.get(HOUR_OF_DAY), cal.get(MINUTE), cal.get(SECOND))
+    LegibleTime(cal.get(YEAR), 1+cal.get(MONTH), cal.get(DAY_OF_MONTH), cal.get(HOUR_OF_DAY), cal.get(MINUTE), cal.get(SECOND),
+                cal.getTimeZone.getID, cal.get(ZONE_OFFSET)/(1000*60*60), cal.get(DST_OFFSET)/(1000*60*60))
   }
+
   val CB  = 100d
   val KB  = 1000d
   val CKB = 100*1000d
