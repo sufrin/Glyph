@@ -66,6 +66,17 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     }
   }
 
+  def theSortedListing = {
+    val paths = thePaths
+    CachedSeq[Int, String](0 until paths.length){
+      case i: Int =>
+        import FileAttributes._
+        val map: Seq[Row] = folder.sortedRows
+        val row: FileAttributes.Row = map(i)
+        row.asString
+    }
+  }
+
   lazy val columns = theListing.prepended(folder.path.toString).map(_.length).max
 
   lazy val view = new unstyled.dynamic.SeqViewer(
@@ -97,6 +108,9 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     override def onKeystroke(keystroke: Gesture): Unit = GUI.guiRoot.close()
   }
 
+  locally{
+    println(theSortedListing.mkString("\n"))
+  }
   val invisibilityButton = CaptionedCheckBox("Showing invisible", showingInvisibles){
     state =>
       showingInvisibles = state

@@ -41,6 +41,10 @@ class Folder(val path: Path) {
       stream.iterator().asScala.toSeq
   }
 
+  lazy val sortedRows: CachedSeq[Path, FileAttributes.Row] = CachedSeq[Path, FileAttributes.Row](sortedPaths.value){
+    case path: Path => FileAttributes.Row(path, attributeMap.value(path))
+  }
+
   lazy val dirs: Cached[Seq[Path]] = Cached {
     sortedPaths.value.filter(_.toFile.isDirectory)
   }
@@ -203,8 +207,21 @@ object FileAttributes {
     lazy private val s = if (isSymbolicLink) "@" else " "
     def dmode: String = s"$d$mode$s"
     val bkmg: String = if (dsize<KB) s"${size}b" else if (dsize<MB) f"${dsize/KB}%1.1fkb" else if (dsize<GB) f"${dsize/MB}%1.1fmb" else s"${dsize/GB}%1.2gb"
-    def asString: String = s"$dmode $owner.$group C ${timeOf(creationTime)} M ${timeOf(lastModifiedTime)} A ${timeOf(lastAccessTime)} $bkmg"
+    val asString: String = s"$dmode $owner.$group C ${timeOf(creationTime)} M ${timeOf(lastModifiedTime)} A ${timeOf(lastAccessTime)} $bkmg"
+  }
+
+  case class Row(path: Path, attributes: PosixFileAttributes) {
+    val name = {
+      val name = path.getFileName.toString
+      if (name.length <= 30) name else {
+        val prefix = name.take(20)
+        val suffix = name.drop(name.length - 7)
+        s"$prefix...$suffix"
+      }
+    }
+    val asString: String = f"$name%-30s ${attributes.asString}"
   }
 
 }
+
 

@@ -2,25 +2,26 @@ package org.sufrin.glyph
 package cached
 
 /**
- * A cache for a value
+ * A cache for a value.
  *
  * @param generate function to generate the value
  * @tparam T the type of the value
  */
 class Cached[T](generate: ()=>T ) {
-  private var current: Option[T] = None
+  private final val UNDEF: T = null.asInstanceOf[T]
+  private var current: T = UNDEF
   /** Is the cache currently valid? */
-  def isValid: Boolean = current.nonEmpty
+  def isValid: Boolean = current!=UNDEF
   /** The currently cached value; regenerated if necessary. */
-  def value: T = current match {
-    case None =>
-      val t = generate()
-      current = Some(t)
-      t
-    case Some(t) => t
+  def value: T =  {
+      if (current==UNDEF) {
+        val t = generate()
+        current = t
+      }
+      current
   }
   /** Invalidate the cached value: the next `value` will regenerate the cached value*/
-  def clear(): Unit = current = None
+  def clear(): Unit = current = UNDEF
 }
 
 
