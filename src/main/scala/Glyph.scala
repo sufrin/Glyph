@@ -262,7 +262,7 @@ trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyp
   @inline final def hasGuiRoot: Boolean = isRooted()
 
   /**
-   *  Cache, invalidated if the current value's window was closed
+   *  Cached, invalidated if the current value's window was closed
    */
   private var theRoot: RootGlyph = null
 

@@ -5,6 +5,7 @@ import files.{FileAttributes, Folder}
 import styled.{CaptionedCheckBox, Label}
 import tests.PathProperties._
 import Modifiers.Bitmap
+import cached._
 import gesture.Gesture
 
 import org.sufrin.logging.SourceLoggable
@@ -12,37 +13,6 @@ import org.sufrin.logging.SourceLoggable
 import java.io.File
 import java.nio.file.{FileSystems, Path}
 import java.util.Date
-import scala.reflect.ClassTag
-
-class Delayed[P,S: ClassTag](paths: Seq[P], generate: P => S) extends Seq[S] { host =>
-
-  def length: Int = paths.length
-
-  val cache = Array.ofDim[S](length)
-
-  def apply(i: Int): S = {
-    var r = cache(i)
-    if (r==null)  {
-      r = generate(paths(i))
-      cache(i)=r
-    }
-    r
-  }
-
-  def iterator: Iterator[S] = new Iterator[S] {
-    var i=0
-    def hasNext: Boolean = i<host.length
-    def next(): S = {
-      val r = host.apply(i)
-      i += 1
-      r
-    }
-  }
-}
-
-object Delayed {
-  def apply[P,S: ClassTag](paths: Seq[P])(gen: P=>S): Delayed[P,S] = new Delayed[P,S](paths, gen)
-}
 
 
 class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
@@ -65,9 +35,9 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     if (showingInvisibles) (dirs ++ files) else (dirs++files).filter(_.isVisible)
   }
 
-  def theListing: Delayed[Path, String] = folder.withValidCaches {
+  def theListing: CachedSeq[Path, String] = folder.withValidCaches {
     Explorer.finest(s"thePaths is ${thePaths.mkString(", ")}")
-    Delayed(thePaths) {
+    CachedSeq(thePaths) {
       case path =>
         import FileAttributes._
         val key = folder.path.resolve(path)
@@ -93,33 +63,6 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
         } else {
           path.getFileName.toString
         }
-    }
-  }
-
-  def theEagerListing: Seq[String] = {
-    thePaths.flatMap { path =>
-      import FileAttributes._
-      val key = folder.path.resolve(path)
-      val map = folder.attributeMap.value
-      if (map.isDefinedAt(key)) {
-        val attrs = map(key)
-        val name = {
-          val name = path.getFileName.toString
-          if (name.length <= 30) name else {
-            val prefix = name.take(20)
-            val suffix = name.drop(name.length - 7)
-            s"$prefix...$suffix"
-          }
-        }
-        val legible = legibleAttributes(attrs)
-        import legible._
-
-        import java.nio.file.attribute.FileTime.fromMillis
-        val modMillis = lastModifiedTime.toMillis
-        val d = new Date(modMillis)
-
-        List(f"$name%-30s $dmode%-10s $owner%s $size%8s ${d.toString}%s ")
-      } else Nil
     }
   }
 
