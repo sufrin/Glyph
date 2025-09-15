@@ -38,7 +38,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
   var rowOrigin, colOrigin = 0
   var current, hovered = 0
-  val diagonal: Vec = Vec(charW*cols, charH*rows)
+  val diagonal: Vec = Vec(charW*cols, charH*rows+descent)
 
   def yToRow(y: Scalar): Int = {
     val r = (y / charH).toInt
@@ -55,7 +55,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
       var row     = rowOrigin
       var lastRow = seq.length
       var y: Scalar = charH-descent
-      while (row<lastRow && y+charH<h) {
+      while (row<lastRow && y<=h) {
         val string = seq(row).substring(colOrigin)                      //
         val text = io.github.humbleui.skija.TextLine.make(string, font) // todo: cache the entire TextLine
         val width = text.getWidth

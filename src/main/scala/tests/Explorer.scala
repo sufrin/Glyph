@@ -1,18 +1,20 @@
 package org.sufrin.glyph
 package tests
 
-import files.{FileAttributes, Folder}
-import styled.{CaptionedCheckBox, Label}
+import files.Folder
+import styled.{CheckBox, Label, RadioCheckBoxes}
 import tests.PathProperties._
 import Modifiers.Bitmap
 import cached._
+import files.FileAttributes.Row
 import gesture.Gesture
+import NaturalSize.Grid
 
-import org.sufrin.logging.SourceLoggable
+import org.sufrin.logging.{FINEST, SourceLoggable}
 
 import java.io.File
 import java.nio.file.{FileSystems, Path}
-import java.util.Date
+import scala.collection.mutable
 
 
 class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
@@ -29,51 +31,72 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     }
   }
 
-  def thePaths: Seq[Path] = {
-    val dirs  = folder.dirs.value
-    val files = folder.notDirs.value
-    if (showingInvisibles) (dirs ++ files) else (dirs++files).filter(_.isVisible)
-  }
-
-  def theListing: CachedSeq[Path, String] = folder.withValidCaches {
-    Explorer.finest(s"thePaths is ${thePaths.mkString(", ")}")
-    CachedSeq(thePaths) {
-      case path =>
-        import FileAttributes._
-        val key = folder.path.resolve(path)
-        val map = folder.attributeMap.value
-        if (map.isDefinedAt(key)) {
-          val attrs = map(key)
-          val name = {
-            val name = path.getFileName.toString
-            if (name.length <= 30) name else {
-              val prefix = name.take(20)
-              val suffix = name.drop(name.length - 7)
-              s"$prefix...$suffix"
-            }
-          }
-          val legible = legibleAttributes(attrs)
-          import legible._
-
-          import java.nio.file.attribute.FileTime.fromMillis
-          val modMillis = lastModifiedTime.toMillis
-          val d = new Date(modMillis)
-
-          (f"$name%-30s $dmode%-10s $owner%s $size%8s ${d.toString}%s ")
-        } else {
-          path.getFileName.toString
-        }
+  object Orderings {
+    import org.sufrin.glyph.files.FileAttributes._
+    private val byModifiedTime = new Ordering[Row] {
+      def compare(r1: Row, r2: Row): Int = r1.attributes.lastModifiedTime().compareTo(r2.attributes.lastModifiedTime())
     }
+    private val byCreatedTime = new Ordering[Row] {
+      def compare(r1: Row, r2: Row): Int = r1.attributes.creationTime().compareTo(r2.attributes.creationTime())
+    }
+    private val byAccessTime = new Ordering[Row] {
+      def compare(r1: Row, r2: Row): Int = r1.attributes.lastAccessTime().compareTo(r2.attributes.lastAccessTime())
+    }
+
+    private val bySize = new Ordering[Row] {
+      def compare(r1: Row, r2: Row): Int = r1.attributes.size().compareTo(r2.attributes.size())
+    }
+
+    def byModTime(rows: Seq[Row]): Seq[Row] = rows.sorted(byModifiedTime)
+    def byAccessTime(rows: Seq[Row]): Seq[Row] = rows.sorted(byAccessTime)
+    def byCreateTime(rows: Seq[Row]): Seq[Row] = rows.sorted(byCreatedTime)
+    def bySize(rows: Seq[Row]): Seq[Row]    = rows.sorted(bySize)
+    def byName(rows: Seq[Row]): Seq[Row]    = rows
   }
 
-  def theSortedListing = {
-    val paths = thePaths
-    CachedSeq[Int, String](0 until paths.length){
-      case i: Int =>
-        import FileAttributes._
-        val map: Seq[Row] = folder.sortedRows
-        val row: FileAttributes.Row = map(i)
-        row.asString
+  var theOrdering: Seq[Row]=>Seq[Row] = Orderings.byName
+
+  def theRows: Seq[Row] = {
+    val dirs  =  theOrdering(folder.sortedDirs)
+    val files =  theOrdering(folder.sortedFiles)
+    val rows = if (showingInvisibles) (dirs ++ files) else (dirs++files).filterNot(_.isHidden)
+    rows
+  }
+
+  val displays: Seq[String] = List("Name", "Size", "Created", "Modified", "Accessed", "Permissions", "Owner", "Group", "Short Size")
+  val displayed: mutable.Set[String] = mutable.Set[String]("Name", "Size", "Modified", "Owner", "Permissions", "Accessed")
+
+  lazy val displayChooser: Glyph = {
+    val labels: Seq[Glyph]  = displays.map(label=>Label(label))
+    val toggles: Seq[Glyph] = displays.map{label=>CheckBox(displayed.contains(label)){
+      case false =>  displayed.remove(label); view.refresh(theListing)
+      case true =>  displayed.add(label); view.refresh(theListing)
+    }}
+    Grid(width=labels.length, padx=10).table(labels++toggles)
+  }
+
+  def theListing: CachedSeq[Row, String] = folder.withValidCaches {
+    import org.sufrin.glyph.files.FileAttributes._
+    CachedSeq(theRows) {
+      case row: Row =>
+        var out = new StringBuilder()
+        for { disp <- displays if displayed.contains(disp) }  {
+          val text = disp match {
+            case "Name" => f"${row.name}%-30s "
+            case "Short Size" => f"${row.attributes.bkmg}%-10s"
+            case "Size" => f"${row.attributes.size}%-10s"
+            case "Permissions" => row.attributes.dmode
+            case "Owner" => row.attributes.owner
+            case "Group" => row.attributes.group
+            case "Modified" => timeOf(row.attributes.lastModifiedTime)
+            case "Created" => timeOf(row.attributes.creationTime())
+            case "Accessed" => timeOf(row.attributes.lastAccessTime())
+            case _ =>
+          }
+          out.append(" ")
+          out.append(text)
+        }
+        out.toString
     }
   }
 
@@ -88,78 +111,100 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
                                 theListing)
   {
 
-    override def onClick(mods: Bitmap, selected: Int): Unit = Explorer.open((folder.path.resolve(thePaths(selected))))
+    override def onClick(mods: Bitmap, selected: Int): Unit = Explorer.open((folder.path.resolve(theRows(selected).path)))
 
-    override def onHover(mods: Bitmap, hovered: Int): Unit = folder.withValidCaches {
-      if (thePaths.isDefinedAt(hovered)) {
-          val key = folder.path.resolve(thePaths(hovered))
-          val map = folder.attributeMap.value
-          import FileAttributes._
-          if (map.isDefinedAt(key)) {
-            val attributes = map(key)
-            println(f"$key%30s ${attributes.asString}%s")
-          }
-          else {
-            println(f"$key%30s (deleted)")
-          }
-      }
+    override def onHover(mods: Bitmap, hovered: Int): Unit = folder.withValidCaches {}
+
+    override def onKeystroke(keystroke: Gesture): Unit = {
+      folder.close()
+      GUI.guiRoot.close()
     }
-
-    override def onKeystroke(keystroke: Gesture): Unit = GUI.guiRoot.close()
   }
 
-  locally{
-    println(theSortedListing.mkString("\n"))
-  }
-  val invisibilityButton = CaptionedCheckBox("Showing invisible", showingInvisibles){
+  val invisibilityCheckBox =
+    styled.CheckBox(showingInvisibles){
     state =>
       showingInvisibles = state
+      theListing.clear()
       view.refresh(theListing)
   }
 
-  val validateButton = TextButton("X"){
+  /** Force a revalidation and redisplay: should not normally be needed */
+  val reValidateButton = TextButton("\u21BB"){
     state =>
       folder.reValidate()
+      theListing.clear()
       view.refresh(theListing)
+  }
+
+  val sortButtons = RadioCheckBoxes(
+    captions = List("Alpha", "Size", "Create", "Modify", "Access"),
+    prefer   = "Alpha"
+    )
+    { case selected => selected match
+        {
+          case Some(0) => theOrdering = Orderings.byName
+          case Some(1) => theOrdering = Orderings.bySize
+          case Some(2) => theOrdering = Orderings.byCreateTime
+          case Some(3) => theOrdering = Orderings.byModTime
+          case Some(4) => theOrdering = Orderings.byAccessTime
+          case _       => theOrdering = Orderings.byName
+        }
+        theListing.clear()
+        view.refresh(theListing)
   }
 
   /**
-   * `buttons` is a sequence of buttons; each corresponding to an ancestor of this
+   * `pathButtons` is a sequence of buttons; each corresponding to an ancestor of this
    * folder in the filestore, and labelled with its filename (not its path). Pressing a button
    * opens an explorer on the ancestor.
+   *
+   * `orderToggles` is a table of the orderToggles controlling the order in which entries in the folder are
+   * shown.
    */
   object Navigation {
     private lazy val prefixDirs = folder.prefixPaths.toSeq.scanLeft(Path.of("/"))((b, p) => b.resolve(p))
-    private lazy val buttons: Seq[Glyph] = prefixDirs.tail.map {
-      case path => TextButton(s"/${path.getFileName.toString}") { _ => Explorer.open(path) }.framed()
+    private lazy val dotdot = {
+      val up = folder.path.resolve("..").toRealPath()
+      TextButton(s"/..", hint=Hint(3, up.toString)) { _ => Explorer.open(up) }
     }
+    private lazy val buttons: Seq[Glyph] = prefixDirs.tail.map {
+      case path => TextButton(s"/${path.getFileName.toString}", hint=Hint(3, path.toRealPath().toString)) { _ => Explorer.open(path) }.framed()
+    }.prepended(TextButton(s"/") { _ => Explorer.open(Path.of("/")) }.framed())
+      .appended(dotdot.framed())
+
     lazy val pathButtons: Glyph = NaturalSize.Row(Navigation.buttons)
+    lazy val orderToggles = Grid(height=2, padx=5).table(sortButtons.glyphRows ++ List(styled.Label("(.)"), invisibilityCheckBox))
   }
 
   lazy val GUI: Glyph =
     NaturalSize.Col()(
-      FixedSize.Row(width=view.w)(Navigation.pathButtons, fileSheet.hSpace(), validateButton, fileSheet.hFill(), invisibilityButton),
-      view
-    ).enlarged(15, fg=Brushes.lightGrey)
+      FixedSize.Row(width=view.w, align=Mid)(Navigation.pathButtons, fileSheet.hSpace(), reValidateButton.scaled(1.7f), fileSheet.hFill(), Navigation.orderToggles).enlarged(15).roundFramed(radius=20),
+      view.enlarged(15),
+      FixedSize.Row(width=view.w, align=Mid)( fileSheet.hFill(), displayChooser, fileSheet.hFill()).enlarged(15).roundFramed(radius=20),
+  ).enlarged(15, fg=Brushes.lightGrey)
 }
 
 object Explorer extends Application with SourceLoggable {
+  level = FINEST
+
   import GlyphTypes.FontStyle.NORMAL
 
   implicit val fileSheet: StyleSheet = StyleSheet(buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.black)
 
-  val root = new Folder(FileSystems.getDefault.getPath("/", "Users", "sufrin"))
-
+  val root = new Folder(FileSystems.getDefault.getPath("/Users/sufrin"))
 
   lazy val GUI: Glyph = new Explorer(root)(fileSheet).GUI
 
   def title: String = "Explore"
 
+  override val dock = Dock("Exp\nlore", bg=Brushes.yellow)
+
   def open(path: Path): Unit =
     if (path.isReadable) {
       if (path.isDir) {
         val folder = new Folder(path)
-        styled.windowdialogues.Dialogue.FLASH(new Explorer(folder).GUI, title=path.toString).OnRootOf(GUI).start()
+        styled.windowdialogues.Dialogue.FLASH(new Explorer(folder).GUI, title=folder.path.toString).OnRootOf(GUI).start()
       } else {
         import java.awt.Desktop
         if (Desktop.isDesktopSupported) {
