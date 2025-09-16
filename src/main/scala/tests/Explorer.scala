@@ -224,6 +224,8 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       view.enlarged(15),
       FixedSize.Row(width=view.w, align=Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()).enlarged(15).roundFramed(radius=20),
       ).enlarged(15, fg=Brushes.lightGrey)
+
+
 }
 
 object Explorer extends Application with SourceLoggable {
@@ -248,7 +250,7 @@ object Explorer extends Application with SourceLoggable {
     if (path.isReadable) {
       if (path.isDir) {
         val folder = new Folder(path)
-        styled.windowdialogues.Dialogue.FLASH(new Explorer(folder).GUI, title=folder.path.toString).OnRootOf(GUI).start()
+        styled.windowdialogues.Dialogue.FLASH(new Explorer(folder).GUI, title=folder.path.toString).OnRootOf(GUI).start(floating=false)
       } else {
         import java.awt.Desktop
         if (Desktop.isDesktopSupported) {
@@ -269,6 +271,10 @@ object Explorer extends Application with SourceLoggable {
       styled.windowdialogues.Dialogue.OK(Label(s"Not readable\n$path")).InFront(GUI).start()
     }
 
+  override protected def whenStarted(): Unit = {
+    super.whenStarted()
+    GUI.guiRoot.autoScale=true
+  }
 }
 
 object PathProperties {

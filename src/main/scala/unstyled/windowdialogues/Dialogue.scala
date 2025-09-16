@@ -154,7 +154,7 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
   }
 
     /** Allocate the window and start the interaction */
-  def start(logEvents: Boolean = false): Unit = {
+  def start(logEvents: Boolean = false, floating: Boolean=true): Unit = {
       App.runOnUIThread {
           () =>
             val theInteraction = new Interaction(App.makeWindow(), theRoot, location.softwareScale) {
@@ -186,7 +186,7 @@ class Dialogue[T](blurb: Glyph, bottomRow: Seq[Glyph], var location: Location, t
                 import io.github.humbleui.jwm.{WindowMac, ZOrder}
                 window match {
                   case mac: WindowMac =>
-                    mac.setZOrder(ZOrder.MODAL_PANEL) // Floats above a MAIN_MENU
+                    if (floating) mac.setZOrder(ZOrder.MODAL_PANEL) // Floats above a MAIN_MENU
                   case _ =>
                     window.setZOrder(ZOrder.FLOATING)
                 }
