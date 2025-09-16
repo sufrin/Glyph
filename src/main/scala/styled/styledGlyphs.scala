@@ -432,6 +432,14 @@ case class CheckBox(initially: Boolean, hint: Hint = NoHint) extends ToggleButto
   }
 }
 
+case class SymbolicCheckBox(initially: Boolean, whenFalse: String, whenTrue: String, hint: Hint = NoHint) extends ToggleButton {
+  def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {
+    val detail = sheet.buttonStyle
+    TextToggle(whenFalse = whenFalse, whenTrue = whenTrue, initially = initially, hint = hint)(reaction)
+  }
+}
+
+
 
   case class CaptionedCheckBox(caption: String, initially: Boolean, hint: Hint = NoHint) extends ToggleButton {
     def apply(reaction: Boolean => Unit)(implicit sheet: StyleSheet): OnOffButton = {

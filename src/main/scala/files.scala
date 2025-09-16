@@ -25,15 +25,16 @@ object System {
  * yielding true for `isOther`
  */
 object UndefinedAttributes {
+  private val sizeDebug = true
   private val singleton = new PosixFileAttributes {
     def owner(): UserPrincipal = new UserPrincipal {
       def getName: String = toString
-      override val toString: String = "\u2323"
+      override val toString: String = "nobody"
     }
 
     def group(): GroupPrincipal = new GroupPrincipal {
       def getName: String = toString
-      override val toString: String = "\u2323"
+      override val toString: String = "nogroup"
 
     }
 
@@ -55,7 +56,7 @@ object UndefinedAttributes {
 
     def isOther: Boolean = true
 
-    def size(): Long = 0
+    def size(): Long = if (sizeDebug) 600000000000L+40000000000000L else 0
 
     def fileKey(): AnyRef = Nil
   }
@@ -68,7 +69,11 @@ object Folder extends SourceLoggable {
 
   def readPosixAttributes(path: Path): PosixFileAttributes =
     try { readAttributes(path, classOf[PosixFileAttributes]) }
-      //, LinkOption.NOFOLLOW_LINKS)
+    catch
+    { case ex: NoSuchFileException => UndefinedAttributes() }
+
+  def readImmediatePosixAttributes(path: Path): PosixFileAttributes =
+    try { readAttributes(path, classOf[PosixFileAttributes], LinkOption.NOFOLLOW_LINKS) }
     catch
     { case ex: NoSuchFileException => UndefinedAttributes() }
 
@@ -84,12 +89,23 @@ class Folder(val path: Path) {
   import java.nio.file.Files.{list, readAttributes}
   private val byName = new Comparator[Path] { def compare(o1: Path, o2: Path): Int = o1.toString.compareToIgnoreCase(o2.toString) }
 
+  var groupWidth, ownerWidth, nameWidth: Int = 0
+
   lazy val sortedRows: Cached[Seq[Row]] = Cached[Seq[Row]]{
+      import FileAttributes._
       require (path.toFile.isDirectory, s"$path is not a directory")
       val stream = list(path).sorted(byName)
+      groupWidth=0
+      ownerWidth=0
+      nameWidth=0
       stream.iterator().asScala.toSeq.map {
         case path: Path =>
-          Row(path, readPosixAttributes(path))
+          val row = Row(path, readPosixAttributes(path))
+          val (owidth, gwidth, nwidth) = row.principalWidths
+          if (owidth>ownerWidth) ownerWidth=owidth
+          if (gwidth>groupWidth) groupWidth=owidth
+          if (nwidth>nameWidth) nameWidth=nwidth
+          row
       }
   }
 
@@ -100,6 +116,7 @@ class Folder(val path: Path) {
     for { row <- rows } map(row.path) = row
     map
   }
+
 
   def sortedDirs: Seq[Row]  = sortedRows.value.filter(_.isDirectory)
   def sortedFiles: Seq[Row] = sortedRows.value.filterNot(_.isDirectory)
@@ -194,7 +211,11 @@ object FileAttributes {
   case class LegibleTime ( year: Int, month: Int, day: Int, h:Int, m:Int, s:Int, zoneID: String, zoneOffset: Int, dstOffset: Int) {
     val utcOffset = zoneOffset+dstOffset
     lazy val zoneoffset=if (dstOffset==0) "" else if (dstOffset>0) s"(${shorten(zoneID)}+$dstOffset)" else s"(${shorten(zoneID)}-${-dstOffset})"
-    val offset = if (dstOffset==0) "  " else s"+$dstOffset"
+    val offset = dstOffset match {
+      case 0 => " "
+      case 1 => "S" // "summer"/"saving"
+      case _ => "?"
+    }
     override val toString = f"$year%4d-$month%02d-$day%02d $h%02d:$m%02d:$s%02d $offset"
   }
 
@@ -210,6 +231,7 @@ object FileAttributes {
   val MB  = 1000*1000d
   val CMB = 100*1000d
   val GB  = 1000*MB
+  val TB  = 1000*GB
   implicit class legibleAttributes(attrs: PosixFileAttributes) {
     def lastModifiedTime: FileTime = attrs.lastModifiedTime()
     def lastAccessTime: FileTime = attrs.lastAccessTime()
@@ -220,17 +242,22 @@ object FileAttributes {
     def mode: String = PosixFilePermissions.toString(attrs.permissions)
     def isDirectory: Boolean = attrs.isDirectory
     def isSymbolicLink: Boolean = attrs.isSymbolicLink
-    val size: Long = attrs.size
-    val dsize: Double = size.toDouble
-    lazy private val d = if (isDirectory) "d" else "-"
-    lazy private val s = if (isSymbolicLink) "@" else " "
+    def size: Long = attrs.size
+    def dsize: Double = size.toDouble
+    def d = if (isDirectory) "\u25A2" else " "
+    def s: String = if (isSymbolicLink) "@" else " "
     def dmode: String = s"$d$mode$s"
-    def bkmg: String = if (dsize<KB) s"${size}b" else if (dsize<MB) f"${dsize/KB}%1.1fkb" else if (dsize<GB) f"${dsize/MB}%1.1fmb" else s"${dsize/GB}%1.2gb"
+    def bkmg: String =
+      if (dsize<KB) s"${size}b" else
+        if (dsize<MB) f"${dsize/KB}%1.1fkb" else
+          if (dsize<GB) f"${dsize/MB}%1.1fmb" else
+            if (dsize<TB) f"${dsize/GB}%1.2fgb" else  f"${dsize/TB}%1.2ftb"
     def asString: String = s"$dmode $owner.$group C ${timeOf(creationTime)} M ${timeOf(lastModifiedTime)} A ${timeOf(lastAccessTime)} $bkmg"
   }
 
   case class Row(path: Path, var attributes: PosixFileAttributes) {
-    val name = {
+    val dirToken: String = attributes.d
+    lazy val name = {
       val name = path.getFileName.toString
       if (name.length <= 30) name else {
         val prefix = name.take(20)
@@ -238,12 +265,15 @@ object FileAttributes {
         s"$prefix...$suffix"
       }
     }
-
-    val isHidden: Boolean      = name(0)=='.'
+    val isLink:        Boolean = Folder.readImmediatePosixAttributes(path).isSymbolicLink
+    val linkToken: String = if (isLink) "@" else " "
+    val isHidden:      Boolean = name(0)=='.'
     val isDirectory:   Boolean = attributes.isDirectory
     val isRegularFile: Boolean = attributes.isRegularFile
     val asString:      String  = f"$name%-30s ${attributes.asString}"
     def update():      Unit    = { attributes = Folder.readPosixAttributes(path) }
+    def principalWidths:(Int,Int,Int) = (attributes.owner.toString.length, attributes.group.toString.length, name.length)
+
   }
 
 }

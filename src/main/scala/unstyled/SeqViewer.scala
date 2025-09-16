@@ -10,7 +10,9 @@ import io.github.humbleui.jwm.Key
 
 class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, override val bg: Brush,
                 val selBrush: Brush,
-                initially: => Seq[String])  extends GestureBasedReactiveGlyph { thisViewer =>
+                initially: => Seq[String],
+                autoScale: Boolean = true
+               )  extends GestureBasedReactiveGlyph { thisViewer =>
 
   def onClick(mods: Bitmap, selected: Int): Unit = {}
   def onKeystroke(keystroke: Gesture): Unit = {}
@@ -21,6 +23,8 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   val charW   = Text("m", font).width // getAvgCharWidth/2
   val charH   = metrics.getHeight+descent
   val bell    = Sound.Clip("WAV/glass.wav")
+
+  var scale: Scalar = 1.0f
 
   def toForegroundBrush(i: Int): Brush = if (i==current) selBrush else if (i==hovered) Brushes.green else fg
   def isUnderlined(i: Int): Boolean = true
@@ -46,29 +50,39 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   }
 
   /**
-   * Draw the glyph on the surface at its given size (as if at the origin).
+   * Compute the scale needed to fit the entire first row; then display at that scale
    */
   def draw(surface: Surface): Unit = {
+    val scaledH =
+    if (autoScale&&seq.nonEmpty&&seq(0).length>cols) {
+      scale = (cols.toDouble/seq(0).length.toDouble).toFloat
+      h/scale
+    } else {
+      scale=1
+      h
+    }
     drawBackground(surface)
-    surface.declareCurrentTransform(this)
     surface.withClip(diagonal) {
-      var row     = rowOrigin
-      var lastRow = seq.length
-      var y: Scalar = charH-descent
-      while (row<lastRow && y<=h) {
-        val string = seq(row).substring(colOrigin)                      //
-        val text = io.github.humbleui.skija.TextLine.make(string, font) // todo: cache the entire TextLine
-        val width = text.getWidth
-        surface.drawTextLine(toForegroundBrush(row), text, 0, y)
-        if (isUnderlined(row)) surface.drawLines$(fg, 0, y+descent, width, y+descent)
-        row += 1
-        y   += charH
+      surface.withScale(scale) {
+      surface.declareCurrentTransform(this)
+        var row = rowOrigin
+        var lastRow = seq.length
+        var y: Scalar = charH - descent
+        while (row < lastRow && y <= scaledH) {
+          val string = seq(row).substring(colOrigin) //
+          val text = io.github.humbleui.skija.TextLine.make(string, font) // todo: cache the entire TextLine
+          val width = text.getWidth
+          surface.drawTextLine(toForegroundBrush(row), text, 0, y)
+          if (isUnderlined(row)) surface.drawLines$(fg, 0, y + descent, width, y + descent)
+          row += 1
+          y += charH
+        }
       }
     }
   }
 
   def copy(fg: Brush=fg, bg: Brush=bg): ReactiveGlyph =
-      new SeqViewer(cols, rows, font, fg, bg, selBrush, seq)
+      new SeqViewer(cols, rows, font, fg, bg, selBrush, seq, autoScale)
 
 
   def handle(gesture: Gesture, location: Vec, delta: Vec): Unit = {
