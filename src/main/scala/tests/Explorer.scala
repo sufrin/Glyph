@@ -10,6 +10,7 @@ import files.FileAttributes.Row
 import gesture.Gesture
 import NaturalSize.Grid
 
+import org.sufrin.glyph.styles.decoration.RoundFramed
 import org.sufrin.logging.{FINEST, SourceLoggable}
 
 import java.io.File
@@ -102,22 +103,22 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
   def theListing: CachedSeq[Row, String] = folder.withValidCaches {
     import org.sufrin.glyph.files.FileAttributes._
-    import Explorer.padToWidth
+    import org.sufrin.utility.CharSequenceOperations._
     CachedSeq(theRows) {
       case row: Row =>
         var out = new StringBuilder()
         for { disp <- Fields.displays if Fields.displayed.contains(disp) }  {
-          val text = disp match {
-            case "Name" => padToWidth(folder.nameWidth+4, s"${row.dirToken} ${row.name}${row.linkToken}")
-            case "Size(xb)" => f"${row.attributes.bkmg}%-10s"
-            case "Size" => f"${row.attributes.size}%-10s"
+          val text: CharSequence = disp match {
+            case "Name"     => (s"${row.dirToken} ${row.name}${row.linkToken}".leftJustify(folder.nameWidth+4))
+            case "Size(xb)" => row.attributes.bkmg.rightJustify(10)
+            case "Size"     => row.attributes.size.toString.rightJustify(10)
             case "Permissions" => row.attributes.mode
-            case "Owner" => padToWidth(folder.ownerWidth, row.attributes.owner.toString)
-            case "Group" => padToWidth(folder.groupWidth, row.attributes.group.toString)
-            case "Modified" => timeOf(row.attributes.lastModifiedTime)
-            case "Created" => timeOf(row.attributes.creationTime())
-            case "Accessed" => timeOf(row.attributes.lastAccessTime())
-            case _ =>
+            case "Owner"    => row.attributes.owner.toString.leftJustify(folder.ownerWidth)
+            case "Group"    => row.attributes.group.toString.leftJustify(folder.groupWidth)
+            case "Modified" => timeOf(row.attributes.lastModifiedTime).toString
+            case "Created"  => timeOf(row.attributes.creationTime()).toString
+            case "Accessed" => timeOf(row.attributes.lastAccessTime()).toString
+            case _ => ""
           }
           out.append(text)
           out.append(" ")
@@ -233,7 +234,8 @@ object Explorer extends Application with SourceLoggable {
 
   import GlyphTypes.FontStyle.NORMAL
 
-  implicit val fileSheet: StyleSheet = StyleSheet(buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
+  implicit val fileSheet: StyleSheet =
+    StyleSheet(buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
 
   val root = new Folder(FileSystems.getDefault.getPath("/Users/sufrin"))
 
@@ -243,8 +245,9 @@ object Explorer extends Application with SourceLoggable {
 
   override val dock = Dock("Exp\nlore", bg=Brushes.yellow)
 
-  def padToWidth(width: Int, string: String): String =
-    if (string.length<width) string+(" "*(width-string.length)) else string
+  val dialogueSheet = fileSheet.copy(buttonForegroundBrush=Brushes.red, buttonDecoration=RoundFramed(Brushes.redFrame, radius=10))
+
+  def dialogueLabel(message: String): Glyph = Label(message)(dialogueSheet).roundFramed(fg=Brushes.red(width=10), radius = 10f).enlarged(10)
 
   def open(path: Path): Unit =
     if (path.isReadable) {
@@ -259,16 +262,16 @@ object Explorer extends Application with SourceLoggable {
             try desktop.open(path.toFile) // Opens with default application
             catch {
               case ex: java.io.IOException =>
-                styled.windowdialogues.Dialogue.OK(Label(s"${ex.getMessage}")).InFront(GUI).start()
+                styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to open\n${path.toRealPath()}"))(dialogueSheet).InFront(GUI).start(floating = false)
             }
           else
-            styled.windowdialogues.Dialogue.OK(Label(s"Desktop open not supported")).InFront(GUI).start()
+            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop open not supported")).InFront(GUI).start()
         }
         else
-          styled.windowdialogues.Dialogue.OK(Label(s"Desktop not supported on this platform")).InFront(GUI).start()
+          styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop not supported on this platform")).InFront(GUI).start()
       }
     } else {
-      styled.windowdialogues.Dialogue.OK(Label(s"Not readable\n$path")).InFront(GUI).start()
+      styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Unreadable\n$path"))(dialogueSheet).InFront(GUI).start()
     }
 
   override protected def whenStarted(): Unit = {

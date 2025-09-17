@@ -216,7 +216,7 @@ object FileAttributes {
       case 1 => "S" // "summer"/"saving"
       case _ => "?"
     }
-    override val toString = f"$year%4d-$month%02d-$day%02d $h%02d:$m%02d:$s%02d $offset"
+    override val toString: String = f"$year%4d-$month%02d-$day%02d $h%02d:$m%02d:$s%02d $offset"
   }
 
   def timeOf(time: FileTime): LegibleTime = {

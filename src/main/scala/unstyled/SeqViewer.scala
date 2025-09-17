@@ -8,6 +8,8 @@ import Modifiers.{Bitmap, Command, Control, Pressed, Primary, Secondary, Shift}
 
 import io.github.humbleui.jwm.Key
 
+import scala.collection.mutable
+
 class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, override val bg: Brush,
                 val selBrush: Brush,
                 initially: => Seq[String],
@@ -26,7 +28,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
   var scale: Scalar = 1.0f
 
-  def toForegroundBrush(i: Int): Brush = if (i==current) selBrush else if (i==hovered) Brushes.green else fg
+  def toForegroundBrush(i: Int): Brush = if (selectedRows.contains(i)) selBrush else fg
   def isUnderlined(i: Int): Boolean = true
 
   var seq: Seq[String] = initially
@@ -36,12 +38,23 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
     reDraw()
   }
 
-  def current(i: Int): String = {
-    seq(i)
-  }
+  def current(i: Int): String = seq(i)
 
   var rowOrigin, colOrigin = 0
-  var current, hovered = 0
+  var hovered = 0
+  var lastclicked = 0
+  val selectedRows = mutable.HashSet[Int]()
+  def currentMinRow = if (selectedRows.isEmpty) 0 else selectedRows.min
+  def currentMaxRow = if (selectedRows.isEmpty) 0 else selectedRows.max
+  def currentRow    = if (selectedRows.isEmpty) 0 else selectedRows.max
+
+  def setCurrentRow(row: Int): Unit = {
+    selectedRows.clear()
+    if (row<seq.length) selectedRows.add(row)
+  }
+
+  def clearSelection(): Unit = { selectedRows.clear(); reDraw() }
+
   val diagonal: Vec = Vec(charW*cols, charH*rows+descent)
 
   def yToRow(y: Scalar): Int = {
@@ -84,6 +97,12 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   def copy(fg: Brush=fg, bg: Brush=bg): ReactiveGlyph =
       new SeqViewer(cols, rows, font, fg, bg, selBrush, seq, autoScale)
 
+  var clicks: Int = 0
+
+  lazy val gutter: Scalar = if (seq.isEmpty) 0 else {
+    val prefix=seq(0).take(2)
+    Text(prefix, font).width
+  }
 
   def handle(gesture: Gesture, location: Vec, delta: Vec): Unit = {
     //println(gesture, location, delta)
@@ -112,45 +131,45 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         key match {
 
           case Key.DOWN =>
-            current += 1
-            if (current-rowOrigin>=rows-1) {
+            setCurrentRow(currentMaxRow + 1)
+            if (currentMaxRow-rowOrigin>=rows-1) {
               rowOrigin += 1
               reDraw()
             }
 
           case Key.UP =>
-            current = 0 max (current-1)
-            if (current<rowOrigin) {
-              rowOrigin = current
+            setCurrentRow(0 max (currentMinRow-1))
+            if (currentMinRow<rowOrigin) {
+              rowOrigin = currentMinRow
               reDraw()
             }
 
           case Key.HOME =>
-            current = 0
+            setCurrentRow(0)
             rowOrigin = 0
             reDraw()
 
           case Key.END =>
-            current = seq.length-1
-            if (current-rowOrigin>=rows-1) {
-              rowOrigin = current-rows
-              reDraw()
+            setCurrentRow(seq.length-1)
+            if (currentRow-rowOrigin>=rows-2) {
+              rowOrigin = seq.length-rows
             }
+            reDraw()
 
           case Key.PAGE_DOWN =>
             if (rowOrigin+rows-1<seq.length) {
               rowOrigin += rows-2
-              current = rowOrigin
+              setCurrentRow(rowOrigin)
               reDraw()
             }
 
           case Key.PAGE_UP =>
             rowOrigin = 0 max rowOrigin-rows
-            current = rowOrigin
+            setCurrentRow(rowOrigin)
             reDraw()
 
           case Key.RIGHT | Key.ENTER =>
-            onClick(mods, current)
+            if (currentMaxRow==currentMinRow && currentRow<seq.length) onClick(mods, currentRow) else bell.play()
 
           // ignore shift buttons
           case Key.SHIFT | Key.CONTROL | Key.CAPS_LOCK | Key.ALT | Key.MAC_COMMAND | Key.MAC_FN | Key.MAC_OPTION =>
@@ -162,22 +181,67 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
             bell.play()
         }
 
-      case MouseMove(modifiers) =>
+      case MouseMove(modifiers) if !PRESSED =>
         val row = yToRow(location.y) + rowOrigin
         val oldHovered = hovered
         hovered = row min seq.length
         if (oldHovered!=hovered) onHover(mods, hovered)
 
-      case MouseClick(_)  if (PRESSED && COMPLEMENT) =>
-
-      case MouseClick(_) if SECONDARY =>
+      case MouseMove(modifiers) if PRESSED && SHIFT =>
         val row = yToRow(location.y) + rowOrigin
-        current = row min seq.length-1
-        onClick(mods, current)
+        hovered = row min seq.length
+        if (row<seq.length) selectedRows.add(hovered)
+        reDraw()
 
-      case MouseClick(_) if PRIMARY =>
+      case MouseMove(modifiers) if PRESSED && CONTROL =>
         val row = yToRow(location.y) + rowOrigin
-        current = row min seq.length-1
+        val oldHovered = hovered
+        hovered = row min seq.length
+        if (row<seq.length && hovered!=oldHovered)  {
+          if (selectedRows.contains(hovered)) selectedRows.remove(hovered) else selectedRows.add(hovered)
+        }
+        reDraw()
+
+
+      case MouseClick(_)  if (PRESSED && CONTROL) =>
+        val row = yToRow(location.y) + rowOrigin
+        val hovered = row min seq.length
+        if (row<seq.length)
+           if (selectedRows.contains(hovered)) selectedRows.remove(hovered) else selectedRows.add(hovered)
+        else
+           selectedRows.clear()
+        reDraw()
+
+      case MouseClick(_) if SECONDARY  =>
+        val row = yToRow(location.y) + rowOrigin
+        setCurrentRow(row min seq.length-1)
+        onClick(mods, currentRow)
+
+      case MouseClick(_) if PRIMARY && SHIFT =>
+        val row = yToRow(location.y) + rowOrigin
+        val hovered = row min seq.length-1
+        selectedRows.add(hovered)
+        val top = selectedRows.min min hovered
+        val bot = selectedRows.max max hovered
+        selectedRows.addAll(top to bot)
+        reDraw()
+
+      case MouseClick(_) if PRESSED =>
+        if (location.x<gutter) {
+          selectedRows.clear()
+        } else {
+          val row = yToRow(location.y) + rowOrigin
+          val hovered = row min seq.length
+          if (selectedRows.contains(row)) {
+            setCurrentRow(row)
+            onClick(mods, currentRow)
+          } else {
+            selectedRows.clear()
+            if (row < seq.length) selectedRows.add(hovered)
+          }
+        }
+        reDraw()
+
 
       case _ =>
     }

@@ -2,11 +2,37 @@
 package org.sufrin
 package utility
 
-import scala.:+
-import scala.annotation.unused
-
 
 object CharSequenceOperations {
+
+  def leftJustify(theSeq: CharSequence, width: Int, ch: Char=' '): CharSequence = new CharSequence{ thisSeq =>
+    val length: Int = width
+    def charAt(i: Int): Char = if (i<theSeq.length) theSeq.charAt(i) else ch
+    def subSequence(start: Int, end: Int): CharSequence = (new Cat(theSeq, constantSeq(ch, width-theSeq.length))).subSequence(start, end) // lazy programmer
+    lazy val toSeq: Seq[Char] = (0 until width).map(charAt)
+    override lazy val toString: String = new String(toSeq.toArray)
+
+  }
+
+  def rightJustify(theSeq: CharSequence, width: Int, ch: Char=' '): CharSequence = new CharSequence{
+    val length: Int = width
+    val delta = width-theSeq.length
+    def charAt(i: Int): Char = if (i<delta) ch else theSeq.charAt(i-delta)
+
+    def subSequence(start: Int, end: Int): CharSequence = (new Cat(constantSeq(ch, width-theSeq.length), theSeq)).subSequence(start, end) // lazy programmer
+
+    lazy val toSeq: Seq[Char] = (0 until width).map(charAt)
+    override lazy val toString: String = new String(toSeq.toArray)
+  }
+
+  def constantSeq(ch: Char, width: Int): CharSequence = new CharSequence {
+    def length(): Int = width
+    def charAt(index: Int): Char = ch
+    def subSequence(start: Int, end: Int): CharSequence =
+      if (start==end) this else constantSeq(ch, 0 max (end-start))
+    lazy val  toSeq: Seq[Char] = (0 until width).map(charAt)
+    override lazy val toString: String = new String(toSeq.toArray)
+  }
 
   /** View a pair of `CharSequence`s as their catenation: constant space and time */
   class Cat(l: CharSequence, r: CharSequence) extends CharSequence {
@@ -57,6 +83,12 @@ object CharSequenceOperations {
   }
 
   /**
+   *  Distributed catenation of `css`  `log2(css.length)` space
+   *  and access time.
+   */
+  def Cat(c1: CharSequence, css: CharSequence*): CharSequence = Cat(css.prepended(c1))
+
+  /**
    * Materialize `cs` as a `String`. Allocates an array of size `cs.length`
    * @param cs
    * @return
@@ -101,6 +133,19 @@ object CharSequenceOperations {
 
   implicit class WithCharSequenceOps(val chars: CharSequence) extends AnyVal {
 
+    def leftJustify(width: Int): CharSequence =
+      if (false)
+        new Cat(chars, constantSeq(' ', width-chars.length))
+      else
+        CharSequenceOperations.leftJustify(chars, width, ' ')
+
+    def rightJustify(width: Int): CharSequence = {
+        if (false)
+          new Cat(constantSeq(' ', width-chars.length),  chars)
+        else
+          CharSequenceOperations.rightJustify(chars, width, ' ')
+    }
+
     def map[T](f: Char=>T): Seq[T] = (0 until chars.length).map{i=>f(chars.charAt(i))}
 
     def ++(otherChars: CharSequence): CharSequence = new Cat(chars, otherChars)
@@ -124,7 +169,9 @@ object CharSequenceOperations {
       def length: Int = chars.length
     }
 
-    def toSeq: Seq[Char] = toIndexedSeq
+    @inline def toSeq: Seq[Char] = toIndexedSeq
+
+    def asString: String = new String(chars.toSeq.toArray)
 
     /** An iterator that yields '\u0000' when `next()` is used after `hasNext` yields false */
     def forwardIterator: Iterator[Char] = new Iterator[Char] {
@@ -147,6 +194,7 @@ object CharSequenceOperations {
       @inline def hasNext: Boolean = i > 0
       @inline def next(): Char = if (hasNext) { i -= 1; chars.charAt(i) } else '\u0000'
     }
+
 
     @inline private def `16x`(n: Long): Long = n<<4
     @inline private def `16x`(n: Int): Int = n<<4
@@ -197,4 +245,28 @@ object CharSequenceOperations {
     }
   }
 
+}
+
+object TestCharSequenceOps {
+  import CharSequenceOperations._
+  def main(args: Array[String]): Unit = {
+    val l0 = constantSeq('=', 5)
+    println(l0.toSeq)
+    val l1  = "01234".leftJustify(10)
+    val l1a = Cat(List("01234",l0))
+    val l2 = leftJustify("01234", 10, '=')
+    println(l1.length)
+    println(l1a.length)
+    println(l2)
+
+    val m1="56789".rightJustify(10)
+    println(m1.length)
+    val m2 = CharSequenceOperations.rightJustify("56789", 10, 'x')
+    println(m1, m2)
+
+    println(m1.subSequence(4, 7).asString)
+    println(m2.subSequence(4, 7).asString)
+    println(l1.subSequence(4, 7).asString)
+    println(l2.subSequence(4, 7).asString)
+  }
 }
