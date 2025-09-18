@@ -598,9 +598,10 @@ class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Bool
     glyphs.toSeq
   }
 
-  def emTab: Glyph = FixedSize.Space(sheet.emWidth, 1, 1)
+  def emTab: Glyph   = FixedSize.Space(sheet.emWidth/2, 1, 1)
+  def enSpace: Glyph =  FixedSize.Space(sheet.emWidth/3, 1, 0)
 
-  def glyphButtons(align: Alignment=Justify): Seq[Glyph] = {
+  def glyphButtons(align: Alignment=Justify, fixedWidth: Boolean=true): Seq[Glyph] = {
     val glyphs: ArrayBuffer[Glyph] = ArrayBuffer[Glyph]()
     val labels = captions.map{caption => Label(caption, Left, sheet.labelStyle)}
 
@@ -613,7 +614,7 @@ class RadioCheckBoxes(captions: Seq[String], prefer: String, inheritFramed: Bool
       case Right =>
         val width = labels.map(_.w).max + checkBoxes.head.w*3
         for {i <- 0 until captions.length } {
-          glyphs += FixedSize.Row(width, align=Mid)(labels(i), emTab, checkBoxes(i)).enlargedBy(15, 0)
+          glyphs += (if (fixedWidth) FixedSize.Row(width, align=Mid)(labels(i), emTab, checkBoxes(i)) else NaturalSize.Row(align=Mid)(labels(i), enSpace, checkBoxes(i))).enlargedBy(15, 0)
         }
 
       case Center =>

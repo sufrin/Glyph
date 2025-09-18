@@ -149,7 +149,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
   }
 
   val invisibilityCheckBox =
-    styled.CheckBox(showingInvisibles, hint=Hint(2, "Show\ninvisible\nfiles")){
+    styled.SymbolicCheckBox(showingInvisibles, whenTrue="(.)", whenFalse="()", hint=Hint(2, "Show\ninvisible\nfiles")){
     state =>
       showingInvisibles = state
       theListing.clear()
@@ -164,6 +164,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
         view.refresh(theListing)
     }.scaled(1.5f)
 
+
   val helpButton = styled.TextButton("Help") { _ => }
   locally {
     helpButton.enabled(false)
@@ -177,9 +178,9 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       view.refresh(theListing)
   }.scaled(1.7f)
 
-  val sortButtons = RadioCheckBoxes(
-    captions = List("Name", "Size", "Created", "Modified", "Accessed"),
-    prefer   = "Name"
+  lazy val sortButtons: RadioCheckBoxes = RadioCheckBoxes(
+    captions = List("N", "S", "C", "M", "A"),
+    prefer   = "N"
     )
     { case selected => selected match
         {
@@ -188,7 +189,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
           case Some(2) => theOrdering = Orderings.byCreateTime
           case Some(3) => theOrdering = Orderings.byModTime
           case Some(4) => theOrdering = Orderings.byAccessTime
-          case _       => theOrdering = Orderings.byName
+          case _       => sortButtons.select(0); theOrdering = Orderings.byName
         }
         theListing.clear()
         view.refresh(theListing)
@@ -213,10 +214,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       .appended(dotdot.framed())
 
     lazy val path: Glyph  = NaturalSize.Row(StateButtons.buttons)
-    lazy val order: Glyph = Grid(height=2, padx=5).table(sortButtons.glyphRows ++
-                                                           List(styled.Label("\u21c5").scaled(1.5f), reverseSortCheckBox,
-                                                                styled.Label("(.)"),                 invisibilityCheckBox,
-                                                                helpButton,                          styled.Label("")))
+    lazy val order: Glyph = NaturalSize.Row(align=Mid)(List(Label("Ordered"), reverseSortCheckBox, Label("on" )) ++ sortButtons.glyphButtons(Right, fixedWidth = false) ++ List( invisibilityCheckBox, helpButton))
   }
 
   lazy val GUI: Glyph =

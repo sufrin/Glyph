@@ -20,6 +20,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   def onKeystroke(keystroke: Gesture): Unit = {}
   def onHover(mods: Bitmap, hovered: Int): Unit = {}
 
+
   val metrics = font.getMetrics
   val descent = metrics.getDescent
   val charW   = Text("m", font).width // getAvgCharWidth/2
@@ -42,11 +43,11 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
   var rowOrigin, colOrigin = 0
   var hovered = 0
-  var lastclicked = 0
-  val selectedRows = mutable.HashSet[Int]()
   def currentMinRow = if (selectedRows.isEmpty) 0 else selectedRows.min
   def currentMaxRow = if (selectedRows.isEmpty) 0 else selectedRows.max
   def currentRow    = if (selectedRows.isEmpty) 0 else selectedRows.max
+  val selectedRows  = mutable.HashSet[Int]()
+
 
   def setCurrentRow(row: Int): Unit = {
     selectedRows.clear()
@@ -55,10 +56,12 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
   def clearSelection(): Unit = { selectedRows.clear(); reDraw() }
 
-  val diagonal: Vec = Vec(charW*cols, charH*rows+descent)
+  val margin: Scalar = 10
+  val rowsDiagonal: Vec = Vec(charW*cols, charH*rows+descent)
+  val diagonal: Vec     = rowsDiagonal+Vec(margin, margin)
 
   def yToRow(y: Scalar): Int = {
-    val r = (y / charH).toInt
+    val r = ((y-margin/2) / charH).toInt
     r
   }
 
@@ -69,15 +72,23 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
     val scaledH =
     if (autoScale&&seq.nonEmpty&&seq(0).length>cols) {
       scale = (cols.toDouble/seq(0).length.toDouble).toFloat
-      h/scale
+      rowsDiagonal.y/scale
     } else {
       scale=1
       h
     }
     drawBackground(surface)
     surface.withClip(diagonal) {
+      // margins
+      val offset=margin/2
+      if (rowOrigin==0) surface.drawLines$(marginBrush, offset,2, w-offset,2) else surface.drawLines$(outsideBrush, offset,2, w-offset,2)
+      if (rowOrigin+rows>=seq.length) surface.drawLines$(marginBrush, offset,h-offset, w-offset,h-offset) else surface.drawLines$(outsideBrush, offset,h-offset, w-offset,h-offset)
+      surface.drawLines$(marginBrush, offset, offset, offset, h-offset)
+      surface.drawLines$(marginBrush, offset+rowsDiagonal.x, offset, offset+rowsDiagonal.x, h-offset)
+      // draw the rows
       surface.withScale(scale) {
       surface.declareCurrentTransform(this)
+        // the rows
         var row = rowOrigin
         var lastRow = seq.length
         var y: Scalar = charH - descent
@@ -85,8 +96,8 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
           val string = seq(row).substring(colOrigin) //
           val text = io.github.humbleui.skija.TextLine.make(string, font) // todo: cache the entire TextLine
           val width = text.getWidth
-          surface.drawTextLine(toForegroundBrush(row), text, 0, y)
-          if (isUnderlined(row)) surface.drawLines$(fg, 0, y + descent, width, y + descent)
+          surface.drawTextLine(toForegroundBrush(row), text, margin, y)
+          if (isUnderlined(row)) surface.drawLines$(fg, margin, y + descent, width, y + descent)
           row += 1
           y += charH
         }
@@ -99,10 +110,10 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
   var clicks: Int = 0
 
-  lazy val gutter: Scalar = if (seq.isEmpty) 0 else {
-    val prefix=seq(0).take(2)
-    Text(prefix, font).width
-  }
+  lazy val marginBrush: Brush = Brushes.red(alpha=0.85f)
+  lazy val outsideBrush: Brush = marginBrush(width=2).dashed(5,5)
+  def isVisible(row: Int): Boolean = (rowOrigin<=row) && (row-rowOrigin<rows)
+
 
   def handle(gesture: Gesture, location: Vec, delta: Vec): Unit = {
     //println(gesture, location, delta)
@@ -122,7 +133,10 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         guiRoot.freeKeyboard(completely = true)
         refresh(initially)
 
-      case _: MouseScroll if !CONTROL => rowOrigin = (rowOrigin+(if (delta.x+delta.y > 0f) -1 else 1)) max 0
+      case _: MouseScroll if !CONTROL =>
+        val nextRowOrigin = (rowOrigin+(if (delta.x+delta.y > 0f) -1 else 1)) max 0
+        if (nextRowOrigin+rows<=seq.length) rowOrigin=nextRowOrigin
+
       case _: MouseScroll if CONTROL  => colOrigin = (colOrigin+(if (delta.x+delta.y > 0f) -1 else 1)) max 0
 
       case Keystroke(key, _) if !PRESSED =>
@@ -169,7 +183,8 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
             reDraw()
 
           case Key.RIGHT | Key.ENTER =>
-            if (currentMaxRow==currentMinRow && currentRow<seq.length) onClick(mods, currentRow) else bell.play()
+            val currentRow=currentMinRow
+            if (currentMaxRow==currentRow && isVisible(currentRow)) onClick(mods, currentRow) else bell.play()
 
           // ignore shift buttons
           case Key.SHIFT | Key.CONTROL | Key.CAPS_LOCK | Key.ALT | Key.MAC_COMMAND | Key.MAC_FN | Key.MAC_OPTION =>
@@ -203,7 +218,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         reDraw()
 
 
-      case MouseClick(_)  if (PRESSED && CONTROL) =>
+      case MouseClick(_)  if (SECONDARY) =>
         val row = yToRow(location.y) + rowOrigin
         val hovered = row min seq.length
         if (row<seq.length)
@@ -212,10 +227,6 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
            selectedRows.clear()
         reDraw()
 
-      case MouseClick(_) if SECONDARY  =>
-        val row = yToRow(location.y) + rowOrigin
-        setCurrentRow(row min seq.length-1)
-        onClick(mods, currentRow)
 
       case MouseClick(_) if PRIMARY && SHIFT =>
         val row = yToRow(location.y) + rowOrigin
@@ -227,7 +238,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         reDraw()
 
       case MouseClick(_) if PRESSED =>
-        if (location.x<gutter) {
+        if (location.x<=margin) {
           selectedRows.clear()
         } else {
           val row = yToRow(location.y) + rowOrigin
