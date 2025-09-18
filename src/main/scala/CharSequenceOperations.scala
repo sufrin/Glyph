@@ -139,6 +139,8 @@ object CharSequenceOperations {
       else
         CharSequenceOperations.leftJustify(chars, width, ' ')
 
+    def centerJustify(width: Int): CharSequence = Cat(constantSeq(' ', (width-chars.length)/2), chars, constantSeq(' ', (width-chars.length)/2))
+
     def rightJustify(width: Int): CharSequence = {
         if (false)
           new Cat(constantSeq(' ', width-chars.length),  chars)

@@ -4,7 +4,7 @@ package dynamic
 
 import GlyphTypes.{Font, Scalar}
 import gesture._
-import Modifiers.{Bitmap, Command, Control, Pressed, Primary, Secondary, Shift}
+import Modifiers.Bitmap
 
 import io.github.humbleui.jwm.Key
 
@@ -13,12 +13,15 @@ import scala.collection.mutable
 class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, override val bg: Brush,
                 val selBrush: Brush,
                 initially: => Seq[String],
-                autoScale: Boolean = true
+                autoScale: Boolean = true,
+                header: => Seq[String],
+                headBrush: Brush = Brushes.black
                )  extends GestureBasedReactiveGlyph { thisViewer =>
 
   def onClick(mods: Bitmap, selected: Int): Unit = {}
   def onKeystroke(keystroke: Gesture): Unit = {}
   def onHover(mods: Bitmap, hovered: Int): Unit = {}
+  def onOther(mods: Bitmap, gesture: Gesture): Unit = { println(s"other($gesture)")}
 
 
   val metrics = font.getMetrics
@@ -29,7 +32,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
   var scale: Scalar = 1.0f
 
-  def toForegroundBrush(i: Int): Brush = if (selectedRows.contains(i)) selBrush else fg
+  def toForegroundBrush(i: Int): Brush = if (_selectedRows.contains(i)) selBrush else fg
   def isUnderlined(i: Int): Boolean = true
 
   var seq: Seq[String] = initially
@@ -43,25 +46,28 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
   var rowOrigin, colOrigin = 0
   var hovered = 0
-  def currentMinRow = if (selectedRows.isEmpty) 0 else selectedRows.min
-  def currentMaxRow = if (selectedRows.isEmpty) 0 else selectedRows.max
-  def currentRow    = if (selectedRows.isEmpty) 0 else selectedRows.max
-  val selectedRows  = mutable.HashSet[Int]()
+  def currentMinRow = if (_selectedRows.isEmpty) 0 else _selectedRows.min
+  def currentMaxRow = if (_selectedRows.isEmpty) 0 else _selectedRows.max
+  def currentRow    = if (_selectedRows.isEmpty) 0 else _selectedRows.max
+  val _selectedRows  = mutable.HashSet[Int]()
 
+
+  def selectedRows: Seq[Int] = _selectedRows.toSeq.sorted
 
   def setCurrentRow(row: Int): Unit = {
-    selectedRows.clear()
-    if (row<seq.length) selectedRows.add(row)
+    _selectedRows.clear()
+    if (row<seq.length) _selectedRows.add(row)
   }
 
-  def clearSelection(): Unit = { selectedRows.clear(); reDraw() }
+  def clearSelection(): Unit = { _selectedRows.clear(); reDraw() }
 
   val margin: Scalar = 10
   val rowsDiagonal: Vec = Vec(charW*cols, charH*rows+descent)
-  val diagonal: Vec     = rowsDiagonal+Vec(margin, margin)
+  val headerDiagonal: Vec = Vec(charW*cols, charH*header.length+descent)
+  val diagonal: Vec     = rowsDiagonal+Vec(margin, margin)+Vec(0, headerDiagonal.y)
 
   def yToRow(y: Scalar): Int = {
-    val r = ((y-margin/2) / charH).toInt
+    val r = ((y-margin/2) / charH).toInt - header.length
     r
   }
 
@@ -72,28 +78,32 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
     val scaledH =
     if (autoScale&&seq.nonEmpty&&seq(0).length>cols) {
       scale = (cols.toDouble/seq(0).length.toDouble).toFloat
-      rowsDiagonal.y/scale
+      headerDiagonal.x+rowsDiagonal.y/scale
     } else {
       scale=1
       h
     }
     drawBackground(surface)
     surface.withClip(diagonal) {
-      // margins
-      val offset=margin/2
-      if (rowOrigin==0) surface.drawLines$(marginBrush, offset,2, w-offset,2) else surface.drawLines$(outsideBrush, offset,2, w-offset,2)
-      if (rowOrigin+rows>=seq.length) surface.drawLines$(marginBrush, offset,h-offset, w-offset,h-offset) else surface.drawLines$(outsideBrush, offset,h-offset, w-offset,h-offset)
-      surface.drawLines$(marginBrush, offset, offset, offset, h-offset)
-      surface.drawLines$(marginBrush, offset+rowsDiagonal.x, offset, offset+rowsDiagonal.x, h-offset)
-      // draw the rows
+      // draw the header
+      var y: Scalar = charH - descent
       surface.withScale(scale) {
-      surface.declareCurrentTransform(this)
+        surface.declareCurrentTransform(this)
+        // the header
+        for {headLine <- header} {
+          val string = headLine //.substring(colOrigin) //
+          val text = io.github.humbleui.skija.TextLine.make(string, font)
+          surface.drawTextLine(headBrush, text, margin, y)
+          y += charH
+        }
+      }
+
+      surface.withScale(scale) {
         // the rows
         var row = rowOrigin
         var lastRow = seq.length
-        var y: Scalar = charH - descent
         while (row < lastRow && y <= scaledH) {
-          val string = seq(row).substring(colOrigin) //
+          val string = seq(row) //.substring(colOrigin) //
           val text = io.github.humbleui.skija.TextLine.make(string, font) // todo: cache the entire TextLine
           val width = text.getWidth
           surface.drawTextLine(toForegroundBrush(row), text, margin, y)
@@ -105,8 +115,18 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
     }
   }
 
-  def copy(fg: Brush=fg, bg: Brush=bg): ReactiveGlyph =
-      new SeqViewer(cols, rows, font, fg, bg, selBrush, seq, autoScale)
+  /*
+  // margins
+        val underY = y-charH+descent
+        val offset=margin/2
+        if (rowOrigin==0) surface.drawLines$(marginBrush, offset,underY, w-offset,underY) else surface.drawLines$(outsideBrush, offset,underY, w-offset,underY)
+        if (rowOrigin+rows>=seq.length) surface.drawLines$(marginBrush, offset,h-offset, w-offset,h-offset) else surface.drawLines$(outsideBrush, offset,h-offset, w-offset,h-offset)
+        surface.drawLines$(marginBrush, offset, offset, offset, h-offset)
+        surface.drawLines$(marginBrush, offset+rowsDiagonal.x, offset, offset+rowsDiagonal.x, h-offset)
+  * */
+
+  def copy(fg: Brush=fg, bg: Brush=bg): ReactiveGlyph = null
+      //new SeqViewer(cols, rows, font, fg, bg, selBrush, seq, autoScale)
 
   var clicks: Int = 0
 
@@ -116,14 +136,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
 
   def handle(gesture: Gesture, location: Vec, delta: Vec): Unit = {
-    //println(gesture, location, delta)
-    val mods: Bitmap  = gesture.modifiers
-    val PRESSED       = mods.includeAll(Pressed)
-    val CONTROL       = mods.includeSome(Command|Control)
-    val PRIMARY       = mods.includeAll(Primary   | Pressed)
-    val SECONDARY     = mods.includeAll(Secondary | Pressed) || (PRIMARY && CONTROL)
-    val COMPLEMENT    = mods.includeSome(Shift)
-    val SHIFT         = mods.includeSome(Shift)
+    import gesture._
     gesture match {
       case _: MouseEnters =>
         guiRoot.grabKeyboard(thisViewer)
@@ -184,28 +197,26 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
           case Key.RIGHT | Key.ENTER =>
             val currentRow=currentMinRow
-            if (currentMaxRow==currentRow && isVisible(currentRow)) onClick(mods, currentRow) else bell.play()
+            if (currentMaxRow==currentRow && isVisible(currentRow)) onClick(modifiers, currentRow) else bell.play()
 
           // ignore shift buttons
           case Key.SHIFT | Key.CONTROL | Key.CAPS_LOCK | Key.ALT | Key.MAC_COMMAND | Key.MAC_FN | Key.MAC_OPTION =>
 
-          case Key.W if CONTROL =>
-               onKeystroke(gesture.asInstanceOf[Keystroke])
-
           case _ =>
-            bell.play()
+            onOther(modifiers, gesture)
+
         }
 
       case MouseMove(modifiers) if !PRESSED =>
         val row = yToRow(location.y) + rowOrigin
         val oldHovered = hovered
         hovered = row min seq.length
-        if (oldHovered!=hovered) onHover(mods, hovered)
+        if (oldHovered!=hovered) onHover(modifiers, hovered)
 
       case MouseMove(modifiers) if PRESSED && SHIFT =>
         val row = yToRow(location.y) + rowOrigin
         hovered = row min seq.length
-        if (row<seq.length) selectedRows.add(hovered)
+        if (row<seq.length) _selectedRows.add(hovered)
         reDraw()
 
       case MouseMove(modifiers) if PRESSED && CONTROL =>
@@ -213,7 +224,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         val oldHovered = hovered
         hovered = row min seq.length
         if (row<seq.length && hovered!=oldHovered)  {
-          if (selectedRows.contains(hovered)) selectedRows.remove(hovered) else selectedRows.add(hovered)
+          if (_selectedRows.contains(hovered)) _selectedRows.remove(hovered) else _selectedRows.add(hovered)
         }
         reDraw()
 
@@ -222,39 +233,40 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         val row = yToRow(location.y) + rowOrigin
         val hovered = row min seq.length
         if (row<seq.length)
-           if (selectedRows.contains(hovered)) selectedRows.remove(hovered) else selectedRows.add(hovered)
+           if (_selectedRows.contains(hovered)) _selectedRows.remove(hovered) else _selectedRows.add(hovered)
         else
-           selectedRows.clear()
+           _selectedRows.clear()
         reDraw()
 
 
       case MouseClick(_) if PRIMARY && SHIFT =>
         val row = yToRow(location.y) + rowOrigin
         val hovered = row min seq.length-1
-        selectedRows.add(hovered)
-        val top = selectedRows.min min hovered
-        val bot = selectedRows.max max hovered
-        selectedRows.addAll(top to bot)
+        _selectedRows.add(hovered)
+        val top = _selectedRows.min min hovered
+        val bot = _selectedRows.max max hovered
+        _selectedRows.addAll(top to bot)
         reDraw()
 
       case MouseClick(_) if PRESSED =>
         if (location.x<=margin) {
-          selectedRows.clear()
+          _selectedRows.clear()
         } else {
           val row = yToRow(location.y) + rowOrigin
           val hovered = row min seq.length
-          if (selectedRows.contains(row)) {
+          if (_selectedRows.contains(row)) {
             setCurrentRow(row)
-            onClick(mods, currentRow)
+            onClick(modifiers, currentRow)
           } else {
-            selectedRows.clear()
-            if (row < seq.length) selectedRows.add(hovered)
+            _selectedRows.clear()
+            if (row < seq.length) _selectedRows.add(hovered)
           }
         }
         reDraw()
 
 
-      case _ =>
+      case other =>
+        if (PRESSED) onOther(modifiers, other)
     }
     //println(displayList)
     //println(selection)

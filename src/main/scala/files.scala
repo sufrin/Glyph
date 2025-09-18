@@ -247,11 +247,14 @@ object FileAttributes {
     def d = if (isDirectory) "\u25A2" else " "
     def s: String = if (isSymbolicLink) "@" else " "
     def dmode: String = s"$d$mode$s"
-    def bkmg: String =
+    def bkmg: String = {
+      if (isDirectory) "-    " else
       if (dsize<KB) s"${size}b" else
-        if (dsize<MB) f"${dsize/KB}%1.1fkb" else
-          if (dsize<GB) f"${dsize/MB}%1.1fmb" else
-            if (dsize<TB) f"${dsize/GB}%1.2fgb" else  f"${dsize/TB}%1.2ftb"
+        if (dsize<MB) f"${dsize/KB}%1.1fk" else
+          if (dsize<GB) f"${dsize/MB}%1.1fm" else
+            if (dsize<TB) f"${dsize/GB}%1.2fg" else  f"${dsize/TB}%1.2ft"
+    }
+
     def asString: String = s"$dmode $owner.$group C ${timeOf(creationTime)} M ${timeOf(lastModifiedTime)} A ${timeOf(lastAccessTime)} $bkmg"
   }
 

@@ -9,8 +9,8 @@ import cached._
 import files.FileAttributes.Row
 import gesture.Gesture
 import NaturalSize.Grid
+import styles.decoration.RoundFramed
 
-import org.sufrin.glyph.styles.decoration.RoundFramed
 import org.sufrin.logging.{FINEST, SourceLoggable}
 
 import java.io.File
@@ -85,7 +85,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
    */
   object Fields {
     /** The list of potential fields (in order of presentation) */
-    val displays: Seq[String] = List("Name", "Size", "Size(xb)", "Permissions", "Owner", "Group", "Created", "Modified", "Accessed")
+    val displays: Seq[String] = List("Name", "Size", "Size(xb)", "Perms", "Owner", "Group", "Created", "Modified", "Accessed")
     /** The set of fields selected for presentation */
     val displayed: mutable.Set[String] = mutable.Set[String]("Name", "Size(xb)", "Modified", "Owner", "Permissions", "Accessed")
 
@@ -101,30 +101,55 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     }
   }
 
-  def theListing: CachedSeq[Row, String] = folder.withValidCaches {
+  def theHeader: Cached[String] = Cached[String]{
     import org.sufrin.glyph.files.FileAttributes._
     import org.sufrin.utility.CharSequenceOperations._
-    CachedSeq(theRows) {
-      case row: Row =>
-        var out = new StringBuilder()
-        for { disp <- Fields.displays if Fields.displayed.contains(disp) }  {
-          val text: CharSequence = disp match {
-            case "Name"     => (s"${row.dirToken} ${row.name}${row.linkToken}".leftJustify(folder.nameWidth+4))
-            case "Size(xb)" => row.attributes.bkmg.rightJustify(10)
-            case "Size"     => row.attributes.size.toString.rightJustify(10)
-            case "Permissions" => row.attributes.mode
-            case "Owner"    => row.attributes.owner.toString.leftJustify(folder.ownerWidth)
-            case "Group"    => row.attributes.group.toString.leftJustify(folder.groupWidth)
-            case "Modified" => timeOf(row.attributes.lastModifiedTime).toString
-            case "Created"  => timeOf(row.attributes.creationTime()).toString
-            case "Accessed" => timeOf(row.attributes.lastAccessTime()).toString
-            case _ => ""
-          }
-          out.append(text)
-          out.append(" ")
-        }
-        out.toString
+    val row = Row(folder.path, files.UndefinedAttributes())
+    val out: StringBuilder = new  StringBuilder()
+    for { disp <- Fields.displays if Fields.displayed.contains(disp) } {
+      val text = disp match {
+        case "Name"     => (s"${row.dirToken} ${row.name}${row.linkToken}".leftJustify(folder.nameWidth+4))
+        case "Size(xb)" => row.attributes.bkmg.rightJustify(10)
+        case "Size"     => row.attributes.size.toString.rightJustify(10)
+        case "Perms"    => row.attributes.mode
+        case "Owner"    => row.attributes.owner.toString.leftJustify(folder.ownerWidth)
+        case "Group"    => row.attributes.group.toString.leftJustify(folder.groupWidth)
+        case "Modified" => timeOf(row.attributes.lastModifiedTime).toString
+        case "Created"  => timeOf(row.attributes.creationTime()).toString
+        case "Accessed" => timeOf(row.attributes.lastAccessTime()).toString
+        case _ => ""
+      }
+      out.append(disp.centerJustify(text.length))
+      out.append(" ")
     }
+    out.toString
+  }
+
+  def showRow(row: Row): String = {
+    import org.sufrin.glyph.files.FileAttributes._
+    import org.sufrin.utility.CharSequenceOperations._
+    val out = new StringBuilder()
+    for { disp <- Fields.displays if Fields.displayed.contains(disp) }  {
+      val text: CharSequence = disp match {
+        case "Name"     => (s"${row.dirToken} ${row.name}${row.linkToken}".leftJustify(folder.nameWidth+4))
+        case "Size(xb)" => row.attributes.bkmg.rightJustify(10)
+        case "Size"     => row.attributes.size.toString.rightJustify(10)
+        case "Perms"    => row.attributes.mode
+        case "Owner"    => row.attributes.owner.toString.leftJustify(folder.ownerWidth)
+        case "Group"    => row.attributes.group.toString.leftJustify(folder.groupWidth)
+        case "Modified" => timeOf(row.attributes.lastModifiedTime).toString
+        case "Created"  => timeOf(row.attributes.creationTime()).toString
+        case "Accessed" => timeOf(row.attributes.lastAccessTime()).toString
+        case _ => ""
+      }
+      out.append(text)
+      out.append(" ")
+    }
+    out.toString
+  }
+
+  def theListing: CachedSeq[Row, String] = folder.withValidCaches {
+    CachedSeq(theRows) (showRow)
   }
 
   lazy val columns = theListing.take(1).prepended(folder.path.toString).map(_.length).max // width needed to show the first row
@@ -135,7 +160,9 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
                                 fileSheet.buttonForegroundBrush,
                                 fileSheet.buttonBackgroundBrush,
                                 Brushes.red,
-                                theListing)
+                                theListing,
+                                autoScale=true,
+                                header=List(theHeader.value))
   {
 
     override def onClick(mods: Bitmap, selected: Int): Unit = Explorer.open((folder.path.resolve(theRows(selected).path)))

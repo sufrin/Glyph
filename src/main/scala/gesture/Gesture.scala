@@ -9,7 +9,7 @@ package gesture
 
 
 import GlyphTypes.{EventKey, Window}
-import Modifiers.Bitmap
+import Modifiers.{Bitmap, Command, Control, Pressed, Primary, Secondary, Shift}
 
 import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, EventMouseScroll, Key}
 
@@ -19,6 +19,12 @@ import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, EventMouseScrol
  */
 trait Gesture {
   val modifiers: Bitmap
+  val PRESSED       = modifiers.includeAll(Pressed)
+  val CONTROL       = modifiers.includeSome(Command  | Control)
+  val PRIMARY       = modifiers.includeAll(Primary   | Pressed)
+  val SECONDARY     = modifiers.includeAll(Secondary | Pressed) || (PRIMARY && CONTROL)
+  val COMPLEMENT    = modifiers.includeSome(Shift)
+  val SHIFT         = modifiers.includeSome(Shift)
 }
 
 case class Keystroke(key: Key, modifiers: Bitmap) extends Gesture
