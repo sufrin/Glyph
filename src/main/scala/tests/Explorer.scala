@@ -41,27 +41,6 @@ object FileOperations {
 }
 
 
-class ClipboardWatcher (action: () => Unit) {
-  import java.awt.{datatransfer, _}
-  val sysClipboard: java.awt.datatransfer.Clipboard = Toolkit.getDefaultToolkit.getSystemClipboard
-
-  locally {
-    sysClipboard.addFlavorListener(
-      new java.awt.datatransfer.FlavorListener()
-      {
-        def flavorsChanged(event: FlavorEvent): Unit = {
-          action()
-        }
-      }
-    )
-  }
-
-}
-
-object ClipboardWatcher {
-  def apply(action: => Unit): ClipboardWatcher = new ClipboardWatcher(()=>action)
-  def files:
-}
 
 class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
   import styled.TextButton
