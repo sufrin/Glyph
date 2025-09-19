@@ -7,6 +7,7 @@ import gesture._
 import Modifiers.Bitmap
 
 import io.github.humbleui.jwm.Key
+import io.github.humbleui.skija.TextLine
 
 import scala.collection.mutable
 
@@ -19,9 +20,8 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
                )  extends GestureBasedReactiveGlyph { thisViewer =>
 
   def onClick(mods: Bitmap, selected: Int): Unit = {}
-  def onKeystroke(keystroke: Gesture): Unit = {}
   def onHover(mods: Bitmap, hovered: Int): Unit = {}
-  def onOther(mods: Bitmap, gesture: Gesture): Unit = { println(s"other($gesture)")}
+  def onOther(gesture: Gesture): Unit = { println(s"other($gesture)")}
 
 
   val metrics = font.getMetrics
@@ -35,10 +35,21 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   def toForegroundBrush(i: Int): Brush = if (_selectedRows.contains(i)) selBrush else fg
   def isUnderlined(i: Int): Boolean = true
 
-  var seq: Seq[String] = initially
+  var seq: Seq[String]     = initially
+  var heading: Seq[String] = header
+
+  val margin: Scalar = 10
+  val rowsDiagonal:   Vec = Vec(charW*cols, charH*rows+descent)
+  val headerDiagonal: Vec = Vec(charW*cols, charH*heading.length+descent)
+  val diagonal: Vec       = rowsDiagonal+Vec(margin, margin)+Vec(0, headerDiagonal.y)
 
   def refresh(current: Seq[String]): Unit = {
-    seq = current
+    seq     = current
+    heading = header
+    if (cacheing) {
+      textCache.clear()
+      headCache.clear()
+    }
     reDraw()
   }
 
@@ -59,70 +70,75 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
     if (row<seq.length) _selectedRows.add(row)
   }
 
+  def addToSelection(row: Int): Unit = {
+    if (row<seq.length) _selectedRows.add(row)
+  }
+
   def clearSelection(): Unit = { _selectedRows.clear(); reDraw() }
 
-  val margin: Scalar = 10
-  val rowsDiagonal: Vec = Vec(charW*cols, charH*rows+descent)
-  val headerDiagonal: Vec = Vec(charW*cols, charH*header.length+descent)
-  val diagonal: Vec     = rowsDiagonal+Vec(margin, margin)+Vec(0, headerDiagonal.y)
+
 
   def yToRow(y: Scalar): Int = {
-    val r = ((y-margin/2) / charH).toInt - header.length
+    val r = 0 max (((y-margin/2) / charH).toInt - header.length)
     r
   }
+
+  private val cacheing = true
+  private val textCache = mutable.HashMap.newBuilder[Int, io.github.humbleui.skija.TextLine](2*rows, 1.5).result()
+  private val headCache = mutable.HashMap.newBuilder[Int, io.github.humbleui.skija.TextLine](1, 2).result()
 
   /**
    * Compute the scale needed to fit the entire first row; then display at that scale
    */
   def draw(surface: Surface): Unit = {
-    val scaledH =
+    val scaledH: Scalar =
     if (autoScale&&seq.nonEmpty&&seq(0).length>cols) {
       scale = (cols.toDouble/seq(0).length.toDouble).toFloat
-      headerDiagonal.x+rowsDiagonal.y/scale
+      h/scale-margin
     } else {
       scale=1
       h
     }
+    val underHeader: Scalar = headerDiagonal.y*scale
+
     drawBackground(surface)
     surface.withClip(diagonal) {
-      // draw the header
+      var nextVisibleRow: Int = 0
+      // draw the heading
       var y: Scalar = charH - descent
       surface.withScale(scale) {
         surface.declareCurrentTransform(this)
         // the header
-        for {headLine <- header} {
-          val string = headLine //.substring(colOrigin) //
-          val text = io.github.humbleui.skija.TextLine.make(string, font)
+        for {i <- 0 until heading.length} {
+          val text = if (cacheing)  headCache.getOrElseUpdate(nextVisibleRow, TextLine.make(heading(i), font)) else TextLine.make(heading(i), font)
           surface.drawTextLine(headBrush, text, margin, y)
           y += charH
         }
-      }
-
-      surface.withScale(scale) {
         // the rows
-        var row = rowOrigin
-        var lastRow = seq.length
-        while (row < lastRow && y <= scaledH) {
-          val string = seq(row) //.substring(colOrigin) //
-          val text = io.github.humbleui.skija.TextLine.make(string, font) // todo: cache the entire TextLine
+        nextVisibleRow= rowOrigin
+        val lastRow = seq.length
+        while (nextVisibleRow < lastRow && y <= scaledH) {
+          val text = if (cacheing) textCache.getOrElseUpdate(nextVisibleRow, TextLine.make(seq(nextVisibleRow), font)) else TextLine.make(seq(nextVisibleRow), font)
           val width = text.getWidth
-          surface.drawTextLine(toForegroundBrush(row), text, margin, y)
-          if (isUnderlined(row)) surface.drawLines$(fg, margin, y + descent, width, y + descent)
-          row += 1
+          surface.drawTextLine(toForegroundBrush(nextVisibleRow), text, margin, y)
+          if (isUnderlined(nextVisibleRow)) surface.drawLines$(fg, margin, y + descent, width, y + descent)
+          nextVisibleRow += 1
           y += charH
         }
       }
+      // show the state of the viewport
+      val offset=margin/2
+      val topBrush = if (rowOrigin==0) marginBrush else outsideBrush
+      val botBrush = if (nextVisibleRow>=seq.length) marginBrush else outsideBrush
+      surface.drawLines$(topBrush, offset,underHeader, w-offset,underHeader)
+      surface.drawLines$(botBrush, offset,h-offset, w-offset,h-offset)
     }
   }
 
   /*
   // margins
-        val underY = y-charH+descent
-        val offset=margin/2
-        if (rowOrigin==0) surface.drawLines$(marginBrush, offset,underY, w-offset,underY) else surface.drawLines$(outsideBrush, offset,underY, w-offset,underY)
-        if (rowOrigin+rows>=seq.length) surface.drawLines$(marginBrush, offset,h-offset, w-offset,h-offset) else surface.drawLines$(outsideBrush, offset,h-offset, w-offset,h-offset)
-        surface.drawLines$(marginBrush, offset, offset, offset, h-offset)
-        surface.drawLines$(marginBrush, offset+rowsDiagonal.x, offset, offset+rowsDiagonal.x, h-offset)
+
+
   * */
 
   def copy(fg: Brush=fg, bg: Brush=bg): ReactiveGlyph = null
@@ -149,8 +165,11 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
       case _: MouseScroll if !CONTROL =>
         val nextRowOrigin = (rowOrigin+(if (delta.x+delta.y > 0f) -1 else 1)) max 0
         if (nextRowOrigin+rows<=seq.length) rowOrigin=nextRowOrigin
+        reDraw()
 
-      case _: MouseScroll if CONTROL  => colOrigin = (colOrigin+(if (delta.x+delta.y > 0f) -1 else 1)) max 0
+      case _: MouseScroll if CONTROL  =>
+        colOrigin = (colOrigin+(if (delta.x+delta.y > 0f) -1 else 1)) max 0
+        reDraw()
 
       case Keystroke(key, _) if !PRESSED =>
 
@@ -158,27 +177,38 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         key match {
 
           case Key.DOWN =>
-            setCurrentRow(currentMaxRow + 1)
-            if (currentMaxRow-rowOrigin>=rows-1) {
-              rowOrigin += 1
-              reDraw()
+            if (selectedRows.nonEmpty) {
+              (if (SHIFT) addToSelection(_) else setCurrentRow(_))(currentMaxRow + 1)
+              if (currentMaxRow - rowOrigin >= rows-1 ) {
+                rowOrigin += 1
+                reDraw()
+              }
+            } else {
+              bell.play()
+              setCurrentRow(rowOrigin+rows-1)
             }
 
           case Key.UP =>
-            setCurrentRow(0 max (currentMinRow-1))
-            if (currentMinRow<rowOrigin) {
-              rowOrigin = currentMinRow
-              reDraw()
+            if (selectedRows.nonEmpty) {
+              (if (SHIFT) addToSelection(_) else setCurrentRow(_))(currentMinRow - 1)
+              if (currentMinRow < rowOrigin) {
+                rowOrigin = 0 max (currentMinRow - 1)
+                reDraw()
+              }
+            } else {
+              bell.play()
+              setCurrentRow(rowOrigin)
             }
 
           case Key.HOME =>
-            setCurrentRow(0)
+            clearSelection()
             rowOrigin = 0
             reDraw()
 
           case Key.END =>
-            setCurrentRow(seq.length-1)
-            if (currentRow-rowOrigin>=rows-2) {
+            clearSelection()
+            val lastRow = (seq.length-1)
+            if (lastRow-rowOrigin>=rows-2) {
               rowOrigin = seq.length-rows
             }
             reDraw()
@@ -186,24 +216,27 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
           case Key.PAGE_DOWN =>
             if (rowOrigin+rows-1<seq.length) {
               rowOrigin += rows-2
-              setCurrentRow(rowOrigin)
               reDraw()
             }
 
           case Key.PAGE_UP =>
             rowOrigin = 0 max rowOrigin-rows
-            setCurrentRow(rowOrigin)
             reDraw()
 
           case Key.RIGHT | Key.ENTER =>
             val currentRow=currentMinRow
             if (currentMaxRow==currentRow && isVisible(currentRow)) onClick(modifiers, currentRow) else bell.play()
+            reDraw()
+
+          case Key.A if CONTROL =>
+            _selectedRows.addAll(0 until seq.length)
+            reDraw()
 
           // ignore shift buttons
           case Key.SHIFT | Key.CONTROL | Key.CAPS_LOCK | Key.ALT | Key.MAC_COMMAND | Key.MAC_FN | Key.MAC_OPTION =>
 
           case _ =>
-            onOther(modifiers, gesture)
+            onOther(gesture)
 
         }
 
@@ -212,6 +245,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         val oldHovered = hovered
         hovered = row min seq.length
         if (oldHovered!=hovered) onHover(modifiers, hovered)
+        reDraw()
 
       case MouseMove(modifiers) if PRESSED && SHIFT =>
         val row = yToRow(location.y) + rowOrigin
@@ -228,6 +262,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         }
         reDraw()
 
+      case other: MouseMove =>
 
       case MouseClick(_)  if (SECONDARY) =>
         val row = yToRow(location.y) + rowOrigin
@@ -266,11 +301,10 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
 
       case other =>
-        if (PRESSED) onOther(modifiers, other)
+        if (PRESSED) onOther(other)
     }
     //println(displayList)
     //println(selection)
-    reDraw()
   }
 
 }

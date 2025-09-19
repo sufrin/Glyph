@@ -11,8 +11,8 @@ object CharSequenceOperations {
     def subSequence(start: Int, end: Int): CharSequence = (new Cat(theSeq, constantSeq(ch, width-theSeq.length))).subSequence(start, end) // lazy programmer
     lazy val toSeq: Seq[Char] = (0 until width).map(charAt)
     override lazy val toString: String = new String(toSeq.toArray)
-
   }
+
 
   def rightJustify(theSeq: CharSequence, width: Int, ch: Char=' '): CharSequence = new CharSequence{
     val length: Int = width
@@ -24,6 +24,14 @@ object CharSequenceOperations {
     lazy val toSeq: Seq[Char] = (0 until width).map(charAt)
     override lazy val toString: String = new String(toSeq.toArray)
   }
+
+  def leftJustify(width: Int)(theSeq: CharSequence): CharSequence = leftJustify(theSeq, width)
+  def rightJustify(width: Int)(theSeq: CharSequence): CharSequence = rightJustify(theSeq, width)
+  def centerJustify(width: Int)(theSeq: CharSequence): CharSequence = {
+    val extra = width-theSeq.length/2
+    Cat(constantSeq(' ', extra), theSeq, constantSeq(' ', width-extra))
+  }
+
 
   def constantSeq(ch: Char, width: Int): CharSequence = new CharSequence {
     def length(): Int = width

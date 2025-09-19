@@ -7,16 +7,61 @@ import tests.PathProperties._
 import Modifiers.Bitmap
 import cached._
 import files.FileAttributes.Row
-import gesture.Gesture
+import gesture.{Gesture, Keystroke}
 import NaturalSize.Grid
 import styles.decoration.RoundFramed
 
+import io.github.humbleui.jwm.Key
 import org.sufrin.logging.{FINEST, SourceLoggable}
 
+import java.awt.datatransfer.FlavorEvent
 import java.io.File
 import java.nio.file.{FileSystems, Path}
 import scala.collection.mutable
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
+object FileOperations {
+  import java.nio.file.{StandardCopyOption, _}
+
+  def copy(from: Path, to: Path): Seq[Exception] = {
+    // pre: to is a writeable folder
+    if (from.isReadable) {
+      try {
+        Files.copy(from, to.resolve(from.getFileName), StandardCopyOption.COPY_ATTRIBUTES)
+        Seq.empty
+      }
+      catch { case ex: java.io.IOException => List(ex) }
+    }
+    else List(new java.nio.file.NoSuchFileException(from.toString, "", " file is unreadable."))
+  }
+
+  def copy(from: Seq[Path], to: Path): Seq[Exception] = {
+    if (to.isDir) from.flatMap{ case path => copy(path, to) } else Seq.empty
+  }
+}
+
+
+class ClipboardWatcher (action: () => Unit) {
+  import java.awt.{datatransfer, _}
+  val sysClipboard: java.awt.datatransfer.Clipboard = Toolkit.getDefaultToolkit.getSystemClipboard
+
+  locally {
+    sysClipboard.addFlavorListener(
+      new java.awt.datatransfer.FlavorListener()
+      {
+        def flavorsChanged(event: FlavorEvent): Unit = {
+          action()
+        }
+      }
+    )
+  }
+
+}
+
+object ClipboardWatcher {
+  def apply(action: => Unit): ClipboardWatcher = new ClipboardWatcher(()=>action)
+  def files:
+}
 
 class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
   import styled.TextButton
@@ -84,43 +129,56 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
    * presented (or not) in the current folder listing.
    */
   object Fields {
+    import org.sufrin.utility.CharSequenceOperations._
+    type FieldLayout = CharSequence => CharSequence
     /** The list of potential fields (in order of presentation) */
-    val displays: Seq[String] = List("Name", "Size", "Size(xb)", "Perms", "Owner", "Group", "Created", "Modified", "Accessed")
-    /** The set of fields selected for presentation */
+    val allFields: Seq[String] =
+        List("Name", "Size", "Size(xb)", "Perms", "Owner", "Group", "Created", "Modified", "Accessed")
+
+    /** The list of potential layouts (in order of presentation) */
+    val fieldLayouts: Seq[FieldLayout] =
+        List(leftJustify(34)(_), rightJustify(10)(_), rightJustify(10)(_), rightJustify(10)(_), rightJustify(10)(_), rightJustify(10)(_), centerJustify(20)(_), centerJustify(20)(_), centerJustify(20)(_))
+
+    /** The mapping from potential fields to their layouts  */
+    val fieldLayout: Map[String, FieldLayout] =
+      collection.immutable.ListMap.from(allFields zip fieldLayouts)
+
+    /** The set of fields currently selected for displaying */
     val displayed: mutable.Set[String] = mutable.Set[String]("Name", "Size(xb)", "Modified", "Owner", "Permissions", "Accessed")
 
+    /** apply `action`  to each field selected for display */
+    def forDisplayedFields(action: String => Unit): Unit = {
+      for {disp <- allFields if displayed.contains(disp)} action(disp)
+    }
+
     lazy val selectors: Glyph = {
-      val labels: Seq[Glyph] = displays.map(label => Label(label))
-      val toggles: Seq[Glyph] = displays.map { label =>
+      val labels: Seq[Glyph] = allFields.map(label => Label(label))
+      val toggles: Seq[Glyph] = allFields.map { label =>
         CheckBox(displayed.contains(label)) {
           case false => displayed.remove(label); view.refresh(theListing)
-          case true => displayed.add(label); view.refresh(theListing)
+          case true  => displayed.add(label); view.refresh(theListing)
         }
       }
       Grid(width = labels.length, padx = 10).table(labels ++ toggles)
     }
+
+    /* Some field widths are determined per-folder */
+    def layout(fieldName: String): FieldLayout =
+      fieldName match {
+        case "Owner" => centerJustify(folder.ownerWidth max 5)(_)
+        case "Group" => centerJustify(folder.groupWidth max 5)(_)
+        case _       => fieldLayout(fieldName)
+      }
   }
 
   def theHeader: Cached[String] = Cached[String]{
     import org.sufrin.glyph.files.FileAttributes._
     import org.sufrin.utility.CharSequenceOperations._
-    val row = Row(folder.path, files.UndefinedAttributes())
     val out: StringBuilder = new  StringBuilder()
-    for { disp <- Fields.displays if Fields.displayed.contains(disp) } {
-      val text = disp match {
-        case "Name"     => (s"${row.dirToken} ${row.name}${row.linkToken}".leftJustify(folder.nameWidth+4))
-        case "Size(xb)" => row.attributes.bkmg.rightJustify(10)
-        case "Size"     => row.attributes.size.toString.rightJustify(10)
-        case "Perms"    => row.attributes.mode
-        case "Owner"    => row.attributes.owner.toString.leftJustify(folder.ownerWidth)
-        case "Group"    => row.attributes.group.toString.leftJustify(folder.groupWidth)
-        case "Modified" => timeOf(row.attributes.lastModifiedTime).toString
-        case "Created"  => timeOf(row.attributes.creationTime()).toString
-        case "Accessed" => timeOf(row.attributes.lastAccessTime()).toString
-        case _ => ""
-      }
-      out.append(disp.centerJustify(text.length))
-      out.append(" ")
+    Fields.forDisplayedFields
+    { case field: String =>
+           out.append(Fields.layout(field)(field))
+           out.append(" ")
     }
     out.toString
   }
@@ -129,21 +187,23 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     import org.sufrin.glyph.files.FileAttributes._
     import org.sufrin.utility.CharSequenceOperations._
     val out = new StringBuilder()
-    for { disp <- Fields.displays if Fields.displayed.contains(disp) }  {
-      val text: CharSequence = disp match {
-        case "Name"     => (s"${row.dirToken} ${row.name}${row.linkToken}".leftJustify(folder.nameWidth+4))
-        case "Size(xb)" => row.attributes.bkmg.rightJustify(10)
-        case "Size"     => row.attributes.size.toString.rightJustify(10)
-        case "Perms"    => row.attributes.mode
-        case "Owner"    => row.attributes.owner.toString.leftJustify(folder.ownerWidth)
-        case "Group"    => row.attributes.group.toString.leftJustify(folder.groupWidth)
-        case "Modified" => timeOf(row.attributes.lastModifiedTime).toString
-        case "Created"  => timeOf(row.attributes.creationTime()).toString
-        case "Accessed" => timeOf(row.attributes.lastAccessTime()).toString
-        case _ => ""
-      }
-      out.append(text)
-      out.append(" ")
+    Fields.forDisplayedFields
+     {  case field: String =>
+        val layout = Fields.layout(field)
+        val text: CharSequence = field match {
+          case "Name"     => layout(s"${row.dirToken} ${row.name}${row.linkToken}")
+          case "Size(xb)" => layout(row.attributes.bkmg)
+          case "Size"     => layout(row.attributes.size.toString)
+          case "Perms"    => layout(row.attributes.mode)
+          case "Owner"    => layout(row.attributes.owner.toString) //.leftJustify(folder.ownerWidth)
+          case "Group"    => layout(row.attributes.group.toString) // .leftJustify(folder.groupWidth)
+          case "Modified" => timeOf(row.attributes.lastModifiedTime).toString
+          case "Created"  => timeOf(row.attributes.creationTime()).toString
+          case "Accessed" => timeOf(row.attributes.lastAccessTime()).toString
+          case _ => ""
+        }
+        out.append(text)
+        out.append(" ")
     }
     out.toString
   }
@@ -152,7 +212,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     CachedSeq(theRows) (showRow)
   }
 
-  lazy val columns = theListing.take(1).prepended(folder.path.toString).map(_.length).max // width needed to show the first row
+  lazy val columns = 90
 
   lazy val view = new unstyled.dynamic.SeqViewer(
                                 columns, 30,
@@ -169,10 +229,34 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
     override def onHover(mods: Bitmap, hovered: Int): Unit = folder.withValidCaches {}
 
-    override def onKeystroke(keystroke: Gesture): Unit = {
-      folder.close()
-      GUI.guiRoot.close()
+    override def onOther(gesture: Gesture): Unit = {
+      import GlyphTypes.Key
+
+      import gesture._
+      gesture match {
+        case Keystroke(Key.W, _) if PRESSED =>
+          folder.close ()
+          GUI.guiRoot.close ()
+
+        case Keystroke(Key.C, _) if PRESSED =>
+          import ClipboardHelper._
+          val selected = selectedRows.map{ i=> folder.path.resolve(theRows(i).path).toFile }
+          val selectedList = new java.util.ArrayList[File](selected.length)
+          for { f <- selected } selectedList.add(f)
+          println(selected)
+          putFiles(selectedList)
+
+        case Keystroke(Key.V, _) if PRESSED =>
+          import ClipboardHelper._
+          val selected = getFiles().asScala.toSeq.map{ case file => Path.of(file.getPath) }
+          println(FileOperations.copy(selected, folder.path))
+
+
+        case other =>
+          bell.play()
+      }
     }
+
   }
 
   val invisibilityCheckBox =
@@ -244,14 +328,20 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     lazy val order: Glyph = NaturalSize.Row(align=Mid)(List(Label("Ordered"), reverseSortCheckBox, Label("on" )) ++ sortButtons.glyphButtons(Right, fixedWidth = false) ++ List( invisibilityCheckBox, helpButton))
   }
 
+  val clipboardFG: Brush = Brushes.lightGrey
+  val clipboardAlert = unstyled.Label("Clipboard", fileSheet.buttonFont, clipboardFG)
+  locally {
+    ClipboardWatcher{
+      clipboardFG.color(Brushes.red.color)
+    }
+  }
+
   lazy val GUI: Glyph =
     NaturalSize.Col()(
-      FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hSpace(), reValidateButton, fileSheet.hFill(), StateButtons.order).enlarged(15).roundFramed(radius=20),
+      FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hSpace(), reValidateButton, clipboardAlert, fileSheet.hFill(), StateButtons.order).enlarged(15).roundFramed(radius=20),
       view.enlarged(15),
       FixedSize.Row(width=view.w, align=Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()).enlarged(15).roundFramed(radius=20),
       ).enlarged(15, fg=Brushes.lightGrey)
-
-
 }
 
 object Explorer extends Application with SourceLoggable {

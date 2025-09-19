@@ -261,7 +261,8 @@ object FileAttributes {
   case class Row(path: Path, var attributes: PosixFileAttributes) {
     val dirToken: String = attributes.d
     lazy val name = {
-      val name = path.getFileName.toString
+      val fname = path.getFileName
+      val name: String = if (fname eq null) "" else fname.toString
       if (name.length <= 30) name else {
         val prefix = name.take(20)
         val suffix = name.drop(name.length - 7)
@@ -270,7 +271,7 @@ object FileAttributes {
     }
     val isLink:        Boolean = Folder.readImmediatePosixAttributes(path).isSymbolicLink
     val linkToken: String = if (isLink) "@" else " "
-    val isHidden:      Boolean = name(0)=='.'
+    val isHidden:      Boolean = name.isEmpty||name(0)=='.'
     val isDirectory:   Boolean = attributes.isDirectory
     val isRegularFile: Boolean = attributes.isRegularFile
     val asString:      String  = f"$name%-30s ${attributes.asString}"
