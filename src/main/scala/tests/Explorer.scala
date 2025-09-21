@@ -14,11 +14,9 @@ import styles.decoration.RoundFramed
 import io.github.humbleui.jwm.Key
 import org.sufrin.logging.{FINEST, SourceLoggable}
 
-import java.awt.datatransfer.FlavorEvent
 import java.io.File
 import java.nio.file.{FileSystems, Path}
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object FileOperations {
   import java.nio.file.{StandardCopyOption, _}
@@ -193,7 +191,29 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
   lazy val columns = 90
 
-  lazy val view = new unstyled.dynamic.SeqViewer(
+  // implicit destination: the clipboard/shelf
+  def Cut(paths: Seq[Path]): Unit = {
+    println(s"Cut: ${paths.mkString(" ")}")
+    Shelf.put(paths)
+  }
+
+  // implicit destination: the clipboard/shelf
+  def Copy(paths: Seq[Path]): Unit = {
+    println(s"Copy: ${paths.mkString(" ")}")
+    Shelf.put(paths)
+  }
+
+  // implicit source: the clipboard/shelf
+  def Paste(path: Path=folder.path): Unit = {
+    println(s"Paste: ${path}")
+  }
+
+  // implicit source: the clipboard/shelf
+  def Move(path: Path=folder.path): Unit = {
+    println(s"Move: ${path}")
+  }
+
+  lazy val view: unstyled.dynamic.SeqViewer = new unstyled.dynamic.SeqViewer(
                                 columns, 30,
                                 fileSheet.buttonFont,
                                 fileSheet.buttonForegroundBrush,
@@ -201,8 +221,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
                                 Brushes.red,
                                 theListing,
                                 autoScale=true,
-                                header=List(theHeader.value))
-  {
+                                header=List(theHeader.value)) {
 
     override def onClick(mods: Bitmap, selected: Int): Unit = Explorer.open((folder.path.resolve(theRows(selected).path)))
 
@@ -214,33 +233,31 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       import gesture._
       gesture match {
         case Keystroke(Key.W, _) if PRESSED =>
-          folder.close ()
-          GUI.guiRoot.close ()
+          folder.close()
+          view.guiRoot.close()
 
         case Keystroke(Key.C, _) if PRESSED =>
-          import ClipboardHelper._
-          val selected = selectedRows.map{ i=> folder.path.resolve(theRows(i).path).toFile }
-          val selectedList = new java.util.ArrayList[File](selected.length)
-          for { f <- selected } selectedList.add(f)
-          println(selected)
-          putFiles(selectedList)
+          Copy(selectedRows.map { i => theRows(i).path })
+
+        case Keystroke(Key.X, _) if PRESSED =>
+          Cut(selectedRows.map { i => theRows(i).path })
 
         case Keystroke(Key.V, _) if PRESSED =>
-          import ClipboardHelper._
-          val selected = getFiles().asScala.toSeq.map{ case file => Path.of(file.getPath) }
-          println(FileOperations.copy(selected, folder.path))
-
+          selectedRows.length match {
+            case 0 => Paste(folder.path)
+            case 1 if theRows(0).isDirectory => Paste(theRows(0).path)
+            case _ => bell.play()
+          }
 
         case other =>
           bell.play()
       }
     }
-
   }
 
   val invisibilityCheckBox =
     styled.SymbolicCheckBox(showingInvisibles, whenTrue="(.)", whenFalse="()", hint=Hint(2, "Show\ninvisible\nfiles")){
-    state =>
+      state =>
       showingInvisibles = state
       theListing.clear()
       view.refresh(theListing)
@@ -307,17 +324,9 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     lazy val order: Glyph = NaturalSize.Row(align=Mid)(List(Label("Ordered"), reverseSortCheckBox, Label("on" )) ++ sortButtons.glyphButtons(Right, fixedWidth = false) ++ List( invisibilityCheckBox, helpButton))
   }
 
-  val clipboardFG: Brush = Brushes.lightGrey
-  val clipboardAlert = unstyled.Label("Clipboard", fileSheet.buttonFont, clipboardFG)
-  locally {
-    ClipboardWatcher{
-      clipboardFG.color(Brushes.red.color)
-    }
-  }
-
   lazy val GUI: Glyph =
     NaturalSize.Col()(
-      FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hSpace(), reValidateButton, clipboardAlert, fileSheet.hFill(), StateButtons.order).enlarged(15).roundFramed(radius=20),
+      FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hSpace(), reValidateButton, Shelf.GUI, fileSheet.hFill(), StateButtons.order).enlarged(15).roundFramed(radius=20),
       view.enlarged(15),
       FixedSize.Row(width=view.w, align=Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()).enlarged(15).roundFramed(radius=20),
       ).enlarged(15, fg=Brushes.lightGrey)

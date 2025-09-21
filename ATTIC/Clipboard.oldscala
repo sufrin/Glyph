@@ -1,0 +1,91 @@
+package org.sufrin.glyph
+
+import java.awt.datatransfer._
+import java.awt.Toolkit
+import java.io.{File, IOException}
+import java.nio.file.Path
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+
+object Clipboard {
+  lazy val sysClipboard: java.awt.datatransfer.Clipboard = Toolkit.getDefaultToolkit.getSystemClipboard
+
+  trait Flavor[T] {
+    val dataFlavor: DataFlavor
+    def data: T
+    def nonEmpty: Boolean
+  }
+
+  case object FileList extends Flavor[Seq[File]]{
+    val dataFlavor: DataFlavor = DataFlavor.javaFileListFlavor
+    def data: Seq[File] = sysClipboard.getData(DataFlavor.javaFileListFlavor).asInstanceOf[java.util.ArrayList[File]].asScala.toSeq
+    def nonEmpty: Boolean = !sysClipboard.getData(DataFlavor.javaFileListFlavor).asInstanceOf[java.util.ArrayList[File]].isEmpty
+  }
+
+  def watch[T](flavor: Flavor[T])(action: Flavor[T]=>Unit): ClipboardWatcher[T] = new ClipboardWatcher[T](flavor, action)
+  def empty(): Unit = sysClipboard.setContents(Empty.emptyTransferable, null)
+
+  class ClipboardWatcher[T] (flavor: Flavor[T], action: Flavor[T] => Unit) {
+    import java.awt.{datatransfer, _}
+
+    locally {
+      sysClipboard.addFlavorListener(
+        new java.awt.datatransfer.FlavorListener()
+        { def flavorsChanged(event: FlavorEvent): Unit = {
+              if (sysClipboard.isDataFlavorAvailable(flavor.dataFlavor)) action(flavor)
+          }
+        })
+    }
+  }
+
+  def putFiles(files: Seq[File], owner: ClipboardOwner = null): Unit = {
+
+    val transfer: Transferable = new Transferable() {
+      val array = new java.util.ArrayList[File](files.length)
+      for { file <-files } array.add(file)
+
+      override def getTransferDataFlavors: Array[DataFlavor] = {
+        Array[DataFlavor](DataFlavor.javaFileListFlavor)
+      }
+
+      override def isDataFlavorSupported(flavor: DataFlavor): Boolean = {
+        return DataFlavor.javaFileListFlavor == (flavor)
+      }
+
+      @throws[UnsupportedFlavorException]
+      override def getTransferData(flavor: DataFlavor): AnyRef = {
+        if (isDataFlavorSupported(flavor)) {
+
+          return array
+        }
+        throw new UnsupportedFlavorException(flavor)
+      }
+    }
+
+    sysClipboard.setContents(transfer, owner)
+  }
+
+  @SuppressWarnings(Array("unchecked"))
+  def getFiles: Option[Seq[File]] =
+    try {
+      if (sysClipboard.isDataFlavorAvailable(DataFlavor.javaFileListFlavor)) {
+        Some(sysClipboard.getData(DataFlavor.javaFileListFlavor).asInstanceOf[List[File]].toSeq)
+      } else None
+    } catch { case e@(_: UnsupportedFlavorException | _: IOException) => None }
+
+
+  def getPaths: Option[Seq[Path]] = getFiles match {
+    case None        => None
+    case Some(files) => Some(files.map{ case file => Path.of(file.getPath) })
+  }
+
+}
+
+object Empty {
+  lazy val emptyTransferable: Transferable = new Transferable (){
+    def getTransferDataFlavors: Array[DataFlavor] = Array.empty
+
+    def isDataFlavorSupported(flavor: DataFlavor): Boolean = false
+
+    def getTransferData(flavor: DataFlavor): AnyRef = Seq.empty
+  }
+}
