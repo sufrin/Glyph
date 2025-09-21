@@ -191,26 +191,64 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
   lazy val columns = 90
 
-  // implicit destination: the clipboard/shelf
-  def Cut(paths: Seq[Path]): Unit = {
-    println(s"Cut: ${paths.mkString(" ")}")
-    Shelf.put(paths)
-  }
+  object Actions {
 
-  // implicit destination: the clipboard/shelf
-  def Copy(paths: Seq[Path]): Unit = {
-    println(s"Copy: ${paths.mkString(" ")}")
-    Shelf.put(paths)
-  }
+    def copy(): Unit  = copy(view.selectedRows.map { i => theRows(i).path })
+    def cut(): Unit   = copy(view.selectedRows.map { i => theRows(i).path })
+    def paste(): Unit = view.selectedRows.length match {
+      case 0                            => paste(folder.path)
+      case 1 if theRows(0).isDirectory  => paste(theRows(0).path)
+      case _                            => view.bell.play()
+    }
+    def move(): Unit = view.selectedRows.length match {
+      case 0                            => move(folder.path)
+      case 1 if theRows(0).isDirectory  => move(theRows(0).path)
+      case _                            => view.bell.play()
+    }
 
-  // implicit source: the clipboard/shelf
-  def Paste(path: Path=folder.path): Unit = {
-    println(s"Paste: ${path}")
-  }
 
-  // implicit source: the clipboard/shelf
-  def Move(path: Path=folder.path): Unit = {
-    println(s"Move: ${path}")
+    // implicit destination: the clipboard/shelf
+    def cut(paths: Seq[Path]): Unit = {
+      println(s"Cut: ${paths.mkString(" ")}")
+      Shelf.put(paths)
+    }
+
+    // implicit destination: the clipboard/shelf
+    def copy(paths: Seq[Path]): Unit = {
+      println(s"Copy: ${paths.mkString(" ")}")
+      Shelf.put(paths)
+    }
+
+    // implicit source: the clipboard/shelf
+    def paste(path: Path): Unit = {
+      println(s"Paste: $Shelf.${path}")
+    }
+
+    // implicit source: the clipboard/shelf
+    def move(path: Path): Unit = {
+      println(s"Move: ${path}")
+    }
+
+    lazy val copyButton = Shelf.Button("Copy", withHint = false){
+      _ => copy()
+    }
+
+    lazy val cutButton = Shelf.Button("Cut", withHint = false){
+      _ => cut()
+    }
+
+    lazy val pasteButton = Shelf.Button("Paste", withHint = true){
+      _ => paste()
+    }
+
+    lazy val moveButton = Shelf.Button("Move", withHint = true){
+      _ => move()
+    }
+
+    lazy val destination = styled.ActiveString(folder.path.toString)
+
+    val GUI = NaturalSize.Row(align=Mid)(copyButton, cutButton, pasteButton, moveButton)
+
   }
 
   lazy val view: unstyled.dynamic.SeqViewer = new unstyled.dynamic.SeqViewer(
@@ -237,17 +275,13 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
           view.guiRoot.close()
 
         case Keystroke(Key.C, _) if PRESSED =>
-          Copy(selectedRows.map { i => theRows(i).path })
+          Actions.copy()
 
         case Keystroke(Key.X, _) if PRESSED =>
-          Cut(selectedRows.map { i => theRows(i).path })
+          Actions.cut()
 
         case Keystroke(Key.V, _) if PRESSED =>
-          selectedRows.length match {
-            case 0 => Paste(folder.path)
-            case 1 if theRows(0).isDirectory => Paste(theRows(0).path)
-            case _ => bell.play()
-          }
+
 
         case other =>
           bell.play()
@@ -326,7 +360,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
   lazy val GUI: Glyph =
     NaturalSize.Col()(
-      FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hSpace(), reValidateButton, Shelf.GUI, fileSheet.hFill(), StateButtons.order).enlarged(15).roundFramed(radius=20),
+      FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hSpace(), reValidateButton, Actions.GUI, fileSheet.hFill(), StateButtons.order).enlarged(15).roundFramed(radius=20),
       view.enlarged(15),
       FixedSize.Row(width=view.w, align=Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()).enlarged(15).roundFramed(radius=20),
       ).enlarged(15, fg=Brushes.lightGrey)
