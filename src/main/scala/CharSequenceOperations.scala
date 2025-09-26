@@ -5,7 +5,7 @@ package utility
 
 object CharSequenceOperations {
 
-  def leftJustify(theSeq: CharSequence, width: Int, ch: Char=' '): CharSequence = new CharSequence{ thisSeq =>
+  def leftJustify(theSeq: CharSequence, width: Int, ch: Char=' '): CharSequence = if (theSeq.length==width) theSeq else new CharSequence{ thisSeq =>
     val length: Int = width
     def charAt(i: Int): Char = if (i<theSeq.length) theSeq.charAt(i) else ch
     def subSequence(start: Int, end: Int): CharSequence = (new Cat(theSeq, constantSeq(ch, width-theSeq.length))).subSequence(start, end) // lazy programmer
@@ -13,8 +13,7 @@ object CharSequenceOperations {
     override lazy val toString: String = new String(toSeq.toArray)
   }
 
-
-  def rightJustify(theSeq: CharSequence, width: Int, ch: Char=' '): CharSequence = new CharSequence{
+  def rightJustify(theSeq: CharSequence, width: Int, ch: Char=' '): CharSequence =  if (theSeq.length==width) theSeq else new CharSequence{
     val length: Int = width
     val delta = width-theSeq.length
     def charAt(i: Int): Char = if (i<delta) ch else theSeq.charAt(i-delta)
@@ -27,9 +26,9 @@ object CharSequenceOperations {
 
   def leftJustify(width: Int)(theSeq: CharSequence): CharSequence = leftJustify(theSeq, width)
   def rightJustify(width: Int)(theSeq: CharSequence): CharSequence = rightJustify(theSeq, width)
-  def centerJustify(width: Int)(theSeq: CharSequence): CharSequence = {
-    val extra = width-theSeq.length/2
-    Cat(constantSeq(' ', extra), theSeq, constantSeq(' ', width-extra))
+  def centerJustify(width: Int)(theSeq: CharSequence): CharSequence = if (theSeq.length==width) theSeq else {
+    val extra = width-theSeq.length
+    Cat(constantSeq(' ', extra/2), theSeq, constantSeq(' ', extra-extra/2))
   }
 
 
@@ -97,15 +96,11 @@ object CharSequenceOperations {
   def Cat(c1: CharSequence, css: CharSequence*): CharSequence = Cat(css.prepended(c1))
 
   /**
-   * Materialize `cs` as a `String`. Allocates an array of size `cs.length`
-   * @param cs
-   * @return
+   * Materialize `chars` as a `String`.
    */
-  def asString(cs: CharSequence): String = {
-    val array = new Array[Char](cs.length)
-    val seq = cs.toIndexedSeq
-    seq.copyToArray(array)
-    new String(array)
+  def asString(chars: CharSequence): String = {
+    import WithCharSequenceOps._
+    chars.asString
   }
 
   /** Equal sequences */

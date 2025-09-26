@@ -29,6 +29,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   val charW   = Text("m", font).width // getAvgCharWidth/2
   val charH   = metrics.getHeight+descent
   val bell    = Sound.Clip("WAV/glass.wav")
+  val shadeHeight = metrics.getHeight
 
   var scale: Scalar = 1.0f
 
@@ -43,12 +44,16 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   val headerDiagonal: Vec = Vec(charW*cols, charH*heading.length+descent)
   val diagonal: Vec       = rowsDiagonal+Vec(margin, margin)+Vec(0, headerDiagonal.y)
 
-  def refresh(current: Seq[String]): Unit = {
+  def refresh(current: Seq[String], reset: Boolean = false): Unit = {
     seq     = current
     heading = header
     if (cacheing) {
       textCache.clear()
       headCache.clear()
+    }
+    if (reset) {
+      rowOrigin=0
+      clearSelection()
     }
     reDraw()
   }
@@ -87,6 +92,8 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   private val textCache = mutable.HashMap.newBuilder[Int, io.github.humbleui.skija.TextLine](2*rows, 1.5).result()
   private val headCache = mutable.HashMap.newBuilder[Int, io.github.humbleui.skija.TextLine](1, 2).result()
 
+  val stripeBrush: Brush = Brushes.lightGrey.alpha(0.2f)
+
   /**
    * Compute the scale needed to fit the entire first row; then display at that scale
    */
@@ -106,6 +113,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
       var nextVisibleRow: Int = 0
       // draw the heading
       var y: Scalar = charH - descent
+      val shadeWidth = w/scale
       surface.withScale(scale) {
         surface.declareCurrentTransform(this)
         // the header
@@ -120,6 +128,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         while (nextVisibleRow < lastRow && y <= scaledH) {
           val text = if (cacheing) textCache.getOrElseUpdate(nextVisibleRow, TextLine.make(seq(nextVisibleRow), font)) else TextLine.make(seq(nextVisibleRow), font)
           val width = text.getWidth
+          if ((nextVisibleRow&1)==0) surface.fillRect(stripeBrush, margin, y-shadeHeight, shadeWidth, charH)
           surface.drawTextLine(toForegroundBrush(nextVisibleRow), text, margin, y)
           if (isUnderlined(nextVisibleRow)) surface.drawLines$(fg, margin, y + descent, width, y + descent)
           nextVisibleRow += 1
@@ -127,7 +136,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         }
       }
       // show the state of the viewport
-      val offset=margin/2
+      val offset=margin/4
       val topBrush = if (rowOrigin==0) marginBrush else outsideBrush
       val botBrush = if (nextVisibleRow>=seq.length) marginBrush else outsideBrush
       surface.drawLines$(topBrush, offset,underHeader, w-offset,underHeader)
@@ -271,6 +280,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
            if (_selectedRows.contains(hovered)) _selectedRows.remove(hovered) else _selectedRows.add(hovered)
         else
            _selectedRows.clear()
+        ClickTimer.clear()
         reDraw()
 
 
@@ -281,6 +291,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         val top = _selectedRows.min min hovered
         val bot = _selectedRows.max max hovered
         _selectedRows.addAll(top to bot)
+        ClickTimer.clear()
         reDraw()
 
       case MouseClick(_) if PRESSED =>
@@ -291,20 +302,35 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
           val hovered = row min seq.length
           if (_selectedRows.contains(row)) {
             setCurrentRow(row)
-            onClick(modifiers, currentRow)
+            if (ClickTimer.doubleClick) {
+              onClick(modifiers, currentRow)
+              ClickTimer.clear()
+            }
           } else {
             _selectedRows.clear()
+            ClickTimer.start()
             if (row < seq.length) _selectedRows.add(hovered)
           }
         }
         reDraw()
-
 
       case other =>
         if (PRESSED) onOther(other)
     }
     //println(displayList)
     //println(selection)
+  }
+
+  object ClickTimer {
+    var lastClick: Long = 0
+    def doubleClick: Boolean = {
+      val timeNow = System.currentTimeMillis()
+      val result = (timeNow-lastClick) < 500
+      lastClick = timeNow
+      result
+    }
+    def start(): Unit = lastClick = System.currentTimeMillis()
+    def clear(): Unit = lastClick=0L
   }
 
 }

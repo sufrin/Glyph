@@ -1,6 +1,5 @@
 package org.sufrin.glyph
 import unstyled.reactive.Enterable
-import unstyled.static
 import unstyled.static.INVISIBLE
 
 /**
@@ -18,7 +17,7 @@ import unstyled.static.INVISIBLE
  *
  * @param constant true if the hint computation always yields the same glyph
  */
-class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Double, constant: Boolean = true) {
+class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Double, constant: Boolean = true, val preferredLocation: Option[Vec]=None) {
   private var _allow: () => Boolean = ()=>true
 
   def onlyWhen(allow: => Boolean): this.type = { _allow = { ()=>allow }; this }
@@ -53,7 +52,13 @@ class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Doubl
         if (_allow() && !layer.visible && seconds>=0) {
           layer.visible = true
           layer.glyph = hintCache.getOrElse(hint())
-          layer.glyph @@ Vec(locX, where.y)
+          preferredLocation match {
+            case None =>
+              layer.glyph @@ Vec(locX, where.y)
+            case Some(location) =>
+              layer.glyph @@ location
+          }
+
           schedule.once((seconds * 1000L).toLong) {
             layer.visible = false
             target.reDraw()
@@ -82,15 +87,16 @@ class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Doubl
  * allows the designer to provide ways of suppressing hints, and of avoiding "nagging".
  */
 object HintManager {
-  def ofGlyph(target: Enterable, seconds: Double, hint: ()=>Glyph, constant: Boolean = true): HintManager =
-      new HintManager(target, hint, seconds, constant)
+  def ofGlyph(target: Enterable, seconds: Double, hint: ()=>Glyph, constant: Boolean = true, preferredLocation: Option[Vec]=None): HintManager =
+      new HintManager(target, hint, seconds, constant, preferredLocation)
 
-  def apply(target: Enterable, seconds: Double, hint: ()=>String, constant: Boolean = true)(implicit style: StyleSheet): HintManager = {
+  def apply(target: Enterable, seconds: Double, hint: ()=>String, constant: Boolean = true, preferredLocation: Option[Vec]=None)(implicit style: StyleSheet): HintManager = {
       new HintManager(
       target,
         ()=>styled.Label(hint())(style.copy(labelForegroundBrush = Brushes.black, labelBackgroundBrush = Brushes.white)).enlarged(10).framed(),
       seconds,
-      constant)
+      constant,
+      preferredLocation)
   }
 }
 
@@ -113,18 +119,18 @@ object Hint {
    * The `hint` is to be managed for `reactive`; generated once only if `constant`, otherwise whenever the hint
    * becomes visible.
    * */
-  def apply(seconds: Double, hint: =>String, constant: Boolean=true)(implicit style: StyleSheet): Hint = new Hint {
+  def apply(seconds: Double, hint: =>String, constant: Boolean=true, preferredLocation: Option[Vec]=None)(implicit style: StyleSheet): Hint = new Hint {
     def apply(reactive: Enterable): Unit =
-      HintManager(reactive, seconds, ()=>hint, constant)
+      HintManager(reactive, seconds, ()=>hint, constant, preferredLocation)
   }
 
   /**
    * The `hint` is to be managed for `reactive`; generated once only if `constant`, otherwise whenever the hint
    * becomes visible.
    * */
-  def ofGlyph(seconds: Double, hint: =>Glyph, constant: Boolean=true)(implicit style: StyleSheet): Hint = new Hint {
+  def ofGlyph(seconds: Double, hint: =>Glyph, constant: Boolean=true, preferredLocation: Option[Vec]=None)(implicit style: StyleSheet): Hint = new Hint {
     def apply(reactive: Enterable): Unit =
-      HintManager.ofGlyph(reactive, seconds, ()=>hint, constant)
+      HintManager.ofGlyph(reactive, seconds, ()=>hint, constant, preferredLocation)
   }
 
 

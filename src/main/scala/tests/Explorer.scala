@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 package tests
 
-import files.Folder
+import files.{FileAttributes, Folder, Shelf}
 import styled.{CheckBox, Label, RadioCheckBoxes}
 import tests.PathProperties._
 import Modifiers.Bitmap
@@ -9,34 +9,16 @@ import cached._
 import files.FileAttributes.Row
 import gesture.{Gesture, Keystroke}
 import NaturalSize.Grid
-import styles.decoration.RoundFramed
+import styles.decoration.{Framed, RoundFramed}
 
 import io.github.humbleui.jwm.Key
 import org.sufrin.logging.{FINEST, SourceLoggable}
 
-import java.io.File
-import java.nio.file.{FileSystems, Path}
+import java.awt.Desktop
+import java.nio.file.{FileSystems, NotDirectoryException, Path, Paths}
 import scala.collection.mutable
 
-object FileOperations {
-  import java.nio.file.{StandardCopyOption, _}
 
-  def copy(from: Path, to: Path): Seq[Exception] = {
-    // pre: to is a writeable folder
-    if (from.isReadable) {
-      try {
-        Files.copy(from, to.resolve(from.getFileName), StandardCopyOption.COPY_ATTRIBUTES)
-        Seq.empty
-      }
-      catch { case ex: java.io.IOException => List(ex) }
-    }
-    else List(new java.nio.file.NoSuchFileException(from.toString, "", " file is unreadable."))
-  }
-
-  def copy(from: Seq[Path], to: Path): Seq[Exception] = {
-    if (to.isDir) from.flatMap{ case path => copy(path, to) } else Seq.empty
-  }
-}
 
 
 
@@ -110,18 +92,28 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     type FieldLayout = CharSequence => CharSequence
     /** The list of potential fields (in order of presentation) */
     val allFields: Seq[String] =
-        List("Name", "Size", "Size(xb)", "Perms", "Owner", "Group", "Created", "Modified", "Accessed")
+        List("Id",
+             "Name",
+             "Size", "Size+", "Perms",
+             "#",
+             "Owner", "Group", "Created",
+             "Modified", "Accessed")
 
     /** The list of potential layouts (in order of presentation) */
     val fieldLayouts: Seq[FieldLayout] =
-        List(leftJustify(34)(_), rightJustify(10)(_), rightJustify(10)(_), rightJustify(10)(_), rightJustify(10)(_), rightJustify(10)(_), centerJustify(20)(_), centerJustify(20)(_), centerJustify(20)(_))
+        List(rightJustify(8)(_),
+             leftJustify(FileAttributes.rowNameLength)(_),
+             rightJustify(10)(_),  rightJustify(10)(_), rightJustify(10)(_),
+             centerJustify(2)(_),
+             rightJustify(10)(_),  rightJustify(10)(_), centerJustify(21)(_),
+             centerJustify(21)(_), centerJustify(21)(_))
 
     /** The mapping from potential fields to their layouts  */
     val fieldLayout: Map[String, FieldLayout] =
       collection.immutable.ListMap.from(allFields zip fieldLayouts)
 
     /** The set of fields currently selected for displaying */
-    val displayed: mutable.Set[String] = mutable.Set[String]("Name", "Size(xb)", "Modified", "Owner", "Permissions", "Accessed")
+    val displayed: mutable.Set[String] = mutable.Set[String]("Name", "Size+", "Modified", "Owner", "Permissions", "Accessed")
 
     /** apply `action`  to each field selected for display */
     def forDisplayedFields(action: String => Unit): Unit = {
@@ -169,14 +161,16 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
         val layout = Fields.layout(field)
         val text: CharSequence = field match {
           case "Name"     => layout(s"${row.dirToken} ${row.name}${row.linkToken}")
-          case "Size(xb)" => layout(row.attributes.bkmg)
+          case "Size+"    => layout(row.compSize)
           case "Size"     => layout(row.attributes.size.toString)
           case "Perms"    => layout(row.attributes.mode)
           case "Owner"    => layout(row.attributes.owner.toString) //.leftJustify(folder.ownerWidth)
           case "Group"    => layout(row.attributes.group.toString) // .leftJustify(folder.groupWidth)
-          case "Modified" => timeOf(row.attributes.lastModifiedTime).toString
-          case "Created"  => timeOf(row.attributes.creationTime()).toString
-          case "Accessed" => timeOf(row.attributes.lastAccessTime()).toString
+          case "Modified" => (timeOf(row.attributes.lastModifiedTime).toString)
+          case "Created"  => (timeOf(row.attributes.creationTime()).toString)
+          case "Accessed" => (timeOf(row.attributes.lastAccessTime()).toString)
+          case "Id"       => layout(row.inum)
+          case "#"        => layout(row.links)
           case _ => ""
         }
         out.append(text)
@@ -193,61 +187,116 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
   object Actions {
 
-    def copy(): Unit  = copy(view.selectedRows.map { i => theRows(i).path })
-    def cut(): Unit   = copy(view.selectedRows.map { i => theRows(i).path })
-    def paste(): Unit = view.selectedRows.length match {
-      case 0                            => paste(folder.path)
-      case 1 if theRows(0).isDirectory  => paste(theRows(0).path)
-      case _                            => view.bell.play()
-    }
-    def move(): Unit = view.selectedRows.length match {
-      case 0                            => move(folder.path)
-      case 1 if theRows(0).isDirectory  => move(theRows(0).path)
-      case _                            => view.bell.play()
+
+    def delete(): Unit   = delete(Shelf.paths)
+    def delete(paths: Seq[Path]): Unit = {
+      println(s"Delete: ${paths.mkString(" ")}")
     }
 
 
-    // implicit destination: the clipboard/shelf
-    def cut(paths: Seq[Path]): Unit = {
-      println(s"Cut: ${paths.mkString(" ")}")
-      Shelf.put(paths)
+
+    def print(): Unit = view.selectedRows.length match {
+      case 1 =>
+        val path = theRows(view.selectedRows(0)).path
+        if (path.isDir) view.bell.play() else Explorer.printOrdinaryFile(path)
+      case _ =>
+        view.bell.play()
     }
 
-    // implicit destination: the clipboard/shelf
-    def copy(paths: Seq[Path]): Unit = {
-      println(s"Copy: ${paths.mkString(" ")}")
-      Shelf.put(paths)
+    def currentImplicitDestination: Option[Path] = view.selectedRows.length match {
+      case 0                            => Some(folder.path)
+      case 1 if theRows(0).isDirectory  => Some(theRows(view.selectedRows.head).path)
+      case _  =>
+        view.bell.play()
+        None
+    }
+
+    def currentImplicitDestinationString: String = currentImplicitDestination match {
+      case None => "(destination is ambiguous)"
+      case Some(path) => path.toString
+    }
+
+    val trashPath = folder.path.resolve(".trash-explorer")
+
+    /** selected paths to the shelf */
+    def clearShelf(): Unit = Shelf.clear()
+    def shelf(): Unit  = shelf(view.selectedRows.map { i => theRows(i).path })
+    def shelf(paths: Seq[Path]): Unit = {
+      println(s"Shelf =  ${paths.mkString(" ")}")
+      Shelf.clear()
+      Shelf.add(paths)
+      view.clearSelection()
+    }
+    def unShelf(): Unit  = unShelf(view.selectedRows.map { i => theRows(i).path })
+    def unShelf(paths: Seq[Path]): Unit = {
+      println(s"Shelf -=  ${paths.mkString(" ")}")
+      Shelf.remove(paths)
+      view.clearSelection()
     }
 
     // implicit source: the clipboard/shelf
-    def paste(path: Path): Unit = {
-      println(s"Paste: $Shelf.${path}")
+    def copy(path: Path): Unit = {
+      println(s"Copy: ${Shelf.paths.mkString(" ")} to ${path}")
+      popupErrors(FileOperations.copy(Shelf.paths, path))
     }
+    def copy(): Unit = currentImplicitDestination.foreach(copy)
 
-    // implicit source: the clipboard/shelf
+
+    def popupErrors(errors: Seq[Exception]): Unit =
+      if (errors.nonEmpty) styled.windowdialogues.Dialogue.OK(Label(errors.mkString("\n"))).InFront(GUI).start()
+
+
+    // implicit source: the shelf
     def move(path: Path): Unit = {
-      println(s"Move: ${path}")
+      println(s"Move: ${Shelf.paths.mkString(" ")}  to ${path}")
+      popupErrors(FileOperations.move(Shelf.paths, path))
+      Shelf.clear()
+    }
+    def move(): Unit = currentImplicitDestination.foreach(move)
+
+    // implicit source: the shelf
+    def link(path: Path): Unit = {
+      println(s"Link: ${Shelf.paths.mkString(" ")}  to ${path}")
+      popupErrors(FileOperations.link(Shelf.paths, path))
+      Shelf.clear()
+    }
+    def link(): Unit = currentImplicitDestination.foreach(link)
+
+
+    lazy val shelfButton = TextButton("(S)=", hint = Hint(2, "Add selection to (s)helf")) {
+      _ => shelf()
     }
 
-    lazy val copyButton = Shelf.Button("Copy", withHint = false){
+    lazy val unShelfButton = TextButton("(S)-=", hint = Hint(2, "Remove selection from (s)helf")) {
+      _ => unShelf()
+    }
+
+    lazy val clearButton = TextButton("(S)={}", hint = Hint(2, "Clear (s)helf")) {
+      _ => clearShelf()
+    }
+
+    lazy val shelfButtons = NaturalSize.Row(shelfButton, unShelfButton, clearButton)
+
+    def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption()), constant = false, preferredLocation = Some(Vec(15,15)))
+
+    lazy val deleteButton = TextButton("del", hint=shelfHint(()=>"Delete files")){
+      _ => delete()
+    }
+
+    lazy val copyButton = TextButton("cp", hint=shelfHint(()=>s"Copy files to ${currentImplicitDestinationString}")){
       _ => copy()
     }
 
-    lazy val cutButton = Shelf.Button("Cut", withHint = false){
-      _ => cut()
-    }
-
-    lazy val pasteButton = Shelf.Button("Paste", withHint = true){
-      _ => paste()
-    }
-
-    lazy val moveButton = Shelf.Button("Move", withHint = true){
+    lazy val moveButton = TextButton("mv", hint=shelfHint(()=>s"Move files to ${currentImplicitDestinationString}")){
       _ => move()
     }
 
-    lazy val destination = styled.ActiveString(folder.path.toString)
+    lazy val linkButton = TextButton("ln", hint=shelfHint(()=>s"Link files to ${currentImplicitDestinationString}")){
+      _ => link()
+    }
 
-    val GUI = NaturalSize.Row(align=Mid)(copyButton, cutButton, pasteButton, moveButton)
+
+    lazy val GUI = NaturalSize.Row(align=Mid)(shelfButtons, fileSheet.hSpace(3), copyButton, moveButton, linkButton, deleteButton)
 
   }
 
@@ -261,9 +310,16 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
                                 autoScale=true,
                                 header=List(theHeader.value)) {
 
+    override def isUnderlined(i: Int): Boolean = Shelf.contains(theRows(i).path)
+
     override def onClick(mods: Bitmap, selected: Int): Unit = Explorer.open((folder.path.resolve(theRows(selected).path)))
 
-    override def onHover(mods: Bitmap, hovered: Int): Unit = folder.withValidCaches {}
+    override def onHover(mods: Bitmap, hovered: Int): Unit = if (false) folder.withValidCaches {
+      if (theRows.isDefinedAt(hovered)) {
+        val path = theRows(hovered).path.toString
+        println(path)
+      }
+    }
 
     override def onOther(gesture: Gesture): Unit = {
       import GlyphTypes.Key
@@ -275,15 +331,19 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
           view.guiRoot.close()
 
         case Keystroke(Key.C, _) if PRESSED =>
-          Actions.copy()
+          Actions.shelf()
 
         case Keystroke(Key.X, _) if PRESSED =>
-          Actions.cut()
+          Actions.delete()
 
         case Keystroke(Key.V, _) if PRESSED =>
+          Actions.copy()
 
+        case Keystroke(Key.P, _) if PRESSED =>
+          Actions.print()
 
         case other =>
+          println(other)
           bell.play()
       }
     }
@@ -294,7 +354,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       state =>
       showingInvisibles = state
       theListing.clear()
-      view.refresh(theListing)
+      view.refresh(theListing, reset=true)
   }
 
   val reverseSortCheckBox =
@@ -302,7 +362,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       state =>
         reverseSort = state
         theListing.clear()
-        view.refresh(theListing)
+        view.refresh(theListing, reset=true)
     }.scaled(1.5f)
 
 
@@ -317,11 +377,11 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       folder.reValidate()
       theListing.clear()
       view.refresh(theListing)
-  }.scaled(1.7f)
+  }
 
   lazy val sortButtons: RadioCheckBoxes = RadioCheckBoxes(
-    captions = List("N", "S", "C", "M", "A"),
-    prefer   = "N"
+    captions = List("Name", "Size", "Created", "Modified", "Accessed"),
+    prefer   = "Name"
     )
     { case selected => selected match
         {
@@ -344,26 +404,44 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
    * `order` is a sequence of (mostly) captioned toggles to control the order of presentation of the rows
    */
   object StateButtons {
+    val hintSheet: StyleSheet = fileSheet.copy(fontScale=0.7f)
+    val buttonSheet: StyleSheet = fileSheet.copy(fontScale=0.8f)
     private lazy val prefixDirs = folder.prefixPaths.toSeq.scanLeft(Path.of("/"))((b, p) => b.resolve(p))
-    private lazy val dotdot = {
-      val up = folder.path.resolve("..").toRealPath()
-      TextButton(s"/..", hint=Hint(3, up.toString)) { _ => Explorer.open(up) }
-    }
+
     private lazy val buttons: Seq[Glyph] = prefixDirs.tail.map {
-      case path => TextButton(s"/${path.getFileName.toString}", hint=Hint(3, path.toRealPath().toString)) { _ => Explorer.open(path) }.framed()
-    }.prepended(TextButton(s"/") { _ => Explorer.open(Path.of("/")) }.framed())
-      .appended(dotdot.framed())
+      case path =>
+        TextButton(s"${path.getFileName.toString}", hint=Hint(3, path.toRealPath().toString, preferredLocation = Some(Vec(10, 10)))(hintSheet))
+        { _ => Explorer.open(path) }(buttonSheet)
+    }.prepended(TextButton(s"/") { _ => Explorer.open(Path.of("/")) }(buttonSheet))
+
+    lazy val parent = {
+      val up = folder.path.resolve("..").toRealPath()
+      TextButton(s"..", hint=Hint(3, up.toString, preferredLocation = Some(Vec(10, 10)))(hintSheet))
+      { _ => Explorer.open(up) }(buttonSheet)
+    }
 
     lazy val path: Glyph  = NaturalSize.Row(StateButtons.buttons)
-    lazy val order: Glyph = NaturalSize.Row(align=Mid)(List(Label("Ordered"), reverseSortCheckBox, Label("on" )) ++ sortButtons.glyphButtons(Right, fixedWidth = false) ++ List( invisibilityCheckBox, helpButton))
+    lazy val order: Glyph = NaturalSize.Row(align=Mid)(List(Label("Ordered"), reverseSortCheckBox, Label("on" )) ++ sortButtons.glyphButtons(Right, fixedWidth = false) ++ List(invisibilityCheckBox))
   }
+
+  lazy val displayStyleGUI = NaturalSize.Col(
+    FixedSize.Row(width=view.w, align=Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()) above
+    FixedSize.Row(width=view.w, align=Mid)(fileSheet.hFill(), StateButtons.order, fileSheet.hFill())).enlarged(15).roundFramed(radius=20)
+
+  lazy val pathGUI =
+    FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hSpace(), reValidateButton, fileSheet.hFill(), StateButtons.parent).enlarged(15).roundFramed(radius=20)
+
 
   lazy val GUI: Glyph =
     NaturalSize.Col()(
-      FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hSpace(), reValidateButton, Actions.GUI, fileSheet.hFill(), StateButtons.order).enlarged(15).roundFramed(radius=20),
+      FixedSize.Row(width=view.w, align=Mid)(Actions.GUI, fileSheet.hFill(), helpButton),
+
       view.enlarged(15),
-      FixedSize.Row(width=view.w, align=Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()).enlarged(15).roundFramed(radius=20),
-      ).enlarged(15, fg=Brushes.lightGrey)
+
+      pathGUI,
+      fileSheet.vSpace(1),
+      displayStyleGUI,
+    ).enlarged(15, fg=Brushes.lightGrey)
 }
 
 object Explorer extends Application with SourceLoggable {
@@ -372,13 +450,13 @@ object Explorer extends Application with SourceLoggable {
   import GlyphTypes.FontStyle.NORMAL
 
   implicit val fileSheet: StyleSheet =
-    StyleSheet(buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
+    StyleSheet(buttonDecoration=Framed(), buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
 
   val root = new Folder(FileSystems.getDefault.getPath("/Users/sufrin"))
 
   lazy val GUI: Glyph = new Explorer(root)(fileSheet).GUI
 
-  def title: String = "Explore"
+  def title: String = s"Explore: ${root.path.abbreviatedString()}"
 
   override val dock = Dock("Exp\nlore", bg=Brushes.yellow)
 
@@ -386,27 +464,65 @@ object Explorer extends Application with SourceLoggable {
 
   def dialogueLabel(message: String): Glyph = Label(message)(dialogueSheet).roundFramed(fg=Brushes.red(width=10), radius = 10f).enlarged(10)
 
+  def openOrdinaryFile(path: Path): Unit =  {
+    import java.awt.Desktop
+    if (Desktop.isDesktopSupported) {
+      val desktop = Desktop.getDesktop
+      if (desktop.isSupported(Desktop.Action.OPEN))
+        try desktop.open(path.toFile) // Opens with default application
+        catch {
+          case ex: java.io.IOException =>
+            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to open\n${path.toString}"))(dialogueSheet).InFront(GUI).start(floating = false)
+        }
+      else
+        styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop open not supported")).InFront(GUI).start()
+    }
+    else
+      styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop not supported on this platform")).InFront(GUI).start()
+  }
+
+  def printOrdinaryFile(path: Path): Unit =  {
+    import java.awt.Desktop
+    if (path.isReadable && !path.isDir) {
+      if (path.isReadable && !path.isDir && Desktop.isDesktopSupported) {
+      val desktop = Desktop.getDesktop
+      if (desktop.isSupported(Desktop.Action.BROWSE))
+        try desktop.browse(path.toUri) // print
+        catch {
+          case ex: java.io.IOException =>
+            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to brows (for printing)\n${path.toRealPath()}"))(dialogueSheet).InFront(GUI).start(floating = false)
+        }
+      else
+        styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop print not supported")).InFront(GUI).start()
+    }
+    else
+      styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop not supported on this platform")).InFront(GUI).start()
+    } else {
+      styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Unreadable, or folder\n$path"))(dialogueSheet).InFront(GUI).start()
+    }
+  }
+
+
   def open(path: Path): Unit =
     if (path.isReadable) {
       if (path.isDir) {
-        val folder = new Folder(path)
-        styled.windowdialogues.Dialogue.FLASH(new Explorer(folder).GUI, title=folder.path.toString).OnRootOf(GUI).start(floating=false)
-      } else {
-        import java.awt.Desktop
-        if (Desktop.isDesktopSupported) {
-          val desktop = Desktop.getDesktop
-          if (desktop.isSupported(Desktop.Action.OPEN))
-            try desktop.open(path.toFile) // Opens with default application
-            catch {
-              case ex: java.io.IOException =>
-                styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to open\n${path.toRealPath()}"))(dialogueSheet).InFront(GUI).start(floating = false)
-            }
-          else
-            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop open not supported")).InFront(GUI).start()
+        try {
+          val folder = new Folder(path)
+          styled.windowdialogues.Dialogue.FLASH(new Explorer(folder).GUI, title = folder.path.abbreviatedString()).OnRootOf(GUI).start(floating = false)
+        } catch {
+          case ex: NotDirectoryException => styled.windowdialogues.Dialogue.OK(Label(s"Not a directory\n${ex.getMessage}")).OnRootOf(GUI).start()
         }
-        else
-          styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop not supported on this platform")).InFront(GUI).start()
-      }
+      } else
+        openOrdinaryFile(path)
+    } else
+    if (path.isDir) { // Apparently non-readable: may still have ACL permissions as a directory
+      val desktop = Desktop.getDesktop
+      if (desktop.isSupported(Desktop.Action.OPEN))
+        try desktop.open(path.toFile) // Opens with platform default
+        catch {
+          case ex: java.io.IOException =>
+            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to open\n${path.toRealPath()}"))(dialogueSheet).InFront(GUI).start(floating = false)
+        }
     } else {
       styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Unreadable\n$path"))(dialogueSheet).InFront(GUI).start()
     }
@@ -415,15 +531,9 @@ object Explorer extends Application with SourceLoggable {
     super.whenStarted()
     GUI.guiRoot.autoScale=true
   }
+
+  lazy val homePath = Paths.get(System.getProperty("user.home"))
 }
 
-object PathProperties {
-  implicit class PathProperty(val path: Path) extends AnyVal {
-    def isHidden: Boolean  = path.getFileName.toString.charAt(0)=='.'//java.nio.file.Files.isHidden(path)
-    def isVisible: Boolean = !isHidden
-    def isDir: Boolean     = java.nio.file.Files.isDirectory(path)
-    def toFile: File       = path.toFile
-    def isReadable: Boolean= path.toFile.canRead
-  }
-}
+
 

@@ -1,26 +1,24 @@
 package org.sufrin.glyph
+package files
+
 import cached.Cached
 import NaturalSize.{Col, Row}
-import unstyled.reactive.Reaction
 
 import java.nio.file.Path
 
 object Shelf {
 
-  def shelfHint(sheet: StyleSheet): Hint = {
+  def hintGlyph(caption: String)(implicit sheet: StyleSheet): Glyph = {
     localSheet = sheet
-    Hint.ofGlyph(5, _shelfHint.value, constant = false)(sheet)
+    Col(align=Center)(styled.Label(caption)(localSheet), _shelfHint.value).enlarged(10, bg=Brushes.white).framed(Brushes.blackLine)
   }
-
-  def Button(caption: String, withHint: Boolean)(action: Reaction)(implicit sheet: StyleSheet): Glyph =
-      styled.TextButton(caption, hint = if (withHint) Shelf.shelfHint(sheet) else Hint(2, "Copy the selection"))(action)
 
   private var _onChange: Int => Unit = { _ => }
   def onChange(action: Int=>Unit): Unit = _onChange = action
 
   private var _paths: Seq[Path] = Seq.empty
   def paths: Seq[Path] = _paths
-  def paths_(paths: Seq[Path]): Unit = put(paths)
+  def paths_(paths: Seq[Path]): Unit = add(paths)
   private var localSheet: StyleSheet = null
 
   val _shelfGlyphs: Cached[Seq[Glyph]] = Cached {
@@ -33,16 +31,22 @@ object Shelf {
     val left   = Col(_shelfGlyphs.value.take(length/2))
     val right  = Col(_shelfGlyphs.value.drop(length/2))
     if (length==0)
-      styled.Label("Shelf is empty")(localSheet).enlarged(10).enlarged(10, bg=Brushes.lightGrey).framed(Brushes.blackLine)
+      styled.Label("(Shelf is empty)")(localSheet)
     else
     Col(align=Center, bg=Brushes.lightGrey)(
-       styled.Label("Shelf")(localSheet),
        Row(bg=Brushes.white)(left, localSheet.em, right),
-    ).enlarged(10).framed(Brushes.blackLine)
+    )
   }
 
-  def put(paths: Seq[Path]): Unit = {
+  def add(paths: Seq[Path]): Unit = {
     _paths=paths
+    _shelfGlyphs.clear()
+    _shelfHint.clear()
+    _onChange(paths.length)
+  }
+
+  def remove(paths: Seq[Path]): Unit = {
+    _paths=_paths.filterNot(paths.contains(_))
     _shelfGlyphs.clear()
     _shelfHint.clear()
     _onChange(paths.length)
@@ -55,7 +59,10 @@ object Shelf {
     _onChange(0)
   }
 
+  def contains(path: Path): Boolean = _paths.contains(path)
+
   def isEmpty: Boolean  = paths.isEmpty
   def nonEmpty: Boolean = paths.nonEmpty
+  def length: Int = paths.length
 
 }
