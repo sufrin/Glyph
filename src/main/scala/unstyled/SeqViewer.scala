@@ -22,6 +22,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   def onClick(mods: Bitmap, selected: Int): Unit = {}
   def onHover(mods: Bitmap, hovered: Int): Unit = {}
   def onOther(gesture: Gesture): Unit = { println(s"other($gesture)")}
+  def underlineBrush: Brush = fg
 
 
   val metrics = font.getMetrics
@@ -44,7 +45,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   val headerDiagonal: Vec = Vec(charW*cols, charH*heading.length+descent)
   val diagonal: Vec       = rowsDiagonal+Vec(margin, margin)+Vec(0, headerDiagonal.y)
 
-  def refresh(current: Seq[String], reset: Boolean = false): Unit = {
+  def refresh(current: Seq[String]=initially, reset: Boolean = false): Unit = {
     seq     = current
     heading = header
     if (cacheing) {
@@ -107,6 +108,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
       h
     }
     val underHeader: Scalar = headerDiagonal.y*scale
+    val underlineColour = underlineBrush
 
     drawBackground(surface)
     surface.withClip(diagonal) {
@@ -130,7 +132,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
           val width = text.getWidth
           if ((nextVisibleRow&1)==0) surface.fillRect(stripeBrush, margin, y-shadeHeight, shadeWidth, charH)
           surface.drawTextLine(toForegroundBrush(nextVisibleRow), text, margin, y)
-          if (isUnderlined(nextVisibleRow)) surface.drawLines$(fg, margin, y + descent, width, y + descent)
+          if (isUnderlined(nextVisibleRow)) surface.drawLines$(underlineColour, margin, y + descent, width, y + descent)
           nextVisibleRow += 1
           y += charH
         }
@@ -165,7 +167,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
     gesture match {
       case _: MouseEnters =>
         guiRoot.grabKeyboard(thisViewer)
-        reDraw()
+        refresh()
       case _: MouseLeaves =>
         hovered = -1
         guiRoot.freeKeyboard(completely = true)

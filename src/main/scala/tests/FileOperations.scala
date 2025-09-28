@@ -119,4 +119,13 @@ object FileOperations {
     }
   }
 
+  def delete(path: Path): Seq[Exception] =
+    try {
+      Files.delete(path)
+      Seq.empty
+    }
+    catch {
+      case ex: java.io.IOException        => List(ex)
+    }
+
 }

@@ -191,9 +191,9 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     def delete(): Unit   = delete(Shelf.paths)
     def delete(paths: Seq[Path]): Unit = {
       println(s"Delete: ${paths.mkString(" ")}")
+      popupErrors(paths.flatMap(FileOperations.delete(_)))
+      view.refresh()
     }
-
-
 
     def print(): Unit = view.selectedRows.length match {
       case 1 =>
@@ -220,14 +220,21 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
     /** selected paths to the shelf */
     def clearShelf(): Unit = Shelf.clear()
-    def shelf(): Unit  = shelf(view.selectedRows.map { i => theRows(i).path })
+
+    def shelf(forCut: Boolean): Unit  = {
+      shelf(view.selectedRows.map { i => theRows(i).path })
+      Shelf.forCut = forCut
+    }
+
     def shelf(paths: Seq[Path]): Unit = {
       println(s"Shelf =  ${paths.mkString(" ")}")
       Shelf.clear()
       Shelf.add(paths)
       view.clearSelection()
     }
+
     def unShelf(): Unit  = unShelf(view.selectedRows.map { i => theRows(i).path })
+
     def unShelf(paths: Seq[Path]): Unit = {
       println(s"Shelf -=  ${paths.mkString(" ")}")
       Shelf.remove(paths)
@@ -235,12 +242,23 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     }
 
     // implicit source: the clipboard/shelf
-    def copy(path: Path): Unit = {
-      println(s"Copy: ${Shelf.paths.mkString(" ")} to ${path}")
-      popupErrors(FileOperations.copy(Shelf.paths, path))
+    def pasteTo(path: Path): Seq[Exception] = {
+      println(s"Paste: ${Shelf.paths.mkString(" ")} to ${path}")
+      FileOperations.copy(Shelf.paths, path)
     }
-    def copy(): Unit = currentImplicitDestination.foreach(copy)
 
+    def paste(): Unit = {
+      currentImplicitDestination match {
+        case None =>
+        case Some(destination) =>
+          val errors = pasteTo(destination)
+          if (errors.nonEmpty) popupErrors(errors)
+          else
+          if (Shelf.forCut) delete()
+      }
+      clearShelf()
+      view.refresh()
+    }
 
     def popupErrors(errors: Seq[Exception]): Unit =
       if (errors.nonEmpty) styled.windowdialogues.Dialogue.OK(Label(errors.mkString("\n"))).InFront(GUI).start()
@@ -251,31 +269,32 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       println(s"Move: ${Shelf.paths.mkString(" ")}  to ${path}")
       popupErrors(FileOperations.move(Shelf.paths, path))
       Shelf.clear()
+      view.refresh()
     }
     def move(): Unit = currentImplicitDestination.foreach(move)
 
+    // implicit source: the shelf
     // implicit source: the shelf
     def link(path: Path): Unit = {
       println(s"Link: ${Shelf.paths.mkString(" ")}  to ${path}")
       popupErrors(FileOperations.link(Shelf.paths, path))
       Shelf.clear()
+      view.refresh()
     }
     def link(): Unit = currentImplicitDestination.foreach(link)
 
 
-    lazy val shelfButton = TextButton("(S)=", hint = Hint(2, "Add selection to (s)helf")) {
-      _ => shelf()
+    lazy val shelfButton = TextButton("Copy", hint = Hint(2, "Selection to (s)helf\n... marked for copying (^C)\n... marked for deletion(^X)")) {
+      _ => shelf(forCut = false)
     }
 
-    lazy val unShelfButton = TextButton("(S)-=", hint = Hint(2, "Remove selection from (s)helf")) {
-      _ => unShelf()
+    lazy val clearButton = TextButton("X", hint = Hint(2, if (Shelf.nonEmpty && Shelf.forCut) "Clear shelf deletion mark" else "Clear shelf completely", constant = false)) {
+      _ =>
+        if(Shelf.nonEmpty && Shelf.forCut) Shelf.forCut = false else clearShelf()
+        view.reDraw()
     }
 
-    lazy val clearButton = TextButton("(S)={}", hint = Hint(2, "Clear (s)helf")) {
-      _ => clearShelf()
-    }
-
-    lazy val shelfButtons = NaturalSize.Row(shelfButton, unShelfButton, clearButton)
+    lazy val shelfButtons = NaturalSize.Row(shelfButton, clearButton)
 
     def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption()), constant = false, preferredLocation = Some(Vec(15,15)))
 
@@ -284,7 +303,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     }
 
     lazy val copyButton = TextButton("cp", hint=shelfHint(()=>s"Copy files to ${currentImplicitDestinationString}")){
-      _ => copy()
+      _ => paste()
     }
 
     lazy val moveButton = TextButton("mv", hint=shelfHint(()=>s"Move files to ${currentImplicitDestinationString}")){
@@ -312,6 +331,10 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
     override def isUnderlined(i: Int): Boolean = Shelf.contains(theRows(i).path)
 
+    val cutBrush: Brush = fileSheet.buttonForegroundBrush.sliced(2,3f)
+
+    override def underlineBrush: Brush = if (Shelf.forCut) cutBrush else fileSheet.buttonForegroundBrush
+
     override def onClick(mods: Bitmap, selected: Int): Unit = Explorer.open((folder.path.resolve(theRows(selected).path)))
 
     override def onHover(mods: Bitmap, hovered: Int): Unit = if (false) folder.withValidCaches {
@@ -331,13 +354,16 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
           view.guiRoot.close()
 
         case Keystroke(Key.C, _) if PRESSED =>
-          Actions.shelf()
+          Actions.shelf(forCut=false)
 
         case Keystroke(Key.X, _) if PRESSED =>
+          Actions.shelf(forCut=true)
+
+        case Keystroke(Key.BACKSPACE, _) if PRESSED =>
           Actions.delete()
 
         case Keystroke(Key.V, _) if PRESSED =>
-          Actions.copy()
+          Actions.paste()
 
         case Keystroke(Key.P, _) if PRESSED =>
           Actions.print()

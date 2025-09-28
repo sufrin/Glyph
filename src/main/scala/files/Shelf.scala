@@ -21,6 +21,8 @@ object Shelf {
   def paths_(paths: Seq[Path]): Unit = add(paths)
   private var localSheet: StyleSheet = null
 
+  var forCut: Boolean = false
+
   val _shelfGlyphs: Cached[Seq[Glyph]] = Cached {
     val detail = localSheet.copy(fontScale=0.8f).labelStyle
     paths.map { path => unstyled.Text(path.toString, detail.font, detail.fg, detail.bg) }
@@ -56,6 +58,7 @@ object Shelf {
     _paths=Seq.empty
     _shelfGlyphs.clear()
     _shelfHint.clear()
+    forCut = false
     _onChange(0)
   }
 
