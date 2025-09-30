@@ -19,7 +19,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
                 headBrush: Brush = Brushes.black
                )  extends GestureBasedReactiveGlyph { thisViewer =>
 
-  def onClick(mods: Bitmap, selected: Int): Unit = {}
+  def onDoubleClick(mods: Bitmap, selected: Int): Unit = {}
   def onHover(mods: Bitmap, hovered: Int): Unit = {}
   def onOther(gesture: Gesture): Unit = { println(s"other($gesture)")}
   def underlineBrush: Brush = fg
@@ -167,7 +167,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
     gesture match {
       case _: MouseEnters =>
         guiRoot.grabKeyboard(thisViewer)
-        refresh()
+        refresh((initially)) //??
       case _: MouseLeaves =>
         hovered = -1
         guiRoot.freeKeyboard(completely = true)
@@ -236,7 +236,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
           case Key.RIGHT | Key.ENTER =>
             val currentRow=currentMinRow
-            if (currentMaxRow==currentRow && isVisible(currentRow)) onClick(modifiers, currentRow) else bell.play()
+            if (currentMaxRow==currentRow && isVisible(currentRow)) onDoubleClick(modifiers, currentRow) else bell.play()
             reDraw()
 
           case Key.A if CONTROL =>
@@ -251,6 +251,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
         }
 
+      // motion near a row with nothing pressed is a hover
       case MouseMove(modifiers) if !PRESSED =>
         val row = yToRow(location.y) + rowOrigin
         val oldHovered = hovered
@@ -258,12 +259,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         if (oldHovered!=hovered) onHover(modifiers, hovered)
         reDraw()
 
-      case MouseMove(modifiers) if PRESSED && SHIFT =>
-        val row = yToRow(location.y) + rowOrigin
-        hovered = row min seq.length
-        if (row<seq.length) _selectedRows.add(hovered)
-        reDraw()
-
+      // motion near a row with control pressed => invert selection state of row
       case MouseMove(modifiers) if PRESSED && CONTROL =>
         val row = yToRow(location.y) + rowOrigin
         val oldHovered = hovered
@@ -273,8 +269,16 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         }
         reDraw()
 
+      // motion near a row without control pressed => add row to selection
+      case MouseMove(modifiers) if PRESSED && !CONTROL =>
+        val row = yToRow(location.y) + rowOrigin
+        hovered = row min seq.length
+        if (row<seq.length) _selectedRows.add(hovered)
+        reDraw()
+
       case other: MouseMove =>
 
+      // secondary button (or primary with control) clicked near row => invert selection state of row
       case MouseClick(_)  if (SECONDARY) =>
         val row = yToRow(location.y) + rowOrigin
         val hovered = row min seq.length
@@ -286,6 +290,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         reDraw()
 
 
+      // primary button with shift clicked near a row => extend the selection (from its other end) to that row
       case MouseClick(_) if PRIMARY && SHIFT =>
         val row = yToRow(location.y) + rowOrigin
         val hovered = row min seq.length-1
@@ -296,6 +301,9 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         ClickTimer.clear()
         reDraw()
 
+      // click in the left gutter => clear the selection
+      // first click near a row => sets selection to that row
+      // second click within 1/2sec on the same row => invokes `onDoubleClick(modifiers, currentRow)`
       case MouseClick(_) if PRESSED =>
         if (location.x<=margin) {
           _selectedRows.clear()
@@ -305,7 +313,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
           if (_selectedRows.contains(row)) {
             setCurrentRow(row)
             if (ClickTimer.doubleClick) {
-              onClick(modifiers, currentRow)
+              onDoubleClick(modifiers, currentRow)
               ClickTimer.clear()
             }
           } else {

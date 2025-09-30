@@ -9,7 +9,8 @@ import cached._
 import files.FileAttributes.Row
 import gesture.{Gesture, Keystroke}
 import NaturalSize.Grid
-import styles.decoration.{Framed, RoundFramed}
+import overlaydialogues.Dialogue
+import styles.decoration.RoundFramed
 
 import io.github.humbleui.jwm.Key
 import org.sufrin.logging.{FINEST, SourceLoggable}
@@ -31,9 +32,9 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
   locally {
     folder.onValidate{
       case event: String =>
-        Explorer.finest(s"about to refresh after: $event")
+        Explorer.finest(s"(${folder.path}) about to refresh after: $event")
         view.refresh(theListing)
-        Explorer.finest(s"refreshed after: $event")
+        Explorer.finest(s"${folder.path} refreshed after: $event")
     }
   }
 
@@ -192,7 +193,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     def delete(paths: Seq[Path]): Unit = {
       println(s"Delete: ${paths.mkString(" ")}")
       popupErrors(paths.flatMap(FileOperations.delete(_)))
-      view.refresh()
+      folder.withValidCaches { view.reDraw() }
     }
 
     def print(): Unit = view.selectedRows.length match {
@@ -257,7 +258,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
           if (Shelf.forCut) delete()
       }
       clearShelf()
-      view.refresh()
+      folder.withValidCaches { view.reDraw() }
     }
 
     def popupErrors(errors: Seq[Exception]): Unit =
@@ -269,7 +270,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       println(s"Move: ${Shelf.paths.mkString(" ")}  to ${path}")
       popupErrors(FileOperations.move(Shelf.paths, path))
       Shelf.clear()
-      view.refresh()
+      folder.withValidCaches { view.reDraw() }
     }
     def move(): Unit = currentImplicitDestination.foreach(move)
 
@@ -279,12 +280,12 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       println(s"Link: ${Shelf.paths.mkString(" ")}  to ${path}")
       popupErrors(FileOperations.link(Shelf.paths, path))
       Shelf.clear()
-      view.refresh()
+      folder.withValidCaches { view.reDraw() }
     }
     def link(): Unit = currentImplicitDestination.foreach(link)
 
 
-    lazy val shelfButton = TextButton("Copy", hint = Hint(2, "Selection to (s)helf\n... marked for copying (^C)\n... marked for deletion(^X)")) {
+    lazy val shelfButton = TextButton("Shelf", hint = Hint(2, "Selection to (s)helf\n... marked for copying (^C)\n... marked for deletion(^X)")) {
       _ => shelf(forCut = false)
     }
 
@@ -320,7 +321,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
   }
 
   lazy val view: unstyled.dynamic.SeqViewer = new unstyled.dynamic.SeqViewer(
-                                columns, 30,
+                                columns, 36,
                                 fileSheet.buttonFont,
                                 fileSheet.buttonForegroundBrush,
                                 fileSheet.buttonBackgroundBrush,
@@ -335,7 +336,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
     override def underlineBrush: Brush = if (Shelf.forCut) cutBrush else fileSheet.buttonForegroundBrush
 
-    override def onClick(mods: Bitmap, selected: Int): Unit = Explorer.open((folder.path.resolve(theRows(selected).path)))
+    override def onDoubleClick(mods: Bitmap, selected: Int): Unit = Explorer.open((folder.path.resolve(theRows(selected).path)))
 
     override def onHover(mods: Bitmap, hovered: Int): Unit = if (false) folder.withValidCaches {
       if (theRows.isDefinedAt(hovered)) {
@@ -375,21 +376,6 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     }
   }
 
-  val invisibilityCheckBox =
-    styled.SymbolicCheckBox(showingInvisibles, whenTrue="(.)", whenFalse="()", hint=Hint(2, "Show\ninvisible\nfiles")){
-      state =>
-      showingInvisibles = state
-      theListing.clear()
-      view.refresh(theListing, reset=true)
-  }
-
-  val reverseSortCheckBox =
-    styled.SymbolicCheckBox(reverseSort, whenTrue="↓", whenFalse="↑", hint=Hint(2, "Reverse\nsort\norder")){
-      state =>
-        reverseSort = state
-        theListing.clear()
-        view.refresh(theListing, reset=true)
-    }.scaled(1.5f)
 
 
   val helpButton = styled.TextButton("Help") { _ => }
@@ -405,22 +391,6 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       view.refresh(theListing)
   }
 
-  lazy val sortButtons: RadioCheckBoxes = RadioCheckBoxes(
-    captions = List("Name", "Size", "Created", "Modified", "Accessed"),
-    prefer   = "Name"
-    )
-    { case selected => selected match
-        {
-          case Some(0) => theOrdering = Orderings.byName
-          case Some(1) => theOrdering = Orderings.bySize
-          case Some(2) => theOrdering = Orderings.byCreateTime
-          case Some(3) => theOrdering = Orderings.byModTime
-          case Some(4) => theOrdering = Orderings.byAccessTime
-          case _       => sortButtons.select(0); theOrdering = Orderings.byName
-        }
-        theListing.clear()
-        view.refresh(theListing)
-  }
 
   /**
    * `path` is a sequence of buttons; each corresponding to an ancestor of this
@@ -432,6 +402,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
   object StateButtons {
     val hintSheet: StyleSheet = fileSheet.copy(fontScale=0.7f)
     val buttonSheet: StyleSheet = fileSheet.copy(fontScale=0.8f)
+
     private lazy val prefixDirs = folder.prefixPaths.toSeq.scanLeft(Path.of("/"))((b, p) => b.resolve(p))
 
     private lazy val buttons: Seq[Glyph] = prefixDirs.tail.map {
@@ -446,28 +417,76 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       { _ => Explorer.open(up) }(buttonSheet)
     }
 
-    lazy val path: Glyph  = NaturalSize.Row(StateButtons.buttons)
-    lazy val order: Glyph = NaturalSize.Row(align=Mid)(List(Label("Ordered"), reverseSortCheckBox, Label("on" )) ++ sortButtons.glyphButtons(Right, fixedWidth = false) ++ List(invisibilityCheckBox))
+    lazy val path: Glyph  = NaturalSize.Row(buttons)
+
   }
 
-  lazy val displayStyleGUI = NaturalSize.Col(
-    FixedSize.Row(width=view.w, align=Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()) above
-    FixedSize.Row(width=view.w, align=Mid)(fileSheet.hFill(), StateButtons.order, fileSheet.hFill())).enlarged(15).roundFramed(radius=20)
+  object Settings {
+    val invisibilityCheckBox =
+      styled.SymbolicCheckBox(showingInvisibles, whenTrue="(.)", whenFalse="()", hint=Hint(2, "Show\ninvisible\nfiles")){
+        state =>
+          showingInvisibles = state
+          theListing.clear()
+          view.refresh(theListing, reset=true)
+      }
+
+    val reverseSortCheckBox =
+      styled.SymbolicCheckBox(reverseSort, whenTrue="↓", whenFalse="↑", hint=Hint(2, "Reverse\nsort\norder")){
+        state =>
+          reverseSort = state
+          theListing.clear()
+          view.refresh(theListing, reset=true)
+      }.scaled(1.5f)
+
+    lazy val sortButtons: RadioCheckBoxes = RadioCheckBoxes(
+      captions = List("Name", "Size", "Created", "Modified", "Accessed"),
+      prefer   = "Name"
+      )
+    { case selected => selected match
+    {
+      case Some(0) => theOrdering = Orderings.byName
+      case Some(1) => theOrdering = Orderings.bySize
+      case Some(2) => theOrdering = Orderings.byCreateTime
+      case Some(3) => theOrdering = Orderings.byModTime
+      case Some(4) => theOrdering = Orderings.byAccessTime
+      case _       => sortButtons.select(0); theOrdering = Orderings.byName
+    }
+      theListing.clear()
+      view.refresh(theListing)
+    }
+
+    private lazy val order: Glyph =
+      NaturalSize.Row(align=Mid)(List(Label("Ordered"), reverseSortCheckBox, Label("on" )) ++ sortButtons.glyphButtons(Right, fixedWidth = false) ++ List(invisibilityCheckBox))
+
+    private val largeButton: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated, fontScale = 1.2f)
+
+    private lazy val settingsGUI = {
+      val close = TextButton("Ξ") { _ => settingsPopup.close() }(largeButton)
+      NaturalSize.Col(align = Left)(
+        close,
+        FixedSize.Row(width = view.w, align = Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()),
+        FixedSize.Row(width = view.w, align = Mid)(fileSheet.hFill(), order, fileSheet.hFill()), fileSheet.vSpace()
+        )
+    }
+
+    private lazy val settingsPopup: Dialogue[Unit] = Dialogue.POPUP(settingsGUI, Seq.empty, None).AtTop(GUI)
+
+    lazy val popupButton: Glyph = TextButton("Ξ") {
+      _ => settingsPopup.start()
+    }(largeButton)
+  }
 
   lazy val pathGUI =
-    FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hSpace(), reValidateButton, fileSheet.hFill(), StateButtons.parent).enlarged(15).roundFramed(radius=20)
+    FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hFill(), StateButtons.parent).enlarged(15).roundFramed(radius=20)
 
 
   lazy val GUI: Glyph =
     NaturalSize.Col()(
-      FixedSize.Row(width=view.w, align=Mid)(Actions.GUI, fileSheet.hFill(), helpButton),
-
-      view.enlarged(15),
-
-      pathGUI,
+      FixedSize.Row(width=view.w, align=Mid)(Settings.popupButton, fileSheet.hSpace(), Actions.GUI, fileSheet.hFill(), helpButton),
       fileSheet.vSpace(1),
-      displayStyleGUI,
-    ).enlarged(15, fg=Brushes.lightGrey)
+      pathGUI,
+      view.enlarged(15),
+      ).enlarged(15, fg=Brushes.lightGrey)
 }
 
 object Explorer extends Application with SourceLoggable {
@@ -476,11 +495,16 @@ object Explorer extends Application with SourceLoggable {
   import GlyphTypes.FontStyle.NORMAL
 
   implicit val fileSheet: StyleSheet =
-    StyleSheet(buttonDecoration=Framed(), buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
+    StyleSheet(buttonDecoration=RoundFramed(bg=Brushes.lightGrey, enlarge=9f, radius=10), buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
 
   val root = new Folder(FileSystems.getDefault.getPath("/Users/sufrin"))
 
-  lazy val GUI: Glyph = new Explorer(root)(fileSheet).GUI
+  lazy val GUI: Glyph = {
+    if (true)
+      new Explorer(root)(fileSheet).GUI
+    else
+      NaturalSize.Row(new Explorer(root)(fileSheet).GUI, new Explorer(root)(fileSheet).GUI)
+  }
 
   def title: String = s"Explore: ${root.path.abbreviatedString()}"
 
@@ -556,6 +580,7 @@ object Explorer extends Application with SourceLoggable {
   override protected def whenStarted(): Unit = {
     super.whenStarted()
     GUI.guiRoot.autoScale=true
+    Folder.level = FINEST
   }
 
   lazy val homePath = Paths.get(System.getProperty("user.home"))

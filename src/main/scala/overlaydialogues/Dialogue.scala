@@ -23,8 +23,8 @@ object Dialogue {
    *
    *  TODO: unbundle first Dialogue parameter
    */
-  def POPUP[T](guiRoot: Glyph, bottomRow: Seq[Glyph]): Dialogue[T] =
-    new Dialogue[T](Col(align=Center)(guiRoot, Row(Top)(bottomRow)), closeGlyph = Some(defaultCloseGlyph))
+  def POPUP[T](guiRoot: Glyph, bottomRow: Seq[Glyph], closeGlyph: Option[Glyph] = Some(defaultCloseGlyph)): Dialogue[T] =
+    new Dialogue[T](Col(align=Center)(guiRoot, Row(Top)(bottomRow)), closeGlyph = closeGlyph)
 
   import reactive.GenericButton
 
@@ -365,6 +365,12 @@ class Dialogue[T](guiRoot:        Glyph,
     location = Location.OnRootOf(glyph)(loc.x + (glyph.w - overlayRoot.diagonal.x)/2f, loc.y + (glyph.h - overlayRoot.diagonal.y)/2f)
     thisPopup
   }
+  /** set the location of this dialogue relative to the root of `glyph`  */
+  def AtTop(glyph: Glyph): this.type = {
+    val loc = glyph.rootDistance
+    location = Location.OnRootOf(glyph)(loc.x + (glyph.w - overlayRoot.diagonal.x)/2f, loc.y)
+    thisPopup
+  }
 
   def OnRootOf(glyph: Glyph): this.type = {
     val loc = glyph.rootDistance
@@ -379,13 +385,15 @@ class Dialogue[T](guiRoot:        Glyph,
     assert(location ne null, "Dialogue must have defined a non-null location before starting")
     val RelativeTo(glyph, offset) = location
         // TODO: eliminate magic offset: without it the dialogues are mislocated
-        val MAGIC = Vec(11f, 14f)
+        val MAGIC = Vec(0f, 0f) //y WAS 11f,14.0f TODO: Check
         var requested = glyph.rootDistance + offset + MAGIC
+    //print(requested)
         // Nudge the request so the glyph is (mostly) visible in the actual window
         while (requested.x<0) requested -= Vec(requested.x, 0)
         while (requested.y<0) requested -= Vec(0, requested.y)
-        while (requested.x + overlayRoot.w > glyph.guiRoot.W) requested -= Vec(10f, 0)
-        while (requested.y + overlayRoot.h > glyph.guiRoot.H) requested -= Vec(0, 10f)
+        while (requested.x + overlayRoot.w > glyph.guiRoot.W) requested -= Vec(3f, 0)
+        while (requested.y + overlayRoot.h > glyph.guiRoot.H) requested -= Vec(0, 3f)
+    //println(s"=> $requested")
         overlayRoot.location = requested
         glyph.guiRoot.giveupFocus()
         glyph.guiRoot.Overlay.pushLayer(overlayRoot, isModal, isMenu=isMenu, offMenuClick={ () => close() })

@@ -63,9 +63,12 @@ object Shelf {
   }
 
   def contains(path: Path): Boolean = _paths.contains(path)
-
   def isEmpty: Boolean  = paths.isEmpty
   def nonEmpty: Boolean = paths.nonEmpty
   def length: Int = paths.length
+
+  // Registrations
+  val
+
 
 }
