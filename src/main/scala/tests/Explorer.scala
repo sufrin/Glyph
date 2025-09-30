@@ -23,18 +23,18 @@ import scala.collection.mutable
 
 
 
-class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
+class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplorer =>
   import styled.TextButton
 
   var showingInvisibles = false
   var reverseSort = false
 
   locally {
-    folder.onValidate{
-      case event: String =>
-        Explorer.finest(s"(${folder.path}) about to refresh after: $event")
+    folder.folderChanged.handleWithTagged(thisExplorer) {
+      case information: String =>
+        Explorer.finest(s"(${folder.path}) about to refresh after: $information")
         view.refresh(theListing)
-        Explorer.finest(s"${folder.path} refreshed after: $event")
+        Explorer.finest(s"${folder.path} refreshed after: $information")
     }
   }
 
@@ -193,7 +193,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     def delete(paths: Seq[Path]): Unit = {
       println(s"Delete: ${paths.mkString(" ")}")
       popupErrors(paths.flatMap(FileOperations.delete(_)))
-      folder.withValidCaches { view.reDraw() }
+      //folder.withValidCaches { view.reDraw() }  // Notification now does this
     }
 
     def print(): Unit = view.selectedRows.length match {
@@ -258,7 +258,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
           if (Shelf.forCut) delete()
       }
       clearShelf()
-      folder.withValidCaches { view.reDraw() }
+      //folder.withValidCaches { view.reDraw() }  // Notification now does this
     }
 
     def popupErrors(errors: Seq[Exception]): Unit =
@@ -270,8 +270,9 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       println(s"Move: ${Shelf.paths.mkString(" ")}  to ${path}")
       popupErrors(FileOperations.move(Shelf.paths, path))
       Shelf.clear()
-      folder.withValidCaches { view.reDraw() }
+      //folder.withValidCaches { view.reDraw() }  // Notification now does this
     }
+
     def move(): Unit = currentImplicitDestination.foreach(move)
 
     // implicit source: the shelf
@@ -280,7 +281,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       println(s"Link: ${Shelf.paths.mkString(" ")}  to ${path}")
       popupErrors(FileOperations.link(Shelf.paths, path))
       Shelf.clear()
-      folder.withValidCaches { view.reDraw() }
+      //folder.withValidCaches { view.reDraw() } // Notification now does this
     }
     def link(): Unit = currentImplicitDestination.foreach(link)
 
@@ -289,7 +290,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       _ => shelf(forCut = false)
     }
 
-    lazy val clearButton = TextButton("X", hint = Hint(2, if (Shelf.nonEmpty && Shelf.forCut) "Clear shelf deletion mark" else "Clear shelf completely", constant = false)) {
+    lazy val clearButton = TextButton("Clear", hint = Hint(2, if (Shelf.nonEmpty && Shelf.forCut) "Clear shelf deletion mark" else "Clear shelf completely", constant = false)) {
       _ =>
         if(Shelf.nonEmpty && Shelf.forCut) Shelf.forCut = false else clearShelf()
         view.reDraw()
@@ -303,7 +304,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       _ => delete()
     }
 
-    lazy val copyButton = TextButton("cp", hint=shelfHint(()=>s"Copy files to ${currentImplicitDestinationString}")){
+    lazy val copyButton = TextButton("cp", hint=shelfHint(()=>s"Copy files to ${currentImplicitDestinationString} (C-V)")){
       _ => paste()
     }
 
@@ -336,7 +337,10 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
     override def underlineBrush: Brush = if (Shelf.forCut) cutBrush else fileSheet.buttonForegroundBrush
 
-    override def onDoubleClick(mods: Bitmap, selected: Int): Unit = Explorer.open((folder.path.resolve(theRows(selected).path)))
+    override def onDoubleClick(mods: Bitmap, selected: Int): Unit = {
+      Explorer.open((folder.path.resolve(theRows(selected).path)))
+      clearSelection()
+    }
 
     override def onHover(mods: Bitmap, hovered: Int): Unit = if (false) folder.withValidCaches {
       if (theRows.isDefinedAt(hovered)) {
@@ -351,8 +355,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
       import gesture._
       gesture match {
         case Keystroke(Key.W, _) if PRESSED =>
-          folder.close()
-          view.guiRoot.close()
+          thisExplorer.close()
 
         case Keystroke(Key.C, _) if PRESSED =>
           Actions.shelf(forCut=false)
@@ -376,11 +379,70 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     }
   }
 
+  def close(): Unit = {
+    folder.folderChanged.removeTagged(thisExplorer)
+    folder.close()
+    GUI.guiRoot.close()
+  }
 
+  lazy val helpDialogue: styled.windowdialogues.Dialogue[Unit] = {
+    val helpSheet: StyleSheet = Explorer.fileSheet.copy(textFontSize = 16f, textForegroundBrush = Brushes.black)
+    val translator = glyphML.Translator(helpSheet)
+    import translator._
+    val blurb: Glyph = <div width="65em" align="justify" parskip="0.5ex">
+      <p align="center"><b>Explorer</b></p>
+      <p> There is an Explorer-wide <b>Shelf</b> whose elements are paths that denote
+          individual files in the filestore. A file is said to be "shelved" if its path is
+          on the shelf.
+      </p>
+      <p>
+          Underlining of a row in a window indicates that it (or rather its path) is "on the shelf", and may be used in a
+          later action. If the underlining is "textured" then the row is marked for deletion
+          as part of the next "paste" (C-V).
+      </p>
+      <p> Individual windows may have a selection: its rows are selected by mouse: </p>
+      <scope>
+        <attributes id="tag:p" hang=" *  " />
+        <p> Primary mouse click: selects uniquely</p>
+        <p> Primary mouse drag: extends the selection</p>
+        <p> Shifted primary mouse click: extends the selection at one end</p>
+        <p> Secondary mouse click (or C-Primary) inverts selection status of the indicated row</p>
+        <p> Mouse double-click, or (ENTER), opens the file indicated by the selected row, if possible</p>
+      </scope>
+      <p>Actions are by buttons or keys.</p>
+      <scope>
+        <attributes id="tag:p" hang=" *  "  />
+        <p> <b>Shelf</b> places the selection on the shelf.</p>
+        <p> <b>C-C</b> places the selection on the shelf.</p>
+        <p> <b>C-X</b> places the selection on the shelf, and marks it for later deletion as part of the next "paste" (C-V) action.</p>
+        <p> <b>C-V</b> copies the shelved files to the folder in which it is clicked; deleting them if they were marked for deletion by (C-X).</p>
+        <p> <b>del</b> deletes the shelved files.</p>
+        <p> <b>cp mv ln</b> respectively copy, move, and link the shelved files to the
+            current implicit destination. This is <i>either</i> the directory denoted by a single selected path in the window in which
+            the button is pressed, <i>or</i> the folder being shown in that window.
+        </p>
+        <p> <b>Clear</b> removes the deletion mark from the shelf if it is so marked; otherwise clears the shelf.</p>
+        <p> The usual navigation methods: <b>home end page-up page-down scroll-wheel</b> can be used to scroll the view; and the <b>up down</b>
+            keys add to the selection in the specified direction if shifted; otherwise selecting a single row in the specified direction.
+        </p>
+      </scope>
+      <p>The path to the directory being viewed in the window is shown (above the listing) as a sequence of buttons, each of which corresponds to an
+          ancestor and is associated with a "hover-hint" that shows the corresponding <i>real</i>
+          path --  with symbolic links expanded when appropriate. Pressing any of them opens a fresh window on the ancestor.
+      </p>
+      <p>The columns shown in the window can be changed in the panel popped up by the <b>Ξ</b> button; as can the order in which they are
+        shown, and whether "invisible" files are shown. Press <b>[.]</b> to enable, and <b>(.)</b> to disable.
+      </p>
+    </div>.enlarged(10)
+    styled.windowdialogues.Dialogue.FLASH(blurb, title="Explorer Help")
+  }
 
-  val helpButton = styled.TextButton("Help") { _ => }
+  lazy val helpButton = styled.TextButton("Help")
+  { _ =>
+    if (helpDialogue.running.isEmpty) helpDialogue.InFront(GUI).start(floating=false)
+  }
   locally {
-    helpButton.enabled(false)
+    //helpButton.enabled(false)
   }
 
   /** Force a revalidation and redisplay: should not normally be needed */
@@ -423,7 +485,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
   object Settings {
     val invisibilityCheckBox =
-      styled.SymbolicCheckBox(showingInvisibles, whenTrue="(.)", whenFalse="()", hint=Hint(2, "Show\ninvisible\nfiles")){
+      styled.SymbolicCheckBox(showingInvisibles, whenTrue="(.)", whenFalse="[.]", hint=Hint(2, "Show\ninvisible\nfiles")){
         state =>
           showingInvisibles = state
           theListing.clear()
@@ -458,12 +520,12 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
     private lazy val order: Glyph =
       NaturalSize.Row(align=Mid)(List(Label("Ordered"), reverseSortCheckBox, Label("on" )) ++ sortButtons.glyphButtons(Right, fixedWidth = false) ++ List(invisibilityCheckBox))
 
-    private val largeButton: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated, fontScale = 1.2f)
+    private val largeButtonStyle: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated, fontScale = 1.3f, buttonHoverBrush = fileSheet.buttonForegroundBrush)
 
     private lazy val settingsGUI = {
-      val close = TextButton("Ξ") { _ => settingsPopup.close() }(largeButton)
+      val closeSettings = unstyled.reactive.RawButton(PolygonLibrary.closeButtonGlyph.scaled(2), down=Brushes.red, hover=Brushes.green) { _ => settingsPopup.close() }
       NaturalSize.Col(align = Left)(
-        close,
+        closeSettings,
         FixedSize.Row(width = view.w, align = Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()),
         FixedSize.Row(width = view.w, align = Mid)(fileSheet.hFill(), order, fileSheet.hFill()), fileSheet.vSpace()
         )
@@ -471,9 +533,19 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  {
 
     private lazy val settingsPopup: Dialogue[Unit] = Dialogue.POPUP(settingsGUI, Seq.empty, None).AtTop(GUI)
 
-    lazy val popupButton: Glyph = TextButton("Ξ") {
-      _ => settingsPopup.start()
-    }(largeButton)
+    lazy val xpopupButton: Glyph = TextButton("Ξ") {
+      _ =>
+        settingsPopup.isModal = false
+        settingsPopup.canEscape = true
+        settingsPopup.start()
+    }(largeButtonStyle)
+
+    lazy val popupButton: Glyph = unstyled.reactive.RawButton(Label("Ξ").scaled(2f), down=Brushes.red, hover=Brushes.green) {
+      _ =>
+        settingsPopup.isModal = false
+        settingsPopup.canEscape = true
+        settingsPopup.start()
+    }
   }
 
   lazy val pathGUI =
@@ -497,7 +569,7 @@ object Explorer extends Application with SourceLoggable {
   implicit val fileSheet: StyleSheet =
     StyleSheet(buttonDecoration=RoundFramed(bg=Brushes.lightGrey, enlarge=9f, radius=10), buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
 
-  val root = new Folder(FileSystems.getDefault.getPath("/Users/sufrin"))
+  val root = Folder(FileSystems.getDefault.getPath("/Users/sufrin"))
 
   lazy val GUI: Glyph = {
     if (true)
@@ -557,8 +629,16 @@ object Explorer extends Application with SourceLoggable {
     if (path.isReadable) {
       if (path.isDir) {
         try {
-          val folder = new Folder(path)
-          styled.windowdialogues.Dialogue.FLASH(new Explorer(folder).GUI, title = folder.path.abbreviatedString()).OnRootOf(GUI).start(floating = false)
+          val folder = Folder(path)
+          val explorer = new Explorer(folder)
+          val dialogue = styled.windowdialogues.Dialogue.FLASH(explorer.GUI, title = folder.path.abbreviatedString()).OnRootOf(GUI)
+          dialogue.onClose
+          { case _ =>
+              folder.folderChanged.removeTagged(explorer)
+              folder.close()
+          }
+          dialogue.start(floating = false)
+          dialogue.GUI.guiRoot.autoScale=true
         } catch {
           case ex: NotDirectoryException => styled.windowdialogues.Dialogue.OK(Label(s"Not a directory\n${ex.getMessage}")).OnRootOf(GUI).start()
         }

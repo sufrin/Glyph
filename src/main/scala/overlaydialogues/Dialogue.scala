@@ -242,7 +242,8 @@ class Dialogue[T](guiRoot:        Glyph,
                   var location:   RelativeTo = null,
                   val closeGlyph: Option[Glyph] = None,
                   var isModal:    Boolean = true,
-                  var isMenu:     Boolean = false)
+                  var isMenu:     Boolean = false,
+                  var canEscape:  Boolean = true)
 {
   thisPopup =>
 
@@ -307,6 +308,7 @@ class Dialogue[T](guiRoot:        Glyph,
             //println(s"closeButton $key")
              key.getKey match {
                case ESCAPE  if isModal && !key.isPressed => close()
+               case ESCAPE  if canEscape && !key.isPressed => close()
                case UP      if isModal && !key.isPressed =>
                  overlayRoot.location = overlayRoot.location + (0f, -15f)
                  overlayRoot.reDraw()

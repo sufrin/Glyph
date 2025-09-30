@@ -192,24 +192,24 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
               (if (SHIFT) addToSelection(_) else setCurrentRow(_))(currentMaxRow + 1)
               if (currentMaxRow - rowOrigin >= rows-1 ) {
                 rowOrigin += 1
-                reDraw()
               }
             } else {
               bell.play()
               setCurrentRow(rowOrigin+rows-1)
             }
+            reDraw()
 
           case Key.UP =>
             if (selectedRows.nonEmpty) {
               (if (SHIFT) addToSelection(_) else setCurrentRow(_))(currentMinRow - 1)
               if (currentMinRow < rowOrigin) {
                 rowOrigin = 0 max (currentMinRow - 1)
-                reDraw()
               }
             } else {
               bell.play()
               setCurrentRow(rowOrigin)
             }
+            reDraw()
 
           case Key.HOME =>
             clearSelection()

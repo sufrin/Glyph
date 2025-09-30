@@ -3,7 +3,8 @@ package files
 
 import org.sufrin.glyph.cached.Cached
 import FileAttributes.Row
-import org.sufrin.logging.SourceLoggable
+import org.sufrin.glyph.notifier.Notifier
+import org.sufrin.logging.{SourceDefault, SourceLoggable}
 
 import java.nio.file.{LinkOption, NoSuchFileException, Path}
 import java.nio.file.attribute.PosixFileAttributes
@@ -13,7 +14,34 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IteratorHasAsScala}
 
 object Folder extends SourceLoggable {
-  def apply(path: Path): Folder = new Folder(path)
+
+  def apply(path: Path): Folder = {
+    val folder = cache.getOrElseUpdate(path, new Folder(path))
+    refCount(path) = 1+refCount.getOrElseUpdate(path, 0)
+    folder
+  }
+
+  def remove(path: Path): Unit = {
+    assert(refCount.contains(path), s"Cannot remove folder for $path")
+    refCount(path) -= 1
+    if (refCount(path)<=0) {
+      refCount.remove(path)
+      cache.remove(path)
+      Folder.finest(s"Folder for $path removed")
+    } else {
+      Folder.finest(s"Folder for $path released (${refCount(path)})")
+    }
+  }
+
+  def withFolderFor(path: Path)(fn: Folder => Unit): Unit = {
+    cache.get(path) match {
+      case None         =>
+        SourceDefault.warn(s"No folder for $path")
+        println(refCount)
+        println(cache)
+      case Some(folder) => fn(folder)
+    }
+  }
 
   def readPosixAttributes(path: Path): PosixFileAttributes =
     try { readAttributes(path, classOf[PosixFileAttributes]) }
@@ -28,12 +56,17 @@ object Folder extends SourceLoggable {
       )
     } catch { case ex: NoSuchFileException => UndefinedAttributes() }
 
+ private val cache: mutable.LinkedHashMap[Path,Folder] = new mutable.LinkedHashMap[Path,Folder]
+ private val refCount: mutable.LinkedHashMap[Path,Int] = new mutable.LinkedHashMap[Path,Int]
+
 }
 
 /**  Proxy for the directory/folder at `path`.
   */
 class Folder(val path: Path) {
   import Folder._
+
+  val folderChanged: Notifier[String] = new Notifier[String]{}
 
   val absolutePath: Path = path.toAbsolutePath.toRealPath()
 
@@ -92,6 +125,11 @@ class Folder(val path: Path) {
     ()
   }
 
+  def notifyChange(): Unit = {
+    invalidate()
+    folderChanged.notify("Direct notification")
+  }
+
   /** Invalidate cache and its dependents
     */
   def invalidate(): Unit = {
@@ -104,8 +142,6 @@ class Folder(val path: Path) {
     expression
   }
 
-  private var _onValidate: String => Unit = (_ => ())
-  def onValidate(response: String => Unit): Unit = _onValidate = response
 
   /**  When /anything/ happens to this directory we clear the relevant caches.
     *  This crude approach was once refined, but the cost of the complexity
@@ -119,7 +155,7 @@ class Folder(val path: Path) {
   }
 
   def close(): Unit = {
-    watching.close()
+    Folder.remove(path)
   }
 
   def validate(): Unit = {
@@ -136,7 +172,7 @@ class Folder(val path: Path) {
       watchKey.reset()
       if (changes) {
         invalidate()
-        _onValidate(lastEvent)
+        folderChanged.notify(lastEvent)
       }
     }
   }

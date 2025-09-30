@@ -67,8 +67,5 @@ object Shelf {
   def nonEmpty: Boolean = paths.nonEmpty
   def length: Int = paths.length
 
-  // Registrations
-  val
-
 
 }

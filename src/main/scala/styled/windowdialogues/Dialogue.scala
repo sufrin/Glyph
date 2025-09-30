@@ -170,6 +170,7 @@ class Dialogue[T](blurb:        Glyph,
     location = Location.OnRootOf(glyph)(loc.x + (glyph.w - GUI.diagonal.x) / 2f, loc.y + (glyph.h - GUI.diagonal.y) / 2f)
     thisPopup
   }
+
   def OnRootOf(glyph: Glyph, loc: Vec=Vec.Zero): this.type = {
     location = Location.OnRootOf(glyph)(loc.x, loc.y)
     thisPopup
@@ -251,9 +252,9 @@ class Dialogue[T](blurb:        Glyph,
   }
 
   /**  Start the popup window, invoking `onClose` when it's closed with a result */
-  def andThen(onClose: T => Unit): Unit = {
+  def andThen(onClose: T => Unit, floating: Boolean = true): Unit = {
     _onClose = Some(onClose)
-    start()
+    start(floating=floating)
   }
 
 }
