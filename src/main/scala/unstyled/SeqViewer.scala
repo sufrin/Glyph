@@ -43,7 +43,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
   val margin: Scalar = 10
   val rowsDiagonal:   Vec = Vec(charW*cols, charH*rows+descent)
   val headerDiagonal: Vec = Vec(charW*cols, charH*heading.length+descent)
-  val diagonal: Vec       = rowsDiagonal+Vec(margin, margin)+Vec(0, headerDiagonal.y)
+  val diagonal: Vec       = rowsDiagonal+Vec(margin, margin)//+Vec(0, headerDiagonal.y)
 
   def refresh(current: Seq[String]=initially, reset: Boolean = false): Unit = {
     seq     = current
@@ -107,6 +107,8 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
       scale=1
       h
     }
+    println(s"SCALE=$scale")
+
     val underHeader: Scalar = headerDiagonal.y*scale
     val underlineColour = underlineBrush
 

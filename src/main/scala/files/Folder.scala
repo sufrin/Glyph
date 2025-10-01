@@ -1,9 +1,11 @@
 package org.sufrin.glyph
 package files
 
-import org.sufrin.glyph.cached.Cached
-import FileAttributes.Row
-import org.sufrin.glyph.notifier.Notifier
+import asynchronous._
+import cached.Cached
+import files.FileAttributes.Row
+import notifier.Notifier
+
 import org.sufrin.logging.{SourceDefault, SourceLoggable}
 
 import java.nio.file.{LinkOption, NoSuchFileException, Path}
@@ -27,9 +29,9 @@ object Folder extends SourceLoggable {
     if (refCount(path)<=0) {
       refCount.remove(path)
       cache.remove(path)
-      Folder.finest(s"Folder for $path removed")
+      Folder.finest(s"Folder cache for $path removed")
     } else {
-      Folder.finest(s"Folder for $path released (${refCount(path)})")
+      Folder.finest(s"Folder cache for $path released by one client (${refCount(path)})")
     }
   }
 
@@ -107,7 +109,7 @@ class Folder(val path: Path) {
       map
     }
 
-  def sortedDirs: Seq[Row] = sortedRows.value.filter(_.isDirectory)
+  def sortedDirs: Seq[Row]  = sortedRows.value.filter(_.isDirectory)
   def sortedFiles: Seq[Row] = sortedRows.value.filterNot(_.isDirectory)
 
   lazy val prefixPaths: Seq[Path] = {

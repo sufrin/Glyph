@@ -39,11 +39,8 @@ object FileAttributes {
                 cal.getTimeZone.getID, cal.get(ZONE_OFFSET)/(1000*60*60), cal.get(DST_OFFSET)/(1000*60*60))
   }
 
-  val CB  = 100d
   val KB  = 1000d
-  val CKB = 100*1000d
-  val MB  = 1000*1000d
-  val CMB = 100*1000d
+  val MB  = 1000*KB
   val GB  = 1000*MB
   val TB  = 1000*GB
   implicit class legibleAttributes(attrs: PosixFileAttributes) {
@@ -79,15 +76,16 @@ object FileAttributes {
   var rowNameLength:  Int     = 38
   val ellipsisString: String  = " \u22ef "
   val ellipsisLength: Int     = ellipsisString.length
+  val suffixLength: Int       = 7
 
   case class Row(path: Path, var attributes: PosixFileAttributes) {
     val dirToken: String = attributes.d
     lazy val name = {
       val fname = path.getFileName
       val name: String = if (fname eq null) "" else fname.toString
-      if (name.length <= rowNameLength) name else {
-        val prefix = name.take(rowNameLength-ellipsisLength-7)
-        val suffix = name.takeRight(7) //drop(name.length - 7)
+      if (name.length < rowNameLength) name else {
+        val prefix = name.take(rowNameLength-ellipsisLength-suffixLength-1)
+        val suffix = name.takeRight(suffixLength) //drop(name.length - 7)
         s"$prefix${ellipsisString}$suffix"
       }
     }
@@ -96,6 +94,10 @@ object FileAttributes {
       catch { case ex: Exception => "??" }
     lazy val links:    String  = Files.getAttribute(path, "unix:nlink").toString
     lazy val inum:     String  = Files.getAttribute(path, "unix:ino").toString
+    lazy val kind:     String = {
+      val approx = Files.probeContentType(path)
+      if (approx eq null) "" else approx
+    }
     val isLink:        Boolean = Folder.readImmediatePosixAttributes(path).isSymbolicLink
     val linkToken:     String  = if (isLink) "@" else " "
     val isHidden:      Boolean = name.isEmpty||name(0)=='.'

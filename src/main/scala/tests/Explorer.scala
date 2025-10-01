@@ -16,7 +16,7 @@ import io.github.humbleui.jwm.Key
 import org.sufrin.logging.{FINEST, SourceLoggable}
 
 import java.awt.Desktop
-import java.nio.file.{FileSystems, NotDirectoryException, Path, Paths}
+import java.nio.file._
 import scala.collection.mutable
 
 
@@ -29,12 +29,12 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
   var showingInvisibles = false
   var reverseSort = false
 
+  // register this explorer with the folder
   locally {
     folder.folderChanged.handleWithTagged(thisExplorer) {
       case information: String =>
-        Explorer.finest(s"(${folder.path}) about to refresh after: $information")
+        Explorer.finest(s"(${folder.path}) refresh ing view after: $information")
         view.refresh(theListing)
-        Explorer.finest(s"${folder.path} refreshed after: $information")
     }
   }
 
@@ -77,11 +77,11 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
   var theOrdering: Seq[Row]=>Seq[Row] = Orderings.byName
 
   def theRows: Seq[Row] = {
-    val sort: Seq[Row]=>Seq[Row] = if (reverseSort) theOrdering.andThen(Orderings.reverseView(_)) else theOrdering
-    val dirs  =  sort(folder.sortedDirs)
-    val files =  sort(folder.sortedFiles)
-    val rows = if (showingInvisibles) (dirs ++ files) else (dirs++files).filterNot(_.isHidden)
-    rows
+    val sort:   Seq[Row]=>Seq[Row] = if (reverseSort) theOrdering.andThen(Orderings.reverseView(_)) else theOrdering
+    val filter: Seq[Row]=>Seq[Row] = if (showingInvisibles) { case rows:Seq[Row] => rows } else { case rows:Seq[Row] => rows.filterNot(_.isHidden) }
+    val dirs  =  sort(filter(folder.sortedDirs))
+    val files =  sort(filter(folder.sortedFiles))
+    dirs++files
   }
 
   /**
@@ -95,6 +95,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
     val allFields: Seq[String] =
         List("Id",
              "Name",
+             "Kind",
              "Size", "Size+", "Perms",
              "#",
              "Owner", "Group", "Created",
@@ -103,7 +104,8 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
     /** The list of potential layouts (in order of presentation) */
     val fieldLayouts: Seq[FieldLayout] =
         List(rightJustify(8)(_),
-             leftJustify(FileAttributes.rowNameLength)(_),
+             leftJustify(FileAttributes.rowNameLength+1)(_),
+             leftJustify(12)(_),
              rightJustify(10)(_),  rightJustify(10)(_), rightJustify(10)(_),
              centerJustify(2)(_),
              rightJustify(10)(_),  rightJustify(10)(_), centerJustify(21)(_),
@@ -162,11 +164,12 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
         val layout = Fields.layout(field)
         val text: CharSequence = field match {
           case "Name"     => layout(s"${row.dirToken} ${row.name}${row.linkToken}")
+          case "Kind"     => layout(row.kind)
           case "Size+"    => layout(row.compSize)
           case "Size"     => layout(row.attributes.size.toString)
           case "Perms"    => layout(row.attributes.mode)
-          case "Owner"    => layout(row.attributes.owner.toString) //.leftJustify(folder.ownerWidth)
-          case "Group"    => layout(row.attributes.group.toString) // .leftJustify(folder.groupWidth)
+          case "Owner"    => layout(row.attributes.owner.toString)
+          case "Group"    => layout(row.attributes.group.toString)
           case "Modified" => (timeOf(row.attributes.lastModifiedTime).toString)
           case "Created"  => (timeOf(row.attributes.creationTime()).toString)
           case "Accessed" => (timeOf(row.attributes.lastAccessTime()).toString)
@@ -389,26 +392,42 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
     val helpSheet: StyleSheet = Explorer.fileSheet.copy(textFontSize = 16f, textForegroundBrush = Brushes.black)
     val translator = glyphML.Translator(helpSheet)
     import translator._
-    val blurb: Glyph = <div width="65em" align="justify" parskip="0.5ex">
-      <p align="center"><b>Explorer</b></p>
-      <p> There is an Explorer-wide <b>Shelf</b> whose elements are paths that denote
-          individual files in the filestore. A file is said to be "shelved" if its path is
-          on the shelf.
+    val blurb: Glyph = <div width="80em" align="justify" parskip="0.5ex">
+      <p align="center"><b>Display</b></p>
+      <p>Each window corresponds to a directory in the filestore. Each of its files is shown on a single row in the display.
+        The columns shown can be changed -- using the panel popped up by the <b>Ξ</b> button. So can the order in which they are
+        shown. Showing "invisible" files is enabled by <b>[.]</b> and disabled by <b>(.)</b>.
       </p>
       <p>
-          Underlining of a row in a window indicates that it (or rather its path) is "on the shelf", and may be used in a
-          later action. If the underlining is "textured" then the row is marked for deletion
-          as part of the next "paste" (C-V).
+        An <b>S</b> to the right of a date/time indicates
+        daylight-saving (summer) time for the current locality on the given date.
       </p>
-      <p> Individual windows may have a selection: its rows are selected by mouse: </p>
+      <p>
+        The <tt>size+</tt> column shows file sizes in compact human-readable form, namely a number followed by a suffix from <b>b k m g t</b> denoting
+        its multiplication by a power of 10:  <b>0 3 6 9 12</b>. Directory sizes are given as their number of files (with suffix <b>f</b>).
+      </p>
+      <p>The path to the directory being viewed in the window is shown (above the listing) as a sequence of buttons, each of which corresponds to an
+        ancestor and is associated with a "hover-hint" that shows the corresponding <i>real</i>
+        path --  with symbolic links expanded when appropriate. Pressing any of them opens a fresh window on the ancestor.
+      </p>
+      <p align="center"><b>Selection</b></p>
+      <p> Individual windows have a (possibly empty) selection: its rows are selected by mouse: </p>
       <scope>
         <attributes id="tag:p" hang=" *  " />
         <p> Primary mouse click: selects uniquely</p>
         <p> Primary mouse drag: extends the selection</p>
         <p> Shifted primary mouse click: extends the selection at one end</p>
-        <p> Secondary mouse click (or C-Primary) inverts selection status of the indicated row</p>
+        <p> Secondary mouse click (or C-Primary) (or drag) inverts selection status of the indicated row(s)</p>
         <p> Mouse double-click, or (ENTER), opens the file indicated by the selected row, if possible</p>
       </scope>
+      <p align="center"><b>Shelf</b></p>
+      <p> There is an Explorer-wide <b>Shelf</b> on which is a collection of paths that denote
+          individual files in the filestore. A file is said to be "shelved" if its path is
+          on the shelf. Shelved files are the objects of the actions describd below, and they are
+          underlined in the display. If the underlining is "textured" then the corresponding file has been marked for deletion
+          as part of the next "paste" (C-V).
+      </p>
+
       <p>Actions are by buttons or keys.</p>
       <scope>
         <attributes id="tag:p" hang=" *  "  />
@@ -419,20 +438,13 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
         <p> <b>del</b> deletes the shelved files.</p>
         <p> <b>cp mv ln</b> respectively copy, move, and link the shelved files to the
             current implicit destination. This is <i>either</i> the directory denoted by a single selected path in the window in which
-            the button is pressed, <i>or</i> the folder being shown in that window.
+            the button is pressed, <i>or if none is selected</i> the folder being shown in that window.
         </p>
         <p> <b>Clear</b> removes the deletion mark from the shelf if it is so marked; otherwise clears the shelf.</p>
         <p> The usual navigation methods: <b>home end page-up page-down scroll-wheel</b> can be used to scroll the view; and the <b>up down</b>
             keys add to the selection in the specified direction if shifted; otherwise selecting a single row in the specified direction.
         </p>
       </scope>
-      <p>The path to the directory being viewed in the window is shown (above the listing) as a sequence of buttons, each of which corresponds to an
-          ancestor and is associated with a "hover-hint" that shows the corresponding <i>real</i>
-          path --  with symbolic links expanded when appropriate. Pressing any of them opens a fresh window on the ancestor.
-      </p>
-      <p>The columns shown in the window can be changed in the panel popped up by the <b>Ξ</b> button; as can the order in which they are
-        shown, and whether "invisible" files are shown. Press <b>[.]</b> to enable, and <b>(.)</b> to disable.
-      </p>
     </div>.enlarged(10)
     styled.windowdialogues.Dialogue.FLASH(blurb, title="Explorer Help")
   }
@@ -624,28 +636,29 @@ object Explorer extends Application with SourceLoggable {
     }
   }
 
+  def openExplorerWindow(path: Path): Unit = {
+    val folder = Folder(path)
+    val explorer = new Explorer(folder)
+    val dialogue = styled.windowdialogues.Dialogue.FLASH(explorer.GUI, title = folder.path.abbreviatedString()).OnRootOf(GUI)
+    dialogue.onClose { case _ =>
+      folder.folderChanged.removeTagged(explorer)
+      folder.close()
+    }
+    dialogue.start(floating = false)
+    dialogue.GUI.guiRoot.autoScale = true
+  }
 
-  def open(path: Path): Unit =
+  def open(path: Path): Unit = {
     if (path.isReadable) {
       if (path.isDir) {
         try {
-          val folder = Folder(path)
-          val explorer = new Explorer(folder)
-          val dialogue = styled.windowdialogues.Dialogue.FLASH(explorer.GUI, title = folder.path.abbreviatedString()).OnRootOf(GUI)
-          dialogue.onClose
-          { case _ =>
-              folder.folderChanged.removeTagged(explorer)
-              folder.close()
-          }
-          dialogue.start(floating = false)
-          dialogue.GUI.guiRoot.autoScale=true
+          openExplorerWindow(path)
         } catch {
           case ex: NotDirectoryException => styled.windowdialogues.Dialogue.OK(Label(s"Not a directory\n${ex.getMessage}")).OnRootOf(GUI).start()
         }
       } else
         openOrdinaryFile(path)
-    } else
-    if (path.isDir) { // Apparently non-readable: may still have ACL permissions as a directory
+    } else if (path.isDir) { // Apparently non-readable: may still have ACL permissions as a directory
       val desktop = Desktop.getDesktop
       if (desktop.isSupported(Desktop.Action.OPEN))
         try desktop.open(path.toFile) // Opens with platform default
@@ -656,6 +669,8 @@ object Explorer extends Application with SourceLoggable {
     } else {
       styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Unreadable\n$path"))(dialogueSheet).InFront(GUI).start()
     }
+  }
+
 
   override protected def whenStarted(): Unit = {
     super.whenStarted()
@@ -664,7 +679,10 @@ object Explorer extends Application with SourceLoggable {
   }
 
   lazy val homePath = Paths.get(System.getProperty("user.home"))
+
+
 }
+
 
 
 

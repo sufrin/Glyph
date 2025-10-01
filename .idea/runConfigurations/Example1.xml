@@ -4,7 +4,7 @@
     <module name="Glyph" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="org.sufrin.glyph.tests.*" />
+        <option name="PATTERN" value="org.sufrin.glyph.asynchronous.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>
