@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 package tests.GlyphBook
 
-import styled.windowdialogues.Dialogue.{OK, POPUP}
+import styled.windowdialogues.Dialogue.POPUP
 import NaturalSize.{Col, Row}
 import styled.{Book, BookSheet, Label, TextButton}
 import unstyled.static.{INVISIBLE, Rect}
@@ -53,80 +53,11 @@ class WindowMenus(implicit val style: BookSheet, implicit val translator: glyphM
     ).enlarged(40)
   }
 
-  Page("Menus",    "Locating Popups and Menus") {
-    import Location._
-
-    val flag = styled.Label("×")
-    val X = styled.windowdialogues.Menu.topBar(List(flag))
-
-    def startLocatorAt(position: Location) = {
-      styled.windowdialogues.Menu.at(position)(flag).start()
-    }
-
-
-    /** Construct a menu with buttons that (may) bind to nested menus */
-    def Menu(name: String, nested: Boolean = true)(glyphs: Glyph*): ReactiveGlyph = {
-      lazy val but: ReactiveGlyph = TextButton(name) {
-        _ => styled.windowdialogues.Menu(glyphs map (_.asMenuButton)).InFront(but).start()
-      }.asInstanceOf[ReactiveGlyph] // TODO: CODE SMELL
-      if (nested) but.asMenuButton else but
-    }
-
-    lazy val theTarget = Label("This is the target").scaled(2).framed()
-
-    Col(align=Center)(
-        <div width="60em" align="justify">
-          <p>
-            This page tests various Dialogue.Location locators for window dialogues and menus.
-            Clicking a button or menu button puts a little popup at the indicated
-            location relative to the target.  An × on the button denotes that
-            glyph placed in that popup. Of particular interest is:
-          </p>
-          <p> (1) whether the popup appears in the named location relative to the target glyph. </p>
-          <p> (2) whether menus behave properly; including whether closing them causes their 'host' glyph to become responsive. </p>
-          <p>"Self-referential" buttons that make themselves the target  glyph are straightforward to implement.</p>
-        </div>,
-      Col(align=Right)(
-        TextButton("A real button!")          { _ => OK(Label("Congratulations!\nYou found\na real button."), South(theTarget)).start() },
-        TextButton("South(the target)")       { _ => startLocatorAt(South(theTarget)) },
-        TextButton("NorthFor(×)(the target)") { _ => startLocatorAt(NorthFor(X)(theTarget)) },
-        TextButton("SouthEast(the target)")   { _ => startLocatorAt(SouthEast(theTarget)) },
-        Menu("SouthWestFor / South / East / SouthEast Placements >")(
-          TextButton("SouthWestFor(×)(the target")
-                                              { _ => startLocatorAt(SouthWestFor(X)(theTarget)) },
-          TextButton("South(the target")      { _ => startLocatorAt(South(theTarget)) },
-          TextButton("East(the target")       { _ => startLocatorAt(East(theTarget)) },
-        ),
-        {
-          lazy val here: Glyph = TextButton("NorthFor(×)(THIS BUTTON ITSELF)")
-                                              { _ => startLocatorAt(NorthFor(X)(here)) }
-          here
-        },
-        ex scaled 2,
-        theTarget,
-        ex scaled 2,
-        Menu("RelativeTo Placements >")(
-          Menu("RelativeTo/By Placements >")(
-            TextButton("RelativeTo(the target)") { _ => startLocatorAt(RelativeTo(theTarget)) },
-            TextButton("RelativeTo(the target, Vec(the target.w,0))") { _ => startLocatorAt(RelativeTo(theTarget, Vec(theTarget.w, 0f))) },
-            //TextButton("RelativeTo(the target)(theTarget.w,0))") { _ => OK(RelativeTo(theTarget)(theTarget.w, 0f)) },
-            TextButton("Another real button!") { _ => OK(Label("Congratulations!\nYou found another\nreal button."), South(theTarget)).start() },
-          ),
-          Menu("SouthWestFor / South / East / SouthEast Placements >")(
-            TextButton("SouthWestFor(×)(the target") { _ => startLocatorAt(SouthWestFor(X)(theTarget)) },
-            TextButton("South(the target") { _ => startLocatorAt(South(theTarget)) },
-            TextButton("East(the target") { _ => startLocatorAt(East(theTarget)) },
-            TextButton("SouthEast(the target)") { _ => startLocatorAt(SouthEast(theTarget)) },
-            TextButton("Another real button!") { _ => OK(Label("Congratulations!\nYou found another\nreal button."), South(theTarget)).start() },
-          ))),
-      ex scaled 5) enlarged 40
-  }
-
   Page("Locators", "Locators for Popups and Menus") {
 
     import io.github.humbleui.types.IRect
 
-    def rect = Rect(200, 250, red).framed(blue)
+    def rect = Rect(250, 350, red).framed(blue)
 
     lazy val theTarget = rect
 
@@ -139,15 +70,14 @@ class WindowMenus(implicit val style: BookSheet, implicit val translator: glyphM
     Row(em,
       Col(align=Center)(
         <div width="60em" align="justify">
-          <p>This test places windowdialogues.Menu instances around the outside of the target (red)
-          square, and in a couple of other places, using the
-          locators defined by `Location`.
-          Locators along the
-          north and west edges use an additional argument to
+          <p>This test places <tt>windowdialogues.Menu</tt> instances around the outside of the target (red)
+          square, and in a couple of other places, using
+          locators defined by <tt>Location.Locators</tt>. Along the
+          north and west edges these use an additional argument to
           specify the glyph that will be located "there".</p>
 
-          <p>When the red button on it is clicked or
-          ESC is typed, a windowdialogues menu pops down.</p>
+          <p>When the red button on it is clicked or the
+          <b>esc</b> key is typed, a <tt>windowdialogues</tt> menu pops down.</p>
 
         </div>,
         ex scaled 5,
@@ -155,7 +85,7 @@ class WindowMenus(implicit val style: BookSheet, implicit val translator: glyphM
           _ =>
             val cardinals: Seq[(String, Location)] = {
               List(
-                ("NorthWest", NorthWestFor(loc("NorthWest"))(theTarget))
+                  ("NorthWest", NorthWestFor(loc("NorthWest"))(theTarget))
                 , ("North ", NorthFor(loc("North"))(theTarget))
                 , ("NorthEast", NorthEastFor(loc("NorthEast"))(theTarget))
                 , ("East", EastFor(loc("East"))(theTarget))
@@ -164,6 +94,9 @@ class WindowMenus(implicit val style: BookSheet, implicit val translator: glyphM
                 , ("SouthWest", SouthWestFor(loc("SouthWest"))(theTarget))
                 , ("West", WestFor(loc("West"))(theTarget))
                 , ("OnScreen(target)(50, 50)", OnScreen(theTarget)(50, 50))
+                , ("AtTop", AtTopFor(loc("AtTop"))(theTarget))
+                , ("AtBottom", AtBottomFor(loc("AtBottom"))(theTarget))
+                , ("InFront", InFrontFor(loc("InFront"))(theTarget))
                 , //("RelativeTo(root)(100,100)", RelativeTo(theTarget.guiRoot)(100f, 100f))
               )
             }
@@ -174,16 +107,21 @@ class WindowMenus(implicit val style: BookSheet, implicit val translator: glyphM
         ex scaled 10,
         theTarget,
         ex scaled 10,
-        TextButton("Dialogue a window at the south") {
+        TextButton("Dialogue at the south") {
           _ =>
             styled.windowdialogues.Dialogue.OK(<p width="25em">This window should be  at the South edge of the target.</p>, South(theTarget)).start()
         },
-        TextButton("Dialogue a window at the north west") {
+        TextButton("Dialogue at the north west") {
           _ =>
             val body = <p width="25em">This window should be  at the north-west edge of the target.</p>
             // Construct a dummy from the APPEARANCE of the intended Dialogue
             val dummy: Glyph = styled.windowdialogues.Dialogue.OK(body, East(theTarget)).GUI
             styled.windowdialogues.Dialogue.OK(body, NorthWestFor(dummy)(theTarget)).start()
+        },
+        TextButton("Dialogue at the east") {
+          _ =>
+            val body = <p width="25em">This window should be  at the eastern edge of the target.</p>
+            styled.windowdialogues.Dialogue.OK(body, East(theTarget)).start()
         }
       ), em)
   }

@@ -24,7 +24,7 @@ class OverlayUses(implicit val style: BookSheet, implicit val translator: glyphM
 
   Page("Dialogues", "") {
 
-    val anchor = FilledRect(150, 70, blue)
+    val anchor = FilledRect(150, 150, blue)
 
     def showChoice(choice: String): Unit = {
       val response = if (choice ne null)  s"You chose $choice" else "You quit the dialogue"
@@ -39,18 +39,21 @@ class OverlayUses(implicit val style: BookSheet, implicit val translator: glyphM
       )
 
     Col(align=Center)(
-      <p width="50em" align="justify">
-        On this page we are testing modal dialogues implemented on
+      <div width="55em" align="justify" parskip="0.5ex">
+      <p>
+        On this page we are testing modal dialogues implemented as
         overlays within the current window. You can
         exit the dialogue without making a choice by clicking on
-        the topmost grey bar or typing ESC. You can shift the
-        location of the dialogue by using the direction keys.
-
+        the topmost grey bar or typing <b>esc</b>. You can shift the
+        location of the dialogue by using the direction, home, and end keys.
+      </p>
+      <p>
         Each dialogue explains where it was intended to pop up
         (relative to the blue rectangle). The location of a dialogue
-        that might be partly off screen are adjusted to make it (as
-        far as possible) visible.
-      </p>.enlarged(30),
+        that might be partly off screen is adjusted to make it (as
+        far as possible, given that it has to fit in the current window) all visible.
+      </p>
+      </div>,
       ex,
       anchor, ex,
       Row(
@@ -93,9 +96,9 @@ class OverlayUses(implicit val style: BookSheet, implicit val translator: glyphM
         }, em,
       ), ex,
       Row(
-        TextButton("W/ABC[long]") {
+        TextButton("W/ABC[ultra long]") {
           _ =>
-            Dialogue.CHOOSE(diaGlyph("West"))("An extraordinarily long button", "a Bigger button that might cause jiggle", "C")
+            Dialogue.CHOOSE(diaGlyph("West"))("An extraordinarily long button that will make the dialogue far too big to fit on the screen", "a biggish button that really means nothing", "A stupendously long button that may go offscreen unless nudged properly")
               .West(anchor)
               .andThen { result => showChoice(s"$result") }
         }, em,
@@ -105,9 +108,9 @@ class OverlayUses(implicit val style: BookSheet, implicit val translator: glyphM
               .InFront(anchor)
               .andThen { result => showChoice(s"$result") }
         }, em,
-        TextButton("S/ABC[long]") {
+        TextButton("E/ABC[verylong]") {
           _ =>
-            Dialogue.CHOOSE(diaGlyph("East"))("An extraordinarily long button", "a Bigger button that might cause jiggle", "Really")
+            Dialogue.CHOOSE(diaGlyph("East"))("An extraordinarily long button", "a biggish button that means nothing", "A stupendously long button that may go offscreen unless nudged properly")
               .East(anchor)
               .andThen { result => showChoice(s"$result") }
         }, em,
@@ -237,11 +240,11 @@ class OverlayUses(implicit val style: BookSheet, implicit val translator: glyphM
     Row(em,
       Col(align=Center)(
         <div width="50em" align="justify">
-          <p>This test places (OK) dialogues around the outside of the target red
+          <p>This test places <b>(OK)</b> dialogues around the outside of the target red
              square using the intrinsic methods of <tt>overlaydialogues.Dialogue</tt>
           </p>
           <p>
-            A dialogue menu disappears when the red button on it is clicked, or the ESC
+            A dialogue menu disappears when the red button on it is clicked, or the <b>esc</b>
             key is hit. As an exception to the <tt>overlaydialogues.Dialogue</tt> norm,
             for this page only, a mouseclick nowhere near any dialogue
             will make one of the dialogues disappear.
@@ -263,7 +266,8 @@ class OverlayUses(implicit val style: BookSheet, implicit val translator: glyphM
             dial("South").South(theTarget).start()
             dial("SouthWest").SouthWest(theTarget).start()
             dial("West").West(theTarget).start()
-            dial("In front of").InFront(theTarget).start()
+            dial("InFront").InFront(theTarget).start()
+            dial("AtBottom").AtBottom(theTarget).start()
         },
         ex scaled 10,
         theTarget,

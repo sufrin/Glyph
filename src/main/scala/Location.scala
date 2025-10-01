@@ -43,6 +43,20 @@ object Location {
 
   def OnRootOf(glyph: Glyph)(x: Scalar, y: Scalar): RelativeTo = RelativeTo(glyph.guiRoot, Vec(x, y))
 
+  def InFrontFor(placed: Glyph)(glyph: Glyph): RelativeTo = {
+    val loc = glyph.rootDistance
+    Location.OnRootOf(glyph)(loc.x + (glyph.w - placed.diagonal.x)/2f, loc.y + (glyph.h - placed.diagonal.y)/2f)
+  }
+
+  def AtTopFor(placed: Glyph)(glyph: Glyph): RelativeTo = {
+    val loc = glyph.rootDistance
+    Location.OnRootOf(glyph)(loc.x + (glyph.w - placed.diagonal.x)/2f, loc.y)
+  }
+
+  def AtBottomFor(placed: Glyph)(glyph: Glyph): RelativeTo = {
+    val loc = glyph.rootDistance
+    Location.OnRootOf(glyph)(loc.x + (glyph.w - placed.diagonal.x)/2f, loc.y + (glyph.h - placed.diagonal.y))
+  }
 
   /** At a location in logical space relative to the location of the glyph */
   case class RelativeTo(glyph: Glyph, offset: Vec = Vec.Zero) extends Location {
@@ -50,8 +64,10 @@ object Location {
 
     def reDraw(): Unit = glyph.guiRoot.reDraw()
 
+    val MAGIC: Vec = Vec(15, 12)
+
     def logicalLocation: (Int, Int) = {
-      val result = Glyph.logicalLocation(glyph, offset)
+      val result = Glyph.logicalLocation(glyph, offset+MAGIC)
       result
     }
 

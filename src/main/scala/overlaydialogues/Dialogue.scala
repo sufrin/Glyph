@@ -387,7 +387,7 @@ class Dialogue[T](guiRoot:        Glyph,
     assert(location ne null, "Dialogue must have defined a non-null location before starting")
     val RelativeTo(glyph, offset) = location
         // TODO: eliminate magic offset: without it the dialogues are mislocated
-        val MAGIC = Vec(0f, 0f) //y WAS 11f,14.0f TODO: Check
+        val MAGIC = Vec(0,0) //Vec(11f, 14f) //y WAS 11f,14.0f TODO: Check
         var requested = glyph.rootDistance + offset + MAGIC
     //print(requested)
         // Nudge the request so the glyph is (mostly) visible in the actual window

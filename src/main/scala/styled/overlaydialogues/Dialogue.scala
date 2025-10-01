@@ -351,11 +351,11 @@ class Dialogue[T](blurb: Glyph,
   protected val closeButtonAppearance: Glyph = closeGlyph match {
     case Some(glyph) =>
       static.Concentric(rowAlign=Mid, colAlign=Center).Left(
-        static.FilledRect(GUI.w, glyph.h*1.2f, fg=Brushes.lightGrey, bg=Brushes.lightGrey), // TODO: 5f is a magic number
+        static.FilledRect(GUI.w, glyph.h*1.2f, fg=Brushes.lightGrey, bg=Brushes.lightGrey),
         glyph,
       )
     case None        =>
-      static.FilledRect(GUI.w-2, 5f, fg=Brushes.lightGrey, bg=Brushes.lightGrey)
+      static.FilledRect(GUI.w-2, 5f, fg=Brushes.lightGrey, bg=Brushes.lightGrey) // TODO: 5f is a magic number -- width of the close bar
   }
 
   /**
@@ -414,7 +414,7 @@ class Dialogue[T](blurb: Glyph,
 
     }
     theCloseButton = Some(closeButton)
-    Col(align=Left,bg = Brushes.transparent)(
+    Col(align=Left, bg = Brushes.transparent)(
       closeButton,
       GUI//.enlargedTo(closeButton.w, guiRoot.h, bg = Brushes.white)
     ).framed(bg = Brushes.white)
@@ -437,12 +437,12 @@ class Dialogue[T](blurb: Glyph,
   /** set the location of this dialogue relative to `glyph`  */
   def NorthWest(glyph: Glyph): this.type = { location = Location.NorthWestFor(overlayRoot)(glyph); thisPopup }
   /** set the location of this dialogue relative to the root of `glyph`  */
-  def InFront(glyph: Glyph): this.type = {
-    val loc = glyph.rootDistance
-    location = Location.OnRootOf(glyph)(loc.x + (glyph.w - overlayRoot.diagonal.x)/2f, loc.y + (glyph.h - overlayRoot.diagonal.y)/2f)
-    thisPopup
-  }
-
+  def InFront(glyph: Glyph): this.type = { location = Location.InFrontFor(overlayRoot)(glyph); thisPopup }
+  /** set the location of this dialogue relative to the root of `glyph`  */
+  def AtTop(glyph: Glyph): this.type = { location = Location.AtTopFor(overlayRoot)(glyph); thisPopup }
+  /** set the location of this dialogue relative to the root of `glyph`  */
+  def AtBottom(glyph: Glyph): this.type = { location = Location.AtBottomFor(overlayRoot)(glyph); thisPopup }
+  /** set the location of this dialogue relative to the root of `glyph`  */
   def OnRootOf(glyph: Glyph): this.type = {
     val loc = glyph.rootDistance
     location = Location.OnRootOf(glyph)(5, 5)
@@ -456,14 +456,25 @@ class Dialogue[T](blurb: Glyph,
     assert(location ne null, "Dialogue must have defined a non-null location before starting")
     val RelativeTo(glyph, offset) = location
     // TODO: eliminate magic offset: without it the dialogues are mislocated
-    val MAGIC = Vec(11f, 14f)
+    val MAGIC = closeGlyph match {
+      case None => Vec(0,0)
+      case Some(glyph) => glyph.diagonal
+    } //WAS Vec(11f, 14f)
+    val nudgeX = -15
+    val nudgeY = -15
     var requested = glyph.rootDistance + offset + MAGIC
     // Nudge the request so the glyph is (mostly) visible in the actual window
-    while (requested.x<0) requested -= Vec(requested.x, 0)
-    while (requested.y<0) requested -= Vec(0, requested.y)
-    while (requested.x + overlayRoot.w > glyph.guiRoot.W) requested -= Vec(10f, 0)
-    while (requested.y + overlayRoot.h > glyph.guiRoot.H) requested -= Vec(0, 10f)
+    //    while (requested.x<0) requested -= Vec(requested.x, 0)
+    //    while (requested.y<0) requested -= Vec(0, requested.y)
+    //while (requested.x + overlayRoot.w > glyph.guiRoot.W) requested -= Vec(2, 0)
+    //while (requested.y + overlayRoot.h > glyph.guiRoot.H) requested -= Vec(0, 2)
     overlayRoot.location = requested
+    // NUDGE
+    val Vec(x, y) = glyph.guiRoot.diagonal-overlayRoot.diagonal-(5,5) // limit
+    overlayRoot.location =
+      Vec(x min (overlayRoot.location.x+nudgeX) max 0,
+          y min (overlayRoot.location.y+nudgeY) max 0)
+    // END NUDGE
     glyph.guiRoot.giveupFocus()
     glyph.guiRoot.Overlay.pushLayer(overlayRoot, isModal, isMenu=isMenu, offMenuClick={ () => close() })
     if (theCloseButton.isDefined) glyph.guiRoot.grabKeyboard(theCloseButton.get)
