@@ -1,0 +1,16 @@
+#
+# Makes a scala file: not good for large images
+#
+inputfile=${1%%.png}.png
+outputfile=${1%%.png}.scala
+object=${1%%.png}
+echo "object $object extends org.sufrin.glyph.External.Base64Icon" > $outputfile
+echo '{ val base64 =' >> $outputfile
+echo '"""' >> $outputfile
+base64 -b 76 -i $inputfile -o - >> $outputfile
+echo '"""' >> $outputfile
+echo '}'   >> $outputfile
+
+
+
+

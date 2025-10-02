@@ -19,7 +19,9 @@ object Folder extends SourceLoggable {
 
   def apply(path: Path): Folder = {
     val folder = cache.getOrElseUpdate(path, new Folder(path))
-    refCount(path) = 1+refCount.getOrElseUpdate(path, 0)
+    val count = 1+refCount.getOrElseUpdate(path, 0)
+    refCount(path)=count
+    Folder.finest(s"Folder cache for $path referenced $count / ${refCount(path)}")
     folder
   }
 
@@ -31,7 +33,7 @@ object Folder extends SourceLoggable {
       cache.remove(path)
       Folder.finest(s"Folder cache for $path removed")
     } else {
-      Folder.finest(s"Folder cache for $path released by one client (${refCount(path)})")
+      Folder.finest(s"Folder cache for $path released by one client (referenced ${refCount(path)})")
     }
   }
 

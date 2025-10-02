@@ -862,7 +862,7 @@ object LargeTestGUI {
     Col(align=Center)(
       Label("(15) An image synthesised as a glyph"),
       medex,
-      new static.Image(flag scaled 1.2f)
+      new static.StaticGlyph(flag scaled 1.2f)
     )
   }
   val bb: Brush = Brush("blue")(color = 0xff0000ff, width = 1.0f, cap = ROUND)

@@ -24,8 +24,8 @@ object CharSequenceOperations {
     override lazy val toString: String = new String(toSeq.toArray)
   }
 
-  def leftJustify(width: Int)(theSeq: CharSequence): CharSequence = leftJustify(theSeq, width)
-  def rightJustify(width: Int)(theSeq: CharSequence): CharSequence = rightJustify(theSeq, width)
+  def leftJustify(width: Int)(theSeq: CharSequence): CharSequence = leftJustify(theSeq, width, ' ')
+  def rightJustify(width: Int)(theSeq: CharSequence): CharSequence = rightJustify(theSeq, width, ' ')
   def centerJustify(width: Int)(theSeq: CharSequence): CharSequence = if (theSeq.length==width) theSeq else {
     val extra = width-theSeq.length
     Cat(constantSeq(' ', extra/2), theSeq, constantSeq(' ', extra-extra/2))

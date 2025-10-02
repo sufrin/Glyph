@@ -8,9 +8,9 @@ import GlyphTypes.Scalar
 
 
 
-  class Image(glyph: Glyph) extends Glyph {
+  class StaticGlyph(glyph: Glyph) extends Glyph {
     val theImage = External.toImage(glyph)
-    override def toString: String = s"Image($diagonal)"
+    override def toString: String = s"StaticGlyph($diagonal)"
     override val fg: Brush = glyph.fg
     override val bg: Brush = glyph.bg
 
@@ -27,7 +27,7 @@ import GlyphTypes.Scalar
     def diagonal: Vec = glyph.diagonal
 
     /** A copy of this glyph; perhaps with different foreground/background */
-    def copy(fg: Brush, bg: Brush): Glyph = new Image(glyph(fg, bg))
+    def copy(fg: Brush, bg: Brush): Glyph = new StaticGlyph(glyph(fg, bg))
 
   }
 
