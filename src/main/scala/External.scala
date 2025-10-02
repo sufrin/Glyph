@@ -112,7 +112,7 @@ object External {
     }
 
     def readResource(id: String): Glyph = {
-      val is = External.Image.getClass.getResourceAsStream(id)
+      val is = getClass.getResourceAsStream(id)
       val buffered: BufferedImage = ImageIO.read(is)
       new ExternalImage(buffered)
     }
