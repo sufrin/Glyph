@@ -24,8 +24,15 @@ trait Surface {
     canvas.drawLines(arrayOfVectors(locs), paint)
   }
 
-  def drawLines$(paint: Paint, locs: Scalar*): Unit = {
-    canvas.drawLines(locs.toArray, paint)
+  def drawLines(paint: Paint, loc: Scalar, locs: Scalar*): Unit = {
+    val array = new Array[Scalar](1+locs.length)
+    array(0) = loc
+    var dest = 0
+    for { loc <- locs } {
+      dest += 1
+      array(dest) = loc
+    }
+    canvas.drawLines(array, paint)
   }
 
   def drawPoints(paint: Paint, locs: Seq[Vec]): Unit = {

@@ -507,7 +507,7 @@ object Explorer extends Application with SourceLoggable {
   implicit val fileSheet: StyleSheet =
     StyleSheet(buttonDecoration=RoundFramed(bg=Brushes.lightGrey, enlarge=9f, radius=10), buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
 
-  val root = Folder(FileSystems.getDefault.getPath("/Users/sufrin"))
+  val rootPath = FileSystems.getDefault.getPath("/Users/sufrin")
 
   val icon: Glyph = External.Image.readResource("/explorer.png").scaled(0.3f) // ExplorerIcon.icon.scaled(0.2f) // External.Image.read("/Users/sufrin/GitHomes/Glyph/ICONS/explorer.png").scaled(0.2f)
 
@@ -569,13 +569,15 @@ object Explorer extends Application with SourceLoggable {
             keys add to the selection in the specified direction if shifted; otherwise selecting a single row in the specified direction.
           </p>
         </scope>
-      </div>.enlarged(10)
-      styled.windowdialogues.Dialogue.FLASH(blurb, title="Explorer Help")
+      </div>.enlarged(20)
+      val port = unstyled.dynamic.ViewPort(blurb, fg=Brushes.blueFrame, portDiagonal = Vec(blurb.w, blurb.h/2)).withDragging(true).withPanning(false).withScaling(false)
+      styled.windowdialogues.Dialogue.FLASH(port.enlarged(port.fg.strokeWidth*4), title="Explorer Help")
     }
 
     lazy val helpButton: Glyph = styled.TextButton("Help")
     { _ =>
-      if (helpDialogue.running.isEmpty) helpDialogue.OnRootOf(GUI).start(floating=false)
+      println(helpButton.location)
+      if (helpDialogue.running.isEmpty) helpDialogue.East(helpButton).start(floating=false)
     }
 
 
@@ -588,7 +590,7 @@ object Explorer extends Application with SourceLoggable {
       )
   }
 
-  def title: String = s"Explore: ${root.path.abbreviatedString()}"
+  def title: String = s"Explore: ${rootPath.abbreviatedString()}"
 
   override val dock: Dock = Dock(icon) // ("Exp\nlore", bg=Brushes.yellow)
 

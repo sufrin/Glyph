@@ -364,7 +364,7 @@ object GlyphShape {
    */
   def line(startx: Scalar, starty: Scalar, endx: Scalar, endy: Scalar)(brush: Brush): GlyphShape = new GlyphShape {
     override val fg: Brush = brush
-    def draw(surface: Surface): Unit = surface.drawLines$(fg, startx, starty, endx, endy)
+    def draw(surface: Surface): Unit = surface.drawLines(fg, startx, starty, endx, endy)
     def diagonal: Vec = Vec.Zero
     override def toString: String = s"line(($startx,$starty), ($endx,$endy))($fg)"
     override def withBrushes(fg: Brush=fg, bg: Brush=null): GlyphShape = line(startx, starty, endx, endy)(brush)
@@ -375,7 +375,7 @@ object GlyphShape {
       val diagonal: Vec = Vec.Zero
 
       def draw(surface: Surface): Unit =
-        surface.drawLines$(fg, l.x+l.w*0.5f, l.y+l.h*0.5f, r.x+r.w*0.5f, r.y+r.h*0.5f)
+        surface.drawLines(fg, l.x+l.w*0.5f, l.y+l.h*0.5f, r.x+r.w*0.5f, r.y+r.h*0.5f)
 
       override def toString: String = s"lineBetween($l,$r)($fg)"
 

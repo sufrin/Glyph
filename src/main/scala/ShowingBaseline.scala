@@ -31,7 +31,7 @@ class ShowingBaseline(glyph: Glyph, enable: Variable[Boolean], override val fg: 
     glyph.draw(surface)
     if (enable.value) {
       surface.drawRect(fg, Vec.Origin, diagonal)
-      surface.drawLines$(fg, 0f, glyph.baseLine, diagonal.x, glyph.baseLine)
+      surface.drawLines(fg, 0f, glyph.baseLine, diagonal.x, glyph.baseLine)
     }
   }
 

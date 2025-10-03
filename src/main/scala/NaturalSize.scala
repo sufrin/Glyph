@@ -80,7 +80,7 @@ object NaturalSize {
             for { glyph <- glyphs.tail } yield glyph.location.x
 
         def drawLines(surface: Surface): Unit =
-          for { loc<-locs } surface.drawLines$(frame, loc,0f, loc,height)
+          for { loc<-locs } surface.drawLines(frame, loc, 0f, loc, height)
 
         override def draw(surface: Surface): Unit = {
           super.draw(surface)
@@ -158,7 +158,7 @@ object NaturalSize {
             for { glyph <- glyphs.tail } yield glyph.location.y
 
         def drawLines(surface: Surface): Unit =
-          for { loc<-locs } surface.drawLines$(frame, 0f,loc, width,loc)
+          for { loc<-locs } surface.drawLines(frame, 0f, loc, width, loc)
 
         override def draw(surface: Surface): Unit = {
           super.draw(surface)

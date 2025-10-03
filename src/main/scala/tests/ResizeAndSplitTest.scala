@@ -135,7 +135,7 @@ object ResizeAndSplitTest extends Application {
         theText(context)
     }
 
-    val viewPort = unstyled.dynamic.ViewPort(resizeable, fg=redFrame, initialPortDiagonal = resizeable.diagonal)
+    val viewPort = unstyled.dynamic.ViewPort(resizeable, fg=redFrame, portDiagonal = resizeable.diagonal)
 
     val widths = List(80, 70, 60, 50, 40, 30, 20)
     val radioWidths  = styled.RadioCheckBoxes(widths.map{ems => s"${ems}ems"}, prefer = "70ems"){

@@ -18,10 +18,18 @@ import scala.jdk.CollectionConverters.{CollectionHasAsScala, IteratorHasAsScala}
 object Folder extends SourceLoggable {
 
   def apply(path: Path): Folder = {
-    val folder = cache.getOrElseUpdate(path, new Folder(path))
-    val count = 1+refCount.getOrElseUpdate(path, 0)
-    refCount(path)=count
-    Folder.finest(s"Folder cache for $path referenced $count / ${refCount(path)}")
+    val folder =
+    cache.get(path) match {
+      case None =>
+        val f = new Folder(path)
+        cache(path) = f
+        refCount(path) = 1
+        f
+      case Some(f) =>
+        refCount(path) += 1
+        f
+    }
+    Folder.finest(s"Folder cache for $path referenced ${refCount(path)}")
     folder
   }
 
@@ -70,6 +78,7 @@ object Folder extends SourceLoggable {
 class Folder(val path: Path) {
   import Folder._
 
+  locally { println(s"Folder($path)") }
   val folderChanged: Notifier[String] = new Notifier[String]{}
 
   val absolutePath: Path = path.toAbsolutePath.toRealPath()

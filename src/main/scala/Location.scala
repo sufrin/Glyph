@@ -25,7 +25,7 @@ object Location {
 
   def East(glyph: Glyph): RelativeTo = RelativeTo(glyph, Vec(glyph.w, glyph.h / 2))
 
-  def EastFor(placed: Glyph)(glyph: Glyph): RelativeTo = RelativeTo(glyph, Vec(glyph.w, (glyph.h-placed.h) / 2))
+  def EastFor(placed: Glyph)(glyph: Glyph): RelativeTo = East(glyph)
 
   def SouthEast(glyph: Glyph): RelativeTo = RelativeTo(glyph, Vec(glyph.w, glyph.h))
 

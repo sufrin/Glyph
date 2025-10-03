@@ -133,7 +133,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
           val width = text.getWidth
           if ((nextVisibleRow&1)==0) surface.fillRect(stripeBrush, margin, y-shadeHeight, shadeWidth, charH)
           surface.drawTextLine(toForegroundBrush(nextVisibleRow), text, margin, y)
-          if (isUnderlined(nextVisibleRow)) surface.drawLines$(underlineColour, margin, y + descent, width, y + descent)
+          if (isUnderlined(nextVisibleRow)) surface.drawLines(underlineColour, margin, y + descent, width, y + descent)
           nextVisibleRow += 1
           y += charH
         }
@@ -142,8 +142,8 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
       val offset=margin/4
       val topBrush = if (rowOrigin==0) marginBrush else outsideBrush
       val botBrush = if (nextVisibleRow>=seq.length) marginBrush else outsideBrush
-      surface.drawLines$(topBrush, offset,underHeader, w-offset,underHeader)
-      surface.drawLines$(botBrush, offset,h-offset, w-offset,h-offset)
+      surface.drawLines(topBrush, offset, underHeader, w-offset, underHeader)
+      surface.drawLines(botBrush, offset, h-offset, w-offset, h-offset)
     }
   }
 

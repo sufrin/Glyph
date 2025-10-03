@@ -339,9 +339,9 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
 
 
         @inline def drawCursor(brush: Brush, position: Scalar): Unit = {
-          surface.drawLines$(brush, position, cursorHeightDelta-deltaY, position, cursorBottom) // vertical
-          surface.drawLines$(brush, position - cursorSerifWidth, cursorHeightDelta-deltaY, position + cursorSerifWidth, cursorHeightDelta-deltaY) // top bar
-          surface.drawLines$(brush, position - cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY, position + cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY) // bottom bar
+          surface.drawLines(brush, position, cursorHeightDelta-deltaY, position, cursorBottom) // vertical
+          surface.drawLines(brush, position - cursorSerifWidth, cursorHeightDelta-deltaY, position + cursorSerifWidth, cursorHeightDelta-deltaY) // top bar
+          surface.drawLines(brush, position - cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY, position + cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY) // bottom bar
         }
 
         // show the text margins when logging
@@ -351,9 +351,9 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
         }
 
         // Draw the cursor as an I-Beam
-        //surface.drawLines$(cursorBrush, cursorLeft, cursorHeightDelta-deltaY, cursorLeft, cursorBottom) // vertical
-        //surface.drawLines$(cursorBrush, cursorLeft - cursorSerifWidth, cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, cursorHeightDelta-deltaY) // top bar
-        //surface.drawLines$(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY) // bottom bar
+        //surface.drawLines(cursorBrush, cursorLeft, cursorHeightDelta-deltaY, cursorLeft, cursorBottom) // vertical
+        //surface.drawLines(cursorBrush, cursorLeft - cursorSerifWidth, cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, cursorHeightDelta-deltaY) // top bar
+        //surface.drawLines(cursorBrush, cursorLeft - cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY, cursorLeft + cursorSerifWidth, diagonal.y - cursorHeightDelta-deltaY) // bottom bar
 
         if (normalizeRightToLeft)
           drawCursor(cursorBrush, cursorLeft)
@@ -366,7 +366,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
           case Some(position) =>
             val r2lCursorBrush: Brush = cursorBrush(color=r2lBrush.color)
             drawCursor(r2lCursorBrush, position)
-            surface.drawLines$(r2lBrush, position, cursorBottom/2, cursorLeft, cursorBottom/2)
+            surface.drawLines(r2lBrush, position, cursorBottom/2, cursorLeft, cursorBottom/2)
             drawCursor(cursorBrush, cursorLeft)
         }
 
@@ -374,7 +374,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
           TextModel.markPosition match {
           case None =>
           case Some(position) =>
-            surface.drawLines$(markedBrush, position min cursorLeft, cursorBottom/2, position max cursorLeft, cursorBottom/2)
+            surface.drawLines(markedBrush, position min cursorLeft, cursorBottom/2, position max cursorLeft, cursorBottom/2)
             drawCursor(markBrush, position)
           //if (overflow && markPosition>w) surface.drawPolygon$(markBrush, w - panWarningOffset, 0f, w - panWarningOffset, diagonal.y)
           //if (panning && markPosition==0f) surface.drawPolygon$(markBrush, panWarningOffset, 0f, panWarningOffset, diagonal.y)

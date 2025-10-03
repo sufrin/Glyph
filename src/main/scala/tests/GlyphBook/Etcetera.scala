@@ -79,7 +79,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translator: glyphML.T
     Page("Scroll", "Scrolling and Scaling with ViewPort"){
 
       val image    = PolygonLibrary.PalestinianFlag scaled 0.5f
-      val viewPort = unstyled.dynamic.ViewPort(image scaled 2f, fg=redFrame(width=10)).enableDrag(true).enableScale(true)
+      val viewPort = unstyled.dynamic.ViewPort(image scaled 2f, fg=redFrame(width=10)).withDragging(true).withScaling(true)
 
       def ScaleButton(scale: Scalar) = TextButton(f"*${scale}%1.1f") {
         _ => viewPort.scaleBy(scale)
