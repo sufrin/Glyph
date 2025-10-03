@@ -569,7 +569,7 @@ object Explorer extends Application with SourceLoggable {
             keys add to the selection in the specified direction if shifted; otherwise selecting a single row in the specified direction.
           </p>
         </scope>
-      </div>.enlarged(20)
+      </div>.enlarged(20, bg=Brushes.white)
       val port = unstyled.dynamic.ViewPort(blurb, fg=Brushes.blueFrame, portDiagonal = Vec(blurb.w, blurb.h/2)).withDragging(true).withPanning(false).withScaling(false)
       styled.windowdialogues.Dialogue.FLASH(port.enlarged(port.fg.strokeWidth*4), title="Explorer Help")
     }

@@ -5,6 +5,7 @@ package dynamic
 import unstyled.{static, Text}
 
 import io.github.humbleui.jwm.App
+import io.github.humbleui.skija.PaintMode
 
 /**
  * A collection of dynamic glyphs: glyphs some aspects of which can vary dynamically
@@ -48,13 +49,13 @@ import io.github.humbleui.jwm.App
   }
 
   /**
-   *  A `Glyph` with the same diagonal as `glyph`, which is drawn with origin at `(panFactor, tiltFactor)`
+   *  A `Glyph` with the same diagonal as `glyph`, which is drawn with origin at `(panFactor, scrollFactor)`
    */
-  class DynamicallyScrolled(tiltFactor: Variable[Float], panFactor: Variable[Float], glyph: Glyph) extends Glyph {
+  class DynamicallyScrolled(scrollFactor: Variable[Float], panFactor: Variable[Float], glyph: Glyph) extends Glyph {
     override val fg = glyph.fg
     override val bg = glyph.bg
     def draw(surface: Surface): Unit = {
-      surface.withOrigin(panFactor.value, tiltFactor.value) {
+      surface.withOrigin(panFactor.value, scrollFactor.value) {
         glyph.draw(surface)
       }
     }
@@ -63,13 +64,13 @@ import io.github.humbleui.jwm.App
 
     def diagonal: Vec = glyph.diagonal
 
-    def copy(fg: Brush=fg, bg:Brush=bg): DynamicallyScrolled = new DynamicallyScrolled(tiltFactor, panFactor, glyph.copy(fg, bg))
+    def copy(fg: Brush=fg, bg:Brush=bg): DynamicallyScrolled = new DynamicallyScrolled(scrollFactor, panFactor, glyph.copy(fg, bg))
 
   }
 
   object DynamicallyScrolled {
-    def apply(tiltFactor: Variable[Float], panFactor: Variable[Float])(glyph: Glyph): Glyph =
-      new DynamicallyScrolled(panFactor, tiltFactor, glyph)
+    def apply(scrollFactor: Variable[Float], panFactor: Variable[Float])(glyph: Glyph): Glyph =
+      new DynamicallyScrolled(panFactor, scrollFactor, glyph)
   }
 
 
@@ -82,7 +83,7 @@ import io.github.humbleui.jwm.App
    * The `glyph` may be dynamically sized (for example if it is constructed by `styled.Resizeable`) and
    * the port behaves appropriately when this is the case.
    *
-   * Unless it is set explicitly by `initialPortDiagonal` the port size is the size of the glyph
+   * Unless it is set explicitly by `portDiagonal` the port size is the size of the glyph
    * when the `ViewPort` is first constructed.
    *
    * The buck stops here when it comes to locating the active glyph containing a given point.
@@ -93,20 +94,22 @@ import io.github.humbleui.jwm.App
    *       one to which all events are forwarded from the top level. This amounts to an
    *       internal virtual window. Perhaps straightforward to deliver eventually.....
    */
-  class ViewPort(glyph: Glyph, override val fg: Brush, override val bg: Brush, initialPortDiagonal: Vec = null) extends ReactiveGlyph {
+  class ViewPort(glyph: Glyph, override val fg: Brush, override val bg: Brush, private var portDiagonal: Vec) extends ReactiveGlyph {
 
     import GlyphTypes.Scalar
 
     import io.github.humbleui.jwm.{EventKey, EventMouseScroll}
 
-    val scale     = Variable(1f)
-    val pan, tilt = Variable(0f)
+    val scale       = Variable(1f)
+    val pan, scroll = Variable(0f)
 
-    val portDiagonal: Vec = if (initialPortDiagonal eq null) glyph.diagonal else initialPortDiagonal
+    locally {
+      if (portDiagonal eq Vec.Zero) portDiagonal = glyph.diagonal
+    }
 
-    override def kind: String = s"ViewPort($scale, $pan, $tilt)"
+    override def kind: String = s"ViewPort($scale, $pan, $scroll)"
 
-    val delegate = DynamicallyScrolled(pan, tilt) {
+    val delegate = DynamicallyScrolled(pan, scroll) {
       DynamicallyScaled(scale) {
         glyph
       }
@@ -114,14 +117,14 @@ import io.github.humbleui.jwm.App
 
     locally { delegate.parent = this }
 
-    def scrollBy(amount: Scalar): Unit = {
-      val newTilt = tilt.value+amount
-      if (newTilt.abs < 0.95f*glyph.h) tilt.value = newTilt
+    def scrollBy(amount: Scalar): Unit = if (_enableScroll) {
+      val newScroll = scroll.value+amount
+      if (newScroll.abs < 0.8f*glyph.h) scroll.value = newScroll min portDiagonal.y*0.8f
     }
 
-    def panBy(amount: Scalar): Unit = {
+    def panBy(amount: Scalar): Unit = if (_enablePan) {
       val newPan = pan.value+amount
-      if (newPan.abs < 0.95f*glyph.h) pan.value = newPan
+      if (newPan.abs < 0.8f*glyph.h) pan.value = newPan min portDiagonal.x*0.8f
     }
 
     def scaleBy(amount: Scalar): Unit =
@@ -130,15 +133,21 @@ import io.github.humbleui.jwm.App
     def reset(): Unit = {
       scale.value = 1f
       pan.value = 0f
-      tilt.value = 0f
+      scroll.value = 0f
       reDraw()
     }
 
     private var _enableDrag: Boolean = false
-    def enableDrag(enable: Boolean): this.type = { _enableDrag = enable; this }
+    def withDragging(enable: Boolean): this.type = { _enableDrag = enable; this }
 
     private var _enableScale: Boolean = false
-    def enableScale(enable: Boolean): this.type = { _enableScale = enable; this }
+    def withScaling(enable: Boolean): this.type = { _enableScale = enable; this }
+
+    private var _enablePan: Boolean = true
+    def withPanning(enable: Boolean): this.type = { _enablePan = enable; this }
+
+    private var _enableScroll: Boolean = true
+    def withScrolling(enable: Boolean): this.type = { _enableScroll = enable; this }
 
     import io.github.humbleui.jwm.{EventMouseButton, EventMouseMove, KeyModifier, Window}
 
@@ -207,13 +216,13 @@ import io.github.humbleui.jwm.App
 
       if (mods.includeSome(Pressed)) key._key match {
         case END        =>
-          tilt.value    = -glyph.h*0.9f
-          pan.value     = -glyph.w*0.9f
+          if (_enableScroll) scroll.value  = -glyph.h*0.9f
+          if (_enablePan)    pan.value     = -glyph.w*0.9f
         case HOME       => reset()
         case UP         => scrollBy(glyph.h*0.12f)
         case DOWN       => scrollBy(-glyph.h*0.12f)
-        case PAGE_UP    => scrollBy(portDiagonal.y*0.9f)
-        case PAGE_DOWN  => scrollBy(-portDiagonal.y*0.9f)
+        case PAGE_UP    => scrollBy(portDiagonal.y*0.5f)
+        case PAGE_DOWN  => scrollBy(-portDiagonal.y*0.5f)
         case RIGHT      => panBy(-glyph.w*0.12f)
         case LEFT       => panBy(glyph.w*0.12f)
         case other      =>
@@ -238,17 +247,35 @@ import io.github.humbleui.jwm.App
       }
     }
 
+    private var _scrollbarBrush, _backgroundBrush: Brush = fg(cap=Brushes.ROUND, alpha=0.2f, width=portDiagonal.x*0.025f, mode=PaintMode.FILL)
+    def withScrollbarBrush(brush: Brush): this.type  = { _scrollbarBrush = brush; this }
+    def withBackgroundBrush(brush: Brush): this.type  = { _backgroundBrush = brush(mode=PaintMode.FILL); this }
+
 
     val offset = Vec(fg.strokeWidth/2, fg.strokeWidth/2)
 
     val selectedColor   = fg(cap=Brushes.ROUND)
     val unselectedColor = fg(width=fg.strokeWidth, cap=Brushes.ROUND, color=0XFF666666)
+    def scrollBarH      = (portDiagonal.y/glyph.h)*portDiagonal.y
+    def scrollBarW      = (portDiagonal.x/glyph.w)*portDiagonal.x
 
     def draw(surface: Surface): Unit = {
       drawBackground(surface)
+      surface.fillRect(_backgroundBrush, diagonal)
       surface.withClip(diagonal) {
         surface.withOrigin(offset) {
           delegate.draw(surface)
+          // Indicate the extent of the scrolling
+          val scrollBarY = -((scroll.value / glyph.h) * portDiagonal.y)
+          val scrollBarYExtent = scrollBarY + scrollBarH
+          if (scrollBarY >= 0 && portDiagonal.y >= scrollBarYExtent) {
+            surface.drawLines(_scrollbarBrush, portDiagonal.x, scrollBarY, portDiagonal.x, scrollBarYExtent)
+          }
+          val scrollBarX = -((pan.value / glyph.w) * portDiagonal.x)
+          val scrollBarXExtent = scrollBarX + scrollBarW
+          if (scrollBarX >= 0 && portDiagonal.x>scrollBarXExtent) {
+            surface.drawLines(_scrollbarBrush, scrollBarX, portDiagonal.y, scrollBarX, portDiagonal.y, scrollBarXExtent)
+          }
         }
       }
       surface.drawRect(if (selected) selectedColor else unselectedColor, Vec.Origin, diagonal)
@@ -258,12 +285,12 @@ import io.github.humbleui.jwm.App
 
     val diagonal: Vec = portDiagonal + (offset * 2f)
 
-    def copy(fg: Brush=fg, bg:Brush=bg): ViewPort = new ViewPort(glyph.copy(fg, bg), fg, bg, initialPortDiagonal)
+    def copy(fg: Brush=fg, bg:Brush=bg): ViewPort = new ViewPort(glyph.copy(fg, bg), fg, bg, portDiagonal)
 
   }
 
   object ViewPort {
-    def apply(glyph: Glyph, fg: Brush=Brushes.black, bg: Brush = Brushes.white, initialPortDiagonal: Vec=null): ViewPort = new ViewPort(glyph, fg, bg, initialPortDiagonal)
+    def apply(glyph: Glyph, fg: Brush=Brushes.black, bg: Brush = Brushes.white, portDiagonal: Vec=Vec.Zero): ViewPort = new ViewPort(glyph, fg, bg, portDiagonal)
   }
 
   /**
@@ -427,7 +454,7 @@ import io.github.humbleui.jwm.App
       }
 
       /* The divider */
-      surface.drawLines$(fg, _boundary+offset, 0, _boundary+offset, h)
+      surface.drawLines(fg, _boundary+offset, 0, _boundary+offset, h)
 
       /* The right pane */
       surface.withOrigin(_boundary + sepWidth, 0) {
