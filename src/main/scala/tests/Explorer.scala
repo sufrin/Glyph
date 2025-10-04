@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package tests
 
 import files.{FileAttributes, Folder, Shelf}
-import styled.{CheckBox, Label, RadioCheckBoxes}
+import styled.{CheckBox, Label, RadioCheckBoxes, TextButton}
 import tests.PathProperties._
 import Modifiers.Bitmap
 import cached._
@@ -491,14 +491,6 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
     _ =>
       Explorer.closeExplorer(folder.path)
   }
-  val nextButton = TextButton(">"){
-    _ =>
-      Explorer.nextExplorer(folder.path)
-  }
-  val prevButton = TextButton("<"){
-    _ =>
-      Explorer.prevExplorer(folder.path)
-  }
 
   lazy val pathGUI =
     FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hFill(), StateButtons.parent).enlarged(15).roundFramed(radius=20)
@@ -506,7 +498,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
 
   lazy val GUI: Glyph =
     NaturalSize.Col()(
-      FixedSize.Row(width=view.w, align=Mid)(Settings.popupButton, fileSheet.hSpace(), Actions.GUI, fileSheet.hFill(), prevButton, nextButton, closeButton),
+      FixedSize.Row(width=view.w, align=Mid)(Settings.popupButton, fileSheet.hSpace(), Actions.GUI, fileSheet.hFill(),closeButton),
       fileSheet.vSpace(1),
       pathGUI,
       view.enlarged(15),
@@ -594,12 +586,24 @@ object Explorer extends Application with SourceLoggable {
       if (helpDialogue.running.isEmpty) helpDialogue.East(helpButton).start(floating=false)
     }
 
+    val nextButton = TextButton(">"){
+      _ =>
+        Explorer.nextExplorer(explorerGUIs.selection)
+    }
+
+    val prevButton = TextButton("<"){
+      _ =>
+        Explorer.prevExplorer(explorerGUIs.selection)
+    }
+
 
     NaturalSize.Row(align=Mid)(
           icon,
           fileSheet.hFill(),
           styled.TextButton(s"$homePath"){ _ => openExplorerWindow(homePath) },
           fileSheet.hFill(),
+          prevButton,
+          nextButton,
           helpButton
       )
   }
@@ -685,12 +689,9 @@ object Explorer extends Application with SourceLoggable {
     explorerGUIs.select(path)
     if (dialogue.running.isEmpty) {
       dialogue.onClose { case _ =>
-        explorerGUIs.glyphs.foreach { case (path, _) =>
-          Folder.withFolderFor(path) { folder =>
-            folder.folderChanged.removeTagged(explorers(path))
-            folder.close()
-          }
-        }
+        for { explorer <- explorers.values } explorer.close()
+        explorers.clear()
+        explorerGUIs.clear()
       }
       dialogue.start(floating = false)
       Application.enableAutoScaleFor(dialogue.GUI)

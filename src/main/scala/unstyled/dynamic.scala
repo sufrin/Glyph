@@ -397,7 +397,10 @@ class MapOf[Key](initially: Seq[(Key,Glyph)], align: Alignment, valign: VAlignme
   var _selection: Key = glyphs.head._1
 
   /** Select the glyph with th given key. */
-  def select(selection: Key): Unit = _selection = selection
+  def select(selection: Key): Unit = {
+    _selection = selection
+    reDraw()
+  }
 
   /** How many glyphs are present. */
   def size: Int = glyphs.size
@@ -419,6 +422,8 @@ class MapOf[Key](initially: Seq[(Key,Glyph)], align: Alignment, valign: VAlignme
   }
 
   def isDefinedAt(key: Key): Boolean = glyphs.isDefinedAt(key)
+
+  def clear(): Unit = glyphs.clear()
 
   def selectNext(path: Key): Unit = {
     if (size>1) {
