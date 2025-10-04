@@ -11,6 +11,7 @@ import gesture.{Gesture, Keystroke}
 import NaturalSize.Grid
 import overlaydialogues.Dialogue
 import styles.decoration.RoundFramed
+import unstyled.dynamic.MapOf
 
 import io.github.humbleui.jwm.Key
 import org.sufrin.logging.{FINEST, SourceLoggable}
@@ -386,7 +387,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
   def close(): Unit = {
     folder.folderChanged.removeTagged(thisExplorer)
     folder.close()
-    GUI.guiRoot.close()
+    //GUI.guiRoot.close()
   }
 
 
@@ -486,13 +487,26 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
     }
   }
 
+  val closeButton = TextButton("Close"){
+    _ =>
+      Explorer.closeExplorer(folder.path)
+  }
+  val nextButton = TextButton(">"){
+    _ =>
+      Explorer.nextExplorer(folder.path)
+  }
+  val prevButton = TextButton("<"){
+    _ =>
+      Explorer.prevExplorer(folder.path)
+  }
+
   lazy val pathGUI =
     FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hFill(), StateButtons.parent).enlarged(15).roundFramed(radius=20)
 
 
   lazy val GUI: Glyph =
     NaturalSize.Col()(
-      FixedSize.Row(width=view.w, align=Mid)(Settings.popupButton, fileSheet.hSpace(), Actions.GUI, fileSheet.hFill()),
+      FixedSize.Row(width=view.w, align=Mid)(Settings.popupButton, fileSheet.hSpace(), Actions.GUI, fileSheet.hFill(), prevButton, nextButton, closeButton),
       fileSheet.vSpace(1),
       pathGUI,
       view.enlarged(15),
@@ -636,16 +650,51 @@ object Explorer extends Application with SourceLoggable {
     }
   }
 
-  def openExplorerWindow(path: Path): Unit = {
-    val folder = Folder(path)
-    val explorer = new Explorer(folder)
-    val dialogue = styled.windowdialogues.Dialogue.FLASH(explorer.GUI, title = folder.path.abbreviatedString()).OnRootOf(GUI)
-    dialogue.onClose { case _ =>
-      folder.folderChanged.removeTagged(explorer)
-      folder.close()
+  lazy val explorers    = mutable.LinkedHashMap[Path, Explorer](rootPath->new Explorer(Folder(rootPath)))
+  lazy val explorerGUIs = MapOf[Path]()(rootPath->explorers(rootPath).GUI)
+  lazy val dialogue     = styled.windowdialogues.Dialogue.FLASH(explorerGUIs, title = "Explorer").OnRootOf(GUI)
+
+  def closeExplorer(path: Path): Unit = {
+    if (explorerGUIs.size > 1) {
+      explorerGUIs.selectPrev(path)
+      explorers(path).close()
+      explorers.remove(path)
+      explorerGUIs.remove(path)
     }
-    dialogue.start(floating = false)
-    Application.enableAutoScaleFor(dialogue.GUI)
+  }
+
+  def nextExplorer(path: Path): Unit = {
+    if (explorerGUIs.size > 1) {
+      explorerGUIs.selectNext(path)
+    }
+  }
+
+  def prevExplorer(path: Path): Unit = {
+    if (explorerGUIs.size > 1) {
+      explorerGUIs.selectPrev(path)
+    }
+  }
+
+  def openExplorerWindow(path: Path): Unit = {
+    if (explorerGUIs.isDefinedAt(path)) explorerGUIs.select(path) else {
+      val folder = Folder(path)
+      val explorer = new Explorer(folder)
+      explorerGUIs.add(path, explorer.GUI)
+      explorers(path)=explorer
+    }
+    explorerGUIs.select(path)
+    if (dialogue.running.isEmpty) {
+      dialogue.onClose { case _ =>
+        explorerGUIs.glyphs.foreach { case (path, _) =>
+          Folder.withFolderFor(path) { folder =>
+            folder.folderChanged.removeTagged(explorers(path))
+            folder.close()
+          }
+        }
+      }
+      dialogue.start(floating = false)
+      Application.enableAutoScaleFor(dialogue.GUI)
+    }
   }
 
   def open(path: Path): Unit = {

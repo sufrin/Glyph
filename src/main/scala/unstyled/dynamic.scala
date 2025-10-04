@@ -7,6 +7,8 @@ import unstyled.{static, Text}
 import io.github.humbleui.jwm.App
 import io.github.humbleui.skija.PaintMode
 
+import scala.collection.mutable
+
 /**
  * A collection of dynamic glyphs: glyphs some aspects of which can vary dynamically
  */
@@ -381,6 +383,119 @@ import io.github.humbleui.skija.PaintMode
         new OneOf(glyphs, align, valign, fg=fg, BG=bg)
 
   }
+
+/**  A mapping from Keys to Glyphs, of which the selected glyph is the active one. */
+class MapOf[Key](initially: Seq[(Key,Glyph)], align: Alignment, valign: VAlignment, override val fg: Brush, override val bg: Brush) extends Glyph {
+  val glyphs: mutable.LinkedHashMap[Key,Glyph] = new mutable.LinkedHashMap[Key,Glyph]
+  locally {
+    glyphs.addAll(initially)
+  }
+
+  override val kind = "SeqOf"
+  override def toString: String = s"""MapOf(fg=$fg, bg=$bg\n glyphs=\n  ${glyphs.map(_.toString).mkString(",\n  ")})"""
+
+  var _selection: Key = glyphs.head._1
+
+  /** Select the glyph with th given key. */
+  def select(selection: Key): Unit = _selection = selection
+
+  /** How many glyphs are present. */
+  def size: Int = glyphs.size
+
+  def selection: Key = _selection
+
+  @inline def selectedGlyph: Glyph = {
+    glyphs(_selection)
+  }
+
+
+  def add(key: Key, glyph: Glyph): Unit = {
+    glyphs.addOne((key, glyph))
+    linkGlyphs()
+  }
+
+  def remove(key: Key): Unit = {
+    glyphs.remove(key)
+  }
+
+  def isDefinedAt(key: Key): Boolean = glyphs.isDefinedAt(key)
+
+  def selectNext(path: Key): Unit = {
+    if (size>1) {
+      val keys = glyphs.keys.toSeq
+      val index = keys.indexOf(path) match {
+        case -1 => 0
+        case other => if (other==keys.length-1) 0 else other+1
+      }
+      select(keys(index))
+    }
+  }
+
+  def selectPrev(path: Key): Unit = {
+    if (size>1) {
+      val keys = glyphs.keys.toSeq
+      val index = keys.indexOf(path) match {
+        case -1 => 0
+        case other => if (other==0) keys.length-1 else other-1
+      }
+      select(keys(index))
+    }
+  }
+
+
+  /**
+   * Space for all
+   */
+  val inset = fg.getStrokeWidth
+  val boundingRect = Vec(glyphs.values.map(_.w).max, glyphs.values.map(_.h).max)+(inset, inset)
+  val diagonal = boundingRect+(inset, inset)
+
+  // Locate the subglyphs.
+  // Link subglyphs into the glyph tree
+  // TODO: (why didn't this happen in Composite?)
+  locally {
+    linkGlyphs()
+  }
+
+  def linkGlyphs(): Unit = {
+    for { (key, glyph) <- glyphs} {
+      glyph @@ ((diagonal.x-glyph.w)*align.proportion, (diagonal.y-glyph.h)*valign.proportion)
+      glyph.parent = this
+    }
+  }
+
+  override def draw(surface: Surface): Unit = {
+    drawBackground(surface)
+    val glyph = selectedGlyph
+    //surface.withOrigin(inset/2, inset/2) { surface.drawRect(fg, boundingRect) }
+    surface.withOrigin(glyph.location) { glyph.draw(surface) }
+  }
+
+  override def glyphContaining(p: Vec): Option[Hit] =
+    selectedGlyph.glyphContaining(p-selectedGlyph.location)
+
+  override def contains(p: Vec): Boolean =
+    selectedGlyph.contains(p)
+
+  /**
+   * A  copy of this glyph: made with the same constructor
+   */
+  def copy(fg: Brush=fg, bg:Brush=bg): Glyph = new MapOf[Key](initially, align, valign, fg, bg)
+}
+
+object MapOf {
+  val defaultBG: Brush = Brush("transparent")
+  val defaultFG: Brush = defaultBG
+
+  def from[Key](initially: Seq[(Key, Glyph)], fg: Brush=defaultFG, bg: Brush=defaultBG, align: Alignment=Center, valign: VAlignment=Mid): MapOf[Key] =
+    new MapOf(initially, align, valign, fg=fg, bg=bg)
+
+  def apply[Key](fg: Brush=defaultFG, bg: Brush=defaultBG, align: Alignment=Center, valign: VAlignment=Mid)(initially: (Key, Glyph)*): MapOf[Key] =
+    new MapOf(initially, align, valign, fg=fg, bg=bg)
+
+
+}
+
 
   /**
    * A (laterally) split screen that (initially) juxtaposes `left` to `right`. If `dynamic`
