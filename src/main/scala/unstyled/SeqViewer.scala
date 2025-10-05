@@ -21,7 +21,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
   def onDoubleClick(mods: Bitmap, selected: Int): Unit = {}
   def onHover(mods: Bitmap, hovered: Int): Unit = {}
-  def onOther(gesture: Gesture): Unit = { println(s"other($gesture)")}
+  def onOther(gesture: Gesture): Unit = {}
   def underlineBrush: Brush = fg
 
 
@@ -112,6 +112,10 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
     val underlineColour = underlineBrush
 
     drawBackground(surface)
+    if (guiRoot.hasKeyboardFocus(thisViewer)) {
+      surface.drawLines(marginBrush, 0,underHeader, 0,h-margin/4)
+      surface.drawLines(marginBrush, margin/4,underHeader, margin/4,h-margin/4)
+    }
     surface.withClip(diagonal) {
       var nextVisibleRow: Int = 0
       // draw the heading
@@ -146,12 +150,6 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
       surface.drawLines(botBrush, offset, h-offset, w-offset, h-offset)
     }
   }
-
-  /*
-  // margins
-
-
-  * */
 
   def copy(fg: Brush=fg, bg: Brush=bg): ReactiveGlyph = null
       //new SeqViewer(cols, rows, font, fg, bg, selBrush, seq, autoScale)
@@ -311,19 +309,19 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
         } else {
           val row = yToRow(location.y) + rowOrigin
           val hovered = row min seq.length
-          println(s"row: $row; hovered: $hovered")
+          //println(s"row: $row; hovered: $hovered")
           if (_selectedRows.contains(row)) {
             setCurrentRow(row)
             if (ClickTimer.doubleClick) {
               onDoubleClick(modifiers, currentRow)
               ClickTimer.clear()
             }
-            println(s"selected contained row: $row; hovered: $hovered")
+            //println(s"selected contained row: $row; hovered: $hovered")
           } else {
             _selectedRows.clear()
             ClickTimer.start()
             if (row < seq.length) _selectedRows.add(hovered)
-            println(s"selected added row: $row; hovered: $hovered")
+            //println(s"selected added row: $row; hovered: $hovered")
           }
         }
         reDraw()
