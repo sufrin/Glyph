@@ -131,7 +131,7 @@ case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = tr
 }
 
 /**  As GlyphButton but destined for a menu; hence deferred decoration */
-case class MenuGlyphButton(up: Glyph, down: Glyph = null, hover: Glyph = null, exact: Boolean = true) extends styled.StyledButton {
+case class MenuGlyphButton(up: Glyph, down: Glyph = null, hover: Glyph = null, exact: Boolean = true, hint: Hint=NoHint) extends styled.StyledButton {
   def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
     val detail = sheet.buttonStyle
     @inline def reify(glyph: Glyph): Glyph = (if (glyph eq null) up() else glyph).enlarged(detail.border, transparent, transparent)
@@ -140,6 +140,8 @@ case class MenuGlyphButton(up: Glyph, down: Glyph = null, hover: Glyph = null, e
         (reactive.RawButton.exact(reify(up), reify(down), reify(hover))(action))
       else
         (reactive.RawButton(reify(up), reify(down), reify(hover))(action))
+
+    hint(button)
     button
   }
 }
