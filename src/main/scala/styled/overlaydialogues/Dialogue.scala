@@ -24,8 +24,8 @@ object Dialogue {
    *  A generic overlaydialogues "choice" popup, located at the given `position`. It can be popped down without using
    *  any of the buttons on its bottom row, by hitting the kill button placed on its top row.
    */
-  def POPUP[T](blurb: Glyph, buttons: Seq[Glyph])(implicit style: StyleSheet): Dialogue[T] =
-    new Dialogue[T](blurb, buttons, location=null, bg = style.popupBackgroundBrush, fg=style.popupForegroundBrush, isNested = false, isMenu = false, closeGlyph = Some(defaultCloseGlyph))
+  def POPUP[T](blurb: Glyph, buttons: Seq[Glyph], closeGlyph: Option[Glyph] = Some(defaultCloseGlyph))(implicit style: StyleSheet): Dialogue[T] =
+    new Dialogue[T](blurb, buttons, location=null, bg = style.popupBackgroundBrush, fg=style.popupForegroundBrush, isNested = false, isMenu = false, closeGlyph = closeGlyph)
 
   import unstyled.reactive.GenericButton
 
@@ -304,12 +304,11 @@ class Dialogue[T](blurb: Glyph,
                   val isNested:   Boolean,
                   var isMenu:     Boolean = false,
                   var isModal:    Boolean = true,
+                  var canEscape:  Boolean = false,
                   val closeGlyph: Option[Glyph] = None,
                   var preferred: Int = 0)
 {
   thisPopup =>
-
-
 
   val GUI      =
     if (isMenu)
@@ -317,7 +316,7 @@ class Dialogue[T](blurb: Glyph,
     else
       Col(align=Center, bg=bg)(blurb, Row(align=Mid, bg=bg)(buttons)).edged(fg)
 
-  val navigation = new NavigationManager(buttons, preferred, nested=isNested, menu=isMenu)(close())
+  val navigation = new NavigationManager(buttons, if (buttons.isEmpty) -1 else preferred, nested=isNested, menu=isMenu)(close())
 
   import NaturalSize.Col
   import unstyled.reactive.RawButton
@@ -360,6 +359,7 @@ class Dialogue[T](blurb: Glyph,
 
   /**
    * The `guiRoot` decorated with a close button/bar: this is the effective GUI root of the overlay that the dialogue will inhabit.
+   * It is constructed exactly once; even when the dialogue is repeatedly opened and closed.
    */
   lazy val overlayRoot: Glyph = {
     // set up the killbutton to (also) respond to ESCAPE with a `close()`
@@ -376,11 +376,15 @@ class Dialogue[T](blurb: Glyph,
 
       override def accept(key: EventKey, location: Vec, window: Window): Unit = {
         // Nudge the window on certain keystrokes; close on esc.
-        // TODO: this is where ENTER (accept lit) favoured, and TAB (move lit) will go
+        // TODO: this is where ENTER (accept the current lit-up) favoured, and TAB (move the lit-up) will go
         //       some pervasive structural changes may be necessary
         //       annotation layer to show the favoured choice?
+        // Buttons take effect when the key is released; otherwise after a close action on press, there would be
+        // no dialogue for the release key to be directed at.
         var (dx, dy, drag) = (0f, 0f, true)
         key.getKey match {
+          case ESCAPE  if isModal && !key.isPressed => close()
+          case ESCAPE  if canEscape && !key.isPressed => close()
           case ESCAPE  if !key.isPressed => drag=false; navigation.Action(false)
           case ENTER   if !key.isPressed => drag=false; navigation.Action(true)
           case TAB     if !key.isPressed => drag=false; navigation.Next()
@@ -450,7 +454,7 @@ class Dialogue[T](blurb: Glyph,
   }
 
   /**
-   * Allocate an Overlay layer and continue the interaction.
+   * Allocate an Overlay layer and continue the interaction. The overlayRoot is constructed exactly one.
    */
   def start(): Unit = {
     assert(location ne null, "Dialogue must have defined a non-null location before starting")
