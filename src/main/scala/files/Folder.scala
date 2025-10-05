@@ -47,10 +47,8 @@ object Folder extends SourceLoggable {
 
   def withFolderFor(path: Path)(fn: Folder => Unit): Unit = {
     cache.get(path) match {
-      case None         =>
-        SourceDefault.warn(s"No folder for $path")
-        println(refCount)
-        println(cache)
+      case None =>
+        SourceDefault.warn(s"No folder for $path\n  ${refCount.mkString("\n ")}\n  ${cache.mkString("\n ")}")
       case Some(folder) => fn(folder)
     }
   }
@@ -78,7 +76,6 @@ object Folder extends SourceLoggable {
 class Folder(val path: Path) {
   import Folder._
 
-  locally { println(s"Folder($path)") }
   val folderChanged: Notifier[String] = new Notifier[String]{}
 
   val absolutePath: Path = path.toAbsolutePath.toRealPath()

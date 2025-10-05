@@ -2,16 +2,17 @@ package org.sufrin.glyph
 package tests
 
 import files.{FileAttributes, Folder, Shelf}
-import styled.{CheckBox, Label, RadioCheckBoxes, TextButton}
+import styled._
 import tests.PathProperties._
 import Modifiers.Bitmap
 import cached._
 import files.FileAttributes.Row
 import gesture.{Gesture, Keystroke}
 import NaturalSize.Grid
-import overlaydialogues.Dialogue
-import styles.decoration.RoundFramed
-import unstyled.dynamic.MapOf
+import glyphML.language
+import styled.overlaydialogues.Dialogue
+import styles.decoration.{Framed, RoundFramed}
+import unstyled.dynamic.Keyed
 
 import io.github.humbleui.jwm.Key
 import org.sufrin.logging.{FINEST, SourceLoggable}
@@ -196,7 +197,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
 
     def delete(): Unit   = delete(Shelf.paths)
     def delete(paths: Seq[Path]): Unit = {
-      println(s"Delete: ${paths.mkString(" ")}")
+      Explorer.finer(s"Delete: ${paths.mkString(" ")}")
       popupErrors(paths.flatMap(FileOperations.delete(_)))
       //folder.withValidCaches { view.reDraw() }  // Notification now does this
     }
@@ -233,7 +234,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
     }
 
     def shelf(paths: Seq[Path]): Unit = {
-      println(s"Shelf =  ${paths.mkString(" ")}")
+      Explorer.finer(s"Shelf =  ${paths.mkString(" ")}")
       Shelf.clear()
       Shelf.add(paths)
       view.clearSelection()
@@ -242,14 +243,14 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
     def unShelf(): Unit  = unShelf(view.selectedRows.map { i => theRows(i).path })
 
     def unShelf(paths: Seq[Path]): Unit = {
-      println(s"Shelf -=  ${paths.mkString(" ")}")
+      Explorer.finer(s"Shelf -=  ${paths.mkString(" ")}")
       Shelf.remove(paths)
       view.clearSelection()
     }
 
     // implicit source: the clipboard/shelf
     def pasteTo(path: Path): Seq[Exception] = {
-      println(s"Paste: ${Shelf.paths.mkString(" ")} to ${path}")
+      Explorer.finer(s"Paste: ${Shelf.paths.mkString(" ")} to ${path}")
       FileOperations.copy(Shelf.paths, path)
     }
 
@@ -272,7 +273,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
 
     // implicit source: the shelf
     def move(path: Path): Unit = {
-      println(s"Move: ${Shelf.paths.mkString(" ")}  to ${path}")
+      Explorer.finer(s"Move: ${Shelf.paths.mkString(" ")}  to ${path}")
       popupErrors(FileOperations.move(Shelf.paths, path))
       Shelf.clear()
       //folder.withValidCaches { view.reDraw() }  // Notification now does this
@@ -283,7 +284,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
     // implicit source: the shelf
     // implicit source: the shelf
     def link(path: Path): Unit = {
-      println(s"Link: ${Shelf.paths.mkString(" ")}  to ${path}")
+      Explorer.finer(s"Link: ${Shelf.paths.mkString(" ")}  to ${path}")
       popupErrors(FileOperations.link(Shelf.paths, path))
       Shelf.clear()
       //folder.withValidCaches { view.reDraw() } // Notification now does this
@@ -343,14 +344,19 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
     override def underlineBrush: Brush = if (Shelf.forCut) cutBrush else fileSheet.buttonForegroundBrush
 
     override def onDoubleClick(mods: Bitmap, selected: Int): Unit = {
-      Explorer.open((folder.path.resolve(theRows(selected).path)))
+      val path = folder.path.resolve(theRows(selected).path)
+      Explorer.finest(s"onDoubleClick(#$selected=$path)")
+      Explorer.open(path)
       clearSelection()
     }
 
     override def onHover(mods: Bitmap, hovered: Int): Unit = if (false) folder.withValidCaches {
       if (theRows.isDefinedAt(hovered)) {
         val path = theRows(hovered).path.toString
-        println(path)
+        Explorer.finest(s"onHover(#$hovered=$path)")
+        Explorer.finest(path)
+      } else {
+        Explorer.finest(s"onHover(#$hovered=???)")
       }
     }
 
@@ -359,8 +365,6 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
 
       import gesture._
       gesture match {
-        case Keystroke(Key.W, _) if PRESSED =>
-          thisExplorer.close()
 
         case Keystroke(Key.C, _) if PRESSED =>
           Actions.shelf(forCut=false)
@@ -378,7 +382,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
           Actions.print()
 
         case other =>
-          println(other)
+          Explorer.finest(s"onOther($gesture)")
           bell.play()
       }
     }
@@ -469,17 +473,17 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
     private val largeButtonStyle: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated, fontScale = 1.3f, buttonHoverBrush = fileSheet.buttonForegroundBrush)
 
     private lazy val settingsGUI = {
-      val closeSettings = unstyled.reactive.RawButton(PolygonLibrary.closeButtonGlyph.scaled(2), down=Brushes.red, hover=Brushes.green) { _ => settingsPopup.close() }
+      val closeSettings = unstyled.reactive.RawButton(PolygonLibrary.closeButtonGlyph.scaled(1.5f), down=Brushes.red, hover=Brushes.green) { _ => settingsPopup.close() }
       NaturalSize.Col(align = Left)(
         closeSettings,
-        FixedSize.Row(width = view.w, align = Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()),
-        FixedSize.Row(width = view.w, align = Mid)(fileSheet.hFill(), order, fileSheet.hFill()), fileSheet.vSpace()
+        FixedSize.Row(width = GUI.w, align = Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()),
+        FixedSize.Row(width = GUI.w, align = Mid)(fileSheet.hFill(), order, fileSheet.hFill()), fileSheet.vSpace()
         )
     }
 
-    private lazy val settingsPopup: Dialogue[Unit] = Dialogue.POPUP(settingsGUI, Seq.empty, None).AtTop(GUI)
+    private lazy val settingsPopup: Dialogue[Unit] = overlaydialogues.Dialogue.POPUP(settingsGUI, Seq.empty, closeGlyph=None).AtTop(GUI)
 
-    lazy val popupButton: Glyph = unstyled.reactive.RawButton(Label("Ξ").scaled(2f), down=Brushes.red, hover=Brushes.green) {
+    lazy val popupButton: Glyph = unstyled.reactive.RawButton(Label("Ξ").scaled(1.7f), down=Brushes.red, hover=Brushes.green) {
       _ =>
         settingsPopup.isModal = false
         settingsPopup.canEscape = true
@@ -505,107 +509,55 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
       ).enlarged(15, fg=Brushes.lightGrey)
 }
 
+
 object Explorer extends Application with SourceLoggable {
   level = FINEST
 
   import GlyphTypes.FontStyle.NORMAL
 
   implicit val fileSheet: StyleSheet =
-    StyleSheet(buttonDecoration=RoundFramed(bg=Brushes.lightGrey, enlarge=9f, radius=10), buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
+    StyleSheet(buttonDecoration=RoundFramed(enlarge=9f, radius=0), buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
+
+  val iconSheet = fileSheet.copy(buttonDecoration = Framed(Brushes.black(width=2)))
 
   val rootPath = FileSystems.getDefault.getPath("/Users/sufrin")
 
-  val icon: Glyph = External.Image.readResource("/explorer.png").scaled(0.3f) // ExplorerIcon.icon.scaled(0.2f) // External.Image.read("/Users/sufrin/GitHomes/Glyph/ICONS/explorer.png").scaled(0.2f)
+  val icon:     Glyph = External.Image.readResource("/explorer.jpg")
+  val menuIcon: Glyph = icon.scaled(0.4f).framed(Brushes.black(width=2))
 
   lazy val GUI: Glyph = {
-    lazy val helpDialogue: styled.windowdialogues.Dialogue[Unit] = {
-      val helpSheet: StyleSheet = Explorer.fileSheet.copy(textFontSize = 16f, textForegroundBrush = Brushes.black)
-      val translator = glyphML.Translator(helpSheet)
-      import translator._
-      val blurb: Glyph = <div width="80em" align="justify" parskip="0.5ex">
-        <p align="center"><b>Display</b></p>
-        <p>Each window corresponds to a directory in the filestore. Each of its files is shown on a single row in the display.
-          The columns shown can be changed -- using the panel popped up by the <b>Ξ</b> button. So can the order in which they are
-          shown. Showing "invisible" files is enabled by <b>[.]</b> and disabled by <b>(.)</b>.
-        </p>
-        <p>
-          An <b>S</b> to the right of a date/time indicates
-          daylight-saving (summer) time for the current locality on the given date.
-        </p>
-        <p>
-          The <tt>size+</tt> column shows file sizes in compact human-readable form, namely a number followed by a suffix from <b>b k m g t</b> denoting
-          its multiplication by a power of 10:  <b>0 3 6 9 12</b>. Directory sizes are given as their number of files (with suffix <b>f</b>).
-        </p>
-        <p>The path to the directory being viewed in the window is shown (above the listing) as a sequence of buttons, each of which corresponds to an
-          ancestor and is associated with a "hover-hint" that shows the corresponding <i>real</i>
-          path --  with symbolic links expanded when appropriate. Pressing any of them opens a fresh window on the ancestor.
-        </p>
-        <p align="center"><b>Selection</b></p>
-        <p> Individual windows have a (possibly empty) selection: its rows are selected by mouse: </p>
-        <scope>
-          <attributes id="tag:p" hang=" *  " />
-          <p> Primary mouse click: selects uniquely</p>
-          <p> Primary mouse drag: extends the selection</p>
-          <p> Shifted primary mouse click: extends the selection at one end</p>
-          <p> Secondary mouse click (or C-Primary) (or drag) inverts selection status of the indicated row(s)</p>
-          <p> Mouse double-click, or (ENTER), opens the file indicated by the selected row, if possible</p>
-        </scope>
-        <p align="center"><b>Shelf</b></p>
-        <p> There is an Explorer-wide <b>Shelf</b> on which is a collection of paths that denote
-          individual files in the filestore. A file is said to be "shelved" if its path is
-          on the shelf. Shelved files are the objects of the actions describd below, and they are
-          underlined in the display. If the underlining is "textured" then the corresponding file has been marked for deletion
-          as part of the next "paste" (C-V).
-        </p>
 
-        <p>Actions are by buttons or keys.</p>
-        <scope>
-          <attributes id="tag:p" hang=" *  "  />
-          <p> <b>Shelf</b> places the selection on the shelf.</p>
-          <p> <b>C-C</b> places the selection on the shelf.</p>
-          <p> <b>C-X</b> places the selection on the shelf, and marks it for later deletion as part of the next "paste" (C-V) action.</p>
-          <p> <b>C-V</b> copies the shelved files to the folder in which it is clicked; deleting them if they were marked for deletion by (C-X).</p>
-          <p> <b>del</b> deletes the shelved files.</p>
-          <p> <b>cp mv ln</b> respectively copy, move, and link the shelved files to the
-            current implicit destination. This is <i>either</i> the directory denoted by a single selected path in the window in which
-            the button is pressed, <i>or if none is selected</i> the folder being shown in that window.
-          </p>
-          <p> <b>Clear</b> removes the deletion mark from the shelf if it is so marked; otherwise clears the shelf.</p>
-          <p> The usual navigation methods: <b>home end page-up page-down scroll-wheel</b> can be used to scroll the view; and the <b>up down</b>
-            keys add to the selection in the specified direction if shifted; otherwise selecting a single row in the specified direction.
-          </p>
-        </scope>
-      </div>.enlarged(20, bg=Brushes.white)
-      val port = unstyled.dynamic.ViewPort(blurb, fg=Brushes.blueFrame, portDiagonal = Vec(blurb.w, blurb.h/2)).withDragging(true).withPanning(false).withScaling(false)
-      styled.windowdialogues.Dialogue.FLASH(port.enlarged(port.fg.strokeWidth*4), title="Explorer Help")
-    }
+    def hint          =  Hint(3, s"${explorers.selectedIndex+1}/${explorers.size.toString}", false, Some(Vec.Zero))
+    lazy val iconHint =  Hint(3, if(explorers.size>1) s"(Menu)" else s"Open $rootPath", false, Some(Vec(0, menuIcon.diagonal.y/2)))
 
-    lazy val helpButton: Glyph = styled.TextButton("Help")
-    { _ =>
-      println(helpButton.location)
-      if (helpDialogue.running.isEmpty) helpDialogue.East(helpButton).start(floating=false)
-    }
-
-    val nextButton = TextButton(">"){
+    lazy val nextButton = TextButton(">",  hint = hint){
       _ =>
-        Explorer.nextExplorer(explorerGUIs.selection)
-    }
+        Explorer.nextExplorer(explorers.selection)
+    }(iconSheet)
 
-    val prevButton = TextButton("<"){
+    lazy val prevButton = TextButton("<", hint = hint){
       _ =>
-        Explorer.prevExplorer(explorerGUIs.selection)
-    }
+        Explorer.prevExplorer(explorers.selection)
+    }(iconSheet)
+
+    lazy val iconButton: Glyph = MenuGlyphButton(menuIcon, hint=iconHint) {
+      _ =>
+        if (explorers.size>1)
+           styled.windowdialogues.Menu(explorers.keys.toSeq.map{ key => MenuButton(s"Open ${key.toString}"){ _ => openExplorerWindow(key)}}).East(iconButton).start()
+        else
+           openExplorerWindow(rootPath)
+    } (iconSheet)
 
 
-    NaturalSize.Row(align=Mid)(
-          icon,
-          fileSheet.hFill(),
-          styled.TextButton(s"$homePath"){ _ => openExplorerWindow(homePath) },
-          fileSheet.hFill(),
-          prevButton,
-          nextButton,
-          helpButton
-      )
+    NaturalSize.Row(align=Top)(
+      //prevButton,
+      iconButton,
+      //nextButton,
+      fileSheet.hFill(),
+      //styled.TextButton(s"$homePath"){ _ => openExplorerWindow(homePath) },
+      fileSheet.hFill(),
+      HelpGUI.button(iconSheet)
+    )
   }
 
   def title: String = s"Explore: ${rootPath.abbreviatedString()}"
@@ -654,44 +606,43 @@ object Explorer extends Application with SourceLoggable {
     }
   }
 
-  lazy val explorers    = mutable.LinkedHashMap[Path, Explorer](rootPath->new Explorer(Folder(rootPath)))
-  lazy val explorerGUIs = MapOf[Path]()(rootPath->explorers(rootPath).GUI)
-  lazy val dialogue     = styled.windowdialogues.Dialogue.FLASH(explorerGUIs, title = "Explorer").OnRootOf(GUI)
+  lazy val explorers = Keyed[Path, Explorer](_.GUI)(rootPath->new Explorer(Folder(rootPath)))
+  lazy val dialogue  = styled.windowdialogues.Dialogue.FLASH(explorers, title = "Explorer").OnRootOf(GUI)
 
   def closeExplorer(path: Path): Unit = {
-    if (explorerGUIs.size > 1) {
-      explorerGUIs.selectPrev(path)
-      explorers(path).close()
+    if (explorers.size > 1) {
+      explorers.selectPrev(path)
       explorers.remove(path)
-      explorerGUIs.remove(path)
     }
   }
 
   def nextExplorer(path: Path): Unit = {
-    if (explorerGUIs.size > 1) {
-      explorerGUIs.selectNext(path)
+    if (explorers.size > 1) {
+      explorers.selectNext(path)
     }
   }
 
   def prevExplorer(path: Path): Unit = {
-    if (explorerGUIs.size > 1) {
-      explorerGUIs.selectPrev(path)
+    if (explorers.size > 1) {
+      explorers.selectPrev(path)
     }
   }
 
   def openExplorerWindow(path: Path): Unit = {
-    if (explorerGUIs.isDefinedAt(path)) explorerGUIs.select(path) else {
+    if (explorers.isDefinedAt(path)) {
+      explorers.select(path)
+    } else {
       val folder = Folder(path)
       val explorer = new Explorer(folder)
-      explorerGUIs.add(path, explorer.GUI)
-      explorers(path)=explorer
+      explorers.add(path, explorer)
+      explorers.select(path)
     }
-    explorerGUIs.select(path)
+    // TODO: Sort out passing focus to the SeqViewer subwindow if the mouse happens to be inside it
+    explorers.select(path)
     if (dialogue.running.isEmpty) {
       dialogue.onClose { case _ =>
-        for { explorer <- explorers.values } explorer.close()
+        for { explorer <- explorers.values} explorer.close()
         explorers.clear()
-        explorerGUIs.clear()
       }
       dialogue.start(floating = false)
       Application.enableAutoScaleFor(dialogue.GUI)
@@ -733,8 +684,126 @@ object Explorer extends Application with SourceLoggable {
 
 }
 
+object HelpGUI {
+  private val style: StyleSheet = Explorer.fileSheet.copy(textFontSize = 16f, textForegroundBrush = Brushes.black)
+  private val language: language = glyphML.Translator(style)
 
-object Icon {
-  
+  import language._
+
+  val text: Glyph = <div width="80em" align="justify" parskip="0.5ex">
+    <p align="center">
+      <b>Display</b>
+    </p>
+    <p>Each window corresponds to a directory in the filestore. Each of its files is shown on a single row in the display.
+      The columns shown can be changed -- using the panel popped up by the
+      <b>Ξ</b>
+      button. So can the order in which they are
+      shown. Showing "invisible" files is enabled by
+      <b>[.]</b>
+      and disabled by
+      <b>(.)</b>
+      .
+    </p>
+    <p>
+      An
+      <b>S</b>
+      to the right of a date/time indicates
+      daylight-saving (summer) time for the current locality on the given date.
+    </p>
+    <p>
+      The
+      <tt>size+</tt>
+      column shows file sizes in compact human-readable form, namely a number followed by a suffix from
+      <b>b k m g t</b>
+      denoting
+      its multiplication by a power of 10:
+      <b>0 3 6 9 12</b>
+      . Directory sizes are given as their number of files (with suffix
+      <b>f</b>
+      ).
+    </p>
+    <p>The path to the directory being viewed in the window is shown (above the listing) as a sequence of buttons, each of which corresponds to an
+      ancestor and is associated with a "hover-hint" that shows the corresponding
+      <i>real</i>
+      path -- with symbolic links expanded when appropriate. Pressing any of them opens a fresh window on the ancestor.
+    </p>
+    <p align="center">
+      <b>Selection</b>
+    </p>
+    <p>Individual windows have a (possibly empty) selection: its rows are selected by mouse:</p>
+    <scope>
+      <attributes id="tag:p" hang=" *  "/>
+      <p>Primary mouse click: selects uniquely</p>
+      <p>Primary mouse drag: extends the selection</p>
+      <p>Shifted primary mouse click: extends the selection at one end</p>
+      <p>Secondary mouse click (or C-Primary) (or drag) inverts selection status of the indicated row(s)</p>
+      <p>Mouse double-click, or (ENTER), opens the file indicated by the selected row, if possible</p>
+    </scope>
+    <p align="center">
+      <b>Shelf</b>
+    </p>
+    <p>There is an Explorer-wide
+      <b>Shelf</b>
+      on which is a collection of paths that denote
+      individual files in the filestore. A file is said to be "shelved" if its path is
+      on the shelf. Shelved files are the objects of the actions describd below, and they are
+      underlined in the display. If the underlining is "textured" then the corresponding file has been marked for deletion
+      as part of the next "paste" (C-V).
+    </p>
+
+    <p>Actions are by buttons or keys.</p>
+    <scope>
+      <attributes id="tag:p" hang=" *  "/>
+      <p>
+        <b>Shelf</b>
+        places the selection on the shelf.</p>
+      <p>
+        <b>C-C</b>
+        places the selection on the shelf.</p>
+      <p>
+        <b>C-X</b>
+        places the selection on the shelf, and marks it for later deletion as part of the next "paste" (C-V) action.</p>
+      <p>
+        <b>C-V</b>
+        copies the shelved files to the folder in which it is clicked; deleting them if they were marked for deletion by (C-X).</p>
+      <p>
+        <b>del</b>
+        deletes the shelved files.</p>
+      <p>
+        <b>cp mv ln</b>
+        respectively copy, move, and link the shelved files to the
+        current implicit destination. This is
+        <i>either</i>
+        the directory denoted by a single selected path in the window in which
+        the button is pressed,
+        <i>or if none is selected</i>
+        the folder being shown in that window.
+      </p>
+      <p>
+        <b>Clear</b>
+        removes the deletion mark from the shelf if it is so marked; otherwise clears the shelf.</p>
+      <p>The usual navigation methods:
+        <b>home end page-up page-down scroll-wheel</b>
+        can be used to scroll the view; and the
+        <b>up down</b>
+        keys add to the selection in the specified direction if shifted; otherwise selecting a single row in the specified direction.
+      </p>
+    </scope>
+  </div>.enlarged(20, bg = Brushes.white)
+
+  lazy val dialogue: styled.windowdialogues.Dialogue[Unit] = {
+    val port = unstyled.dynamic.ViewPort(text, fg = Brushes.blueFrame, portDiagonal = Vec(text.w, text.h /
+      2)).withDragging(true).withPanning(false).withScaling(false)
+    styled.windowdialogues.Dialogue.FLASH(port.enlarged(port.fg.strokeWidth * 4), title = "Explorer Help")(style)
+  }
+
+  def button(implicit style: StyleSheet): Glyph = {
+    lazy val but: Glyph =
+      styled.TextButton("Help") { _ =>
+        if (HelpGUI.dialogue.running.isEmpty) HelpGUI.dialogue.East(but).start(floating = false)
+      }
+
+    but
+  }
+
 }
-
