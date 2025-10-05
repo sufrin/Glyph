@@ -529,7 +529,6 @@ class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component
     components(_selection)
   }
 
-
   def add(key: Key, component: Component): Unit = {
     components.addOne((key, component))
     linkGlyphs()
@@ -548,23 +547,31 @@ class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component
 
   def selectNext(path: Key): Unit = {
     if (size>1) {
-      val keys = components.keys.toSeq
-      val index = keys.indexOf(path) match {
+      val ks = keys.toSeq
+      val index = ks.indexOf(path) match {
         case -1 => 0
         case other => if (other==keys.length-1) 0 else other+1
       }
-      select(keys(index))
+      select(ks(index))
     }
   }
 
   def selectPrev(path: Key): Unit = {
     if (size>1) {
-      val keys = components.keys.toSeq
-      val index = keys.indexOf(path) match {
+      val ks = keys.toSeq
+      val index = ks.indexOf(path) match {
         case -1 => 0
         case other => if (other==0) keys.length-1 else other-1
       }
-      select(keys(index))
+      select(ks(index))
+    }
+  }
+
+  def selectedIndex: Int = {
+    val ks = keys.toSeq
+    ks.indexOf(selection) match {
+      case -1 => 0
+      case other => if (other==0) keys.length-1 else other-1
     }
   }
 
@@ -599,7 +606,7 @@ class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component
 
   override def draw(surface: Surface): Unit = {
     drawBackground(surface)
-    val glyph = GUI(selected)
+    val glyph = selectedGlyph
     //surface.withOrigin(inset/2, inset/2) { surface.drawRect(fg, boundingRect) }
     surface.withOrigin(glyph.location) { glyph.draw(surface) }
   }
