@@ -6,6 +6,7 @@ import unstyled.{static, Text}
 
 import io.github.humbleui.jwm.App
 import io.github.humbleui.skija.PaintMode
+import org.sufrin.glyph.GlyphTypes.Scalar
 
 import scala.collection.mutable
 
@@ -498,6 +499,134 @@ object MapOf {
   def apply[Key](fg: Brush=defaultFG, bg: Brush=defaultBG, align: Alignment=Center, valign: VAlignment=Mid)(initially: (Key, Glyph)*): MapOf[Key] =
     new MapOf(initially, align, valign, fg=fg, bg=bg)
 
+
+}
+
+/**  A mapping from `Key`s to `Component`s, of which the selected component provides the active GUI */
+class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component)], align: Alignment, valign: VAlignment, override val fg: Brush, override val bg: Brush) extends Glyph {
+  val components: mutable.LinkedHashMap[Key,Component] = new mutable.LinkedHashMap[Key,Component]
+  locally {
+    components.addAll(initially)
+  }
+
+  override val kind = "SeqOf"
+  override def toString: String = s"""MapOf(fg=$fg, bg=$bg\n glyphs=\n  ${components.map(_.toString).mkString(",\n  ")})"""
+
+  var _selection: Key = components.head._1
+
+  /** Select the glyph with th given key. */
+  def select(selection: Key): Unit = {
+    _selection = selection
+    reDraw()
+  }
+
+  /** How many glyphs are present. */
+  def size: Int = components.size
+
+  def selection: Key = _selection
+
+  @inline def selected: Component = {
+    components(_selection)
+  }
+
+
+  def add(key: Key, component: Component): Unit = {
+    components.addOne((key, component))
+    linkGlyphs()
+  }
+
+  def remove(key: Key): Unit = {
+    components.remove(key)
+  }
+
+  def isDefinedAt(key: Key): Boolean = components.isDefinedAt(key)
+
+  def values: Iterator[Component] = components.valuesIterator
+  def keys: Iterator[Key]        = components.keysIterator
+
+  def clear(): Unit = components.clear()
+
+  def selectNext(path: Key): Unit = {
+    if (size>1) {
+      val keys = components.keys.toSeq
+      val index = keys.indexOf(path) match {
+        case -1 => 0
+        case other => if (other==keys.length-1) 0 else other+1
+      }
+      select(keys(index))
+    }
+  }
+
+  def selectPrev(path: Key): Unit = {
+    if (size>1) {
+      val keys = components.keys.toSeq
+      val index = keys.indexOf(path) match {
+        case -1 => 0
+        case other => if (other==0) keys.length-1 else other-1
+      }
+      select(keys(index))
+    }
+  }
+
+  def boundingRectangle: Vec = {
+    @inline def componentWidth(component: Component): Scalar = GUI(component).w
+    @inline def componentHeight(component: Component): Scalar = GUI(component).h
+    val glyphs = components.values
+    Vec(glyphs.map(componentWidth(_)).max, glyphs.map(componentHeight(_)).max)
+  }
+
+  /**
+   * Space for all
+   */
+  val inset = fg.getStrokeWidth
+  val boundingRect = boundingRectangle+(inset, inset)
+  val diagonal = boundingRect+(inset, inset)
+
+  // Locate the subglyphs.
+  // Link subglyphs into the glyph tree
+  // TODO: (why didn't this happen in Composite?)
+  locally {
+    linkGlyphs()
+  }
+
+  def linkGlyphs(): Unit = {
+    for { (key, component) <- components} {
+      val glyph = GUI(component)
+      glyph @@ ((diagonal.x-glyph.w)*align.proportion, (diagonal.y-glyph.h)*valign.proportion)
+      glyph.parent = this
+    }
+  }
+
+  override def draw(surface: Surface): Unit = {
+    drawBackground(surface)
+    val glyph = GUI(selected)
+    //surface.withOrigin(inset/2, inset/2) { surface.drawRect(fg, boundingRect) }
+    surface.withOrigin(glyph.location) { glyph.draw(surface) }
+  }
+
+  @inline private def selectedGlyph: Glyph = GUI(selected)
+
+  override def glyphContaining(p: Vec): Option[Hit] =
+    selectedGlyph.glyphContaining(p-selectedGlyph.location)
+
+  override def contains(p: Vec): Boolean =
+    selectedGlyph.contains(p)
+
+  /**
+   * A  copy of this glyph: made with the same constructor
+   */
+  def copy(fg: Brush=fg, bg:Brush=bg): Glyph = new Keyed[Key, Component](GUI, initially, align, valign, fg, bg)
+}
+
+object Keyed {
+  val defaultBG: Brush = Brush("transparent")
+  val defaultFG: Brush = defaultBG
+
+  def from[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key, Component)], fg: Brush=defaultFG, bg: Brush=defaultBG, align: Alignment=Center, valign: VAlignment=Mid): Keyed[Key, Component] =
+    new Keyed(GUI, initially, align, valign, fg=fg, bg=bg)
+
+  def apply[Key, Component](GUI: Component=>Glyph, fg: Brush=defaultFG, bg: Brush=defaultBG, align: Alignment=Center, valign: VAlignment=Mid)(initially: (Key, Component)*): Keyed[Key, Component] =
+    new Keyed(GUI, initially, align, valign, fg=fg, bg=bg)
 
 }
 
