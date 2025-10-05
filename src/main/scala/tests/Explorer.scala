@@ -499,6 +499,10 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
   lazy val pathGUI =
     FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hFill(), StateButtons.parent).enlarged(15).roundFramed(radius=20)
 
+  def giveupFocus(): Unit = {
+    if (GUI.hasGuiRoot) GUI.guiRoot.giveupFocus()
+
+  }
 
   lazy val GUI: Glyph =
     NaturalSize.Col()(
@@ -638,6 +642,7 @@ object Explorer extends Application with SourceLoggable {
       explorers.select(path)
     }
     // TODO: Sort out passing focus to the SeqViewer subwindow if the mouse happens to be inside it
+    explorers.selected.giveupFocus()
     explorers.select(path)
     if (dialogue.running.isEmpty) {
       dialogue.onClose { case _ =>
