@@ -22,24 +22,27 @@ import java.awt.Desktop
 import java.nio.file._
 import scala.collection.mutable
 
-trait Host {
+trait ExplorerServices {
+  /** open the object denoted by `path` */
   def openPath(path: Path): Unit
+  /** close the `Explorer` opened for `path` */
   def closeExplorer(path: Path): Unit
-  def openHost(path: Path): Unit
+  /** Open a new `ExplorerServices` initially showing `path` */
+  def openServices(path: Path): Unit
 }
 
 /**
  * An `Explorer` implements the user interface to a `Folder`.
  * @param folder the `Folder` to be explored.
- * @param host  the host providing opening and closing services to this explorer
+ * @param provider  provides opening and closing services to this explorer
  * @param fileSheet the stylesheet defining (much of) this explorer's appearance
  */
-class Explorer(folder: Folder, host: ExplorerStack)(implicit val fileSheet: StyleSheet)  { thisExplorer =>
+class Explorer(folder: Folder, provider: ExplorerServices)(implicit val fileSheet: StyleSheet)  { thisExplorer =>
   import styled.TextButton
 
   val serial = Explorer.nextSerial()
 
-  override def toString: String = s"Explorer#$serial(${folder.path}, $host)"
+  override def toString: String = s"Explorer#$serial(${folder.path}, $provider)"
 
   var showingInvisibles = false
   var reverseSort = false
@@ -361,7 +364,7 @@ class Explorer(folder: Folder, host: ExplorerStack)(implicit val fileSheet: Styl
     override def onDoubleClick(mods: Bitmap, selected: Int): Unit = {
       val path = folder.path.resolve(theRows(selected).path)
       Explorer.finest(s"onDoubleClick(#$selected=$path) on $thisExplorer")
-      host.openPath(path)
+      provider.openPath(path)
       clearSelection()
     }
 
@@ -435,13 +438,13 @@ class Explorer(folder: Folder, host: ExplorerStack)(implicit val fileSheet: Styl
     private lazy val buttons: Seq[Glyph] = prefixDirs.tail.map {
       case path =>
         TextButton(s"${path.getFileName.toString}", hint=Hint(3, path.toRealPath().toString, preferredLocation = Some(Vec(10, 10)))(hintSheet))
-        { _ => host.openPath(path) }(buttonSheet)
-    }.prepended(TextButton(s"/") { _ => host.openPath(Path.of("/")) }(buttonSheet))
+        { _ => provider.openPath(path) }(buttonSheet)
+    }.prepended(TextButton(s"/") { _ => provider.openPath(Path.of("/")) }(buttonSheet))
 
     lazy val parent = {
       val up = folder.path.resolve("..").toRealPath()
       TextButton(s"..", hint=Hint(3, up.toString, preferredLocation = Some(Vec(10, 10)))(hintSheet))
-      { _ => host.openPath(up) }(buttonSheet)
+      { _ => provider.openPath(up) }(buttonSheet)
     }
 
     lazy val path: Glyph  = NaturalSize.Row(buttons)
@@ -508,14 +511,14 @@ class Explorer(folder: Folder, host: ExplorerStack)(implicit val fileSheet: Styl
 
   val closeButton = TextButton("Close"){
     _ =>
-      host.closeExplorer(folder.path)
+      provider.closeExplorer(folder.path)
   }
 
   val newButton = TextButton("New", hint=Hint(2, "Start a new explorer stack")){
     _ =>
       selectedPaths match {
-        case paths if paths.length != 1 => host.openHost(folder.path)
-        case paths if paths.length == 1 => host.openHost(paths.head)
+        case paths if paths.length != 1 => provider.openServices(folder.path)
+        case paths if paths.length == 1 => provider.openServices(paths.head)
       }
 
   }
@@ -540,7 +543,7 @@ class Explorer(folder: Folder, host: ExplorerStack)(implicit val fileSheet: Styl
 
 
 /**
- * The main application's root. Its GUI consistes of a single `ExplorerStack` whose
+ * The main application's root. Its GUI consistes of a single `ExplorerCollection` whose
  * initially selected `Explorer`  is bound to the current user's home directory.
  */
 object Explorer extends Application with SourceLoggable {
@@ -559,7 +562,7 @@ object Explorer extends Application with SourceLoggable {
   val icon:     Glyph = External.Image.readResource("/explorer").scaled(0.1f)
   def menuIcon: Glyph = icon
 
-  lazy val host = new ExplorerStack(homePath)
+  lazy val host = new ExplorerCollection(homePath)
   lazy val GUI: Glyph = host.GUI
 
   def title: String = s"Explore: ${homePath.abbreviatedString()}"
@@ -616,22 +619,22 @@ object Explorer extends Application with SourceLoggable {
   lazy val homePath = Paths.get(System.getProperty("user.home"))
 }
 
-object ExplorerStack {
+object ExplorerCollection {
   private var _serial = 0
   def nextSerial(): Int = { _serial +=1 ; _serial }
 }
 
 /**
- * A collection of `Explorer` with a single GUI presenting the currently-selected `Explorer`.
+ * A collection of `Explorer` with a single GUI that shows the currently-selected `Explorer`.
  * When there is more than one explorer others can be selected from a menu popped up by the
  * topmost leftmost button.
  *
  * @param rootPath the initially-selected `Explorer`s path.
  */
 
-class ExplorerStack(rootPath: Path) extends Host { thisExplorerStack =>
+class ExplorerCollection(rootPath: Path) extends ExplorerServices { thisExplorerCollection =>
 
-  lazy val explorers = Keyed[Path, Explorer](_.GUI)(rootPath -> new Explorer(Folder(rootPath), thisExplorerStack))
+  lazy val explorers = Keyed[Path, Explorer](_.GUI)(rootPath -> new Explorer(Folder(rootPath), thisExplorerCollection))
 
   lazy val GUI: Glyph = {
     lazy val iconHint =  Hint(3, if(explorers.size>1) s"(Menu of size ${explorers.size})" else s"Open $rootPath", false, Some(Vec(0, menuIcon.diagonal.y/2)))
@@ -656,9 +659,9 @@ class ExplorerStack(rootPath: Path) extends Host { thisExplorerStack =>
   }
 
 
-  val serial: Int = ExplorerStack.nextSerial()
+  val serial: Int = ExplorerCollection.nextSerial()
 
-  override val toString: String = explorers.keys.map(_.toString).mkString(s"ExplorerStack#$serial(", " ", ")")
+  override val toString: String = explorers.keys.map(_.toString).mkString(s"ExplorerCollection#$serial(", " ", ")")
 
 
   def closeExplorer(path: Path): Unit = {
@@ -680,10 +683,10 @@ class ExplorerStack(rootPath: Path) extends Host { thisExplorerStack =>
     }
   }
 
-  def openHost(path: Path): Unit = {
+  def openServices(path: Path): Unit = {
     assert(path.isReadable, s"$path is not readable")
-    val window = styled.windowdialogues.Dialogue.FLASH(new ExplorerStack(path).GUI)(fileSheet).NorthEast(GUI).withAutoScale()
-    window.andThen(floating = false, onClose = { _ => Explorer.fine(s"Closed $thisExplorerStack") })
+    val window = styled.windowdialogues.Dialogue.FLASH(new ExplorerCollection(path).GUI)(fileSheet).NorthEast(GUI).withAutoScale()
+    window.andThen(floating = false, onClose = { _ => Explorer.fine(s"Closed $thisExplorerCollection") })
   }
 
   def openExplorerWindow(path: Path): Unit = {
@@ -691,7 +694,7 @@ class ExplorerStack(rootPath: Path) extends Host { thisExplorerStack =>
       explorers.select(path)
     } else {
       val folder = Folder(path)
-      val explorer = new Explorer(folder, thisExplorerStack)
+      val explorer = new Explorer(folder, thisExplorerCollection)
       explorers.add(path, explorer)
       explorers.select(path)
     }
