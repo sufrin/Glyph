@@ -39,7 +39,7 @@ object Location {
 
   def NorthWestFor(placed: Glyph)(glyph: Glyph): RelativeTo = RelativeTo(glyph, Vec(-placed.w, -placed.h))
 
-  def NorthEastFor(placed: Glyph)(glyph: Glyph): RelativeTo = RelativeTo(glyph, Vec(glyph.w, -placed.h))
+  def NorthEastFor(placed: Glyph)(glyph: Glyph): RelativeTo = NorthEast(glyph)
 
   def OnRootOf(glyph: Glyph)(x: Scalar, y: Scalar): RelativeTo = RelativeTo(glyph.guiRoot, Vec(x, y))
 

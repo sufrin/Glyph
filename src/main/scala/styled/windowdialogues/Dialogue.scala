@@ -80,13 +80,16 @@ class Dialogue[T](blurb:        Glyph,
                   var location: Location,
                   theTitle:     String,
                   bg:            Brush,
-                  var preferred: Int = 0
+                  var preferred: Int = 0,
                  )(implicit sheet: StyleSheet) { thisPopup =>
 
   val maxPreferred = buttons.length
   /**
    * Make a primitive popup from `blurb` atop `bottomRow`; placing it at `location` on the screen.
    */
+
+  private var _autoScale: Boolean = false
+  def withAutoScale(enable: Boolean=true) = { _autoScale=enable; thisPopup }
 
   import GlyphTypes.Pixels
   import NaturalSize.{Col, Row}
@@ -241,6 +244,8 @@ class Dialogue[T](blurb:        Glyph,
           case button: GenericButton => button.setHover(true)
           case _ =>
         }
+        // deal with auto scaling
+        if (_autoScale) Application.enableAutoScaleFor(GUI)
     }
   }
 

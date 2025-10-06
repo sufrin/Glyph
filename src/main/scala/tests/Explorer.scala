@@ -12,7 +12,7 @@ import NaturalSize.Grid
 import glyphML.language
 import styled.overlaydialogues.Dialogue
 import styles.decoration.{Framed, RoundFramed}
-import tests.Explorer.{dialogueLabel, dialogueSheet, fileSheet, openOrdinaryFile, GUI}
+import tests.Explorer.{dialogueLabel, dialogueSheet, fileSheet, iconSheet, menuIcon, openOrdinaryFile}
 import unstyled.dynamic.Keyed
 
 import io.github.humbleui.jwm.Key
@@ -22,16 +22,24 @@ import java.awt.Desktop
 import java.nio.file._
 import scala.collection.mutable
 
+trait Host {
+  def openPath(path: Path): Unit
+  def closeExplorer(path: Path): Unit
+  def openHost(path: Path): Unit
+}
 
-
-
-
-class Explorer(folder: Folder, stack: ExplorerStack)(implicit val fileSheet: StyleSheet)  { thisExplorer =>
+/**
+ * An `Explorer` implements the user interface to a `Folder`.
+ * @param folder the `Folder` to be explored.
+ * @param host  the host providing opening and closing services to this explorer
+ * @param fileSheet the stylesheet defining (much of) this explorer's appearance
+ */
+class Explorer(folder: Folder, host: ExplorerStack)(implicit val fileSheet: StyleSheet)  { thisExplorer =>
   import styled.TextButton
 
   val serial = Explorer.nextSerial()
 
-  override def toString: String = s"Explorer#$serial(${folder.path}, $stack)"
+  override def toString: String = s"Explorer#$serial(${folder.path}, $host)"
 
   var showingInvisibles = false
   var reverseSort = false
@@ -67,14 +75,14 @@ class Explorer(folder: Folder, stack: ExplorerStack)(implicit val fileSheet: Sty
     def bySize(rows: Seq[Row]): Seq[Row]    = rows.sorted(bySize)
     def byName(rows: Seq[Row]): Seq[Row]    = rows
 
-    def reverseView[T](s: Seq[T]): Seq[T] = new Seq[T] { host =>
+    def reverseView[T](s: Seq[T]): Seq[T] = new Seq[T] { thisView =>
 
       def apply(i: Int): T = s(length-i-1)
 
       val length: Int = s.length
 
       def iterator: Iterator[T] = new Iterator[T] {
-        var i: Int = host.length
+        var i: Int = thisView.length
         def hasNext: Boolean = i>0
         def next(): T = { i-=1; s(i) }
       }
@@ -196,6 +204,7 @@ class Explorer(folder: Folder, stack: ExplorerStack)(implicit val fileSheet: Sty
     CachedSeq(theRows) (showRow)
   }
 
+  def selectedPaths: Seq[Path] = view.selectedRows.map { i => theRows(i).path }
 
   object Actions {
 
@@ -233,8 +242,9 @@ class Explorer(folder: Folder, stack: ExplorerStack)(implicit val fileSheet: Sty
     /** selected paths to the shelf */
     def clearShelf(): Unit = Shelf.clear()
 
+
     def shelf(forCut: Boolean): Unit  = {
-      shelf(view.selectedRows.map { i => theRows(i).path })
+      shelf(selectedPaths)
       Shelf.forCut = forCut
     }
 
@@ -245,7 +255,7 @@ class Explorer(folder: Folder, stack: ExplorerStack)(implicit val fileSheet: Sty
       view.clearSelection()
     }
 
-    def unShelf(): Unit  = unShelf(view.selectedRows.map { i => theRows(i).path })
+    def unShelf(): Unit  = unShelf(selectedPaths)
 
     def unShelf(paths: Seq[Path]): Unit = {
       Explorer.finer(s"Shelf -=  ${paths.mkString(" ")}")
@@ -351,7 +361,7 @@ class Explorer(folder: Folder, stack: ExplorerStack)(implicit val fileSheet: Sty
     override def onDoubleClick(mods: Bitmap, selected: Int): Unit = {
       val path = folder.path.resolve(theRows(selected).path)
       Explorer.finest(s"onDoubleClick(#$selected=$path) on $thisExplorer")
-      stack.open(path)
+      host.openPath(path)
       clearSelection()
     }
 
@@ -425,13 +435,13 @@ class Explorer(folder: Folder, stack: ExplorerStack)(implicit val fileSheet: Sty
     private lazy val buttons: Seq[Glyph] = prefixDirs.tail.map {
       case path =>
         TextButton(s"${path.getFileName.toString}", hint=Hint(3, path.toRealPath().toString, preferredLocation = Some(Vec(10, 10)))(hintSheet))
-        { _ => stack.open(path) }(buttonSheet)
-    }.prepended(TextButton(s"/") { _ => stack.open(Path.of("/")) }(buttonSheet))
+        { _ => host.openPath(path) }(buttonSheet)
+    }.prepended(TextButton(s"/") { _ => host.openPath(Path.of("/")) }(buttonSheet))
 
     lazy val parent = {
       val up = folder.path.resolve("..").toRealPath()
       TextButton(s"..", hint=Hint(3, up.toString, preferredLocation = Some(Vec(10, 10)))(hintSheet))
-      { _ => stack.open(up) }(buttonSheet)
+      { _ => host.openPath(up) }(buttonSheet)
     }
 
     lazy val path: Glyph  = NaturalSize.Row(buttons)
@@ -498,12 +508,16 @@ class Explorer(folder: Folder, stack: ExplorerStack)(implicit val fileSheet: Sty
 
   val closeButton = TextButton("Close"){
     _ =>
-      stack.closeExplorer(folder.path)
+      host.closeExplorer(folder.path)
   }
 
-  val newButton = TextButton("New"){
+  val newButton = TextButton("New", hint=Hint(2, "Start a new explorer stack")){
     _ =>
-      stack.newExplorerStack(folder.path)
+      selectedPaths match {
+        case paths if paths.length != 1 => host.openHost(folder.path)
+        case paths if paths.length == 1 => host.openHost(paths.head)
+      }
+
   }
 
 
@@ -525,6 +539,10 @@ class Explorer(folder: Folder, stack: ExplorerStack)(implicit val fileSheet: Sty
 }
 
 
+/**
+ * The main application's root. Its GUI consistes of a single `ExplorerStack` whose
+ * initially selected `Explorer`  is bound to the current user's home directory.
+ */
 object Explorer extends Application with SourceLoggable {
   level = FINEST
 
@@ -538,38 +556,13 @@ object Explorer extends Application with SourceLoggable {
 
   val iconSheet = fileSheet.copy(buttonDecoration = Framed(Brushes.black(width=2)))
 
-  val rootPath = FileSystems.getDefault.getPath("/Users/sufrin")
+  val icon:     Glyph = External.Image.readResource("/explorer").scaled(0.1f)
+  def menuIcon: Glyph = icon
 
-  val icon:     Glyph = External.Image.readResource("/explorer.jpg")
-  val menuIcon: Glyph = icon.scaled(0.4f).framed(Brushes.black(width=2))
+  lazy val host = new ExplorerStack(homePath)
+  lazy val GUI: Glyph = host.GUI
 
-  lazy val stack = new ExplorerStack(rootPath)
-
-  lazy val GUI: Glyph = {
-    import stack._
-
-    def hint          =  Hint(3, s"${explorers.selectedIndex+1}/${explorers.size.toString}", false, Some(Vec.Zero))
-    lazy val iconHint =  Hint(3, if(explorers.size>1) s"(Menu)" else s"Open $rootPath", false, Some(Vec(0, menuIcon.diagonal.y/2)))
-
-    lazy val iconButton: Glyph = MenuGlyphButton(menuIcon, hint=iconHint) {
-      _ =>
-        if (explorers.size>1)
-           styled.windowdialogues.Menu(explorers.keys.toSeq.map{ key => MenuButton(s"Open ${key.toString}"){ _ => openExplorerWindow(key)}}).East(iconButton).start()
-        else
-           openExplorerWindow(rootPath)
-    } (iconSheet)
-
-
-    NaturalSize.Row(align=Top)(
-      iconButton,
-      fileSheet.hFill(),
-      fileSheet.hFill(),
-      HelpGUI.button(iconSheet)
-    )
-  }
-
-  def title: String = s"Explore: ${rootPath.abbreviatedString()}"
-
+  def title: String = s"Explore: ${homePath.abbreviatedString()}"
   override val dock: Dock = Dock(icon) // ("Exp\nlore", bg=Brushes.yellow)
 
   val dialogueSheet = fileSheet.copy(buttonForegroundBrush=Brushes.red, buttonDecoration=RoundFramed(Brushes.redFrame, radius=10))
@@ -628,11 +621,40 @@ object ExplorerStack {
   def nextSerial(): Int = { _serial +=1 ; _serial }
 }
 
-class ExplorerStack(rootPath: Path) { thisExplorerStack =>
+/**
+ * A collection of `Explorer` with a single GUI presenting the currently-selected `Explorer`.
+ * When there is more than one explorer others can be selected from a menu popped up by the
+ * topmost leftmost button.
+ *
+ * @param rootPath the initially-selected `Explorer`s path.
+ */
 
+class ExplorerStack(rootPath: Path) extends Host { thisExplorerStack =>
 
   lazy val explorers = Keyed[Path, Explorer](_.GUI)(rootPath -> new Explorer(Folder(rootPath), thisExplorerStack))
-  lazy val dialogue = styled.windowdialogues.Dialogue.FLASH(explorers, title = "Explorer").OnRootOf(GUI)
+
+  lazy val GUI: Glyph = {
+    lazy val iconHint =  Hint(3, if(explorers.size>1) s"(Menu of size ${explorers.size})" else s"Open $rootPath", false, Some(Vec(0, menuIcon.diagonal.y/2)))
+
+    lazy val iconButton: Glyph = MenuGlyphButton(menuIcon, hint=iconHint) {
+      _ =>
+        if (explorers.size>1)
+          styled.windowdialogues.Menu(explorers.keys.toSeq.map{ key => MenuButton(s"Open ${key.toString}"){ _ => openExplorerWindow(key)}}).East(iconButton).start()
+        else
+          openExplorerWindow(rootPath)
+    } (iconSheet)
+
+    NaturalSize.Col(align=Center)(
+      FixedSize.Row(width=explorers.w, align=Top)(
+        iconButton,
+        iconSheet.hFill(),
+        HelpGUI.button(Explorer.fileSheet)
+      ),
+      explorers
+    )
+
+  }
+
 
   val serial: Int = ExplorerStack.nextSerial()
 
@@ -658,12 +680,9 @@ class ExplorerStack(rootPath: Path) { thisExplorerStack =>
     }
   }
 
-  def newExplorerStack(path: Path): Unit = {
+  def openHost(path: Path): Unit = {
     assert(path.isReadable, s"$path is not readable")
-    val stack  = new ExplorerStack(path)
-    val folder = Folder(path)
-    val explorer = new Explorer(folder, stack)
-    val window = styled.windowdialogues.Dialogue.OK(explorer.GUI)(fileSheet).East(GUI)
+    val window = styled.windowdialogues.Dialogue.FLASH(new ExplorerStack(path).GUI)(fileSheet).NorthEast(GUI).withAutoScale()
     window.andThen(floating = false, onClose = { _ => Explorer.fine(s"Closed $thisExplorerStack") })
   }
 
@@ -678,17 +697,9 @@ class ExplorerStack(rootPath: Path) { thisExplorerStack =>
     }
     explorers.selected.giveupFocus()
     explorers.select(path)
-    if (dialogue.running.isEmpty) {
-      dialogue.onClose { case _ =>
-        for {explorer <- explorers.values} explorer.close()
-        explorers.clear()
-      }
-      dialogue.start(floating = false)
-      Application.enableAutoScaleFor(dialogue.GUI)
-    }
   }
 
-  def open(path: Path): Unit = {
+  def openPath(path: Path): Unit = {
     if (path.isReadable) {
       if (path.isDir) {
         try {
@@ -825,7 +836,7 @@ object HelpGUI {
     styled.windowdialogues.Dialogue.FLASH(port.enlarged(port.fg.strokeWidth * 4), title = "Explorer Help")(style)
   }
 
-  def button(implicit style: StyleSheet): Glyph = {
+  def button(style: StyleSheet): Glyph = {
     lazy val but: Glyph =
       styled.TextButton("Help") { _ =>
         if (HelpGUI.dialogue.running.isEmpty) HelpGUI.dialogue.East(but).start(floating = false)
