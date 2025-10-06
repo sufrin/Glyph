@@ -12,6 +12,7 @@ import NaturalSize.Grid
 import glyphML.language
 import styled.overlaydialogues.Dialogue
 import styles.decoration.{Framed, RoundFramed}
+import tests.Explorer.{dialogueLabel, dialogueSheet, fileSheet, openOrdinaryFile, GUI}
 import unstyled.dynamic.Keyed
 
 import io.github.humbleui.jwm.Key
@@ -25,8 +26,12 @@ import scala.collection.mutable
 
 
 
-class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplorer =>
+class Explorer(folder: Folder, stack: ExplorerStack)(implicit val fileSheet: StyleSheet)  { thisExplorer =>
   import styled.TextButton
+
+  val serial = Explorer.nextSerial()
+
+  override def toString: String = s"Explorer#$serial(${folder.path}, $stack)"
 
   var showingInvisibles = false
   var reverseSort = false
@@ -345,8 +350,8 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
 
     override def onDoubleClick(mods: Bitmap, selected: Int): Unit = {
       val path = folder.path.resolve(theRows(selected).path)
-      Explorer.finest(s"onDoubleClick(#$selected=$path)")
-      Explorer.open(path)
+      Explorer.finest(s"onDoubleClick(#$selected=$path) on $thisExplorer")
+      stack.open(path)
       clearSelection()
     }
 
@@ -382,7 +387,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
           Actions.print()
 
         case other =>
-          Explorer.finest(s"onOther($gesture)")
+          Explorer.finest(s"onOther($gesture) on $thisExplorer")
           bell.play()
       }
     }
@@ -420,13 +425,13 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
     private lazy val buttons: Seq[Glyph] = prefixDirs.tail.map {
       case path =>
         TextButton(s"${path.getFileName.toString}", hint=Hint(3, path.toRealPath().toString, preferredLocation = Some(Vec(10, 10)))(hintSheet))
-        { _ => Explorer.open(path) }(buttonSheet)
-    }.prepended(TextButton(s"/") { _ => Explorer.open(Path.of("/")) }(buttonSheet))
+        { _ => stack.open(path) }(buttonSheet)
+    }.prepended(TextButton(s"/") { _ => stack.open(Path.of("/")) }(buttonSheet))
 
     lazy val parent = {
       val up = folder.path.resolve("..").toRealPath()
       TextButton(s"..", hint=Hint(3, up.toString, preferredLocation = Some(Vec(10, 10)))(hintSheet))
-      { _ => Explorer.open(up) }(buttonSheet)
+      { _ => stack.open(up) }(buttonSheet)
     }
 
     lazy val path: Glyph  = NaturalSize.Row(buttons)
@@ -493,8 +498,14 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
 
   val closeButton = TextButton("Close"){
     _ =>
-      Explorer.closeExplorer(folder.path)
+      stack.closeExplorer(folder.path)
   }
+
+  val newButton = TextButton("New"){
+    _ =>
+      stack.newExplorerStack(folder.path)
+  }
+
 
   lazy val pathGUI =
     FixedSize.Row(width=view.w, align=Mid)(StateButtons.path, fileSheet.hFill(), StateButtons.parent).enlarged(15).roundFramed(radius=20)
@@ -506,7 +517,7 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
 
   lazy val GUI: Glyph =
     NaturalSize.Col()(
-      FixedSize.Row(width=view.w, align=Mid)(Settings.popupButton, fileSheet.hSpace(), Actions.GUI, fileSheet.hFill(),closeButton),
+      FixedSize.Row(width=view.w, align=Mid)(Settings.popupButton, fileSheet.hSpace(), Actions.GUI, fileSheet.hFill(), newButton, closeButton),
       fileSheet.vSpace(1),
       pathGUI,
       view.enlarged(15),
@@ -516,6 +527,9 @@ class Explorer(folder: Folder)(implicit val fileSheet: StyleSheet)  { thisExplor
 
 object Explorer extends Application with SourceLoggable {
   level = FINEST
+
+  private var _serial = 0
+  def nextSerial(): Int = { _serial +=1 ; _serial }
 
   import GlyphTypes.FontStyle.NORMAL
 
@@ -529,20 +543,13 @@ object Explorer extends Application with SourceLoggable {
   val icon:     Glyph = External.Image.readResource("/explorer.jpg")
   val menuIcon: Glyph = icon.scaled(0.4f).framed(Brushes.black(width=2))
 
+  lazy val stack = new ExplorerStack(rootPath)
+
   lazy val GUI: Glyph = {
+    import stack._
 
     def hint          =  Hint(3, s"${explorers.selectedIndex+1}/${explorers.size.toString}", false, Some(Vec.Zero))
     lazy val iconHint =  Hint(3, if(explorers.size>1) s"(Menu)" else s"Open $rootPath", false, Some(Vec(0, menuIcon.diagonal.y/2)))
-
-    lazy val nextButton = TextButton(">",  hint = hint){
-      _ =>
-        Explorer.nextExplorer(explorers.selection)
-    }(iconSheet)
-
-    lazy val prevButton = TextButton("<", hint = hint){
-      _ =>
-        Explorer.prevExplorer(explorers.selection)
-    }(iconSheet)
 
     lazy val iconButton: Glyph = MenuGlyphButton(menuIcon, hint=iconHint) {
       _ =>
@@ -554,11 +561,8 @@ object Explorer extends Application with SourceLoggable {
 
 
     NaturalSize.Row(align=Top)(
-      //prevButton,
       iconButton,
-      //nextButton,
       fileSheet.hFill(),
-      //styled.TextButton(s"$homePath"){ _ => openExplorerWindow(homePath) },
       fileSheet.hFill(),
       HelpGUI.button(iconSheet)
     )
@@ -598,7 +602,7 @@ object Explorer extends Application with SourceLoggable {
         try desktop.browse(path.toUri) // print
         catch {
           case ex: java.io.IOException =>
-            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to brows (for printing)\n${path.toRealPath()}"))(dialogueSheet).InFront(GUI).start(floating = false)
+            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to browse (for printing)\n${path.toRealPath()}"))(dialogueSheet).InFront(GUI).start(floating = false)
         }
       else
         styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop print not supported")).InFront(GUI).start()
@@ -610,8 +614,30 @@ object Explorer extends Application with SourceLoggable {
     }
   }
 
-  lazy val explorers = Keyed[Path, Explorer](_.GUI)(rootPath->new Explorer(Folder(rootPath)))
-  lazy val dialogue  = styled.windowdialogues.Dialogue.FLASH(explorers, title = "Explorer").OnRootOf(GUI)
+  override protected def whenStarted(): Unit = {
+    super.whenStarted()
+    GUI.guiRoot.autoScale=true
+    Folder.level = FINEST
+  }
+
+  lazy val homePath = Paths.get(System.getProperty("user.home"))
+}
+
+object ExplorerStack {
+  private var _serial = 0
+  def nextSerial(): Int = { _serial +=1 ; _serial }
+}
+
+class ExplorerStack(rootPath: Path) { thisExplorerStack =>
+
+
+  lazy val explorers = Keyed[Path, Explorer](_.GUI)(rootPath -> new Explorer(Folder(rootPath), thisExplorerStack))
+  lazy val dialogue = styled.windowdialogues.Dialogue.FLASH(explorers, title = "Explorer").OnRootOf(GUI)
+
+  val serial: Int = ExplorerStack.nextSerial()
+
+  override val toString: String = explorers.keys.map(_.toString).mkString(s"ExplorerStack#$serial(", " ", ")")
+
 
   def closeExplorer(path: Path): Unit = {
     if (explorers.size > 1) {
@@ -632,21 +658,29 @@ object Explorer extends Application with SourceLoggable {
     }
   }
 
+  def newExplorerStack(path: Path): Unit = {
+    assert(path.isReadable, s"$path is not readable")
+    val stack  = new ExplorerStack(path)
+    val folder = Folder(path)
+    val explorer = new Explorer(folder, stack)
+    val window = styled.windowdialogues.Dialogue.OK(explorer.GUI)(fileSheet).East(GUI)
+    window.andThen(floating = false, onClose = { _ => Explorer.fine(s"Closed $thisExplorerStack") })
+  }
+
   def openExplorerWindow(path: Path): Unit = {
     if (explorers.isDefinedAt(path)) {
       explorers.select(path)
     } else {
       val folder = Folder(path)
-      val explorer = new Explorer(folder)
+      val explorer = new Explorer(folder, thisExplorerStack)
       explorers.add(path, explorer)
       explorers.select(path)
     }
-    // TODO: Sort out passing focus to the SeqViewer subwindow if the mouse happens to be inside it
     explorers.selected.giveupFocus()
     explorers.select(path)
     if (dialogue.running.isEmpty) {
       dialogue.onClose { case _ =>
-        for { explorer <- explorers.values} explorer.close()
+        for {explorer <- explorers.values} explorer.close()
         explorers.clear()
       }
       dialogue.start(floating = false)
@@ -676,17 +710,6 @@ object Explorer extends Application with SourceLoggable {
       styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Unreadable\n$path"))(dialogueSheet).InFront(GUI).start()
     }
   }
-
-
-  override protected def whenStarted(): Unit = {
-    super.whenStarted()
-    GUI.guiRoot.autoScale=true
-    Folder.level = FINEST
-  }
-
-  lazy val homePath = Paths.get(System.getProperty("user.home"))
-
-
 }
 
 object HelpGUI {
@@ -806,8 +829,7 @@ object HelpGUI {
     lazy val but: Glyph =
       styled.TextButton("Help") { _ =>
         if (HelpGUI.dialogue.running.isEmpty) HelpGUI.dialogue.East(but).start(floating = false)
-      }
-
+      }(style)
     but
   }
 
