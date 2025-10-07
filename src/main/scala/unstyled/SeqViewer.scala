@@ -147,7 +147,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
       val topBrush = if (rowOrigin==0) marginBrush else outsideBrush
       val botBrush = if (nextVisibleRow>=seq.length) marginBrush else outsideBrush
       surface.drawLines(topBrush, offset, underHeader, w-offset, underHeader)
-      surface.drawLines(botBrush, offset, h-offset, w-offset, h-offset)
+      surface.drawLines(botBrush, offset, h, w-offset, h)
     }
   }
 
@@ -156,8 +156,8 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
   var clicks: Int = 0
 
-  lazy val marginBrush: Brush = Brushes.red(alpha=0.85f)
-  lazy val outsideBrush: Brush = marginBrush(width=2).dashed(5,5)
+  lazy val marginBrush: Brush = Brushes.darkGrey(alpha=1)
+  lazy val outsideBrush: Brush = marginBrush(width=1).dashed(5,5)
   def isVisible(row: Int): Boolean = (rowOrigin<=row) && (row-rowOrigin<rows)
 
 

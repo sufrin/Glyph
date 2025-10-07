@@ -1,7 +1,8 @@
 package org.sufrin.glyph
 package tests
+package explorer
 
-import tests.PathProperties._
+import tests.explorer.PathProperties._
 
 import org.sufrin.logging.SourceDefault
 

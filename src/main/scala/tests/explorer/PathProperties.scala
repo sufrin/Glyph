@@ -1,5 +1,6 @@
 package org.sufrin.glyph
 package tests
+package explorer
 
 import files.FileAttributes
 

@@ -1,35 +1,24 @@
 package org.sufrin.glyph
 package tests
+package explorer
 
 import files.{FileAttributes, Folder, Shelf}
 import styled._
-import tests.PathProperties._
+import tests.explorer.PathProperties._
 import Modifiers.Bitmap
 import cached._
 import files.FileAttributes.Row
 import gesture.{Gesture, Keystroke}
 import NaturalSize.Grid
-import glyphML.language
 import styled.overlaydialogues.Dialogue
 import styles.decoration.{Framed, RoundFramed}
-import tests.Explorer.{dialogueLabel, dialogueSheet, fileSheet, iconSheet, menuIcon, openOrdinaryFile}
-import unstyled.dynamic.Keyed
 
 import io.github.humbleui.jwm.Key
 import org.sufrin.logging.{FINEST, SourceLoggable}
 
-import java.awt.Desktop
 import java.nio.file._
 import scala.collection.mutable
 
-trait ExplorerServices {
-  /** open the object denoted by `path` */
-  def openPath(path: Path): Unit
-  /** close the `Explorer` opened for `path` */
-  def closeExplorer(path: Path): Unit
-  /** Open a new `ExplorerServices` initially showing `path` */
-  def openServices(path: Path): Unit
-}
 
 /**
  * An `Explorer` implements the user interface to a `Folder`.
@@ -37,7 +26,7 @@ trait ExplorerServices {
  * @param provider  provides opening and closing services to this explorer
  * @param fileSheet the stylesheet defining (much of) this explorer's appearance
  */
-class Explorer(folder: Folder, provider: ExplorerServices)(implicit val fileSheet: StyleSheet)  { thisExplorer =>
+class Explorer(val folder: Folder, val provider: ExplorerServices)(implicit val fileSheet: StyleSheet)  { thisExplorer =>
   import styled.TextButton
 
   val serial = Explorer.nextSerial()
@@ -503,24 +492,9 @@ class Explorer(folder: Folder, provider: ExplorerServices)(implicit val fileShee
 
     lazy val popupButton: Glyph = unstyled.reactive.RawButton(Label("Ξ").scaled(1.7f), down=Brushes.red, hover=Brushes.green) {
       _ =>
-        settingsPopup.isModal = false
         settingsPopup.canEscape = true
         settingsPopup.start()
     }
-  }
-
-  val closeButton = TextButton("Close"){
-    _ =>
-      provider.closeExplorer(folder.path)
-  }
-
-  val newButton = TextButton("New", hint=Hint(2, "Start a new explorer stack")){
-    _ =>
-      selectedPaths match {
-        case paths if paths.length != 1 => provider.openServices(folder.path)
-        case paths if paths.length == 1 => provider.openServices(paths.head)
-      }
-
   }
 
 
@@ -534,7 +508,7 @@ class Explorer(folder: Folder, provider: ExplorerServices)(implicit val fileShee
 
   lazy val GUI: Glyph =
     NaturalSize.Col()(
-      FixedSize.Row(width=view.w, align=Mid)(Settings.popupButton, fileSheet.hSpace(), Actions.GUI, fileSheet.hFill(), newButton, closeButton),
+      FixedSize.Row(width=view.w, align=Mid)(Settings.popupButton, fileSheet.hSpace(), Actions.GUI, fileSheet.hFill()),
       fileSheet.vSpace(1),
       pathGUI,
       view.enlarged(15),
@@ -555,11 +529,11 @@ object Explorer extends Application with SourceLoggable {
   import GlyphTypes.FontStyle.NORMAL
 
   implicit val fileSheet: StyleSheet =
-    StyleSheet(buttonDecoration=RoundFramed(enlarge=9f, radius=0), buttonFontSize = 18, labelFontSize = 18, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
+    StyleSheet(buttonDecoration=RoundFramed(enlarge=9f, radius=0), buttonFontSize = 14, labelFontSize = 14, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
 
   val iconSheet = fileSheet.copy(buttonDecoration = Framed(Brushes.black(width=2)))
 
-  val icon:     Glyph = External.Image.readResource("/explorer").scaled(0.1f)
+  val icon:     Glyph = External.Image.readResource("/explorer").scaled(0.03f)
   def menuIcon: Glyph = icon
 
   lazy val host = new ExplorerCollection(homePath)
@@ -619,232 +593,8 @@ object Explorer extends Application with SourceLoggable {
   lazy val homePath = Paths.get(System.getProperty("user.home"))
 }
 
-object ExplorerCollection {
-  private var _serial = 0
-  def nextSerial(): Int = { _serial +=1 ; _serial }
-}
-
-/**
- * A collection of `Explorer` with a single GUI that shows the currently-selected `Explorer`.
- * When there is more than one explorer others can be selected from a menu popped up by the
- * topmost leftmost button.
- *
- * @param rootPath the initially-selected `Explorer`s path.
- */
-
-class ExplorerCollection(rootPath: Path) extends ExplorerServices { thisExplorerCollection =>
-
-  lazy val explorers = Keyed[Path, Explorer](_.GUI)(rootPath -> new Explorer(Folder(rootPath), thisExplorerCollection))
-
-  lazy val GUI: Glyph = {
-    lazy val iconHint =  Hint(3, if(explorers.size>1) s"(Menu of size ${explorers.size})" else s"Open $rootPath", false, Some(Vec(0, menuIcon.diagonal.y/2)))
-
-    lazy val iconButton: Glyph = MenuGlyphButton(menuIcon, hint=iconHint) {
-      _ =>
-        if (explorers.size>1)
-          styled.windowdialogues.Menu(explorers.keys.toSeq.map{ key => MenuButton(s"Open ${key.toString}"){ _ => openExplorerWindow(key)}}).East(iconButton).start()
-        else
-          openExplorerWindow(rootPath)
-    } (iconSheet)
-
-    NaturalSize.Col(align=Center)(
-      FixedSize.Row(width=explorers.w, align=Top)(
-        iconButton,
-        iconSheet.hFill(),
-        HelpGUI.button(Explorer.fileSheet)
-      ),
-      explorers
-    )
-
-  }
 
 
-  val serial: Int = ExplorerCollection.nextSerial()
-
-  override val toString: String = explorers.keys.map(_.toString).mkString(s"ExplorerCollection#$serial(", " ", ")")
 
 
-  def closeExplorer(path: Path): Unit = {
-    if (explorers.size > 1) {
-      explorers.selectPrev(path)
-      explorers.remove(path)
-    }
-  }
 
-  def nextExplorer(path: Path): Unit = {
-    if (explorers.size > 1) {
-      explorers.selectNext(path)
-    }
-  }
-
-  def prevExplorer(path: Path): Unit = {
-    if (explorers.size > 1) {
-      explorers.selectPrev(path)
-    }
-  }
-
-  def openServices(path: Path): Unit = {
-    assert(path.isReadable, s"$path is not readable")
-    val window = styled.windowdialogues.Dialogue.FLASH(new ExplorerCollection(path).GUI)(fileSheet).NorthEast(GUI).withAutoScale()
-    window.andThen(floating = false, onClose = { _ => Explorer.fine(s"Closed $thisExplorerCollection") })
-  }
-
-  def openExplorerWindow(path: Path): Unit = {
-    if (explorers.isDefinedAt(path)) {
-      explorers.select(path)
-    } else {
-      val folder = Folder(path)
-      val explorer = new Explorer(folder, thisExplorerCollection)
-      explorers.add(path, explorer)
-      explorers.select(path)
-    }
-    explorers.selected.giveupFocus()
-    explorers.select(path)
-  }
-
-  def openPath(path: Path): Unit = {
-    if (path.isReadable) {
-      if (path.isDir) {
-        try {
-          openExplorerWindow(path)
-        } catch {
-          case ex: NotDirectoryException => styled.windowdialogues.Dialogue.OK(Label(s"Not a directory\n${ex.getMessage}")).OnRootOf(GUI).start()
-        }
-      } else
-        openOrdinaryFile(path)
-    } else if (path.isDir) { // Apparently non-readable: may still have ACL permissions as a directory
-      val desktop = Desktop.getDesktop
-      if (desktop.isSupported(Desktop.Action.OPEN))
-        try desktop.open(path.toFile) // Opens with platform default
-        catch {
-          case ex: java.io.IOException =>
-            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to open\n${path.toRealPath()}"))(dialogueSheet).InFront(GUI).start(floating = false)
-        }
-    } else {
-      styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Unreadable\n$path"))(dialogueSheet).InFront(GUI).start()
-    }
-  }
-}
-
-object HelpGUI {
-  private val style: StyleSheet = Explorer.fileSheet.copy(textFontSize = 16f, textForegroundBrush = Brushes.black)
-  private val language: language = glyphML.Translator(style)
-
-  import language._
-
-  val text: Glyph = <div width="80em" align="justify" parskip="0.5ex">
-    <p align="center">
-      <b>Display</b>
-    </p>
-    <p>Each window corresponds to a directory in the filestore. Each of its files is shown on a single row in the display.
-      The columns shown can be changed -- using the panel popped up by the
-      <b>Ξ</b>
-      button. So can the order in which they are
-      shown. Showing "invisible" files is enabled by
-      <b>[.]</b>
-      and disabled by
-      <b>(.)</b>
-      .
-    </p>
-    <p>
-      An
-      <b>S</b>
-      to the right of a date/time indicates
-      daylight-saving (summer) time for the current locality on the given date.
-    </p>
-    <p>
-      The
-      <tt>size+</tt>
-      column shows file sizes in compact human-readable form, namely a number followed by a suffix from
-      <b>b k m g t</b>
-      denoting
-      its multiplication by a power of 10:
-      <b>0 3 6 9 12</b>
-      . Directory sizes are given as their number of files (with suffix
-      <b>f</b>
-      ).
-    </p>
-    <p>The path to the directory being viewed in the window is shown (above the listing) as a sequence of buttons, each of which corresponds to an
-      ancestor and is associated with a "hover-hint" that shows the corresponding
-      <i>real</i>
-      path -- with symbolic links expanded when appropriate. Pressing any of them opens a fresh window on the ancestor.
-    </p>
-    <p align="center">
-      <b>Selection</b>
-    </p>
-    <p>Individual windows have a (possibly empty) selection: its rows are selected by mouse:</p>
-    <scope>
-      <attributes id="tag:p" hang=" *  "/>
-      <p>Primary mouse click: selects uniquely</p>
-      <p>Primary mouse drag: extends the selection</p>
-      <p>Shifted primary mouse click: extends the selection at one end</p>
-      <p>Secondary mouse click (or C-Primary) (or drag) inverts selection status of the indicated row(s)</p>
-      <p>Mouse double-click, or (ENTER), opens the file indicated by the selected row, if possible</p>
-    </scope>
-    <p align="center">
-      <b>Shelf</b>
-    </p>
-    <p>There is an Explorer-wide
-      <b>Shelf</b>
-      on which is a collection of paths that denote
-      individual files in the filestore. A file is said to be "shelved" if its path is
-      on the shelf. Shelved files are the objects of the actions describd below, and they are
-      underlined in the display. If the underlining is "textured" then the corresponding file has been marked for deletion
-      as part of the next "paste" (C-V).
-    </p>
-
-    <p>Actions are by buttons or keys.</p>
-    <scope>
-      <attributes id="tag:p" hang=" *  "/>
-      <p>
-        <b>Shelf</b>
-        places the selection on the shelf.</p>
-      <p>
-        <b>C-C</b>
-        places the selection on the shelf.</p>
-      <p>
-        <b>C-X</b>
-        places the selection on the shelf, and marks it for later deletion as part of the next "paste" (C-V) action.</p>
-      <p>
-        <b>C-V</b>
-        copies the shelved files to the folder in which it is clicked; deleting them if they were marked for deletion by (C-X).</p>
-      <p>
-        <b>del</b>
-        deletes the shelved files.</p>
-      <p>
-        <b>cp mv ln</b>
-        respectively copy, move, and link the shelved files to the
-        current implicit destination. This is
-        <i>either</i>
-        the directory denoted by a single selected path in the window in which
-        the button is pressed,
-        <i>or if none is selected</i>
-        the folder being shown in that window.
-      </p>
-      <p>
-        <b>Clear</b>
-        removes the deletion mark from the shelf if it is so marked; otherwise clears the shelf.</p>
-      <p>The usual navigation methods:
-        <b>home end page-up page-down scroll-wheel</b>
-        can be used to scroll the view; and the
-        <b>up down</b>
-        keys add to the selection in the specified direction if shifted; otherwise selecting a single row in the specified direction.
-      </p>
-    </scope>
-  </div>.enlarged(20, bg = Brushes.white)
-
-  lazy val dialogue: styled.windowdialogues.Dialogue[Unit] = {
-    val port = unstyled.dynamic.ViewPort(text, fg = Brushes.blueFrame, portDiagonal = Vec(text.w, text.h /
-      2)).withDragging(true).withPanning(false).withScaling(false)
-    styled.windowdialogues.Dialogue.FLASH(port.enlarged(port.fg.strokeWidth * 4), title = "Explorer Help")(style)
-  }
-
-  def button(style: StyleSheet): Glyph = {
-    lazy val but: Glyph =
-      styled.TextButton("Help") { _ =>
-        if (HelpGUI.dialogue.running.isEmpty) HelpGUI.dialogue.East(but).start(floating = false)
-      }(style)
-    but
-  }
-
-}
