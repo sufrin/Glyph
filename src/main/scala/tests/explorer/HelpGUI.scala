@@ -16,20 +16,19 @@ object HelpGUI {
     <p align="center">
       <b>Display</b>
     </p>
-    <p>Each window corresponds to a directory in the filestore. Each of its files is shown on a single row in the display.
+    <p>Each window displays a directory in the filestore, each of whose files is shown on a single row.
       The columns shown can be changed -- using the panel popped up by the
-      <b>Ξ</b>
-      button. So can the order in which they are
-      shown. Showing "invisible" files is enabled by
+      settings button. So can the order in which they are
+      shown. Showing "invisible" files is enabled, on that panel, by pressing
       <b>[.]</b>
-      and disabled by
+      and disabled by pressing
       <b>(.)</b>
       .
     </p>
     <p>
       An
       <b>S</b>
-      to the right of a date/time indicates
+      to the right of a date/time in the display indicates
       daylight-saving (summer) time for the current locality on the given date.
     </p>
     <p>
@@ -40,14 +39,16 @@ object HelpGUI {
       denoting
       its multiplication by a power of 10:
       <b>0 3 6 9 12</b>
-      . Directory sizes are given as their number of files (with suffix
+      . Directory sizes are given as the number of files in them (with suffix
       <b>f</b>
       ).
     </p>
-    <p>The path to the directory being viewed in the window is shown (above the listing) as a sequence of buttons, each of which corresponds to an
+    <p>The path to the directory shown in the window is shown (above the listing) as a sequence of buttons, each of which corresponds to an
       ancestor and is associated with a "hover-hint" that shows the corresponding
       <i>real</i>
-      path -- with symbolic links expanded when appropriate. Pressing any of them opens a fresh window on the ancestor.
+      path -- with symbolic links expanded when appropriate. Pressing any of them selects it display, Pressing the ".." button
+      selects the <b>real</b> parent of the current directory for display. This only differs if there was a symbolic link
+      somewhere on the path.
     </p>
     <p align="center">
       <b>Selection</b>
@@ -110,7 +111,14 @@ object HelpGUI {
         <b>up down</b>
         keys add to the selection in the specified direction if shifted; otherwise selecting a single row in the specified direction.
       </p>
-    </scope>
+      </scope>
+      <p align="center"><b>Other browsing actions</b></p>
+      <p>
+        Pressing the top-left button pops up a menu which enables any of the unclosed diretory views to be selected (if thereare more than one)</p>
+      <p>
+        The adjacent <b>New</b> button opens a new window displaying the currently-selected directory (if any), or displaying
+        the currently displayed directory (if none is selected).</p>
+
   </div>.enlarged(20, bg = Brushes.white)
 
   lazy val dialogue: styled.windowdialogues.Dialogue[Unit] = {

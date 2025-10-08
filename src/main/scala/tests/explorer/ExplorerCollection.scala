@@ -8,6 +8,7 @@ import styled._
 import tests.explorer.Explorer.{dialogueLabel, dialogueSheet, fileSheet, iconSheet, menuIcon, openOrdinaryFile}
 import tests.explorer.PathProperties._
 import unstyled.dynamic.Keyed
+import GlyphTypes.Scalar
 
 import java.awt.Desktop
 import java.nio.file._
@@ -36,7 +37,7 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
   def visibleProvider:  ExplorerServices = visibleExplorer.provider // usually = this
   def visibleFolder:    Folder           = visibleExplorer.folder
   def visibleSelection: Seq[Path]        = visibleExplorer.selectedPaths
-  def visibleActions: ActionProvider     = visibleExplorer.Actions
+  def visibleActions:   ActionProvider   = visibleExplorer
 
   lazy val GUI: Glyph = {
     lazy val iconHint = Hint(
@@ -62,12 +63,8 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
           openExplorerWindow(rootPath)
     }(iconSheet)
 
-    val closeButton = TextButton("Close Directory"){
-      _ =>
-        visibleExplorer.provider.closeExplorer(visibleExplorer.folder.path)
-    }
 
-    lazy val newButton = TextButton("New Window", hint=Hint(2, "Start a new window")){
+    lazy val newButton = TextButton("New", hint=Hint(2, "Start a new window\nwith the selected directory\nor with the current directory\nif none is selected")){
       _ =>
         visibleSelection match {
           case paths if paths.length != 1 => visibleExplorer.provider.openServices(visibleExplorer.folder.path)
@@ -106,22 +103,20 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
       _ => visibleActions.link()
     }
 
-    lazy val settingsButton = TextButton("Settings"){
-      _ => visibleActions.popupSettings()
-    }
+    val perimeter: Scalar = 10
 
     NaturalSize.Col(align = Center)(
       FixedSize.Row(width = explorers.w, align = Mid)(
         iconButton,
         newButton,
-        closeButton,
+        iconSheet.hFill(),
         shelfButtons, copyButton, linkButton, moveButton, deleteButton,
         iconSheet.hFill(),
         HelpGUI.button(Explorer.fileSheet),
-        settingsButton
       ),
+      iconSheet.vSpace(),
       explorers
-    ).enlarged(10)
+    ).enlarged(perimeter)
 
   }
 

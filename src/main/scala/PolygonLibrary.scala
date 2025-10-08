@@ -20,7 +20,7 @@ object PolygonLibrary {
     static.Concentric(
       static.FilledOval(diam, diam, fg = red()),
       Polygon(diam, diam, fg = crossFG)((diam / 2f, 0), (diam / 2f, diam)),
-      Polygon(diam, diam, fg = crossFG)((0, diam / 2f), (diam, diam / 2f))).turnedBoxed(diam, diam)(45)
+      Polygon(diam, diam, fg = crossFG)((0, diam / 2f), (diam, diam / 2f))).turned(45)
   }
 
   def hideButtonGlyph: Glyph = {

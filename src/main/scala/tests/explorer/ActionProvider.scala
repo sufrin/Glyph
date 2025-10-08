@@ -1,7 +1,6 @@
 package org.sufrin.glyph
 package tests.explorer
 import files.{FileAttributes, Folder, Shelf}
-import styled.Label
 import unstyled.dynamic.SeqViewer
 
 import java.nio.file.Path
@@ -9,13 +8,14 @@ import java.nio.file.Path
 trait ActionProvider {
   this: Object =>
 
-  val view:           SeqViewer
-  val folder:         Folder
-  def selectedPaths:  Seq[Path]
-  implicit val sheet: StyleSheet
-  val GUI:            Glyph
-  def theRows:        Seq[FileAttributes.Row]
-  def popupSettings():Unit
+  val view:               SeqViewer
+  val folder:             Folder
+  def selectedPaths:      Seq[Path]
+  val GUI:                Glyph
+  def theRows:            Seq[FileAttributes.Row]
+  def popupSettings():    Unit
+  def popupErrors(errors: Seq[Exception]): Unit
+
 
   def delete(): Unit = delete(Shelf.paths)
 
@@ -84,12 +84,6 @@ trait ActionProvider {
     //folder.withValidCaches { view.reDraw() }  // Notification now does this
   }
 
-  def popupErrors(errors: Seq[Exception]): Unit =
-    if (errors.nonEmpty)
-      styled.windowdialogues.Dialogue
-        .OK(Label(errors.mkString("\n")))
-        .InFront(GUI)
-        .start()
 
   // implicit source: the shelf
   def move(path: Path): Unit = {
