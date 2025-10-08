@@ -12,6 +12,7 @@ import gesture.{Gesture, Keystroke}
 import NaturalSize.Grid
 import styled.overlaydialogues.Dialogue
 import styles.decoration.{Framed, RoundFramed}
+import unstyled.dynamic.SeqViewer
 
 import io.github.humbleui.jwm.Key
 import org.sufrin.logging.{FINEST, SourceLoggable}
@@ -198,140 +199,14 @@ class Explorer(val folder: Folder, val provider: ExplorerServices)(implicit val 
 
   def selectedPaths: Seq[Path] = view.selectedRows.map { i => theRows(i).path }
 
-  object Actions {
-
-
-    def delete(): Unit   = delete(Shelf.paths)
-    def delete(paths: Seq[Path]): Unit = {
-      Explorer.finer(s"Delete: ${paths.mkString(" ")}")
-      popupErrors(paths.flatMap(FileOperations.delete(_)))
-      //folder.withValidCaches { view.reDraw() }  // Notification now does this
-    }
-
-    def print(): Unit = view.selectedRows.length match {
-      case 1 =>
-        val path = theRows(view.selectedRows(0)).path
-        if (path.isDir) view.bell.play() else Explorer.printOrdinaryFile(path)
-      case _ =>
-        view.bell.play()
-    }
-
-    def currentImplicitDestination: Option[Path] = view.selectedRows.length match {
-      case 0                            => Some(folder.path)
-      case 1 if theRows(0).isDirectory  => Some(theRows(view.selectedRows.head).path)
-      case _  =>
-        view.bell.play()
-        None
-    }
-
-    def currentImplicitDestinationString: String = currentImplicitDestination match {
-      case None => "(destination is ambiguous)"
-      case Some(path) => path.toString
-    }
-
-    val trashPath = folder.path.resolve(".trash-explorer")
-
-    /** selected paths to the shelf */
-    def clearShelf(): Unit = Shelf.clear()
-
-
-    def shelf(forCut: Boolean): Unit  = {
-      shelf(selectedPaths)
-      Shelf.forCut = forCut
-    }
-
-    def shelf(paths: Seq[Path]): Unit = {
-      Explorer.finer(s"Shelf =  ${paths.mkString(" ")}")
-      Shelf.clear()
-      Shelf.add(paths)
-      view.clearSelection()
-    }
-
-    def unShelf(): Unit  = unShelf(selectedPaths)
-
-    def unShelf(paths: Seq[Path]): Unit = {
-      Explorer.finer(s"Shelf -=  ${paths.mkString(" ")}")
-      Shelf.remove(paths)
-      view.clearSelection()
-    }
-
-    // implicit source: the clipboard/shelf
-    def pasteTo(path: Path): Seq[Exception] = {
-      Explorer.finer(s"Paste: ${Shelf.paths.mkString(" ")} to ${path}")
-      FileOperations.copy(Shelf.paths, path)
-    }
-
-    def paste(): Unit = {
-      currentImplicitDestination match {
-        case None =>
-        case Some(destination) =>
-          val errors = pasteTo(destination)
-          if (errors.nonEmpty) popupErrors(errors)
-          else
-          if (Shelf.forCut) delete()
-      }
-      clearShelf()
-      //folder.withValidCaches { view.reDraw() }  // Notification now does this
-    }
-
-    def popupErrors(errors: Seq[Exception]): Unit =
-      if (errors.nonEmpty) styled.windowdialogues.Dialogue.OK(Label(errors.mkString("\n"))).InFront(GUI).start()
-
-
-    // implicit source: the shelf
-    def move(path: Path): Unit = {
-      Explorer.finer(s"Move: ${Shelf.paths.mkString(" ")}  to ${path}")
-      popupErrors(FileOperations.move(Shelf.paths, path))
-      Shelf.clear()
-      //folder.withValidCaches { view.reDraw() }  // Notification now does this
-    }
-
-    def move(): Unit = currentImplicitDestination.foreach(move)
-
-    // implicit source: the shelf
-    // implicit source: the shelf
-    def link(path: Path): Unit = {
-      Explorer.finer(s"Link: ${Shelf.paths.mkString(" ")}  to ${path}")
-      popupErrors(FileOperations.link(Shelf.paths, path))
-      Shelf.clear()
-      //folder.withValidCaches { view.reDraw() } // Notification now does this
-    }
-    def link(): Unit = currentImplicitDestination.foreach(link)
-
-
-    lazy val shelfButton = TextButton("Shelf", hint = Hint(2, "Selection to (s)helf\n... marked for copying (^C)\n... marked for deletion(^X)")) {
-      _ => shelf(forCut = false)
-    }
-
-    lazy val clearButton = TextButton("Clear", hint = Hint(2, if (Shelf.nonEmpty && Shelf.forCut) "Clear shelf deletion mark" else "Clear shelf completely", constant = false)) {
-      _ =>
-        if(Shelf.nonEmpty && Shelf.forCut) Shelf.forCut = false else clearShelf()
-        view.reDraw()
-    }
-
-    lazy val shelfButtons = NaturalSize.Row(shelfButton, clearButton)
-
-    def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption()), constant = false, preferredLocation = Some(Vec(15,15)))
-
-    lazy val deleteButton = TextButton("del", hint=shelfHint(()=>"Delete files")){
-      _ => delete()
-    }
-
-    lazy val copyButton = TextButton("cp", hint=shelfHint(()=>s"Copy files to ${currentImplicitDestinationString} (C-V)")){
-      _ => paste()
-    }
-
-    lazy val moveButton = TextButton("mv", hint=shelfHint(()=>s"Move files to ${currentImplicitDestinationString}")){
-      _ => move()
-    }
-
-    lazy val linkButton = TextButton("ln", hint=shelfHint(()=>s"Link files to ${currentImplicitDestinationString}")){
-      _ => link()
-    }
-
-
-    lazy val GUI = NaturalSize.Row(align=Mid)(shelfButtons, fileSheet.hSpace(3), copyButton, moveButton, linkButton, deleteButton)
-
+  object Actions extends ActionProvider { // TODO: Make Explorer an ActionProvider
+    val view: SeqViewer = thisExplorer.view
+    val folder: Folder = thisExplorer.folder
+    def selectedPaths: Seq[Path] = thisExplorer.selectedPaths
+    implicit val sheet: StyleSheet = thisExplorer.fileSheet
+    val GUI: Glyph = thisExplorer.GUI
+    def theRows: Seq[Row] = thisExplorer.theRows
+    def popupSettings(): Unit = thisExplorer.Settings.popupSettings()
   }
 
   lazy val view: unstyled.dynamic.SeqViewer = new unstyled.dynamic.SeqViewer(
@@ -385,8 +260,8 @@ class Explorer(val folder: Folder, val provider: ExplorerServices)(implicit val 
         case Keystroke(Key.V, _) if PRESSED =>
           Actions.paste()
 
-        case Keystroke(Key.P, _) if PRESSED =>
-          Actions.print()
+        //case Keystroke(Key.P, _) if PRESSED =>
+        //  Actions.print()
 
         case other =>
           Explorer.finest(s"onOther($gesture) on $thisExplorer")
@@ -479,7 +354,7 @@ class Explorer(val folder: Folder, val provider: ExplorerServices)(implicit val 
 
     private val largeButtonStyle: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated, fontScale = 1.3f, buttonHoverBrush = fileSheet.buttonForegroundBrush)
 
-    private lazy val settingsGUI = {
+    lazy val settingsGUI: Glyph = {
       val closeSettings = unstyled.reactive.RawButton(PolygonLibrary.closeButtonGlyph.scaled(1.5f), down=Brushes.red, hover=Brushes.green) { _ => settingsPopup.close() }
       NaturalSize.Col(align = Left)(
         closeSettings,
@@ -495,6 +370,11 @@ class Explorer(val folder: Folder, val provider: ExplorerServices)(implicit val 
         settingsPopup.canEscape = true
         settingsPopup.start()
     }
+
+    def popupSettings(): Unit = {
+      settingsPopup.canEscape = true
+      settingsPopup.start()
+    }
   }
 
 
@@ -508,7 +388,6 @@ class Explorer(val folder: Folder, val provider: ExplorerServices)(implicit val 
 
   lazy val GUI: Glyph =
     NaturalSize.Col()(
-      FixedSize.Row(width=view.w, align=Mid)(Settings.popupButton, fileSheet.hSpace(), Actions.GUI, fileSheet.hFill()),
       fileSheet.vSpace(1),
       pathGUI,
       view.enlarged(15),

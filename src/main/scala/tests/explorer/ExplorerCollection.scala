@@ -3,7 +3,7 @@ package tests.explorer
 
 
 import cached._
-import files.Folder
+import files.{Folder, Shelf}
 import styled._
 import tests.explorer.Explorer.{dialogueLabel, dialogueSheet, fileSheet, iconSheet, menuIcon, openOrdinaryFile}
 import tests.explorer.PathProperties._
@@ -33,9 +33,10 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
   )
 
   def visibleExplorer:  Explorer         = explorers.selected
-  def visibleProvider:  ExplorerServices = visibleExplorer.provider // = this
-  def visibleFolder:    Folder    = visibleExplorer.folder
-  def visibleSelection: Seq[Path] = visibleExplorer.selectedPaths
+  def visibleProvider:  ExplorerServices = visibleExplorer.provider // usually = this
+  def visibleFolder:    Folder           = visibleExplorer.folder
+  def visibleSelection: Seq[Path]        = visibleExplorer.selectedPaths
+  def visibleActions: ActionProvider     = visibleExplorer.Actions
 
   lazy val GUI: Glyph = {
     lazy val iconHint = Hint(
@@ -75,13 +76,49 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
 
     }
 
+    lazy val shelfButton = TextButton("Shelf", hint = Hint(2, "Selection to (s)helf\n... marked for copying (^C)\n... marked for deletion(^X)")) {
+      _ => visibleActions.shelf(forCut = false)
+    }
+
+    lazy val clearButton = TextButton("Clear", hint = Hint(2, if (Shelf.nonEmpty && Shelf.forCut) "Clear shelf deletion mark" else "Clear shelf completely", constant = false)) {
+      _ =>
+        if(Shelf.nonEmpty && Shelf.forCut) Shelf.forCut = false else visibleActions.clearShelf()
+        visibleActions.view.reDraw()
+    }
+
+    lazy val shelfButtons = NaturalSize.Row(shelfButton, clearButton)
+
+    def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption()), constant = false, preferredLocation = Some(Vec(15,15)))
+
+    lazy val deleteButton = TextButton("del", hint=shelfHint(()=>"Delete files")){
+      _ => visibleActions.delete()
+    }
+
+    lazy val copyButton = TextButton("cp", hint=shelfHint(()=>s"Copy files to ${visibleActions.currentImplicitDestinationString} (C-V)")){
+      _ => visibleActions.paste()
+    }
+
+    lazy val moveButton = TextButton("mv", hint=shelfHint(()=>s"Move files to ${visibleActions.currentImplicitDestinationString}")){
+      _ => visibleActions.move()
+    }
+
+    lazy val linkButton = TextButton("ln", hint=shelfHint(()=>s"Link files to ${visibleActions.currentImplicitDestinationString}")){
+      _ => visibleActions.link()
+    }
+
+    lazy val settingsButton = TextButton("Settings"){
+      _ => visibleActions.popupSettings()
+    }
+
     NaturalSize.Col(align = Center)(
       FixedSize.Row(width = explorers.w, align = Mid)(
         iconButton,
         newButton,
         closeButton,
+        shelfButtons, copyButton, linkButton, moveButton, deleteButton,
         iconSheet.hFill(),
-        HelpGUI.button(Explorer.fileSheet)
+        HelpGUI.button(Explorer.fileSheet),
+        settingsButton
       ),
       explorers
     ).enlarged(10)
