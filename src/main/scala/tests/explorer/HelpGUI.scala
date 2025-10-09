@@ -4,11 +4,12 @@ package tests.explorer
 import glyphML.language
 
 object HelpGUI {
-  private val style: StyleSheet = Explorer.fileSheet.copy(
+  private implicit val style: StyleSheet = Explorer.fileSheet.copy(
     textFontSize = 16f,
     textForegroundBrush = Brushes.black
   )
   private val language: language = glyphML.Translator(style)
+  language.definitions("settings") = External.Image.readResource("/settings").scaled(0.06f)
 
   import language._
 
@@ -16,9 +17,10 @@ object HelpGUI {
     <p align="center">
       <b>Display</b>
     </p>
-    <p>Each window displays a directory in the filestore, each of whose files is shown on a single row.
-      The columns shown can be changed -- using the panel popped up by the
-      settings button. So can the order in which they are
+    <p>Each window is associated with one or more <i>directory views</i>, of which one is always shown. Each file in a directory view
+      is shown as a single row whose columns show its relevant/selected attributes. The attributes shown can be
+      selected using the panel popped up by the
+      <glyph gid="settings"/> button. So can the order in which they are
       shown. Showing "invisible" files is enabled, on that panel, by pressing
       <b>[.]</b>
       and disabled by pressing
@@ -43,10 +45,10 @@ object HelpGUI {
       <b>f</b>
       ).
     </p>
-    <p>The path to the directory shown in the window is shown (above the listing) as a sequence of buttons, each of which corresponds to an
+    <p>The path to the directory currently on view in the window is shown as a sequence of buttons, each of which corresponds to an
       ancestor and is associated with a "hover-hint" that shows the corresponding
-      <i>real</i>
-      path -- with symbolic links expanded when appropriate. Pressing any of them selects it display, Pressing the ".." button
+      <i>real path</i>
+      -- <i>viz.</i> the path with symbolic links expanded when appropriate. Pressing one opens/selects a view of it, Pressing the ".." button
       selects the <b>real</b> parent of the current directory for display. This only differs if there was a symbolic link
       somewhere on the path.
     </p>
@@ -112,12 +114,14 @@ object HelpGUI {
         keys add to the selection in the specified direction if shifted; otherwise selecting a single row in the specified direction.
       </p>
       </scope>
-      <p align="center"><b>Other browsing actions</b></p>
+      <p align="center"><b>Opening and Selecting Views</b></p>
       <p>
-        Pressing the top-left button pops up a menu which enables any of the unclosed diretory views to be selected (if thereare more than one)</p>
-      <p>
-        The adjacent <b>New</b> button opens a new window displaying the currently-selected directory (if any), or displaying
-        the currently displayed directory (if none is selected).</p>
+        The <b>Open</b> button opens a new window in a view of the currently-selected directory (if any), or of
+        the currently viewed directory (if none).</p>
+    <p>
+        When the window has more than one view available, the <b>View</b> button supports the selection of one of them, or the
+        closing of the currently-visible view and the selection of another.
+    </p>
 
   </div>.enlarged(20, bg = Brushes.white)
 

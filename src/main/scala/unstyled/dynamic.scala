@@ -304,7 +304,7 @@ import scala.collection.mutable
 
   /**
    * Dynamically chooseable glyph from among the sequence of `glyphs`, that behaves exactly like
-   * the currently-selected of the glyphs, whose origin is at the centre of the bounding box.
+   * the currently-selected of the glyphs.
    *
    * Its bounding box is the union of the bounding boxes of `glyphs` enlarged by
    * a perimeter of half the foreground strokewidth.
@@ -385,221 +385,139 @@ import scala.collection.mutable
 
   }
 
-/**  A mapping from Keys to Glyphs, of which the selected glyph is the active one. */
-class MapOf[Key](initially: Seq[(Key,Glyph)], align: Alignment, valign: VAlignment, override val fg: Brush, override val bg: Brush) extends Glyph {
-  val glyphs: mutable.LinkedHashMap[Key,Glyph] = new mutable.LinkedHashMap[Key,Glyph]
-  locally {
-    glyphs.addAll(initially)
-  }
+/**
+ *   A mapping from `Key`s to `Component`s. The currently-selected component provides the active GUI. When
+ *   a component is added to this mapping, its GUI is linked into the glyph tree.
+ *
+ * @param GUI -- maps each component to the glyph that is drawn when it is selected
+ * @param initially -- the NONEMPTY initial keyed collection of components the bounding box of this glyph is computed.
+ *                  Subsequently-added components are clipped to the union of the  `initially` components.
+ * @param align -- the horizontal alignment of components within this bounding box
+ * @param valign -- the vertical alignment of components within this bounding box
+ * @param fg
+ * @param bg
+ * @since October 2025
+ *
+ *        NOTE: `Keyed` is a generalization of `OneOf`, without the latter's overblown features for determining background.
+ */
+class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component)], align: Alignment, valign: VAlignment, override val fg: Brush, override val bg: Brush)
+  extends Glyph
+     with mutable.Map[Key, Component]
+ {
+  val components: mutable.LinkedHashMap[Key, Component] = new mutable.LinkedHashMap[Key, Component]
 
-  override val kind = "SeqOf"
-  override def toString: String = s"""MapOf(fg=$fg, bg=$bg\n glyphs=\n  ${glyphs.map(_.toString).mkString(",\n  ")})"""
-
-  var _selection: Key = glyphs.head._1
-
-  /** Select the glyph with th given key. */
-  def select(selection: Key): Unit = {
-    _selection = selection
-    reDraw()
-  }
-
-  /** How many glyphs are present. */
-  def size: Int = glyphs.size
-
-  def selection: Key = _selection
-
-  @inline def selectedGlyph: Glyph = {
-    glyphs(_selection)
-  }
-
-
-  def add(key: Key, glyph: Glyph): Unit = {
-    glyphs.addOne((key, glyph))
-    linkGlyphs()
-  }
-
-  def remove(key: Key): Unit = {
-    glyphs.remove(key)
-  }
-
-  def isDefinedAt(key: Key): Boolean = glyphs.isDefinedAt(key)
-
-  def clear(): Unit = glyphs.clear()
-
-  def selectNext(path: Key): Unit = {
-    if (size>1) {
-      val keys = glyphs.keys.toSeq
-      val index = keys.indexOf(path) match {
-        case -1 => 0
-        case other => if (other==keys.length-1) 0 else other+1
-      }
-      select(keys(index))
-    }
-  }
-
-  def selectPrev(path: Key): Unit = {
-    if (size>1) {
-      val keys = glyphs.keys.toSeq
-      val index = keys.indexOf(path) match {
-        case -1 => 0
-        case other => if (other==0) keys.length-1 else other-1
-      }
-      select(keys(index))
-    }
-  }
-
-
-  /**
-   * Space for all
-   */
-  val inset = fg.getStrokeWidth
-  val boundingRect = Vec(glyphs.values.map(_.w).max, glyphs.values.map(_.h).max)+(inset, inset)
-  val diagonal = boundingRect+(inset, inset)
-
-  // Locate the subglyphs.
-  // Link subglyphs into the glyph tree
-  // TODO: (why didn't this happen in Composite?)
-  locally {
-    linkGlyphs()
-  }
-
-  def linkGlyphs(): Unit = {
-    for { (key, glyph) <- glyphs} {
-      glyph @@ ((diagonal.x-glyph.w)*align.proportion, (diagonal.y-glyph.h)*valign.proportion)
-      glyph.parent = this
-    }
-  }
-
-  override def draw(surface: Surface): Unit = {
-    drawBackground(surface)
-    val glyph = selectedGlyph
-    //surface.withOrigin(inset/2, inset/2) { surface.drawRect(fg, boundingRect) }
-    surface.withOrigin(glyph.location) { glyph.draw(surface) }
-  }
-
-  override def glyphContaining(p: Vec): Option[Hit] =
-    selectedGlyph.glyphContaining(p-selectedGlyph.location)
-
-  override def contains(p: Vec): Boolean =
-    selectedGlyph.contains(p)
-
-  /**
-   * A  copy of this glyph: made with the same constructor
-   */
-  def copy(fg: Brush=fg, bg:Brush=bg): Glyph = new MapOf[Key](initially, align, valign, fg, bg)
-}
-
-object MapOf {
-  val defaultBG: Brush = Brush("transparent")
-  val defaultFG: Brush = defaultBG
-
-  def from[Key](initially: Seq[(Key, Glyph)], fg: Brush=defaultFG, bg: Brush=defaultBG, align: Alignment=Center, valign: VAlignment=Mid): MapOf[Key] =
-    new MapOf(initially, align, valign, fg=fg, bg=bg)
-
-  def apply[Key](fg: Brush=defaultFG, bg: Brush=defaultBG, align: Alignment=Center, valign: VAlignment=Mid)(initially: (Key, Glyph)*): MapOf[Key] =
-    new MapOf(initially, align, valign, fg=fg, bg=bg)
-
-
-}
-
-/**  A mapping from `Key`s to `Component`s, of which the selected component provides the active GUI */
-class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component)], align: Alignment, valign: VAlignment, override val fg: Brush, override val bg: Brush) extends Glyph {
-  val components: mutable.LinkedHashMap[Key,Component] = new mutable.LinkedHashMap[Key,Component]
-  locally {
+   locally {
+    assert(initially.nonEmpty, "Keyed component glyph must have a nonempty 'initially'")
     components.addAll(initially)
   }
 
-  override val kind = "SeqOf"
-  override def toString: String = s"""MapOf(fg=$fg, bg=$bg\n glyphs=\n  ${components.map(_.toString).mkString(",\n  ")})"""
 
-  var _selection: Key = components.head._1
+  override val kind = "Keyed"
 
-  /** Select the glyph with th given key. */
+  override def toString: String = s"""Keyed(fg=$fg, bg=$bg\n glyphs=\n  ${components.map(_.toString).mkString(",\n  ")})"""
+
+  private var _selection: Key = components.head._1
+
+  /** Select the component with the given key, and redraw this glyph */
   def select(selection: Key): Unit = {
     _selection = selection
     reDraw()
   }
 
-  /** How many glyphs are present. */
-  def size: Int = components.size
 
+  /** The currently-selected key */
   def selection: Key = _selection
 
+  /** The currently-selected component */
   @inline def selected: Component = {
     components(_selection)
   }
 
+  override def size: Int = components.size
+
+  def get(key: Key): Option[Component] = components.get(key)
+
+  override def apply(key: Key): Component = components(key)
+
+  override def update(key: Key, component: Component): Unit = {
+    components(key) = component; linkGlyphs()
+  }
+
+  override def isEmpty: Boolean = components.isEmpty
+
+  /** @see update */
   def add(key: Key, component: Component): Unit = {
     components.addOne((key, component))
     linkGlyphs()
   }
 
-  def remove(key: Key): Unit = {
-    components.remove(key)
+  override def remove(key: Key): Option[Component] = components.remove(key)
+
+  override def isDefinedAt(key: Key): Boolean = components.isDefinedAt(key)
+
+  override def values: Iterable[Component] = components.values
+
+  override def keys: Iterable[Key] = components.keys
+
+  override def clear(): Unit = components.clear()
+
+  def addOne(elem: (Key, Component)): Keyed.this.type = {
+    add(elem._1, elem._2); this
   }
 
-  def isDefinedAt(key: Key): Boolean = components.isDefinedAt(key)
+  def iterator: Iterator[(Key, Component)] = components.iterator
 
-  def values: Iterator[Component] = components.valuesIterator
-  def keys: Iterator[Key]        = components.keysIterator
+  def subtractOne(elem: Key): Keyed.this.type = {
+    remove(elem); this
+  }
 
-  def clear(): Unit = components.clear()
-
+  /** If there is more than one path, select the next (in sequence of adding to this component)  */
   def selectNext(path: Key): Unit = {
-    if (size>1) {
+    if (size > 1) {
       val ks = keys.toSeq
       val index = ks.indexOf(path) match {
         case -1 => 0
-        case other => if (other==keys.length-1) 0 else other+1
+        case other => if (other == ks.length - 1) 0 else other + 1
       }
       select(ks(index))
     }
   }
 
-  def selectPrev(path: Key): Unit = {
-    if (size>1) {
+   /** If there is more than one path, select the previous (in sequence of adding to this component)  */
+   def selectPrev(path: Key): Unit = {
+    if (size > 1) {
       val ks = keys.toSeq
       val index = ks.indexOf(path) match {
         case -1 => 0
-        case other => if (other==0) keys.length-1 else other-1
+        case other => if (other == 0) ks.length - 1 else other - 1
       }
       select(ks(index))
     }
   }
 
-  def selectedIndex: Int = {
-    val ks = keys.toSeq
-    ks.indexOf(selection) match {
-      case -1 => 0
-      case other => if (other==0) keys.length-1 else other-1
-    }
-  }
 
   def boundingRectangle: Vec = {
     @inline def componentWidth(component: Component): Scalar = GUI(component).w
+
     @inline def componentHeight(component: Component): Scalar = GUI(component).h
-    val glyphs = components.values
+
+    val glyphs = initially.map(_._2) //values
     Vec(glyphs.map(componentWidth(_)).max, glyphs.map(componentHeight(_)).max)
   }
 
-  /**
-   * Space for all
-   */
-  val inset = fg.getStrokeWidth
-  val boundingRect = boundingRectangle+(inset, inset)
-  val diagonal = boundingRect+(inset, inset)
+  val inset        = fg.getStrokeWidth
+  val boundingRect = boundingRectangle + (inset, inset)
+  val diagonal     = boundingRect + (inset, inset)
 
-  // Locate the subglyphs.
-  // Link subglyphs into the glyph tree
-  // TODO: (why didn't this happen in Composite?)
-  locally {
-    linkGlyphs()
-  }
+
+   locally {
+     linkGlyphs()
+   }
 
   def linkGlyphs(): Unit = {
-    for { (key, component) <- components} {
+    for {(key, component) <- components} {
       val glyph = GUI(component)
-      glyph @@ ((diagonal.x-glyph.w)*align.proportion, (diagonal.y-glyph.h)*valign.proportion)
+      glyph @@ ((diagonal.x - glyph.w) * align.proportion, (diagonal.y - glyph.h) * valign.proportion)
       glyph.parent = this
     }
   }
@@ -608,13 +526,15 @@ class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component
     drawBackground(surface)
     val glyph = selectedGlyph
     //surface.withOrigin(inset/2, inset/2) { surface.drawRect(fg, boundingRect) }
-    surface.withOrigin(glyph.location) { glyph.draw(surface) }
+    surface.withOrigin(glyph.location) {
+      glyph.draw(surface)
+    }
   }
 
   @inline private def selectedGlyph: Glyph = GUI(selected)
 
   override def glyphContaining(p: Vec): Option[Hit] =
-    selectedGlyph.glyphContaining(p-selectedGlyph.location)
+    selectedGlyph.glyphContaining(p - selectedGlyph.location)
 
   override def contains(p: Vec): Boolean =
     selectedGlyph.contains(p)
@@ -622,8 +542,10 @@ class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component
   /**
    * A  copy of this glyph: made with the same constructor
    */
-  def copy(fg: Brush=fg, bg:Brush=bg): Glyph = new Keyed[Key, Component](GUI, initially, align, valign, fg, bg)
+  def copy(fg: Brush = fg, bg: Brush = bg): Glyph = new Keyed[Key, Component](GUI, initially, align, valign, fg, bg)
+
 }
+
 
 object Keyed {
   val defaultBG: Brush = Brush("transparent")

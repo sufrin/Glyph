@@ -6,7 +6,7 @@ import cached.Cached
 import files.FileAttributes.Row
 import notifier.Notifier
 
-import org.sufrin.logging.{SourceDefault, SourceLoggable}
+import org.sufrin.logging.{FINEST, SourceDefault, SourceLoggable}
 
 import java.nio.file.{LinkOption, NoSuchFileException, Path}
 import java.nio.file.attribute.PosixFileAttributes
@@ -16,6 +16,7 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IteratorHasAsScala}
 
 object Folder extends SourceLoggable {
+  level = FINEST
 
   def apply(path: Path): Folder = {
     val folder =
@@ -30,19 +31,21 @@ object Folder extends SourceLoggable {
         f
     }
     Folder.finest(s"Folder cache for $path referenced ${refCount(path)}")
+    Folder.finest(toString)
     folder
   }
 
   def remove(path: Path): Unit = {
     assert(refCount.contains(path), s"Cannot remove folder for $path")
     refCount(path) -= 1
-    if (refCount(path)<=0) {
-      refCount.remove(path)
-      cache.remove(path)
-      Folder.finest(s"Folder cache for $path removed")
-    } else {
-      Folder.finest(s"Folder cache for $path released by one client (referenced ${refCount(path)})")
-    }
+    Folder.finest(s"Starting cache garbage collection (for $path) with $toString")
+    for { path <- refCount.keys }
+        if (refCount(path)<=0) {
+          refCount.remove(path)
+          cache.remove(path)
+          Folder.finest(s"Folder cache for $path removed")
+        }
+    Folder.finest(s"Finished cache garbage collection (for $path)")
   }
 
   def withFolderFor(path: Path)(fn: Folder => Unit): Unit = {
@@ -68,6 +71,10 @@ object Folder extends SourceLoggable {
 
  private val cache: mutable.LinkedHashMap[Path,Folder] = new mutable.LinkedHashMap[Path,Folder]
  private val refCount: mutable.LinkedHashMap[Path,Int] = new mutable.LinkedHashMap[Path,Int]
+
+ override def toString: String = {
+   refCount.keys.toSeq.map { key => s"$key (${refCount(key)})"}.mkString("Cache:\n ", "\n ", "\n")
+ }
 
 }
 

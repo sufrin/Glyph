@@ -5,7 +5,7 @@ package tests.explorer
 import cached._
 import files.{Folder, Shelf}
 import styled._
-import tests.explorer.Explorer.{dialogueLabel, dialogueSheet, fileSheet, iconSheet, menuIcon, openOrdinaryFile}
+import tests.explorer.Explorer.{dialogueLabel, dialogueSheet, fileSheet, openOrdinaryFile}
 import tests.explorer.PathProperties._
 import unstyled.dynamic.Keyed
 import GlyphTypes.Scalar
@@ -33,44 +33,42 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
     rootPath -> new Explorer(Folder(rootPath), thisExplorerCollection)
   )
 
+  def close(): Unit = explorers.values.foreach(_.close())
+
   def visibleExplorer:  Explorer         = explorers.selected
   def visibleProvider:  ExplorerServices = visibleExplorer.provider // usually = this
   def visibleFolder:    Folder           = visibleExplorer.folder
+  def visiblePath:      Path             = visibleExplorer.folder.path
   def visibleSelection: Seq[Path]        = visibleExplorer.selectedPaths
   def visibleActions:   ActionProvider   = visibleExplorer
 
   lazy val GUI: Glyph = {
-    lazy val iconHint = Hint(
-      3,
-      if (explorers.size > 1) s"(Menu of size ${explorers.size})"
-      else s"Open $rootPath",
-      false,
-      Some(Vec(0, menuIcon.diagonal.y / 2))
-    )
+    def menuHint = Hint(2, explorers.keys.map(_.toString).mkString(s"Views\n", "\n", ""), constant=false )
 
-    lazy val iconButton: Glyph = MenuGlyphButton(menuIcon, hint = iconHint) {
+    lazy val viewButton: Glyph = TextButton("View", hint = menuHint) {
       _ =>
         if (explorers.size > 1)
           styled.windowdialogues
             .Menu(explorers.keys.toSeq.map { key =>
-              MenuButton(s"Open ${key.toString}") { _ =>
+              MenuButton(s"Open view of ${key.toString}") { _ =>
                 openExplorerWindow(key)
               }
-            })
-            .East(iconButton)
+            } . prepended(
+               MenuButton(s"Close view of $visiblePath"){ _ => closeExplorer(visiblePath) }
+            ))
+            .East(viewButton)
             .start()
         else
           openExplorerWindow(rootPath)
-    }(iconSheet)
+    }
 
 
-    lazy val newButton = TextButton("New", hint=Hint(2, "Start a new window\nwith the selected directory\nor with the current directory\nif none is selected")){
+    lazy val openButton = TextButton("Open", hint=Hint(2, "Start a new view of\nthe selected directory\nor of the current directory\nif none is selected")){
       _ =>
         visibleSelection match {
           case paths if paths.length != 1 => visibleExplorer.provider.openServices(visibleExplorer.folder.path)
           case paths if paths.length == 1 => visibleExplorer.provider.openServices(paths.head)
         }
-
     }
 
     lazy val shelfButton = TextButton("Shelf", hint = Hint(2, "Selection to (s)helf\n... marked for copying (^C)\n... marked for deletion(^X)")) {
@@ -103,18 +101,20 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
       _ => visibleActions.link()
     }
 
+
+
     val perimeter: Scalar = 10
 
     NaturalSize.Col(align = Center)(
       FixedSize.Row(width = explorers.w, align = Mid)(
-        iconButton,
-        newButton,
-        iconSheet.hFill(),
+        openButton,
+        viewButton,
+        fileSheet.hFill(),
         shelfButtons, copyButton, linkButton, moveButton, deleteButton,
-        iconSheet.hFill(),
+        fileSheet.hFill(),
         HelpGUI.button(Explorer.fileSheet),
       ),
-      iconSheet.vSpace(),
+      fileSheet.vSpace(),
       explorers
     ).enlarged(perimeter)
 
@@ -128,6 +128,7 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
 
   def closeExplorer(path: Path): Unit = {
     if (explorers.size > 1) {
+      explorers(path).close()
       explorers.selectPrev(path)
       explorers.remove(path)
     }
@@ -147,13 +148,17 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
 
   def openServices(path: Path): Unit = {
     assert(path.isReadable, s"$path is not readable")
+    val collection = new ExplorerCollection(path)
     val window = styled.windowdialogues.Dialogue
-      .FLASH(new ExplorerCollection(path).GUI)(fileSheet)
+      .FLASH(collection.GUI)(fileSheet)
       .NorthEast(GUI)
       .withAutoScale()
     window.andThen(
       floating = false,
-      onClose = { _ => Explorer.fine(s"Closed $thisExplorerCollection") }
+      onClose = { _ =>
+        collection.close()
+        Explorer.fine(s"Closed $collection")
+      }
     )
   }
 

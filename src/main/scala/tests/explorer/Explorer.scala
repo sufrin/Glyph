@@ -11,7 +11,7 @@ import files.FileAttributes.Row
 import gesture.{Gesture, Keystroke}
 import NaturalSize.Grid
 import styled.overlaydialogues.Dialogue
-import styles.decoration.{unDecorated, Framed, RoundFramed}
+import styles.decoration.RoundFramed
 
 import io.github.humbleui.jwm.Key
 import org.sufrin.logging.{FINEST, SourceLoggable}
@@ -285,8 +285,8 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
 
   def close(): Unit = {
     folder.folderChanged.removeTagged(thisExplorer)
+    Explorer.finest(s"Closing folder for ${folder.path}")
     folder.close()
-    //GUI.guiRoot.close()
   }
 
 
@@ -381,32 +381,21 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
       settingsPopup.start()
     }
 
+    val GUI: Glyph = MenuGlyphButton(Explorer.settingsIcon.scaled(2), hint=Hint(1, "Settings")){ _ => Settings.popup() }(PathButtons.buttonSheet)
+
   }
 
-  def popupSettings(): Unit = Settings.popup()
 
 
-  val closeButton: Glyph = MenuGlyphButton(PolygonLibrary.closeButtonGlyph.scaled(1.1f), hint = Hint(1, "Close this directory\n(unless last-in-window)")) {
-    _ => provider.closeExplorer(folder.path)
-  }(PathButtons.buttonSheet.copy(buttonDecoration = unDecorated))
-
-
-  val settingsButton: Glyph = MenuGlyphButton(Explorer.settingsIcon.scaled(2), hint=Hint(1, "Settings")){ _ => Settings.popup() }(PathButtons.buttonSheet)
-
-  lazy val pathGUI =
-    FixedSize.Row(width=view.w, align=Mid)(
-      closeButton, PathButtons.GUI, fileSheet.hFill(), settingsButton).enlarged(15).roundFramed(radius=20)
 
   def giveupFocus(): Unit = {
     if (GUI.hasGuiRoot) GUI.guiRoot.giveupFocus()
-
   }
 
-  lazy val GUI: Glyph =
-    NaturalSize.Col()(
-      pathGUI,
-      view //.enlarged(15),
-      ) //.enlarged(15, fg=Brushes.lightGrey)
+  lazy val GUI: Glyph = NaturalSize.Col()(
+    FixedSize.Row(width=view.w, align=Mid)(PathButtons.GUI, fileSheet.hFill(), Settings.GUI).enlarged(15).roundFramed(radius=20),
+    view
+  )
 }
 
 
@@ -425,11 +414,9 @@ object Explorer extends Application with SourceLoggable {
   implicit val fileSheet: StyleSheet =
     StyleSheet(buttonDecoration=RoundFramed(enlarge=9f, radius=10), buttonFontSize = 15, labelFontSize = 15, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
 
-  val iconSheet = fileSheet.copy(buttonDecoration = Framed(Brushes.black(width=2)))
 
   val settingsIcon: Glyph = External.Image.readResource("/settings").scaled(0.03f)
   val icon:         Glyph = External.Image.readResource("/explorer")
-  def menuIcon:     Glyph = icon.scaled(0.05f)
 
   lazy val host = new ExplorerCollection(homePath)
   lazy val GUI: Glyph = host.GUI

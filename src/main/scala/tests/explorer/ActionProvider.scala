@@ -13,7 +13,6 @@ trait ActionProvider {
   def selectedPaths:      Seq[Path]
   val GUI:                Glyph
   def theRows:            Seq[FileAttributes.Row]
-  def popupSettings():    Unit
   def popupErrors(errors: Seq[Exception]): Unit
 
 
@@ -22,7 +21,6 @@ trait ActionProvider {
   def delete(paths: Seq[Path]): Unit = {
     Explorer.finer(s"Delete: ${paths.mkString(" ")}")
     popupErrors(paths.flatMap(FileOperations.delete(_)))
-    //folder.withValidCaches { view.reDraw() }  // Notification now does this
   }
 
 
