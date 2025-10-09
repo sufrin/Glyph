@@ -82,7 +82,6 @@ trait ActionProvider {
     //folder.withValidCaches { view.reDraw() }  // Notification now does this
   }
 
-
   // implicit source: the shelf
   def move(path: Path): Unit = {
     Explorer.finer(s"Move: ${Shelf.paths.mkString(" ")}  to ${path}")

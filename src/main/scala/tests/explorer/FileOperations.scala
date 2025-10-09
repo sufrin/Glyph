@@ -4,19 +4,19 @@ package explorer
 
 import tests.explorer.PathProperties._
 
-import org.sufrin.logging.SourceDefault
+import org.sufrin.logging.SourceLoggable
 
-object FileOperations {
+object FileOperations extends SourceLoggable {
   import org.sufrin.glyph.files._
 
   import java.nio.file._
 
   def dirChanged(from: Path, to: Path): Unit = {
-    SourceDefault.finest(s"changed at: ${from.getParent} and: $to")
+    finest(s"changed at: ${from.getParent} and: $to")
   }
 
   def dirChanged(to: Path): Unit = {
-    SourceDefault.finest(s"changed at: $to")
+    finest(s"changed at: $to")
   }
 
   def copy(from: Path, to: Path): Seq[Exception] = {

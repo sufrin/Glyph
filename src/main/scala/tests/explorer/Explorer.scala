@@ -14,7 +14,7 @@ import styled.overlaydialogues.Dialogue
 import styles.decoration.RoundFramed
 
 import io.github.humbleui.jwm.Key
-import org.sufrin.logging.{FINEST, SourceLoggable}
+import org.sufrin.logging.SourceLoggable
 
 import java.nio.file._
 import scala.collection.mutable
@@ -31,6 +31,9 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
 
   import styled.TextButton
 
+  import Explorer.{finest, logging, warn}
+
+
   val serial = Explorer.nextSerial()
 
   override def toString: String = s"Explorer#$serial(${folder.path}, $provider)"
@@ -42,7 +45,7 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
   locally {
     folder.folderChanged.handleWithTagged(thisExplorer) {
       case information: String =>
-        Explorer.finest(s"(${folder.path}) refresh ing view after: $information")
+        if (logging) finest(s"(${folder.path}) refreshing view after: $information")
         view.refresh(theListing)
     }
   }
@@ -240,7 +243,7 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
 
     override def onDoubleClick(mods: Bitmap, selected: Int): Unit = {
       val path = folder.path.resolve(theRows(selected).path)
-      Explorer.finest(s"onDoubleClick(#$selected=$path) on $thisExplorer")
+      if (logging) finest(s"onDoubleClick(#$selected=$path) on $thisExplorer")
       provider.openPath(path)
       clearSelection()
     }
@@ -248,10 +251,10 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
     override def onHover(mods: Bitmap, hovered: Int): Unit = if (false) folder.withValidCaches {
       if (theRows.isDefinedAt(hovered)) {
         val path = theRows(hovered).path.toString
-        Explorer.finest(s"onHover(#$hovered=$path)")
-        Explorer.finest(path)
+        if (logging) finest(s"onHover(#$hovered=$path)")
+        if (logging) finest(path)
       } else {
-        Explorer.finest(s"onHover(#$hovered=???)")
+        if (logging) finest(s"onHover(#$hovered=???)")
       }
     }
 
@@ -273,11 +276,19 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
         case Keystroke(Key.V, _) if PRESSED =>
           thisExplorer.paste()
 
+        case Keystroke(Key.N, _) if PRESSED =>
+          val thePath: Path = selectedPaths.length match {
+            case 0 => folder.path
+            case 1 => selectedPaths.head
+            case _ => { bell.play(); folder.path }
+          }
+          thisExplorer.provider.openServices(thePath)
+
         //case Keystroke(Key.P, _) if PRESSED =>
         //  Actions.print()
 
         case other =>
-          Explorer.finest(s"onOther($gesture) on $thisExplorer")
+          if (logging) warn(s"onOther($gesture) on $thisExplorer")
           bell.play()
       }
     }
@@ -285,7 +296,7 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
 
   def close(): Unit = {
     folder.folderChanged.removeTagged(thisExplorer)
-    Explorer.finest(s"Closing folder for ${folder.path}")
+    if (logging) finest(s"Closing folder for ${folder.path}")
     folder.close()
   }
 
@@ -314,12 +325,12 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
 
     private lazy val buttons: Seq[Glyph] = prefixDirs.tail.map {
       case path =>
-        TextButton(s"${path.getFileName.toString}", hint = Hint(3, path.toRealPath().toString, preferredLocation = Some(Vec(10, 10)))(hintSheet)) { _ => provider.openPath(path) }(buttonSheet)
+        TextButton(s"${path.getFileName.toString}", hint = Hint(3, path.toRealPath().toString, preferredLocation = Hint.South)(hintSheet)) { _ => provider.openPath(path) }(buttonSheet)
     }.prepended(TextButton(s"/") { _ => provider.openPath(Path.of("/")) }(buttonSheet)).appended(fileSheet.hSpace()).appended(parent)
 
     lazy val parent = {
       val up = folder.path.resolve("..").toRealPath()
-      TextButton(s"..", hint = Hint(3, s"Open the real parent directory\n${up.toString}", preferredLocation = Some(Vec(10, 10)))(hintSheet)) { _ => provider.openPath(up) }(buttonSheet)
+      TextButton(s"..", hint = Hint(3, s"Open the real parent directory\n${up.toString}", preferredLocation = Hint.West)(hintSheet)) { _ => provider.openPath(up) }(buttonSheet)
     }
 
     lazy val GUI: Glyph = NaturalSize.Row(align = Mid)(buttons)
@@ -386,10 +397,13 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
   }
 
 
-
-
   def giveupFocus(): Unit = {
     if (GUI.hasGuiRoot) GUI.guiRoot.giveupFocus()
+  }
+
+  def setTitle(path: Path): Unit = {
+    import PathProperties._
+    if (GUI.hasGuiRoot) GUI.guiRoot.rootWindow.setTitle(path.abbreviatedString())
   }
 
   lazy val GUI: Glyph = NaturalSize.Col()(
@@ -404,7 +418,7 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
  * initially selected `Explorer`  is bound to the current user's home directory.
  */
 object Explorer extends Application with SourceLoggable {
-  level = FINEST
+
 
   private var _serial = 0
   def nextSerial(): Int = { _serial +=1 ; _serial }
@@ -419,7 +433,12 @@ object Explorer extends Application with SourceLoggable {
   val icon:         Glyph = External.Image.readResource("/explorer")
 
   lazy val host = new ExplorerCollection(homePath)
-  lazy val GUI: Glyph = host.GUI
+
+
+  lazy val GUI: Glyph = {
+    Logging(Explorer, Folder, FileOperations)
+    Logging.Decorate(host.GUI, Mid)
+  }
 
   def title: String = s"Explore: ${homePath.abbreviatedString()}"
   override val dock: Dock = Dock(icon) // ("Exp\nlore", bg=Brushes.yellow)
@@ -469,10 +488,10 @@ object Explorer extends Application with SourceLoggable {
   override protected def whenStarted(): Unit = {
     super.whenStarted()
     GUI.guiRoot.autoScale=true
-    Folder.level = FINEST
   }
 
   lazy val homePath = Paths.get(System.getProperty("user.home"))
+
 }
 
 

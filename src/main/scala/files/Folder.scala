@@ -6,7 +6,7 @@ import cached.Cached
 import files.FileAttributes.Row
 import notifier.Notifier
 
-import org.sufrin.logging.{FINEST, SourceDefault, SourceLoggable}
+import org.sufrin.logging.SourceLoggable
 
 import java.nio.file.{LinkOption, NoSuchFileException, Path}
 import java.nio.file.attribute.PosixFileAttributes
@@ -16,7 +16,6 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IteratorHasAsScala}
 
 object Folder extends SourceLoggable {
-  level = FINEST
 
   def apply(path: Path): Folder = {
     val folder =
@@ -30,28 +29,29 @@ object Folder extends SourceLoggable {
         refCount(path) += 1
         f
     }
-    Folder.finest(s"Folder cache for $path referenced ${refCount(path)}")
-    Folder.finest(toString)
+
+    if (logging) finest(s"Folder cache for $path referenced ${refCount(path)}")
+    if (logging) finest(toString)
     folder
   }
 
   def remove(path: Path): Unit = {
     assert(refCount.contains(path), s"Cannot remove folder for $path")
     refCount(path) -= 1
-    Folder.finest(s"Starting cache garbage collection (for $path) with $toString")
+    if (logging) finest(s"Starting cache garbage collection (for $path) with $toString")
     for { path <- refCount.keys }
         if (refCount(path)<=0) {
           refCount.remove(path)
           cache.remove(path)
           Folder.finest(s"Folder cache for $path removed")
         }
-    Folder.finest(s"Finished cache garbage collection (for $path)")
+    if (logging) finest(s"Finished cache garbage collection (for $path)")
   }
 
   def withFolderFor(path: Path)(fn: Folder => Unit): Unit = {
     cache.get(path) match {
       case None =>
-        SourceDefault.warn(s"No folder for $path\n  ${refCount.mkString("\n ")}\n  ${cache.mkString("\n ")}")
+        if (logging) warn(s"No folder for $path\n  ${refCount.mkString("\n ")}\n  ${cache.mkString("\n ")}")
       case Some(folder) => fn(folder)
     }
   }
@@ -151,7 +151,7 @@ class Folder(val path: Path) {
     */
   def invalidate(): Unit = {
     for { cache <- List(sortedRows, rowIndex, entryCount) } cache.clear()
-    finest(s"invalidated primary caches for: $path")
+    if (logging) finest(s"invalidated primary caches for: $path")
   }
 
   def withValidCaches[T](expression: => T): T = {

@@ -43,7 +43,7 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
   def visibleActions:   ActionProvider   = visibleExplorer
 
   lazy val GUI: Glyph = {
-    def menuHint = Hint(2, explorers.keys.map(_.toString).mkString(s"Views\n", "\n", ""), constant=false )
+    def menuHint = Hint(0.8, explorers.keys.map(_.toString).mkString(s"Views\n", "\n", ""), constant=false )
 
     lazy val viewButton: Glyph = TextButton("View", hint = menuHint) {
       _ =>
@@ -63,7 +63,7 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
     }
 
 
-    lazy val openButton = TextButton("Open", hint=Hint(2, "Start a new view of\nthe selected directory\nor of the current directory\nif none is selected")){
+    lazy val openButton = TextButton("Open", hint=Hint(0.8, "Start a new view of\nthe selected directory\nor of the current directory\nif none is selected")){
       _ =>
         visibleSelection match {
           case paths if paths.length != 1 => visibleExplorer.provider.openServices(visibleExplorer.folder.path)
@@ -83,7 +83,7 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
 
     lazy val shelfButtons = NaturalSize.Row(shelfButton, clearButton)
 
-    def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption()), constant = false, preferredLocation = Some(Vec(15,15)))
+    def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption()), constant = false, preferredLocation = Hint.NoPreference)
 
     lazy val deleteButton = TextButton("del", hint=shelfHint(()=>"Delete files")){
       _ => visibleActions.delete()
@@ -147,10 +147,11 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
   }
 
   def openServices(path: Path): Unit = {
+    import PathProperties._
     assert(path.isReadable, s"$path is not readable")
     val collection = new ExplorerCollection(path)
     val window = styled.windowdialogues.Dialogue
-      .FLASH(collection.GUI)(fileSheet)
+      .FLASH(collection.GUI, title=path.abbreviatedString())(fileSheet)
       .NorthEast(GUI)
       .withAutoScale()
     window.andThen(
@@ -172,6 +173,7 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
       explorers.select(path)
     }
     explorers.selected.giveupFocus()
+    explorers.selected.setTitle(path)
     explorers.select(path)
   }
 
