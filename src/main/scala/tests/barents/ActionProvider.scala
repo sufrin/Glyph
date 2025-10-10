@@ -1,5 +1,5 @@
 package org.sufrin.glyph
-package tests.explorer
+package tests.barents
 import files.{FileAttributes, Folder, Shelf}
 import unstyled.dynamic.SeqViewer
 
@@ -19,7 +19,7 @@ trait ActionProvider {
   def delete(): Unit = delete(Shelf.paths)
 
   def delete(paths: Seq[Path]): Unit = {
-    Explorer.finer(s"Delete: ${paths.mkString(" ")}")
+    Viewer.finer(s"Delete: ${paths.mkString(" ")}")
     popupErrors(paths.flatMap(FileOperations.delete(_)))
   }
 
@@ -50,7 +50,7 @@ trait ActionProvider {
   }
 
   def shelf(paths: Seq[Path]): Unit = {
-    Explorer.finer(s"Shelf =  ${paths.mkString(" ")}")
+    Viewer.finer(s"Shelf =  ${paths.mkString(" ")}")
     Shelf.clear()
     Shelf.add(paths)
     view.clearSelection()
@@ -59,14 +59,14 @@ trait ActionProvider {
   def unShelf(): Unit = unShelf(selectedPaths)
 
   def unShelf(paths: Seq[Path]): Unit = {
-    Explorer.finer(s"Shelf -=  ${paths.mkString(" ")}")
+    Viewer.finer(s"Shelf -=  ${paths.mkString(" ")}")
     Shelf.remove(paths)
     view.clearSelection()
   }
 
   // implicit source: the clipboard/shelf
   def pasteTo(path: Path): Seq[Exception] = {
-    Explorer.finer(s"Paste: ${Shelf.paths.mkString(" ")} to ${path}")
+    Viewer.finer(s"Paste: ${Shelf.paths.mkString(" ")} to ${path}")
     FileOperations.copy(Shelf.paths, path)
   }
 
@@ -84,7 +84,7 @@ trait ActionProvider {
 
   // implicit source: the shelf
   def move(path: Path): Unit = {
-    Explorer.finer(s"Move: ${Shelf.paths.mkString(" ")}  to ${path}")
+    Viewer.finer(s"Move: ${Shelf.paths.mkString(" ")}  to ${path}")
     popupErrors(FileOperations.move(Shelf.paths, path))
     Shelf.clear()
     //folder.withValidCaches { view.reDraw() }  // Notification now does this
@@ -95,7 +95,7 @@ trait ActionProvider {
   // implicit source: the shelf
   // implicit source: the shelf
   def link(path: Path): Unit = {
-    Explorer.finer(s"Link: ${Shelf.paths.mkString(" ")}  to ${path}")
+    Viewer.finer(s"Link: ${Shelf.paths.mkString(" ")}  to ${path}")
     popupErrors(FileOperations.link(Shelf.paths, path))
     Shelf.clear()
     //folder.withValidCaches { view.reDraw() } // Notification now does this

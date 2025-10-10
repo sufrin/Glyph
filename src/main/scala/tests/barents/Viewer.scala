@@ -1,10 +1,10 @@
 package org.sufrin.glyph
 package tests
-package explorer
+package barents
 
 import files.{FileAttributes, Folder, Shelf}
 import styled._
-import tests.explorer.PathProperties._
+import tests.barents.PathProperties._
 import Modifiers.Bitmap
 import cached._
 import files.FileAttributes.Row
@@ -12,6 +12,8 @@ import gesture.{Gesture, Keystroke}
 import NaturalSize.Grid
 import styled.overlaydialogues.Dialogue
 import styles.decoration.RoundFramed
+import GlyphTypes.FontStyle.NORMAL
+import unstyled.static.INVISIBLE
 
 import io.github.humbleui.jwm.Key
 import org.sufrin.logging.SourceLoggable
@@ -21,29 +23,29 @@ import scala.collection.mutable
 
 
 /**
- * An `Explorer` implements the user interface to a `Folder`.
+ * A `Viewer` implements the user interface to a `Folder`.
  * @param folder the `Folder` to be explored.
- * @param provider  provides opening and closing services to this explorer
- * @param fileSheet the stylesheet defining (much of) this explorer's appearance
+ * @param services  provides opening and closing services to this viewer
+ * @param fileSheet the stylesheet defining (much of) this viewer's appearance
  */
-class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val fileSheet: StyleSheet) extends ActionProvider {
-  thisExplorer =>
+class Viewer(val folder: Folder, val services: ViewerServices)(implicit val fileSheet: StyleSheet) extends ActionProvider {
+  thisViewer =>
 
   import styled.TextButton
 
-  import Explorer.{finest, logging, warn}
+  import Viewer.{finest, logging, warn}
 
 
-  val serial = Explorer.nextSerial()
+  val serial = Viewer.nextSerial()
 
-  override def toString: String = s"Explorer#$serial(${folder.path}, $provider)"
+  override def toString: String = s"Viewer#$serial(${folder.path}, $services)"
 
   var showingInvisibles = false
   var reverseSort = false
 
-  // register this explorer with the folder
+  // register this barents with the folder
   locally {
-    folder.folderChanged.handleWithTagged(thisExplorer) {
+    folder.folderChanged.handleWithTagged(thisViewer) {
       case information: String =>
         if (logging) finest(s"(${folder.path}) refreshing view after: $information")
         view.refresh(theListing)
@@ -243,8 +245,8 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
 
     override def onDoubleClick(mods: Bitmap, selected: Int): Unit = {
       val path = folder.path.resolve(theRows(selected).path)
-      if (logging) finest(s"onDoubleClick(#$selected=$path) on $thisExplorer")
-      provider.openPath(path)
+      if (logging) finest(s"onDoubleClick(#$selected=$path) on $thisViewer")
+      services.openPath(path)
       clearSelection()
     }
 
@@ -265,16 +267,16 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
       gesture match {
 
         case Keystroke(Key.C, _) if PRESSED =>
-          thisExplorer.shelf(forCut = false)
+          thisViewer.shelf(forCut = false)
 
         case Keystroke(Key.X, _) if PRESSED =>
-          thisExplorer.shelf(forCut = true)
+          thisViewer.shelf(forCut = true)
 
         case Keystroke(Key.BACKSPACE, _) if PRESSED =>
-          thisExplorer.delete()
+          thisViewer.delete()
 
         case Keystroke(Key.V, _) if PRESSED =>
-          thisExplorer.paste()
+          thisViewer.paste()
 
         case Keystroke(Key.N, _) if PRESSED =>
           val thePath: Path = selectedPaths.length match {
@@ -282,20 +284,20 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
             case 1 => selectedPaths.head
             case _ => { bell.play(); folder.path }
           }
-          thisExplorer.provider.openServices(thePath)
+          thisViewer.services.openServices(thePath)
 
         //case Keystroke(Key.P, _) if PRESSED =>
         //  Actions.print()
 
         case other =>
-          if (logging) warn(s"onOther($gesture) on $thisExplorer")
+          if (logging) warn(s"onOther($gesture) on $thisViewer")
           bell.play()
       }
     }
   }
 
   def close(): Unit = {
-    folder.folderChanged.removeTagged(thisExplorer)
+    folder.folderChanged.removeTagged(thisViewer)
     if (logging) finest(s"Closing folder for ${folder.path}")
     folder.close()
   }
@@ -313,7 +315,7 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
   /**
    * `path` is a sequence of buttons; each corresponding to an ancestor of this
    * folder in the filestore, and labelled with its filename (not its path). Pressing a button
-   * opens an explorer on the ancestor.
+   * opens an barents on the ancestor.
    *
    * `order` is a sequence of (mostly) captioned toggles to control the order of presentation of the rows
    */
@@ -325,12 +327,12 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
 
     private lazy val buttons: Seq[Glyph] = prefixDirs.tail.map {
       case path =>
-        TextButton(s"${path.getFileName.toString}", hint = Hint(3, path.toRealPath().toString, preferredLocation = Hint.South)(hintSheet)) { _ => provider.openPath(path) }(buttonSheet)
-    }.prepended(TextButton(s"/") { _ => provider.openPath(Path.of("/")) }(buttonSheet)).appended(fileSheet.hSpace()).appended(parent)
+        TextButton(s"${path.getFileName.toString}", hint = Hint(3, path.toRealPath().toString, preferredLocation = Hint.South)(hintSheet)) { _ => services.openPath(path) }(buttonSheet)
+    }.prepended(TextButton(s"/") { _ => services.openPath(Path.of("/")) }(buttonSheet)).appended(fileSheet.hSpace()).appended(parent)
 
     lazy val parent = {
       val up = folder.path.resolve("..").toRealPath()
-      TextButton(s"..", hint = Hint(3, s"Open the real parent directory\n${up.toString}", preferredLocation = Hint.West)(hintSheet)) { _ => provider.openPath(up) }(buttonSheet)
+      TextButton(s"..", hint = Hint(3, s"Open the real parent directory\n${up.toString}", preferredLocation = Hint.West)(hintSheet)) { _ => services.openPath(up) }(buttonSheet)
     }
 
     lazy val GUI: Glyph = NaturalSize.Row(align = Mid)(buttons)
@@ -392,7 +394,7 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
       settingsPopup.start()
     }
 
-    val GUI: Glyph = MenuGlyphButton(Explorer.settingsIcon.scaled(2), hint=Hint(1, "Settings")){ _ => Settings.popup() }(PathButtons.buttonSheet)
+    val GUI: Glyph = MenuGlyphButton(Viewer.settingsIcon.scaled(2), hint=Hint(1, "Settings")){ _ => Settings.popup() }(PathButtons.buttonSheet)
 
   }
 
@@ -413,12 +415,9 @@ class Explorer(val folder: Folder, val provider: ExplorerServices) (implicit val
 }
 
 
-/**
- * The main application's root. Its GUI consistes of a single `ExplorerCollection` whose
- * initially selected `Explorer`  is bound to the current user's home directory.
- */
-object Explorer extends Application with SourceLoggable {
+object Viewer extends SourceLoggable {
 
+  var dialogueAnchor: Glyph = INVISIBLE()
 
   private var _serial = 0
   def nextSerial(): Int = { _serial +=1 ; _serial }
@@ -428,20 +427,7 @@ object Explorer extends Application with SourceLoggable {
   implicit val fileSheet: StyleSheet =
     StyleSheet(buttonDecoration=RoundFramed(enlarge=9f, radius=10), buttonFontSize = 15, labelFontSize = 15, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
 
-
   val settingsIcon: Glyph = External.Image.readResource("/settings").scaled(0.03f)
-  val icon:         Glyph = External.Image.readResource("/explorer")
-
-  lazy val host = new ExplorerCollection(homePath)
-
-
-  lazy val GUI: Glyph = {
-    Logging(Explorer, Folder, FileOperations)
-    Logging.Decorate(host.GUI, Mid)
-  }
-
-  def title: String = s"Explore: ${homePath.abbreviatedString()}"
-  override val dock: Dock = Dock(icon) // ("Exp\nlore", bg=Brushes.yellow)
 
   val dialogueSheet = fileSheet.copy(buttonForegroundBrush=Brushes.red, buttonDecoration=RoundFramed(Brushes.redFrame, radius=10))
 
@@ -455,13 +441,13 @@ object Explorer extends Application with SourceLoggable {
         try desktop.open(path.toFile) // Opens with default application
         catch {
           case ex: java.io.IOException =>
-            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to open\n${path.toString}"))(dialogueSheet).InFront(GUI).start(floating = false)
+            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to open\n${path.toString}"))(dialogueSheet).InFront(dialogueAnchor).start(floating = false)
         }
       else
-        styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop open not supported")).InFront(GUI).start()
+        styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop open not supported")).InFront(dialogueAnchor).start()
     }
     else
-      styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop not supported on this platform")).InFront(GUI).start()
+      styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop not supported on this platform")).InFront(dialogueAnchor).start()
   }
 
   def printOrdinaryFile(path: Path): Unit =  {
@@ -473,27 +459,19 @@ object Explorer extends Application with SourceLoggable {
         try desktop.browse(path.toUri) // print
         catch {
           case ex: java.io.IOException =>
-            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to browse (for printing)\n${path.toRealPath()}"))(dialogueSheet).InFront(GUI).start(floating = false)
+            styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Failed to browse (for printing)\n${path.toRealPath()}"))(dialogueSheet).InFront(dialogueAnchor).start(floating = false)
         }
       else
-        styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop print not supported")).InFront(GUI).start()
+        styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop print not supported")).InFront(dialogueAnchor).start()
     }
     else
-      styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop not supported on this platform")).InFront(GUI).start()
+      styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Desktop not supported on this platform")).InFront(dialogueAnchor).start()
     } else {
-      styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Unreadable, or folder\n$path"))(dialogueSheet).InFront(GUI).start()
+      styled.windowdialogues.Dialogue.OK(dialogueLabel(s"Unreadable, or folder\n$path"))(dialogueSheet).InFront(dialogueAnchor).start()
     }
   }
 
-  override protected def whenStarted(): Unit = {
-    super.whenStarted()
-    GUI.guiRoot.autoScale=true
-  }
-
-  lazy val homePath = Paths.get(System.getProperty("user.home"))
-
 }
-
 
 
 

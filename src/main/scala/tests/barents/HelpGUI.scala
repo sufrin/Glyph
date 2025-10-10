@@ -1,10 +1,10 @@
 package org.sufrin.glyph
-package tests.explorer
+package tests.barents
 
 import glyphML.language
 
 object HelpGUI {
-  private implicit val style: StyleSheet = Explorer.fileSheet.copy(
+  private implicit val style: StyleSheet = Viewer.fileSheet.copy(
     textFontSize = 16f,
     textForegroundBrush = Brushes.black
   )
@@ -63,6 +63,7 @@ object HelpGUI {
       <p>Shifted primary mouse click: extends the selection at one end</p>
       <p>Secondary mouse click (or C-Primary) (or drag) inverts selection status of the indicated row(s)</p>
       <p>Mouse double-click, or (ENTER), opens the file indicated by the selected row, if possible</p>
+      <p>Mouse click in the "gutter" at the left of the display clears the selection</p>
     </scope>
     <p align="center">
       <b>Shelf</b>
@@ -141,7 +142,7 @@ object HelpGUI {
       .withScaling(false)
     styled.windowdialogues.Dialogue.FLASH(
       port.enlarged(port.fg.strokeWidth * 4),
-      title = "Explorer Help"
+      title = "Viewer Help"
     )(style)
   }
 

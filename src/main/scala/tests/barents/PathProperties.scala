@@ -1,11 +1,11 @@
 package org.sufrin.glyph
 package tests
-package explorer
+package barents
 
 import files.FileAttributes
 
 import java.io.File
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 
 object PathProperties {
   implicit class PathProperty(val path: Path) extends AnyVal {
@@ -31,10 +31,10 @@ object PathProperties {
       if (realPath.toString.length <= size) path
       else
         try {
-          val home = Explorer.homePath
-          val homePath = home.toRealPath()
-          val fileName = realPath.getFileName
-          val prefixSize = size - fileName.toString.length
+          val home: Path    = Paths.get(System.getProperty("user.home"))
+          val homePath      = home.toRealPath()
+          val fileName      = realPath.getFileName
+          val prefixSize    = size - fileName.toString.length
           var currentPrefix = realPath.prefix
           def currentLength = currentPrefix.toString.length
           def largest: Path = currentPrefix.names.maxBy(_.toString.length)

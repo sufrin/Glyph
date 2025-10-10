@@ -1,14 +1,14 @@
 package org.sufrin.glyph
-package tests.explorer
+package tests.barents
 
 import java.nio.file._
 
-trait ExplorerServices {
+trait ViewerServices {
   /** open the object denoted by `path` */
   def openPath(path: Path): Unit
-  /** close the `Explorer` opened for `path` */
+  /** close the `Viewer` opened for `path` */
   def closeExplorer(path: Path): Unit
-  /** Open a new `ExplorerServices` initially showing `path` */
+  /** Open a new `ViewerServices` initially showing `path` */
   def openServices(path: Path): Unit
 }
 

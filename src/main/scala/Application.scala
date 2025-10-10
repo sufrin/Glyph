@@ -1,13 +1,8 @@
 package org.sufrin
 package glyph
 
-import GlyphTypes.{EventKey, Window}
-import io.github.humbleui.skija.PaintStrokeCap
+import org.sufrin.glyph.GlyphTypes.{EventKey, Window}
 import org.sufrin.glyph.NaturalSize.Row
-import org.sufrin.glyph.unstyled.Text
-import org.sufrin.glyph.unstyled.static.Rect
-
-import java.io.File
 
 /**
  * An application specified by a GUI, and a title. Some generic arguments
@@ -157,6 +152,8 @@ trait Application {
 }
 
 object Application {
+
+  var GUI: Option[Glyph] = None
 
   def confirmCloseRequestsFor(GUI: Glyph)(implicit sheet: StyleSheet): Unit = {
     GUI.guiRoot.onCloseRequest{ window: Window => confirmCloseOn(GUI, window) }

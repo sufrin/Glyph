@@ -1,12 +1,12 @@
 package org.sufrin.glyph
-package tests.explorer
+package tests.barents
 
 
 import cached._
 import files.{Folder, Shelf}
 import styled._
-import tests.explorer.Explorer.{dialogueLabel, dialogueSheet, fileSheet, openOrdinaryFile}
-import tests.explorer.PathProperties._
+import tests.barents.PathProperties._
+import tests.barents.Viewer.{dialogueLabel, dialogueSheet, fileSheet, openOrdinaryFile}
 import unstyled.dynamic.Keyed
 import GlyphTypes.Scalar
 
@@ -14,42 +14,44 @@ import java.awt.Desktop
 import java.nio.file._
 
 
-object ExplorerCollection {
+object ViewerWindow {
   private var _serial = 0
   def nextSerial(): Int = { _serial += 1; _serial }
 }
 
-/** A collection of `Explorer` with a single GUI that shows the currently-selected `Explorer`.
-  * When there is more than one explorer others can be selected from a menu popped up by the
-  * topmost leftmost button.
+/**
+  *  A collection of `Viewer`, one of which is deemed to be selected.
+  *  Its GUI shows the currently-selected `Viewer`.
   *
-  * @param rootPath the initially-selected `Explorer`s path.
+  *  When there is more than one viewer others can be selected from a menu
+  *
+  * @param rootPath the initially-selected `Viewer`s path.
   */
 
-class ExplorerCollection(rootPath: Path) extends ExplorerServices {
-  thisExplorerCollection =>
+class ViewerWindow(rootPath: Path) extends ViewerServices {
+  thisViewerWindow =>
 
-  lazy val explorers = Keyed[Path, Explorer](_.GUI)(
-    rootPath -> new Explorer(Folder(rootPath), thisExplorerCollection)
+  lazy val viewers = Keyed[Path, Viewer](_.GUI)(
+    rootPath -> new Viewer(Folder(rootPath), thisViewerWindow)
   )
 
-  def close(): Unit = explorers.values.foreach(_.close())
+  def close(): Unit = viewers.values.foreach(_.close())
 
-  def visibleExplorer:  Explorer         = explorers.selected
-  def visibleProvider:  ExplorerServices = visibleExplorer.provider // usually = this
-  def visibleFolder:    Folder           = visibleExplorer.folder
-  def visiblePath:      Path             = visibleExplorer.folder.path
-  def visibleSelection: Seq[Path]        = visibleExplorer.selectedPaths
-  def visibleActions:   ActionProvider   = visibleExplorer
+  def visibleViewer:    Viewer           = viewers.selected
+  def visibleServices:  ViewerServices   = visibleViewer.services // usually = this
+  def visibleFolder:    Folder           = visibleViewer.folder
+  def visiblePath:      Path             = visibleViewer.folder.path
+  def visibleSelection: Seq[Path]        = visibleViewer.selectedPaths
+  def visibleActions:   ActionProvider   = visibleViewer
 
   lazy val GUI: Glyph = {
-    def menuHint = Hint(0.8, explorers.keys.map(_.toString).mkString(s"Views\n", "\n", ""), constant=false )
+    def menuHint = Hint(0.8, viewers.keys.map(_.toString).mkString(s"Views\n", "\n", ""), constant=false)
 
     lazy val viewButton: Glyph = TextButton("View", hint = menuHint) {
       _ =>
-        if (explorers.size > 1)
+        if (viewers.size > 1)
           styled.windowdialogues
-            .Menu(explorers.keys.toSeq.map { key =>
+            .Menu(viewers.keys.toSeq.map { key =>
               MenuButton(s"Open view of ${key.toString}") { _ =>
                 openExplorerWindow(key)
               }
@@ -66,8 +68,8 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
     lazy val openButton = TextButton("Open", hint=Hint(0.8, "Start a new view of\nthe selected directory\nor of the current directory\nif none is selected")){
       _ =>
         visibleSelection match {
-          case paths if paths.length != 1 => visibleExplorer.provider.openServices(visibleExplorer.folder.path)
-          case paths if paths.length == 1 => visibleExplorer.provider.openServices(paths.head)
+          case paths if paths.length != 1 => visibleViewer.services.openServices(visibleViewer.folder.path)
+          case paths if paths.length == 1 => visibleViewer.services.openServices(paths.head)
         }
     }
 
@@ -106,50 +108,50 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
     val perimeter: Scalar = 10
 
     NaturalSize.Col(align = Center)(
-      FixedSize.Row(width = explorers.w, align = Mid)(
+      FixedSize.Row(width = viewers.w, align = Mid)(
         openButton,
         viewButton,
         fileSheet.hFill(),
         shelfButtons, copyButton, linkButton, moveButton, deleteButton,
         fileSheet.hFill(),
-        HelpGUI.button(Explorer.fileSheet),
-      ),
+        HelpGUI.button(Viewer.fileSheet),
+        ),
       fileSheet.vSpace(),
-      explorers
-    ).enlarged(perimeter)
+      viewers
+      ).enlarged(perimeter)
 
   }
 
-  val serial: Int = ExplorerCollection.nextSerial()
+  val serial: Int = ViewerWindow.nextSerial()
 
-  override val toString: String = explorers.keys
+  override val toString: String = viewers.keys
     .map(_.toString)
-    .mkString(s"ExplorerCollection#$serial(", " ", ")")
+    .mkString(s"ViewerWindow#$serial(", " ", ")")
 
   def closeExplorer(path: Path): Unit = {
-    if (explorers.size > 1) {
-      explorers(path).close()
-      explorers.selectPrev(path)
-      explorers.remove(path)
+    if (viewers.size > 1) {
+      viewers(path).close()
+      viewers.selectPrev(path)
+      viewers.remove(path)
     }
   }
 
   def nextExplorer(path: Path): Unit = {
-    if (explorers.size > 1) {
-      explorers.selectNext(path)
+    if (viewers.size > 1) {
+      viewers.selectNext(path)
     }
   }
 
   def prevExplorer(path: Path): Unit = {
-    if (explorers.size > 1) {
-      explorers.selectPrev(path)
+    if (viewers.size > 1) {
+      viewers.selectPrev(path)
     }
   }
 
   def openServices(path: Path): Unit = {
     import PathProperties._
     assert(path.isReadable, s"$path is not readable")
-    val collection = new ExplorerCollection(path)
+    val collection = new ViewerWindow(path)
     val window = styled.windowdialogues.Dialogue
       .FLASH(collection.GUI, title=path.abbreviatedString())(fileSheet)
       .NorthEast(GUI)
@@ -158,23 +160,23 @@ class ExplorerCollection(rootPath: Path) extends ExplorerServices {
       floating = false,
       onClose = { _ =>
         collection.close()
-        Explorer.fine(s"Closed $collection")
+        Viewer.fine(s"Closed $collection")
       }
     )
   }
 
   def openExplorerWindow(path: Path): Unit = {
-    if (explorers.isDefinedAt(path)) {
-      explorers.select(path)
+    if (viewers.isDefinedAt(path)) {
+      viewers.select(path)
     } else {
       val folder = Folder(path)
-      val explorer = new Explorer(folder, thisExplorerCollection)
-      explorers.add(path, explorer)
-      explorers.select(path)
+      val explorer = new Viewer(folder, thisViewerWindow)
+      viewers.add(path, explorer)
+      viewers.select(path)
     }
-    explorers.selected.giveupFocus()
-    explorers.selected.setTitle(path)
-    explorers.select(path)
+    viewers.selected.giveupFocus()
+    viewers.selected.setTitle(path)
+    viewers.select(path)
   }
 
   def openPath(path: Path): Unit = {

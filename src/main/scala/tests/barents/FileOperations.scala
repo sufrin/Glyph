@@ -1,8 +1,8 @@
 package org.sufrin.glyph
 package tests
-package explorer
+package barents
 
-import tests.explorer.PathProperties._
+import tests.barents.PathProperties._
 
 import org.sufrin.logging.SourceLoggable
 
@@ -42,8 +42,9 @@ object FileOperations extends SourceLoggable {
   }
 
   def copy(from: Seq[Path], to: Path): Seq[Exception] = {
-    val errors = if (to.isDir) from.flatMap { case path => copy(path, to) }
-    else Seq.empty
+    val errors =
+      if (to.isDir) from.flatMap { case path => copy(path, to) }
+      else List(new NotDirectoryException(to.toString))
     Folder.withFolderFor(to)(_.notifyChange())
     errors
   }
@@ -73,14 +74,15 @@ object FileOperations extends SourceLoggable {
   }
 
   def move(from: Seq[Path], to: Path): Seq[Exception] = {
-    val errors = if (to.isDir) from.flatMap { case path => move(path, to) }
-    else Seq.empty
+    val errors =
+      if (to.isDir)
+        from.flatMap { case path => move(path, to) }
+      else
+        List(new NotDirectoryException(to.toString))
     Folder.withFolderFor(to)(_.notifyChange())
+
     val fromParents: Set[Path] = from.map(_.getParent).toSet
-    println(fromParents)
-    fromParents.foreach { case source: Path =>
-      Folder.withFolderFor(source)(_.notifyChange())
-    }
+    fromParents.foreach { case source: Path => Folder.withFolderFor(source)(_.notifyChange()) }
     errors
   }
 
@@ -106,7 +108,7 @@ object FileOperations extends SourceLoggable {
 
   def link(from: Seq[Path], to: Path): Seq[Exception] = {
     val errors = if (to.isDir) from.flatMap { case path => link(path, to) }
-    else Seq.empty
+    else List(new NotDirectoryException(to.toString))
     Folder.withFolderFor(to)(_.notifyChange())
     errors
   }
@@ -133,7 +135,7 @@ object FileOperations extends SourceLoggable {
 
   def symboliclink(from: Seq[Path], to: Path): Seq[Exception] = {
     val errors = if (to.isDir) from.flatMap { case path => symboliclink(path, to) }
-    else Seq.empty
+    else List(new NotDirectoryException(to.toString))
     Folder.withFolderFor(to)(_.notifyChange())
     errors
   }

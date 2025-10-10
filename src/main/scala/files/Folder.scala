@@ -48,11 +48,14 @@ object Folder extends SourceLoggable {
     if (logging) finest(s"Finished cache garbage collection (for $path)")
   }
 
-  def withFolderFor(path: Path)(fn: Folder => Unit): Unit = {
+  /**
+   *  If `path` denotes a cached `Folder` then `act` on that folder.
+   *  Used only for notifications from `FileOperation`s.
+   */
+  def withFolderFor(path: Path)(act: Folder => Unit): Unit = {
     cache.get(path) match {
-      case None =>
-        if (logging) warn(s"No folder for $path\n  ${refCount.mkString("\n ")}\n  ${cache.mkString("\n ")}")
-      case Some(folder) => fn(folder)
+      case None          => if (logging) fine(s"$path is not a Directory")
+      case Some(folder)  => act(folder)
     }
   }
 
