@@ -17,7 +17,7 @@ import java.nio.file.{Path, Paths}
  */
 object Barents extends Application with SourceLoggable {
   implicit val fileSheet: StyleSheet =
-    StyleSheet(buttonDecoration=RoundFramed(enlarge=9f, radius=10), buttonFontSize = 15, labelFontSize = 15, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
+    StyleSheet(buttonDecoration=RoundFramed(fg=Brushes.darkGrey(width=3), bg=Brushes.lightGrey, enlarge=9f, radius=10), buttonFontSize = 15, labelFontSize = 15, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
 
   val homePath: Path  = Paths.get(System.getProperty("user.home"))
 

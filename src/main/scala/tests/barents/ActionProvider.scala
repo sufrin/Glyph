@@ -23,6 +23,12 @@ trait ActionProvider {
     popupErrors(paths.flatMap(FileOperations.delete(_)))
   }
 
+  def trash(): Unit = trash(Shelf.paths)
+
+  def trash(paths: Seq[Path]): Unit = {
+    Viewer.finer(s"Trash: ${paths.mkString(" ")}")
+    popupErrors(paths.flatMap(FileOperations.trash(_)))
+  }
 
   def currentImplicitDestination: Option[Path] =
     view.selectedRows.length match {
@@ -93,7 +99,6 @@ trait ActionProvider {
   def move(): Unit = currentImplicitDestination.foreach(move)
 
   // implicit source: the shelf
-  // implicit source: the shelf
   def link(path: Path): Unit = {
     Viewer.finer(s"Link: ${Shelf.paths.mkString(" ")}  to ${path}")
     popupErrors(FileOperations.link(Shelf.paths, path))
@@ -102,4 +107,15 @@ trait ActionProvider {
   }
 
   def link(): Unit = currentImplicitDestination.foreach(link)
+
+  // implicit source: the shelf
+  def symlink(path: Path): Unit = {
+    Viewer.finer(s"Symlink: ${Shelf.paths.mkString(" ")}  to ${path}")
+    popupErrors(FileOperations.symboliclink(Shelf.paths, path))
+    Shelf.clear()
+    //folder.withValidCaches { view.reDraw() } // Notification now does this
+  }
+
+  def symlink(): Unit = currentImplicitDestination.foreach(symlink)
+
 }

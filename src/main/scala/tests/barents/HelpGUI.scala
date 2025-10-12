@@ -10,28 +10,28 @@ object HelpGUI {
   )
   private val language: language = glyphML.Translator(style)
   language.definitions("settings") = External.Image.readResource("/settings").scaled(0.06f)
+  language.definitions("shelf") = ViewerWindow.SHELF
+  language.definitions("clearshelf") = ViewerWindow.CLEARSHELF
 
   import language._
 
   val text: Glyph = <div width="80em" align="justify" parskip="0.5ex">
     <p align="center">
-      <b>Display</b>
+      <b>The Barents Display</b>
     </p>
-    <p>Each window is associated with one or more <i>directory views</i>, of which one is always shown. Each file in a directory view
+    <p>Each window is associated with one or more <i>directory views</i>, of which one is always shown. Each directory or file in a directory view
       is shown as a single row whose columns show its relevant/selected attributes. The attributes shown can be
       selected using the panel popped up by the
-      <glyph gid="settings"/> button. So can the order in which they are
-      shown. Showing "invisible" files is enabled, on that panel, by pressing
+      <glyph gid="settings"/> button; as can the column on which the rows are
+      ordered when shown.</p>
+    <p>Showing "invisible" files is enabled by pressing
       <b>[.]</b>
       and disabled by pressing
       <b>(.)</b>
-      .
+      on that panel.
     </p>
-    <p>
-      An
-      <b>S</b>
-      to the right of a date/time in the display indicates
-      daylight-saving (summer) time for the current locality on the given date.
+    <p align="center">
+      <b>Columns</b>
     </p>
     <p>
       The
@@ -44,6 +44,15 @@ object HelpGUI {
       . Directory sizes are given as the number of files in them (with suffix
       <b>f</b>
       ).
+    </p>
+    <p>
+      An
+      <b>S</b>
+      to the right of a date/time in the display indicates
+      daylight-saving (summer) time for the current locality on the given date.
+    </p>
+    <p align="center">
+      <b>Path</b>
     </p>
     <p>The path to the directory currently on view in the window is shown as a sequence of buttons, each of which corresponds to an
       ancestor and is associated with a "hover-hint" that shows the corresponding
@@ -68,36 +77,45 @@ object HelpGUI {
     <p align="center">
       <b>Shelf</b>
     </p>
-    <p>There is an Explorer-wide
+    <p>There is an Explorer-wide <i>conceptual</i>
       <b>Shelf</b>
       on which is a collection of paths that denote
-      individual files in the filestore. A file is said to be "shelved" if its path is
-      on the shelf. Shelved files are the objects of the actions describd below, and they are
-      underlined in the display. If the underlining is "textured" then the corresponding file has been marked for deletion
+      individual files in the filestore, and a file or directory is said to be "shelved" if its path is
+      on the shelf, and "selected" if its path is in the selection. Shelved files are the objects of the actions described below, and they are
+      underlined in the display.
+    </p>
+    <p>If the underlining is "textured" (see <b>Actions C-X</b>) then the corresponding file has been marked for deletion
       as part of the next "paste" (C-V).
     </p>
 
-    <p>Actions are by buttons or keys.</p>
+    <p>Actions are invoked by pressing GUI buttons or keys on the keyboard.</p>
     <scope>
       <attributes id="tag:p" hang=" *  "/>
       <p>
-        <b>Shelf</b>
-        places the selection on the shelf.</p>
+        <glyph gid="shelf"/> <b>(shelve))</b>
+        shelves the selected files.</p>
       <p>
         <b>C-C</b>
-        places the selection on the shelf.</p>
+        shelves the selected files.</p>
       <p>
         <b>C-X</b>
-        places the selection on the shelf, and marks it for later deletion as part of the next "paste" (C-V) action.</p>
+        shelves the selected files and marks them for later deletion. The next "paste" (C-V) action will perform
+        the deletion.</p>
       <p>
         <b>C-V</b>
         copies the shelved files to the folder in which it is clicked; deleting them if they were marked for deletion by (C-X).</p>
       <p>
-        <b>del</b>
-        deletes the shelved files.</p>
+        <b>C-BACKSPACE</b>
+        completely deletes the shelved files.</p>
+     <p>
+       <b>BACKSPACE</b>
+       moves the shelved files into their local .TRASH folder with "timestamped" names.</p>
       <p>
-        <b>cp mv ln</b>
-        respectively copy, move, and link the shelved files to the
+        <b>trash</b>
+        moves the shelved files into their local .TRASH folder with "timestamped" names.</p>
+      <p>
+        <b>copy move link ln-s</b>
+        respectively copy, move, link, and sym_bol_ical_ly-link the shelved files to the
         current implicit destination. This is
         <i>either</i>
         the directory denoted by a single selected path in the window in which
@@ -106,7 +124,7 @@ object HelpGUI {
         the folder being shown in that window.
       </p>
       <p>
-        <b>Clear</b>
+        <glyph gid="clearshelf"/> <b>(clear shelf))</b>
         removes the deletion mark from the shelf if it is so marked; otherwise clears the shelf.</p>
       <p>The usual navigation methods:
         <b>home end page-up page-down scroll-wheel</b>

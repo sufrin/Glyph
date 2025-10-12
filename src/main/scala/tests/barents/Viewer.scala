@@ -12,7 +12,6 @@ import gesture.{Gesture, Keystroke}
 import NaturalSize.Grid
 import styled.overlaydialogues.Dialogue
 import styles.decoration.RoundFramed
-import GlyphTypes.FontStyle.NORMAL
 import unstyled.static.INVISIBLE
 
 import io.github.humbleui.jwm.Key
@@ -273,7 +272,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
           thisViewer.shelf(forCut = true)
 
         case Keystroke(Key.BACKSPACE, _) if PRESSED =>
-          thisViewer.delete()
+          if (CONTROL) thisViewer.delete() else thisViewer.trash()
 
         case Keystroke(Key.V, _) if PRESSED =>
           thisViewer.paste()
@@ -424,8 +423,7 @@ object Viewer extends SourceLoggable {
 
   import GlyphTypes.FontStyle.NORMAL
 
-  implicit val fileSheet: StyleSheet =
-    StyleSheet(buttonDecoration=RoundFramed(enlarge=9f, radius=10), buttonFontSize = 15, labelFontSize = 15, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
+  implicit lazy val fileSheet: StyleSheet = Barents.fileSheet
 
   val settingsIcon: Glyph = External.Image.readResource("/settings").scaled(0.03f)
 

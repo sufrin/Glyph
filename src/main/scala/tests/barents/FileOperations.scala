@@ -6,6 +6,8 @@ import tests.barents.PathProperties._
 
 import org.sufrin.logging.SourceLoggable
 
+import java.util.Date
+
 object FileOperations extends SourceLoggable {
   import org.sufrin.glyph.files._
 
@@ -150,6 +152,9 @@ object FileOperations extends SourceLoggable {
     }
   }
 
+  val TRASH: Path = Paths.get(java.lang.System.getProperty("user.home"), ".Trash")
+
+  /** Expunge */
   def delete(path: Path): Seq[Exception] =
     try {
       Files.delete(path)
@@ -160,5 +165,47 @@ object FileOperations extends SourceLoggable {
     catch {
       case ex: java.io.IOException        => List(ex)
     }
+
+
+  def renamingMove(from: Path, to: Path): Seq[Exception] = {
+    // pre: to is in a writeable folder
+    if (from.isReadable) {
+      try {
+        Files.move(from,  to)
+        Seq.empty
+      } catch {
+        case ex: java.io.IOException => List(ex)
+      }
+    } else {
+      List(
+        new java.nio.file.NoSuchFileException(
+          from.toString,
+          "",
+          " file is unreadable."
+          )
+        )
+    }
+  }
+
+  /** Really delete files already in the trash */
+  def trash(path: Path): Seq[Exception] = {
+      val localTrash = path.getParent.resolve(".TRASH")
+      if (path.getParent == localTrash) {
+        delete(path)
+      } else
+      createDirectory(localTrash).toList match {
+        case Nil =>
+          val timeStamped = Paths.get(path.getFileName.toString+"@"+new Date().toString)
+          val stamped = localTrash.resolve(timeStamped)
+          renamingMove(path, stamped) match {
+            case Nil =>
+              Folder.withFolderFor(path.getParent)(_.notifyChange())
+              Nil
+            case errors => errors
+          }
+        case errors =>
+          errors
+      }
+  }
 
 }

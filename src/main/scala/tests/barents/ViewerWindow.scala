@@ -9,6 +9,8 @@ import tests.barents.PathProperties._
 import tests.barents.Viewer.{dialogueLabel, dialogueSheet, fileSheet, openOrdinaryFile}
 import unstyled.dynamic.Keyed
 import GlyphTypes.Scalar
+import unstyled.static.{Concentric, FilledRect}
+import NaturalSize.{Col, Row}
 
 import java.awt.Desktop
 import java.nio.file._
@@ -17,6 +19,26 @@ import java.nio.file._
 object ViewerWindow {
   private var _serial = 0
   def nextSerial(): Int = { _serial += 1; _serial }
+
+  lazy val SHELF: Glyph = {
+    val plank   = FilledRect(120, 20, fg=Brushes.darkGrey)
+    val planket = FilledRect(50, 20, fg=Brushes.black) above plank()
+    val plonket = FilledRect(30, 25, fg=Brushes.black) above plank()
+    val upright = FilledRect(20, 4*plank.h+plonket.h, fg=Brushes.darkGrey)
+    Row(align=Bottom)(upright,
+                   Col(plonket,
+                       plank(fg=Brushes.transparent),
+                       planket,
+                       plank(fg=Brushes.transparent),
+                       plank(),
+                       ),
+                   upright()).scaled(0.15f).withBaseline(20)
+  }
+
+  lazy val CLEARSHELF: Glyph = {
+    Concentric(SHELF, GlyphShape.line(SHELF.diagonal.scaled(-1, -1), SHELF.diagonal)(Brushes.redLine).asGlyph)
+  }
+
 }
 
 /**
@@ -64,7 +86,6 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
           openExplorerWindow(rootPath)
     }
 
-
     lazy val openButton = TextButton("Open", hint=Hint(0.8, "Start a new view of\nthe selected directory\nor of the current directory\nif none is selected")){
       _ =>
         visibleSelection match {
@@ -73,34 +94,38 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
         }
     }
 
-    lazy val shelfButton = TextButton("Shelf", hint = Hint(2, "Selection to (s)helf\n... marked for copying (^C)\n... marked for deletion(^X)")) {
+    lazy val shelfButton = MenuGlyphButton(ViewerWindow.SHELF, hint = Hint(2, "Selection to (s)helf\n... marked for copying (^C)\n... marked for deletion(^X)")) {
       _ => visibleActions.shelf(forCut = false)
     }
 
-    lazy val clearButton = TextButton("Clear", hint = Hint(2, if (Shelf.nonEmpty && Shelf.forCut) "Clear shelf deletion mark" else "Clear shelf completely", constant = false)) {
+    lazy val clearButton = MenuGlyphButton(ViewerWindow.CLEARSHELF, hint = Hint(2, if (Shelf.nonEmpty && Shelf.forCut) "Clear shelf deletion mark" else "Clear shelf completely", constant = false)) {
       _ =>
         if(Shelf.nonEmpty && Shelf.forCut) Shelf.forCut = false else visibleActions.clearShelf()
         visibleActions.view.reDraw()
     }
 
-    lazy val shelfButtons = NaturalSize.Row(shelfButton, clearButton)
+    lazy val shelfButtons = NaturalSize.Row(align=Mid)(clearButton, shelfButton)
 
     def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption()), constant = false, preferredLocation = Hint.NoPreference)
 
-    lazy val deleteButton = TextButton("del", hint=shelfHint(()=>"Delete files")){
-      _ => visibleActions.delete()
+    lazy val trashButton = TextButton("trash", hint=shelfHint(()=>"Move files to .Trash")){
+      _ => visibleActions.trash()
     }
 
-    lazy val copyButton = TextButton("cp", hint=shelfHint(()=>s"Copy files to ${visibleActions.currentImplicitDestinationString} (C-V)")){
+    lazy val copyButton = TextButton("copy", hint=shelfHint(()=>s"Copy files to ${visibleActions.currentImplicitDestinationString} (C-V)")){
       _ => visibleActions.paste()
     }
 
-    lazy val moveButton = TextButton("mv", hint=shelfHint(()=>s"Move files to ${visibleActions.currentImplicitDestinationString}")){
+    lazy val moveButton = TextButton("move", hint=shelfHint(()=>s"Move files to ${visibleActions.currentImplicitDestinationString}")){
       _ => visibleActions.move()
     }
 
-    lazy val linkButton = TextButton("ln", hint=shelfHint(()=>s"Link files to ${visibleActions.currentImplicitDestinationString}")){
+    lazy val linkButton = TextButton("link", hint=shelfHint(()=>s"Link files to ${visibleActions.currentImplicitDestinationString}")){
       _ => visibleActions.link()
+    }
+
+    lazy val symlinkButton = TextButton("ln-s", hint=shelfHint(()=>s"Symbolically link files to ${visibleActions.currentImplicitDestinationString}")){
+      _ => visibleActions.symlink()
     }
 
 
@@ -111,9 +136,11 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
       FixedSize.Row(width = viewers.w, align = Mid)(
         openButton,
         viewButton,
-        fileSheet.hFill(),
-        shelfButtons, copyButton, linkButton, moveButton, deleteButton,
-        fileSheet.hFill(),
+        fileSheet.hFill(stretch = 1),
+        shelfButtons,
+        fileSheet.hFill(stretch = 1),
+        symlinkButton, linkButton,copyButton, moveButton, trashButton,
+        fileSheet.hFill(stretch = 2),
         HelpGUI.button(Viewer.fileSheet),
         ),
       fileSheet.vSpace(),
