@@ -12,7 +12,7 @@ do
  CP=$CP:$file
 done
 
-PROGRAM=${1-Explorer}
+PROGRAM=${1-barents.Barents}
 shift
 
 scala -cp $CP org.sufrin.glyph.tests.$PROGRAM "$@" &
