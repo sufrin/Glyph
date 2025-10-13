@@ -13,6 +13,7 @@ import NaturalSize.Grid
 import styled.overlaydialogues.Dialogue
 import styles.decoration.RoundFramed
 import unstyled.static.INVISIBLE
+import Hint.{Centred, West}
 
 import io.github.humbleui.jwm.Key
 import org.sufrin.logging.SourceLoggable
@@ -326,12 +327,13 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
 
     private lazy val buttons: Seq[Glyph] = prefixDirs.tail.map {
       case path =>
-        TextButton(s"${path.getFileName.toString}", hint = Hint(3, path.toRealPath().toString, preferredLocation = Hint.South)(hintSheet)) { _ => services.openPath(path) }(buttonSheet)
+        TextButton(s"${path.getFileName.toString}", hint = Hint(3, path.toRealPath().toString, preferredLocation = Centred)(hintSheet)) { _ => services.openPath(path) }(buttonSheet)
     }.prepended(TextButton(s"/") { _ => services.openPath(Path.of("/")) }(buttonSheet)).appended(fileSheet.hSpace()).appended(parent)
 
     lazy val parent = {
       val up = folder.path.resolve("..").toRealPath()
-      TextButton(s"..", hint = Hint(3, s"Open the real parent directory\n${up.toString}", preferredLocation = Hint.West)(hintSheet)) { _ => services.openPath(up) }(buttonSheet)
+      TextButton("..", hint = Hint(3, s"Open the real parent directory\n${up.toString}",
+                                      preferredLocation = Centred)(hintSheet)) { _ => services.openPath(up) }(buttonSheet)
     }
 
     lazy val GUI: Glyph = NaturalSize.Row(align = Mid)(buttons)
@@ -339,21 +341,23 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
   }
 
   object Settings {
-    val invisibilityCheckBox =
-      styled.SymbolicCheckBox(showingInvisibles, whenTrue = "(.)", whenFalse = "[.]", hint = Hint(2, "Show\ninvisible\nfiles")) {
+    val invisibilityCheckBox = {
+      styled.Label(" Invisible ") above
+      styled.CheckBox(showingInvisibles, hint = Hint(2, if (showingInvisibles) "Click not to show invisibles" else "Click to show invisibles", constant=false, preferredLocation = Centred)) {
         state =>
           showingInvisibles = state
           theListing.clear()
           view.refresh(theListing, reset = true)
       }
+    }
 
     val reverseSortCheckBox =
-      styled.SymbolicCheckBox(reverseSort, whenTrue = "↓", whenFalse = "↑", hint = Hint(2, "Reverse\nsort\norder")) {
+      styled.SymbolicCheckBox(reverseSort, whenTrue = "descending", whenFalse = "ascending", hint = Hint(2, "Reverse the\ncurrent sort\norder", preferredLocation = Centred)) {
         state =>
           reverseSort = state
           theListing.clear()
           view.refresh(theListing, reset = true)
-      }.scaled(1.5f)
+      }.roundFramed(fg=Brushes.darkGrey(width=2), radius=15)
 
     lazy val sortButtons: RadioCheckBoxes = RadioCheckBoxes(
       captions = List("Name", "Size", "Created", "Modified", "Accessed"),
@@ -371,8 +375,8 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     }
 
     private lazy val order: Glyph =
-      NaturalSize.Row(align = Mid)(List(Label("Ordered"), reverseSortCheckBox, Label("on")) ++
-                                     sortButtons.glyphButtons(Right, fixedWidth = false) ++ List(invisibilityCheckBox))
+      NaturalSize.Row(align = Mid)(List(Label("Ordered on "), reverseSortCheckBox, Label(" ")) ++
+                                     sortButtons.glyphButtons(Right, fixedWidth = false))
 
     private val largeButtonStyle: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated, fontScale = 1.3f, buttonHoverBrush = fileSheet.buttonForegroundBrush)
 
@@ -380,7 +384,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       val closeSettings = unstyled.reactive.RawButton(PolygonLibrary.closeButtonGlyph.scaled(1.5f), down = Brushes.red, hover = Brushes.green) { _ => settingsPopup.close() }
       NaturalSize.Col(align = Left)(
         closeSettings,
-        FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), Fields.selectors, fileSheet.hFill()),
+        FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), Fields.selectors, invisibilityCheckBox, fileSheet.hFill()),
         FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), order, fileSheet.hFill()), fileSheet.vSpace()
         )
     }
@@ -390,10 +394,11 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
 
     def popup(): Unit = {
       settingsPopup.canEscape = true
+      settingsPopup.isMenu = true
       settingsPopup.start()
     }
 
-    val GUI: Glyph = MenuGlyphButton(Viewer.settingsIcon.scaled(2), hint=Hint(1, "Settings")){ _ => Settings.popup() }(PathButtons.buttonSheet)
+    val GUI: Glyph = MenuGlyphButton(Viewer.settingsIcon.scaled(2), hint=Hint(1, "View settings\n(to leave type esc or click anywhere)", preferredLocation = West)){ _ => Settings.popup() }(PathButtons.buttonSheet)
 
   }
 

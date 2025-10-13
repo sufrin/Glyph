@@ -9,8 +9,8 @@ import tests.barents.PathProperties._
 import tests.barents.Viewer.{dialogueLabel, dialogueSheet, fileSheet, openOrdinaryFile}
 import unstyled.dynamic.Keyed
 import GlyphTypes.Scalar
-import unstyled.static.{Concentric, FilledRect}
-import NaturalSize.{Col, Row}
+
+import io.github.humbleui.skija.PaintMode
 
 import java.awt.Desktop
 import java.nio.file._
@@ -21,23 +21,25 @@ object ViewerWindow {
   def nextSerial(): Int = { _serial += 1; _serial }
 
   lazy val SHELF: Glyph = {
-    val plank   = FilledRect(120, 20, fg=Brushes.darkGrey)
-    val planket = FilledRect(50, 20, fg=Brushes.black) above plank()
-    val plonket = FilledRect(30, 25, fg=Brushes.black) above plank()
-    val upright = FilledRect(20, 4*plank.h+plonket.h, fg=Brushes.darkGrey)
-    Row(align=Bottom)(upright,
-                   Col(plonket,
-                       plank(fg=Brushes.transparent),
-                       planket,
-                       plank(fg=Brushes.transparent),
-                       plank(),
-                       ),
-                   upright()).scaled(0.15f).withBaseline(20)
+    import Brushes.{blue => B, darkGrey => G, red => R, transparent => T}
+    import GlyphShape._
+    val box: Brush=>GlyphShape = rect(5.25f, 3)
+    val gap:       GlyphShape  = rect(18, 3)(T)
+    val gapB:      GlyphShape  = rect(18, 1.5f)(T)
+    val plank0B:   GlyphShape  = rect(18, 3)(G) // no boxes
+    val plank1B:   GlyphShape  = ((rect(1.5f, 3)(T) ||| box(R))                       --- plank0B) // 1 box
+    val plank2B:   GlyphShape  = ((rect(0.75f,3)(T) ||| box(R(width=1, mode=PaintMode.STROKE)) ||| box(T) ||| box(B)) --- plank0B) // 2 boxes
+    val upright:   GlyphShape  = rect(3, 21)(G)
+
+    val image: GlyphShape = upright ||| (plank1B --- gapB --- plank2B --- gap --- plank0B) ||| upright
+      image.asGlyph.withBaseline(20)
   }
 
   lazy val CLEARSHELF: Glyph = {
-    Concentric(SHELF, GlyphShape.line(SHELF.diagonal.scaled(-1, -1), SHELF.diagonal)(Brushes.redLine).asGlyph)
+    import GlyphShape._
+    superimposed(List(SHELF, GlyphShape.line(SHELF.diagonal.scaled(-1, -1), SHELF.diagonal)(Brushes.redLine))).asGlyph
   }
+
 
 }
 

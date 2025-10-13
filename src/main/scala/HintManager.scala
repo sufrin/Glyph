@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 import unstyled.reactive.Enterable
 import unstyled.static.INVISIBLE
-import Hint.{East, NoPreference, North, PreferredLocation, South, West}
+import Hint.{East, NoPreference, North, PreferredLocation, Northmost, Centered, Centred, South, West}
 
 /**
  *
@@ -34,8 +34,10 @@ class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Doubl
    * will show is computed only after it is determined that the layer is visible, and this makes
    * it feasible to generate hints dynamically.
    *
-   * The hint glyph is located at the left edge of the reactive glyph if this increases
-   * the chance of it being visible.
+   * When `preferredLocation` is noPreference` the hint glyph is located at the left edge of the target glyph if this increases
+   * the chance of it being visible. When `preferredLocation` is one of `North South East West`, the hint is located "as adjacent
+   * as it can be" to the corresponding edge of the target, whereas `Northmost` places the hint along the northmost edge of
+   * the current window and `Centered` (or `Centred`) places the hint "roughly in the centre" of the current window.
    */
   def getLayer(guiRoot: RootGlyph): RootLayer =
     guiRoot.Overlay.annotations.getOrElse(id, guiRoot.Overlay.newAnnotation(id, glyph=INVISIBLE(), isModal = false, visible = false, strictHiding = false, active = false))
@@ -59,9 +61,13 @@ class HintManager(val target: Enterable, val hint: ()=>Glyph, val seconds: Doubl
             case South =>
               layer.glyph @@ Vec(locX, target.where.y+target.size.y)
             case West =>
-              layer.glyph @@ Vec(target.where.x, target.where.y+target.size.y/2)
+              layer.glyph @@ Vec(target.where.x-layer.glyph.w, target.where.y+target.size.y/2)
             case East =>
               layer.glyph @@ Vec(target.where.x+layer.glyph.w, target.where.y+target.size.y/2)
+            case Northmost =>
+              layer.glyph @@ Vec(((target.guiRoot.w-layer.glyph.w)/2).abs , 0)
+            case Centered | Centred =>
+              layer.glyph @@ Vec(((target.guiRoot.w-layer.glyph.w)/2).abs , (target.guiRoot.h-layer.glyph.h)/2)
             case NoPreference =>
               layer.glyph @@ Vec(locX, where.y)
           }
@@ -145,8 +151,11 @@ object Hint {
   trait PreferredLocation
   case object South extends PreferredLocation
   case object North extends PreferredLocation
-  case object East extends PreferredLocation
-  case object West extends PreferredLocation
+  case object East  extends PreferredLocation
+  case object West  extends PreferredLocation
+  case object Northmost    extends PreferredLocation
+  case object Centered     extends PreferredLocation
+  case object Centred      extends PreferredLocation
   case object NoPreference extends PreferredLocation
 
 }

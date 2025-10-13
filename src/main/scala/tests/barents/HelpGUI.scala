@@ -23,13 +23,8 @@ object HelpGUI {
       is shown as a single row whose columns show its relevant/selected attributes. The attributes shown can be
       selected using the panel popped up by the
       <glyph gid="settings"/> button; as can the column on which the rows are
-      ordered when shown.</p>
-    <p>Showing "invisible" files is enabled by pressing
-      <b>[.]</b>
-      and disabled by pressing
-      <b>(.)</b>
-      on that panel.
-    </p>
+      ordered when shown, and whether the order is ascending or descending. The "Invisible" checkbox controls whether
+      nominally "invisible" files are shown.</p>
     <p align="center">
       <b>Columns</b>
     </p>
