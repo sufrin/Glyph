@@ -19,7 +19,7 @@ object HelpGUI {
     <p align="center">
       <b>The Barents Display</b>
     </p>
-    <p>Each window is associated with one or more <i>directory views</i>, of which one is always shown. Each directory or file in a directory view
+    <p>Each viewer window is associated with one or more <i>directory views</i>, of which one is always shown. Each directory or file in a directory view
       is shown as a single row whose columns show its relevant/selected attributes. The attributes shown can be
       selected using the panel popped up by the
       <glyph gid="settings"/> button; as can the column on which the rows are
@@ -66,8 +66,8 @@ object HelpGUI {
       <p>Primary mouse drag: extends the selection</p>
       <p>Shifted primary mouse click: extends the selection at one end</p>
       <p>Secondary mouse click (or C-Primary) (or drag) inverts selection status of the indicated row(s)</p>
-      <p>Mouse double-click, or (ENTER), opens the file indicated by the selected row, if possible</p>
-      <p>Mouse click in the "gutter" at the left of the display clears the selection</p>
+      <p>Mouse double-click, or (ENTER): if  <i>the unique</i> selected row denotes a directory then open a view of it; otherwise open the corresponding file on the desktop if possible. </p>
+      <p>Mouse click in the "gutter" at the left of the display: clears the selection</p>
     </scope>
     <p align="center">
       <b>Shelf</b>
@@ -130,11 +130,11 @@ object HelpGUI {
       </scope>
       <p align="center"><b>Opening and Selecting Views</b></p>
       <p>
-        The <b>Open</b> button opens a new window in a view of the currently-selected directory (if any), or of
+        The <b>New Viewer</b> button opens a new window in a view of the currently-selected directory (if any), or of
         the currently viewed directory (if none).</p>
     <p>
         When the window has more than one view available, the <b>View</b> button supports the selection of one of them, or the
-        closing of the currently-visible view and the selection of another.
+        closing of the currently-visible view in favour of its predecessor.
     </p>
 
   </div>.enlarged(20, bg = Brushes.white)

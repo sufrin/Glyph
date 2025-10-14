@@ -86,22 +86,39 @@ object Folder extends SourceLoggable {
 class Folder(val path: Path) {
   import Folder._
 
+  /**
+   * Subscription point for changes discovered (externally) in this folder
+   */
   val folderChanged: Notifier[String] = new Notifier[String]{}
 
+  /**
+   * The real absolute path of this folder in the filestore. This
+   * will not be the same as `path` if there are symbolic links
+   * or "." or ".." references in `path`.
+   */
   val absolutePath: Path = path.toAbsolutePath.toRealPath()
 
-  import java.nio.file.Files.list
+  import java.nio.file.Files
   private val byName = new Comparator[Path] {
     def compare(o1: Path, o2: Path): Int =
       o1.toString.compareToIgnoreCase(o2.toString)
   }
 
+  /**
+   * Widest group name, owner name, and filename in this folder.
+   * Calculated as a side-effect of computing `allRowsByName`.
+   */
   var groupWidth, ownerWidth, nameWidth: Int = 0
 
-  lazy val sortedRows: Cached[Seq[Row]] = Cached[Seq[Row]] {
+
+  /**
+   * Rows (ordered by name) corresponding to the entries in this folder.
+   * Invalidated when changes have been noticed in the folder.
+   */
+  private lazy val allRowsByName: Cached[Seq[Row]] = Cached[Seq[Row]] {
     import FileAttributes._
     require(path.toFile.isDirectory, s"$path is not a directory")
-    val stream = list(path).sorted(byName)
+    val stream = Files.list(path).sorted(byName)
     groupWidth = 0
     ownerWidth = 0
     nameWidth = 0
@@ -115,20 +132,13 @@ class Folder(val path: Path) {
     }
   }
 
+  /** Number of entries in the folder at this path */
   lazy val entryCount: Cached[Long] = Cached[Long] {
-    list(path).count()
+    Files.list(path).count()
   }
 
-  lazy val rowIndex: Cached[mutable.Map[Path, Row]] =
-    Cached[mutable.Map[Path, Row]] {
-      val rows = sortedRows.value
-      val map = mutable.LinkedHashMap[Path, Row]()
-      for { row <- rows } map(row.path) = row
-      map
-    }
-
-  def sortedDirs: Seq[Row]  = sortedRows.value.filter(_.isDirectory)
-  def sortedFiles: Seq[Row] = sortedRows.value.filterNot(_.isDirectory)
+  def directoriesByName: Seq[Row] = allRowsByName.value.filter(_.isDirectory)
+  def filesByName:       Seq[Row] = allRowsByName.value.filterNot(_.isDirectory)
 
   lazy val prefixPaths: Seq[Path] = {
     val p = path.normalize()
@@ -137,11 +147,9 @@ class Folder(val path: Path) {
   }
 
   def reValidate(): Unit = {
-    sortedRows.clear()
-    sortedRows.value
-    rowIndex.clear()
+    allRowsByName.clear()
+    allRowsByName.value
     entryCount.clear()
-    rowIndex.value
     ()
   }
 
@@ -153,7 +161,7 @@ class Folder(val path: Path) {
   /** Invalidate cache and its dependents
     */
   def invalidate(): Unit = {
-    for { cache <- List(sortedRows, rowIndex, entryCount) } cache.clear()
+    for { cache <- List(allRowsByName, entryCount)} cache.clear()
     if (logging) finest(s"invalidated primary caches for: $path")
   }
 

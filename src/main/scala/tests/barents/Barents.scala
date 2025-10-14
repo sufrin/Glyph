@@ -16,8 +16,15 @@ import java.nio.file.{Path, Paths}
  * initially selected `Viewer`  is bound to the current user's home directory.
  */
 object Barents extends Application with SourceLoggable {
+  lazy val menuBackgroundBrush: Brush = Brushes.darkGrey(alpha=0.3f)
   implicit val fileSheet: StyleSheet =
-    StyleSheet(buttonDecoration=RoundFramed(fg=Brushes.darkGrey(width=3), bg=Brushes.lightGrey, enlarge=9f, radius=10), buttonFontSize = 15, labelFontSize = 15, buttonFontStyle=NORMAL, labelForegroundBrush= Brushes.blue)
+    StyleSheet(
+      buttonDecoration  = RoundFramed(fg=Brushes.darkGrey(width=3), bg=Brushes.lightGrey, enlarge=9f, radius=10),
+      buttonFontSize    = 15,
+      labelFontSize     = 15,
+      buttonFontStyle   = NORMAL,
+      labelForegroundBrush = Brushes.darkGrey
+   )
 
   val homePath: Path  = Paths.get(System.getProperty("user.home"))
 

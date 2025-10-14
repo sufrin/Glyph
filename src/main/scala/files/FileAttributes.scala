@@ -109,6 +109,49 @@ object FileAttributes {
 
   }
 
+  object Orderings {
+
+
+
+    private val byModifiedTime = new Ordering[Row] {
+      def compare(r1: Row, r2: Row): Int = r1.attributes.lastModifiedTime().compareTo(r2.attributes.lastModifiedTime())
+    }
+    private val byCreatedTime = new Ordering[Row] {
+      def compare(r1: Row, r2: Row): Int = r1.attributes.creationTime().compareTo(r2.attributes.creationTime())
+    }
+    private val byAccessTime = new Ordering[Row] {
+      def compare(r1: Row, r2: Row): Int = r1.attributes.lastAccessTime().compareTo(r2.attributes.lastAccessTime())
+    }
+
+    private val bySize = new Ordering[Row] {
+      def compare(r1: Row, r2: Row): Int = r1.attributes.size().compareTo(r2.attributes.size())
+    }
+
+    def byModTime(rows: Seq[Row]): Seq[Row] = rows.sorted(byModifiedTime)
+
+    def byAccessTime(rows: Seq[Row]): Seq[Row] = rows.sorted(byAccessTime)
+
+    def byCreateTime(rows: Seq[Row]): Seq[Row] = rows.sorted(byCreatedTime)
+
+    def bySize(rows: Seq[Row]): Seq[Row] = rows.sorted(bySize)
+
+    def byName(rows: Seq[Row]): Seq[Row] = rows
+
+    def reverseView[T](s: Seq[T]): Seq[T] = new Seq[T] {
+      thisView =>
+      def apply(i: Int): T = s(length - i - 1)
+      val length: Int = s.length
+      def iterator: Iterator[T] = new Iterator[T] {
+        var i: Int = thisView.length
+        def hasNext: Boolean = i > 0
+        def next(): T = {
+          i -= 1; s(i)
+        }
+      }
+    }
+  }
+
+
 }
 
 

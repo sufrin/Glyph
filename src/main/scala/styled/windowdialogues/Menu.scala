@@ -3,7 +3,6 @@ package styled.windowdialogues
 
 import Location.Location
 import unstyled.reactive.{GenericButton, RawButton}
-import Brushes.lightGrey
 
 /**
  *
@@ -28,7 +27,7 @@ import Brushes.lightGrey
  *
  */
 
-class Menu(entries: Seq[Glyph]) { thisPopup =>
+class Menu(entries: Seq[Glyph], bg: Brush) { thisPopup =>
 
   var location: Location = null
 
@@ -61,15 +60,15 @@ class Menu(entries: Seq[Glyph]) { thisPopup =>
    *
    *  (The laziness of `root` is essential because root and `close()` are mutually recursive.)
    */
-  lazy val root: Glyph = Framed(fg=Brushes.red(width=0f))({
+  lazy val root: Glyph = {
     def afterReact(glyph: Glyph): Glyph = glyph match  {
       case button: GenericButton =>
         if (button.isMenuButton) button  else button.afterReact{ _ => close() }
       case _ => glyph
     }
-    val col = Col(align=Left)(entries.map(afterReact))
-    Col(align=Left, bg=lightGrey)(killButton, col)
-  })
+    val col = Col(align=Left, bg=bg)(entries.map(afterReact))
+    Col(align=Left, bg=bg)(killButton, col)
+  }
 
   // TODO: Perhaps we need an "annular" reactiveGlyph into which menus can be nested.
   //       When the cursor enters the anulus "from the inside", the menu close
@@ -213,15 +212,15 @@ object Menu {
   }
 
   /** A popup menu with `entries` as glyphs: located as specified by `position`. */
-  def apply(entries: Seq[Glyph]): Menu = {
-    new Menu(entries)
+  def apply(entries: Seq[Glyph], bg: Brush=Brushes.transparent): Menu = {
+    new Menu(entries, bg)
   }
 
   /**
    * A popup menu with `entries` as glyphs: located as specified by `position`.
    */
-  def at(position: Location)(entries: Glyph*): Menu = {
-    val menu = new Menu(entries)
+  def at(position: Location, bg: Brush = Brushes.transparent)(entries: Glyph*): Menu = {
+    val menu = new Menu(entries, bg)
     menu.location=position
     menu
   }

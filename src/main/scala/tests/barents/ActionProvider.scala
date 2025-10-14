@@ -8,7 +8,7 @@ import java.nio.file.Path
 trait ActionProvider {
   this: Object =>
 
-  val view:               SeqViewer
+  val viewer:             SeqViewer
   val folder:             Folder
   def selectedPaths:      Seq[Path]
   val GUI:                Glyph
@@ -31,12 +31,12 @@ trait ActionProvider {
   }
 
   def currentImplicitDestination: Option[Path] =
-    view.selectedRows.length match {
+    viewer.selectedRows.length match {
       case 0 => Some(folder.path)
       case 1 if theRows(0).isDirectory =>
-        Some(theRows(view.selectedRows.head).path)
+        Some(theRows(viewer.selectedRows.head).path)
       case _ =>
-        view.bell.play()
+        viewer.bell.play()
         None
     }
 
@@ -59,7 +59,7 @@ trait ActionProvider {
     Viewer.finer(s"Shelf =  ${paths.mkString(" ")}")
     Shelf.clear()
     Shelf.add(paths)
-    view.clearSelection()
+    viewer.clearSelection()
   }
 
   def unShelf(): Unit = unShelf(selectedPaths)
@@ -67,7 +67,7 @@ trait ActionProvider {
   def unShelf(paths: Seq[Path]): Unit = {
     Viewer.finer(s"Shelf -=  ${paths.mkString(" ")}")
     Shelf.remove(paths)
-    view.clearSelection()
+    viewer.clearSelection()
   }
 
   // implicit source: the clipboard/shelf
@@ -85,7 +85,7 @@ trait ActionProvider {
         else if (Shelf.forCut) delete()
     }
     clearShelf()
-    //folder.withValidCaches { view.reDraw() }  // Notification now does this
+    //folder.withValidCaches { viewer.reDraw() }  // Notification now does this
   }
 
   // implicit source: the shelf
@@ -93,7 +93,7 @@ trait ActionProvider {
     Viewer.finer(s"Move: ${Shelf.paths.mkString(" ")}  to ${path}")
     popupErrors(FileOperations.move(Shelf.paths, path))
     Shelf.clear()
-    //folder.withValidCaches { view.reDraw() }  // Notification now does this
+    //folder.withValidCaches { viewer.reDraw() }  // Notification now does this
   }
 
   def move(): Unit = currentImplicitDestination.foreach(move)
@@ -103,7 +103,7 @@ trait ActionProvider {
     Viewer.finer(s"Link: ${Shelf.paths.mkString(" ")}  to ${path}")
     popupErrors(FileOperations.link(Shelf.paths, path))
     Shelf.clear()
-    //folder.withValidCaches { view.reDraw() } // Notification now does this
+    //folder.withValidCaches { viewer.reDraw() } // Notification now does this
   }
 
   def link(): Unit = currentImplicitDestination.foreach(link)
@@ -113,7 +113,7 @@ trait ActionProvider {
     Viewer.finer(s"Symlink: ${Shelf.paths.mkString(" ")}  to ${path}")
     popupErrors(FileOperations.symboliclink(Shelf.paths, path))
     Shelf.clear()
-    //folder.withValidCaches { view.reDraw() } // Notification now does this
+    //folder.withValidCaches { viewer.reDraw() } // Notification now does this
   }
 
   def symlink(): Unit = currentImplicitDestination.foreach(symlink)

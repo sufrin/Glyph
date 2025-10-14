@@ -255,7 +255,7 @@ case class MenuButton(text: String, hint: Hint=NoHint) extends styled.StyledButt
 object UniformSize {
   case class ButtonSpecification(text: String, action: Reaction, hint: Hint = NoHint)
 
-  def apply(text: String)(action: Reaction): ButtonSpecification = ButtonSpecification(text, action)
+  def apply(text: String, hint: Hint = NoHint)(action: Reaction): ButtonSpecification = ButtonSpecification(text, action, hint)
 
   def constrained(buttonSpecs: Seq[ButtonSpecification])(implicit sheet: StyleSheet): Seq[ReactiveGlyph] = {
     val detail = sheet.buttonStyle

@@ -69,26 +69,25 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
   def visibleActions:   ActionProvider   = visibleViewer
 
   lazy val GUI: Glyph = {
-    def menuHint = Hint(0.8, viewers.keys.map(_.toString).mkString(s"Views\n", "\n", ""), constant=false)
+    val viewHint = Hint(0.75, if (viewers.size<=1) "[There are no other views in this viewer]" else s"Close this view\nor choose from the others (${viewers.size-1})", constant=false)
 
-    lazy val viewButton: Glyph = TextButton("View", hint = menuHint) {
+    lazy val viewButton: Glyph = TextButton("View", hint = viewHint) {
       _ =>
-        if (viewers.size > 1)
-          styled.windowdialogues
-            .Menu(viewers.keys.toSeq.map { key =>
-              MenuButton(s"Open view of ${key.toString}") { _ =>
-                openExplorerWindow(key)
+        if (viewers.size > 1) {
+          val buttons =
+              UniformSize(s"CLOSE: $visiblePath"){ _ => closeExplorer(visiblePath) } +:
+              viewers.keys.toSeq.map {
+                key => UniformSize(key.toString) { _ => openExplorerWindow(key) }
               }
-            } . prepended(
-               MenuButton(s"Close view of $visiblePath"){ _ => closeExplorer(visiblePath) }
-            ))
+          styled.windowdialogues
+            .Menu(UniformSize.constrained(buttons), bg=Barents.menuBackgroundBrush)
             .East(viewButton)
             .start()
-        else
+        } else
           openExplorerWindow(rootPath)
     }
 
-    lazy val openButton = TextButton("Open", hint=Hint(0.8, "Start a new view of\nthe selected directory\nor of the current directory\nif none is selected")){
+    lazy val openButton = TextButton("New Viewer", hint=Hint(0.8, "Start a new viewer of\nthe selected directory\nor of the current directory\nif none is selected")){
       _ =>
         visibleSelection match {
           case paths if paths.length != 1 => visibleViewer.services.openServices(visibleViewer.folder.path)
@@ -103,7 +102,7 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
     lazy val clearButton = MenuGlyphButton(ViewerWindow.CLEARSHELF, hint = Hint(2, if (Shelf.nonEmpty && Shelf.forCut) "Clear shelf deletion mark" else "Clear shelf completely", constant = false)) {
       _ =>
         if(Shelf.nonEmpty && Shelf.forCut) Shelf.forCut = false else visibleActions.clearShelf()
-        visibleActions.view.reDraw()
+        visibleActions.viewer.reDraw()
     }
 
     lazy val shelfButtons = NaturalSize.Row(align=Mid)(clearButton, shelfButton)

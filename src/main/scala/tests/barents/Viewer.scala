@@ -19,6 +19,7 @@ import io.github.humbleui.jwm.Key
 import org.sufrin.logging.SourceLoggable
 
 import java.nio.file._
+import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
 
@@ -35,20 +36,20 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
 
   import Viewer.{finest, logging, warn}
 
-
   val serial = Viewer.nextSerial()
 
   override def toString: String = s"Viewer#$serial(${folder.path}, $services)"
 
-  var showingInvisibles = false
-  var reverseSort = false
+  /** Include rows corresponding to "invisible" files. */
+  var includeInvisible = false
+  var reverseSort      = false
 
   // register this barents with the folder
   locally {
     folder.folderChanged.handleWithTagged(thisViewer) {
       case information: String =>
-        if (logging) finest(s"(${folder.path}) refreshing view after: $information")
-        view.refresh(theListing)
+        if (logging) finest(s"(${folder.path}) refreshing viewer after: $information")
+        viewer.refresh(theListing)
     }
   }
 
@@ -59,131 +60,13 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         .InFront(GUI)
         .start()
 
-  object Orderings {
+  import FileAttributes.Orderings
 
-    import org.sufrin.glyph.files.FileAttributes._
 
-    private val byModifiedTime = new Ordering[Row] {
-      def compare(r1: Row, r2: Row): Int = r1.attributes.lastModifiedTime().compareTo(r2.attributes.lastModifiedTime())
-    }
-    private val byCreatedTime = new Ordering[Row] {
-      def compare(r1: Row, r2: Row): Int = r1.attributes.creationTime().compareTo(r2.attributes.creationTime())
-    }
-    private val byAccessTime = new Ordering[Row] {
-      def compare(r1: Row, r2: Row): Int = r1.attributes.lastAccessTime().compareTo(r2.attributes.lastAccessTime())
-    }
 
-    private val bySize = new Ordering[Row] {
-      def compare(r1: Row, r2: Row): Int = r1.attributes.size().compareTo(r2.attributes.size())
-    }
 
-    def byModTime(rows: Seq[Row]): Seq[Row] = rows.sorted(byModifiedTime)
-
-    def byAccessTime(rows: Seq[Row]): Seq[Row] = rows.sorted(byAccessTime)
-
-    def byCreateTime(rows: Seq[Row]): Seq[Row] = rows.sorted(byCreatedTime)
-
-    def bySize(rows: Seq[Row]): Seq[Row] = rows.sorted(bySize)
-
-    def byName(rows: Seq[Row]): Seq[Row] = rows
-
-    def reverseView[T](s: Seq[T]): Seq[T] = new Seq[T] {
-      thisView =>
-
-      def apply(i: Int): T = s(length - i - 1)
-
-      val length: Int = s.length
-
-      def iterator: Iterator[T] = new Iterator[T] {
-        var i: Int = thisView.length
-
-        def hasNext: Boolean = i > 0
-
-        def next(): T = {
-          i -= 1; s(i)
-        }
-      }
-    }
-  }
-
-  var theOrdering: Seq[Row] => Seq[Row] = Orderings.byName
-
-  def theRows: Seq[Row] = {
-    val sort: Seq[Row] => Seq[Row] = if (reverseSort) theOrdering.andThen(Orderings.reverseView(_)) else theOrdering
-    val filter: Seq[Row] => Seq[Row] = if (showingInvisibles) {
-      case rows: Seq[Row] => rows
-    } else {
-      case rows: Seq[Row] => rows.filterNot(_.isHidden)
-    }
-    val dirs = sort(filter(folder.sortedDirs))
-    val files = sort(filter(folder.sortedFiles))
-    dirs ++ files
-  }
-
-  /**
-   * `selectors` is a glyph composed of (suitably-captioned) checkboxes that control whether a field is to be
-   * presented (or not) in the current folder listing.
-   */
-  object Fields {
-
-    import org.sufrin.utility.CharSequenceOperations._
-
-    type FieldLayout = CharSequence => CharSequence
-    /** The list of potential fields (in order of presentation) */
-    val allFields: Seq[String] =
-      List("Id",
-           "Name",
-           "Kind",
-           "Size", "Size+", "Perms",
-           "#",
-           "Owner", "Group", "Created",
-           "Modified", "Accessed")
-
-    /** The list of potential layouts (in order of presentation) */
-    val fieldLayouts: Seq[FieldLayout] =
-      List(rightJustify(8)(_),
-           leftJustify(FileAttributes.rowNameLength + 1)(_),
-           leftJustify(12)(_),
-           rightJustify(10)(_), rightJustify(10)(_), rightJustify(10)(_),
-           centerJustify(2)(_),
-           rightJustify(10)(_), rightJustify(10)(_), centerJustify(21)(_),
-           centerJustify(21)(_), centerJustify(21)(_))
-
-    /** The mapping from potential fields to their layouts */
-    val fieldLayout: Map[String, FieldLayout] =
-      collection.immutable.ListMap.from(allFields zip fieldLayouts)
-
-    /** The set of fields currently selected for displaying */
-    val displayed: mutable.Set[String] = mutable.Set[String]("Name", "Size+", "Modified", "Owner", "Permissions", "Accessed")
-
-    /** apply `action`  to each field selected for display */
-    def forDisplayedFields(action: String => Unit): Unit = {
-      for {disp <- allFields if displayed.contains(disp)} action(disp)
-    }
-
-    lazy val selectors: Glyph = {
-      val labels: Seq[Glyph] = allFields.map(label => Label(label))
-      val toggles: Seq[Glyph] = allFields.map { label =>
-        CheckBox(displayed.contains(label)) {
-          case false => displayed.remove(label); view.refresh(theListing)
-          case true => displayed.add(label); view.refresh(theListing)
-        }
-      }
-      Grid(width = labels.length, padx = 10).table(labels ++ toggles)
-    }
-
-    /* Some field widths are determined per-folder */
-    def layout(fieldName: String): FieldLayout =
-      fieldName match {
-        case "Owner" => centerJustify(folder.ownerWidth max 5)(_)
-        case "Group" => centerJustify(folder.groupWidth max 5)(_)
-        case _ => fieldLayout(fieldName)
-      }
-  }
-
+  /** The current viewer header */
   def theHeader: Cached[String] = Cached[String] {
-    import org.sufrin.glyph.files.FileAttributes._
-    import org.sufrin.utility.CharSequenceOperations._
     val out: StringBuilder = new StringBuilder()
     Fields.forDisplayedFields { case field: String =>
       out.append(Fields.layout(field)(field))
@@ -192,43 +75,64 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     out.toString
   }
 
-  def columns: Int = theHeader.value.length
+  /** Length of the current header */
+  def headerLength: Int = theHeader.value.length
 
-  def showRow(row: Row): String = {
-    import org.sufrin.glyph.files.FileAttributes._
-    import org.sufrin.utility.CharSequenceOperations._
-    val out = new StringBuilder()
-    Fields.forDisplayedFields { case field: String =>
-      val layout = Fields.layout(field)
-      val text: CharSequence = field match {
-        case "Name" => layout(s"${row.dirToken} ${row.name}${row.linkToken}")
-        case "Kind" => layout(row.kind)
-        case "Size+" => layout(row.compSize)
-        case "Size" => layout(row.attributes.size.toString)
-        case "Perms" => layout(row.attributes.mode)
-        case "Owner" => layout(row.attributes.owner.toString)
-        case "Group" => layout(row.attributes.group.toString)
-        case "Modified" => (timeOf(row.attributes.lastModifiedTime).toString)
-        case "Created" => (timeOf(row.attributes.creationTime()).toString)
-        case "Accessed" => (timeOf(row.attributes.lastAccessTime()).toString)
-        case "Id" => layout(row.inum)
-        case "#" => layout(row.links)
-        case _ => ""
-      }
-      out.append(text)
-      out.append(" ")
+  /** The (current) ordering of the rows in the viewer */
+  var theOrdering: Seq[Row] => Seq[Row] = Orderings.byName
+
+  /** The rows derived from `folder` to be shown in the viewer */
+  def theRows: Seq[Row] = {
+    val sort:    Seq[Row] => Seq[Row] = if (reverseSort) theOrdering.andThen(Orderings.reverseView(_)) else theOrdering
+    val filter:  Seq[Row] => Seq[Row] = if (includeInvisible) {
+      case rows: Seq[Row] => rows
+    } else {
+      case rows: Seq[Row] => rows.filterNot(_.isHidden)
     }
-    out.toString
+    val dirs  = sort(filter(folder.directoriesByName))
+    val files = sort(filter(folder.filesByName))
+    // Potential for speedup by pushing dirs/files into folder: hardly worth the complexity
+    dirs++files
   }
 
+  /**
+   * @return the current presentation of the rows to be displayed in `viewer`.
+   */
   def theListing: CachedSeq[Row, String] = folder.withValidCaches {
-    CachedSeq(theRows)(showRow)
+    CachedSeq(theRows){
+      row: Row =>
+        import files.FileAttributes._
+        val out = new StringBuilder()
+        Fields.forDisplayedFields { case field: String =>
+          val layout = Fields.layout(field)
+          val text: CharSequence = field match {
+            case "Name" => layout(s"${row.dirToken} ${row.name}${row.linkToken}")
+            case "Kind" => layout(row.kind)
+            case "Size+" => layout(row.compSize)
+            case "Size" => layout(row.attributes.size.toString)
+            case "Perms" => layout(row.attributes.mode)
+            case "Owner" => layout(row.attributes.owner.toString)
+            case "Group" => layout(row.attributes.group.toString)
+            case "Modified" => (timeOf(row.attributes.lastModifiedTime).toString)
+            case "Created" => (timeOf(row.attributes.creationTime()).toString)
+            case "Accessed" => (timeOf(row.attributes.lastAccessTime()).toString)
+            case "Id" => layout(row.inum)
+            case "#" => layout(row.links)
+            case _ => ""
+          }
+          out.append(text)
+          out.append(" ")
+        }
+        out.toString
+    }
   }
 
-  def selectedPaths: Seq[Path] = view.selectedRows.map { i => theRows(i).path }
+  /** The paths selected in the viewer */
+  def selectedPaths: Seq[Path] = viewer.selectedRows.map { i => theRows(i).path }
 
-  lazy val view: unstyled.dynamic.SeqViewer = new unstyled.dynamic.SeqViewer(
-    columns + 1, 36,
+  /** The glyph that shows the current presentation */
+  lazy val viewer: unstyled.dynamic.SeqViewer = new unstyled.dynamic.SeqViewer(
+    headerLength + 1, 36,
     fileSheet.buttonFont,
     fileSheet.buttonForegroundBrush,
     fileSheet.buttonBackgroundBrush,
@@ -302,25 +206,15 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     folder.close()
   }
 
-
-  /** Force a revalidation and redisplay: should not normally be needed */
-  val reValidateButton = TextButton("\u21BB", hint = Hint(2, "Force revalidation of the display\n(not usually needed)")) {
-    state =>
-      folder.reValidate()
-      theListing.clear()
-      view.refresh(theListing)
-  }
-
-
   /**
-   * `path` is a sequence of buttons; each corresponding to an ancestor of this
+   * Provides a `GUI` consisting of a sequence of buttons -- each corresponding to an ancestor of this
    * folder in the filestore, and labelled with its filename (not its path). Pressing a button
-   * opens an barents on the ancestor.
+   * opens a viewer on the ancestor. The ".." button opens a viewer for the  real path to this folder.
+   * The "/" button opens a viewer for the root folder.
    *
-   * `order` is a sequence of (mostly) captioned toggles to control the order of presentation of the rows
    */
   object PathButtons {
-    val hintSheet: StyleSheet = fileSheet.copy(fontScale = 0.7f)
+    val hintSheet:   StyleSheet = fileSheet.copy(fontScale = 0.7f)
     val buttonSheet: StyleSheet = fileSheet.copy(fontScale = 0.8f)
 
     private lazy val prefixDirs = folder.prefixPaths.toSeq.scanLeft(Path.of("/"))((b, p) => b.resolve(p))
@@ -330,7 +224,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         TextButton(s"${path.getFileName.toString}", hint = Hint(3, path.toRealPath().toString, preferredLocation = Centred)(hintSheet)) { _ => services.openPath(path) }(buttonSheet)
     }.prepended(TextButton(s"/") { _ => services.openPath(Path.of("/")) }(buttonSheet)).appended(fileSheet.hSpace()).appended(parent)
 
-    lazy val parent = {
+    private lazy val parent = {
       val up = folder.path.resolve("..").toRealPath()
       TextButton("..", hint = Hint(3, s"Open the real parent directory\n${up.toString}",
                                       preferredLocation = Centred)(hintSheet)) { _ => services.openPath(up) }(buttonSheet)
@@ -340,26 +234,93 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
 
   }
 
+  /**
+   * 
+   * Provides a `GUI` composed of (suitably-captioned) checkboxes that control whether a field is to be
+   * presented (or not) in the current folder listing.
+   * 
+   * 
+   */
+  object Fields {
+
+    import org.sufrin.utility.CharSequenceOperations._
+
+    type FieldLayout = CharSequence => CharSequence
+    /** The list of potential fields (in order of presentation) */
+    val allFields: Seq[String] =
+      List("Id",
+           "Name",
+           "Kind",
+           "Size", "Size+", "Perms",
+           "#",
+           "Owner", "Group", "Created",
+           "Modified", "Accessed")
+
+    /** The list of potential layouts (in order of presentation) */
+    val fieldLayouts: Seq[FieldLayout] =
+      List(rightJustify(8)(_),
+           leftJustify(FileAttributes.rowNameLength + 1)(_),
+           leftJustify(12)(_),
+           rightJustify(10)(_), rightJustify(10)(_), rightJustify(10)(_),
+           centerJustify(2)(_),
+           rightJustify(10)(_), rightJustify(10)(_), centerJustify(21)(_),
+           centerJustify(21)(_), centerJustify(21)(_))
+    
+
+    /** The set of fields currently selected for displaying */
+    val displayed: mutable.Set[String] = mutable.Set[String]("Name", "Size+", "Modified", "Owner", "Permissions", "Accessed")
+
+    /** apply `action`  to each field selected for display */
+    def forDisplayedFields(action: String => Unit): Unit = {
+      for {disp <- allFields if displayed.contains(disp)} action(disp)
+    }
+
+    lazy val GUI: Glyph = {
+      val labels: Seq[Glyph] = allFields.map(label => Label(label))
+      val toggles: Seq[Glyph] = allFields.map { label =>
+        CheckBox(displayed.contains(label)) {
+          case false => displayed.remove(label); viewer.refresh(theListing)
+          case true => displayed.add(label); viewer.refresh(theListing)
+        }
+      }
+      Grid(width = labels.length, padx = 10).table(labels ++ toggles)
+    }
+
+    /** Maps a field name to its default layout */
+    private val fieldLayout: Map[String, FieldLayout] = ListMap.from(allFields zip fieldLayouts)
+
+    /*
+     *  Effective mapping from `fieldName` to `FieldLayout`
+     */
+    def layout(fieldName: String): FieldLayout =
+      fieldName match {
+        case "Owner" => centerJustify(folder.ownerWidth max 5)(_)
+        case "Group" => centerJustify(folder.groupWidth max 5)(_)
+        case _ => fieldLayout(fieldName)
+      }
+  }
+
+  /** Provides a button (`GUI`) that pops up the settings sheet for the current view */
   object Settings {
-    val invisibilityCheckBox = {
+    private val invisibilityCheckBox = {
       styled.Label(" Invisible ") above
-      styled.CheckBox(showingInvisibles, hint = Hint(2, if (showingInvisibles) "Click not to show invisibles" else "Click to show invisibles", constant=false, preferredLocation = Centred)) {
+      styled.CheckBox(includeInvisible, hint = Hint(2, if (includeInvisible) "Click not to show invisibles" else "Click to show invisibles", constant=false, preferredLocation = Centred)) {
         state =>
-          showingInvisibles = state
+          includeInvisible = state
           theListing.clear()
-          view.refresh(theListing, reset = true)
+          viewer.refresh(theListing, reset = true)
       }
     }
 
-    val reverseSortCheckBox =
+    private val reverseSortCheckBox =
       styled.SymbolicCheckBox(reverseSort, whenTrue = "descending", whenFalse = "ascending", hint = Hint(2, "Reverse the\ncurrent sort\norder", preferredLocation = Centred)) {
         state =>
           reverseSort = state
           theListing.clear()
-          view.refresh(theListing, reset = true)
+          viewer.refresh(theListing, reset = true)
       }.roundFramed(fg=Brushes.darkGrey(width=2), radius=15)
 
-    lazy val sortButtons: RadioCheckBoxes = RadioCheckBoxes(
+    private lazy val sortButtons: RadioCheckBoxes = RadioCheckBoxes(
       captions = List("Name", "Size", "Created", "Modified", "Accessed"),
       prefer = "Name"
       ) { case selected => selected match {
@@ -371,34 +332,34 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       case _ => sortButtons.select(0); theOrdering = Orderings.byName
     }
       theListing.clear()
-      view.refresh(theListing)
+      viewer.refresh(theListing)
     }
 
-    private lazy val order: Glyph =
-      NaturalSize.Row(align = Mid)(List(Label("Ordered on "), reverseSortCheckBox, Label(" ")) ++
-                                     sortButtons.glyphButtons(Right, fixedWidth = false))
+    private lazy val orderButtons: Glyph =
+      NaturalSize.Row(align = Mid)(
+        List(Label("Ordered on "), reverseSortCheckBox, Label(" ")) ++ sortButtons.glyphButtons(Right, fixedWidth = false)
+      )
 
     private val largeButtonStyle: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated, fontScale = 1.3f, buttonHoverBrush = fileSheet.buttonForegroundBrush)
 
-    lazy val settingsGUI: Glyph = {
-      val closeSettings = unstyled.reactive.RawButton(PolygonLibrary.closeButtonGlyph.scaled(1.5f), down = Brushes.red, hover = Brushes.green) { _ => settingsPopup.close() }
+    private lazy val settingsPanel: Glyph = {
+      val closeSettings = unstyled.reactive.RawButton(PolygonLibrary.closeButtonGlyph.scaled(1.5f), down = Brushes.red, hover = Brushes.green) { _ => settingsDialogue.close() }
       NaturalSize.Col(align = Left)(
         closeSettings,
-        FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), Fields.selectors, invisibilityCheckBox, fileSheet.hFill()),
-        FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), order, fileSheet.hFill()), fileSheet.vSpace()
+        FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), Fields.GUI, invisibilityCheckBox, fileSheet.hFill()),
+        FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), orderButtons, fileSheet.hFill()), fileSheet.vSpace()
         )
     }
 
-    private lazy val settingsPopup: Dialogue[Unit] =
-      overlaydialogues.Dialogue.POPUP(settingsGUI, Seq.empty, closeGlyph = None).AtTop(GUI.guiRoot)
+    private lazy val settingsDialogue: Dialogue[Unit] =
+      overlaydialogues.Dialogue.POPUP(settingsPanel, Seq.empty, closeGlyph = None).AtTop(GUI.guiRoot)
 
-    def popup(): Unit = {
-      settingsPopup.canEscape = true
-      settingsPopup.isMenu = true
-      settingsPopup.start()
-    }
-
-    val GUI: Glyph = MenuGlyphButton(Viewer.settingsIcon.scaled(2), hint=Hint(1, "View settings\n(to leave type esc or click anywhere)", preferredLocation = West)){ _ => Settings.popup() }(PathButtons.buttonSheet)
+    val GUI: Glyph = MenuGlyphButton(Viewer.settingsIcon.scaled(2), hint=Hint(1, "View settings\n(type esc or click anywhere to leave)", preferredLocation = West)){
+      _ =>  
+        settingsDialogue.canEscape = true
+        settingsDialogue.isMenu = true
+        settingsDialogue.start()
+    }(PathButtons.buttonSheet)
 
   }
 
@@ -413,9 +374,9 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
   }
 
   lazy val GUI: Glyph = NaturalSize.Col()(
-    FixedSize.Row(width=view.w, align=Mid)(PathButtons.GUI, fileSheet.hFill(), Settings.GUI).enlarged(15).roundFramed(radius=20),
-    view
-  )
+    FixedSize.Row(width=viewer.w, align=Mid)(PathButtons.GUI, fileSheet.hFill(), Settings.GUI).enlarged(15).roundFramed(radius=20),
+    viewer
+    )
 }
 
 
