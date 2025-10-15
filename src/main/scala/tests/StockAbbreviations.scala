@@ -197,6 +197,8 @@ object StockAbbreviations {
       ("--" -> "\u2014"), //  # — (wide minus)
       ("ae" -> "æ"), // ᴂ
       ("Ae" -> "Æ"), // ᴂ
+
+      ("\\((", "\uD83C\uDF49")
       )
 
       val composites = List(

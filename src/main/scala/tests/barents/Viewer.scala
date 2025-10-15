@@ -343,7 +343,8 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     private val largeButtonStyle: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated, fontScale = 1.3f, buttonHoverBrush = fileSheet.buttonForegroundBrush)
 
     private lazy val settingsPanel: Glyph = {
-      val closeSettings = unstyled.reactive.RawButton(PolygonLibrary.closeButtonGlyph.scaled(1.5f), down = Brushes.red, hover = Brushes.green) { _ => settingsDialogue.close() }
+      import IconLibrary.CLOSE
+      val closeSettings = unstyled.reactive.RawButton(CLOSE(), CLOSE(), CLOSE()) { _ => settingsDialogue.close() }
       NaturalSize.Col(align = Left)(
         closeSettings,
         FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), Fields.GUI, invisibilityCheckBox, fileSheet.hFill()),
@@ -354,7 +355,8 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     private lazy val settingsDialogue: Dialogue[Unit] =
       overlaydialogues.Dialogue.POPUP(settingsPanel, Seq.empty, closeGlyph = None).AtTop(GUI.guiRoot)
 
-    val GUI: Glyph = MenuGlyphButton(Viewer.settingsIcon.scaled(2), hint=Hint(1, "View settings\n(type esc or click anywhere to leave)", preferredLocation = West)){
+    val icon: Glyph = IconLibrary.SETTINGS()
+    val GUI: Glyph = MenuGlyphButton(icon, hint=Hint(1, "View settings\n(type esc or click anywhere to leave)", preferredLocation = West)){
       _ =>  
         settingsDialogue.canEscape = true
         settingsDialogue.isMenu = true

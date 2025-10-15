@@ -13,25 +13,9 @@ object PolygonLibrary {
   import scala.collection.mutable.ArrayBuffer
 
 
-  def closeButtonGlyph: Glyph = {
-    import static.Polygon
-    val diam = 14f // entries.map(_.h).min / 2f
-    val crossFG = white(width = diam / 8f)
-    static.Concentric(
-      static.FilledOval(diam, diam, fg = red()),
-      Polygon(diam, diam, fg = crossFG)((diam / 2f, 0), (diam / 2f, diam)),
-      Polygon(diam, diam, fg = crossFG)((0, diam / 2f), (diam, diam / 2f))).turned(45)
-  }
+  def closeButtonGlyph: Glyph = IconLibrary.CLOSE(14f)
 
-  def hideButtonGlyph: Glyph = {
-    import static.Polygon
-    val diam = 14f // entries.map(_.h).min / 2f
-    val dashFG = white(width = diam / 8f)
-    val halfDiam = diam/2f
-    static.Concentric(
-      static.FilledOval(diam, diam, fg = brown),
-      Polygon(diam, diam, fg = dashFG)((0, halfDiam), (diam, halfDiam)))
-  }
+  def hideButtonGlyph: Glyph =  IconLibrary.HIDE(14f)
 
   val PalestinianFlag: Glyph = {
     val white = Brush("white").color(0xFFffffff)
@@ -131,3 +115,4 @@ object PolygonLibrary {
     Polygon(2*C, 2*C, fg, bg)(regularStarPath(n, C, R))
 
 }
+

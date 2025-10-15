@@ -43,9 +43,9 @@ class Menu(entries: Seq[Glyph], bg: Brush) { thisPopup =>
    * Workaround automatic popdown when focus leaves menu:
    * Click the red blob
    */
-  import PolygonLibrary.closeButtonGlyph
+  import IconLibrary.CLOSE
 
-  val killButton = RawButton(closeButtonGlyph(), closeButtonGlyph(), closeButtonGlyph()) { _ => close() }
+  val killButton = RawButton(CLOSE(14), CLOSE(14), CLOSE(14)) { _ => close() }
 
   /** Close this menu/window */
   def close(): Unit = App.runOnUIThread {

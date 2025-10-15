@@ -5,11 +5,14 @@ import glyphML.language
 
 object HelpGUI {
   private implicit val style: StyleSheet = Viewer.fileSheet.copy(
-    textFontSize = 16f,
+    textFontSize = 30f,
     textForegroundBrush = Brushes.black
   )
   private val language: language = glyphML.Translator(style)
-  language.definitions("settings") = External.Image.readResource("/settings").scaled(0.06f)
+  language.definitions("settings") = {
+    val raw = IconLibrary.SETTINGSSYMBOL()
+    raw.scaled(style.exHeight/raw.h).withBaseline(baseLine=style.textFontSize, height=style.exHeight, offset=style.textFontSize/3)
+  }//External.Image.readResource("/settings").scaled(0.06f)
   language.definitions("shelf") = ViewerWindow.SHELF
   language.definitions("clearshelf") = ViewerWindow.CLEARSHELF
 
@@ -17,7 +20,7 @@ object HelpGUI {
 
   val text: Glyph = <div width="80em" align="justify" parskip="0.5ex">
     <p align="center">
-      <b>The Barents Display</b>
+      <b>🍉 The Barents Display 🍉</b>
     </p>
     <p>Each viewer window is associated with one or more <i>directory views</i>, of which one is always shown. Each directory or file in a directory view
       is shown as a single row whose columns show its relevant/selected attributes. The attributes shown can be
@@ -87,14 +90,14 @@ object HelpGUI {
     <scope>
       <attributes id="tag:p" hang=" *  "/>
       <p>
-        <glyph gid="shelf"/> <b>(shelve))</b>
+        <glyph gid="shelf"/> <b>(shelve)</b>
         shelves the selected files.</p>
       <p>
         <b>C-C</b>
         shelves the selected files.</p>
       <p>
         <b>C-X</b>
-        shelves the selected files and marks them for later deletion. The next "paste" (C-V) action will perform
+        shelves the selected files and marks them for later deletion: this is shown by textured underlining. The next "paste" (C-V) action will perform
         the deletion.</p>
       <p>
         <b>C-V</b>
@@ -119,8 +122,8 @@ object HelpGUI {
         the folder being shown in that window.
       </p>
       <p>
-        <glyph gid="clearshelf"/> <b>(clear shelf))</b>
-        removes the deletion mark from the shelf if it is so marked; otherwise clears the shelf.</p>
+        <glyph gid="clearshelf"/> <b>(clear shelf)</b>
+        removes the deletion mark from shelved paths if they are so marked; otherwise clears the shelf.</p>
       <p>The usual navigation methods:
         <b>home end page-up page-down scroll-wheel</b>
         can be used to scroll the view; and the
