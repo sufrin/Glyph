@@ -118,4 +118,10 @@ trait ActionProvider {
 
   def symlink(): Unit = currentImplicitDestination.foreach(symlink)
 
+  def openTerminal(): Unit = {
+    import scala.sys.process._
+    def terminal(path: Path): Unit = Process(List ("open", "-a", "iTerm", path.toString)).run()
+    currentImplicitDestination.foreach(terminal)
+  }
+
 }

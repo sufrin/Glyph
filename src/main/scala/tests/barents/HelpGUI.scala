@@ -147,6 +147,9 @@ object HelpGUI {
         When the window has more than one view available, the <b>View</b> button pops up a menu
         each of whose whose buttons selects a view.
     </p>
+    <p>
+      The <b>>_</b> button opens a terminal in the currently-selected directory (if any), or in
+      the currently viewed directory (if none).</p>
 
   </div>.enlarged(20, bg = Brushes.white)
 
@@ -170,12 +173,12 @@ object HelpGUI {
     )(style)
   }
 
-  def button(style: StyleSheet): Glyph = {
+  def button(implicit style: StyleSheet): Glyph = {
     lazy val but: Glyph =
       styled.TextButton("Help") { _ =>
         if (HelpGUI.dialogue.running.isEmpty)
-          HelpGUI.dialogue.East(but).start(floating = false)
-      }(style)
+          HelpGUI.dialogue.OnRootOf(but).start(floating = false)
+      }
     but
   }
 

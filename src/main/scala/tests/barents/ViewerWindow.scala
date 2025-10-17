@@ -9,6 +9,7 @@ import tests.barents.PathProperties._
 import tests.barents.Viewer.{dialogueLabel, dialogueSheet, fileSheet, openOrdinaryFile}
 import unstyled.dynamic.Keyed
 import GlyphTypes.Scalar
+import Hint.West
 
 import io.github.humbleui.skija.PaintMode
 
@@ -106,7 +107,7 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
 
     lazy val shelfButtons = NaturalSize.Row(align=Mid)(clearButton, shelfButton)
 
-    def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption())(Barents.hintSheet), constant = false, preferredLocation = Hint.NoPreference)(Barents.hintSheet)
+    def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption())(Barents.hintSheet), constant = false, preferredLocation = Hint.West)(Barents.hintSheet)
 
     lazy val trashButton = TextButton("trash", hint=shelfHint(()=>"Move files to .Trash")){
       _ => visibleActions.trash()
@@ -128,6 +129,10 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
       _ => visibleActions.symlink()
     }
 
+    lazy val terminalButton =  TextButton("> _", hint=Hint(0.85, s"Open a terminal in ${visibleActions.currentImplicitDestinationString}", preferredLocation = West)){
+      _ => visibleActions.openTerminal()
+    }
+
 
 
     val perimeter: Scalar = 10
@@ -141,6 +146,7 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
         fileSheet.hFill(stretch = 1),
         symlinkButton, linkButton,copyButton, moveButton, trashButton,
         fileSheet.hFill(stretch = 2),
+        terminalButton,
         HelpGUI.button(Viewer.fileSheet),
         ),
       fileSheet.vSpace(),
