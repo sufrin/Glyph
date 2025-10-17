@@ -19,7 +19,7 @@ import io.github.humbleui.types.Rect
 trait GlyphShape { thisShape =>
   def draw(surface: Surface): Unit                                     // draw on the given surface
   def diagonal:               Vec                                      // a bounding box
-  def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape  // a copy, with new brushes if that means anything
+  def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape              // a copy -- with new brushes when that means anything (it doesn't for composites)
   def withBackground(bg: Brush): GlyphShape = superimposed(List(rect(w, h)(bg), this))  // this shape, with a rectangular background coloured bg
   def cardinalPoints: Seq[Vec] = Seq.empty                             // places for handles
 
