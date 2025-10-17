@@ -10,6 +10,9 @@ trait ViewerServices {
   def closeExplorer(path: Path): Unit
   /** Open a new `ViewerServices` initially showing `path` */
   def openServices(path: Path): Unit
+  /** How many viewers are present */
+  def viewerCount: Int
+
 }
 
 

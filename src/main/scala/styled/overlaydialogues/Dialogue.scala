@@ -17,15 +17,15 @@ import io.github.humbleui.jwm.{App, EventMouseScroll}
  */
 object Dialogue {
 
-  import PolygonLibrary.{closeButtonGlyph => defaultCloseGlyph}
-
+  def defaultCloseGlyph: Glyph = IconLibrary.CLOSE(16)
 
   /**
    *  A generic overlaydialogues "choice" popup, located at the given `position`. It can be popped down without using
    *  any of the buttons on its bottom row, by hitting the kill button placed on its top row.
    */
-  def POPUP[T](blurb: Glyph, buttons: Seq[Glyph], closeGlyph: Option[Glyph] = Some(defaultCloseGlyph))(implicit style: StyleSheet): Dialogue[T] =
+  def POPUP[T](blurb: Glyph, buttons: Seq[Glyph], closeGlyph: Option[Glyph] = Some(defaultCloseGlyph))(implicit style: StyleSheet): Dialogue[T] = {
     new Dialogue[T](blurb, buttons, location=null, bg = style.popupBackgroundBrush, fg=style.popupForegroundBrush, isNested = false, isMenu = false, closeGlyph = closeGlyph)
+  }
 
   import unstyled.reactive.GenericButton
 
@@ -310,6 +310,7 @@ class Dialogue[T](blurb: Glyph,
 {
   thisPopup =>
 
+
   val GUI      =
     if (isMenu)
       Col(align=Center, bg=bg)(buttons).edged(fg)
@@ -350,12 +351,13 @@ class Dialogue[T](blurb: Glyph,
   protected val closeButtonAppearance: Glyph = closeGlyph match {
     case Some(glyph) =>
       static.Concentric(rowAlign=Mid, colAlign=Center).Left(
-        static.FilledRect(GUI.w, glyph.h*1.2f, fg=Brushes.lightGrey, bg=Brushes.lightGrey),
+        static.FilledRect(GUI.w, glyph.h*1.3f, fg=Brushes.lightGrey, bg=Brushes.lightGrey),
         glyph,
       )
     case None        =>
       static.FilledRect(GUI.w-2, 5f, fg=Brushes.lightGrey, bg=Brushes.lightGrey) // TODO: 5f is a magic number -- width of the close bar
   }
+
 
   /**
    * The `guiRoot` decorated with a close button/bar: this is the effective GUI root of the overlay that the dialogue will inhabit.
@@ -363,9 +365,10 @@ class Dialogue[T](blurb: Glyph,
    */
   lazy val overlayRoot: Glyph = {
     // set up the killbutton to (also) respond to ESCAPE with a `close()`
-    val closeButton = new RawButton(closeButtonAppearance(),
+    val closeButton = new RawButton(
       closeButtonAppearance(),
-      closeButtonAppearance(), closeButtonAppearance.fg, closeButtonAppearance.bg,
+      closeButtonAppearance(),
+      closeButtonAppearance, closeButtonAppearance.fg, closeButtonAppearance.bg,
       { _: Modifiers.Bitmap  => close() }
     )
     {
@@ -424,28 +427,30 @@ class Dialogue[T](blurb: Glyph,
     ).framed(bg = Brushes.white)
   }
 
+  val MAGIC= Vec(20,20) // I've no idea why this offset is needed, and no time to find out
+
   /** set the location of this dialogue relative to `glyph`  */
-  def North(glyph: Glyph): this.type = { location = Location.NorthFor(overlayRoot)(glyph); thisPopup }
+  def North(glyph: Glyph): this.type = { location = Location.NorthFor(overlayRoot)(glyph)(MAGIC); thisPopup }
   /** set the location of this dialogue relative to `glyph`  */
-  def NorthEast(glyph: Glyph): this.type = { location = Location.NorthEastFor(overlayRoot)(glyph); thisPopup }
+  def NorthEast(glyph: Glyph): this.type = { location = Location.NorthEastFor(overlayRoot)(glyph)(MAGIC); thisPopup }
   /** set the location of this dialogue relative to `glyph`  */
-  def East(glyph: Glyph): this.type = { location = Location.EastFor(overlayRoot)(glyph); thisPopup }
+  def East(glyph: Glyph): this.type = { location = Location.EastFor(overlayRoot)(glyph)(MAGIC); thisPopup }
   /** set the location of this dialogue relative to `glyph`  */
-  def SouthEast(glyph: Glyph): this.type = { location = Location.SouthEast(glyph); thisPopup }
+  def SouthEast(glyph: Glyph): this.type = { location = Location.SouthEast(glyph)(MAGIC); thisPopup }
   /** set the location of this dialogue relative to `glyph`  */
-  def South(glyph: Glyph): this.type = { location = Location.SouthFor(overlayRoot)(glyph); thisPopup }
+  def South(glyph: Glyph): this.type = { location = Location.SouthFor(overlayRoot)(glyph)(MAGIC); thisPopup }
   /** set the location of this dialogue relative to `glyph`  */
-  def SouthWest(glyph: Glyph): this.type = { location = Location.SouthWestFor(overlayRoot)(glyph); thisPopup }
+  def SouthWest(glyph: Glyph): this.type = { location = Location.SouthWestFor(overlayRoot)(glyph)(MAGIC); thisPopup }
   /** set the location of this dialogue relative to `glyph`  */
-  def West(glyph: Glyph): this.type = { location = Location.WestFor(overlayRoot)(glyph); thisPopup }
+  def West(glyph: Glyph): this.type = { location = Location.WestFor(overlayRoot)(glyph)(MAGIC); thisPopup }
   /** set the location of this dialogue relative to `glyph`  */
-  def NorthWest(glyph: Glyph): this.type = { location = Location.NorthWestFor(overlayRoot)(glyph); thisPopup }
+  def NorthWest(glyph: Glyph): this.type = { location = Location.NorthWestFor(overlayRoot)(glyph)(MAGIC); thisPopup }
   /** set the location of this dialogue relative to the root of `glyph`  */
-  def InFront(glyph: Glyph): this.type = { location = Location.InFrontFor(overlayRoot)(glyph); thisPopup }
+  def InFront(glyph: Glyph): this.type = { location = Location.InFrontFor(overlayRoot)(glyph)(MAGIC); thisPopup }
   /** set the location of this dialogue relative to the root of `glyph`  */
-  def AtTop(glyph: Glyph): this.type = { location = Location.AtTopFor(overlayRoot)(glyph); thisPopup }
+  def AtTop(glyph: Glyph): this.type = { location = Location.AtTopFor(overlayRoot)(glyph)(MAGIC); thisPopup }
   /** set the location of this dialogue relative to the root of `glyph`  */
-  def AtBottom(glyph: Glyph): this.type = { location = Location.AtBottomFor(overlayRoot)(glyph); thisPopup }
+  def AtBottom(glyph: Glyph): this.type = { location = Location.AtBottomFor(overlayRoot)(glyph)(MAGIC); thisPopup }
   /** set the location of this dialogue relative to the root of `glyph`  */
   def OnRootOf(glyph: Glyph): this.type = {
     val loc = glyph.rootDistance
@@ -461,7 +466,7 @@ class Dialogue[T](blurb: Glyph,
     val RelativeTo(glyph, offset) = location
     // TODO: eliminate magic offset: without it the dialogues are mislocated
     val MAGIC = closeGlyph match {
-      case None => Vec(0,0)
+      case None => Vec.Zero
       case Some(glyph) => glyph.diagonal
     } //WAS Vec(11f, 14f)
     val nudgeX = -15

@@ -67,16 +67,15 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
   def visiblePath:      Path             = visibleViewer.folder.path
   def visibleSelection: Seq[Path]        = visibleViewer.selectedPaths
   def visibleActions:   ActionProvider   = visibleViewer
+  def viewerCount:      Int              = viewers.size
 
   lazy val GUI: Glyph = {
-    val viewHint = Hint(0.75, if (viewers.size<=1) "[There are no other views in this viewer]" else s"Close this view\nor choose from the others (${viewers.size-1})", constant=false)
+    val viewHint = Hint(0.75, if (viewers.size<=1) "[There are no other views in this viewer]" else s"Choose another view (${viewers.size-1})", constant=false)(Barents.hintSheet)
 
     lazy val viewButton: Glyph = TextButton("View", hint = viewHint) {
       _ =>
         if (viewers.size > 1) {
-          val buttons =
-              UniformSize(s"CLOSE: $visiblePath"){ _ => closeExplorer(visiblePath) } +:
-              viewers.keys.toSeq.map {
+          val buttons = viewers.keys.toSeq.map {
                 key => UniformSize(key.toString) { _ => openExplorerWindow(key) }
               }
           styled.windowdialogues
@@ -87,7 +86,7 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
           openExplorerWindow(rootPath)
     }
 
-    lazy val openButton = TextButton("New Viewer", hint=Hint(0.8, "Start a new viewer of\nthe selected directory\nor of the current directory\nif none is selected")){
+    lazy val openButton = TextButton("New Viewer", hint=Hint(0.8, "Start a new viewer of\nthe selected directory\nor of the current directory\nif none is selected")(Barents.hintSheet)){
       _ =>
         visibleSelection match {
           case paths if paths.length != 1 => visibleViewer.services.openServices(visibleViewer.folder.path)
@@ -95,11 +94,11 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
         }
     }
 
-    lazy val shelfButton = MenuGlyphButton(ViewerWindow.SHELF, hint = Hint(2, "Selection to (s)helf\n... marked for copying (^C)\n... marked for deletion(^X)")) {
+    lazy val shelfButton = MenuGlyphButton(ViewerWindow.SHELF, hint = Hint(2, "Selection to (s)helf\n... marked for copying (^C)\n... marked for deletion(^X)")(Barents.hintSheet)) {
       _ => visibleActions.shelf(forCut = false)
     }
 
-    lazy val clearButton = MenuGlyphButton(ViewerWindow.CLEARSHELF, hint = Hint(2, if (Shelf.nonEmpty && Shelf.forCut) "Clear shelf deletion mark" else "Clear shelf completely", constant = false)) {
+    lazy val clearButton = MenuGlyphButton(ViewerWindow.CLEARSHELF, hint = Hint(2, if (Shelf.nonEmpty && Shelf.forCut) "Clear shelf deletion mark" else "Clear shelf completely", constant = false)(Barents.hintSheet)) {
       _ =>
         if(Shelf.nonEmpty && Shelf.forCut) Shelf.forCut = false else visibleActions.clearShelf()
         visibleActions.viewer.reDraw()
@@ -107,7 +106,7 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
 
     lazy val shelfButtons = NaturalSize.Row(align=Mid)(clearButton, shelfButton)
 
-    def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption()), constant = false, preferredLocation = Hint.NoPreference)
+    def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption())(Barents.hintSheet), constant = false, preferredLocation = Hint.NoPreference)(Barents.hintSheet)
 
     lazy val trashButton = TextButton("trash", hint=shelfHint(()=>"Move files to .Trash")){
       _ => visibleActions.trash()

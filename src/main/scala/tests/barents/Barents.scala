@@ -23,9 +23,18 @@ object Barents extends Application with SourceLoggable {
       buttonFontSize    = 15,
       labelFontSize     = 15,
       buttonFontStyle   = NORMAL,
-      labelForegroundBrush = Brushes.darkGrey
+      labelForegroundBrush = Brushes.black
    )
 
+  val hintSheet: StyleSheet =
+    fileSheet.copy(fontScale = 0.8f, labelForegroundBrush = Brushes.black)
+
+  val pathButtonSheet: StyleSheet =
+    fileSheet.copy(fontScale = 0.8f, labelForegroundBrush = Brushes.black)
+
+  def viewCloseIcon:        Glyph = IconLibrary.CROSS45(14)
+  def settingsCloseIcon:    Glyph = IconLibrary.CROSS45(14)
+  def viewSettingsIcon:     Glyph = IconLibrary.SETTINGS(Brushes.black)
   val homePath: Path  = Paths.get(System.getProperty("user.home"))
 
   val icon:     Glyph = External.Image.readResource("/explorer")

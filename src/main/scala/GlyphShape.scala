@@ -1,13 +1,13 @@
 package org.sufrin.glyph
 
+import Brush.ROUND
+import Brushes.{invisible, red}
+import GlyphShape.{circle, composite, rect, superimposed, FILL, STROKE}
 import GlyphTypes.{Font, Scalar}
+import unstyled.dynamic.Animateable
 
 import io.github.humbleui.skija.{PaintMode, Path, PathFillMode}
 import io.github.humbleui.types.Rect
-import org.sufrin.glyph.Brush.{ROUND, SQUARE}
-import org.sufrin.glyph.Brushes.{black, green, invisible, lightGrey, red}
-import org.sufrin.glyph.GlyphShape.{circle, composite, rect, superimposed, FILL, STROKE}
-import org.sufrin.glyph.unstyled.dynamic.{Animateable, Steppable}
 
 /**
  *  Lightweight precursor to `Glyph`. This type arrived in Glyph 0.9 and may eventually
@@ -139,7 +139,7 @@ trait GlyphShape { thisShape =>
 
     override def scale(factor: Scalar): GlyphShape = if (factor==1) this else thisShape ||| thatShape
 
-    override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = thisShape.withBrushes(fg, bg) ||| thatShape.withBrushes(fg, bg)
+    override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = thisShape.withBrushes(thisShape.fg, bg) ||| thatShape.withBrushes(thatShape.fg, bg)
 
   }
 
@@ -162,7 +162,7 @@ trait GlyphShape { thisShape =>
 
     override def scale(factor: Scalar): GlyphShape = if (factor==1) this else thisShape --- thatShape
 
-    override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = thisShape.withBrushes(fg, bg) --- thatShape.withBrushes(fg, bg)
+    override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = thisShape.withBrushes(thisShape.fg, bg) --- thatShape.withBrushes(thatShape.fg, bg)
 
 
   }
@@ -356,7 +356,7 @@ object GlyphShape {
     def draw(surface: Surface): Unit =  surface.drawLines(fg, List(start, end))
     def diagonal: Vec = Vec.Zero
     override def toString: String = s"line($start,$end)($fg)"
-    override def withBrushes(fg: Brush=fg, bg: Brush=null): GlyphShape = line(start, end)(brush)
+    override def withBrushes(fg: Brush=fg, bg: Brush=null): GlyphShape = line(start, end)(fg)
   }
 
   /**
@@ -367,7 +367,7 @@ object GlyphShape {
     def draw(surface: Surface): Unit = surface.drawLines(fg, startx, starty, endx, endy)
     def diagonal: Vec = Vec.Zero
     override def toString: String = s"line(($startx,$starty), ($endx,$endy))($fg)"
-    override def withBrushes(fg: Brush=fg, bg: Brush=null): GlyphShape = line(startx, starty, endx, endy)(brush)
+    override def withBrushes(fg: Brush=fg, bg: Brush=null): GlyphShape = line(startx, starty, endx, endy)(fg)
   }
 
   def lineBetween(l: LocatedShape, r: LocatedShape)(brush: Brush): GlyphShape = new GlyphShape {
@@ -672,7 +672,7 @@ object GlyphShape {
 
     override def scale(factor: Scalar): GlyphShape = if (factor==1) this else superimposed(shapes.map(_.scale(factor)))
 
-    override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = superimposed(shapes.map(_.withBrushes(fg, bg)))
+    override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = superimposed(shapes)
 
   }
 
@@ -728,7 +728,7 @@ object GlyphShape {
 
 
   def cardinalPoints(shape: GlyphShape): Seq[Vec] = {
-    import shape.{w, h}
+    import shape.{h, w}
     if (shape.cardinalPoints.nonEmpty)
       shape.cardinalPoints
     else

@@ -5,15 +5,19 @@ import glyphML.language
 
 object HelpGUI {
   private implicit val style: StyleSheet = Viewer.fileSheet.copy(
-    textFontSize = 30f,
+    textFontSize = 16f,
     textForegroundBrush = Brushes.black
   )
   private val language: language = glyphML.Translator(style)
   language.definitions("settings") = {
-    val raw = IconLibrary.SETTINGSSYMBOL()
-    raw.scaled(style.exHeight/raw.h).withBaseline(baseLine=style.textFontSize, height=style.exHeight, offset=style.textFontSize/3)
-  }//External.Image.readResource("/settings").scaled(0.06f)
-  language.definitions("shelf") = ViewerWindow.SHELF
+    val raw = Barents.viewSettingsIcon
+    raw.scaled(style.exHeight/raw.h).withBaseline(baseLine=style.textFontSize, offset=style.textFontSize/3)
+  }
+  language.definitions("closeview") = {
+    val raw = Barents.viewCloseIcon
+    raw.scaled(style.exHeight/raw.h).withBaseline(baseLine=style.textFontSize, offset=style.textFontSize/3)
+  }
+  language.definitions("shelf")      = ViewerWindow.SHELF
   language.definitions("clearshelf") = ViewerWindow.CLEARSHELF
 
   import language._
@@ -23,8 +27,12 @@ object HelpGUI {
       <b>🍉 The Barents Display 🍉</b>
     </p>
     <p>Each viewer window is associated with one or more <i>directory views</i>, of which one is always shown. Each directory or file in a directory view
-      is shown as a single row whose columns show its relevant/selected attributes. The attributes shown can be
-      selected using the panel popped up by the
+      is shown as a single row whose columns show its relevant/selected attributes. </p>
+    <p>
+      <i>If more than one directory view has been opened in this window but is not yet closed</i>, pressing <glyph gid="closeview"/> closes the currently visible view and
+      makes another view visible.
+    </p>
+    <p>The attributes shown can be  selected using the panel popped up by the
       <glyph gid="settings"/> button; as can the column on which the rows are
       ordered when shown, and whether the order is ascending or descending. The "Invisible" checkbox controls whether
       nominally "invisible" files are shown.</p>
@@ -55,9 +63,9 @@ object HelpGUI {
     <p>The path to the directory currently on view in the window is shown as a sequence of buttons, each of which corresponds to an
       ancestor and is associated with a "hover-hint" that shows the corresponding
       <i>real path</i>
-      -- <i>viz.</i> the path with symbolic links expanded when appropriate. Pressing one opens/selects a view of it, Pressing the ".." button
-      selects the <b>real</b> parent of the current directory for display. This only differs if there was a symbolic link
-      somewhere on the path.
+      -- <i>viz.</i> the path with symbolic links expanded when appropriate. Pressing one opens it or selects a view of it. Pressing the ".." button
+      selects the <b>real</b> parent of the current directory for display (which differs only if there was a symbolic link
+      somewhere on the path).
     </p>
     <p align="center">
       <b>Selection</b>
@@ -136,8 +144,8 @@ object HelpGUI {
         The <b>New Viewer</b> button opens a new window in a view of the currently-selected directory (if any), or of
         the currently viewed directory (if none).</p>
     <p>
-        When the window has more than one view available, the <b>View</b> button supports the selection of one of them, or the
-        closing of the currently-visible view in favour of its predecessor.
+        When the window has more than one view available, the <b>View</b> button pops up a menu
+        each of whose whose buttons selects a view.
     </p>
 
   </div>.enlarged(20, bg = Brushes.white)

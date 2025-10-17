@@ -117,24 +117,25 @@ object ToggleVariable {
  *
  * The details of its frame, if any, are specified by the (implicit) `ButtonStyle`.
  */
-case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = true) extends styled.StyledButton {
+case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = true, hint: Hint=NoHint) extends styled.StyledButton {
   def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
     val detail = sheet.buttonStyle
     @inline def enlarged(glyph: Glyph): Glyph = glyph.enlarged(detail.border, transparent, transparent)
     val button =
       if (exact)
-        Decorate(reactive.RawButton.exact(enlarged(up), enlarged(down), enlarged(hover))(action))
+       reactive.RawButton.exact(enlarged(up), enlarged(down), enlarged(hover))(action)
       else
-        Decorate(reactive.RawButton(enlarged(up), enlarged(down), enlarged(hover))(action))
-    button
+        reactive.RawButton(enlarged(up), enlarged(down), enlarged(hover))(action)
+    hint(button)
+    Decorate(button)
   }
 }
 
 /**  As GlyphButton but destined for a menu; hence deferred decoration */
-case class MenuGlyphButton(up: Glyph, down: Glyph = null, hover: Glyph = null, exact: Boolean = true, hint: Hint=NoHint) extends styled.StyledButton {
+case class MenuGlyphButton(up: Glyph, down: Glyph = null, hover: Glyph = null, exact: Boolean = false, hint: Hint=NoHint) extends styled.StyledButton {
   def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
     val detail = sheet.buttonStyle
-    @inline def reify(glyph: Glyph): Glyph = (if (glyph eq null) up() else glyph).enlarged(detail.border, transparent, transparent)
+    @inline def reify(glyph: Glyph): Glyph = (if (glyph eq null) up.copy() else glyph).enlarged(detail.border, transparent, transparent)
     val button =
       if (exact)
         (reactive.RawButton.exact(reify(up), reify(down), reify(hover))(action))

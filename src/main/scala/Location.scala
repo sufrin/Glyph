@@ -25,7 +25,7 @@ object Location {
 
   def East(glyph: Glyph): RelativeTo = RelativeTo(glyph, Vec(glyph.w, glyph.h / 2))
 
-  def EastFor(placed: Glyph)(glyph: Glyph): RelativeTo = East(glyph)
+  def EastFor(placed: Glyph)(glyph: Glyph): RelativeTo = RelativeTo(glyph, Vec(glyph.w, (glyph.h - placed.h) / 2))
 
   def SouthEast(glyph: Glyph): RelativeTo = RelativeTo(glyph, Vec(glyph.w, glyph.h))
 
@@ -39,7 +39,7 @@ object Location {
 
   def NorthWestFor(placed: Glyph)(glyph: Glyph): RelativeTo = RelativeTo(glyph, Vec(-placed.w, -placed.h))
 
-  def NorthEastFor(placed: Glyph)(glyph: Glyph): RelativeTo = NorthEast(glyph)
+  def NorthEastFor(placed: Glyph)(glyph: Glyph): RelativeTo = RelativeTo(glyph, Vec(glyph.w, -placed.h))
 
   def OnRootOf(glyph: Glyph)(x: Scalar, y: Scalar): RelativeTo = RelativeTo(glyph.guiRoot, Vec(x, y))
 
@@ -75,6 +75,8 @@ object Location {
     def hardwareScale:   Scalar   = glyph.guiRoot.hardwareScale
     def softwareScale:   Scalar   = glyph.guiRoot.softwareScale
     def screen:          Screen   = glyph.guiRoot.currentScreen
+
+    def apply(delta: Vec): RelativeTo = RelativeTo(glyph, offset+delta)
   }
 
   /**

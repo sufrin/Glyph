@@ -1,6 +1,6 @@
 package org.sufrin.glyph
 
-import Brushes.{blue, brown, red, white}
+import Brushes.{blue, white}
 import GlyphTypes.Scalar
 
 import io.github.humbleui.skija.PaintMode
@@ -22,9 +22,9 @@ object IconLibrary {
     raw.scaled(style.exHeight/raw.h).withBaseline(baseLine=style.textFontSize, height=style.exHeight, offset=style.textFontSize/3)
   }
 
-  lazy val redFill    = red(mode=PaintMode.FILL)
-  lazy val brownFill  = brown(mode=PaintMode.FILL)
-  lazy val crossBrush = white
+  lazy val redFill    = Brushes.red(mode=PaintMode.FILL)
+  lazy val brownFill  = Brushes.brown(mode=PaintMode.FILL)
+  lazy val crossBrush = Brushes.white
 
   def HIDE(diam: Scalar = 28f): Glyph = {
     import GlyphShape._
@@ -59,4 +59,17 @@ object IconLibrary {
     superimposed(List(oval(diam, diam)(fill), nsBar, ewBar)).asGlyph
   }
 
+}
+
+object IconLibraryTest extends Application {
+  import IconLibrary._
+  val GUI: Glyph = NaturalSize.Col(align=Center)(
+    CROSS(42),
+    CROSS45(up=Brushes.brown, down=Brushes.green),
+    CLOSE(),
+    styled.overlaydialogues.Dialogue.defaultCloseGlyph,
+    CROSS(42),
+    )
+
+  def title: String = "IconLibraryTest"
 }

@@ -214,8 +214,8 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
    *
    */
   object PathButtons {
-    val hintSheet:   StyleSheet = fileSheet.copy(fontScale = 0.7f)
-    val buttonSheet: StyleSheet = fileSheet.copy(fontScale = 0.8f)
+    val hintSheet:   StyleSheet = Barents.hintSheet
+    val buttonSheet: StyleSheet = Barents.pathButtonSheet
 
     private lazy val prefixDirs = folder.prefixPaths.toSeq.scanLeft(Path.of("/"))((b, p) => b.resolve(p))
 
@@ -302,6 +302,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
 
   /** Provides a button (`GUI`) that pops up the settings sheet for the current view */
   object Settings {
+    import PathButtons.hintSheet
     private val invisibilityCheckBox = {
       styled.Label(" Invisible ") above
       styled.CheckBox(includeInvisible, hint = Hint(2, if (includeInvisible) "Click not to show invisibles" else "Click to show invisibles", constant=false, preferredLocation = Centred)) {
@@ -343,25 +344,33 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     private val largeButtonStyle: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated, fontScale = 1.3f, buttonHoverBrush = fileSheet.buttonForegroundBrush)
 
     private lazy val settingsPanel: Glyph = {
-      import IconLibrary.CLOSE
-      val closeSettings = unstyled.reactive.RawButton(CLOSE(), CLOSE(), CLOSE()) { _ => settingsDialogue.close() }
+      val close = Barents.settingsCloseIcon
+      val closeSettings = unstyled.reactive.RawButton(close, close, close) { _ => settingsDialogue.close() }
       NaturalSize.Col(align = Left)(
         closeSettings,
         FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), Fields.GUI, invisibilityCheckBox, fileSheet.hFill()),
+        fileSheet.ex,
         FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), orderButtons, fileSheet.hFill()), fileSheet.vSpace()
         )
     }
 
     private lazy val settingsDialogue: Dialogue[Unit] =
-      overlaydialogues.Dialogue.POPUP(settingsPanel, Seq.empty, closeGlyph = None).AtTop(GUI.guiRoot)
+      overlaydialogues.Dialogue.POPUP(settingsPanel, Seq.empty, closeGlyph=None).AtTop(GUI.guiRoot)
 
-    val icon: Glyph = IconLibrary.SETTINGS()
-    val GUI: Glyph = MenuGlyphButton(icon, hint=Hint(1, "View settings\n(type esc or click anywhere to leave)", preferredLocation = West)){
-      _ =>  
-        settingsDialogue.canEscape = true
-        settingsDialogue.isMenu = true
-        settingsDialogue.start()
-    }(PathButtons.buttonSheet)
+
+    val GUI: Glyph = {
+      val close:    Glyph = Barents.viewCloseIcon
+      val settings: Glyph = Barents.viewSettingsIcon
+      NaturalSize.Col(align=Center)(
+          MenuGlyphButton(settings, settings, settings, hint=Hint(0.75, "Change view settings", preferredLocation = West)(hintSheet)){
+          _ =>
+            settingsDialogue.canEscape = true
+            settingsDialogue.isMenu = true
+            settingsDialogue.start()
+        }(fileSheet),
+          MenuGlyphButton(close, close, close, hint=Hint(0.75, "Close this view &\nrevert to parent view", preferredLocation = West)(hintSheet)){ _ => services.closeExplorer(folder.path) }(fileSheet)
+      )
+    }
 
   }
 

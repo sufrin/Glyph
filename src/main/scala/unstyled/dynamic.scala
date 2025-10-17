@@ -411,7 +411,6 @@ class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component
     components.addAll(initially)
   }
 
-
   override val kind = "Keyed"
 
   override def toString: String = s"""Keyed(fg=$fg, bg=$bg\n glyphs=\n  ${components.map(_.toString).mkString(",\n  ")})"""
