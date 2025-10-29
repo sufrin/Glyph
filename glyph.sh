@@ -1,6 +1,7 @@
-#
+#!/bin/bash
 #
 # Run a glyph test program after IntelliJ has made the jar artefact
+#
 #
 
 SKLIB=/Users/sufrin/GitHomes/Glyph/SkijaLib
@@ -15,7 +16,7 @@ done
 PROGRAM=${1-barents.Barents}
 shift
 
-scala -cp $CP org.sufrin.glyph.tests.$PROGRAM "$@" &
+scala -J-Xdock:name=${PROGRAM/*./} -cp $CP org.sufrin.glyph.tests.$PROGRAM "$@" &
 #2>/dev/null &
 
 
