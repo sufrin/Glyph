@@ -95,8 +95,9 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
         }
     }
 
-    lazy val shelfButton = MenuGlyphButton(ViewerWindow.SHELF, hint = Hint(2, "Selection to (s)helf\n... marked for copying (^C)\n... marked for deletion(^X)")(Barents.hintSheet)) {
-      _ => visibleActions.shelf(forCut = false)
+    lazy val shelfButton = MenuGlyphButton(ViewerWindow.SHELF, hint = Hint(2, "Selection to (s)helf\n... B2=>marked for deletion")(Barents.hintSheet)) {
+      case mods  =>
+        visibleActions.shelf(forCut = mods.are(Modifiers.Secondary|Modifiers.Released))
     }
 
     lazy val clearButton = MenuGlyphButton(ViewerWindow.CLEARSHELF, hint = Hint(2, if (Shelf.nonEmpty && Shelf.forCut) "Clear shelf deletion mark" else "Clear shelf completely", constant = false)(Barents.hintSheet)) {
