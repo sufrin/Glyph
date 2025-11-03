@@ -53,32 +53,34 @@ demonstration/test programs.
 The repository has all the Skija/Skia/JWM jar files needed to support
 building and using **Glyph**. I maintain the code using **IntelliJ**, and
 the repository has all the appropriate configuration files for that
-IDE. 
+IDE.
+
+## Getting Started (sbt)
 
 The **sbt** build.sbt file is also set up with the appropriate Skija/JWM dependencies,
 and can be used to build the package as a whole, as well as  to run individual test
 applications. The following are available:
 
-  org.sufrin.glyph.tests.CalculatorExample
-  org.sufrin.glyph.tests.DocumentationDiagrams
-  org.sufrin.glyph.tests.Example1
-  org.sufrin.glyph.tests.Example2
-  org.sufrin.glyph.tests.Example3
-  org.sufrin.glyph.tests.Example3a
-  org.sufrin.glyph.tests.Example3b
-  org.sufrin.glyph.tests.Example3c
-  org.sufrin.glyph.tests.Example3d
-  org.sufrin.glyph.tests.Example3e
-  org.sufrin.glyph.tests.Example3f
-  org.sufrin.glyph.tests.Example4
-  org.sufrin.glyph.tests.GlyphBook.GlyphBook
-  org.sufrin.glyph.tests.Haddock
-  org.sufrin.glyph.tests.LargeTest
-  org.sufrin.glyph.tests.Play
-  org.sufrin.glyph.tests.ResizeAndSplitTest
-  org.sufrin.glyph.tests.ResizeableWindowTest
-  org.sufrin.glyph.tests.TextField
-  org.sufrin.glyph.tests.barents.Barents
+    org.sufrin.glyph.tests.CalculatorExample
+    org.sufrin.glyph.tests.DocumentationDiagrams
+    org.sufrin.glyph.tests.Example1
+    org.sufrin.glyph.tests.Example2
+    org.sufrin.glyph.tests.Example3
+    org.sufrin.glyph.tests.Example3a
+    org.sufrin.glyph.tests.Example3b
+    org.sufrin.glyph.tests.Example3c
+    org.sufrin.glyph.tests.Example3d
+    org.sufrin.glyph.tests.Example3e
+    org.sufrin.glyph.tests.Example3f
+    org.sufrin.glyph.tests.Example4
+    org.sufrin.glyph.tests.GlyphBook.GlyphBook
+    org.sufrin.glyph.tests.Haddock
+    org.sufrin.glyph.tests.LargeTest
+    org.sufrin.glyph.tests.Play
+    org.sufrin.glyph.tests.ResizeAndSplitTest
+    org.sufrin.glyph.tests.ResizeableWindowTest
+    org.sufrin.glyph.tests.TextField
+    org.sufrin.glyph.tests.barents.Barents
 
 You can run any of them with (eg)
 
