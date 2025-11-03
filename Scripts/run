@@ -20,9 +20,9 @@ do
  CP=$CP:$file
 done
 
-module=${1-demonstrationBook.Pages}
+module=${1-GlyphBook.GlyphBook}
 shift
 
 # echo scala -J-Xdock:name=Glyph -cp $CP org.sufrin.glyph.tests.$module "$@"
 
-scala -J-Xdock:name=Glyph -cp $CP org.sufrin.glyph.tests.$module "$@"
+scala -J-Xdock:name=${PROGRAM/*./} -cp $CP org.sufrin.glyph.tests.$module "$@"

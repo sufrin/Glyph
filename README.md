@@ -5,7 +5,7 @@
         Emeritus: Department of Computer Science
         Oxford University
 
-        (Revised April 3rd 2025)
+        (Revised November 3rd 2025)
         (Version 0.9.0)
 
 
@@ -43,12 +43,12 @@ and `Windows.`
 A draft introduction to **Glyph** appears in `Glyph-Document/Glyph.pdf` --
 which provides a few explained examples of
 **GUI**s (**G**lyph **U**ser **I**nterfaces). Prospective
-users may also want to read the source code of the largest
-example `demonstrationBook` -- which embodies many
-useful **GUIdioms** in its several files.
+users may also want to read the source code of one or more of the
+demonstration/test programs.
 
 
-## Getting Started
+
+## Getting Started (IntelliJ)
 
 The repository has all the Skija/Skia/JWM jar files needed to support
 building and using **Glyph**. I maintain the code using **IntelliJ**, and
@@ -59,27 +59,26 @@ The **sbt** build.sbt file is also set up with the appropriate Skija/JWM depende
 and can be used to build the package as a whole, as well as  to run individual test
 applications. The following are available:
 
-    [info] * org.sufrin.glyph.GridUtils
-    [info] * org.sufrin.glyph.glyphXMLDeprecated.AbstractSyntax
-    [info] * org.sufrin.glyph.osBridge.SwingMain
-    [info] * org.sufrin.glyph.tests.CalculatorExample
-    [info] * org.sufrin.glyph.tests.DocumentationDiagrams
-    [info] * org.sufrin.glyph.tests.Example1
-    [info] * org.sufrin.glyph.tests.Example2
-    [info] * org.sufrin.glyph.tests.Example3
-    [info] * org.sufrin.glyph.tests.Example3a
-    [info] * org.sufrin.glyph.tests.Example3b
-    [info] * org.sufrin.glyph.tests.Example3c
-    [info] * org.sufrin.glyph.tests.Example3d
-    [info] * org.sufrin.glyph.tests.Example3e
-    [info] * org.sufrin.glyph.tests.Example3f
-    [info] * org.sufrin.glyph.tests.Example4
-    [info] * org.sufrin.glyph.tests.HandleQuit
-    [info] * org.sufrin.glyph.tests.LargeTest
-    [info] * org.sufrin.glyph.tests.ResizeAndSplitTest
-    [info] * org.sufrin.glyph.tests.ResizeableWindowTest
-    [info] * org.sufrin.glyph.tests.GlyphBook.GlyphBook
-    [info] * org.sufrin.glyph.tests.glyphXMLTestDeprecated
+  org.sufrin.glyph.tests.CalculatorExample
+  org.sufrin.glyph.tests.DocumentationDiagrams
+  org.sufrin.glyph.tests.Example1
+  org.sufrin.glyph.tests.Example2
+  org.sufrin.glyph.tests.Example3
+  org.sufrin.glyph.tests.Example3a
+  org.sufrin.glyph.tests.Example3b
+  org.sufrin.glyph.tests.Example3c
+  org.sufrin.glyph.tests.Example3d
+  org.sufrin.glyph.tests.Example3e
+  org.sufrin.glyph.tests.Example3f
+  org.sufrin.glyph.tests.Example4
+  org.sufrin.glyph.tests.GlyphBook.GlyphBook
+  org.sufrin.glyph.tests.Haddock
+  org.sufrin.glyph.tests.LargeTest
+  org.sufrin.glyph.tests.Play
+  org.sufrin.glyph.tests.ResizeAndSplitTest
+  org.sufrin.glyph.tests.ResizeableWindowTest
+  org.sufrin.glyph.tests.TextField
+  org.sufrin.glyph.tests.barents.Barents
 
 You can run any of them with (eg)
 
@@ -89,22 +88,24 @@ or from inside sbt in response to the sbt prompt:
 
     sbt:Glyph> runMain org.sufrin.glyph.tests.Example4
 
+## Getting Started (Shell)
+
 But if you don't want to have any truck with an IDE, and if you cannot
 be bothered to learn anything about **sbt** (it really *is* a
 bother), then you can use the shell script:
 
-        Script/compile
+        Scripts/compile
 
 to compile the library (to GETTINGSTARTED/Glyph.jar), and
 the script:
 
-        Script/run <test-name> <arguments>
+        Scripts/run <test-name> <arguments>
 
 to run any of the tests. If no <test-name> is given, then
 
-        demonstrationBook.Pages
+        GlyphBook.GlyphBook
 
-is run.
+is run. It provides examples of some of the use of the kit.
 
 ![Splash Screen](PNG/Sampler.png)
 

@@ -16,6 +16,9 @@ done
 PROGRAM=${1-barents.Barents}
 shift
 
+#CLASSPATH=$CP java org.sufrin.glyph.tests.$PROGRAM
+#exit
+
 scala -J-Xdock:name=${PROGRAM/*./} -cp $CP org.sufrin.glyph.tests.$PROGRAM "$@" &
 #2>/dev/null &
 
