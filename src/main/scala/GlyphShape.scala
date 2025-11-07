@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 
 import Brush.ROUND
-import Brushes.{invisible, red}
+import Brushes.red
 import GlyphShape.{circle, composite, rect, superimposed, FILL, STROKE}
 import GlyphTypes.{Font, Scalar}
 import unstyled.dynamic.Animateable
@@ -62,9 +62,10 @@ trait GlyphShape { thisShape =>
    * with an additional transform), the glyph resulting from a sequence of `turn` contains a sequence of transformed glyphs that embody
    * the entire sequence. The method here just aggregates successive rotations.
    */
-  def turn(degrees: Scalar, tight: Boolean=false): GlyphShape = if (degrees==0f) thisShape else new Turned(thisShape, degrees, tight)
+  def turn(degrees: Scalar, tight: Boolean=false): GlyphShape =
+      if (degrees==0f) thisShape else new Turned(thisShape, degrees, tight)
 
-  private class Turned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphTransforms.Turned(original.asGlyph, degrees, tight, invisible, invisible) {
+  private class Turned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphShape {
     override def turn(degrees: Scalar, tight: Boolean=true): GlyphShape =
       if (degrees==0f) original else new Turned(original, this.degrees+degrees, tight)
 
@@ -73,52 +74,58 @@ trait GlyphShape { thisShape =>
 
 
     override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = original.withBrushes(fg, bg).turn(degrees, tight)
+
+    private val Theta = Math.toRadians(((degrees % 360) + 360) % 360)
+    private val d = original.diagonal
+
+    @inline private def cos(theta: Double): Scalar = Math.cos(theta).toFloat
+    @inline private def sin(theta: Double): Scalar = Math.sin(theta).toFloat
+    @inline private def oddQuadrant(theta: Double)  = Vec((d.x * cos(theta) + d.y * sin(theta)).abs, (d.x * sin(theta) + d.y * cos(theta)).abs)
+    @inline private def evenQuadrant(theta: Double) = Vec((d.x * sin(theta) + d.y * cos(theta)).abs, (d.x * cos(theta) + d.y * sin(theta)).abs)
+
+    def diagonal: Vec = if (tight) {
+      val D =  d.x max d.y
+      Vec(D,D)
+    } else {
+      val quadrant = (((degrees % 360) + 360) % 360 / 90).toInt + 1
+      quadrant match {
+        case 1 => oddQuadrant(Theta)
+        case 2 => evenQuadrant(Theta - Math.PI/2)
+        case 3 => oddQuadrant(Theta  - Math.PI)
+        case 4 => evenQuadrant(Theta - Math.PI/2 - Math.PI)
+      }
+    }
+
+    private val originalCentre = d * 0.5f
+    private val thisCentre     = diagonal * 0.5f
+    private val delta = thisCentre - originalCentre
+
+    def draw(surface: Surface): Unit = {
+      surface.withOrigin(delta) {
+        surface.withRot(degrees, originalCentre) {
+          original.draw(surface)
+        }
+      }
+    }
+
+
+    @inline private def relativeLocation(glyphPos: Vec): Vec = {
+        val theta    = Theta
+        val cosTheta = Math.cos(Theta).toFloat
+        val sinTheta = Math.sin(Theta).toFloat
+        val Vec(x, y) = glyphPos - thisCentre   //vector to the centre of this glyph
+        val xr = x*cosTheta + y*sinTheta        //rotated by theta
+        val yr = y*cosTheta - x*sinTheta
+        originalCentre+Vec(xr, yr)
+    }
+
+    override def enclosing(p: Vec): Option[GlyphShape] = {
+      val res = original.enclosing(relativeLocation(p))
+      res
+    }
+
   }
 
-//  private class XTurned(original: GlyphShape, degrees: Scalar, tight: Boolean) extends GlyphShape {
-//    override def toString: String = s"$original.turn($degrees)"
-//
-//    override def turn(degrees: Scalar, tight: Boolean=true): GlyphShape =
-//      if (degrees==0f) original else new Turned(original, this.degrees+degrees, tight)
-//
-//    // Bounding box of the transformed shape -- pessimistic (see `GlyphTransforms.Turned`)
-//    def diagonal: Vec = {
-//      val side = original.diagonal.x max original.diagonal.y
-//      Vec(side, side)
-//    }
-//
-//    // Centre of the original shape's bounding box
-//    private val originalCentre = original.diagonal scaled 0.5f
-//
-//    // Distance of the new centre from the host centre
-//    private val delta = (diagonal scaled 0.5f) - originalCentre
-//
-//    def draw(surface: Surface): Unit =
-//      surface.withOrigin(delta) {
-//        surface.withRot(degrees, originalCentre) {
-//          original.draw(surface)
-//        }
-//      }
-//
-//    private val thisCentre: Vec = diagonal scaled 0.5f
-//
-//    @inline private def relativeLocation(glyphPos: Vec): Vec = {
-//      import Math.{cos, sin, PI}
-//      val theta = degrees * (PI / 180)
-//      val cosTheta = cos(theta).toFloat
-//      val sinTheta = sin(theta).toFloat
-//      val Vec(x, y) = glyphPos - thisCentre  // vector to the centre of this glyph
-//      val xr = x*cosTheta + y*sinTheta       // rotated by theta
-//      val yr = y*cosTheta - x*sinTheta
-//      originalCentre+Vec(xr, yr)
-//    }
-//
-//    override def enclosing(p: Vec): Option[GlyphShape] = {
-//      val res = original.enclosing(relativeLocation(p))
-//      res
-//    }
-//
-//  }
 
 
   /** left '''beside''' right */

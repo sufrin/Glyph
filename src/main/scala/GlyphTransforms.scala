@@ -410,12 +410,16 @@ object GlyphTransforms {
 
     private def d = glyph.diagonal
 
+    private val oldVersion = false
+
     // degrees mod 360 as radians
-    private val Theta: Scalar = {
+    private val Theta: Scalar = if (oldVersion)  {
        var norm: Scalar = degrees
        while (norm<0)    norm += 360f
        while (norm>360f) norm -= 360f
       (norm * PI / 180f).toFloat
+    } else {
+      Math.toRadians(((degrees % 360) + 360)%360).toFloat
     }
 
     @inline private def cos(theta: Double): Scalar = Math.cos(theta).toFloat
