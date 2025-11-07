@@ -1,5 +1,4 @@
-package org.sufrin.glyph
-package notifier
+package org.sufrin.utility
 
 /**  Subject/Observer infrastructure (copied from org.sufrin.Red).
  *

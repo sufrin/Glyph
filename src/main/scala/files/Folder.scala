@@ -4,9 +4,9 @@ package files
 import asynchronous._
 import cached.Cached
 import files.FileAttributes.Row
-import notifier.Notifier
 
 import org.sufrin.logging.SourceLoggable
+import org.sufrin.utility.Notifier
 
 import java.nio.file.{LinkOption, NoSuchFileException, Path}
 import java.nio.file.attribute.PosixFileAttributes

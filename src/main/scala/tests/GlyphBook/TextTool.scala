@@ -8,8 +8,8 @@ import unstyled.static
 import Brushes.{black, blackFrame, lightGrey, white}
 
 import io.github.humbleui.jwm.Key
-import org.sufrin.utility.TextAbbreviations
 import org.sufrin.SourceLocation.SourceLocation
+import org.sufrin.glyph.TextAbbreviations
 import org.sufrin.logging
 
 

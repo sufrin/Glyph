@@ -13,7 +13,7 @@ do
  CP=$CP:$file
 done
 
-scalac -deprecation -verbose -d $DIR/Glyph.jar -cp $CP `find src -name '*.scala'` |\
+scalac -deprecation -verbose -d $DIR/Glyph.jar -cp $CP `find . -name '*.scala'` |\
   grep "specializing"
 
 ls -l $DIR

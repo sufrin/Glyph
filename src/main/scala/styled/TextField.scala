@@ -2,9 +2,9 @@ package org.sufrin
 package glyph
 package styled
 
-import org.sufrin.glyph.CodePointSeqMap.CodePointSeq
-import org.sufrin.utility.TextAbbreviations
+import org.sufrin.utility.CodePointSeqMap.CodePointSeq
 import org.sufrin.SourceLocation.SourceLocation
+import org.sufrin.glyph.TextAbbreviations
 
 
 /**

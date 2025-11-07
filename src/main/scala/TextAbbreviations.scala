@@ -1,9 +1,7 @@
-package org.sufrin
-package utility
+package org.sufrin.glyph
 
-import org.sufrin.glyph.CodePointSeqMap.{CodePoint, CodePointSeq}
-import org.sufrin.glyph.TextField
-import org.sufrin.logging.{Loggable, WARN}
+import org.sufrin.{logging, SourceLocation}
+import org.sufrin.utility.CodePointSeqMap.{CodePoint, CodePointSeq}
 
 /**
  * A collection of text abbreviations and their translations. If `implicitUnicode` then
@@ -17,7 +15,7 @@ import org.sufrin.logging.{Loggable, WARN}
  */
 
 class TextAbbreviations(var onLineTrigger: Boolean = false, var implicitUnicode: Boolean=false, var onAmbiguous: (String, String, String, String) => Unit = TextAbbreviations.ambiguous) {
-  import org.sufrin.glyph.CodePointSeqMap
+  import org.sufrin.utility.CodePointSeqMap
   val forward: CodePointSeqMap[String] = new CodePointSeqMap[String]
 
   var reversible: Boolean = false

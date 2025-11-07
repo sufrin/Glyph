@@ -1,6 +1,4 @@
-
-package org.sufrin
-package utility
+package org.sufrin.utility
 
 
 object CharSequenceOperations {
@@ -47,18 +45,18 @@ object CharSequenceOperations {
     val length: Int = l.length+r.length
 
     def charAt(index: Int): Char = {
-     if (index<l.length) l.charAt(index) else r.charAt(index-l.length)
+      if (index<l.length) l.charAt(index) else r.charAt(index-l.length)
     }
 
     /** "Efficient" view of the specified subsequence */
     def subSequence(start: Int, end: Int): CharSequence = {
       if (start==0 && end==length) this else
-      if (start<=l.length && end<=l.length) l.subSequence(start, end) else {
-        val rs=start-l.length
-        val re=end-l.length
-        if (0<=rs && re<=r.length) r.subSequence(rs, re) else
-        new Cat(l.subSequence(start, l.length), r.subSequence(0, re))
-      }
+        if (start<=l.length && end<=l.length) l.subSequence(start, end) else {
+          val rs=start-l.length
+          val re=end-l.length
+          if (0<=rs && re<=r.length) r.subSequence(rs, re) else
+            new Cat(l.subSequence(start, l.length), r.subSequence(0, re))
+        }
     }
   }
 
@@ -83,10 +81,10 @@ object CharSequenceOperations {
    */
   def Cat(css: Seq[CharSequence]): CharSequence = {
     if (css.length==0) empty else
-    if (css.length==1) css(0) else
-    if (css.length==2) new Cat(l=css(0), r=css(1)) else {
-      new Cat(l=Cat(css.take(css.length/2)), r=Cat(css.drop(css.length/2)))
-    }
+      if (css.length==1) css(0) else
+        if (css.length==2) new Cat(l=css(0), r=css(1)) else {
+          new Cat(l=Cat(css.take(css.length/2)), r=Cat(css.drop(css.length/2)))
+        }
   }
 
   /**
@@ -105,14 +103,14 @@ object CharSequenceOperations {
 
   /** Equal sequences */
   def ====(l: CharSequence, r: CharSequence): Boolean = (l eq r) || {
-        var eq = l.length == r.length
-        var i = 0
-        while (i<l.length&&eq) {
-          eq=l.charAt(i)==r.charAt(i)
-          i += 1
-        }
-        eq
+    var eq = l.length == r.length
+    var i = 0
+    while (i<l.length&&eq) {
+      eq=l.charAt(i)==r.charAt(i)
+      i += 1
     }
+    eq
+  }
 
   /**
    * Hashcode computed from `cs.drop(cs.length-15)` using the same algorithm (as it happens)
@@ -145,10 +143,10 @@ object CharSequenceOperations {
     def centerJustify(width: Int): CharSequence = Cat(constantSeq(' ', (width-chars.length)/2), chars, constantSeq(' ', (width-chars.length)/2))
 
     def rightJustify(width: Int): CharSequence = {
-        if (false)
-          new Cat(constantSeq(' ', width-chars.length),  chars)
-        else
-          CharSequenceOperations.rightJustify(chars, width, ' ')
+      if (false)
+        new Cat(constantSeq(' ', width-chars.length),  chars)
+      else
+        CharSequenceOperations.rightJustify(chars, width, ' ')
     }
 
     def map[T](f: Char=>T): Seq[T] = (0 until chars.length).map{i=>f(chars.charAt(i))}
@@ -252,6 +250,7 @@ object CharSequenceOperations {
 
 }
 
+/*
 object TestCharSequenceOps {
   import CharSequenceOperations._
   def main(args: Array[String]): Unit = {
@@ -275,3 +274,4 @@ object TestCharSequenceOps {
     println(l2.subSequence(4, 7).asString)
   }
 }
+*/

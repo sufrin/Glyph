@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package glyphML
 package expression
 
-import utility.{IteratorCursor, StringCursor}
+import org.sufrin.utility.{IteratorCursor, StringCursor}
 import GlyphTypes.Scalar
 import glyphML.AbstractSyntax.Scope
 import glyphML.Context.Context

@@ -5,12 +5,10 @@ import io.github.humbleui.jwm.{EventKey, EventTextInput, EventTextInputMarked, K
 import io.github.humbleui.skija.TextLine
 import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.unstyled.Text
-import org.sufrin.glyph.CodePointSeqMap.{CodePoint, CodePointSeq}
+import org.sufrin.utility.CodePointSeqMap.{CodePoint, CodePointSeq}
 import org.sufrin.glyph.tests.StockAbbreviations
 import org.sufrin.logging
 import org.sufrin.logging.{FINER, SourceDefault}
-import org.sufrin.utility.TextAbbreviations
-
 
 
 /**
@@ -86,7 +84,7 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
                 var onChange: Option[String => Unit],
                 val size: Int,
                 initialText: String,
-                val abbreviations: org.sufrin.utility.TextAbbreviations,
+                val abbreviations: TextAbbreviations,
                 val polyCodings: PolyCodings,
                 var onNewGlyph: (String, CodePointSeq) => Unit,
                 var normalizeRightToLeft: Boolean = true // normalize RTL in pasted material
@@ -1193,7 +1191,7 @@ object TextField extends logging.SourceLoggable {
             onChange: Option[String=>Unit]     = None,
             size: Int,
             initialText: String = "",
-            abbreviations: org.sufrin.utility.TextAbbreviations = null,
+            abbreviations: TextAbbreviations = null,
             polyCodings: PolyCodings = PolyCodings(),
             onNewGlyph: (String, CodePointSeq) => Unit = reportNewGlyph(_, _),
             visualOrderPaste: Boolean = true // normalize RTL in pasted material
@@ -1218,6 +1216,7 @@ object TextField extends logging.SourceLoggable {
  * length of its polycoding.
  */
 case class PolyCodings() {
+          import org.sufrin.utility.CodePointSeqMap
           /** domain: the (reversed) sequences of codepoints (known to us) that represent a single glyph */
           private val leftGlyphCodepointCount: CodePointSeqMap[Boolean] = new CodePointSeqMap[Boolean]
           /** domain: the (forward) sequences of codepoints (known to us) that represent a single glyph */

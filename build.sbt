@@ -52,11 +52,33 @@ scalacOptions ++= Seq(
   )
   
 lazy val root = (project in file("."))
+  .aggregate(Utilities)
+  .dependsOn(Utilities)
   .settings(
     name := "Glyph",
     idePackagePrefix := Some("org.sufrin.glyph"),
 
   )
+
+lazy val Utilities = (project in file("Utilities"))
+  .settings(
+    name := "Utilities",
+    idePackagePrefix := Some("org.sufrin.utility"),
+  )
+
+// Documentation merge
+lazy val mergeApi = taskKey[Unit]("Merge Scaladoc API directories")
+
+mergeApi := {
+  import scala.sys.process._
+  val base = (ThisBuild / baseDirectory).value
+  val rootApi = base / "target" / "api"
+  val UtilitiesApi = base / "Utilities" / "target" / "api"
+
+  Seq("bash", "-c", s"mv $UtilitiesApi/ $rootApi/UtilitiesApi").!
+  streams.value.log.info(s"Moved $UtilitiesApi to $rootApi/UtilitiesApi")
+}
+
 
 // XML GlyphML for paragraphs
 

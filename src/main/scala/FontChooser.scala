@@ -19,7 +19,6 @@ import org.sufrin.glyph.Modifiers.{toBitmap, Bitmap}
 import org.sufrin.glyph.tests.StockAbbreviations
 import org.sufrin.glyph.FontFamily.Extensions
 import org.sufrin.logging
-import org.sufrin.utility.TextAbbreviations
 
 /**
  *
