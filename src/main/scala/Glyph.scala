@@ -72,10 +72,12 @@ trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyp
 
   import scala.annotation.tailrec
 
+  /** Text showing the baseline */
   lazy val baseLineText = s"[$baseLine]"
   def kind = "Glyph"
   override def toString: String = s"$kind(${diagonal.x},${diagonal.y})$colourString$baseLineText@@$location"
 
+  /** Is this a reactive glyph? Equivalent to `isInstanceOf[ReactiveGlyph]` */
   def isReactive: Boolean = false
 
   /**
@@ -112,15 +114,7 @@ trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyp
         }*/
     }
 
-  /**
-   * Run `effect(this)` only if `sat(this)`. For implementing
-   * glyph-tree visitors.
-   *
-   * @see Composite
-   */
-  def forEach(sat: Glyph=>Boolean)(effect: Glyph=> Unit): Unit = {
-    if (sat(this)) effect(this)
-  }
+
 
   /**
    * draw the glyph's background, if its colour means something
@@ -130,8 +124,9 @@ trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyp
     if ((bg ne null) && bg.getAlpha != 0) surface.fillRect(bg, diagonal)
   }
 
-
+  /** position of the bottom of this glyph in the parent glyph */
   @inline def bottom: Scalar = h + location.y
+  /** position of the right of this glyph in the parent glyph */
   @inline def right: Scalar  = w + location.x
 
 
@@ -165,6 +160,10 @@ trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyp
    * the content of a FixedSize container (Row, Col) fit.
    */
   val xStretch: Scalar = 0.0f
+  /**
+   * Stretchability: used when (eg) a stretchable space is to be expanded to make
+   * the content of a FixedSize container (Row, Col) fit.
+   */
   val yStretch: Scalar = 0.0f
 
 
@@ -429,10 +428,6 @@ abstract class Composite(components: Seq[Glyph]) extends Glyph {
         if (result.isEmpty) here else result
     }
 
-  override def forEach(sat: Glyph => Boolean)(effect: Glyph => Unit): Unit = {
-    if (sat(this)) effect(this)
-    for { glyph <- glyphs} glyph.forEach(sat)(effect)
-  }
 
 }
 
