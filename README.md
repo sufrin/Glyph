@@ -7,6 +7,7 @@
 
         (Revised November 3rd 2025)
         (Version 0.9.0)
+        (scala 2.13.14)
 
 
 **Glyph** is a (prototype) user-interface library for Scala.
