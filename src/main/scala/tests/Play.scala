@@ -2,19 +2,20 @@ package org.sufrin.glyph
 package tests
 
 
-import GlyphTypes.Scalar
+import GlyphTypes.PaintMode._
 import Modifiers.{Bitmap, Command, Control, Pressed, Primary, Secondary, Shift}
 import gesture._
 import Brushes._
-import Shape.{arrow, circle, polygon, STROKE}
+import Shape.{arrow, circle, polygon}
 import styled.{Book, BookSheet}
 import unstyled.reactive.{Enterable, Reaction}
 import NaturalSize.transparent
 import styled.windowdialogues.Dialogue.OK
 import unstyled.Text
+import GlyphTypes.{PaintMode, Scalar}
 
 import io.github.humbleui.jwm.Key
-import io.github.humbleui.skija.{BlendMode, PaintMode, PaintStrokeCap}
+import io.github.humbleui.skija.{BlendMode, PaintStrokeCap}
 import org.sufrin.logging
 
 import scala.collection.mutable
@@ -438,7 +439,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
   def diagonal: Vec = Vec(w, h)
 
-  val focussedBrush: Brush      = Brushes.red(width=4, mode=Shape.STROKE)
+  val focussedBrush: Brush      = Brushes.red(width=4, mode=PaintMode.STROKE)
   val focussedFrame: Shape = Shape.rect(w-4, h-4)(focussedBrush)
 
   val selectBrush: Brush = Brushes("white.2.round.stroke")(mode=PaintMode.STROKE, blendMode=BlendMode.OVERLAY)

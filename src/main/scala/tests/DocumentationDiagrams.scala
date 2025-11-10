@@ -5,7 +5,7 @@ import Brushes.{blueLine, lightGrey, redFrame, yellow}
 import GlyphTypes._
 import unstyled.Text
 
-import io.github.humbleui.skija.PaintMode
+import GlyphTypes.PaintMode
 
 
 /**

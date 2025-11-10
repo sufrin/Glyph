@@ -1,11 +1,10 @@
 package org.sufrin
 package glyph
 
-import org.sufrin.glyph.NumberUtils.hexToInt
-import org.sufrin.glyph.unstyled.Text
+import io.github.humbleui.skija.PaintMode.{FILL, STROKE, STROKE_AND_FILL}
 import org.sufrin.glyph.Colour.HSV
-import org.sufrin.glyph.Shape.{FILL, STROKE, STROKE_AND_FILL}
 import org.sufrin.glyph.GlyphTypes.Scalar
+import org.sufrin.glyph.NumberUtils.hexToInt
 
 
 /**

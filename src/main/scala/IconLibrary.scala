@@ -3,7 +3,7 @@ package org.sufrin.glyph
 import Brushes.{blue, white}
 import GlyphTypes.Scalar
 
-import io.github.humbleui.skija.PaintMode
+import GlyphTypes.PaintMode
 
 object IconLibrary {
 

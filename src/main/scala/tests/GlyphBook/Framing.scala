@@ -2,14 +2,14 @@ package org.sufrin.glyph
 package tests.GlyphBook
 
 import styled.{Book, BookSheet, Label}
+import GlyphTypes.PaintMode._
 import GlyphTypes.Scalar
 import NaturalSize.{Col, Grid, Row}
-import unstyled.static.{INVISIBLE, Polygon}
-import Shape.FILL
 import styled.windowdialogues.Dialogue
 import unstyled.dynamic.OneOf
+import unstyled.static.{INVISIBLE, Polygon}
 
-import io.github.humbleui.skija.{PaintMode, PaintStrokeCap}
+import io.github.humbleui.skija.PaintStrokeCap
 
 class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Translator)  {
   implicit val pageSheet: StyleSheet = style.buttonSheet.copy(fontScale = 0.8f)
@@ -187,8 +187,8 @@ class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Tr
 
     def Framed(fg: Brush, bg: Brush, enlarge: Scalar): Decoration = new Decoration {
       import Shape._
-      val ffg=fg mode PaintMode.STROKE
-      val fbg=bg mode PaintMode.FILL
+      val ffg=fg(mode=STROKE)
+      val fbg=bg(mode=FILL)
       def decorate(glyph: Glyph): Glyph = {
         val fenlarge = if (enlarge<1) (glyph.w min glyph.h)*enlarge else enlarge
         val frame = rect(glyph.w+2*fg.strokeWidth+fenlarge, glyph.h+2*fg.strokeWidth+fenlarge)(ffg)
@@ -200,8 +200,8 @@ class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Tr
     def RoundFramed(fg: Brush, bg: Brush, enlarge: Scalar, radius: Scalar): Decoration = new Decoration {
       import Shape._
       val rad = radius max 0.1f
-      val ffg=fg(mode=PaintMode.STROKE).rounded(radius)
-      val fbg=bg(mode=PaintMode.FILL).rounded(radius)
+      val ffg=fg(mode=STROKE).rounded(radius)
+      val fbg=bg(mode=FILL).rounded(radius)
       def decorate(glyph: Glyph): Glyph = {
         val fenlarge = if (enlarge<1) (glyph.w min glyph.h)*enlarge else enlarge
         val frame = rectangle(glyph.w+2*fg.strokeWidth+enlarge, glyph.h+2*fg.strokeWidth+enlarge)(ffg)
@@ -355,8 +355,8 @@ class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Tr
     <div width="70em" >
       <col align="center">
       <p align="center">
-        Many glyphXML constructs can specify decorations. Below we show a few examples of
-        such specifications, and their outcomes; using a glyph defined in Scala by adding
+        A few glyphXML constructs specify transformations or decorations. Below we show a few examples of
+        such constructs and their outcomes; using a glyph defined in Scala by adding
         a generator to the translation:
       </p>
       <fill/>
@@ -370,46 +370,33 @@ class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Tr
       <fill height="3ex"/>
       <table foreground="darkGrey.3" padX="2em" padY="2em" cols="3">
           <glyph gid="star"/>
-          <glyph gid="star" scaled="0.5"/>
-          <glyph gid="star" frame="red.2.sliced(3,2)" />
+          <scale scale="0.75"><glyph gid="star"/></scale>
+          <skew skewx="-0.2"><frame scale="0.75" radius="15px"><glyph gid="star"/></frame></skew>
 
-          <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20.dashed(10,10)"  enlarged="25px"/>
-          <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="0.3" enlarged="25px" edge="black.3"/>
-          <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="0.2" enlarged="25px" edge="black.3">
-            <glyph gid="star"/>
-            <glyph gid="star"/>
-          </div>
+          <glyph gid="star"/>
+          <scale scale="1.5"><glyph gid="star"/></scale>
+          <frame scale="0.75" radius="0.3px" fg="red.12."><glyph gid="star"/></frame>
 
-          <glyph gid="star" decorate="enlarge;frame" frame="red.5.stroke.sliced(5,5)" radius="3" enlarged="25px"/>
-          <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="3" enlarged="25px" edge="black.3"/>
-          <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="3" enlarged="25px" edge="black.3">
-            <glyph gid="star"/>
-            <glyph gid="star"/>
-          </div>
+          <turn degrees="45"><frame scale="0.75" radius="0.3px" fg="red.12."><glyph gid="star"/></frame></turn>
+          <frame radius="0px" fg="red.4.sliced(2,2)" bg="yellow"><scale scale="1.5"><glyph gid="star"/></scale></frame>
+          <frame radius="0px" fg="red.5.dashed(10,10)" bg="yellow"><scale scale="1.5"><glyph gid="star"/></scale></frame>
+
       </table>
       <fill height="3ex"/>
       <div normalizePCData="true" fontFamily="Courier" fontScale="0.9" textForeground="black" textBackground="transparent" background="lightGrey">
-      <![CDATA[
-           <rows foreground="darkGrey.3" padX="2em" padY="2em" cols="3">
-              <glyph gid="star"/>
-              <glyph gid="star" scaled="0.5"/>
-              <glyph gid="star" frame="red.2.sliced(3,2)" />
+        <![CDATA[
+          <glyph gid="star"/>
+          <scale scale="0.75"><glyph gid="star"/></scale>
+          <skew skewx="-0.2"><frame scale="0.75" radius="15px"><glyph gid="star"/></frame></skew>
 
-              <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20.dashed(10,10)"  enlarged="25px"/>
-              <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="0.3" enlarged="25px" edge="black.3"/>
-              <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="0.2" enlarged="25px" edge="black.3">
-                <glyph gid="star"/>
-                <glyph gid="star"/>
-              </div>
+          <glyph gid="star"/>
+          <scale scale="1.5"><glyph gid="star"/></scale>
+          <frame scale="0.75" radius="0.3px" fg="red.12."><glyph gid="star"/></frame>
 
-              <glyph gid="star" decorate="enlarge;frame" frame="red.5.fill.sliced(5,5)" radius="3" enlarged="25px"/>
-              <glyph gid="star" decorate="edge;enlarge;frame" frame="red.20" radius="3" enlarged="25px" edge="black.3"/>
-              <div decorate="rotate;edge;frame" rotated="1" frame="red.25" radius="3" enlarged="25px" edge="black.3">
-                <glyph gid="star"/>
-                <glyph gid="star"/>
-              </div>
-          </rows>
-      ]]>
+          <turn degrees="45"><frame scale="0.75" radius="0.3px" fg="red.12."><glyph gid="star"/></frame></turn>
+          <frame radius="0px" fg="red.4.sliced(2,2)" bg="yellow"><scale scale="1.5"><glyph gid="star"/></scale></frame>
+          <frame radius="0px" fg="red.5.dashed(10,10)" bg="yellow"><scale scale="1.5"><glyph gid="star"/></scale></frame>
+        ]]>>
       </div>
       </col>
     </div>

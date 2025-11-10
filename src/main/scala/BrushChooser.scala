@@ -235,6 +235,7 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
         }(menuSheet), ex,
         brushFieldChooserMenu("Mode", "stroke", "fill"){
           v =>
+            import GlyphTypes.PaintMode._
             val mode = v match { case "fill"=>FILL; case "stroke"=>STROKE }
             protoBrush.mode(mode)
             brushFeedback()

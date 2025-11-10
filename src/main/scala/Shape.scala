@@ -1,10 +1,9 @@
 package org.sufrin.glyph
 
 import Shape.{composite, rect, superimposed}
-import GlyphTypes.{Font, Scalar}
 import unstyled.dynamic.Animateable
+import GlyphTypes.{Font, PaintMode, Path, PathFillMode, Scalar}
 
-import io.github.humbleui.skija.{PaintMode, Path, PathFillMode}
 import io.github.humbleui.types.Rect
 
 
@@ -18,12 +17,15 @@ import io.github.humbleui.types.Rect
 trait Shape { thisShape =>
   def draw(surface: Surface): Unit                                     // draw on the given surface
   def diagonal:               Vec                                      // a bounding box
-  def withBrushes(fg: Brush=fg, bg: Brush=bg): Shape              // a copy -- with new brushes when that means anything (it doesn't for composites)
+  def withBrushes(fg: Brush=fg, bg: Brush=bg): Shape                   // a copy -- with new brushes when that means anything (it doesn't for composites)
   def withBackground(bg: Brush): Shape = superimposed(List(rect(w, h)(bg), this))  // this shape, with a rectangular background coloured bg
   def cardinalPoints: Seq[Vec] = Seq.empty                             // places for handles
 
+  /** width */
   @inline def w:      Scalar  = diagonal.x
+  /** height */
   @inline def h:      Scalar  = diagonal.y
+  /** offset to centre */
   @inline def centre: Vec     = diagonal * 0.5f
 
   val fg: Brush = Brushes.transparent
@@ -32,7 +34,7 @@ trait Shape { thisShape =>
   /** Is the given point within the shape: default is within the bounding box */
   @inline def encloses(point: Vec): Boolean = enclosing(point).nonEmpty
 
-  /** The "nearest" enclosing shape */
+  /** The "nearest" shape that encloses the given point */
   def enclosing(point: Vec): Option[Shape] =
     if (0<=point.x && point.x<=w && 0<=point.y && point.y<=h) Some(thisShape) else None
 
@@ -71,7 +73,6 @@ trait Shape { thisShape =>
     override val fg: Brush = original.fg
     override val bg: Brush = original.bg
 
-
     override def withBrushes(fg: Brush=fg, bg: Brush=bg): Shape = original.withBrushes(fg, bg).turn(degrees, tight)
 
     private val Theta = Math.toRadians(((degrees % 360) + 360) % 360)
@@ -79,19 +80,21 @@ trait Shape { thisShape =>
 
     @inline private def cos(theta: Double): Scalar = Math.cos(theta).toFloat
     @inline private def sin(theta: Double): Scalar = Math.sin(theta).toFloat
-    @inline private def oddQuadrant(theta: Double)  = Vec((d.x * cos(theta) + d.y * sin(theta)).abs, (d.x * sin(theta) + d.y * cos(theta)).abs)
-    @inline private def evenQuadrant(theta: Double) = Vec((d.x * sin(theta) + d.y * cos(theta)).abs, (d.x * cos(theta) + d.y * sin(theta)).abs)
+    /** effective diagonal when theta is in q0 or q2 */
+    @inline private def q0q2(theta: Double)  = Vec((d.x * cos(theta) + d.y * sin(theta)).abs, (d.x * sin(theta) + d.y * cos(theta)).abs)
+    /** effective diagonal when theta is in q1 or q3  */
+    @inline private def q1q3(theta: Double) = Vec((d.x * sin(theta) + d.y * cos(theta)).abs, (d.x * cos(theta) + d.y * sin(theta)).abs)
 
     def diagonal: Vec = if (tight) {
       val D =  d.x max d.y
       Vec(D,D)
     } else {
-      val quadrant = (((degrees % 360) + 360) % 360 / 90).toInt + 1
+      val quadrant = (((degrees % 360) + 360) % 360 / 90).toInt
       quadrant match {
-        case 1 => oddQuadrant(Theta)
-        case 2 => evenQuadrant(Theta - Math.PI/2)
-        case 3 => oddQuadrant(Theta  - Math.PI)
-        case 4 => evenQuadrant(Theta - Math.PI/2 - Math.PI)
+        case 0 => q0q2(Theta)
+        case 1 => q1q3(Theta - Math.PI/2)
+        case 2 => q0q2(Theta - Math.PI)
+        case 3 => q1q3(Theta - Math.PI/2 - Math.PI)
       }
     }
 
@@ -237,7 +240,7 @@ object Shape {
    * A circle of radius `r`, occupying a square of side `2r+fg.strokeWidth`
    * Unless `fg.mode=PaintMode.STROKE` the circle is filled.
    */
-  def circle(r: Scalar)(brush: Brush): Shape = new Shape {
+  case class circle(r: Scalar)(brush: Brush) extends Shape {
     override val fg: Brush = brush
     val delta = Vec(fg.strokeWidth / 2, fg.strokeWidth / 2)
 
@@ -271,7 +274,7 @@ object Shape {
    * An oval bounded by a `(width x height)` rectangle, occupying a `(width+delta x height+delta)` rectangle
    * (where delta=`brush.strokeWidth`).
    */
-  def oval(width: Scalar, height: Scalar)(brush: Brush): Shape = new Shape {
+  case class oval(width: Scalar, height: Scalar)(brush: Brush) extends Shape {
     override val fg: Brush = brush
     val delta = Vec(fg.strokeWidth / 2, fg.strokeWidth / 2)
 
@@ -298,7 +301,7 @@ object Shape {
    * path of the arc starts in direction `startAngle` and extends for `sweepAngle`. The centre is included in
    * the path if `incCentre` is true.
    */
-  def arc(width: Scalar, height: Scalar, startAngle: Scalar, sweepAngle: Scalar, incCentre: Boolean)(brush: Brush): Shape = new Shape {
+  case class arc(width: Scalar, height: Scalar, startAngle: Scalar, sweepAngle: Scalar, incCentre: Boolean)(brush: Brush)extends Shape {
     override val fg: Brush = brush
     val delta = Vec(fg.strokeWidth / 2, fg.strokeWidth / 2)
 
@@ -357,18 +360,12 @@ object Shape {
    *
    * @see located
    */
-  def line(start: Vec, end: Vec)(brush: Brush): Shape = new Shape {
-    override val fg: Brush = brush
-    def draw(surface: Surface): Unit =  surface.drawLines(fg, List(start, end))
-    def diagonal: Vec = Vec.Zero
-    override def toString: String = s"line($start,$end)($fg)"
-    override def withBrushes(fg: Brush=fg, bg: Brush=null): Shape = line(start, end)(fg)
-  }
+  def line(start: Vec, end: Vec)(brush: Brush): Shape = line(start.x, start.y, end.x, end.y)(brush)
 
   /**
    * @see line
    */
-  def line(startx: Scalar, starty: Scalar, endx: Scalar, endy: Scalar)(brush: Brush): Shape = new Shape {
+  case class line(startx: Scalar, starty: Scalar, endx: Scalar, endy: Scalar)(brush: Brush) extends Shape {
     override val fg: Brush = brush
     def draw(surface: Surface): Unit = surface.drawLines(fg, startx, starty, endx, endy)
     def diagonal: Vec = Vec.Zero
@@ -376,7 +373,7 @@ object Shape {
     override def withBrushes(fg: Brush=fg, bg: Brush=null): Shape = line(startx, starty, endx, endy)(fg)
   }
 
-  def lineBetween(l: LocatedShape, r: LocatedShape)(brush: Brush): Shape = new Shape {
+  case class lineBetween(l: LocatedShape, r: LocatedShape)(brush: Brush) extends Shape {
       override val fg: Brush = brush
       val diagonal: Vec = Vec.Zero
 
@@ -421,7 +418,7 @@ object Shape {
    * visible point; and its top,left point appears at the origin.
    *
    */
-  def polygon(vertices: Seq[(Scalar, Scalar)])(brush: Brush): Shape = new Shape {
+  case class polygon(vertices: Seq[(Scalar, Scalar)])(brush: Brush) extends Shape {
     override val fg: Brush=brush
     val kind: String = "Polygon"
 
@@ -490,7 +487,7 @@ object Shape {
    *
    * @see ~~~
    */
-  def superimposed(shapes: Seq[Shape]): Shape = new Shape {
+  case class superimposed(shapes: Seq[Shape]) extends Shape {
     val tw = Measure.maxWidth(shapes)
     val th = Measure.maxHeight(shapes)
     val deltas = for {shape <- shapes} yield (Vec((tw - shape.w) / 2, (th - shape.h) / 2))
@@ -535,7 +532,7 @@ object Shape {
   def composite(shape: LocatedShape, shapes: LocatedShape*): Shape = composite(shape :: shapes.toList)
 
   /** Superposition of located shapes */
-  def composite(shapes: Iterable[LocatedShape]): Shape = new Shape {
+  case class composite(shapes: Iterable[LocatedShape]) extends Shape {
     def withBrushes(brush: Brush): Shape =  this
     val diagonals = for {shape <- shapes} yield (shape.x+shape.w, shape.y+shape.h)
     val tw = diagonals.map(_._1).max
@@ -568,14 +565,7 @@ object Shape {
 
   }
 
-
-
-
-
-
-  val STROKE: PaintMode = PaintMode.STROKE
-  val FILL: PaintMode = PaintMode.FILL
-  val STROKE_AND_FILL: PaintMode = PaintMode.STROKE_AND_FILL
+  import PaintMode.{FILL, STROKE, STROKE_AND_FILL}
 
 
   def cardinalPoints(shape: Shape): Seq[Vec] = {
@@ -587,7 +577,7 @@ object Shape {
   }
 
 
-  def fromGlyph(glyph: Glyph): Shape = new Shape {
+  case class fromGlyph(glyph: Glyph) extends Shape {
     def draw(surface: Surface): Unit = glyph.draw(surface)
     def diagonal: Vec = glyph.diagonal
     override def withBrushes(fg: Brush=glyph.fg, bg: Brush=glyph.bg): Shape = glyph.copy(fg, bg)

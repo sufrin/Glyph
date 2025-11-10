@@ -2,8 +2,9 @@ package org.sufrin.glyph
 
 import Brush.ROUND
 import Brushes.red
-import Shape.{circle, rect, FILL, STROKE}
+import Shape.{circle, rect}
 import GlyphTypes.Scalar
+import GlyphTypes.PaintMode._
 
 /** A variably-located and rotated shape currently located at `(x,y)`. Shown
   * with a "handle" whose appearance can be changed when hovering or selected.

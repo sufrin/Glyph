@@ -2,13 +2,14 @@ package org.sufrin.glyph
 package tests.GlyphBook
 
 import styled._
-import Shape.{circle, composite, lineBetween, rect, superimposed, AnimatedShapeGlyph, FILL, STROKE}
+import GlyphTypes.PaintMode._
 import GlyphTypes.Scalar
 import NaturalSize.{Col, Grid, Row}
+import Shape.{circle, composite, lineBetween, rect, superimposed, AnimatedShapeGlyph}
 import unstyled.{reactive, static}
 import unstyled.static.{FilledOval, FilledRect, Label, Rect}
 
-import io.github.humbleui.skija.{PaintMode, PaintStrokeCap}
+import io.github.humbleui.skija.PaintStrokeCap
 
 import java.lang.Math.{cos, log1p, sin}
 import scala.math.floor
@@ -207,7 +208,7 @@ class Animation(implicit val style: BookSheet, implicit val translator: glyphML.
 
 
       lazy val stage: Glyph    = background
-      val path                 = new PathShape(red(mode=PaintMode.STROKE), absolute=true)
+      val path                 = new PathShape(red(mode=STROKE), absolute=true)
       val orbit                = stage.w*0.5f-10f
       var startPos             = cartesian(orbit, 0.0)
       val nib: LocatedShape    = circle(4)(blue).targetLocatedAt(0,0) // (stage.w*0.5f, stage.h*0.5f)
@@ -374,7 +375,7 @@ class Animation(implicit val style: BookSheet, implicit val translator: glyphML.
       locally { current = -oneDegree }
 
       lazy val stage: Glyph    = background
-      val curveColor           = red(width=2, cap=ROUND, mode=PaintMode.STROKE)
+      val curveColor           = red(width=2, cap=ROUND, mode=STROKE)
       val path                 = new PathShape(curveColor, absolute=true)
       val orbit                = stage.w*0.5f-30f
       var d: Double            = 0.03

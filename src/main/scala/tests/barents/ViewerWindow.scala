@@ -8,10 +8,8 @@ import styled._
 import tests.barents.PathProperties._
 import tests.barents.Viewer.{dialogueLabel, dialogueSheet, fileSheet, openOrdinaryFile}
 import unstyled.dynamic.Keyed
-import GlyphTypes.Scalar
+import GlyphTypes.{PaintMode, Scalar}
 import Hint.West
-
-import io.github.humbleui.skija.PaintMode
 
 import java.awt.Desktop
 import java.nio.file._

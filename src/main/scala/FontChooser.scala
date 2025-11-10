@@ -1,24 +1,15 @@
 package org.sufrin.glyph
 
-import styled.{ActiveString, CheckBox, Label, MenuButton, ToggleVariable}
-import unstyled.reactive.{Enterable, Reaction}
+import styled.{ActiveString, Label, MenuButton, ToggleVariable}
+import Brushes.{black, lightGrey, red}
+import GlyphTypes.{Font, FontManager, Scalar}
+import NaturalSize.{Col, Grid, Row}
+import unstyled.static.INVISIBLE
+import Modifiers.{toBitmap, Bitmap}
+import tests.StockAbbreviations
+import FontFamily.Extensions
 
 import io.github.humbleui.jwm.Key
-import org.sufrin.glyph.Brush.{BUTT, ROUND, SQUARE}
-import org.sufrin.glyph.Brushes.{black, lightGrey, red, white, NonBrush}
-import org.sufrin.glyph.Colour.{ARGB, HSV}
-import org.sufrin.glyph.Shape.{FILL, STROKE}
-import org.sufrin.glyph.NaturalSize.{transparent, Col, Grid, Row}
-import org.sufrin.glyph.styles.decoration.Framed
-import org.sufrin.glyph.GlyphTypes.{Font, FontManager, Scalar}
-import org.sufrin.glyph.styled.windowdialogues.Dialogue
-import org.sufrin.glyph.unstyled.dynamic.ActiveGlyph
-import org.sufrin.glyph.unstyled.Text
-import org.sufrin.glyph.unstyled.static.{INVISIBLE, Rect}
-import org.sufrin.glyph.Modifiers.{toBitmap, Bitmap}
-import org.sufrin.glyph.tests.StockAbbreviations
-import org.sufrin.glyph.FontFamily.Extensions
-import org.sufrin.logging
 
 /**
  *
@@ -118,8 +109,9 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
                                                   abbreviations = abbrs)(sheet.copy(textForegroundBrush = initialBrush)).withAbbreviationKey(Key.ESCAPE)
 
 
-  import sheet.{em, ex}
   import CellFit._
+
+  import sheet.{em, ex}
 
   val frameGrey = Brushes.darkGrey(width=2)
 

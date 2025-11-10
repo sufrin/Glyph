@@ -8,10 +8,8 @@ package styles
 package decoration
 
   import unstyled.static
-
-  import org.sufrin.glyph.Shape.FILL
-  import org.sufrin.glyph.GlyphTypes.{PathEffect, Scalar}
-  import org.sufrin.glyph.unstyled.static.Concentric
+  import GlyphTypes.{PathEffect, Scalar}
+  import GlyphTypes.PaintMode._
 
   /** The decoration applied to a glyph */
   trait Decoration {

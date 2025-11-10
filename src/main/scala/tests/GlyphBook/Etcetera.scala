@@ -3,12 +3,12 @@ package tests.GlyphBook
 
 import styled.{Label, _}
 import GlyphTypes.{FontStyle, Scalar}
+import GlyphTypes.PaintMode._
 import NaturalSize.{Col, Row}
 import styles.decoration.{Edged, Framed, RoundFramed}
 import unstyled.{reactive, static}
 import unstyled.dynamic.SplitScreen
 import unstyled.static._
-import Shape.STROKE
 
 import io.github.humbleui.skija.{PaintMode, PathFillMode}
 
@@ -572,7 +572,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translator: glyphML.T
 
       Col(align=Center)(
           <p width="70em" align="justify">
-            A cursory test of <b>GlyphShape</b>: a precursor type to <b>Glyph</b>. Shapes have a <b>draw(Surface)</b> method, and a bounding box <b>diagonal:Vec.</b>
+            A cursory test of <b>Shape</b>: a precursor type to <b>Glyph</b>. Shapes have a <b>draw(Surface)</b> method, and a bounding box <b>diagonal:Vec.</b>
             They can be composed laterally <span><b>(left|||right)</b></span> and vertically <b>(top---bottom)</b>, and superimposed <b>(l~~~r)</b>. In the latter case, the shape
             with the smaller area (<b>l</b> when they have the same area) is drawn centred on the other shape.
           </p>, ex,
