@@ -5,7 +5,7 @@ import styled.{Book, BookSheet, Label}
 import GlyphTypes.Scalar
 import NaturalSize.{Col, Grid, Row}
 import unstyled.static.{INVISIBLE, Polygon}
-import GlyphShape.FILL
+import Shape.FILL
 import styled.windowdialogues.Dialogue
 import unstyled.dynamic.OneOf
 
@@ -174,9 +174,8 @@ class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Tr
       button
     }
 
-    import GlyphShape.PathShape
 
-    def rectangle(w: Scalar, h: Scalar)(brush: Brush): GlyphShape = {
+    def rectangle(w: Scalar, h: Scalar)(brush: Brush): Shape = {
       val path=new PathShape(brush, false)
       path.moveTo(0, 0)
       path.lineTo(w, 0)
@@ -187,7 +186,7 @@ class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Tr
     }
 
     def Framed(fg: Brush, bg: Brush, enlarge: Scalar): Decoration = new Decoration {
-      import GlyphShape._
+      import Shape._
       val ffg=fg mode PaintMode.STROKE
       val fbg=bg mode PaintMode.FILL
       def decorate(glyph: Glyph): Glyph = {
@@ -199,7 +198,7 @@ class Framing(implicit val style: BookSheet, implicit val translator: glyphML.Tr
     }
 
     def RoundFramed(fg: Brush, bg: Brush, enlarge: Scalar, radius: Scalar): Decoration = new Decoration {
-      import GlyphShape._
+      import Shape._
       val rad = radius max 0.1f
       val ffg=fg(mode=PaintMode.STROKE).rounded(radius)
       val fbg=bg(mode=PaintMode.FILL).rounded(radius)

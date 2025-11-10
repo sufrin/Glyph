@@ -8,7 +8,7 @@ import styles.decoration.{Edged, Framed, RoundFramed}
 import unstyled.{reactive, static}
 import unstyled.dynamic.SplitScreen
 import unstyled.static._
-import GlyphShape.STROKE
+import Shape.STROKE
 
 import io.github.humbleui.skija.{PaintMode, PathFillMode}
 
@@ -541,8 +541,8 @@ class Etcetera(implicit val style: BookSheet, implicit val translator: glyphML.T
       )
     }
 
-    Page("GlyphShape", "") {
-      import GlyphShape._
+    Page("Shape", "") {
+      import Shape._
       var cr = rect(30, 30)(Brushes.redLine(width=15, mode=PaintMode.STROKE))
       var cb = circle(30)(Brushes.blue(width=15, mode=PaintMode.STROKE))
       var cg = circle(60)(Brushes.green(width=20, mode=PaintMode.STROKE))
@@ -556,7 +556,7 @@ class Etcetera(implicit val style: BookSheet, implicit val translator: glyphML.T
       val em = pageSheet.em
 
 
-      val shapes: List[GlyphShape] =
+      val shapes: List[Shape] =
         List(
           arrow(red)~~~circle(60)(greenFill), arrow(red(width=3,mode=STROKE)), arrow(blue)~~~circle(60)(greenFill), arrow(blue(mode=STROKE))~~~rect(120,120)(greenFill),
         cr~~~circle(60)(greenFill),           cb,                     cg,                                   cg.withBackground(yellowFill),

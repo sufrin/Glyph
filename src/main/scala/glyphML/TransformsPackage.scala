@@ -156,7 +156,7 @@ class TransformsPackage(definitions: Definitions) {
     } else {
       val top    = (Row(align = Baseline)(nonempties.take(1).flatMap(translator.translate(derivedContext))))
       val bottom = (Row(align = Baseline)(nonempties.drop(1).flatMap(translator.translate(derivedContext))))
-      val glyph  = (top --- INVISIBLE(h=aboveBarSkip) --- GlyphShape.rect((top.w max bottom.w)*1.05f, 3*(1+linebrush.strokeWidth))(linebrush) --- bottom).asGlyph
+      val glyph  = (top --- INVISIBLE(h=aboveBarSkip) --- Shape.rect((top.w max bottom.w)*1.05f, 3*(1+linebrush.strokeWidth))(linebrush) --- bottom).asGlyph
       List(glyph.withBaseline(0.5f *(glyph.h + derivedContext.sheet.exHeight)))
     }
   }

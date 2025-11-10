@@ -6,7 +6,7 @@ import GlyphTypes.Scalar
 import Modifiers.{Bitmap, Command, Control, Pressed, Primary, Secondary, Shift}
 import gesture._
 import Brushes._
-import GlyphShape.{arrow, circle, polygon, PathShape, STROKE}
+import Shape.{arrow, circle, polygon, STROKE}
 import styled.{Book, BookSheet}
 import unstyled.reactive.{Enterable, Reaction}
 import NaturalSize.transparent
@@ -189,7 +189,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
 
   /** Apply the transform, as if about the current centre  */
-  def transformSelected(transform: GlyphShape => GlyphShape, command: String=""): Unit = runUndoably (command) {
+  def transformSelected(transform: Shape => Shape, command: String=""): Unit = runUndoably (command) {
     //cut = selection
     val mapped = selection.map {
       case v: TargetShape =>
@@ -208,27 +208,27 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
    *  @see composeSelected
    *  @see
    */
-  class Composition(x : Scalar, y : Scalar, shape : GlyphShape, val components: Seq[TargetShape]) extends GlyphShape {
+  class Composition(x : Scalar, y : Scalar, shape : Shape, val components: Seq[TargetShape]) extends Shape {
     override def toString: String = s"Composition[${super.toString}]"
 
     def draw(surface: Surface): Unit = shape.draw(surface)
 
     def diagonal: Vec = shape.diagonal
 
-    override def scale(factor: Scalar): GlyphShape = new Composition(x, y, shape.scale(factor), components)
+    override def scale(factor: Scalar): Shape = new Composition(x, y, shape.scale(factor), components)
 
-    override def turn(degrees: Scalar, tight: Boolean): GlyphShape = new Composition(x, y, shape.turn(degrees, tight), components)
+    override def turn(degrees: Scalar, tight: Boolean): Shape = new Composition(x, y, shape.turn(degrees, tight), components)
 
-    override def withBrushes(fg: Brush=shape.fg, bg: Brush=shape.bg): GlyphShape = new Composition(x, y, shape.withBrushes(fg, bg), components)
+    override def withBrushes(fg: Brush=shape.fg, bg: Brush=shape.bg): Shape = new Composition(x, y, shape.withBrushes(fg, bg), components)
   }
 
   /** Compose the selected elements in the order of selection  */
-  def composeSelected(compose: GlyphShape => GlyphShape => GlyphShape): Unit =
+  def composeSelected(compose: Shape => Shape => Shape): Unit =
     if (selection.length>1) runUndoably ("compose") {
       val targets = selection
       val left = targets.map(_.x).min
       val top = targets.map(_.y).min
-      var composed: GlyphShape = targets.head.shape
+      var composed: Shape = targets.head.shape
         for { v <- targets.tail } composed = compose(composed)(v.shape)
         displayList.dequeueAll(_.isIn(selection))
         val composite = new Composition(left, top, composed, targets).targetLocatedAt(left, top)
@@ -243,7 +243,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
    * relative to the shape's origin.
    * @param targets
    */
-  class ComposedInPlace(val targets: Seq[LocatedShape]) extends GlyphShape {
+  class ComposedInPlace(val targets: Seq[LocatedShape]) extends Shape {
     override def toString: String = s"InPlace(${targets.mkString(",\n")})"
     private val left  = targets.map(_.x).min
     private val right = targets.map{ t => t.x+t.w }.max
@@ -257,9 +257,9 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
     def diagonal: Vec = Vec(right-left, bot-top)
 
-    def withForeground(brush: Brush): GlyphShape = new ComposedInPlace(targets.map(_.withForeground(brush)))
+    def withForeground(brush: Brush): Shape = new ComposedInPlace(targets.map(_.withForeground(brush)))
 
-    def withBrushes(fg: Brush=this.fg, bg: Brush=this.bg): GlyphShape = new ComposedInPlace(targets.map(_.withBrushes(fg, bg)))
+    def withBrushes(fg: Brush=this.fg, bg: Brush=this.bg): Shape = new ComposedInPlace(targets.map(_.withBrushes(fg, bg)))
 
     def topLeft: Vec = Vec(left, top)
   }
@@ -438,8 +438,8 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
   def diagonal: Vec = Vec(w, h)
 
-  val focussedBrush: Brush      = Brushes.red(width=4, mode=GlyphShape.STROKE)
-  val focussedFrame: GlyphShape = GlyphShape.rect(w-4, h-4)(focussedBrush)
+  val focussedBrush: Brush      = Brushes.red(width=4, mode=Shape.STROKE)
+  val focussedFrame: Shape = Shape.rect(w-4, h-4)(focussedBrush)
 
   val selectBrush: Brush = Brushes("white.2.round.stroke")(mode=PaintMode.STROKE, blendMode=BlendMode.OVERLAY)
 
@@ -459,8 +459,8 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     if (guiRoot.hasKeyboardFocus(thisBoard)) focussedFrame.draw(surface)
   }
 
-  val selectionPath = new GlyphShape.PathShape(selectBrush, false)
-  val vertexPath = new GlyphShape.PathShape(Brushes("red.2.round.stroke.dashed(4)")(blendMode = BlendMode.DARKEN), false)
+  val selectionPath = new PathShape(selectBrush, false)
+  val vertexPath    = new PathShape(Brushes("red.2.round.stroke.dashed(4)")(blendMode = BlendMode.DARKEN), false)
 
 
   def indicateVertices(surface: Surface): Unit = if (vertices.nonEmpty) {
@@ -503,7 +503,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     surface.withOrigin(lastMouseDown-PathSymbols.last.centre) { PathSymbols.last.draw(surface)}
   }
 
-  def addShape(kind: String, x:Scalar, y:Scalar)(shape: GlyphShape) : Unit = runUndoably(s"+$kind"){
+  def addShape(kind: String, x:Scalar, y:Scalar)(shape: Shape) : Unit = runUndoably(s"+$kind"){
     val target = shape.targetLocatedAt(x min (w - shape.w), y min (h - shape.h))
     displayList.enqueue(target)
     selection = List(target)
@@ -511,7 +511,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
 
   def addText(text: String, brush: Brush): Unit = {
     var reselect: Seq[TargetShape] = Seq.empty
-    val shape = GlyphShape.text (text) (brush)
+    val shape = Shape.text (text) (brush)
     if (selection.nonEmpty) {
       val selected = selection.last
       selected.shape match {
@@ -525,7 +525,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     selection = reselect ++ List(selection.head)
   }
 
-  def replaceLastSelection(shape: GlyphShape): Unit = runUndoably ("replace"){
+  def replaceLastSelection(shape: Shape): Unit = runUndoably ("replace"){
     val last = selection.last
     val delta = last.shape.centre-shape.centre
     val target = TargetShape(last.x+delta.x, last.y, shape) // centred in the same place
@@ -534,7 +534,7 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
     selection = selection.tail :+ target
   }
 
-  def addShape(kind: String, shape: GlyphShape) : Unit = {
+  def addShape(kind: String, shape: Shape) : Unit = {
     val delta = shape.diagonal * 0.5f
     addShape(kind, lastMouseDown.x-delta.x, lastMouseDown.y-delta.y)(shape)
   }
@@ -560,7 +560,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
     var newBrush: Brush = Brushes("blue.0.stroke.round")
 
-    def addButton(kind: String, dim: String="")(shape: => GlyphShape): Glyph = {
+    def addButton(kind: String, dim: String="")(shape: => Shape): Glyph = {
       val b  = styled.TextButton(kind){ _ => { drawingBoard.addShape(kind, shape); drawingBoard.feedback() } }(sheet)
       HintManager(b.asInstanceOf[Enterable], 5, ()=>s"Add a $dim", true)(hintSheet)
       b
@@ -587,7 +587,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
     if (drawingBoard.selection.nonEmpty) {
       drawingBoard.selection.last.shape match {
         case t: Text =>
-          drawingBoard.replaceLastSelection(GlyphShape.text(textField.string, t.font)(t.fg, t.bg))
+          drawingBoard.replaceLastSelection(Shape.text(textField.string, t.font)(t.fg, t.bg))
         case _ =>
       }
     }
@@ -595,7 +595,7 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
 
 
 
-  class withRadius(R: Scalar)(shape: GlyphShape) extends GlyphShape {
+  class withRadius(R: Scalar)(shape: Shape) extends Shape {
       val delta = (Vec(2*R, 2*R)-shape.diagonal) * 0.5f
 
       def draw(surface: Surface): Unit = {
@@ -605,12 +605,12 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       def diagonal: Vec = Vec(2*R, 2*R)
 
 
-      override def enclosing(point: Vec): Option[GlyphShape] = {
+      override def enclosing(point: Vec): Option[Shape] = {
         val origin = point - delta
         if (shape.encloses(point-delta)) Some(this) else None
       }
 
-      def withBrushes(fg: Brush=shape.fg, bg: Brush=shape.bg): GlyphShape = new withRadius(R)(shape.withBrushes(fg, bg))
+      def withBrushes(fg: Brush=shape.fg, bg: Brush=shape.bg): Shape = new withRadius(R)(shape.withBrushes(fg, bg))
 
     }
 
@@ -621,9 +621,9 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
     var scale: Scalar = 1.0f
     var vertices: Int = 5
 
-    def RAD(shape: GlyphShape): GlyphShape = shape // new withRadius(radius)(shape)
+    def RAD(shape: Shape): Shape = shape // new withRadius(radius)(shape)
 
-    def rectangle(w: Scalar, h: Scalar)(brush: Brush): GlyphShape = {
+    def rectangle(w: Scalar, h: Scalar)(brush: Brush): Shape = {
       val path=new PathShape(brush, false)
       path.moveTo(0, 0)
       path.lineTo(w, 0)
@@ -637,10 +637,10 @@ class Dashboard(help: => Unit, hintSheet: StyleSheet, implicit val sheet: StyleS
       addButton("Rect", "rectangle (wxh)")(rectangle(width,height)(newBrush.copy).scale(scale max 1)),
       addButton("Circ", "circle (radius r)")(circle(radius)(newBrush.copy).scale(scale max 1)),
       addButton("Arrow", "arrow")(arrow(newBrush.copy).scale(scale max 0.3f)),
-      addButton("Star", "v-pointed star size r")(RAD(GlyphShape.polygon(PolygonLibrary.regularStarPath(vertices, C=radius, R=radius).tail)(brush=newBrush.copy)).scale(scale max 0.3f)),
-      addButton("Poly", "v-sided polygon size r")(RAD(GlyphShape.polygon(PolygonLibrary.regularPolygonPath(vertices, C=radius, R=radius).tail)(brush=newBrush.copy)).scale(scale max 0.3f)),
-      //addButton("Text", "text from the text window")(GlyphShape.text(textField.text, sheet.textFont)(fg=newBrush.copy).scale(scale max 0.3f))
-    )
+      addButton("Star", "v-pointed star size r")(RAD(Shape.polygon(PolygonLibrary.regularStarPath(vertices, C=radius, R=radius).tail)(brush=newBrush.copy)).scale(scale max 0.3f)),
+      addButton("Poly", "v-sided polygon size r")(RAD(Shape.polygon(PolygonLibrary.regularPolygonPath(vertices, C=radius, R=radius).tail)(brush=newBrush.copy)).scale(scale max 0.3f)),
+      //addButton("Text", "text from the text window")(Shape.text(textField.text, sheet.textFont)(fg=newBrush.copy).scale(scale max 0.3f))
+      )
 
 
   lazy val dimField: TextField = styled.TextField(onEnter = setDims, onCursorLeave = setDims, size = 30, initialText=s"w=$width, h=$height, r=$radius, scale=$scale, v=$vertices")

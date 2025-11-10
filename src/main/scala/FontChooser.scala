@@ -7,7 +7,7 @@ import io.github.humbleui.jwm.Key
 import org.sufrin.glyph.Brush.{BUTT, ROUND, SQUARE}
 import org.sufrin.glyph.Brushes.{black, lightGrey, red, white, NonBrush}
 import org.sufrin.glyph.Colour.{ARGB, HSV}
-import org.sufrin.glyph.GlyphShape.{FILL, STROKE}
+import org.sufrin.glyph.Shape.{FILL, STROKE}
 import org.sufrin.glyph.NaturalSize.{transparent, Col, Grid, Row}
 import org.sufrin.glyph.styles.decoration.Framed
 import org.sufrin.glyph.GlyphTypes.{Font, FontManager, Scalar}

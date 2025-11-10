@@ -68,7 +68,7 @@ object CellFit {
  *  The origin of the drawing surface is translated by this amount
  *  before each component is drawn.
  */
-trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyph =>
+trait Glyph extends Shape with GlyphColours with GlyphTransforms { thisGlyph =>
 
   import scala.annotation.tailrec
 
@@ -354,8 +354,8 @@ trait Glyph extends GlyphShape with GlyphColours with GlyphTransforms { thisGlyp
   /** A copy of this glyph; perhaps with different foreground/background */
   def apply(fg: Brush=fg, bg: Brush=bg): Glyph = this.copy(fg, bg)
 
-  /** Abstract a glyphShape from a  `this.copy(fg, bg)` -- necessary only because `Glyph extends GlyphShape` */
-  override def withBrushes(fg: Brush=fg, bg: Brush=bg): GlyphShape = GlyphShape.fromGlyph(this.copy(fg, bg))
+  /** Abstract a glyphShape from a  `this.copy(fg, bg)` -- necessary only because `Glyph extends Shape` */
+  override def withBrushes(fg: Brush=fg, bg: Brush=bg): Shape = Shape.fromGlyph(this.copy(fg, bg))
 
   /**
    * A functionally equivalent copy of this glyph, generated within the

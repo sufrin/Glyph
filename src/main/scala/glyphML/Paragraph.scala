@@ -234,6 +234,7 @@ object Paragraph extends SourceLoggable {
     galley
   }
 
+  import org.sufrin.glyph.{Shape=>GlyphShape}
   def CLIPWIDTH(width: Scalar)(g: Glyph): Glyph = new GlyphShape {
 
     def draw(surface: Surface): Unit =
@@ -246,7 +247,7 @@ object Paragraph extends SourceLoggable {
 
     def diagonal: Vec = Vec(width, g.h)
 
-    def withBrushes(fg: Brush, bg: Brush): GlyphShape = ???
+    def withBrushes(fg: Brush, bg: Brush): GlyphShape = null
   }.asGlyph
 
 }

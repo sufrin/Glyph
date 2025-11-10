@@ -158,7 +158,7 @@ object CalculatorExample extends Application {
     override def title: String = "CalculatorExample"
     //override val defaultIconPath: Option[String] = Some("./PNG/redpoly.png")
     override val dock = new Dock {
-      import GlyphShape._
+      import Shape._
       val f = FontFamily("Courier", "normal", 34)
       setGlyph((text("+ -", f)() --- text("* /", f)()).asGlyph.framed(Brushes.redFrame))
     }

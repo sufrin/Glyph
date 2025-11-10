@@ -23,22 +23,22 @@ object ViewerWindow {
 
   lazy val SHELF: Glyph = {
     import Brushes.{blue => B, darkGrey => G, red => R, transparent => T}
-    import GlyphShape._
-    val box: Brush=>GlyphShape = rect(5.25f, 3)
-    val gap:       GlyphShape  = rect(18, 3)(T)
-    val gapB:      GlyphShape  = rect(18, 1.5f)(T)
-    val plank0B:   GlyphShape  = rect(18, 3)(G) // no boxes
-    val plank1B:   GlyphShape  = ((rect(1.5f, 3)(T) ||| box(R))                       --- plank0B) // 1 box
-    val plank2B:   GlyphShape  = ((rect(0.75f,3)(T) ||| box(R(width=1, mode=PaintMode.STROKE)) ||| box(T) ||| box(B)) --- plank0B) // 2 boxes
-    val upright:   GlyphShape  = rect(3, 21)(G)
+    import Shape._
+    val box: Brush=>Shape = rect(5.25f, 3)
+    val gap:       Shape  = rect(18, 3)(T)
+    val gapB:      Shape  = rect(18, 1.5f)(T)
+    val plank0B:   Shape  = rect(18, 3)(G) // no boxes
+    val plank1B:   Shape  = ((rect(1.5f, 3)(T) ||| box(R))                       --- plank0B) // 1 box
+    val plank2B:   Shape  = ((rect(0.75f, 3)(T) ||| box(R(width=1, mode=PaintMode.STROKE)) ||| box(T) ||| box(B)) --- plank0B) // 2 boxes
+    val upright:   Shape  = rect(3, 21)(G)
 
-    val image: GlyphShape = upright ||| (plank1B --- gapB --- plank2B --- gap --- plank0B) ||| upright
+    val image: Shape = upright ||| (plank1B --- gapB --- plank2B --- gap --- plank0B) ||| upright
       image.asGlyph.withBaseline(20)
   }
 
   lazy val CLEARSHELF: Glyph = {
-    import GlyphShape._
-    superimposed(List(SHELF, GlyphShape.line(SHELF.diagonal.scaled(-1, -1), SHELF.diagonal)(Brushes.redLine))).asGlyph
+    import Shape._
+    superimposed(List(SHELF, Shape.line(SHELF.diagonal.scaled(-1, -1), SHELF.diagonal)(Brushes.redLine))).asGlyph
   }
 
 

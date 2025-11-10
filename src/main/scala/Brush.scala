@@ -12,7 +12,7 @@ import GlyphTypes.{Paint, PathEffect, Scalar}
 import io.github.humbleui.skija.BlendMode
 import org.sufrin.glyph.Brush.BUTT
 import org.sufrin.glyph.Colour.ARGB
-import org.sufrin.glyph.GlyphShape.{FILL, STROKE, STROKE_AND_FILL}
+import org.sufrin.glyph.Shape.{FILL, STROKE, STROKE_AND_FILL}
 
 object Brush {
 

@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package tests.GlyphBook
 
 import styled._
-import GlyphShape.{circle, composite, lineBetween, rect, superimposed, AnimatedShapeGlyph, FILL, PathShape, STROKE}
+import Shape.{circle, composite, lineBetween, rect, superimposed, AnimatedShapeGlyph, FILL, STROKE}
 import GlyphTypes.Scalar
 import NaturalSize.{Col, Grid, Row}
 import unstyled.{reactive, static}
@@ -25,7 +25,7 @@ class Animation(implicit val style: BookSheet, implicit val translator: glyphML.
   val Mechanism = Page("Mechanism", "") {
     import unstyled.dynamic.{ActiveGlyph, Periodic}
 
-    trait SpokedWheel extends GlyphShape {
+    trait SpokedWheel extends Shape {
       val radius: Scalar
       val spokes: Int
       val brush, rimBrush:  Brush
@@ -49,7 +49,7 @@ class Animation(implicit val style: BookSheet, implicit val translator: glyphML.
     class RotatingWheel (val radius: Scalar, val spokes: Int) extends SpokedWheel {
       lazy val brush = blue
       lazy val rimBrush = brown
-      def withForeground(brush: Brush): GlyphShape = null
+      def withForeground(brush: Brush): Shape = null
 
       def jointLocation(degrees: Scalar): Vec = {
         import Math.{cos, sin, PI}
@@ -60,9 +60,9 @@ class Animation(implicit val style: BookSheet, implicit val translator: glyphML.
         (Vec(dx, dy))
       }
 
-      def toShape(t: Double): GlyphShape = this.shape.turn(t.toFloat, tight=true)
+      def toShape(t: Double): Shape = this.shape.turn(t.toFloat, tight=true)
 
-      def withBrushes(fg: org.sufrin.glyph.Brush, bg: org.sufrin.glyph.Brush): GlyphShape = this
+      def withBrushes(fg: org.sufrin.glyph.Brush, bg: org.sufrin.glyph.Brush): Shape = this
 
     }
 
@@ -82,7 +82,7 @@ class Animation(implicit val style: BookSheet, implicit val translator: glyphML.
         lineBetween(v1, v2)(fg).floating()
       }
 
-      private def rodBetween(v1: Vec, v2: Vec)(brush: Brush): GlyphShape = new GlyphShape {
+      private def rodBetween(v1: Vec, v2: Vec)(brush: Brush): Shape = new Shape {
         override val fg: Brush = brush
         def draw(surface: Surface): Unit = {
           val p = new PathShape(fg, false)
@@ -93,9 +93,9 @@ class Animation(implicit val style: BookSheet, implicit val translator: glyphML.
 
         def diagonal: Vec = Vec.Zero
 
-        def withForeground(brush: Brush): GlyphShape = null
+        def withForeground(brush: Brush): Shape = null
 
-        def withBrushes(fg: Brush, bg: Brush): GlyphShape = throw new java.lang.UnsupportedOperationException()
+        def withBrushes(fg: Brush, bg: Brush): Shape = throw new java.lang.UnsupportedOperationException()
       }
 
       lazy val wheel1 = new RotatingWheel(100, 4)
@@ -120,7 +120,7 @@ class Animation(implicit val style: BookSheet, implicit val translator: glyphML.
        * placing the roded vertices then forming a glyph superimposing
        * the scenery, the turned mobile, and the placed vertices.
        */
-      def toShape(degrees: Double): GlyphShape = {
+      def toShape(degrees: Double): Shape = {
         import Linkage._
         val deg = degrees.toFloat
         val w1 = wheel1.toShape(deg).centredAt(w*0.25f, wheel1.h*0.5f+30)

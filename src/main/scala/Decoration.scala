@@ -9,7 +9,7 @@ package decoration
 
   import unstyled.static
 
-  import org.sufrin.glyph.GlyphShape.FILL
+  import org.sufrin.glyph.Shape.FILL
   import org.sufrin.glyph.GlyphTypes.{PathEffect, Scalar}
   import org.sufrin.glyph.unstyled.static.Concentric
 
@@ -18,7 +18,6 @@ package decoration
     def decorate(glyph: Glyph): Glyph
   }
 
-  import GlyphShape.PathShape
 
 
   /**
@@ -31,7 +30,7 @@ package decoration
    * @see GlyphTransforms.Framed
    */
   case class Framed(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar=0.15f, radius: Scalar=0) extends Decoration {
-    import GlyphShape._
+    import Shape._
     val ffg=fg(mode=STROKE)
     val fbg=bg(mode=FILL)
     def decorate(glyph: Glyph): Glyph = {
@@ -61,7 +60,7 @@ package decoration
    * @see Framed
    */
   case class RoundFramed(fg: Brush=Brushes.black, bg: Brush=Brushes.transparent, enlarge: Scalar=0.15f, radius: Scalar=0) extends Decoration {
-    import GlyphShape._
+    import Shape._
     val ffg=fg(mode=STROKE)
     val fbg=bg(mode=FILL)
     def decorate(glyph: Glyph): Glyph = {

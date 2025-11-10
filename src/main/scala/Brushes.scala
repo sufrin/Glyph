@@ -4,7 +4,7 @@ package glyph
 import org.sufrin.glyph.NumberUtils.hexToInt
 import org.sufrin.glyph.unstyled.Text
 import org.sufrin.glyph.Colour.HSV
-import org.sufrin.glyph.GlyphShape.{FILL, STROKE, STROKE_AND_FILL}
+import org.sufrin.glyph.Shape.{FILL, STROKE, STROKE_AND_FILL}
 import org.sufrin.glyph.GlyphTypes.Scalar
 
 

@@ -90,13 +90,13 @@ class BrushChooser(val protoBrush: Brush, val resultBrush: Brush, val onError: N
   }
 
 
-    import GlyphShape._
+    import Shape._
 
     import sheet.{em, ex}
 
   protected def brushFeedback(): Unit = setResultBrush(protoBrush.copy())
   
-  protected   def rectangle(w: Scalar, h: Scalar)(brush: Brush): GlyphShape = {
+  protected   def rectangle(w: Scalar, h: Scalar)(brush: Brush): Shape = {
       val path=new PathShape(brush, false)
       path.moveTo(0, 0)
       path.lineTo(w, 0)
