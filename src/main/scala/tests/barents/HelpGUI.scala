@@ -28,14 +28,18 @@ object HelpGUI {
     </p>
     <p>Each viewer window is associated with one or more <i>directory views</i>, of which one is always shown. Each directory or file in a directory view
       is shown as a single row whose columns show its relevant/selected attributes. </p>
-    <p>
-      <i>If more than one directory view has been opened in this window but is not yet closed</i>, pressing <glyph gid="closeview"/> closes the currently visible view and
-      makes another view visible.
-    </p>
     <p>The attributes shown can be  selected using the panel popped up by the
       <glyph gid="settings"/> button; as can the column on which the rows are
       ordered when shown, and whether the order is ascending or descending. The "Invisible" checkbox controls whether
       nominally "invisible" files are shown.</p>
+    <p align="center">
+      <b>Window Size</b>
+    </p>
+    <p>The scale and size of the window is increased by typing <b>Ctrl</b><b>=</b>, decreased by typing <b>Ctrl</b><b>-</b> or adjusted by dragging a <b>vertical</b> edge.
+    </p>
+    <p>
+      On OS/X the <b>Ctrl</b> and <b>Cmd</b>  shift keys are effectively identical.
+    </p>
     <p align="center">
       <b>Columns</b>
     </p>
@@ -76,22 +80,23 @@ object HelpGUI {
       <p>Primary mouse click: selects uniquely</p>
       <p>Primary mouse drag: extends the selection</p>
       <p>Shifted primary mouse click: extends the selection at one end</p>
-      <p>Secondary mouse click (or C-Primary) (or drag) inverts selection status of the indicated row(s)</p>
+      <p>Secondary mouse click (or <b>C</b>-Primary) (or drag) inverts selection status of the indicated row(s)</p>
       <p>Mouse double-click, or (ENTER): if  <i>the unique</i> selected row denotes a directory then open a view of it; otherwise open the corresponding file on the desktop if possible. </p>
       <p>Mouse click in the "gutter" at the left of the display: clears the selection</p>
     </scope>
     <p align="center">
       <b>Shelf</b>
     </p>
-    <p>There is an Explorer-wide <i>conceptual</i>
+    <p>There is an program-wide <i>conceptual</i>
       <b>Shelf</b>
       on which is a collection of paths that denote
-      individual files in the filestore, and a file or directory is said to be "shelved" if its path is
-      on the shelf, and "selected" if its path is in the selection. Shelved files are the objects of the actions described below, and they are
+      individual files/directories in the filestore. Putting a path on the shelf doesn't affect the location of its corresponding file/directory.
+      A file/directory is said to be "shelved" if its path is
+      on the shelf, and "selected" if its path is in the selection. Shelved files are the objects of the actions described below, and their paths are
       underlined in the display.
     </p>
-    <p>If the underlining is "textured" (see <b>Actions C-X</b>) then the corresponding file has been marked for deletion
-      as part of the next "paste" (C-V).
+    <p>If the underlining is "textured" (see <b>Actions Ctrl-X</b>) then the corresponding file has been marked for deletion
+      as part of the next "paste" (Ctrl-V).
     </p>
 
     <p>Actions are invoked by pressing GUI buttons or keys on the keyboard.</p>
@@ -101,17 +106,17 @@ object HelpGUI {
         <glyph gid="shelf"/> <b>(shelve)</b>
         shelves the selected files.</p>
       <p>
-        <b>C-C</b>
+        <b>Ctrl-C</b>
         shelves the selected files.</p>
       <p>
-        <b>C-X</b>
-        shelves the selected files and marks them for later deletion: this is shown by textured underlining. The next "paste" (C-V) action will perform
+        <b>Ctrl-X</b>
+        shelves the selected files and marks them for later deletion: this is shown by textured underlining. The next "paste" (Ctrl-V) action will perform
         the deletion.</p>
       <p>
-        <b>C-V</b>
-        copies the shelved files to the folder in which it is clicked; deleting them if they were marked for deletion by (C-X).</p>
+        <b>Ctrl-V</b>
+        copies the shelved files to the folder in which it is clicked; deleting them if they were marked for deletion by (Ctrl-X).</p>
       <p>
-        <b>C-BACKSPACE</b>
+        <b>Ctrl-BACKSPACE</b>
         completely deletes the shelved files.</p>
      <p>
        <b>BACKSPACE</b>
@@ -144,11 +149,15 @@ object HelpGUI {
         The <b>New Viewer</b> button opens a new window in a view of the currently-selected directory (if any), or of
         the currently viewed directory (if none).</p>
     <p>
-        When the window has more than one view available, the <b>View</b> button pops up a menu
-        each of whose whose buttons selects a view.
+        <i>When the window has more than one view available (ie opened but not yet closed),</i> the <b>View</b> button pops up a menu
+        from which the folder to be viewed  may be selected.
     </p>
     <p>
-      The <b>>_</b> button opens a terminal in the currently-selected directory (if any), or in
+      <i>When the window has more than one view available</i>, pressing <glyph gid="closeview"/> closes the currently visible view and
+      makes another view visible. When there is only one view available <glyph gid="closeview"/> has no effect.
+    </p>
+    <p>
+      The <![CDATA[>_]]> button opens a terminal in the currently-selected directory (if any), or in
       the currently viewed directory (if none).</p>
 
   </div>.enlarged(20, bg = Brushes.white)

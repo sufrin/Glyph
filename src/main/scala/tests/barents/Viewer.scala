@@ -182,6 +182,15 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         case Keystroke(Key.V, _) if PRESSED =>
           thisViewer.paste()
 
+        case Keystroke(Key.EQUALS, _) if PRESSED && CONTROL =>
+          val diagonal = thisViewer.GUI.guiRoot.diagonal
+          thisViewer.GUI.guiRoot.setContentSize(diagonal+(20,20))
+
+        case Keystroke(Key.MINUS, _) if PRESSED && CONTROL =>
+          val diagonal = thisViewer.GUI.guiRoot.diagonal
+          thisViewer.GUI.guiRoot.setContentSize(diagonal-(20,20))
+
+
         case Keystroke(Key.N, _) if PRESSED =>
           val thePath: Path = selectedPaths.length match {
             case 0 => folder.path
