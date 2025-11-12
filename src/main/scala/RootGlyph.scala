@@ -133,11 +133,14 @@ class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
        if (autoScale && platform != "X11") { // X11 is problematic
          // Change the software display scaling to reflect a window size imposed manually
          val oldScale = eventHandler.softwareScale
-         val factor =
-           if (w != newW) newW / w
-           else if (h != newH) newH / h
+         val factor  =
+           if (w < newW || h < newH)         // size increasing
+             (newW / w) max (newH / h)
+           else if (w > newW || h > newH)    // size decreasing
+             (newW / w) min (newH / h)
            else
              1.0f
+
          RootGlyph.finest(s"autoScale: $oldScale $w $newW $factor")
          eventHandler.softwareScale *= factor
          if (oldScale != eventHandler.softwareScale) {
