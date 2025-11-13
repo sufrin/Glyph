@@ -100,7 +100,7 @@ trait Book {
         case (n: Int, page: Page) => UniformSize(page.title){ _ => oneOf.select(n) }
       }
 
-    BookComponents(if (uniform) UniformSize.constrained(uniformButtons) else buttons, oneOf)
+    BookComponents(if (uniform) UniformSize.buttons(uniformButtons) else buttons, oneOf)
   }
 
 
@@ -267,7 +267,7 @@ trait Book {
             }.main(Array())
           }
         }
-      UniformSize.constrained(uniformButtons)
+      UniformSize.buttons(uniformButtons)
     }
   }
 }

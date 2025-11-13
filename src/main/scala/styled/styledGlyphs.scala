@@ -254,15 +254,21 @@ case class MenuButton(text: String, hint: Hint=NoHint) extends styled.StyledButt
  * @see Book
  */
 object UniformSize {
+  /** Specification of a text button that will eventually be part of a collection of uniformly-sized buttons */
   case class ButtonSpecification(text: String, action: Reaction, hint: Hint = NoHint)
 
+  /** Specification of a text button that will eventually be part of a collection of uniformly-sized buttons */
   def apply(text: String, hint: Hint = NoHint)(action: Reaction): ButtonSpecification = ButtonSpecification(text, action, hint)
 
-  def constrained(buttonSpecs: Seq[ButtonSpecification])(implicit sheet: StyleSheet): Seq[ReactiveGlyph] = {
+  /**
+   *  Return the sequence of uniformly-sized buttons derived from the given `specifications` each with a frame styled by `sheet`
+   * @param align specifies the lateral alignment of each button within the uniformly-sized bounding box
+   */
+  def buttons(specifications: Seq[ButtonSpecification], align: Alignment=Left)(implicit sheet: StyleSheet): Seq[ReactiveGlyph] = {
     val detail = sheet.buttonStyle
-    val upGlyphs    = buttonSpecs.map {b => detail.up.toGlyph (b.text)}
-    val downGlyphs  = buttonSpecs.map {b => detail.down.toGlyph (b.text)}
-    val hoverGlyphs = buttonSpecs.map {b => detail.hover.toGlyph (b.text)}
+    val upGlyphs    =  specifications.map {b => detail.up.toGlyph (b.text)}
+    val downGlyphs  =  specifications.map {b => detail.down.toGlyph (b.text)}
+    val hoverGlyphs =  specifications.map {b => detail.hover.toGlyph (b.text)}
 
     val border = detail.border
 
@@ -277,18 +283,22 @@ object UniformSize {
         hoverGlyphs.map (_.h).max)
 
     def frame(glyph: Glyph): Glyph = {
-      Decorate (glyph.enlargedTo (theWidth, theHeight) )
+      val raw = align match {
+        case Left   => FixedSize.Row(align=Mid, width = theWidth)(glyph, FixedSize.Fill(0f, 1f))
+        case Center => glyph
+        case Right  => FixedSize.Row(align=Mid, width = theWidth)(FixedSize.Fill(0f, 1f), glyph)
+      }
+      Decorate (raw.enlargedTo (theWidth, theHeight) )
     }
 
     val buttons =
-      for {i <- buttonSpecs.indices} yield {
+      for {i <- specifications.indices} yield {
         val button =
           reactive.RawButton(
             frame(upGlyphs(i)),
             frame(downGlyphs(i)),
-            frame(hoverGlyphs(i)))(buttonSpecs(i).action)
-
-        buttonSpecs(i).hint(button)
+            frame(hoverGlyphs(i)))(specifications(i).action)
+        specifications(i).hint(button)
         button
       }
 
