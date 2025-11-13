@@ -394,7 +394,11 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
   }
 
   lazy val GUI: Glyph = NaturalSize.Col()(
-    FixedSize.Row(width=viewer.w, align=Mid)(PathButtons.GUI, fileSheet.hFill(), Settings.GUI).enlarged(15).roundFramed(radius=20),
+    { val hfill = fileSheet.hFill()
+      val pathWidth = viewer.w - Settings.GUI.w - hfill.w
+      val scale = if (PathButtons.GUI.w<pathWidth) 1 else pathWidth/PathButtons.GUI.w
+      FixedSize.Row(width=viewer.w, align=Mid)(PathButtons.GUI.scaled(scale), hfill, Settings.GUI).enlarged(15).roundFramed(radius=20)
+    },
     viewer
     )
 }

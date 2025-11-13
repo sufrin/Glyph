@@ -78,8 +78,8 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
                 key => UniformSize(key.toString) { _ => openExplorerWindow(key) }
               }
           styled.windowdialogues
-            .Menu(UniformSize.constrained(buttons), bg=Barents.menuBackgroundBrush)
-            .East(viewButton)
+            .Menu(UniformSize.buttons(buttons), bg=Barents.menuBackgroundBrush)
+            .SouthEast(viewButton)
             .start()
         } else
           openExplorerWindow(rootPath)
