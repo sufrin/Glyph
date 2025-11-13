@@ -186,7 +186,7 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
     val collection = new ViewerWindow(path)
     val window = styled.windowdialogues.Dialogue
       .FLASH(collection.GUI, title=path.abbreviatedString())(fileSheet)
-      .NorthEast(GUI)
+      .InFront(GUI)
       .withAutoScale()
     window.andThen(
       floating = false,

@@ -8,7 +8,7 @@ import files.FileAttributes.Row
 import org.sufrin.logging.SourceLoggable
 import org.sufrin.utility.Notifier
 
-import java.nio.file.{LinkOption, NoSuchFileException, Path}
+import java.nio.file._
 import java.nio.file.attribute.PosixFileAttributes
 import java.nio.file.Files.readAttributes
 import java.util.Comparator
@@ -86,6 +86,39 @@ object Folder extends SourceLoggable {
 class Folder(val path: Path) {
   import Folder._
 
+  val patternAssigned: Notifier[String] = new Notifier[String](s"patternAssigned:$path")
+
+  /**
+   *
+   */
+  def setPattern(source: String): Option[String] = {
+    val err =
+    if (source.isEmpty) {
+      pattern = null
+      reValidate()
+      None
+    }
+    else {
+        try {
+          pattern = FileSystems.getDefault.getPathMatcher(s"glob:$source")
+          reValidate()
+          None
+        } catch {
+          case err: Throwable =>
+            pattern = null
+            reValidate()
+            Some(err.toString)
+        }
+    }
+
+    patternAssigned.notify(source)
+    notifyChange()
+    err
+  }
+
+  var pattern: PathMatcher = null
+  def matches(path: Path): Boolean = pattern==null || pattern.matches(path)
+
   /**
    * Subscription point for changes discovered (externally) in this folder
    */
@@ -118,7 +151,7 @@ class Folder(val path: Path) {
   private lazy val allRowsByName: Cached[Seq[Row]] = Cached[Seq[Row]] {
     import FileAttributes._
     require(path.toFile.isDirectory, s"$path is not a directory")
-    val stream = Files.list(path).sorted(byName)
+    val stream = Files.list(path).filter(matches).sorted(byName)
     groupWidth = 0
     ownerWidth = 0
     nameWidth = 0

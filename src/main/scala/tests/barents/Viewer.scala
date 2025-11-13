@@ -388,17 +388,33 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     if (GUI.hasGuiRoot) GUI.guiRoot.giveupFocus()
   }
 
+  def setPattern(pattern: String): Unit = {
+    folder.setPattern(pattern) match {
+      case None => println(s"Pattern is $pattern")
+      case Some(error) => println(error)
+    }
+  }
+
+  val patternField: TextField = TextField(size=20, onEnter=setPattern)(PathButtons.buttonSheet)
+
+  locally {
+    folder.patternAssigned.handleWith {
+      case patternSource => patternField.string=patternSource
+    }
+  }
+
   def setTitle(path: Path): Unit = {
     import PathProperties._
     if (GUI.hasGuiRoot) GUI.guiRoot.rootWindow.setTitle(path.abbreviatedString())
   }
 
-  lazy val GUI: Glyph = NaturalSize.Col()(
+  lazy val GUI: Glyph = NaturalSize.Col(align=Center)(
     { val hfill = fileSheet.hFill()
       val pathWidth = viewer.w - Settings.GUI.w - hfill.w
       val scale = if (PathButtons.GUI.w<pathWidth) 1 else pathWidth/PathButtons.GUI.w
       FixedSize.Row(width=viewer.w, align=Mid)(PathButtons.GUI.scaled(scale), hfill, Settings.GUI).enlarged(15).roundFramed(radius=20)
     },
+    patternField.roundFramed(radius=15).enlarged(10f),
     viewer
     )
 }
