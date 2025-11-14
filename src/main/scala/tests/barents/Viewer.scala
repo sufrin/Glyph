@@ -106,25 +106,31 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         Fields.forDisplayedFields { case field: String =>
           val layout = Fields.layout(field)
           val text: CharSequence = field match {
-            case "Name" => layout(s"${row.dirToken} ${row.name}${row.linkToken}")
-            case "Kind" => layout(row.kind)
-            case "Size+" => layout(row.compSize)
-            case "Size" => layout(row.attributes.size.toString)
-            case "Perms" => layout(row.attributes.mode)
-            case "Owner" => layout(row.attributes.owner.toString)
-            case "Group" => layout(row.attributes.group.toString)
+            case "Name"     => layout(s"${row.dirToken} ${row.name}${row.linkToken}")
+            case "Kind"     => layout(row.kind)
+            case "Size+"    => layout(row.compSize)
+            case "Size"     => layout(row.attributes.size.toString)
+            case "Perms"    => layout(row.attributes.mode)
+            case "Owner"    => layout(row.attributes.owner.toString)
+            case "Group"    => layout(row.attributes.group.toString)
             case "Modified" => (timeOf(row.attributes.lastModifiedTime).toString)
-            case "Created" => (timeOf(row.attributes.creationTime()).toString)
+            case "Created"  => (timeOf(row.attributes.creationTime()).toString)
             case "Accessed" => (timeOf(row.attributes.lastAccessTime()).toString)
-            case "Id" => layout(row.inum)
-            case "#" => layout(row.links)
-            case _ => ""
+            case "Id"       => layout(row.inum)
+            case "#"        => layout(row.links)
+            case "Parent"   => layout(relativePath(row.path.getParent))
+            case "###"      => layout(row.path.getNameCount.toString)
+            case _          => ""
           }
           out.append(text)
           out.append(" ")
         }
         out.toString
     }
+  }
+
+  def relativePath(parent: Path): String = {
+    parent.getFileName.toString
   }
 
   /** The paths selected in the viewer */
@@ -211,6 +217,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
 
   def close(): Unit = {
     folder.folderChanged.removeTagged(thisViewer)
+    folder.patternAssigned.removeTagged(thisViewer)
     if (logging) finest(s"Closing folder for ${folder.path}")
     folder.close()
   }
@@ -257,7 +264,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     type FieldLayout = CharSequence => CharSequence
     /** The list of potential fields (in order of presentation) */
     val allFields: Seq[String] =
-      List("Id",
+      List("Id",  "###", "Parent",
            "Name",
            "Kind",
            "Size", "Size+", "Perms",
@@ -268,6 +275,8 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     /** The list of potential layouts (in order of presentation) */
     val fieldLayouts: Seq[FieldLayout] =
       List(rightJustify(8)(_),
+           centerJustify(3)(_),
+           leftJustify(20)(_),
            leftJustify(FileAttributes.rowNameLength + 1)(_),
            leftJustify(12)(_),
            rightJustify(10)(_), rightJustify(10)(_), rightJustify(10)(_),
@@ -322,6 +331,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       }
     }
 
+    val pathDepthSymbol = "###"
     private val reverseSortCheckBox =
       styled.SymbolicCheckBox(reverseSort, whenTrue = "descending", whenFalse = "ascending", hint = Hint(2, "Reverse the\ncurrent sort\norder", preferredLocation = Centred)) {
         state =>
@@ -331,7 +341,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       }.roundFramed(fg=Brushes.darkGrey(width=2), radius=15)
 
     private lazy val sortButtons: RadioCheckBoxes = RadioCheckBoxes(
-      captions = List("Name", "Size", "Created", "Modified", "Accessed"),
+      captions = List("Name", "Size", "Created", "Modified", "Accessed", pathDepthSymbol, "Parent"),
       prefer = "Name"
       ) { case selected => selected match {
       case Some(0) => theOrdering = Orderings.byName
@@ -339,6 +349,8 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       case Some(2) => theOrdering = Orderings.byCreateTime
       case Some(3) => theOrdering = Orderings.byModTime
       case Some(4) => theOrdering = Orderings.byAccessTime
+      case Some(5) => theOrdering = Orderings.byPathDepth
+      case Some(6) => theOrdering = Orderings.byParentPath
       case _ => sortButtons.select(0); theOrdering = Orderings.byName
     }
       theListing.clear()
@@ -383,23 +395,38 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
 
   }
 
-
   def giveupFocus(): Unit = {
     if (GUI.hasGuiRoot) GUI.guiRoot.giveupFocus()
   }
 
-  def setPattern(pattern: String): Unit = {
-    folder.setPattern(pattern) match {
-      case None => println(s"Pattern is $pattern")
-      case Some(error) => println(error)
+  object Pattern {
+
+    def setPattern(pattern: String, tree: Boolean=false): Unit = {
+      val effectivePattern = if (pattern.isBlank) "" else pattern // s"${folder.path.toString}/$pattern"
+      folder.setPattern(effectivePattern, tree) match {
+        case None        =>
+        case Some(error) =>
+          styled.windowdialogues.Dialogue.OK(Label(s"$error").enlarged(10), title="Pattern error").InFront(GUI).start()
+      }
     }
-  }
 
-  val patternField: TextField = TextField(size=20, onEnter=setPattern)(PathButtons.buttonSheet)
+    val patternField: TextField = TextField(size = 20)(PathButtons.buttonSheet)
+    val patternSheet: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated)
 
-  locally {
-    folder.patternAssigned.handleWith {
-      case patternSource => patternField.string=patternSource
+    val GUI =
+      NaturalSize.Row(align=Mid)(
+        TextButton("x", hint=Hint(1, "Clear pattern")){ _ => setPattern("") }(patternSheet),
+        patternField.enlarged(10).roundFramed(radius=10).enlarged(10f),
+        TextButton("*",  hint=Hint(1, "Filter by pattern")){ _ => setPattern(patternField.string) }(patternSheet),
+        TextButton("**", hint=Hint(1, "Filter tree by pattern")){ _ => setPattern(patternField.string, true) }(patternSheet),
+      )
+
+    locally {
+      // solicit pattern-change notifications from the folder
+      // (this synchronises the patterns of all viewers of a given folder)
+      folder.patternAssigned.handleWithTagged(thisViewer) {
+        case patternSource => patternField.string = patternSource
+      }
     }
   }
 
@@ -414,7 +441,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       val scale = if (PathButtons.GUI.w<pathWidth) 1 else pathWidth/PathButtons.GUI.w
       FixedSize.Row(width=viewer.w, align=Mid)(PathButtons.GUI.scaled(scale), hfill, Settings.GUI).enlarged(15).roundFramed(radius=20)
     },
-    patternField.roundFramed(radius=15).enlarged(10f),
+    Pattern.GUI,
     viewer
     )
 }

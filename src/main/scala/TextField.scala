@@ -97,14 +97,14 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
 
   import io.github.humbleui.jwm.{EventMouseButton, Window}
   private val metrics = font.getMetrics
-  private val fontHeight = metrics.getHeight
+  private val fontHeight = metrics.getDescent - metrics.getAscent //metrics.getHeight
   private val emWidth    = metrics.getMaxCharWidth
   private val spacing    = metrics.getDescent + metrics.getAscent + metrics.getLeading
-  private val emDrop     = fontHeight - spacing
+  private val emDrop     = fontHeight// - spacing
 
   private val em         = Text("M", font)
   private val emDiagonal = Vec(emWidth, emDrop)
-  private val atBaseLine = fontHeight
+  private val atBaseLine = metrics.getXHeight+metrics.getDescent - 1//fontHeight
   private val nudge      = emWidth / 2
   private val deltaY     = emDiagonal.y*0.2f
   def diagonal: Vec      = Vec(emWidth*size, emDrop)//emDiagonal.y*1.2)
@@ -317,8 +317,6 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
    * editing position.
    */
   def draw(surface: Surface): Unit = {
-
-
     drawBackground(surface)
     surface.declareCurrentTransform(this)
     var panning = panBy>0
@@ -524,7 +522,7 @@ def giveUpKeyboardFocus(): Unit = if (hasGuiRoot) guiRoot.giveupFocus()
     /** Delegated to by the main `draw` */
     def draw(surface: Surface): (Scalar, Scalar) =
     { val (tl, cursor, width) = allTextLine(pan: Int)
-      surface.drawTextLine(fg, tl, 0, fontHeight)
+      surface.drawTextLine(fg, tl, 0, atBaseLine)//metrics.getXHeight+metrics.getDescent
       (cursor, width)
     }
 

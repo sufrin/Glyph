@@ -106,7 +106,7 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
 
     lazy val shelfButtons = NaturalSize.Row(align=Mid)(clearButton, shelfButton)
 
-    def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption())(Barents.hintSheet), constant = false, preferredLocation = Hint.West)(Barents.hintSheet)
+    def shelfHint(caption: () => String): Hint = Hint.ofGlyph(4, Shelf.hintGlyph(caption())(Barents.hintSheet), constant = false, preferredLocation = Hint.Centred)(Barents.hintSheet)
 
     lazy val trashButton = TextButton("trash", hint=shelfHint(()=>"Move files to .Trash")){
       _ => visibleActions.trash()

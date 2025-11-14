@@ -111,8 +111,6 @@ object FileAttributes {
 
   object Orderings {
 
-
-
     private val byModifiedTime = new Ordering[Row] {
       def compare(r1: Row, r2: Row): Int = r1.attributes.lastModifiedTime().compareTo(r2.attributes.lastModifiedTime())
     }
@@ -123,9 +121,22 @@ object FileAttributes {
       def compare(r1: Row, r2: Row): Int = r1.attributes.lastAccessTime().compareTo(r2.attributes.lastAccessTime())
     }
 
+    private val byParentPath = new Ordering[Row] {
+      def compare(r1: Row, r2: Row): Int = r1.path.getParent.compareTo(r2.path.getParent)
+    }
+
+    private val byPath = new Ordering[Row] {
+      def compare(r1: Row, r2: Row): Int = r1.path.compareTo(r2.path)
+    }
+
     private val bySize = new Ordering[Row] {
       def compare(r1: Row, r2: Row): Int = r1.attributes.size().compareTo(r2.attributes.size())
-    }
+    }.orElse(byPath)
+
+    private val byPathDepth = new Ordering[Row] {
+      def compare(r1: Row, r2: Row): Int = r1.path.getNameCount.compareTo(r2.path.getNameCount)
+    }.orElse(byParentPath)
+
 
     def byModTime(rows: Seq[Row]): Seq[Row] = rows.sorted(byModifiedTime)
 
@@ -134,6 +145,12 @@ object FileAttributes {
     def byCreateTime(rows: Seq[Row]): Seq[Row] = rows.sorted(byCreatedTime)
 
     def bySize(rows: Seq[Row]): Seq[Row] = rows.sorted(bySize)
+
+    def byPathDepth(rows: Seq[Row]): Seq[Row] = rows.sorted(byPathDepth)
+
+    def byPath(rows: Seq[Row]): Seq[Row] = rows.sorted(byPath)
+
+    def byParentPath(rows: Seq[Row]): Seq[Row] = rows.sorted(byParentPath)
 
     def byName(rows: Seq[Row]): Seq[Row] = rows
 

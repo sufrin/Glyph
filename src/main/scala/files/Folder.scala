@@ -91,23 +91,28 @@ class Folder(val path: Path) {
   /**
    *
    */
-  def setPattern(source: String): Option[String] = {
+  def setPattern(source: String, tree: Boolean=false): Option[String] = {
     val err =
     if (source.isEmpty) {
       pattern = null
+      findTree = false
       reValidate()
       None
     }
     else {
         try {
           pattern = FileSystems.getDefault.getPathMatcher(s"glob:$source")
+          findTree = tree
           reValidate()
+          //println(Files.walk(path).filter(matches).iterator().asScala.toSeq)
+
           None
         } catch {
           case err: Throwable =>
             pattern = null
+            findTree = false
             reValidate()
-            Some(err.toString)
+            Some(err.getMessage)
         }
     }
 
@@ -116,6 +121,7 @@ class Folder(val path: Path) {
     err
   }
 
+  var findTree: Boolean = false
   var pattern: PathMatcher = null
   def matches(path: Path): Boolean = pattern==null || pattern.matches(path)
 
@@ -151,17 +157,24 @@ class Folder(val path: Path) {
   private lazy val allRowsByName: Cached[Seq[Row]] = Cached[Seq[Row]] {
     import FileAttributes._
     require(path.toFile.isDirectory, s"$path is not a directory")
-    val stream = Files.list(path).filter(matches).sorted(byName)
     groupWidth = 0
     ownerWidth = 0
     nameWidth = 0
-    stream.iterator().asScala.toSeq.map { case path: Path =>
+    val mkRow: Path => Row = { case path: Path =>
       val row = Row(path, readPosixAttributes(path))
       val (owidth, gwidth, nwidth) = row.principalWidths
       if (owidth > ownerWidth) ownerWidth = owidth
       if (gwidth > groupWidth) groupWidth = owidth
       if (nwidth > nameWidth) nameWidth = nwidth
       row
+    }
+
+    if (findTree) {
+      Files.find(path, Integer.MAX_VALUE, (path, attrs)=> matches(path)).sorted(byName).iterator().asScala.toSeq.map(mkRow)
+    }
+    else {
+      val stream = Files.list(path).filter(matches).sorted(byName)
+      stream.iterator().asScala.toSeq.map(mkRow)
     }
   }
 
