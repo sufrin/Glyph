@@ -101,16 +101,15 @@ class Folder(val path: Path) {
     }
     else {
         try {
-          pattern = FileSystems.getDefault.getPathMatcher(s"glob:$source")
+          pattern = FileSystems.getDefault.getPathMatcher(s"glob:**$source")
           findTree = tree
           reValidate()
-          //println(Files.walk(path).filter(matches).iterator().asScala.toSeq)
-
           None
         } catch {
           case err: Throwable =>
             pattern = null
             findTree = false
+            err.printStackTrace()
             reValidate()
             Some(err.getMessage)
         }
@@ -170,7 +169,7 @@ class Folder(val path: Path) {
     }
 
     if (findTree) {
-      Files.find(path, Integer.MAX_VALUE, (path, attrs)=> matches(path)).sorted(byName).iterator().asScala.toSeq.map(mkRow)
+      Files.find(path, Integer.MAX_VALUE, (path, attrs)=> matches(path), FileVisitOption.FOLLOW_LINKS).sorted(byName).iterator().asScala.toSeq.map(mkRow)
     }
     else {
       val stream = Files.list(path).filter(matches).sorted(byName)

@@ -91,7 +91,10 @@ object FileAttributes {
     }
     lazy val compSize: String  =
       try   { if (isDirectory) s"${Files.list(path).count}f" else attributes.meaningfulSize }
-      catch { case ex: Exception => "??" }
+      catch { case ex: Exception =>
+        //ex.printStackTrace()
+        "??"
+      }
     lazy val links:    String  = Files.getAttribute(path, "unix:nlink").toString
     lazy val inum:     String  = Files.getAttribute(path, "unix:ino").toString
     lazy val kind:     String = {

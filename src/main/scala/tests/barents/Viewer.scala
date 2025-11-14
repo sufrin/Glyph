@@ -56,7 +56,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
   def popupErrors(errors: Seq[Exception]): Unit =
     if (errors.nonEmpty)
       styled.windowdialogues.Dialogue
-        .OK(Label(errors.mkString("\n")))
+        .OK(Label(errors.mkString("\n")).roundFramed(Brushes.red(width=5), radius=5))
         .InFront(GUI)
         .start()
 

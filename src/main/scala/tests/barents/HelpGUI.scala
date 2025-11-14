@@ -71,6 +71,7 @@ object HelpGUI {
       selects the <b>real</b> parent of the current directory for display (which differs only if there was a symbolic link
       somewhere on the path).
     </p>
+
     <p align="center">
       <b>Selection</b>
     </p>
@@ -159,6 +160,19 @@ object HelpGUI {
     <p>
       The <![CDATA[>_]]> button opens a terminal in the currently-selected directory (if any), or in
       the currently viewed directory (if none).</p>
+
+    <p align="center">
+      <b>Patterns</b>
+    </p>
+    <p>
+      The current directory view can show only those files whose paths match the (glob-style) pattern
+      specified in the pattern field -- press the green magnifying glass to do this.
+    </p>
+    <p>
+      The current directory view can show all files in the subtree of the current directory whose paths match the (glob-style) pattern
+      specified in the pattern field -- press the red magnifying glass to do this. This operation can take a long time (or fail) when the
+      subtree is large.
+    </p>
 
   </div>.enlarged(20, bg = Brushes.white)
 
