@@ -162,7 +162,7 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
 
   def closeExplorer(path: Path): Unit = {
     if (viewers.size > 1) {
-      viewers(path).close()
+      try { viewers(path).close() } catch { case ex: NoSuchElementException => ex.printStackTrace() } // TODO: why does this occasionally happen?
       viewers.selectPrev(path)
       viewers.remove(path)
     }

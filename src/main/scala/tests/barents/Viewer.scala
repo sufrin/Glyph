@@ -362,16 +362,14 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         List(Label("Ordered on "), reverseSortCheckBox, Label(" ")) ++ sortButtons.glyphButtons(Right, fixedWidth = false)
       )
 
-    private val largeButtonStyle: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated, fontScale = 1.3f, buttonHoverBrush = fileSheet.buttonForegroundBrush)
-
     private lazy val settingsPanel: Glyph = {
       val close = Barents.settingsCloseIcon
       val closeSettings = unstyled.reactive.RawButton(close, close, close) { _ => settingsDialogue.close() }
       NaturalSize.Col(align = Left)(
         closeSettings,
-        FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), Fields.GUI, invisibilityCheckBox, fileSheet.hFill()),
+        FixedSize.Row(width = GUI.guiRoot.w-10, align = Mid)(fileSheet.hFill(), Fields.GUI, invisibilityCheckBox, fileSheet.hFill()),
         fileSheet.ex,
-        FixedSize.Row(width = GUI.guiRoot.w, align = Mid)(fileSheet.hFill(), orderButtons, fileSheet.hFill()), fileSheet.vSpace()
+        FixedSize.Row(width = GUI.guiRoot.w-10, align = Mid)(fileSheet.hFill(), orderButtons, fileSheet.hFill()), fileSheet.vSpace()
         )
     }
 
@@ -415,10 +413,10 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
 
     val GUI =
       NaturalSize.Row(align=Mid)(
-        TextButton("x", hint=Hint(1, "Clear pattern")){ _ => setPattern("") }(patternSheet),
+        SimpleGlyphButton(IconLibrary.XSHAPE(patternSheet.exHeight, Brushes("blue.2.stroke)")), hint=Hint(1, "Clear pattern")){ _ => setPattern("") }(patternSheet),
         patternField.enlarged(10).roundFramed(radius=10).enlarged(10f),
-        TextButton("*",  hint=Hint(1, "Filter by pattern")){ _ => setPattern(patternField.string) }(patternSheet),
-        TextButton("**", hint=Hint(1, "Filter tree by pattern")){ _ => setPattern(patternField.string, true) }(patternSheet),
+        SimpleGlyphButton(IconLibrary.LOOKSHAPE(patternSheet.exHeight, Brushes("green.2.stroke)")).turned(45),  hint=Hint(1, "Filter this folder\n by pattern")){ _ => setPattern(patternField.string) }(patternSheet),
+        SimpleGlyphButton(IconLibrary.LOOKSHAPE(patternSheet.exHeight, Brushes("red.2.stroke)")).turned(45), hint=Hint(1, "Filter tree rooted here\n by pattern")){ _ => setPattern(patternField.string, true) }(patternSheet),
       )
 
     locally {

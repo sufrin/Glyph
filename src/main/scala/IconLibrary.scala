@@ -1,9 +1,8 @@
 package org.sufrin.glyph
 
 import Brushes.{blue, white}
-import GlyphTypes.Scalar
-
-import GlyphTypes.PaintMode
+import GlyphTypes.{PaintMode, Scalar}
+import Shape.line
 
 object IconLibrary {
 
@@ -57,7 +56,19 @@ object IconLibrary {
     val halfDiam: Float = diam / 2
     val nsBar: Shape = line(0, -halfDiam, 0, halfDiam)(ns(width = diam / 8f))
     val ewBar: Shape = line(-halfDiam, 0, halfDiam, 0)(ew(width = diam / 8f))
-    superimposed(List(oval(diam, diam)(fill), nsBar, ewBar)).asGlyph
+    superimposed(List(circle(diam)(fill), nsBar, ewBar)).asGlyph
+  }
+
+  def LOOKSHAPE(diam: Scalar = 28f, brush: Brush = Brushes.darkGrey): Glyph = {
+    import Shape._
+    (oval(diam, diam)(brush) --- rect(diam/4, diam)(brush.copy(mode=GlyphTypes.PaintMode.FILL))).asGlyph
+  }
+
+  def XSHAPE(diam: Scalar = 28f, brush: Brush = Brushes.darkGrey): Glyph = {
+    val halfDiam: Float = diam / 2
+    val nsBar: Shape = line(0, -halfDiam, 0, halfDiam)(brush(width = diam / 8f))
+    val ewBar: Shape = line(-halfDiam, 0, halfDiam, 0)(brush(width = diam / 8f))
+    (nsBar ~~~ ewBar).turn(45).asGlyph
   }
 
 }

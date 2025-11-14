@@ -131,6 +131,13 @@ case class GlyphButton(up: Glyph, down: Glyph, hover: Glyph, exact: Boolean = tr
   }
 }
 
+/**
+ * A simplified `GlyphButton` whose `up`, `down`, `hover` are identical
+ */
+object SimpleGlyphButton {
+  def apply(up: Glyph, exact: Boolean = false, hint: Hint=NoHint): GlyphButton = GlyphButton(up, up, up, exact, hint)
+}
+
 /**  As GlyphButton but destined for a menu; hence deferred decoration */
 case class MenuGlyphButton(up: Glyph, down: Glyph = null, hover: Glyph = null, exact: Boolean = false, hint: Hint=NoHint) extends styled.StyledButton {
   def apply(action: Reaction)(implicit sheet: StyleSheet): Glyph = {
