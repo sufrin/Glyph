@@ -99,7 +99,9 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
    * @return the current presentation of the rows to be displayed in `viewer`.
    */
   def theListing: CachedSeq[Row, String] = folder.withValidCaches {
-    CachedSeq(theRows){
+    val rows = theRows
+    setRowCount(rows.length)
+    CachedSeq(rows){
       row: Row =>
         import files.FileAttributes._
         val out = new StringBuilder()
@@ -128,6 +130,8 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         out.toString
     }
   }
+
+  def setRowCount(count: Int): Unit = Settings.countLabel.set(count.toString)
 
   def relativePath(parent: Path): String = {
     parent.getFileName.toString
@@ -341,7 +345,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       }.roundFramed(fg=Brushes.darkGrey(width=2), radius=15)
 
     private lazy val sortButtons: RadioCheckBoxes = RadioCheckBoxes(
-      captions = List("Name", "Size", "Created", "Modified", "Accessed", pathDepthSymbol, "Parent"),
+      captions = List("Name", "Size", "Created", "Modified", "Accessed", "###", "Parent"),
       prefer = "Name"
       ) { case selected => selected match {
       case Some(0) => theOrdering = Orderings.byName
@@ -376,18 +380,23 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     private lazy val settingsDialogue: Dialogue[Unit] =
       overlaydialogues.Dialogue.POPUP(settingsPanel, Seq.empty, closeGlyph=None).AtTop(GUI.guiRoot)
 
+    val countLabel: ActiveString = ActiveString("xxxx")
 
     val GUI: Glyph = {
       val close:    Glyph = Barents.viewCloseIcon
       val settings: Glyph = Barents.viewSettingsIcon
       NaturalSize.Col(align=Center)(
           MenuGlyphButton(settings, settings, settings, hint=Hint(0.75, "Change view settings", preferredLocation = West)(hintSheet)){
-          _ =>
-            settingsDialogue.canEscape = true
-            settingsDialogue.isMenu = true
-            settingsDialogue.start()
-        }(fileSheet),
-          MenuGlyphButton(close, close, close, hint=Hint(0.75, "Close this view &\nrevert to parent view", preferredLocation = West)(hintSheet)){ _ => services.closeExplorer(folder.path) }(fileSheet)
+            _ =>
+              settingsDialogue.canEscape = true
+              settingsDialogue.isMenu = true
+              settingsDialogue.start()
+          }(fileSheet),
+          MenuGlyphButton(close, close, close, hint=Hint(0.75, "Close this view &\nrevert to parent view", preferredLocation = West)(hintSheet)){
+            _ =>
+              services.closeExplorer(folder.path)
+          }(fileSheet),
+          countLabel.framed()
       )
     }
 
@@ -399,27 +408,64 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
 
   object Pattern {
 
-    def setPattern(pattern: String, tree: Boolean=false): Unit = {
+    def setPattern(pattern: String, tree: Boolean = false): Unit = {
       val effectivePattern = if (pattern.isBlank) "" else pattern // s"${folder.path.toString}/$pattern"
       folder.setPattern(effectivePattern, tree) match {
-        case None        =>
+        case None =>
         case Some(error) =>
-          styled.windowdialogues.Dialogue.OK(Label(s"$error").enlarged(10), title="Pattern error").InFront(GUI).start()
+          styled.windowdialogues.Dialogue.OK(Label(s"$error").enlarged(10), title = "Pattern error").InFront(GUI).start()
       }
     }
 
     val patternField: TextField = TextField(size = 20)(PathButtons.buttonSheet)
     val patternSheet: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated)
+    var searchTree: Boolean = false
 
-    val GUI =
-      NaturalSize.Row(align=Mid)(
-        SimpleGlyphButton(IconLibrary.XSHAPE(patternSheet.exHeight, Brushes("blue.2.stroke)")), hint=Hint(1, "Clear pattern")){ _ => setPattern("") }(patternSheet),
-        patternField.enlarged(10).roundFramed(radius=10).enlarged(10f),
-        SimpleGlyphButton(IconLibrary.LOOKSHAPE(patternSheet.exHeight, Brushes("green.2.stroke)")).turned(45),  hint=Hint(1, "Filter this folder\n by pattern")){ _ => setPattern(patternField.string) }(patternSheet),
-        SimpleGlyphButton(IconLibrary.LOOKSHAPE(patternSheet.exHeight, Brushes("red.2.stroke)")).turned(45), hint=Hint(1, "Filter tree rooted here\n by pattern")){ _ => setPattern(patternField.string, true) }(patternSheet),
-      )
+    case class SavedSettings(displayed: Set[String] = Fields.displayed.toSet, ordering: Seq[Row] => Seq[Row] = theOrdering)
 
-    locally {
+    var manualSettings = SavedSettings()
+
+    val filterButtons: RadioCheckBoxes = RadioCheckBoxes(
+      captions = List("Find", "Filter"),
+      prefer = "Filter"
+      ) {
+      case Some(0) =>
+        searchTree = true
+        manualSettings = SavedSettings()
+        Fields.displayed.add("Parent")
+        Fields.displayed.add("###")
+        theOrdering = Orderings.byPathDepth
+        theListing.clear()
+        viewer.refresh(theListing)
+      case Some(1) | _ =>
+        searchTree = false
+        Fields.displayed.clear()
+        Fields.displayed.addAll(manualSettings.displayed)
+        theOrdering = manualSettings.ordering
+        theListing.clear()
+        viewer.refresh(theListing)
+    }
+
+
+      val GUI: Glyph =
+        NaturalSize.Row(align = Mid) (
+          patternField.enlarged(10).roundFramed(radius = 10).enlarged(10f),
+          SimpleGlyphButton(IconLibrary.XSHAPE(patternSheet.exHeight, Brushes("darkgrey.3)")), hint = Hint(1, "Clear pattern")) {
+            _ =>
+              Fields.displayed.clear()
+              Fields.displayed.addAll(manualSettings.displayed)
+              theOrdering = manualSettings.ordering
+              setPattern("", false)
+          }(patternSheet),
+          SimpleGlyphButton(IconLibrary.LOOKSHAPE(patternSheet.exHeight, Brushes("darkGrey.2.stroke)")).turned(45),
+                            hint = Hint(1, if (searchTree) "find matches" else "filter matches", constant = false)) {
+            _ =>
+              setPattern(patternField.string, searchTree)
+          }(patternSheet),
+          NaturalSize.Row(align = Mid)(filterButtons.glyphButtons(Left, fixedWidth = false))
+        )
+
+        locally {
       // solicit pattern-change notifications from the folder
       // (this synchronises the patterns of all viewers of a given folder)
       folder.patternAssigned.handleWithTagged(thisViewer) {
@@ -427,6 +473,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       }
     }
   }
+
 
   def setTitle(path: Path): Unit = {
     import PathProperties._
@@ -441,7 +488,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     },
     Pattern.GUI,
     viewer
-    )
+  )
 }
 
 

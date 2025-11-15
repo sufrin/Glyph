@@ -112,6 +112,17 @@ object FileAttributes {
 
   }
 
+  class DummyRow(dummyPath: Path) extends Row(dummyPath, null) {
+    override lazy val compSize: String  = "++"
+    override lazy val links:    String  = "**"
+    override lazy val inum:     String  = "**"
+    override lazy val kind:     String  = "**"
+    override val isDirectory:   Boolean = false
+    override val isRegularFile: Boolean = false
+    override def update(): Unit = {}
+    override def principalWidths:(Int,Int,Int) = (0, 0, 0)
+  }
+
   object Orderings {
 
     private val byModifiedTime = new Ordering[Row] {

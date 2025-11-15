@@ -8,6 +8,7 @@ import files.FileAttributes.Row
 import org.sufrin.logging.SourceLoggable
 import org.sufrin.utility.Notifier
 
+import java.io.IOException
 import java.nio.file._
 import java.nio.file.attribute.PosixFileAttributes
 import java.nio.file.Files.readAttributes
@@ -169,7 +170,8 @@ class Folder(val path: Path) {
     }
 
     if (findTree) {
-      Files.find(path, Integer.MAX_VALUE, (path, attrs)=> matches(path), FileVisitOption.FOLLOW_LINKS).sorted(byName).iterator().asScala.toSeq.map(mkRow)
+      val seq = Directory.allMatches(path, pattern)(mkRow)
+      seq
     }
     else {
       val stream = Files.list(path).filter(matches).sorted(byName)
@@ -248,5 +250,43 @@ class Folder(val path: Path) {
         folderChanged.notify(lastEvent)
       }
     }
+  }
+}
+
+object Directory extends SourceLoggable {
+  import java.nio.file._
+  import java.nio.file.attribute.BasicFileAttributes
+  import scala.collection.mutable.ListBuffer
+
+  private lazy val NOFOLLOW = java.util.EnumSet.noneOf(classOf[FileVisitOption])
+  private lazy val FOLLOW   = java.util.EnumSet.allOf(classOf[FileVisitOption])
+
+  def allMatches[Result](root: Path,  pattern: PathMatcher, depth: Int = Int.MaxValue, followSymbolic: Boolean = false)(result: Path=>Result): Seq[Result] = {
+    val results = ListBuffer.empty[Result]
+
+    Files.walkFileTree(
+      root,
+      if (followSymbolic) FOLLOW else NOFOLLOW,
+      depth,
+      new SimpleFileVisitor[Path] {
+        override def visitFile(path: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          if ((pattern eq null) || pattern.matches(path)) results += result(path)
+          FileVisitResult.CONTINUE
+        }
+
+
+        override def preVisitDirectory(path: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          if ((pattern eq null) || pattern.matches(path)) results += result(path)
+          FileVisitResult.CONTINUE
+        }
+
+        override def visitFileFailed(path: Path, exn: IOException): FileVisitResult = {
+          warn(exn.toString)
+          FileVisitResult.CONTINUE
+        }
+      }
+    )
+
+    results.toSeq
   }
 }

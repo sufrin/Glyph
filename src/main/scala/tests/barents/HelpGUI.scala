@@ -165,13 +165,10 @@ object HelpGUI {
       <b>Patterns</b>
     </p>
     <p>
-      The current directory view can show only those files whose paths match the (glob-style) pattern
-      specified in the pattern field -- press the green magnifying glass to do this.
-    </p>
-    <p>
-      The current directory view can show all files in the subtree of the current directory whose paths match the (glob-style) pattern
-      specified in the pattern field -- press the red magnifying glass to do this. This operation can take a long time (or fail) when the
-      subtree is large.
+      The pattern field specifies a pattern to be used to filter the files in the current directory
+      or to "find" files in the directory tree rooted at the current directory. The green
+      search button filters or finds: the latter iff the adjacent checkbox is checked,
+      in which case the fields shown also include the parent directory name and the nesting level (###).
     </p>
 
   </div>.enlarged(20, bg = Brushes.white)
