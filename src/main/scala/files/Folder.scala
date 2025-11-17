@@ -270,13 +270,21 @@ object Directory extends SourceLoggable {
       depth,
       new SimpleFileVisitor[Path] {
         override def visitFile(path: Path, attrs: BasicFileAttributes): FileVisitResult = {
-          if ((pattern eq null) || pattern.matches(path)) results += result(path)
+          if ((pattern eq null) || pattern.matches(path)) {
+            results += result(path)
+            val depth = path.getNameCount
+            fine(s"${"  "*depth} ${path.getFileName}")
+          }
           FileVisitResult.CONTINUE
         }
 
 
         override def preVisitDirectory(path: Path, attrs: BasicFileAttributes): FileVisitResult = {
-          if ((pattern eq null) || pattern.matches(path)) results += result(path)
+          if ((pattern eq null) || pattern.matches(path)) {
+            results += result(path)
+            val depth = path.getNameCount
+            fine(s"${"  "*depth} ${path.getFileName}")
+          }
           FileVisitResult.CONTINUE
         }
 
@@ -286,7 +294,8 @@ object Directory extends SourceLoggable {
         }
       }
     )
-
     results.toSeq
   }
+
+
 }

@@ -164,6 +164,13 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       clearSelection()
     }
 
+    override def onSecondaryClick(double: Boolean, mods: Bitmap, selected: Int): Unit = {
+      val path = folder.path.resolve(theRows(selected).path)
+      if (logging) finest(s"onSeondaryClick(#$selected=$path) on $thisViewer")
+      val parent = path.getParent
+      if (parent ne null) (thisViewer.services.openPath)(parent)
+    }
+
     override def onHover(mods: Bitmap, hovered: Int): Unit = if (false) folder.withValidCaches {
       if (theRows.isDefinedAt(hovered)) {
         val path = theRows(hovered).path.toString
@@ -208,6 +215,16 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
             case _ => { bell.play(); folder.path }
           }
           thisViewer.services.openServices(thePath)
+
+        case Keystroke(Key.D, _) if PRESSED =>
+          val thePath: Path = selectedPaths.length match {
+            case 0 => folder.path
+            case 1 => selectedPaths.head
+            case _ => { bell.play(); folder.path }
+          }
+          val path = thePath.getParent
+          if (path ne null) thisViewer.services.openServices(path)
+
 
         //case Keystroke(Key.P, _) if PRESSED =>
         //  Actions.print()
@@ -383,7 +400,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     val countLabel: ActiveString = ActiveString("xxxx")
 
     val GUI: Glyph = {
-      val close:    Glyph = Barents.viewCloseIcon
+      val closeIcon:    Glyph = Barents.viewCloseIcon
       val settings: Glyph = Barents.viewSettingsIcon
       NaturalSize.Col(align=Center)(
           MenuGlyphButton(settings, settings, settings, hint=Hint(0.75, "Change view settings", preferredLocation = West)(hintSheet)){
@@ -392,8 +409,9 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
               settingsDialogue.isMenu = true
               settingsDialogue.start()
           }(fileSheet),
-          MenuGlyphButton(close, close, close, hint=Hint(0.75, "Close this view &\nrevert to parent view", preferredLocation = West)(hintSheet)){
+          MenuGlyphButton(closeIcon, closeIcon, closeIcon, hint=Hint(0.75, "Close this view &\nrevert to parent view", preferredLocation = West)(hintSheet)){
             _ =>
+              Viewer.fine(s"Closing from ${folder.path}")
               services.closeExplorer(folder.path)
           }(fileSheet),
           countLabel.framed()

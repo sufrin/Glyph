@@ -3,7 +3,7 @@ package tests.barents
 
 import styles.decoration.RoundFramed
 import GlyphTypes.FontStyle.NORMAL
-import files.Folder
+import files.{Directory, Folder}
 import styled.Logging
 
 import org.sufrin.glyph.tests.barents.PathProperties.PathProperty
@@ -43,7 +43,7 @@ object Barents extends Application with SourceLoggable {
     val host: ViewerWindow = new ViewerWindow(homePath)
     val hostGUI: Glyph = host.GUI
     Viewer.dialogueAnchor = hostGUI
-    Logging(Viewer, Folder, FileOperations)
+    Logging(Viewer, Folder, FileOperations, ViewerWindow, Directory)
     Logging.Decorate(hostGUI, Mid)
   }
 

@@ -11,11 +11,13 @@ import unstyled.dynamic.Keyed
 import GlyphTypes.{PaintMode, Scalar}
 import Hint.West
 
+import org.sufrin.logging.SourceLoggable
+
 import java.awt.Desktop
 import java.nio.file._
 
 
-object ViewerWindow {
+object ViewerWindow extends SourceLoggable {
   private var _serial = 0
   def nextSerial(): Int = { _serial += 1; _serial }
 
@@ -161,22 +163,27 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
     .mkString(s"ViewerWindow#$serial(", " ", ")")
 
   def closeExplorer(path: Path): Unit = {
+    ViewerWindow.fine(s"CloseExplorer from: ($path) \n  [${viewers.keysInOrder.mkString(", ")}]\n  visible: $visiblePath\n  previous: ${viewers.previous(visiblePath)}" )
     if (viewers.size > 1) {
-      try { viewers(path).close() } catch { case ex: NoSuchElementException => ex.printStackTrace() } // TODO: why does this occasionally happen?
-      viewers.selectPrev(path)
-      viewers.remove(path)
+      try { viewers(visiblePath).close() } catch {
+        case ex: NoSuchElementException =>
+          ex.printStackTrace()
+      } // TODO: why does this occasionally happen?
+      val selected = viewers.previous(visiblePath)
+      viewers.remove(visiblePath)
+      viewers.select(selected)
     }
   }
 
   def nextExplorer(path: Path): Unit = {
     if (viewers.size > 1) {
-      viewers.selectNext(path)
+      viewers.select(viewers.next(path))
     }
   }
 
   def prevExplorer(path: Path): Unit = {
     if (viewers.size > 1) {
-      viewers.selectPrev(path)
+      viewers.select(viewers.previous(path))
     }
   }
 

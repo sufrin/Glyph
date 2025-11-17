@@ -3,10 +3,10 @@ package unstyled
 package dynamic
 
 import unstyled.{static, Text}
+import GlyphTypes.Scalar
 
 import io.github.humbleui.jwm.App
 import io.github.humbleui.skija.PaintMode
-import org.sufrin.glyph.GlyphTypes.Scalar
 
 import scala.collection.mutable
 
@@ -404,11 +404,13 @@ class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component
   extends Glyph
      with mutable.Map[Key, Component]
  {
-  val components: mutable.LinkedHashMap[Key, Component] = new mutable.LinkedHashMap[Key, Component]
+  val components: mutable.HashMap[Key, Component] = new mutable.HashMap[Key, Component]
+  val keysInOrder: mutable.Queue[Key] = mutable.Queue[Key]()
 
    locally {
     assert(initially.nonEmpty, "Keyed component glyph must have a nonempty 'initially'")
     components.addAll(initially)
+    keysInOrder.addAll(initially.map(_._1))
   }
 
   override val kind = "Keyed"
@@ -439,7 +441,9 @@ class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component
   override def apply(key: Key): Component = components(key)
 
   override def update(key: Key, component: Component): Unit = {
-    components(key) = component; linkGlyphs()
+    components(key) = component
+    if (!keysInOrder.contains(key)) keysInOrder.enqueue(key)
+    linkGlyphs()
   }
 
   override def isEmpty: Boolean = components.isEmpty
@@ -447,16 +451,21 @@ class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component
   /** @see update */
   def add(key: Key, component: Component): Unit = {
     components.addOne((key, component))
+    if (!keysInOrder.contains(key)) keysInOrder.enqueue(key)
     linkGlyphs()
   }
 
-  override def remove(key: Key): Option[Component] = components.remove(key)
+  override def remove(key: Key): Option[Component] = {
+    val result = components.remove(key)
+    keysInOrder.removeAll(k => k==key)
+    result
+  }
 
   override def isDefinedAt(key: Key): Boolean = components.isDefinedAt(key)
 
   override def values: Iterable[Component] = components.values
 
-  override def keys: Iterable[Key] = components.keys
+  override def keys: Iterable[Key] = keysInOrder
 
   override def clear(): Unit = components.clear()
 
@@ -470,28 +479,28 @@ class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component
     remove(elem); this
   }
 
-  /** If there is more than one path, select the next (in sequence of adding to this component)  */
-  def selectNext(path: Key): Unit = {
+  /** the next key (in sequence of adding to this component)  */
+  def next(key: Key): Key = {
     if (size > 1) {
-      val ks = keys.toSeq
-      val index = ks.indexOf(path) match {
+      val ks = keysInOrder.toSeq
+      val index = ks.indexOf(key) match {
         case -1 => 0
         case other => if (other == ks.length - 1) 0 else other + 1
       }
-      select(ks(index))
-    }
+      ks(index)
+    } else keysInOrder(0)
   }
 
-   /** If there is more than one path, select the previous (in sequence of adding to this component)  */
-   def selectPrev(path: Key): Unit = {
+   /** the previous key (in sequence of adding to this component)  */
+   def previous(key: Key): Key = {
     if (size > 1) {
-      val ks = keys.toSeq
-      val index = ks.indexOf(path) match {
+      val ks = keysInOrder.toSeq
+      val index = ks.indexOf(key) match {
         case -1 => 0
         case other => if (other == 0) ks.length - 1 else other - 1
       }
-      select(ks(index))
-    }
+      ks(index)
+    } else keysInOrder(0)
   }
 
 

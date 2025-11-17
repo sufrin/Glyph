@@ -21,6 +21,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
   def onDoubleClick(mods: Bitmap, selected: Int): Unit = {}
   def onHover(mods: Bitmap, hovered: Int): Unit = {}
+  def onSecondaryClick(double: Boolean, mods: Bitmap, hovered: Int): Unit = {}
   def onOther(gesture: Gesture): Unit = {}
   def underlineBrush: Brush = fg
 
@@ -281,10 +282,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
       case MouseClick(_)  if (SECONDARY) =>
         val row = yToRow(location.y) + rowOrigin
         val hovered = row min seq.length
-        if (row<seq.length)
-           if (_selectedRows.contains(hovered)) _selectedRows.remove(hovered) else _selectedRows.add(hovered)
-        else
-           _selectedRows.clear()
+        onSecondaryClick(ClickTimer.doubleClick, modifiers, hovered)
         ClickTimer.clear()
         reDraw()
 
@@ -302,7 +300,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
       // click in the left gutter => clear the selection
       // first click near a row => sets selection to that row
-      // second click within 1/2sec on the same row => invokes `onDoubleClick(modifiers, currentRow)`
+      // second click within 600msec on the same row => invokes `onDoubleClick(modifiers, currentRow)`
       case MouseClick(_) if PRESSED =>
         if (location.x<=margin) {
           _selectedRows.clear()
@@ -337,7 +335,7 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
     var lastClick: Long = 0
     def doubleClick: Boolean = {
       val timeNow = System.currentTimeMillis()
-      val result = (timeNow-lastClick) < 500
+      val result = (timeNow-lastClick) < 600
       lastClick = timeNow
       result
     }
