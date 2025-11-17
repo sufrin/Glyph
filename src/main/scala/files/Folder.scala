@@ -263,7 +263,11 @@ object Directory extends SourceLoggable {
 
   def allMatches[Result](root: Path,  pattern: PathMatcher, depth: Int = Int.MaxValue, followSymbolic: Boolean = false)(result: Path=>Result): Seq[Result] = {
     val results = ListBuffer.empty[Result]
+    forMatches(root: Path,  pattern: PathMatcher, depth: Int, followSymbolic: Boolean, { path => results += result(path) })
+    results.toSeq
+  }
 
+  def forMatches[Result](root: Path,  pattern: PathMatcher, depth: Int = Int.MaxValue, followSymbolic: Boolean = false, out: Path=> Unit): Unit = {
     Files.walkFileTree(
       root,
       if (followSymbolic) FOLLOW else NOFOLLOW,
@@ -271,7 +275,7 @@ object Directory extends SourceLoggable {
       new SimpleFileVisitor[Path] {
         override def visitFile(path: Path, attrs: BasicFileAttributes): FileVisitResult = {
           if ((pattern eq null) || pattern.matches(path)) {
-            results += result(path)
+            out(path)
             val depth = path.getNameCount
             fine(s"${"  "*depth} ${path.getFileName}")
           }
@@ -281,7 +285,7 @@ object Directory extends SourceLoggable {
 
         override def preVisitDirectory(path: Path, attrs: BasicFileAttributes): FileVisitResult = {
           if ((pattern eq null) || pattern.matches(path)) {
-            results += result(path)
+            out(path)
             val depth = path.getNameCount
             fine(s"${"  "*depth} ${path.getFileName}")
           }
@@ -294,8 +298,5 @@ object Directory extends SourceLoggable {
         }
       }
     )
-    results.toSeq
   }
-
-
 }
