@@ -24,7 +24,8 @@
             <option value="$PROJECT_DIR$/microCSO/project" />
           </set>
         </option>
-        <option name="sbtVersion" value="1.9.7" />
+        <option name="useSbtShellForBuild" value="true" />
+        <option name="useSbtShellForImport" value="true" />
       </SbtProjectSettings>
     </option>
   </component>

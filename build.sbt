@@ -14,7 +14,7 @@
 // component needed to use the glyph library.
 //
 
-ThisBuild / scalaVersion := "2.13.12"
+ThisBuild / scalaVersion := "2.13.16"
 ThisBuild / fork := true
 
 ThisBuild / crossPaths := false

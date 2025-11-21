@@ -76,7 +76,7 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
     lazy val viewButton: Glyph = TextButton("View", hint = viewHint) {
       _ =>
         if (viewers.size > 1) {
-          val buttons = viewers.keys.toSeq.map {
+          val buttons = viewers.keySet.toSeq.map {
                 key => UniformSize(key.toString) { _ => openExplorerWindow(key) }
               }
           styled.windowdialogues
@@ -158,7 +158,7 @@ class ViewerWindow(rootPath: Path) extends ViewerServices {
 
   val serial: Int = ViewerWindow.nextSerial()
 
-  override val toString: String = viewers.keys
+  override val toString: String = viewers.keySet
     .map(_.toString)
     .mkString(s"ViewerWindow#$serial(", " ", ")")
 

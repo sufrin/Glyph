@@ -9,11 +9,12 @@ import org.sufrin.logging.SourceLoggable
 import org.sufrin.utility.Notifier
 
 import java.nio.file._
-import java.nio.file.attribute.PosixFileAttributes
+import java.nio.file.attribute.{BasicFileAttributes, PosixFileAttributes}
 import java.nio.file.Files.readAttributes
 import java.util.Comparator
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.{CollectionHasAsScala, IteratorHasAsScala}
+import scala.collection.mutable.ListBuffer
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object Folder extends SourceLoggable {
 
@@ -153,14 +154,16 @@ class Folder(val path: Path) {
    * Rows (ordered by name) corresponding to the entries in this folder.
    * Invalidated when changes have been noticed in the folder.
    */
-  private lazy val allRowsByName: Cached[Seq[Row]] = Cached[Seq[Row]] {
+  private lazy val allRowsUnordered: Cached[Seq[Row]] = Cached[Seq[Row]] {
     import FileAttributes._
     require(path.toFile.isDirectory, s"$path is not a directory")
     groupWidth = 0
     ownerWidth = 0
     nameWidth = 0
-    val mkRow: Path => Row = { case path: Path =>
-      val row = Row(path, readPosixAttributes(path))
+
+    def mkRow(path: Path, basicAttrs: BasicFileAttributes): Row = {
+      val attrs = try readPosixAttributes(path) catch { case exn: Throwable => basicAttrs}
+      val row = Row(path, attrs)
       val (owidth, gwidth, nwidth) = row.principalWidths
       if (owidth > ownerWidth) ownerWidth = owidth
       if (gwidth > groupWidth) groupWidth = owidth
@@ -168,14 +171,18 @@ class Folder(val path: Path) {
       row
     }
 
+    val seq: ListBuffer[Row] = collection.mutable.ListBuffer[Row]()
+    def addRow(path: Path, attrs: BasicFileAttributes): Unit = seq += mkRow(path, attrs)
+
+    var depth: Int = Int.MaxValue
+
     if (findTree) {
-      val seq = Directory.allMatches(path, pattern)(mkRow)
-      seq
+      Directory.forMatches(path, pattern, depth, followSymbolic = true, includeRoot=false, addRow(_,_))
     }
     else {
-      val stream = Files.list(path).filter(matches).sorted(byName)
-      stream.iterator().asScala.toSeq.map(mkRow)
+      Directory.forMatches(path, pattern, 1, followSymbolic = true, includeRoot = false, addRow(_,_))
     }
+    seq.toSeq
   }
 
   /** Number of entries in the folder at this path */
@@ -183,8 +190,8 @@ class Folder(val path: Path) {
     Files.list(path).count()
   }
 
-  def directoriesByName: Seq[Row] = allRowsByName.value.filter(_.isDirectory)
-  def filesByName:       Seq[Row] = allRowsByName.value.filterNot(_.isDirectory)
+  def allDirectories: Seq[Row] = allRowsUnordered.value.filter(_.isDirectory)
+  def allFiles:       Seq[Row] = allRowsUnordered.value.filterNot(_.isDirectory)
 
   lazy val prefixPaths: Seq[Path] = {
     val p = path.normalize()
@@ -193,8 +200,8 @@ class Folder(val path: Path) {
   }
 
   def reValidate(): Unit = {
-    allRowsByName.clear()
-    allRowsByName.value
+    allRowsUnordered.clear()
+    allRowsUnordered.value
     entryCount.clear()
     ()
   }
@@ -207,7 +214,7 @@ class Folder(val path: Path) {
   /** Invalidate cache and its dependents
     */
   def invalidate(): Unit = {
-    for { cache <- List(allRowsByName, entryCount)} cache.clear()
+    for { cache <- List(allRowsUnordered, entryCount)} cache.clear()
     if (logging) finest(s"invalidated primary caches for: $path")
   }
 

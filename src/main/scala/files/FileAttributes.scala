@@ -43,7 +43,8 @@ object FileAttributes {
   val MB  = 1000*KB
   val GB  = 1000*MB
   val TB  = 1000*GB
-  implicit class legibleAttributes(attrs: PosixFileAttributes) {
+
+  implicit class legibleAttributes(attrs: BasicFileAttributes) {
     def id: String = attrs.fileKey().toString match {
       case s"(dev=$dev,ino=$ino)" => ino
       case id => id
@@ -51,10 +52,27 @@ object FileAttributes {
     def lastModifiedTime: FileTime = attrs.lastModifiedTime()
     def lastAccessTime: FileTime = attrs.lastAccessTime()
     def creationTime: FileTime = attrs.creationTime()
-    def owner: UserPrincipal = attrs.owner()
-    def group: GroupPrincipal = attrs.group()
-    def permissions: collection.mutable.Set[PosixFilePermission] = attrs.permissions().asScala
-    def mode: String = PosixFilePermissions.toString(attrs.permissions)
+
+    def owner: String = attrs match {
+      case attrs: PosixFileAttributes => attrs.owner().toString
+      case _ => "OWNER"
+    }
+
+    def group: String = attrs match {
+      case attrs: PosixFileAttributes => attrs.group().toString
+      case _ => "GROUP"
+    }
+
+    def permissions: collection.mutable.Set[PosixFilePermission] = attrs match {
+      case attrs: PosixFileAttributes => attrs.permissions().asScala
+      case _                          => collection.mutable.Set[PosixFilePermission]()
+    }
+
+    def mode: String = attrs match {
+      case attrs: PosixFileAttributes => PosixFilePermissions.toString(attrs.permissions)
+      case _                          => "??????"
+    }
+
     def isDirectory: Boolean = attrs.isDirectory && !attrs.isOther
     def isSymbolicLink: Boolean = attrs.isSymbolicLink
     def size: Long = attrs.size
@@ -78,7 +96,7 @@ object FileAttributes {
   val ellipsisLength: Int     = ellipsisString.length
   val suffixLength: Int       = 7
 
-  case class Row(path: Path, var attributes: PosixFileAttributes) {
+  case class Row(path: Path, var attributes: BasicFileAttributes) {
     val dirToken: String = attributes.d
     lazy val name = {
       val fname = path.getFileName
@@ -166,7 +184,7 @@ object FileAttributes {
 
     def byParentPath(rows: Seq[Row]): Seq[Row] = rows.sorted(byParentPath)
 
-    def byName(rows: Seq[Row]): Seq[Row] = rows
+    def byName(rows: Seq[Row]): Seq[Row] = rows.sorted(byPath)
 
     def reverseView[T](s: Seq[T]): Seq[T] = new Seq[T] {
       thisView =>

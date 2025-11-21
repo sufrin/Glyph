@@ -16,9 +16,10 @@ import unstyled.static.INVISIBLE
 import Hint.{Centred, West}
 
 import io.github.humbleui.jwm.Key
-import org.sufrin.logging.SourceLoggable
+import org.sufrin.logging.{SourceDefault, SourceLoggable}
 
 import java.nio.file._
+import java.nio.file.attribute.BasicFileAttributes
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
@@ -89,8 +90,8 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     } else {
       case rows: Seq[Row] => rows.filterNot(_.isHidden)
     }
-    val dirs  = sort(filter(folder.directoriesByName))
-    val files = sort(filter(folder.filesByName))
+    val dirs  = sort(filter(folder.allDirectories))
+    val files = sort(filter(folder.allFiles))
     // Potential for speedup by pushing dirs/files into folder: hardly worth the complexity
     dirs++files
   }
@@ -455,6 +456,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         theOrdering = Orderings.byPathDepth
         theListing.clear()
         viewer.refresh(theListing)
+
       case Some(1) | _ =>
         searchTree = false
         Fields.displayed.clear()
@@ -462,6 +464,43 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         theOrdering = manualSettings.ordering
         theListing.clear()
         viewer.refresh(theListing)
+    }
+
+    def streamMatches(source: String): Unit = {
+        import org.sufrin.microCSO._
+
+        val paths: Chan[(Path, BasicFileAttributes)] = Chan[(Path, BasicFileAttributes)](10)
+
+        val (depth, pat)  = {
+          source match {
+            case s"$pat%$num" if num.matches("[0-9]+") => (num.toInt, pat)
+            case _ => (Int.MaxValue, source)
+          }
+        }
+
+        val matcher = FileSystems.getDefault.getPathMatcher(s"glob:${folder.path.toString}/$pat")
+
+        val readPaths = proc {
+            val rootDepth = folder.path.getNameCount
+            proc.repeatedly {
+              paths ? {
+                pair => if (pair == null) SourceDefault.error ("PAIR null") else {
+                  val (path, attrs) = pair
+                  val depth = path.getNameCount-rootDepth
+                  if (matcher.matches(path)) println((s"${"  " * depth} ${path.getFileName}"))
+                } }
+            }
+            paths.close()
+        }
+
+
+        println(s"Depth: depth, pattern: $pat")
+        try {
+          (files.Directory.streamAll(folder.path, depth, followSymbolic=true, includeRoot=false, paths) || readPaths)()
+        }
+        catch {
+          case exn: Throwable => exn.printStackTrace()
+        }
     }
 
 
@@ -480,7 +519,12 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
             _ =>
               setPattern(patternField.string, searchTree)
           }(patternSheet),
-          NaturalSize.Row(align = Mid)(filterButtons.glyphButtons(Left, fixedWidth = false))
+          NaturalSize.Row(align = Mid)(filterButtons.glyphButtons(Left, fixedWidth = false)),
+
+          TextButton("Stream"){
+            _ => streamMatches(patternField.string)
+          }(patternSheet)
+
         )
 
         locally {

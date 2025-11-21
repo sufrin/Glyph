@@ -465,7 +465,7 @@ class Keyed[Key, Component](GUI: Component=>Glyph, initially: Seq[(Key,Component
 
   override def values: Iterable[Component] = components.values
 
-  override def keys: Iterable[Key] = keysInOrder
+  override def keySet: Set[Key] = keysInOrder.toSet
 
   override def clear(): Unit = components.clear()
 

@@ -13,42 +13,41 @@ object Directory extends SourceLoggable {
   private lazy val NOFOLLOW = java.util.EnumSet.noneOf(classOf[FileVisitOption])
   private lazy val FOLLOW   = java.util.EnumSet.allOf(classOf[FileVisitOption])
 
-  def allMatches[Result](
-      root: Path,
-      pattern: PathMatcher,
-      depth: Int = Int.MaxValue,
-      followSymbolic: Boolean = false
-  )(result: Path => Result): Seq[Result] = {
-    val results = ListBuffer.empty[Result]
-    forMatches(
-      root: Path,
-      pattern: PathMatcher,
-      depth: Int,
-      followSymbolic: Boolean,
-      { path => results += result(path) }
-    )
-    results.toSeq
+
+  import org.sufrin.microCSO._
+
+  def streamAll(    root: Path,
+                    depth: Int = Int.MaxValue,
+                    followSymbolic: Boolean = false,
+                    includeRoot: Boolean = false,
+                    out: OutPort[(Path, BasicFileAttributes)]
+               ): proc = {
+    proc(s"streamAll(out=${out.toString})") {
+      def output(path: Path, attrs: BasicFileAttributes): Unit = out!(path, attrs)
+      forAll(root, depth, followSymbolic, includeRoot, output)
+      out.closeOut()
+    }
   }
 
-//  import org.sufrin.microCSO._
-//
-//  def streamMatches(
-//                     root: Path,
-//                     pattern: PathMatcher,
-//                     depth: Int = Int.MaxValue,
-//                     followSymbolic: Boolean = false,
-//                     out: OutPort[Path]
-//                   ): Unit = {
-//
-//  }
-
-  def forMatches[Result](
+  def forMatches(
       root: Path,
       pattern: PathMatcher,
       depth: Int = Int.MaxValue,
       followSymbolic: Boolean = false,
-      out: Path => Unit
+      includeRoot: Boolean = false,
+      out: (Path, BasicFileAttributes) => Unit,
+      warn: String => Unit = { _ => () },
   ): Unit = {
+    def output(path: Path, attrs: BasicFileAttributes): Unit = if ((pattern eq null) || pattern.matches(path)) {
+      out(path, attrs)
+      val depth = path.getNameCount
+      fine(s"${"  " * depth} ${path.getFileName}")
+    }
+    forAll(root, depth, followSymbolic, includeRoot, output)
+  }
+
+  def forAll(root: Path, depth: Int = Int.MaxValue, followSymbolic: Boolean = false, includeRoot: Boolean = false, out: (Path, BasicFileAttributes) => Unit): Unit =
+  { val exclude: Path = if (includeRoot) null else root
     Files.walkFileTree(
       root,
       if (followSymbolic) FOLLOW else NOFOLLOW,
@@ -58,23 +57,19 @@ object Directory extends SourceLoggable {
             path: Path,
             attrs: BasicFileAttributes
         ): FileVisitResult = {
-          if ((pattern eq null) || pattern.matches(path)) {
-            out(path)
+            out(path, attrs)
             val depth = path.getNameCount
             fine(s"${"  " * depth} ${path.getFileName}")
-          }
           FileVisitResult.CONTINUE
-        }
+          }
 
         override def preVisitDirectory(
             path: Path,
             attrs: BasicFileAttributes
         ): FileVisitResult = {
-          if ((pattern eq null) || pattern.matches(path)) {
-            out(path)
-            val depth = path.getNameCount
-            fine(s"${"  " * depth} ${path.getFileName}")
-          }
+          if (path != exclude) out(path, attrs)
+          val depth = path.getNameCount
+          fine(s"${"  " * depth} ${path.getFileName}")
           FileVisitResult.CONTINUE
         }
 
@@ -82,7 +77,7 @@ object Directory extends SourceLoggable {
             path: Path,
             exn: IOException
         ): FileVisitResult = {
-          warn(exn.toString)
+          fine(exn.toString)
           FileVisitResult.CONTINUE
         }
       }
