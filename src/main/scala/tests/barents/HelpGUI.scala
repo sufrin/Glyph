@@ -166,9 +166,14 @@ object HelpGUI {
     </p>
     <p>
       The pattern field specifies a pattern to be used to filter the files in the current directory
-      or to "find" files in the directory tree rooted at the current directory. The green
-      search button filters or finds: the latter iff the adjacent checkbox is checked,
-      in which case the fields shown also include the parent directory name and the nesting level (###).
+      or recursively to "find" files in the directory tree rooted at the current directory -- the checked box
+      determines which.  In which the "find" case the fields shown include the parent directory name and the
+      nesting level (###). Moving the cursor outside the pattern field or pressing the search icon performs the
+      filtering or finding. Pressing the x button clears the pattern.
+    </p>
+    <p>
+      When selection consists of a single path, pressing the <b>LEFT</b> key changes the view to the directory at its parent path.
+      This is useful when a "find" results in a match in a directory deeper than the current directory.
     </p>
 
   </div>.enlarged(20, bg = Brushes.white)

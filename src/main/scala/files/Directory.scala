@@ -13,6 +13,9 @@ object Directory extends SourceLoggable {
   private lazy val NOFOLLOW = java.util.EnumSet.noneOf(classOf[FileVisitOption])
   private lazy val FOLLOW   = java.util.EnumSet.allOf(classOf[FileVisitOption])
 
+  val opaquePattern = FileSystems.getDefault.getPathMatcher(s"glob:**/Library/Caches")
+
+  def opaque(path: Path): Boolean = opaquePattern.matches(path)
 
   import org.sufrin.microCSO._
 
@@ -40,8 +43,6 @@ object Directory extends SourceLoggable {
   ): Unit = {
     def output(path: Path, attrs: BasicFileAttributes): Unit = if ((pattern eq null) || pattern.matches(path)) {
       out(path, attrs)
-      val depth = path.getNameCount
-      fine(s"${"  " * depth} ${path.getFileName}")
     }
     forAll(root, depth, followSymbolic, includeRoot, output)
   }
@@ -58,18 +59,18 @@ object Directory extends SourceLoggable {
             attrs: BasicFileAttributes
         ): FileVisitResult = {
             out(path, attrs)
-            val depth = path.getNameCount
-            fine(s"${"  " * depth} ${path.getFileName}")
           FileVisitResult.CONTINUE
           }
 
         override def preVisitDirectory(
             path: Path,
             attrs: BasicFileAttributes
-        ): FileVisitResult = {
+        ): FileVisitResult =
+        if (opaque(path)) {
+          finer(s"Skipping: $path")
+          FileVisitResult.SKIP_SUBTREE
+        } else {
           if (path != exclude) out(path, attrs)
-          val depth = path.getNameCount
-          fine(s"${"  " * depth} ${path.getFileName}")
           FileVisitResult.CONTINUE
         }
 

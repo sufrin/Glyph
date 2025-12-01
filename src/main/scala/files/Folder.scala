@@ -93,6 +93,12 @@ class Folder(val path: Path) {
    *
    */
   def setPattern(source: String, tree: Boolean=false): Option[String] = {
+    val (depth, pat)  = {
+      source match {
+        case s"$pat%$num" if num.matches("[0-9]+") => (num.toInt, pat)
+        case _ => (Int.MaxValue, source)
+      }
+    }
     val err =
     if (source.isEmpty) {
       pattern = null
@@ -102,8 +108,9 @@ class Folder(val path: Path) {
     }
     else {
         try {
-          pattern = FileSystems.getDefault.getPathMatcher(s"glob:**$source")
+          pattern = FileSystems.getDefault.getPathMatcher(s"glob:**$pat")
           findTree = tree
+          findDepth = depth
           reValidate()
           None
         } catch {
@@ -122,6 +129,7 @@ class Folder(val path: Path) {
   }
 
   var findTree: Boolean = false
+  var findDepth: Int = 1
   var pattern: PathMatcher = null
   def matches(path: Path): Boolean = pattern==null || pattern.matches(path)
 
@@ -177,7 +185,7 @@ class Folder(val path: Path) {
     var depth: Int = Int.MaxValue
 
     if (findTree) {
-      Directory.forMatches(path, pattern, depth, followSymbolic = true, includeRoot=false, addRow(_,_))
+      Directory.forMatches(path, pattern, findDepth, followSymbolic = true, includeRoot=false, addRow(_,_))
     }
     else {
       Directory.forMatches(path, pattern, 1, followSymbolic = true, includeRoot = false, addRow(_,_))

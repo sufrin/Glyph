@@ -278,11 +278,12 @@ class SeqViewer(cols: Int, rows: Int, font: Font, override val fg: Brush, overri
 
       case other: MouseMove =>
 
-      // secondary button (or primary with control) clicked near row => invert selection state of row
+      // secondary button (or primary with control)
       case MouseClick(_)  if (SECONDARY) =>
         val row = yToRow(location.y) + rowOrigin
         val hovered = row min seq.length
-        onSecondaryClick(ClickTimer.doubleClick, modifiers, hovered)
+        if (_selectedRows.contains(hovered)) _selectedRows.remove(hovered) else _selectedRows.add(hovered)
+        //onSecondaryClick(ClickTimer.doubleClick, modifiers, hovered)
         ClickTimer.clear()
         reDraw()
 

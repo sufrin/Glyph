@@ -130,6 +130,8 @@ object FileAttributes {
 
   }
 
+  /** Once used during debugging (when a Row has gone missing from the cache) */
+  @deprecated("Obsolete debugging aid")
   class DummyRow(dummyPath: Path) extends Row(dummyPath, null) {
     override lazy val compSize: String  = "++"
     override lazy val links:    String  = "**"

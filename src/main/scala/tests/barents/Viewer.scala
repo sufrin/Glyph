@@ -165,13 +165,6 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       clearSelection()
     }
 
-    override def onSecondaryClick(double: Boolean, mods: Bitmap, selected: Int): Unit = {
-      val path = folder.path.resolve(theRows(selected).path)
-      if (logging) finest(s"onSeondaryClick(#$selected=$path) on $thisViewer")
-      val parent = path.getParent
-      if (parent ne null) (thisViewer.services.openPath)(parent)
-    }
-
     override def onHover(mods: Bitmap, hovered: Int): Unit = if (false) folder.withValidCaches {
       if (theRows.isDefinedAt(hovered)) {
         val path = theRows(hovered).path.toString
@@ -187,6 +180,13 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
 
       import gesture._
       gesture match {
+
+        case Keystroke(Key.LEFT, _) =>
+          if (selectedPaths.length==1) {
+            val path = folder.path.resolve(selectedPaths.head)
+            val parent = path.getParent
+            if (parent ne null) (thisViewer.services.openPath)(parent)
+          } else bell.play()
 
         case Keystroke(Key.C, _) if PRESSED =>
           thisViewer.shelf(forCut = false)
@@ -436,9 +436,11 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       }
     }
 
-    val patternField: TextField = TextField(size = 20)(PathButtons.buttonSheet)
+    val patternField: TextField  = TextField(size = 20, onCursorLeave = { pat => setPattern(pat, searchTree) }, onEnter = { pat => setPattern(pat, searchTree) } )(PathButtons.buttonSheet)
     val patternSheet: StyleSheet = fileSheet.copy(buttonDecoration = styles.decoration.unDecorated)
     var searchTree: Boolean = false
+
+
 
     case class SavedSettings(displayed: Set[String] = Fields.displayed.toSet, ordering: Seq[Row] => Seq[Row] = theOrdering)
 
@@ -454,7 +456,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         Fields.displayed.add("Parent")
         Fields.displayed.add("###")
         theOrdering = Orderings.byPathDepth
-        theListing.clear()
+        setPattern(patternField.string, searchTree)
         viewer.refresh(theListing)
 
       case Some(1) | _ =>
@@ -462,19 +464,19 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         Fields.displayed.clear()
         Fields.displayed.addAll(manualSettings.displayed)
         theOrdering = manualSettings.ordering
-        theListing.clear()
+        setPattern(patternField.string, searchTree)
         viewer.refresh(theListing)
     }
 
-    def streamMatches(source: String): Unit = {
+    def streamMatches(patternSource: String): Unit = {
         import org.sufrin.microCSO._
 
-        val paths: Chan[(Path, BasicFileAttributes)] = Chan[(Path, BasicFileAttributes)](10)
+        val paths: Chan[(Path, BasicFileAttributes)] = Chan[(Path, BasicFileAttributes)](1)
 
         val (depth, pat)  = {
-          source match {
+          patternSource match {
             case s"$pat%$num" if num.matches("[0-9]+") => (num.toInt, pat)
-            case _ => (Int.MaxValue, source)
+            case _ => (Int.MaxValue, patternSource)
           }
         }
 
@@ -494,9 +496,10 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         }
 
 
-        println(s"Depth: depth, pattern: $pat")
+        println(s"Depth: $depth, pattern: $pat")
         try {
-          (files.Directory.streamAll(folder.path, depth, followSymbolic=true, includeRoot=false, paths) || readPaths)()
+          val handle = (files.Directory.streamAll(folder.path, depth, followSymbolic=true, includeRoot=false, paths) || readPaths).fork()
+          println(handle)
         }
         catch {
           case exn: Throwable => exn.printStackTrace()
@@ -514,6 +517,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
               theOrdering = manualSettings.ordering
               setPattern("", false)
           }(patternSheet),
+
           SimpleGlyphButton(IconLibrary.LOOKSHAPE(patternSheet.exHeight, Brushes("darkGrey.2.stroke)")).turned(45),
                             hint = Hint(1, if (searchTree) "find matches" else "filter matches", constant = false)) {
             _ =>
