@@ -286,8 +286,9 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     type FieldLayout = CharSequence => CharSequence
     /** The list of potential fields (in order of presentation) */
     val allFields: Seq[String] =
-      List("Id",  "###", "Parent",
+      List("Id",
            "Name",
+           "Parent",  "###",
            "Kind",
            "Size", "Size+", "Perms",
            "#",
@@ -297,9 +298,9 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     /** The list of potential layouts (in order of presentation) */
     val fieldLayouts: Seq[FieldLayout] =
       List(rightJustify(8)(_),
-           centerJustify(3)(_),
-           leftJustify(20)(_),
            leftJustify(FileAttributes.rowNameLength + 1)(_),
+           leftJustify(20)(_),
+           centerJustify(3)(_),
            leftJustify(12)(_),
            rightJustify(10)(_), rightJustify(10)(_), rightJustify(10)(_),
            centerJustify(2)(_),
@@ -363,7 +364,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
       }.roundFramed(fg=Brushes.darkGrey(width=2), radius=15)
 
     private lazy val sortButtons: RadioCheckBoxes = RadioCheckBoxes(
-      captions = List("Name", "Size", "Created", "Modified", "Accessed", "###", "Parent"),
+      captions = List("Name", "Parent",  "###", "Size", "Created", "Modified", "Accessed"),
       prefer = "Name"
       ) { case selected => selected match {
       case Some(0) => theOrdering = Orderings.byName
@@ -447,10 +448,11 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
     var manualSettings = SavedSettings()
 
     val filterButtons: RadioCheckBoxes = RadioCheckBoxes(
-      captions = List("Find", "Filter"),
+      captions = List("Filter", "find", "Find", "FIND"),
       prefer = "Filter"
       ) {
-      case Some(0) =>
+      case Some(n) if n>0  =>
+        val depth = n match { case 1=>4; case 2=>6; case 3=>Int.MaxValue }
         searchTree = true
         manualSettings = SavedSettings()
         Fields.displayed.add("Parent")
@@ -459,7 +461,7 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
         setPattern(patternField.string, searchTree)
         viewer.refresh(theListing)
 
-      case Some(1) | _ =>
+      case Some(0) | _ =>
         searchTree = false
         Fields.displayed.clear()
         Fields.displayed.addAll(manualSettings.displayed)
@@ -525,9 +527,9 @@ class Viewer(val folder: Folder, val services: ViewerServices)(implicit val file
           }(patternSheet),
           NaturalSize.Row(align = Mid)(filterButtons.glyphButtons(Left, fixedWidth = false)),
 
-          TextButton("Stream"){
-            _ => streamMatches(patternField.string)
-          }(patternSheet)
+          //TextButton("Stream"){
+          //  _ => streamMatches(patternField.string)
+          //}(patternSheet)
 
         )
 
