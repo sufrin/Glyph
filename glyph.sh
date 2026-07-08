@@ -4,11 +4,10 @@
 #
 #
 
-SKLIB=/Users/sufrin/GitHomes/Glyph/SkijaLib
-CP=$SKLIB/../out/artifacts/Glyph/Glyph.jar 
-
+RELEASE=Glyph
+CP=""
 # add the Skija lib to the class path
-for file in $SKLIB/*.jar
+for file in $RELEASE/*.jar
 do
  CP=$CP:$file
 done

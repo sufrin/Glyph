@@ -1,0 +1,88 @@
+//| mill-version: 1.1.6
+//| mill-jvm-version: system
+package build
+
+import mill.*, scalalib.*
+import mill.scalalib.JpackageModule
+
+trait ComponentModule extends ScalaModule {
+  def scalaVersion = "2.13.18"
+  def glyphVersion = "1.0.0"
+  override def scalacOptions = Seq(
+    "-deprecation",
+    "-feature",
+    "-unchecked"
+  )
+}
+
+trait UsesUnmanaged extends ScalaModule {
+    def unmanagedJars:    String          = "lib"
+    def unmanagedJarsDir: T[PathRef]      = Task.Input { (PathRef(moduleDir / os.up / os.SubPath(unmanagedJars))) }
+     // a classpath with all the jars on the unmanagedClassPathDir()
+      override def unmanagedClasspath = Task {
+        val dir = unmanagedJarsDir().path
+        if (!os.exists(dir)) Seq.empty
+        else
+          Seq.from(
+            os.list(dir)
+              .filter(_.ext == "jar")
+              .map(PathRef(_))
+          )
+      }
+}
+
+trait Releasable extends ScalaModule {
+   def releasePath: String    = "Release"
+   def releaseTarget: os.Path = moduleDir / os.SubPath(releasePath)
+   def release() = Task.Command {
+              val target = releaseTarget
+              os.makeDir.all(target / os.up)
+
+              os.copy.over(
+                assembly().path,
+                target
+              )
+
+              os.proc("chmod", "+x", target)
+              System.err.println(target)
+              PathRef(target)
+        }
+}
+
+object Glyph extends  Releasable with ComponentModule  with JpackageModule {
+  override
+  def scalaVersion  = "2.13.18"
+  def releasePath   = s"Glyph-$glyphVersion.jar"
+  def unmanagedJars = "SkijaLib"
+  def mainClass     = Some("org.sufrin.glyph.tests.GlyphBook/GlyphBook")
+  override def jpackageType = "app-image"
+
+
+  override def moduleDeps = Seq(Utilities, MicroCSO)
+
+  override def mvnDeps = super.mvnDeps() ++ Seq(
+    mvn"org.scala-lang.modules::scala-xml:2.3.0",
+    mvn"io.github.humbleui:jwm:0.4.25",
+    mvn"io.github.humbleui:skija-macos-arm64:0.143.17"
+  )
+}
+
+
+// this module defines classes that are (in some sense) useful
+object Utilities extends ComponentModule {
+   override def moduleDeps = Seq(SourceLocation)
+    def mvnDeps = Seq(
+                mvn"org.scala-lang:scala-reflect:${scalaVersion()}"
+        )
+}
+
+object SourceLocation extends ComponentModule {
+        def mvnDeps = Seq(
+                mvn"org.scala-lang:scala-reflect:${scalaVersion()}"
+        )
+}
+
+object MicroCSO extends ComponentModule {
+   override def moduleDeps = Seq(Utilities)
+}
+
