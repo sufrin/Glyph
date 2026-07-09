@@ -5,9 +5,9 @@
         Emeritus: Department of Computer Science
         Oxford University
 
-        (Revised November 3rd 2025)
-        (Version 0.9.0)
-        (scala 2.13.14)
+        (Revised July 9th 2026)
+        (Version 1.0.0)
+        (scala 2.13.18)
 
 
 **Glyph** is a (prototype) user-interface library for Scala.
@@ -47,76 +47,86 @@ which provides a few explained examples of
 users may also want to read the source code of one or more of the
 demonstration/test programs.
 
+### Acknowledgement: Skija and JWM
+Whilst Glyph's conceptual model is independent, and more abstract,
+than those of Skija and of JWM it could not have been constructed without 
+them, and a proper understanding of the implementation of its
+lower level modules may be helped by browsing 
+
+1. Skija documentation  [https://tanikaze.icu/Skija-Docs/](https://tanikaze.icu/Skija-Docs/)
+or source [https://github.com/HumbleUI/Skija](https://github.com/HumbleUI/Skija)
+
+2. JWM documentation [https://i10416.github.io/JWM/](https://i10416.github.io/JWM/)
+or source [https://github.com/humbleUI/JWM](https://github.com/humbleUI/JWM)
 
 
-## Getting Started (IntelliJ)
-
+## Getting Started
 The repository has all the Skija/Skia/JWM jar files needed to support
 building and using **Glyph**. I maintain the code using **IntelliJ**, and
 the repository has all the appropriate configuration files for that
 IDE.
 
-## Getting Started (sbt)
+## Getting Started (Mill)
+You should be able to **build** the toolkit distribution directory 
+out of the box (ie the GitHub source distribution), if you have  **mill** installed. 
+The shell command: 
 
-The **sbt** build.sbt file is also set up with the appropriate Skija/JWM dependencies,
-and can be used to build the package as a whole, as well as  to run individual test
-applications. The following are available:
+    mill Distribution.dist
 
-    org.sufrin.glyph.tests.CalculatorExample
-    org.sufrin.glyph.tests.DocumentationDiagrams
-    org.sufrin.glyph.tests.Example1
-    org.sufrin.glyph.tests.Example2
-    org.sufrin.glyph.tests.Example3
-    org.sufrin.glyph.tests.Example3a
-    org.sufrin.glyph.tests.Example3b
-    org.sufrin.glyph.tests.Example3c
-    org.sufrin.glyph.tests.Example3d
-    org.sufrin.glyph.tests.Example3e
-    org.sufrin.glyph.tests.Example3f
-    org.sufrin.glyph.tests.Example4
-    org.sufrin.glyph.tests.GlyphBook.GlyphBook
-    org.sufrin.glyph.tests.Haddock
-    org.sufrin.glyph.tests.LargeTest
-    org.sufrin.glyph.tests.Play
-    org.sufrin.glyph.tests.ResizeAndSplitTest
-    org.sufrin.glyph.tests.ResizeableWindowTest
-    org.sufrin.glyph.tests.TextField
-    org.sufrin.glyph.tests.barents.Barents
+generates (in the project root directory), the directory
 
-You can run any of them with (eg)
+    out/Distribution/dist.dest/Glyph-1.0.0/
 
-    sbt "runMain org.sufrin.glyph.tests.Example4"
+that contains all the jars necessary to run or compile a Glyph-based
+program *on a wide variety of hardware architectures and operating systems*.
 
-or from inside sbt in response to the sbt prompt:
+In that same directory you will find several *launcher scripts*. Each, when
+invoked, runs a Glyph-based program that demonstrates some (or many) of Glyph's 
+features. For example
 
-    sbt:Glyph> runMain org.sufrin.glyph.tests.Example4
+        out/Distribution/dist.dest/Glyph-1.0.0/book
 
-## Getting Started (Shell)
+demonstrates many aspects of the Glyph library by offering the choice of
+several demonstration interfaces. 
 
-But if you don't want to have any truck with an IDE, and if you cannot
-be bothered to learn anything about **sbt** (it really *is* a
-bother), then you can use the shell script:
-
-        Scripts/compile
-
-to compile the library (to GETTINGSTARTED/Glyph.jar), and
-the script:
-
-        Scripts/run <test-name> <arguments>
-
-to run any of the tests. If no <test-name> is given, then
-
-        GlyphBook.GlyphBook
-
-is run. It provides examples of some of the use of the kit.
-
-![Splash Screen](PNG/Sampler.png)
+![Splash Screen](PNG/GlyphBook.png)
 
 ![Help Window](PNG/Help.png)
 
+The nontrivial launchers are
 
-A moderately experienced Scala programmer should be able to
-adapt these scripts.
+        barents
+        book
+        calc
+        gridz
+        play
+        resizeable
+        split
+
+and some smaller examples, discussed in the introduction, are
+
+        example1
+        example2
+        example3
+        example3a
+        example3b
+        example3c
+        example3d
+        example3e
+        example3f
+
+The launchers are virtually identical: setting up the java class path then
+running the jvm with an appropriate main class.
+
+## Getting Started (IntelliJ + Mill)
+Once the mill build is operational you can import everything into IntelliJ
+by first running (in the project root directory)
+
+        mill --bsp-install
+
+then opening the project root directory in IntelliJ. 
+
+
 
 ## Example
 
@@ -199,4 +209,39 @@ object Example4 extends Application {
 }
 
 ````
+
+## Appendix: Getting Started (**sbt**)
+I advise you to think again, and to read no further unless you like 
+pathologists' reports.
+
+I admit that I used **sbt** in earlier releases of this (and other) projects; but I no longer have
+confidence in my ability to explain it to myself or anybody else who
+might be thinking of using it as a serious build tool *and who does not to waste hours*.
+I gave it up when build problems were taking an ever-larger fraction of the time it
+would take me to solve technical problems.
+
+I predicted in my keynote address to the IFIP 11th World Congress in 1989 that once we had mastered abstract
+specifications, program refinement, and the formal semantics of programming languages, the next huge problem
+was going to be with the semantics  of configuration languages. I showed that even the 
+--apparently simple-- **make** beloved of developers then (and now) had ambiguities in
+its documentation that led to an unclear conceptual model: leaving *experiment* as 
+the only recourse for people who wanted to use it for nontrivial builds.
+
+But at least **make** had short documentation! **SBT**, whose
+documentation the last time I looked occupied several hindreds of pages, 
+is not just a build language, it’s a programmable build 
+language with emergent semantics. And that’s where things get slippery.
+
+* it is *almost but not quite* declarative (settings graph, tasks, scopes)
+* but expressed in Scala (fully imperative, Turing-complete)
+* with lazy evaluation (sometimes) and dynamically-scoped keys (property names)
+* yielding a dynamically evolving dependency graph/tree
+
+Instead of a clean “configuration model / dependency tree”, you get:
+
+* a not-consistently-lazily evaluated build program whose component meanings depend
+on where they were declared, and in what context they are interpreted. 
+
+Adding extensions (indispensable for a serious engineer) into this mix makes
+the "emergent semantics" matter even worse.
 

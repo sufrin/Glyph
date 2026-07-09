@@ -622,7 +622,7 @@ case class Handles(thing: TargetShape, handles: Seq[Handle]) {
 class PathShape(override val fg: Brush, absolute: Boolean = true) extends Shape {
   hostShape =>
   val path = new GlyphPath {
-    if (absolute) moveTo(0, 0)
+    if (absolute) this.moveTo(0, 0)
   }
 
   /** A mutable shape that shares the same path; but is drawn with a possibly-different (foreground) brush */

@@ -1,15 +1,15 @@
 package org.sufrin.glyph
 
-import styled.{ActiveString, Label, MenuButton, ToggleVariable}
-import Brushes.{black, lightGrey, red}
-import GlyphTypes.{Font, FontManager, Scalar}
-import NaturalSize.{Col, Grid, Row}
-import unstyled.static.INVISIBLE
-import Modifiers.{toBitmap, Bitmap}
-import tests.StockAbbreviations
-import FontFamily.Extensions
 
 import io.github.humbleui.jwm.Key
+import org.sufrin.glyph.Brushes.{black, lightGrey, red}
+import org.sufrin.glyph.FontFamily.Extensions
+import org.sufrin.glyph.GlyphTypes.{Font, FontManager, Scalar}
+import org.sufrin.glyph.Modifiers.{Bitmap, toBitmap}
+import org.sufrin.glyph.NaturalSize.{Col, Grid, Row}
+import org.sufrin.glyph.styled.{ActiveString, Label, MenuButton, ToggleVariable}
+import org.sufrin.glyph.unstyled.static.INVISIBLE
+import org.sufrin.glyph.{StandardTextAbbreviations => StockAbbreviations}
 
 /**
  *
@@ -110,7 +110,6 @@ class FontChooser(initialFont: Font, initialBrush: Brush, aboveDisplay: (Glyph, 
 
 
   import CellFit._
-
   import sheet.{em, ex}
 
   val frameGrey = Brushes.darkGrey(width=2)
