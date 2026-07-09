@@ -6,7 +6,7 @@ import io.github.humbleui.skija.TextLine
 import org.sufrin.glyph.GlyphTypes.{Font, Scalar}
 import org.sufrin.glyph.unstyled.Text
 import org.sufrin.utility.CodePointSeqMap.{CodePoint, CodePointSeq}
-import org.sufrin.glyph.tests.StockAbbreviations
+import org.sufrin.glyph.{StandardTextAbbreviations=>StockAbbreviations}
 import org.sufrin.logging
 import org.sufrin.logging.{FINER, SourceDefault}
 

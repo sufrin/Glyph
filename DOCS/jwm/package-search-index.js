@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"io.github.humbleui.jwm"},{"l":"io.github.humbleui.jwm.impl"},{"l":"io.github.humbleui.jwm.skija"}]
