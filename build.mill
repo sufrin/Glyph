@@ -5,32 +5,22 @@ package build
 import mill.*, scalalib.*
 import mill.scalalib.JpackageModule
 
+// Defines versions and compiler flags
 trait ComponentModule extends ScalaModule {
   def scalaVersion = "2.13.18"
   def glyphVersion = "1.0.0"
   override def scalacOptions = Seq(
-    "-deprecation",
-    "-feature",
-    "-unchecked"
+      "-deprecation"
+    , "-feature"
+    , "-unchecked"
+    , "-language:implicitConversions"
+    , "-Wconf:msg=legacy-binding:s"
   )
 }
 
-
-object Glyph extends  Distributable with ComponentModule  with JpackageModule {
-  override
-  def scalaVersion         = "2.13.18"
-  def distributionVersion  = glyphVersion
-  def distributionName     = s"Glyph"
-  def unmanagedJars        = "SkijaLib"
-  def monitorTransfer      = true
-  def dependencyExclude    = ".*windows.*"    // leave out the windows skija library when distributing
-  def mainClass            = Some("org.sufrin.glyph.tests.barents/Barents")
-
-  override def jpackageType = "app-image"
-  def app = jpackageAppImage
-
+// Defines dependencies internal and external
+trait GlyphModule extends ComponentModule   {
   override def moduleDeps = Seq(Utilities, MicroCSO)
-
   override def mvnDeps = super.mvnDeps() ++ Seq(
     mvn"org.scala-lang.modules::scala-xml:2.3.0",
     mvn"io.github.humbleui:jwm:0.4.25",
@@ -42,9 +32,45 @@ object Glyph extends  Distributable with ComponentModule  with JpackageModule {
   )
 }
 
+// Defines the Glyph module itself
+object Glyph extends GlyphModule
+
+// Defines the current distribution
+object Distribution extends GlyphModule with Distributable {
+  def distributionVersion  = glyphVersion
+  def distributionName     = s"Glyph"
+  def monitorTransfer      = true
+  def dependencyExclude    = ".*windows.*"    // leave out the windows skija library when distributing
+
+  def launchers = Seq(
+        "barents"     ->"org.sufrin.glyph.tests.barents/Barents"
+      , "book"        ->"org.sufrin.glyph.tests.GlyphBook/GlyphBook"
+      , "calc"        ->"org.sufrin.glyph.tests.CalculatorExample"
+      , "gridz"       ->"org.sufrin.glyph.tests.Haddock"
+      , "resizeable"  ->"org.sufrin.glyph.tests.ResizeableWindowTest"
+      , "split"       ->"org.sufrin.glyph.tests.ResizeAndSplitTest"
+      , "play"        ->"org.sufrin.glyph.tests.Play"
+      , "textfield"   ->"org.sufrin.glyph.tests.TextField"
+      , "example1"    ->"org.sufrin.glyph.tests.Example1"
+      , "example2"    ->"org.sufrin.glyph.tests.Example2"
+      , "example3"    ->"org.sufrin.glyph.tests.Example3"
+      , "example3a"   ->"org.sufrin.glyph.tests.Example3a"
+      , "example3b"   ->"org.sufrin.glyph.tests.Example3b"
+      , "example3c"   ->"org.sufrin.glyph.tests.Example3c"
+      , "example3d"   ->"org.sufrin.glyph.tests.Example3d"
+      , "example3e"   ->"org.sufrin.glyph.tests.Example3e"
+      , "example3f"   ->"org.sufrin.glyph.tests.Example3f"
+  )
+  override def moduleDeps = super.moduleDeps++Seq(TESTS)
+}
+
+object TESTS extends ComponentModule {
+       def moduleDeps = Seq(Glyph)
+}
 
 
-// this module defines classes that are (in some sense) useful
+/////////////////////////////////// MODULES IMPORTED AS SOURCE
+
 object Utilities extends ComponentModule {
    override def moduleDeps = Seq(SourceLocation)
     def mvnDeps = Seq(

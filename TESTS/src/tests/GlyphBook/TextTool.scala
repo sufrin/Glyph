@@ -2,14 +2,12 @@ package org.sufrin.glyph
 package tests.GlyphBook
 
 
-import styled._
-import tests.StockAbbreviations
-import unstyled.static
-import Brushes.{black, blackFrame, lightGrey, white}
-
 import io.github.humbleui.jwm.Key
 import org.sufrin.SourceLocation.SourceLocation
-import org.sufrin.glyph.TextAbbreviations
+import org.sufrin.glyph.Brushes.{black, blackFrame, lightGrey, white}
+import org.sufrin.glyph.styled._
+import org.sufrin.glyph.unstyled.static
+import org.sufrin.glyph.{TextAbbreviations, StandardTextAbbreviations => StockAbbreviations}
 import org.sufrin.logging
 
 

@@ -45,33 +45,41 @@ trait Releasable extends ScalaModule {
         }
 }
 
-/**
-    Builds a THIN distribution directory, and a launch program if one is named.
 
-    If the mainClass is None (or Some("")) then the launch program runs java
-    with the normal classpath, and expects, as its first argument, the fully qualified name of a
-    main class to run.
+/**
+    Builds a THIN distribution directory together with
+    launchers if any are named, that set the java classpath
+    appropriately, then run the given main class.
 */
 trait Distributable extends ScalaModule {
+  type Launcher = (String, String) // name of the launcher, main class to launch
   import java.nio.file.{Files, StandardCopyOption}
   import java.nio.file.attribute.PosixFilePermissions
-  def monitorTransfer: Boolean = false
-  def distributionVersion = ""
-  def distributionJar     = s"$distributionPath.jar"
-  def distributionPath    = s"$distributionName-$distributionVersion"
-  def distributionName    = s"distribution"
-  def launcherName        = distributionName
-  def dependencyExclude   = ""
-  def resources           = Task.Sources( moduleDir / "resources" )
+  def monitorTransfer: Boolean  = false
+  def distributionVersion       = ""
+  def distributionJar           = s"$distributionPath.jar"
+  def distributionPath          = s"$distributionName-$distributionVersion"
+  def distributionName          = s"distribution"
+  def launchers: Seq[Launcher]  = Nil
+  def dependencyExclude         = ""
+  def resources                 = Task.Sources( moduleDir / "resources" )
 
-  /** Accumulates the names of jars added to the distribution directory */
-  val localClassPath      = new collection.mutable.ListBuffer[String]()
+  /** Accumulates the names of jars added to the distribution directory
+   *  (unused)
+   */
+  val localClassPath            = new collection.mutable.ListBuffer[String]()
 
   /**
    * Copy all extant files from `from` to `to`, while making a `.jar`
-   * file of the content of directories
+   * file of the content of directories. Note that a jar file has exactly
+   * the same format as a zip file.
+   *
+   * Assumption: The module name is the last of `from/../..`
+   * Source:     Mill's choice of destination for the compiled classes
+   *             of a module, which is:
+   *             rootDirectory/out/<modulename>/compile.dest/classes
    */
-  private def copyTree(from: os.Path, to: os.Path, resourceRoots: Seq[os.Path] = Nil): Unit = {
+   private def copyTree(from: os.Path, to: os.Path, resourceRoots: Seq[os.Path] = Nil): Unit = {
       if (os.isDir(from)) {
         val module = from / os.up / os.up
         val zipped: String = s"${module.last.toString}.jar"
@@ -110,32 +118,27 @@ trait Distributable extends ScalaModule {
         //   println(s"*** Skipping missing classpath entry: $p")
       }
 
-      val launcher = dist / launcherName
-      // val jars = localClassPath.mkString(" ")
-      if (launcherName.nonEmpty) {
-      os.write.over(
-        launcher,
-        s"""#!/bin/sh
-           |DIR="$$(CDPATH= cd -- "$$(dirname "$$0")" && pwd)"
-           |CP=""
-           |for jar in $$DIR/*.jar
-           |do
-           |   CP=$$CP:$$jar
-           |done
-           |for file in $$DIR/resources
-           |do
-           | CP=$$CP:$$jar
-           |done
-           |exec java -cp $$CP ${mainClass().getOrElse("")} "$$@"
-           """.stripIndent()
-      )
-
-      Files.setPosixFilePermissions(launcher.toNIO, PosixFilePermissions.fromString("rwxr-xr-x"))
-      if (monitorTransfer) println(s"*** Launcher $launcher")
+      for { (launcherName, mainClass) <- launchers } {
+          val launcher = dist / launcherName
+          os.write.over(
+            launcher,
+            s"""#!/bin/sh
+               |DIR="$$(CDPATH= cd -- "$$(dirname "$$0")" && pwd)"
+               |CP=""
+               |for jar in $$DIR/*.jar
+               |do
+               |   CP=$$CP:$$jar
+               |done
+               |for file in $$DIR/resources
+               |do
+               | CP=$$CP:$$jar
+               |done
+               |exec java -cp $$CP ${mainClass} "$$@"
+               """.stripIndent()
+          )
+          Files.setPosixFilePermissions(launcher.toNIO, PosixFilePermissions.fromString("rwxr-xr-x"))
+          if (monitorTransfer) println(s"*** Launcher $launcher")
+      }
       PathRef(dist)
-     } else {
-       if (monitorTransfer) println(s"*** No Launcher")
-       PathRef(dist)
-     }
   }
 }

@@ -1,9 +1,9 @@
 package org.sufrin.glyph
 package tests
 
-import NaturalSize.{Col,Row,Grid}
-import Brushes._
-import unstyled.Label
+import org.sufrin.glyph.Brushes._
+import org.sufrin.glyph.NaturalSize.{Col, Grid}
+import org.sufrin.glyph.unstyled.Label
 
 
 
