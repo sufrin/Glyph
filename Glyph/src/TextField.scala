@@ -98,12 +98,11 @@ class TextField(override val fg: Brush, override val bg: Brush, font: Font,
   import io.github.humbleui.jwm.{EventMouseButton, Window}
   private val metrics = font.getMetrics
   private val fontHeight = metrics.getDescent - metrics.getAscent //metrics.getHeight
-  private val emWidth    = metrics.getMaxCharWidth
-  private val spacing    = metrics.getDescent + metrics.getAscent + metrics.getLeading
+  private val em         = TextLine.make("M", font)
+  private val emWidth    = em.getWidth
   private val emDrop     = fontHeight// - spacing
 
-  private val em         = Text("M", font)
-  private val emDiagonal = Vec(emWidth, emDrop)
+  private val emDiagonal = Vec(emWidth, em.getHeight)
   private val atBaseLine = metrics.getXHeight+metrics.getDescent - 1//fontHeight
   private val nudge      = emWidth / 2
   private val deltaY     = emDiagonal.y*0.2f

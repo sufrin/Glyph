@@ -47,7 +47,7 @@ class TextTool(implicit style: StyleSheet)  {
 
 
   val textField: TextField =
-      styled.TextField(size = 20,
+      styled.TextField(size = 40,
                        onEnter = { _ =>  },
                        onCursorLeave = { _ => anchor.guiRoot.giveupFocus() },
                        onError = {
