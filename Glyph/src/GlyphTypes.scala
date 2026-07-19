@@ -16,6 +16,10 @@ object GlyphTypes {
   type Path        = io.github.humbleui.skija.Path
   type PathFillMode = io.github.humbleui.skija.PathFillMode
   type PaintMode    = io.github.humbleui.skija.PaintMode
+  type TextLine     = io.github.humbleui.skija.TextLine
+  type EventMouseButton = io.github.humbleui.jwm.EventMouseButton
+  type EventMouseScroll = io.github.humbleui.jwm.EventMouseScroll
+  type EventMouseMove   = io.github.humbleui.jwm.EventMouseMove
 
   object PaintMode  {
     /* lazy values ensure skija's java enum implementation as an enumeration doesn't go wrong */
