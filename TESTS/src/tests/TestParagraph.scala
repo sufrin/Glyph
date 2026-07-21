@@ -15,6 +15,10 @@ import org.sufrin.glyph.NaturalSize._
 
 
 class Para(builder: ParagraphBuilder, width: Scalar, height: Scalar) extends Glyph {
+  def addText(s: String): Unit = {
+    val words = s.split("""[\n\s]""")
+    for { w <- words} { builder.addText(w); builder.addText(" ") }
+  }
 
   /** A copy of this glyph; perhaps with different foreground/background */
   def copy(fg: Brush, bg: Brush): Glyph = this
@@ -39,16 +43,13 @@ class TestParagraph(sheet: StyleSheet) {
   implicit val style: StyleSheet = sheet
   val fc: FontCollection = new FontCollection()
   fc.setDefaultFontManager(FontMgr.getDefault)
-  val black24 = new TextStyle().setWordSpacing(3f).setFontSize(24f).setColor(Brushes.black.color)
+  val black24 = new TextStyle().setFontSize(24f).setWordSpacing(3f).setColor(Brushes.black.color)
   val red30   = new TextStyle().setWordSpacing(3f).setFontSize(20f).setColor(Brushes.red.color)
-  val centred: ParagraphStyle = new ParagraphStyle().setAlignment(Alignment.CENTER).setEllipsis("...").setMaxLinesCount(40)
-  val para = new ParagraphBuilder(centred, fc).pushStyle(black24).
-    addText("Glyph is ").
-    pushStyle(red30).addText("constructive in ").
-    //addPlaceholder(new PlaceholderStyle(40f, 50f, PlaceholderAlignment.MIDDLE, BaselineMode.ALPHABETIC, 10f)).
-    addText("spirit\tand\temphasis").popStyle().popStyle()
+  val centred: ParagraphStyle = new ParagraphStyle().setAlignment(Alignment.JUSTIFY).setEllipsis("...").setMaxLinesCount(40)
+  val para = new Para(new ParagraphBuilder(centred, fc).pushStyle(black24), 400f, 400f)
 
-  lazy val GUI: Glyph = Col()(new Para(para, 180f, 300f))
+  para.addText("The curfew tolls the knell of closing day, the lowing herd wind some-thing o'er the way; the blah di ba")
+  lazy val GUI: Glyph = Col()(para)
 }
 
 object TestParagraph extends Application {
