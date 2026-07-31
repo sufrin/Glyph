@@ -4,12 +4,12 @@ package styled
 
 
 /**
- *   A glyph, whose appearance is denoted by the `element`
- *   delivered by `element`. It rebuilds its appearance at a given size on request.
- *   Its initial appearance is determined by `context`; and if the context hasn't
+ *   A glyph, whose appearance is denoted by the Glyph
+ *   delivered by `glyph`. It rebuilds its appearance at a given size on request.
+ *   Its initial appearance is determined by the context `initialStyle`; and if the context hasn't
  *   set a positive `boundingBox`, this will be the "natural" (bottom-up)
  *   appearance determined by the rest of the context. Subsequent invocations of
- *   `atSize(box: Vec)` regenerate the appearance using `context.copy(boundingBox=box)`
+ *   `atSize(box: Vec)` regenerate the appearance using `currentStyle.copy(boundingBox=box)`
  *
  *   It is intended for use as the top-level `Glyph` of a GUI whose
  *   window may be resized, and whose layout may need to be adapted to
@@ -60,18 +60,10 @@ class Resizeable(glyph: StyleSheet=>Glyph, initialStyle: StyleSheet) extends Gly
 }
 
 /**
- *   A glyph, whose appearance is denoted by the GlyphML element
- *   denoted by `theElement`. It rebuilds its appearance at a given size on request.
- *   Its initial appearance is determined by `context`; and if the context hasn't
- *   set a positive `boundingBox`, this will be the "natural" (bottom-up)
- *   appearance determined by the rest of the context. Subsequent invocations of
- *   `atSize(box: Vec)` regenerate the appearance using `context.copy(boundingBox=box)`
- *
- *   It is intended for use as the top-level `Glyph` of a GUI whose
- *   window may be resized, and whose layout may need to be adapted to
- *   the current size.
- *
- */
+ *  A glyph, whose initial appearance is denoted by the Glyph
+ *  delivered by `generate(style)`.
+ *  It rebuilds its appearance at a given size on request.
+*/
 object Resizeable extends logging.Loggable {
   def apply(generate: StyleSheet=>Glyph)(implicit style: StyleSheet): Resizeable = new Resizeable(generate, style)
 }

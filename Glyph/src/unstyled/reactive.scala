@@ -360,20 +360,25 @@ object reactive {
     }
   }
 
+  implicit class ReactionTransforms(val reaction: Reaction) extends AnyVal {
+    def offGUIThread: Reaction = { modifiers => Schedule(0) { reaction(modifiers) }.once()}
+  }
+
   object RawButton {
+
     /**
      *  A button with up/down/hover glyphs, and offsets/alphas
      *  that reflect its state
      */
     def apply(up: Glyph, down: Glyph, hover: Glyph)(reaction: Reaction): RawButton =
-      new RawButton(up, down, hover, up.fg, up.bg, { reaction } )
+      new RawButton(up, down, hover, up.fg, up.bg, { reaction.offGUIThread } )
 
     /**
      * A button with up/down/hover glyphs specified by `up`, and down and hover
      * colours as specified. Also offsets/alphas that reflect its state.
      */
     def apply(up: Glyph, down: Brush, hover: Brush)(reaction: Reaction): RawButton =
-      new RawButton(up, up(fg=down), up(fg=hover), up.fg, up.bg, { reaction })
+      new RawButton(up, up(fg=down), up(fg=hover), up.fg, up.bg, { reaction.offGUIThread })
 
     /**
      * A button with up/down/hover glyphs, but no offsets/alphas
@@ -381,7 +386,7 @@ object reactive {
      * decide whether the mouse cursor is within the button.
      */
     def exact(up: Glyph, down: Glyph, hover: Glyph)(reaction: Reaction): RawButton =
-      new RawButton(up, down, hover, up.fg, up.bg, { reaction }) {
+      new RawButton(up, down, hover, up.fg, up.bg, { reaction.offGUIThread }) {
         override val withDetailedShape: Boolean = true
         override def extra: Vec  = Vec.Zero
         override val downOffset: Vec = Vec.Zero
@@ -396,7 +401,7 @@ object reactive {
      * decide whether the mouse cursor is within the button.
      */
     def exact(up: Glyph, down: Brush, hover: Brush)(reaction: Reaction): RawButton =
-      new RawButton(up, up(fg = down), up(fg = hover), up.fg, up.bg, { reaction }) {
+      new RawButton(up, up(fg = down), up(fg = hover), up.fg, up.bg, { reaction.offGUIThread }) {
         override val withDetailedShape: Boolean = true
         override def extra: Vec = Vec.Zero
         override val downOffset: Vec = Vec.Zero
@@ -412,7 +417,7 @@ object reactive {
              (reaction: Reaction): ReactiveGlyph = {
          val up = fallback.buttonText(text, fg, bg).enlarged(fallback.upFrame.strokeWidth * 4)
          //new RawButton(up, up(fg = red), up(fg = green), up.fg, up.bg, reaction)
-         new ColourButton(up, fg, bg, background, reaction)
+         new ColourButton(up, fg, bg, background, reaction.offGUIThread)
        }
 
 
@@ -425,7 +430,7 @@ object reactive {
     def apply(size: Vec, colour: Brush, hint: Hint=NoHint)
              (reaction: Reaction): RawButton = {
       val glyph = FilledRect(size.x, size.y, colour)
-      val but = new RawButton(glyph, glyph(), glyph(), colour, colour, reaction)
+      val but = new RawButton(glyph, glyph(), glyph(), colour, colour, reaction.offGUIThread)
       hint(but)
       but
     }
@@ -438,7 +443,7 @@ object reactive {
       new RawButton(
         up.framed(fallback.upFrame),
         up().framed(fallback.downFrame),
-        up().framed(fallback.hoverFrame), up.fg, up.bg, reaction)
+        up().framed(fallback.hoverFrame), up.fg, up.bg, reaction.offGUIThread)
 
     /** A framed button whose up, down, and hover glyphs are all `text` */
     def apply(text: String, fg: Brush=fallback.buttonForeground, bg: Brush=fallback.buttonBackground)(reaction: Reaction): RawButton = {
@@ -446,7 +451,7 @@ object reactive {
       new RawButton(
         up.framed(fallback.upFrame),
         up().framed(fallback.downFrame),
-        up().framed(fallback.hoverFrame), up.fg, up.bg, reaction)
+        up().framed(fallback.hoverFrame), up.fg, up.bg, reaction.offGUIThread)
     }
 
     /**
