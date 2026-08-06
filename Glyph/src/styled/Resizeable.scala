@@ -30,10 +30,12 @@ class Resizeable(glyph: StyleSheet=>Glyph, initialStyle: StyleSheet) extends Gly
     if (hasGuiRoot) guiRoot.setContentSize(currentStyle.containerDiagonal)
   }
 
-  var delegate: Glyph = {
+  var delegate: Glyph = _
+
+  locally {
     val initial = glyph(currentStyle)
     initial.parent = this
-    initial
+    delegate = initial
   }
 
   override def atSize(boundingBox: Vec): Glyph = {
