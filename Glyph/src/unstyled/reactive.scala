@@ -361,7 +361,8 @@ object reactive {
   }
 
   implicit class ReactionTransforms(val reaction: Reaction) extends AnyVal {
-    def offGUIThread: Reaction = { modifiers => Schedule(0) { reaction(modifiers) }.once()}
+    // abandoning async, which causes SEVERE crashes
+    def offGUIThread: Reaction = if (true) reaction else { modifiers => Schedule(0) { reaction(modifiers) }.once()}
   }
 
   object RawButton {

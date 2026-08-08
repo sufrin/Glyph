@@ -22,5 +22,9 @@ object Asynchronously {
     Await.result(Future({ expr; true }), timeout)
     ()
   }
+
+  def offGUIThread(body: => Unit): Unit = Thread.startVirtualThread{
+    () => body
+  }
 }
 
