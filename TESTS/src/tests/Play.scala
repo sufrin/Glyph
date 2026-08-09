@@ -2,20 +2,19 @@ package org.sufrin.glyph
 package tests
 
 
-import GlyphTypes.PaintMode._
-import Modifiers.{Bitmap, Command, Control, Pressed, Primary, Secondary, Shift}
-import gesture._
-import Brushes._
-import Shape.{arrow, circle, polygon}
-import styled.{Book, BookSheet}
-import unstyled.reactive.{Enterable, Reaction}
-import NaturalSize.transparent
-import styled.windowdialogues.Dialogue.OK
-import unstyled.Text
-import GlyphTypes.{PaintMode, Scalar}
-
 import io.github.humbleui.jwm.Key
 import io.github.humbleui.skija.{BlendMode, PaintStrokeCap}
+import org.sufrin.glyph.Brushes._
+import org.sufrin.glyph.GlyphTypes.PaintMode._
+import org.sufrin.glyph.GlyphTypes.{PaintMode, Scalar}
+import org.sufrin.glyph.Modifiers.{Bitmap, Command, Control, Pressed, Primary, Secondary, Shift}
+import org.sufrin.glyph.NaturalSize.transparent
+import org.sufrin.glyph.Shape.{arrow, circle, polygon}
+import org.sufrin.glyph.gesture._
+import org.sufrin.glyph.styled.windowdialogues.Dialogue.OK
+import org.sufrin.glyph.styled.{Book, BookSheet}
+import org.sufrin.glyph.unstyled.Text
+import org.sufrin.glyph.unstyled.reactive.{Enterable, Reaction}
 import org.sufrin.logging
 
 import scala.collection.mutable
@@ -427,6 +426,8 @@ class DrawingBoard(w: Scalar, h: Scalar, override val fg: Brush=transparent, ove
       }
 
       case MouseClick(_) =>
+
+      case _ =>
 
     }
     //println(displayList)

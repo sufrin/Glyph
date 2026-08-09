@@ -3,7 +3,7 @@ package glyph
 
 import io.github.humbleui.jwm.{EventKey, Window, _}
 import org.sufrin.glyph.GlyphTypes._
-import org.sufrin.logging.{Loggable, Logger}
+import org.sufrin.logging.{Logger, SourceLoggable}
 
 /**
  *
@@ -42,7 +42,7 @@ class NonReentrant(log: Logger = RootGlyph.log) {
   }
 }
 
-object RootGlyph extends Loggable {
+object RootGlyph extends SourceLoggable {
 
 }
 
@@ -65,8 +65,8 @@ object RootGlyph extends Loggable {
  * be less universally accessible than this.
  */
 class RootGlyph(var GUIroot: Glyph) extends Glyph { thisRoot =>
-  import io.github.humbleui.jwm.{Event, EventKey, Screen, Window}
   import io.github.humbleui.jwm.App.runOnUIThread
+  import io.github.humbleui.jwm.{Event, EventKey, Screen, Window}
   def copy(fg: Brush=this.fg, bg: Brush=this.bg) : Glyph = new RootGlyph(GUIroot)
 
   val dock: Dock = null
