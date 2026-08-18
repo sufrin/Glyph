@@ -229,7 +229,7 @@ trait EventHandler extends Consumer[Event] {
              case root: RootGlyph =>
                root.windowCloseRequest(window)
                root.reDraw()
-             case _ =>
+             case other =>
            }
 
       // This event is invoked by/after a `window.requestFrame`

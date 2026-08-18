@@ -406,13 +406,51 @@ class Dialogue[T](guiRoot:        Glyph,
 
   private var _onClose: Option[T => Unit] = None
 
-  /** Declare that `continuation(t)` should run just after `this.close(t)`. */
+  /**
+   * Declare that `continuation(t)` should run just after `this.close(t)`.
+   *
+   *
+   * '''IMPORTANT:'''
+   * A close because  ESC was typed or the close button was pressed will
+   * apply `continuation` to `null`. So a typical invocation will be
+   * something like this
+   * {{{
+   *   onClose {
+   *         case response  if response ne null =>
+   *           if (preparedToQuit(response)) {
+   *              root.rootWindow.close()
+   *           }
+   *         case null =>
+   *              if (preparedToQuit("DEFAULTRESPONSE")) {
+   *                  root.rootWindow.close()
+   *              }
+   *       }
+   * }}}
+   */
   def onClose(continuation: T => Unit): this.type = {
     _onClose = Some(continuation)
     this
   }
 
-  /** Declare that `continuation(t)` should run just after `this.close(t)`; then start this popup. */
+  /** Declare that `continuation(t)` should run just after `this.close(t)`; then start this popup.
+   *
+   * '''IMPORTANT:'''
+   * A close because  ESC was typed or the close button was pressed will
+   * apply `continuation` to `null`. SO a typical invocation will be something like
+   * this:
+   * {{{
+   *   onClose {
+   *         case response  if response ne null =>
+   *           if (preparedToQuit(response)) {
+   *              root.rootWindow.close()
+   *           }
+   *         case null =>
+   *              if (preparedToQuit("DEFAULTRESPONSE")) {
+   *                  root.rootWindow.close()
+   *              }
+   *       }
+   * }}}
+   */
   def andThen(continuation: T => Unit): Unit = {
     _onClose = Some(continuation)
     start()
