@@ -1,0 +1,129 @@
+//| mill-version: 1.1.6
+//| mill-jvm-version: system
+
+// Distributon.dist makes a thin distribution directory with all the tests
+// included as launchers, as well as all the dependency jars.
+//
+// Glyph.publishLocal publishes sources, compiled jars, and documentation
+// in the local ivy repo: /Users/sufrin/.ivy2/local/org.sufrin/Glyph_2.13/1.0.2
+// 
+
+package build
+
+import mill.*, scalalib.*
+import mill.scalalib.JpackageModule
+import mill.scalalib.publish.*
+
+
+// Defines versions and compiler flags
+trait ComponentModule extends ScalaModule with PublishModule {
+  def scalaVersion = "2.13.18"
+  def glyphVersion = "1.0.0"
+  override def scalacOptions = Seq(
+      "-deprecation"
+    , "-feature"
+    , "-unchecked"
+    , "-language:implicitConversions"
+    , "-Wconf:msg=legacy-binding:s"
+  )
+
+  def publishVersion = "1.0.2"
+  def pomSettings = PomSettings(
+    description = "Glyph",
+    organization = "org.sufrin",
+    url = "https://github.com/sufrin/Glyph",
+    licenses = Seq(),
+    versionControl = VersionControl.github("sufrin", "glyph"),
+    developers = Seq()
+  )
+}
+
+// Defines dependencies internal and external
+trait GlyphModule extends ComponentModule   {
+  override def moduleDeps = Seq(Utilities, MicroCSO)
+  override def mvnDeps = super.mvnDeps() ++ Seq(
+    mvn"org.scala-lang.modules::scala-xml:2.3.0",
+    mvn"io.github.humbleui:jwm:0.4.25",
+    mvn"io.github.humbleui:skija-macos-arm64:0.143.17",
+    mvn"io.github.humbleui:skija-macos-x64:0.143.17",
+    mvn"io.github.humbleui:skija-linux-x64:0.143.17",
+    mvn"io.github.humbleui:skija-linux-arm64:0.143.17",
+    mvn"io.github.humbleui:skija-windows-x64:0.143.17"
+  )
+}
+
+// Defines the Glyph module itself
+object Glyph extends GlyphModule  {
+ 
+}
+
+// Defines the current distribution
+object Distribution extends GlyphModule with Distributable {
+  def distributionVersion  = glyphVersion
+  def distributionName     = s"Glyph"
+  def monitorTransfer      = true
+  def dependencyExclude    = ".*windows.*"    // leave out the windows skija library when distributing
+
+  def launchers = Seq(
+        "barents"     ->"org.sufrin.glyph.tests.barents/Barents"
+      , "book"        ->"org.sufrin.glyph.tests.GlyphBook/GlyphBook"
+      , "calc"        ->"org.sufrin.glyph.tests.CalculatorExample"
+      , "gridz"       ->"org.sufrin.glyph.tests.Haddock"
+      , "resizeable"  ->"org.sufrin.glyph.tests.ResizeableWindowTest"
+      , "split"       ->"org.sufrin.glyph.tests.ResizeAndSplitTest"
+      , "play"        ->"org.sufrin.glyph.tests.Play"
+      , "textfield"   ->"org.sufrin.glyph.tests.TextField"
+      , "example1"    ->"org.sufrin.glyph.tests.Example1"
+      , "example2"    ->"org.sufrin.glyph.tests.Example2"
+      , "example3"    ->"org.sufrin.glyph.tests.Example3"
+      , "example3a"   ->"org.sufrin.glyph.tests.Example3a"
+      , "example3b"   ->"org.sufrin.glyph.tests.Example3b"
+      , "example3c"   ->"org.sufrin.glyph.tests.Example3c"
+      , "example3d"   ->"org.sufrin.glyph.tests.Example3d"
+      , "example3e"   ->"org.sufrin.glyph.tests.Example3e"
+      , "example3f"   ->"org.sufrin.glyph.tests.Example3f"
+  )
+  override def moduleDeps = super.moduleDeps++Seq(TESTS)
+}
+
+object TESTS extends ComponentModule {
+       def moduleDeps = Seq(Glyph)
+}
+
+
+/////////////////////////////////// MODULES IMPORTED AS SOURCE
+
+object Utilities extends ComponentModule {
+   override def moduleDeps = Seq(SourceLocation)
+    def mvnDeps = Seq(
+                mvn"org.scala-lang:scala-reflect:${scalaVersion()}"
+        )
+}
+
+object SourceLocation extends ComponentModule {
+        def mvnDeps = Seq(
+                mvn"org.scala-lang:scala-reflect:${scalaVersion()}"
+        )
+}
+
+object MicroCSO extends ComponentModule {
+   override def moduleDeps = Seq(Utilities)
+}
+
+object API extends ComponentModule with UnidocModule {
+  def unidocVersion = Some(glyphVersion)
+  def moduleDeps    = Seq(Distribution)
+  def unidocDocumentTitle = "Glyph API"
+  //def unidocSourceUrl = Some("https://github.com/sufrin/ScalaLR/")
+
+  def make() = Task.Command {
+    val site = unidocSite().path.toString
+    println(s"Documentation: $site")
+  }
+
+  def browse() = Task.Command {
+      val site = unidocSite().path
+      os.proc("open", site / "index.html").call()
+  }
+
+}

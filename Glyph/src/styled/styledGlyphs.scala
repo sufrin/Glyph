@@ -470,7 +470,7 @@ case class SymbolicCheckBox(initially: Boolean, whenFalse: String, whenTrue: Str
     }
   }
 
-case class ActiveString(initial: String)(implicit style: StyleSheet) extends dynamic.ActiveString(style.labelStyle.font, style.labelStyle.fg, style.labelStyle.bg, initial)
+case class ActiveString(override val initial: String)(implicit style: StyleSheet) extends dynamic.ActiveString(style.labelStyle.font, style.labelStyle.fg, style.labelStyle.bg, initial)
 
 
 /** Checkbox destined for a menu; hence deferred decoration */

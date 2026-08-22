@@ -731,7 +731,7 @@ object Keyed {
     override def glyphContaining(p: Vec): Option[Hit] = currentGlyph.glyphContaining(p-currentGlyph.location)
   }
 
-  class ActiveString(font: Font, fg: Brush, bg: Brush, initial: String) extends ActiveGlyph[String](initial, Text(initial, font, fg, bg)) {
+  class ActiveString(font: Font, fg: Brush, bg: Brush, val initial: String) extends ActiveGlyph[String](initial, Text(initial, font, fg, bg)) {
     def toGlyph(t: String): Glyph = Text(t, font, fg, bg)
     override def copy(fg: Brush, bg: Brush): Glyph = new ActiveString(font, fg, bg, initial)
   }
