@@ -272,6 +272,18 @@ trait Surface {
     }
   }
 
+  def withClip(x: Scalar, y: Scalar, w: Scalar, h: Scalar)(effect: => Unit): Unit = {
+    val l = canvas.saveLayer(null, null)
+    canvas.clipRect(Rect.makeXYWH(x, y, w, h))
+    try effect
+    catch {
+      // TODO: log the error in a logging stream
+      case err: Throwable => err.printStackTrace()
+    } finally {
+      canvas.restoreToCount(l)
+    }
+  }
+
 
   private var _extent: Extent = EmptyExtent
 
