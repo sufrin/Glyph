@@ -66,8 +66,11 @@ trait proc extends (()=>Unit) with Runnable {
   /**
    *  Run in a newly-acquired thread; yielding a handle from which the
    *  thread can be interrupted or awaited.
+   *
+   *  The thread is normally a virtual thread; but when `virtual` is
+   *  false it will be a kernel thread.
    */
-  def fork():  ForkHandle
+  def fork(virtual: Boolean = true):  ForkHandle
 
   /** Name of the proc */
   def name: String
@@ -132,8 +135,11 @@ class ForkHandle(val name: String, val body: ()=>Unit, val latch: Latch) extends
   }
 
   /** Acquire a new JVM thread, and evaluate `body()` in it */
-  def start(): Unit = {
-    thread = Thread.ofVirtual.start( () => run() )
+  def start(virtual: Boolean = true): Unit = {
+    if (virtual)
+      thread = Thread.ofVirtual.start( () => run() )
+    else
+      thread = Thread.ofPlatform().start( () => run() )
   }
 }
 
@@ -170,9 +176,9 @@ class par(components: Seq[proc]) extends proc {
     status.propagate()
   }
 
-  def fork(): ForkHandle = {
+  def fork(virtual: Boolean = true): ForkHandle = {
     val handle = new ForkHandle(name, apply, new Latch(1))
-    handle.start()
+    handle.start(virtual)
     handle
   }
 }
@@ -295,9 +301,9 @@ object proc extends serialNamer with Control {
 
     def apply(): Unit = body()
 
-    def fork(): ForkHandle = {
+    def fork(virtual: Boolean = true): ForkHandle = {
       val handle = new ForkHandle(name, apply, new Latch(1))
-      handle.start()
+      handle.start(virtual)
       handle
     }
 

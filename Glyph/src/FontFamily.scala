@@ -32,7 +32,7 @@ object FontFamily extends logging.Loggable {
   private val familyStore=collection.mutable.LinkedHashMap[String, FontFamily]()
 
   /** Build and cache a font family */
-  def apply(family: String="Menlo"): FontFamily =
+  def apply(family: String="DejaVu Sans Mono"): FontFamily =
       familyStore.getOrElseUpdate(family, new FontFamily(family))
 
   /** Build and cache a Font with properties specified by the given `FontId` */

@@ -302,7 +302,7 @@ object testClosing extends testFramework {
         || copy(alpha, mid)
         || copy(mid, omega)
         || sink(omega) { n => count.incrementAndGet(); last.set(n); if (n >= o) omega.closeIn() }
-      ).fork()
+      ).fork(virtual=false)
     val (terminated, status) = handle.terminationStatus(seconds(3))
     if (!terminated) printStatus(status)
     if (count.get()!=o) println(s"testRun(1..100 -> Chan($a) -> Chan($m) -> Chan($z) | $o) => ${count} ($last)")  }

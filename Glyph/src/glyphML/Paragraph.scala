@@ -221,7 +221,7 @@ object Paragraph extends SourceLoggable {
             // element is unfittable: just clip it
             other match {
               case other: HyphenatableText => SourceDefault.warn(s"Unfittable Hyphenatable: ${other.parts.mkString("-")}")
-              case other: unstyled.Text    => SourceDefault.warn(s"Unfittable Text: ${other.string}")
+              case other: unstyled.Text    => SourceDefault.warn(s"Unfittable Text: ${other.string} Font: ${FontFamily.fontString(other.font)}")
               case _                       => SourceDefault.warn(s"Unfittable: ${other.getClass}")
             }
             galley += CLIPWIDTH(galleyWidth)(other).framed(Brushes.red, bg=Brushes.pink)

@@ -22,7 +22,7 @@ object HelpGUI {
 
   import language._
 
-  val text: Glyph = <div width="80em" align="justify" parskip="0.5ex">
+  val text: Glyph = <div width="60em" align="justify" parskip="0.5ex">
     <p align="center">
       <b>🍉 The Barents Display 🍉</b>
     </p>
