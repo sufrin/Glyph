@@ -8,14 +8,14 @@ import NaturalSize.{Col, Row}
 import unstyled.{reactive, static}
 import unstyled.reactive.GenericButton
 import unstyled.static.INVISIBLE
-
 import io.github.humbleui.jwm.{App, EventMouseScroll}
+import org.sufrin.logging.SourceLoggable
 
 
 /**
  * Overlay variant of `Dialogue`
  */
-object Dialogue {
+object Dialogue extends SourceLoggable {
 
   def defaultCloseGlyph: Glyph = IconLibrary.CLOSE(16)
 

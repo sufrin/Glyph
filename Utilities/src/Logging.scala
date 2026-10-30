@@ -6,6 +6,14 @@ package org.sufrin
 object logging {
     import java.io.PrintStream
 
+    val _loggables: scala.collection.mutable.ArrayBuffer[Loggable] = scala.collection.mutable.ArrayBuffer[Loggable]()
+
+    def register(loggable: Loggable): Unit = {
+      _loggables += loggable
+    }
+
+    def loggables: Seq[Loggable] = _loggables.toSeq.sortBy[String](_.className)
+
     /** If `stream` is non-null then run `body` with `stdout` and `stderr` set to `stream`. */
     def withConsole(stream: java.io.PrintStream = null)( body : => Unit): Unit = {
       if (stream==null) {
@@ -381,6 +389,7 @@ object logging {
      */
   trait LogHost { thisHost: LogHost =>
 
+
     /** The path name of this class: shorn of its
      * trailing '$' if it's a companion object,
      * and with internal '$' transformed into '.'.
@@ -394,6 +403,13 @@ object logging {
       (if (n.endsWith("$")) n.substring(0, n.length - 1) else n)
         .replace('$', '.')
     }
+
+    def simpleClassName: String = {
+      val n = this.getClass.getSimpleName
+      (if (n.endsWith("$")) n.substring(0, n.length - 1) else n)
+        .replace('$', '.')
+    }
+
 
     /** Key to the logging level of this class in `sys.props`.
      *
@@ -436,6 +452,8 @@ object logging {
   }
 
   trait Loggable extends LogHost {
+    locally { register(this) }
+
     /** Invoke this method's namesake on the `log` */
     @inline def finest(message: => String): Unit = log.finest(message)
 

@@ -24,6 +24,16 @@ class Etcetera(implicit val style: BookSheet, implicit val translator: glyphML.T
   import Brushes._
 
 
+    Page("Logging", "Logging levels (...=>org.sufrin.glyph)") {
+      def shortName(loggable: org.sufrin.logging.Loggable): String = {
+        loggable.className.replace("org.sufrin.glyph.", "... ")
+      }
+      NaturalSize.Col(
+
+        new LoggingPanel(className=shortName(_)).GUI()
+      )
+    }
+
     Page("Grid", "") {
       val nested = Book()
       val Page = nested.Page

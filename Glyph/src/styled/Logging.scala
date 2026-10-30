@@ -5,32 +5,39 @@ import unstyled.static.FilledRect
 
 /**
  *  Provides a facility for dynamic user-control (by GUI) of the logging
- *  levels of a (fixed) collection of `Loggable` objects.
+ *  levels of a collection of `Loggable` objects.
+ *
+ *  @see LoggingPanel
  */
 
 object Logging {
   import org.sufrin.logging.{Loggable, WARN}
 
   private var _loggables: Seq[Loggable] = Seq.empty
+  var className: Loggable => String = { case loggable: Loggable => loggable.simpleClassName }
 
   /**
    * Make a (new) gui suitable for controlling the logging levels of the currently-declared
    * collection of `Loggable`s.
    */
   def GUI(implicit style: StyleSheet): Glyph = {
-    val names = "OFF/UNSET/FATAL/ERROR/WARN/INFO/FINE/FINER/FINEST/ALL".split('/').toSeq
+    val names = "OFF/ UNSET/ FATAL/ ERROR/ WARN/ INFO/ FINE/ FINER/ FINEST/ ALL".split('/').toSeq
     for { loggable <- _loggables } loggable.level = WARN
 
-    def GUI(loggable: Loggable): Glyph = {
-      lazy val buttons: RadioCheckBoxes =
+    def CONTROL(loggable: Loggable): Glyph = {
+       lazy val buttons: RadioCheckBoxes =
         RadioCheckBoxes(names, prefer = "WARN") {
-          case Some(i) => loggable.level = org.sufrin.logging.toLogLevel(names(i))
+          case Some(i) => loggable.level = org.sufrin.logging.toLogLevel(names(i).trim)
           case None    => buttons.select(4)
         }
 
-      (Label(loggable.getClass.getSimpleName.replace("$", ""))above buttons.arrangedHorizontally()).framed ()
+      NaturalSize.Col(align=Left)(
+        Label(className(loggable)),
+        NaturalSize.Row(align=Mid)(buttons.glyphRows) // TODO: why did buttons.arrangedHorizontally stop working?
+      ).enlarged(5).framed()
     }
-    NaturalSize.Col(align = Left)(_loggables map GUI).enlarged(5)
+
+    NaturalSize.Col(align = Left)(_loggables map CONTROL).enlarged(5)
   }
 
   /**
@@ -63,6 +70,8 @@ object Logging {
     _loggables = loggables
     for { loggable <- loggables } loggable.level = WARN
   }
+
+  def declareLoggables(loggables: Seq[Loggable]): Unit = _loggables=loggables
 
   /**
    * Declare the collection of loggables to be controlled; set their logging levels at `level`

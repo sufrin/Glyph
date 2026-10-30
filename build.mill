@@ -28,7 +28,8 @@ trait GlyphModule extends ComponentModule   {
     mvn"io.github.humbleui:skija-macos-x64:0.143.17",
     mvn"io.github.humbleui:skija-linux-x64:0.143.17",
     mvn"io.github.humbleui:skija-linux-arm64:0.143.17",
-    mvn"io.github.humbleui:skija-windows-x64:0.143.17"
+    mvn"io.github.humbleui:skija-windows-x64:0.143.17",
+    mvn"org.ekrich::sconfig:2.1.0"
   )
 }
 
