@@ -2,7 +2,7 @@ package org.sufrin.glyph
 package styled
 
 import org.sufrin.glyph.unstyled.static.FilledRect
-import org.sufrin.logging.Loggable
+import org.sufrin.logging.{Loggable, UNSET}
 
 /**
  * A control panel supporting individual assigment of logging
@@ -34,7 +34,7 @@ class LoggingPanel(loggables: Seq[Loggable]=org.sufrin.logging.loggables)(implic
    */
   def GUI(implicit sheet: StyleSheet): Glyph = {
     val names = "OFF/UNSET/FATAL/ERROR/WARN/INFO/FINE/FINER/FINEST/ALL".split('/').toSeq
-    for { loggable <- loggables } loggable.level = WARN
+    for { loggable <- loggables } if (loggable.level==UNSET) loggable.level = WARN
 
     def CONTROL(loggable: Loggable): Glyph = {
       lazy val buttons: RadioCheckBoxes =
