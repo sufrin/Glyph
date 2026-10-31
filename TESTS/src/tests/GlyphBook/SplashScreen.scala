@@ -1,7 +1,7 @@
 package org.sufrin.glyph
 package tests.GlyphBook
 
-import styled.{BookSheet, Label, RadioCheckBoxes, TextButton}
+import styled.{BookSheet, Label, LoggingPanel, RadioCheckBoxes, TextButton}
 import NaturalSize._
 import styles.decoration
 import Location.South
@@ -141,10 +141,24 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
       _ => styled.windowdialogues.Dialogue.BORDERLESS((help), South(helpButton)).start()
     }(splashStyle.copy(fontScale=1))
 
+    lazy val logButton: Glyph =
+      TextButton("Logging\nControls",
+                  hint=Hint(5.0, "Pops up a new panel with controls for\nthe logging levels of\nevery currently-active Loggable", preferredLocation=Hint.North)) {
+       _ =>
+         val panel = NaturalSize.Col(align=Center)(
+           Label("\nState of the currently-active loggables\n\"...\" means  \"org.sufrin.glyph\"\n ", align=Center),
+           new LoggingPanel(){
+             override def className(loggable: org.sufrin.logging.Loggable): String = {
+               loggable.className.replace("org.sufrin.glyph.", "... ")
+             }
+           }.GUI
+         )
+         styled.windowdialogues.Dialogue.OK(panel, South(helpButton), "Logging Controls").start()
+    }(splashStyle.copy(fontScale=1))
+
     lazy val debug: Glyph = styled.CheckBox(initially=false){
       state => debug.guiRoot.eventHandler.logEvents = state
     }
-
 
     val styleDefinitionButtons: Glyph = Row(align=Top)(
       styleSelect.arrangedVertically(), em scaled 4,
@@ -157,7 +171,7 @@ class  SplashScreen(implicit val sheet: BookSheet, implicit val translator: glyp
       splashStyle.vFill(),
       styleDefinitionButtons,
       splashStyle.vFill(),
-      FixedSize.Row(align=Top, width = styleDefinitionButtons.w)(splashStyle.hFill(), helpButton),
+      FixedSize.Row(align=Mid, width = styleDefinitionButtons.w)(logButton, splashStyle.hFill(), helpButton),
     ) enlarged 15
 
 }
