@@ -1,12 +1,14 @@
 package tests
+import org.ekrich.config.ConfigFactory.systemProperties
 import org.ekrich.config.ConfigFormatOptions
 import org.ekrich.config.parser.ConfigDocumentFactory
 import org.ekrich.config.parser.ConfigDocument
 import org.ekrich.config._
+import org.ekrich.config.impl.SimpleConfigList
 
 object ConfigTrial extends App {
   val text =
-    """complex-app {
+    """xyzzy = {
       |    something="This value comes from complex-app's complex2.conf"
       |
       |    # here we want a simple-lib-context unique to our app
@@ -21,18 +23,29 @@ object ConfigTrial extends App {
       |        }
       |        alist.x.y=["foo", "bar"]
       |    }
-      |}""".stripMargin
+      |}
+      |
+      |""".stripMargin
 
   //println(ConfigDocumentFactory.parseString(text).render)
 
-  val config: Config = ConfigFactory.parseString(text)
+  val config: Config = ConfigFactory.parseFile( new java.io.File("/Users/sufrin/configurationtest.file")) .resolve()
 
-
-  val es = config.atPath("outer-app").entrySet
-  val esit = es.iterator()
-  while (esit.hasNext) {
-    println(esit.next())
+  def mapping(config: Config): collection.mutable.Map[String, Any] = {
+    val map = new collection.mutable.HashMap[String, Any]()
+    val it = config.entrySet.iterator()
+    while (it.hasNext) {
+      val entry = it.next
+      map.addOne((entry.getKey, entry.getValue))
+    }
+    map
   }
+
+
+  println(mapping(config))
+  println(mapping(config.getConfig("abbreviations")))
+  println(mapping(config.getConfig("abbreviations.math")))
+
 
 
 }
