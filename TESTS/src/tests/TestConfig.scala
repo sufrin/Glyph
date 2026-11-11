@@ -6,7 +6,7 @@ import org.ekrich.config.parser.ConfigDocument
 import org.ekrich.config._
 import org.ekrich.config.impl.SimpleConfigList
 
-object ConfigTrial extends App {
+object TestConfig extends App {
   val text =
     """xyzzy = {
       |    something="This value comes from complex-app's complex2.conf"
@@ -29,7 +29,7 @@ object ConfigTrial extends App {
 
   //println(ConfigDocumentFactory.parseString(text).render)
 
-  val config: Config = ConfigFactory.parseFile( new java.io.File("/Users/sufrin/configurationtest.file")) .resolve()
+  val config: Config = ConfigFactory.parseFile( new java.io.File("TESTS/testconfig.config")) .resolve()
 
   def mapping(config: Config): collection.mutable.Map[String, Any] = {
     val map = new collection.mutable.HashMap[String, Any]()
