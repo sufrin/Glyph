@@ -625,10 +625,10 @@ object testMerge extends testFramework {
 
       var count = 0
       println(s"Merge trial $N producers (output termination) (Merge channel size = $bufSize)")
-      println(s"This also demonstrates selective logging of channel events")
-      for { chan <- chans } chan.level = FINEST
-      Component.level=FINEST
-      merged.level=FINEST
+      println(s"This (would) also demonstrates selective logging of channel events if logging were compiled in")
+      //for { chan <- chans } chan.level = FINEST
+      //Component.level=FINEST
+      //merged.level=FINEST
       run(producers             ||
           Merge(chans)(merged)  ||
           sink(merged) {
@@ -678,7 +678,8 @@ object testEvents extends testFramework {
             }
             // without guarding c the serve loop livelocks
           )
-          c.info(s"$c")
+        // c.info(s"$c")
+          println(s"$c")
           Default.info("Source finished")
 
         l.closeIn(); r.closeIn(); c.closeIn(); d.closeOut()

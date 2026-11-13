@@ -125,9 +125,9 @@ class SyncChan[T](val name: String) extends Chan[T] {
    * Fully close this channel for both input and output.
    */
   override def close(): Unit = {
-    if (logging) finer(s"$this CLOSING")
+    //if (logging) finer(s"$this CLOSING")
     if (!closed.getAndSet(true)) { // closing is idempotent
-      if (logging) finer(s"$this CLOSED")
+      //if (logging) finer(s"$this CLOSED")
       LockSupport.unpark( reader.getAndSet(null) ) // Force a waiting reader to continue **
       LockSupport.unpark( writer.getAndSet(null) ) // Force a waiting writer to continue ***
       CSORuntime.removeChannel(this)// Debugger no longer interested
@@ -239,14 +239,14 @@ class SharedSyncChan[T](name: String, readers: Int=1, writers: Int = 1) extends 
     s"SharedSyncChan.$name [readers=${readersLeft.get}/$readers, writers=${writersLeft.get}/$writers] $currentState"
 
   override def closeIn(): Unit =  {
-    if (logging) fine(s"$this CLOSING INPUT")
+    //if (logging) fine(s"$this CLOSING INPUT")
     if (readersLeft.decrementAndGet()<=0) {
       super.closeIn()
     }
   }
 
   override def closeOut(): Unit = {
-    if (logging) fine(s"$this CLOSING OUTPUT")
+    //if (logging) fine(s"$this CLOSING OUTPUT")
     if (writersLeft.decrementAndGet()<=0) {
       super.closeOut()
     }

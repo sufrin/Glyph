@@ -3,9 +3,10 @@ package org.sufrin.microCSO
 import org.sufrin.logging.Loggable
 import org.sufrin.microCSO.Alternation.`Both-Ports`
 
-trait Chan[T] extends OutPort[T] with InPort[T] with Loggable {
+trait Chan[T] extends OutPort[T] with InPort[T] //with Loggable
+{ def className: String = "Chan"
   def withLogLevel(logLevel: Int): this.type =
-  { level = logLevel
+  { //level = logLevel
     this
   }
 

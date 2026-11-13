@@ -123,18 +123,18 @@ class BufferChan[T](val name: String, capacity: Int) extends Chan[T] {
   def canOutput: Boolean = !inputClosed.get
 
   def closeIn(): Unit = {
-    if (logging) finer(s"$this CLOSING INPUT")
+    //if (logging) finer(s"$this CLOSING INPUT")
     if (!inputClosed.getAndSet(true)) {
-      if (logging) finer(s"$this CLOSED INPUT")
+      //if (logging) finer(s"$this CLOSED INPUT")
       LockSupport.unpark(writer.getAndSet(null))
     }
     removeFromRuntime()
   }
 
   def closeOut(): Unit = {
-    if (logging) finer(s"$this CLOSING OUTPUT")
+    //if (logging) finer(s"$this CLOSING OUTPUT")
     if (!outputClosed.getAndSet(true)) {
-      if (logging) finer(s"$this CLOSED OUTPUT")
+      //if (logging) finer(s"$this CLOSED OUTPUT")
       LockSupport.unpark( reader.getAndSet(null) )
     }
     removeFromRuntime()
@@ -203,14 +203,14 @@ class SharedBufferChan[T](name: String, capacity: Int, readers: Int=1, writers: 
   override def toString: String = s"SharedSyncChan.$name [readers=${readersLeft.get}/$readers, writers=${writersLeft.get}/$writers] $currentState"
 
   override def closeIn(): Unit =  {
-    if (logging) fine(s"$this CLOSING INPUT")
+    //if (logging) fine(s"$this CLOSING INPUT")
     if (readersLeft.decrementAndGet()<=0) {
       super.closeIn()
     }
   }
 
   override def closeOut(): Unit = {
-    if (logging) fine(s"$this CLOSING OUTPUT")
+    //if (logging) fine(s"$this CLOSING OUTPUT")
     if (writersLeft.decrementAndGet()<=0) {
       super.closeOut()
     }
